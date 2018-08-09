@@ -1,3 +1,5 @@
+// MIR: Multiple Image Rendering
+
 // gcc -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
 // add transparency value
 // allow aritimetic in B
@@ -48,6 +50,9 @@
 #include <stdlib.h>
 #include <math.h>
 #include "swimio.h"
+
+#include "debug.h"
+
 struct image *inimg, *outimg, outtile;
 
 typedef unsigned long long ticks;		// the cycle counter is 64 bits
@@ -306,9 +311,9 @@ void dtri(float *v0, float *v1, float *v2) {
 	int i;
 /*
 fprintf(stderr, "dtri %d: %g %g  %g %g  %g %g\n", trival,
-v0[0], v0[1], v1[0], v1[1], v2[0], v2[1]); 
+v0[0], v0[1], v1[0], v1[1], v2[0], v2[1]);
 fprintf(stderr, "\t%g %g  %g %g  %g %g\n",
-v0[2], v0[3], v1[2], v1[3], v2[2], v2[3]); 
+v0[2], v0[3], v1[2], v1[3], v2[2], v2[3]);
 */
 	tri_ticks -= getticks();
 	for(i = 0; i < 4; i++) { // XXX should 4 really be VL???
@@ -546,6 +551,9 @@ void main(int argc, char *argv[]) {
 	int box_xmin, box_ymin, box_xmax, box_ymax;
 	float *vp, det, fx, fy;
 	t_ticks -= getticks();
+
+	print_args ( "top of main:", argc, argv );
+
 	argc--;
 	argv++;
 	while(argc > 0 && argv[0][0] == '-') {
@@ -651,11 +659,36 @@ fprintf(stderr, "lastpts %d  atoi %d\n", Zval, atoi(p+1));
 	}
 	set_lut();
 
+	print_args ( "End of argument processing loop:", argc, argv );
+
+// ?
 for(;;) {
+	printf ( "Enter a MIR command (? for help) > " );
 	if((c = getchar()) == EOF || c == 'E')
 		break;
 //fprintf(stderr, "switch <%c>\n", c);
 	switch(c) {
+	case '?':
+		printf ( "\nMIR is Multiple Image Rendering\n" );
+		printf ( "\n" );
+		printf ( "Commands:\n" );
+		printf ( "  X for eXchange\n" );
+		printf ( "  I for interpolation 0, 1, 2\n" );
+		printf ( "  a new reverse mapping: mi00 mi01 mi02  mi10 mi11 mi12 \n" );
+		printf ( "  A new forward mapping: mf00 mf01 mf02  mf10 mf11 mf12 \n" );
+		printf ( "  G new global mapping:  mg00 mg01 mg02  mg10 mg11 mg12 \n" );
+		printf ( "  S scale multipliers: oscalex oscaley iscalex iscaley\n" );
+		printf ( "  O offsets: ooffx ooffy ioffx ioffy\n" );
+		printf ( "  B bounds of output region: owid oht obpp twid tht trans\n" );
+		printf ( "  D directory prefix for all input file names\n" );
+		printf ( "  F read a new file\n" );
+		printf ( "  R fill bounding box rect from src file & current mf[][]\n" );
+		printf ( "  Z zero the drawing space\n" );
+		printf ( "  V reverse video?\n" );
+		printf ( "  W write a file?\n" );
+		printf ( "  # for comment to end of line\n" );
+		printf ( "  E to Exit\n" );
+		continue;
 	case 'X':
 //fprintf(stderr, "eXchange\n");
 		exchange ^= 1;
@@ -1342,17 +1375,17 @@ fprintf(stderr, "aug %d %d\n", neqn, rowlen);
 	// put augmented matrix into diagonal form
 	for(j = 0; j < neqn; j++) {
 		temp=j;
-  
+
 		// find MAX coefficient of Xj in last (neqn-j) equations
 		for(i = j+1; i < neqn; i++)
 		if(aug[i][j] > aug[temp][j])
 			temp=i;
-  
+
 		if(fabs(aug[temp][j]) < MINVAL) {
 			fprintf(stderr, "\n Coefficients too small !!!\n");
 			//exit(1);
 		}
-  
+
 		// swap row with MAX coefficient of Xj
 		if(temp!=j) {
 			minus++;
@@ -1362,7 +1395,7 @@ fprintf(stderr, "aug %d %d\n", neqn, rowlen);
 				aug[temp][k] = temporary;
 			}
 		}
-  
+
 		// row operations to form required diagonal matrix
 		for(i = 0; i < neqn; i++)
 			if(i!=j) {
@@ -1371,7 +1404,7 @@ fprintf(stderr, "aug %d %d\n", neqn, rowlen);
 					aug[i][k] -= (aug[j][k]/aug[j][j])*r;
 			}
   }
- 
+
 	for(i = 0; i < neqn; i++)
 		solution[i] = aug[i][neqn]/aug[i][i];
 

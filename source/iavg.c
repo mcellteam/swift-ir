@@ -10,6 +10,8 @@
 #include <tiffio.h>
 #include "swimio.h"
 
+#include "debug.h"
+
 struct image *im0, *im1;
 
 int mode = -1;
@@ -39,10 +41,42 @@ unsigned int hist[256], min = 4000000000, max = 0;
 int *v_hist, *h_hist;
 float xrampl = 1., xramph = 1.;
 float yrampl = 1., yramph = 1.;
+
 int main(int argc, char* argv[]) {
 	int n = 1, i, x, y, size;
+	print_args ( "main:", argc, argv );
+
+	if ( (argc<=1) || (strcmp(argv[1],"--help")==0) ) {
+		printf ( "\n" );
+		printf ( "\n" );
+		printf ( "Usage:\n" );
+		printf ( "\n" );
+		//          ----------- argv[0] -------argv[1]--
+		printf ( "  iavg [Options] ImageName\n" );
+		printf ( "\n" );
+		printf ( " Where:\n" );
+		printf ( "\n" );
+		printf ( "  Options:\n" );
+		printf ( "    -r: reverse video\n" );
+		printf ( "    -e: fill black top edge for newjosh WRE's\n" );
+		printf ( "    -h: hv_hists\n" );
+		printf ( "    -q: more quiet\n" );
+		printf ( "    -a: mode = 0\n" );
+		printf ( "    -s: mode = 5\n" );
+		printf ( "    -i: mode = 6\n" );
+		printf ( "    -p: mode = 7\n" );
+		printf ( "    -p#: mode = 7 pcount = #\n" );
+		printf ( "    -#: mode = #\n" );
+		printf ( "    -m: xramph and xrampl\n" );
+		printf ( "    -+: add = 1\n" );
+		printf ( "    --: sub = 1\n" );
+		printf ( "    -b #: black = #+2\n" );
+		printf ( "    -w #: white = #+2\n" );
+		exit(0);
+	}
 
 	while(argv[1][0] == '-') {
+		print_args ( "main (top while loop):", argc, argv );
 //fprintf(stderr, "arg %s\n", argv[1]);
 		if(argv[1][1] == 'r')
 			reversevid = 1;
@@ -56,49 +90,57 @@ int main(int argc, char* argv[]) {
 			mode = 5;
 		else if(argv[1][1] == 'i')
 			mode = 6;
-		else if(argv[1][1] == 'm') {
-			xramph = 1.143;
-			xramph = 1 + (xramph - 1)/2;
-			xrampl = 1/xramph;
-		} else if(argv[1][1] == 'a')
+		else if(argv[1][1] == 'm')
+			{
+				xramph = 1.143;
+				xramph = 1 + (xramph - 1)/2;
+				xrampl = 1/xramph;
+			}
+		else if(argv[1][1] == 'a')
 			mode = 0;
 		else if(argv[1][1] == '+')
 			add = 1;
 		else if(argv[1][1] == '-')
 			sub = 1;
 		else if(argv[1][1] == 'b')
-{
-//fprintf(stderr, "black %s\n", argv[1]+2);
-			black = atoi(argv[1]+2);
-//fprintf(stderr, "set to %d\n", black);
-}
+			{
+			//fprintf(stderr, "black %s\n", argv[1]+2);
+						black = atoi(argv[1]+2);
+			//fprintf(stderr, "set to %d\n", black);
+			}
 		else if(argv[1][1] == 'w')
-{
-//fprintf(stderr, "white %s\n", argv[1]+2);
+			{
+			//fprintf(stderr, "white %s\n", argv[1]+2);
 			white = atoi(argv[1]+2);
-//fprintf(stderr, "set to %d\n", white);
-}
-		else if(argv[1][1] == 'p') {
-			mode = 7;
-			if(argv[1][2])
-				pcount = atoi(argv[1]+2);
-if(!quiet)
-fprintf(stderr, "pcount thresh %d\n", pcount);
-		} else {
-			mode = atoi(argv[1]+1);
-if(!quiet)
-fprintf(stderr, "mode %d = %s\n", mode, modest[mode]);
-		}
-//fprintf(stderr, "advance\n");
+			//fprintf(stderr, "set to %d\n", white);
+			}
+		else if(argv[1][1] == 'p')
+			{
+				mode = 7;
+				if(argv[1][2])
+					pcount = atoi(argv[1]+2);
+				if(!quiet)
+					fprintf(stderr, "pcount thresh %d\n", pcount);
+			}
+		else
+			{
+				mode = atoi(argv[1]+1);
+				if(!quiet)
+					fprintf(stderr, "mode %d = %s\n", mode, modest[mode]);
+			}
+		fprintf(stderr, "advance\n");
 		argv++;
 		argc--;
 	}
-//fprintf(stderr, "bw %d %d\n", black, white);
+	printf ( "Args after parsing options: " );
+	print_args ( "  ", argc, argv );
+
+	//fprintf(stderr, "bw %d %d\n", black, white);
 	if(black != 0 || white != 255) {
 		int i;
 		float d;
 		d = 255./(white - black);
-//fprintf(stderr, "d %d %f\n", (white - black), d);
+		//fprintf(stderr, "d %d %f\n", (white - black), d);
 		clut = malloc(256*sizeof(int));
 		if(white > black) {
 			for(i = 0; i < black; i++)
@@ -116,50 +158,52 @@ fprintf(stderr, "mode %d = %s\n", mode, modest[mode]);
 			for(i = white; i < black; i++)
 				clut[i] = d*(i-black)+.5;
 		}
-//for(i = 0; i < 256; i++)
-//fprintf(stderr, "clut[%d] = %d\n", i, clut[i]);
+		//for(i = 0; i < 256; i++)
+		//fprintf(stderr, "clut[%d] = %d\n", i, clut[i]);
 	}
-//fprintf(stderr, "im0 = read_img\n");
+	//fprintf(stderr, "im0 = read_img\n");
 	im0 = read_img(argv[1]);
-if(!quiet)
-fprintf(stderr, "%d: %s  %d %d %d\n", n, argv[1], im0->wid, im0->ht, im0->bpp);
+	if(!quiet)
+		fprintf(stderr, "%d: %s  %d %d %d\n", n, argv[1], im0->wid, im0->ht, im0->bpp);
 	size = im0->ht * im0->wid * im0->bpp;
 	intimg = malloc(size*sizeof(unsigned int));
 	minimg = malloc(size*sizeof(unsigned char));
 	maximg = malloc(size*sizeof(unsigned char));
 	cntimg = malloc(size*sizeof(unsigned char)); // non 0 pixel counter
 
-//fprintf(stderr, "edge %d\n", edge);
+	//fprintf(stderr, "edge %d\n", edge);
 	if(edge) { // fill newjosh/W??/WRE tops with top nonblack value
-//fprintf(stderr, "fill top %d %d\n", im0->wid, im0->ht);
+		//fprintf(stderr, "fill top %d %d\n", im0->wid, im0->ht);
 		int x, y, yb, nbv;
 		for(x = 0; x < im0->wid; x++) {
 			for(yb = 0; yb < im0->ht && im0->pp[x+yb*im0->wid] == 0; yb++);
 				;
 			nbv = im0->pp[x+yb*im0->wid]; // non black val
-//if(yb) fprintf(stderr, "x %d  yb %d  nbv %d\n", x, yb, nbv);
+			//if(yb) fprintf(stderr, "x %d  yb %d  nbv %d\n", x, yb, nbv);
 			for(y = 0; y < yb; y++)
 				im0->pp[x+y*im0->wid] = nbv;
 		}
 	}
-fprintf(stderr, "xramph %g\n", xramph);
+	fprintf(stderr, "xramph %g\n", xramph);
 	if(xramph != 1.0) {
 		float m, ml = xrampl, dm = (xramph-xrampl)/im0->wid;
-fprintf(stderr, "xramp %g %g  dm %g\n", xrampl, xramph, dm);
+		fprintf(stderr, "xramp %g %g  dm %g\n", xrampl, xramph, dm);
 		for(y = 0; y < im0->ht; y++)
-		    for(m = ml, x = 0; x < im0->wid; x++, m += dm)
-			im0->pp[x+y*im0->wid] = m*im0->pp[x+y*im0->wid];
+			for(m = ml, x = 0; x < im0->wid; x++, m += dm)
+				im0->pp[x+y*im0->wid] = m*im0->pp[x+y*im0->wid];
 	}
-//fprintf(stderr, "initial hv_hists %d\n", hv_hists);
+	//fprintf(stderr, "initial hv_hists %d\n", hv_hists);
 	if(hv_hists) { // fill newjosh/W??/WRE tops with top nonblack value
-//fprintf(stderr, "fill top %d %d\n", im0->wid, im0->ht);
+		//fprintf(stderr, "fill top %d %d\n", im0->wid, im0->ht);
 		int x, y, v;
 		v_hist = malloc(256*im0->wid*sizeof(int));
 		h_hist = malloc(256*im0->ht*sizeof(int));
-		for(y = 0; y < im0->ht; y++) for(x = 0; x < im0->wid; x++) {
-			v = im0->pp[x+y*im0->wid];
-			h_hist[y*256 + v]++;
-			v_hist[x*256 + v]++;
+		for(y = 0; y < im0->ht; y++) {
+			for(x = 0; x < im0->wid; x++) {
+				v = im0->pp[x+y*im0->wid];
+				h_hist[y*256 + v]++;
+				v_hist[x*256 + v]++;
+			}
 		}
 	}
 	for(i = 0; i < size; i++) {
@@ -194,8 +238,8 @@ fprintf(stderr, "xramp %g %g  dm %g\n", xrampl, xramph, dm);
 		free(im0->pp);
 		free(im0);
 		im0 = read_img(argv[0]);
-if(!quiet)
-fprintf(stderr, "%d: %s  %d %d %d\n", n, argv[0], im0->wid, im0->ht, im0->bpp);
+		if(!quiet)
+			fprintf(stderr, "%d: %s  %d %d %d\n", n, argv[0], im0->wid, im0->ht, im0->bpp);
 		if(size != im0->ht*im0->wid*im0->bpp) {
 			fprintf(stderr, "old size %d -- break\n", size);
 			break;
@@ -204,12 +248,12 @@ fprintf(stderr, "%d: %s  %d %d %d\n", n, argv[0], im0->wid, im0->ht, im0->bpp);
 		n++;
 		if(xramph != 1.0) {
 			float m, ml = xrampl, dm = (xramph-xrampl)/im0->wid;
-fprintf(stderr, "xramp %g %g  dm %g\n", xrampl, xramph, dm);
+			fprintf(stderr, "xramp %g %g  dm %g\n", xrampl, xramph, dm);
 			for(y = 0; y < im0->ht; y++)
-			    for(m = ml, x = 0; x < im0->wid; x++, m += dm)
-				im0->pp[x+y*im0->wid] = m*im0->pp[x+y*im0->wid];
+				for(m = ml, x = 0; x < im0->wid; x++, m += dm)
+					im0->pp[x+y*im0->wid] = m*im0->pp[x+y*im0->wid];
 		}
-//fprintf(stderr, "hv_hists %d %d\n", n, hv_hists);
+		//fprintf(stderr, "hv_hists %d %d\n", n, hv_hists);
 		if(hv_hists) {
 			int x, y, v;
 			for(y = 0; y < im0->ht; y++)
@@ -255,11 +299,11 @@ fprintf(stderr, "xramp %g %g  dm %g\n", xrampl, xramph, dm);
 		argc--;
 		argv++;
 	}
-if(quiet <= 1)
-fprintf(stderr, "%d source images\n", n);
+	if(quiet <= 1)
+		fprintf(stderr, "%d source images\n", n);
 	switch(mode) {
-	case 0:
-/*
+	case 0: // -a
+		/*
 		for(i = 0; i < 256; i++)
 			if(hist[i])
 				break;
@@ -270,15 +314,15 @@ fprintf(stderr, "%d source images\n", n);
 		fprintf(stderr, "minmax %d %d\n", min, max);
 		for(i = 0; i < size; i++)
 			im0->pp[i] = 255.0*(im0->pp[i]-min)/(max-min);
-*/
+		*/
 		// XXXX not fixed for RGB color
-//fprintf(stderr, "starting minmax %d %d\n", min, max);
+		//fprintf(stderr, "starting minmax %d %d\n", min, max);
 		for(i = 0; i < size; i++)
 			if(intimg[i] > max)
 				max = intimg[i];
 			else if(intimg[i] < min)
 				min = intimg[i];
-//fprintf(stderr, "minmax %d %d\n", min, max);
+		//fprintf(stderr, "minmax %d %d\n", min, max);
 		for(i = 0; i < size; i++)
 			im0->pp[i] = 255.99*(intimg[i]-min)/(max-min);
 		break;
@@ -320,20 +364,20 @@ fprintf(stderr, "%d source images\n", n);
 		printf("P5\n%d %d\n255\n", im0->wid, im0->ht);
 	fflush(stdout);
 	ignore = write(1, im0->pp, size);
-//fprintf(stderr, "final hv_hists %d\n", hv_hists);
+	//fprintf(stderr, "final hv_hists %d\n", hv_hists);
 	if(hv_hists) {
 		int fd, x, y, max;
 		unsigned char line[256];
 		fd = creat("xy_hists.pgm", 0666);
-//fprintf(stderr, "fd %d\n", fd);
+		//fprintf(stderr, "fd %d\n", fd);
 		sprintf(line, "P5\n%d %d\n255\n", 256, im0->wid+im0->ht);
 		ignore = write(fd, line, strlen(line));
 		for(y = 0; y < im0->ht; y++) {
 			unsigned int *ip = &h_hist[y*256];
-if((y%69) == 0) {
-fprintf(stderr, "y %d\n", y);
-for(x = 0; x < 256; x++) fprintf(stderr, "%d %d\n", x, ip[x]);
-}
+			if((y%69) == 0) {
+				fprintf(stderr, "y %d\n", y);
+				for(x = 0; x < 256; x++) fprintf(stderr, "%d %d\n", x, ip[x]);
+			}
 			for(max = x = 0; x < 256; x++)
 				if(ip[x] > max)
 					max = ip[x];

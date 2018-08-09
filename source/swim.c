@@ -1,5 +1,37 @@
 // gcc -o swim -O3 -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
 // ./swim 800 -k keep.JPG -i 1 R34CA1-B_S12.112.pgm 2048 2048 R34CA1-B_S12.113.pgm 2000 2100  1
+
+//	Args:
+//
+//    WindowSize // may be either a single number for both x and y or a string of the form #x# such as 2048x1024
+/*    options:
+				-x expr: addx = MUL*eval_expr(expr)
+				-y expr: addy = MUL*eval_expr(expr)
+				-m expr: MUL = eval_expr(expr)
+				-i expr: niter = atoi(expr)
+				-w expr: wht_expon = eval_expr(expr);  whiten = 1;  if(wht_expon == 0.0) whiten = 0;
+				-A apodize = 0
+				-V no_vert = 1
+				-H no_hor = 1
+				-r reverse = 1
+				-k str: keepimg = str
+				-t snrthr,xthr,ythr :
+							char *p;
+							p = argv[2];
+							snrthr = atof(p);
+							while(*p && *p != ',')
+								p++;
+							if(*p++ == ',')
+								xthr = ythr = atof(p);
+							while(*p && *p != ',')
+								p++;
+							if(*p++ == ',')
+								ythr = atof(p);
+*/
+//    ImageName1
+//    ImageName2
+
+//
 //#define	VERB
 // investigate small reversibility position inaccuracies
 // while first starting point stays the same then keep searching - XXX failed??
@@ -16,7 +48,11 @@
 #include <unistd.h>
 #include <sys/time.h>
 #include "swimio.h"
+
+#include "debug.h"
+
 #define	MSIZE 65536	// max size
+
 int SIZEX = 512, SIZEY = 480;
 int fftw_mode = FFTW_ESTIMATE;	// modes are FFTW_ESTIMATE or FFTW_MEASURE
 
@@ -60,11 +96,12 @@ void mk_fpat(struct image *im, double xc, double yc, double xdx, double ydx, dou
 	int x, y, ix, iy, v0, v1, v2, v3, n = nx*ny;
 	uchar *pp;
 	float f0, f1, f2, f3, psum = 0, psum2 = 0, *ifpp = fpp;
-if(!quiet)
-fprintf(stderr, "im %p  del %d xy %g %g  %g %g  %g %g  lut %p  flt %p %d %d\n",
-im, im->ydelta, xc, yc, xdx, ydx, xdy, ydy, lut, fpp, nx, ny);
-if(!quiet)
-fprintf(stderr, "AFFINE afm %g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
+	if(!quiet) {
+		fprintf(stderr, "im %p  del %d xy %g %g  %g %g  %g %g  lut %p  flt %p %d %d\n", im, im->ydelta, xc, yc, xdx, ydx, xdy, ydy, lut, fpp, nx, ny);
+	}
+	if(!quiet) {
+		fprintf(stderr, "AFFINE afm %g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
+	}
 	f0 = (nx-1) * xdx/2;
 	f1 = (nx-1) * xdy/2;
 	f2 = (ny-1) * ydx/2;
@@ -96,8 +133,7 @@ fprintf(stderr, "AFFINE afm %g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
 			}
 			frx = xc - ix;
 			fry = yc - iy;
-			fv = (1-fry)*((1-frx)*v0+frx*v1)
-				+ fry*((1-frx)*v2+frx*v3);
+			fv = (1-fry)*((1-frx)*v0+frx*v1) + fry*((1-frx)*v2+frx*v3);
 			*fpp++ = fv;	// output to contiguous presized rect
 			psum += fv;	// to get avg
 			psum2 += fv*fv; // to get var
@@ -113,35 +149,38 @@ fprintf(stderr, "AFFINE afm %g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
 	patsd = sqrt(patvar);
 	if(n != nx*ny) {
 		for(y = 0; y < ny; y++) for(x = 0; x < nx; x++, ifpp++) {
-			if(*ifpp == -1048576.0)
+			if(*ifpp == -1048576.0) {
 				*ifpp = patavg;
+			}
 		}
 	}
 }
+
+#define	CLIPLEFT 0 // Davi's camera left edge 20 ... XXX cond check for blk cols
 
 void mk_ftarg(struct image *im, int xc, int yc, float *fpp, int nx, int ny) {
 	int x, y, ix, iy, v0, v1, v2, v3, n = nx*ny;
 	uchar *pp;
 	float fv = 0, psum = 0, psum2 = 0;
-if(!quiet)
-fprintf(stderr, "im %p  %d x %d del %d cornerxy %d %d flt %p %d %d\n",
-im, im->wid, im->ht, im->ydelta, xc, yc, fpp, nx, ny);
+	if(!quiet) {
+		fprintf(stderr, "im %p  %d x %d del %d cornerxy %d %d flt %p %d %d\n", im, im->wid, im->ht, im->ydelta, xc, yc, fpp, nx, ny);
+	}
 	n = 0; // replace nx*ny by count to handle off edge cases
-if(!quiet)
-fprintf(stderr, "**** xc %d  yc %d\n", xc, yc);
+	if(!quiet) {
+		fprintf(stderr, "**** xc %d  yc %d\n", xc, yc);
+	}
 	for(y = 0; y < ny; y++, yc++, fpp += nx) {
-		if(yc < 0 || yc >= im->ht)
+		if(yc < 0 || yc >= im->ht) {
 			continue;
+		}
 		pp = &im->pp[yc*im->ydelta + xc];
 		for(x = 0; x < nx; x++, xc++) {
-#define	CLIPLEFT 0 // Davi's camera left edge 20 ... XXX cond check for blk cols
-			if(xc < CLIPLEFT || xc >= im->wid) // XXX move out
-{
-//if(n == 0) fpp[x] = pp[x+nx/2]; else
-//fpp[x] = psum/n; // XXX proper fix later + pretest this all outside the loop
-fpp[x] = 0; // XXX AWW
+			if(xc < CLIPLEFT || xc >= im->wid) { // XXX move out
+				//if(n == 0) fpp[x] = pp[x+nx/2]; else
+				//fpp[x] = psum/n; // XXX proper fix later + pretest this all outside the loop
+				fpp[x] = 0; // XXX AWW
 				continue;
-}
+			}
 			fv = pp[x];
 			fpp[x] = fv;
 			psum += fv;	// to get avg
@@ -156,51 +195,58 @@ fpp[x] = 0; // XXX AWW
 	fpp -= ny*nx;
 	yc -= ny;
 	fv = targavg;
-if(!quiet)
-fprintf(stderr, "restart yc %d fpp %p  fv %g\n", yc, fpp, fv);
+	if(!quiet) {
+		fprintf(stderr, "restart yc %d fpp %p  fv %g\n", yc, fpp, fv);
+	}
 	for(y = 0; y < ny; y++, yc++, fpp += nx) {
 		if(yc < 0 || yc >= im->ht) {
-//fprintf(stderr, "fix y %d yc %d to %g\n", y, yc, fv); // XXX AWW apodize edges
-//alternatively fold back and diffuse on opposite edge to preserve this edge
-			for(x = 0; x < nx; x++)
+			//fprintf(stderr, "fix y %d yc %d to %g\n", y, yc, fv); // XXX AWW apodize edges
+			//alternatively fold back and diffuse on opposite edge to preserve this edge
+			for(x = 0; x < nx; x++) {
 				fpp[x] = fv;
+			}
 		} else { // XXX should do the same thing for the right side
-			for(x = 0; fpp[x] == 0 && x < nx; x++)
+			for(x = 0; fpp[x] == 0 && x < nx; x++) {
 				fpp[x] = fv;
-			for(x = nx-1; fpp[x] == 0 && x > 0; x--)
+			}
+			for(x = nx-1; fpp[x] == 0 && x > 0; x--) {
 				fpp[x] = fv;
+			}
 		}
 	}
-if(!quiet)
-fprintf(stderr, "ftarg stats  av %g  va %g  sd %g  n %d\n", targavg, targvar, targsd, n);
+	if(!quiet) {
+		fprintf(stderr, "ftarg stats  av %g  va %g  sd %g  n %d\n", targavg, targvar, targsd, n);
+	}
 }
 
 void scalepat(float *pat, int nx, int ny) {
 	float *fp, fmin = 1e20, fmax = -1e20;
 	int x, y;
-	for(y = 0, fp = pat; y < ny; y++, fp += nx)
+	for(y = 0, fp = pat; y < ny; y++, fp += nx) {
 		for(x = 0; x < nx; x++) {
-			if(fp[x] > fmax)
-				fmax = fp[x];
-			if(fp[x] < fmin)
-				fmin = fp[x];
+			if(fp[x] > fmax) fmax = fp[x];
+			if(fp[x] < fmin) fmin = fp[x];
 		}
-//fprintf(stderr, "scalepat minmax %g %g\n", fmin, fmax);
-	for(y = 0, fp = pat; y < ny; y++, fp += nx)
-		for(x = 0; x < nx; x++)
+	}
+	//fprintf(stderr, "scalepat minmax %g %g\n", fmin, fmax);
+	for(y = 0, fp = pat; y < ny; y++, fp += nx) {
+		for(x = 0; x < nx; x++) {
 			fp[x] = 255*(fp[x] - fmin)/(fmax - fmin);
+		}
+	}
 }
 
 void qflip(float *pat, int nx, int ny) {
 	float *fp, *fp2, t;
 	int x, y;
-//fprintf(stderr, "qflip 0x%lx  %d %d\n", pat, nx, ny);
-	for(y = 0, fp = pat; y < ny; y++, fp += nx) // left and right
+	//fprintf(stderr, "qflip 0x%lx  %d %d\n", pat, nx, ny);
+	for(y = 0, fp = pat; y < ny; y++, fp += nx) { // left and right
 		for(x = 0; x < nx/2; x++) {
 			t = fp[x];
 			fp[x] = fp[x+(nx+1)/2];
 			fp[x+(nx+1)/2] = t;
 		}
+	}
 	for(y = 0, fp = pat; y < ny/2; y++, fp += nx) { // top and bottom
 		fp2 = fp + (ny+1)/2 * nx;
 		for(x = 0; x < nx; x++) {
@@ -216,8 +262,9 @@ void qflip(float *pat, int nx, int ny) {
 */
 	for(y = ny-1; y > 0; y--) { // XXX OK, WANT FASTER FIX due to 1D FFT
 		fp = pat + y*nx;
-		for(x = 0; x < nx/2; x++)
+		for(x = 0; x < nx/2; x++) {
 			fp[x] = fp[x-nx];
+		}
 	}
 }
 
@@ -225,9 +272,11 @@ void cpfout(float *pat, int nx, int ny, struct image *im, int xo, int yo) {
 	int x, y;
 	unsigned char *cp = im->pp;
 	cp += yo*im->ydelta + xo;
-	for(y = 0; y < ny; y++, pat += nx, cp += im->ydelta)
-		for(x = 0; x < nx; x++)
+	for(y = 0; y < ny; y++, pat += nx, cp += im->ydelta) {
+		for(x = 0; x < nx; x++) {
 			cp[x] = pat[x];
+		}
+	}
 }
 
 void expand(float *ip, int ix, int iy, float *op, int ox, int oy, float pad) {
@@ -235,14 +284,18 @@ void expand(float *ip, int ix, int iy, float *op, int ox, int oy, float pad) {
 //fprintf(stderr, "expand %d %d  to %d %d  pad %g\n", ix, iy, ox, oy, pad);
 	for(y = 0; y < iy; y++, ip += ix, op += ox) {
 //fprintf(stderr, "y %d\n", y);
-		for(x = 0; x < ix; x++)
+		for(x = 0; x < ix; x++) {
 			op[x] = ip[x];
-		for( ; x < ox; x++)
+		}
+		for( ; x < ox; x++) {
 			op[x] = pad;
+		}
 	}
-	for( ; y < oy; y++, op += ox)
-		for(x = 0; x < ox; x++)
+	for( ; y < oy; y++, op += ox) {
+		for(x = 0; x < ox; x++) {
 			op[x] = pad;
+		}
+	}
 //fprintf(stderr, "edone y %d\n", y);
 }
 
@@ -255,23 +308,25 @@ void mk_winf(float *winf, int nx, int ny) {
 		rad = ny/2;
 	rad *= 1.05; // fudge so we don't waste true 0 edges.
 	rad /= M_PI/2;
-if(!quiet)
-fprintf(stderr, "mk_winf %d %d rad %g\n", nx, ny, rad);
+	if(!quiet) {
+		fprintf(stderr, "mk_winf %d %d rad %g\n", nx, ny, rad);
+	}
 	for(y = 0; y < ny; y++, winf += nx) {
 		dy = fabs(y - ny/2.)/(ny/2);
 		if(dy > .8)
 			dy = .5 + cos(5*M_PI*(dy-.8))/2;
 		else
 			dy = 1;
-//fprintf(stderr, "y %d dy %g\n", y, dy);
+		//fprintf(stderr, "y %d dy %g\n", y, dy);
 		for(x = 0; x < nx; x++) {
 			dx = fabs(x - nx/2.)/(nx/2);
-			if(dx > .8)
+			if(dx > .8) {
 				dx = .5 + cos(5*M_PI*(dx-.8))/2;
-			else
+			} else {
 				dx = 1;
+			}
 			winf[x] = dy*dx;
-/*
+			/*
 			dy = y - ny/2.;
 			dx = x - nx/2.;
 			r = sqrt(dx*dx + dy*dy)/rad;
@@ -280,9 +335,9 @@ fprintf(stderr, "mk_winf %d %d rad %g\n", nx, ny, rad);
 			// annular and mexican hat with negs
 			if(winf[x] < 0)
 				winf[x] = 0;
-if(x < (nx>>6) || y < (nx>>6) || x > nx-(nx>>6) || y > ny-(ny>>6)) winf[x] = 0;
-else winf[x] = 1; // square crop Apr 2012
-*/
+			if(x < (nx>>6) || y < (nx>>6) || x > nx-(nx>>6) || y > ny-(ny>>6)) winf[x] = 0;
+			else winf[x] = 1; // square crop Apr 2012
+			*/
 		}
 	}
 }
@@ -307,8 +362,9 @@ void use_winf(float *winf, float *pat, int nx, int ny) {
 	winavg = wsum / n;
 	winvar = (wsum2 - wsum*wsum/n) / (n-1);
 	winsd = sqrt(winvar);
-if(!quiet)
-fprintf(stderr, "win stats  av %g  va %g  sd %g  n %d\n", winavg, winvar, winsd, n);
+	if(!quiet) {
+		fprintf(stderr, "win stats  av %g  va %g  sd %g  n %d\n", winavg, winvar, winsd, n);
+	}
 }
 
 float stat_avg, stat_var, stat_sd, stat_min, stat_max, stat_maxz, stat_minz;
@@ -375,16 +431,17 @@ void stats(float *fp, int nx, int ny) {
 	newbest = 0;
 //fprintf(stderr, "compare %g > %g\n", zscore, bestz);
 	if(zscore > bestz) {
-if(!quiet)
-fprintf(stderr, "newbest %g vs %g a %g w %g xy %d %d\n",
-zscore, bestz, curra, wht_expon, stat_minx, stat_miny);
+		if(!quiet) {
+			fprintf(stderr, "newbest %g vs %g a %g w %g xy %d %d\n",
+														zscore, bestz, curra, wht_expon, stat_minx, stat_miny);
+		}
 		besta = curra;
 		bestz = zscore;
 		worst = stat_maxz/stat_sd;
 		bestw = wht_expon;
 		bestx = stat_minx;
 		besty = stat_miny;
-		newbest = 1;	
+		newbest = 1;
 		sumbestx += bestx;
 		sumbesty += besty;
 		sum2bestx += bestx*bestx;
@@ -392,12 +449,15 @@ zscore, bestz, curra, wht_expon, stat_minx, stat_miny);
 		nbests++;
 	} else {
 		float zdiff = bestz-zscore;
-if(!quiet || zdiff > 1.5)
-fprintf(stderr, "%s %g %g GOTWORSE by %g:  %g vs %g a %g xy %d %d\n",
-fname0, tarx, tary, zdiff, zscore, bestz, curra, stat_minx, stat_miny);
+		if(!quiet || zdiff > 1.5) {
+			fprintf(stderr, "%s %g %g GOTWORSE by %g:  %g vs %g a %g xy %d %d\n",
+											fname0, tarx, tary, zdiff, zscore, bestz, curra, stat_minx, stat_miny);
+		}
 	}
-//fprintf(stderr, "ret from stats\n");
+	//fprintf(stderr, "ret from stats\n");
 }
+
+#define	ETHR (bestsd/2)
 
 float find_xyoff(unsigned char *ip, int wid, int ht) {
 	int i, n = 0, v, x, y;
@@ -410,8 +470,9 @@ float find_xyoff(unsigned char *ip, int wid, int ht) {
 	firstx = firsty = -1;
 	lastx = lasty = 1000000;
 	n = ht * wid;
-if(!quiet)
-fprintf(stderr, "xy %d %d\n", wid, ht);
+	if(!quiet) {
+		fprintf(stderr, "xy %d %d\n", wid, ht);
+	}
 	fh = fha;
 	fhc = fhca;
 	fv = fva;
@@ -439,23 +500,23 @@ fprintf(stderr, "xy %d %d\n", wid, ht);
 			sumsq += v*v;
 		}
 	}
-fprintf(stderr, "sumsq %g\n", sumsq);
-//if(hiprot[0] != 1234.) { fprintf(stderr, "****** B\n"); exit(1); }
+	fprintf(stderr, "sumsq %g\n", sumsq);
+	//if(hiprot[0] != 1234.) { fprintf(stderr, "****** B\n"); exit(1); }
 	av = sum/n;
 	var = (sumsq - sum*sum/n) / (n-1);
 	sd = sqrt(var);
-fprintf(stderr, "avg %g  var %g  sd %g\n", sum/n, var, sd);
-fprintf(stderr, "max %d at %d %d ... %g\n", maxv, xmax, ymax, (maxv-av)/sd);
-fprintf(stderr, "min %d at %d %d ... %g\n", minv, xmin, ymin, (av-minv)/sd);
+	fprintf(stderr, "avg %g  var %g  sd %g\n", sum/n, var, sd);
+	fprintf(stderr, "max %d at %d %d ... %g\n", maxv, xmax, ymax, (maxv-av)/sd);
+	fprintf(stderr, "min %d at %d %d ... %g\n", minv, xmin, ymin, (av-minv)/sd);
 	worstsd = (maxv-av)/sd;
 	bestsd = (av-minv)/sd;
-/*
+	/*
 	for(x = 0; x < wid; x++)
 		fprintf(stderr, "%d %g\n", x, -(fh[x]/wid - av));
 	printf("\n");
 	for(y = 0; y < ht; y++)
 		fprintf(stderr, "%d %g\n", y, -(fv[y]/ht - av));
-*/
+	*/
 	for(x = 0; x < wid; x++) {
 		fh[x] = 0;
 		fhc[x] = 0;
@@ -470,12 +531,11 @@ fprintf(stderr, "min %d at %d %d ... %g\n", minv, xmin, ymin, (av-minv)/sd);
 			v = (av - v);
 			if(v > 0) {
 				f = v/sd;
-#define	ETHR (bestsd/2)
-if(f < ETHR) continue;
-//fprintf(stderr, "f %g ETHR %g\n", f, ETHR);
-//fprintf(stderr, "xy %d %d: f %g -> ", x, y, f);
-			f = exp(f/10.); // use Q errf instead XXX
-//fprintf(stderr, "exp %g\n", f); // no div by 10 gave too many nan overflows
+				if(f < ETHR) continue;
+				//fprintf(stderr, "f %g ETHR %g\n", f, ETHR);
+				//fprintf(stderr, "xy %d %d: f %g -> ", x, y, f);
+				f = exp(f/10.); // use Q errf instead XXX
+				//fprintf(stderr, "exp %g\n", f); // no div by 10 gave too many nan overflows
 				if(f > 0) {
 					fh[x] += f;
 					fv[y] += f;
@@ -754,9 +814,10 @@ double fastPow(double a, double b) {
 
 float mf[2][3] = {1, 0, 0, 0, 1, 0};	// forward affine
 float mi[2][3] = {1, 0, 0, 0, 1, 0};	// inverse affine
+
 void affine_inverse(float *mi, float *mf) {
 	float det = mf[0]*mf[3+1] - mf[1]*mf[3+0];
-fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1/det));
+	fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1/det));
 	mi[0] = mf[3+1]/det;
 	mi[1] = -mf[1]/det;
 	mi[2] = -mf[2]*mi[0] - mf[3+2]*mi[1];
@@ -766,10 +827,13 @@ fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1/det));
 }
 
 char *keepimg;
+
 fftwf_complex *fft_result0, *fft_result1, *fft_comb;
 fftwf_plan forward_plan0, backward_plan;
+
 int Nforw, Nrev;
 float *ifft_comb;
+
 int oldmain(int argc, char *argv[]) {
 	float *fp, a, addx = 0, addy = 0, MUL = 1.0;
 	float rota = 0, ntarx, ntary, npatx, npaty, deltx, delty;
@@ -780,34 +844,37 @@ int oldmain(int argc, char *argv[]) {
 	int niter = 1, reverse = 0, no_vert = 0, no_hor = 0, apodize = 1;
 	char *cp;
 	float m0, m1;
-targs -= getticks();
+	print_args ( "oldmain:", argc, argv );
+
+	targs -= getticks();
 	ncalls++;
 	patx = -1000000;
 	paty = -1000000;
 	tarx = -1000000;
 	tary = -1000000;
 	while(*argv[1] == '-') {
-		if(argv[1][1] == 'x') {
+		print_args ( "oldmain top of while:", argc, argv );
+		if(argv[1][1] == 'x') { // -x
 			addx = MUL*eval_expr(argv[2]);
 			argc--;
 			argv++;
 		}
-		if(argv[1][1] == 'y') {
+		if(argv[1][1] == 'y') { // -y
 			addy = MUL*eval_expr(argv[2]);
 			argc--;
 			argv++;
 		}
-		if(argv[1][1] == 'm') {
+		if(argv[1][1] == 'm') { // -m
 			MUL = eval_expr(argv[2]);
 			argc--;
 			argv++;
 		}
-		if(argv[1][1] == 'i') {
+		if(argv[1][1] == 'i') { // -i
 			niter = atoi(argv[2]);
 			argc--;
 			argv++;
 		}
-		if(argv[1][1] == 'w') {
+		if(argv[1][1] == 'w') { // -w
 			wht_expon = eval_expr(argv[2]);
 			whiten = 1;
 			if(wht_expon == 0.0)
@@ -815,13 +882,13 @@ targs -= getticks();
 			argc--;
 			argv++;
 		}
-		if(argv[1][1] == 't') { // Thresholds for affine reset
+		if(argv[1][1] == 't') { // -t Thresholds for affine reset
 			char *p;
 			p = argv[2];
 			snrthr = atof(p);
 			while(*p && *p != ',')
 				p++;
-			if(*p++ == ',') 
+			if(*p++ == ',')
 				xthr = ythr = atof(p);
 			while(*p && *p != ',')
 				p++;
@@ -830,15 +897,15 @@ targs -= getticks();
 			argc--;
 			argv++;
 		}
-		if(argv[1][1] == 'A')
+		if(argv[1][1] == 'A') // -A
 			apodize = 0;
-		if(argv[1][1] == 'V')
+		if(argv[1][1] == 'V') // -V
 			no_vert = 1;
-		if(argv[1][1] == 'H')
+		if(argv[1][1] == 'H') // -H
 			no_hor = 1;
-		if(argv[1][1] == 'r')
+		if(argv[1][1] == 'r') // -r
 			reverse = 1;
- 		if(argv[1][1] == 'k') {
+		if(argv[1][1] == 'k') { // -k
  			keepimg = argv[2];
 			argc--;
 			argv++;
@@ -850,20 +917,28 @@ targs -= getticks();
 	afm[1] = 0;
 	afm[2] = 0;
 	afm[3] = 1;
+
+	print_args ( "main after parsing options:", argc, argv );
+
 	fname0 = argv[1];
 	if(argc == 3) {
+		printf ( "3 non-option arguments (including 0)\n" );
 		fname1 = argv[2];
 	} else {
+		printf ( "not 3 non-option arguments (including 0)\n" );
 		tarx = eval_expr(argv[2]);
 		tary = eval_expr(argv[3]);
 		fname1 = argv[4];
 		patx = tarx;
 		paty = tary;
 		if(argc > 5)
+			printf ( "more than 5 non-option arguments (including 0)\n" );
 			patx = eval_expr(argv[5]);
 		if(argc > 6)
+			printf ( "more than 6 non-option arguments (including 0)\n" );
 			paty = eval_expr(argv[6]);
 		if(argc == 8) {
+			printf ( "exactly 8 non-option arguments (including 0)\n" );
 			rota = eval_expr(argv[7]);
 			a = rota*M_PI/180;
 			afm[0] = cos(a);
@@ -871,12 +946,14 @@ targs -= getticks();
 			afm[2] = -sin(a);
 			afm[3] = cos(a);
 		} else if(argc == 11) {
+			printf ( "exactly 11 non-option arguments (including 0)\n" );
 			rota = 1024; // XXX magic to use explicit afm
 			afm[0] = eval_expr(argv[7]);
 			afm[1] = eval_expr(argv[8]);
 			afm[2] = eval_expr(argv[9]);
 			afm[3] = eval_expr(argv[10]);
 		} else if(argc == 12) { // affine predict
+			printf ( "exactly 12 non-option arguments (including 0)\n" );
 			rota = 1024; // XXX magic to use explicit afm
 			mf[0][0] = eval_expr(argv[5]);
 			mf[0][1] = eval_expr(argv[6]);
@@ -884,12 +961,11 @@ targs -= getticks();
 			mf[1][0] = eval_expr(argv[8]);
 			mf[1][1] = eval_expr(argv[9]);
 			mf[1][2] = eval_expr(argv[10]);
-fprintf(stderr, "MF  %g %g %g  %g %g %g\n",
-mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
+			fprintf(stderr, "MF  %g %g %g  %g %g %g\n", mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
 			affine_inverse(&mi[0][0], &mf[0][0]);
-fprintf(stderr, "MI  %g %g %g  %g %g %g\n",
-mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
+			fprintf(stderr, "MI  %g %g %g  %g %g %g\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
 			if(argv[11][0] == '-') {
+				printf ( "argv[11][0] == -\n" );
 				patx = tarx*mi[0][0] + tary*mi[0][1] + mi[0][2];
 				paty = tarx*mi[1][0] + tary*mi[1][1] + mi[1][2];
 				afm[0] = mi[0][0];
@@ -897,6 +973,7 @@ mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
 				afm[2] = mi[1][0];
 				afm[3] = mi[1][1];
 			} else {
+				printf ( "argv[11][0] =/= -\n" );
 				patx = tarx*mf[0][0] + tary*mf[0][1] + mf[0][2];
 				paty = tarx*mf[1][0] + tary*mf[1][1] + mf[1][2];
 				afm[0] = mf[0][0];
@@ -904,13 +981,15 @@ mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
 				afm[2] = mf[1][0];
 				afm[3] = mf[1][1];
 			}
-		} else if(argc != 7 && argc != 5)
+		} else if(argc != 7 && argc != 5) {
+			printf ( "argc =/= 7 or 5" );
 			fprintf(stderr, "******** bad argc %d\n", argc);
+		}
 	}
 
-targs += getticks();
+	targs += getticks();
 	if(/*fname0[0] != '-' ||*/ strcmp(fname0, lastf0)) {  // XXX recheck
-tread0 -= getticks();
+		tread0 -= getticks();
 		strcpy(lastf0, fname0);
 		if(im0 && im0->pp) {
 			free(im0->pp);
@@ -918,7 +997,7 @@ tread0 -= getticks();
 		}
 		im0 = read_img(fname0);
 		if(im0 == NULL) {
-tread0 += getticks();
+			tread0 += getticks();
 			fprintf(stderr, "Can't read_img %s\n", fname0);
 			return(-1);
 		}
@@ -940,12 +1019,12 @@ tread0 += getticks();
 		oldtarx = -10000;
 		oldtary = -10000;
 		nread0++;
-tread0 += getticks();
+		tread0 += getticks();
 	}
 	if(im0 == NULL) // quietly handle repeat open failures
 		return(-1);
 	if(/*fname1[0] != '-' ||*/ strcmp(fname1, lastf1)) {  // XXX recheck
-tread1 -= getticks();
+		tread1 -= getticks();
 		strcpy(lastf1, fname1);
 		if(im1 && im1->pp) {
 			free(im1->pp);
@@ -953,7 +1032,7 @@ tread1 -= getticks();
 		}
 		im1 = read_img(fname1);
 		if(im1 == NULL) {
-tread1 += getticks();
+			tread1 += getticks();
 			fprintf(stderr, "Can't read_img %s\n", fname1);
 			return(-1);
 		}
@@ -964,7 +1043,7 @@ tread1 += getticks();
 		oldpatx = -10000;
 		oldpaty = -10000;
 		nread1++;
-tread1 += getticks();
+		tread1 += getticks();
 	}
 	if(im1 == NULL)	// quietly handle repeat open failures
 		return(-1);
@@ -1004,7 +1083,7 @@ tread1 += getticks();
 	RW = EW;
 	RH = EH;
 	if(ndone++ == 0) {
-tinit -= getticks();
+		tinit -= getticks();
 		io = newimage(PW, PH, 1); // for the original pattern area
 		ro = newimage(RW, RH, 1); // the result corr over the roi
 		eo = newimage(EW, EH, 1); // expanded pattern for correlation
@@ -1022,7 +1101,7 @@ tinit -= getticks();
 		backward_plan = fftwf_plan_dft_c2r_1d(
 			size, fft_comb, ifft_comb, fftw_mode);
 		mk_winf(winf, PW, PH);
-tinit += getticks();
+		tinit += getticks();
 		if(fftw_mode == FFTW_MEASURE) {
 			gettimeofday(&tv, NULL);
 			elapsed_sec = (tv.tv_sec-starts) +
@@ -1035,7 +1114,7 @@ tinit += getticks();
 		fprintf(stderr, "make targ at %g %g EWH %d %d\n",
 			tarx, tary, EW, EH);
 	if(oldtarx != tarx || oldtary != tary) {
-tprep0 -= getticks();
+		tprep0 -= getticks();
 		mk_ftarg(im0, tarx-EW/2, tary-EH/2, targ, EW, EH);
 		if(apodize)
 			use_winf(winf, targ, EW, EH);
@@ -1069,16 +1148,16 @@ loop:
 	sum2bestx = 0;
 	sum2besty = 0;
 	ia = 0;
-fprintf(stderr, "LOOP ia %d  wht_expon %g\n", ia, wht_expon);
+	fprintf(stderr, "LOOP ia %d  wht_expon %g\n", ia, wht_expon);
 	curra = 0;
 	currw = wht_expon;
 	a = (rota+curra)*M_PI/180;
 	fdx = cos(a);
 	fdy = sin(a);
 	m0 = sqrt(fdx*fdx + fdy*fdy);
-fprintf(stderr, "ia %d a %g  %g %g  %g\n", ia, a, fdx, fdy, m0);
+	fprintf(stderr, "ia %d a %g  %g %g  %g\n", ia, a, fdx, fdy, m0);
 	if(1 || oldpatx != patx || oldpaty != paty || oldpata != a) { // XXX
-tprep1 -= getticks();
+		tprep1 -= getticks();
 		if(a >= -.001 && a <= 0.001)
 			mk_ftarg(im1, patx-PW/2, paty-PH/2, fpat, PW,  PH);
 		else if(rota == 1024)
@@ -1097,36 +1176,33 @@ tprep1 -= getticks();
 		if(!quiet)
 			fprintf(stderr, "scaled\n");
 		cpfout(fpat, PW, PH, io, 0, 0);
-tprep1 += getticks();
+		tprep1 += getticks();
 	}
 	if(oldtarx != tarx || oldtary != tary) {
-if(!quiet) fprintf(stderr, "need first FFT %g %g  %p\n", tarx, tary, targ);
-tfft0 -= getticks();
+		if(!quiet) fprintf(stderr, "need first FFT %g %g  %p\n", tarx, tary, targ);
+		tfft0 -= getticks();
 		fftwf_execute_dft_r2c(forward_plan0, targ, fft_result0);
 		oldtarx = tarx; oldtary = tary; ntargft++;
-tfft0 += getticks();
+		tfft0 += getticks();
 		Nforw++;
-fprintf(stderr, "did first FFT\n");
+		fprintf(stderr, "did first FFT\n");
 	}
 	fdx = patx - oldpatx;
 	fdy = paty - oldpaty;
 	m0 = sqrt(fdx*fdx + fdy*fdy);
-	if(oldpatx != patx || oldpaty != paty || oldpata != a ||
-	afm[0] != ofm[0] || afm[1] != ofm[1] || afm[2] != ofm[2] ||
-	afm[3] != ofm[3]) {
-if(!quiet)
-fprintf(stderr, "need second FFT %g %g\n", patx, paty);
-tfft1 -= getticks();
+	if(oldpatx != patx || oldpaty != paty || oldpata != a || afm[0] != ofm[0] || afm[1] != ofm[1] || afm[2] != ofm[2] || afm[3] != ofm[3]) {
+		if(!quiet) fprintf(stderr, "need second FFT %g %g\n", patx, paty);
+		tfft1 -= getticks();
 		fftwf_execute_dft_r2c(forward_plan0, epat, fft_result1);
 		oldpatx = patx; oldpaty = paty; oldpata = a; npatft++;
 		ofm[0] = afm[0];
 		ofm[1] = afm[1];
 		ofm[2] = afm[2];
 		ofm[3] = afm[3];
-tfft1 += getticks();
+		tfft1 += getticks();
 		Nforw++;
 	}
-tmult -= getticks();
+	tmult -= getticks();
 	for(i = 0; i < size/2+1; i++) { // convolution multiply loop
 		double re, im, conj, s;
 		conj = -fft_result0[i][1]; // conjugate to correlate
@@ -1146,14 +1222,14 @@ tmult -= getticks();
 		fft_comb[i][0] = -re; // reversed to dark corr
 		fft_comb[i][1] = im;
 	}
-tmult += getticks();
+	tmult += getticks();
 	if(!quiet)
 		fprintf(stderr, "ready for backward_plan\n");
-tfft2 -= getticks();
+	tfft2 -= getticks();
 	fftwf_execute_dft_c2r(backward_plan, fft_comb, ifft_comb);
-tfft2 += getticks();
+	tfft2 += getticks();
 	Nrev++;
-tpost -= getticks();
+	tpost -= getticks();
 	scalepat(ifft_comb, EW, EH);
 	qflip(ifft_comb, EW, EH);
 	stats(ifft_comb, EW, EH); // easier to understand in gray levs
@@ -1169,7 +1245,7 @@ tpost -= getticks();
 		if(!quiet)
 			fprintf(stderr, "uncert %f\n", uncert);
 	}
-tpost += getticks();
+	tpost += getticks();
 	if(!quiet)
 		fprintf(stderr, "loop all done\n");
 	rng_lft = tarx < patx ? tarx : patx;
@@ -1222,30 +1298,34 @@ tpost += getticks();
 	fdx = patx - startpatx;
 	fdy = paty - startpaty;
 	m0 = sqrt(fdx*fdx + fdy*fdy);
-{
-	char outbuf[10000];
-	static char *flags[] = { "", " dx", " dy", " dxy", " dreset" };
-	int flag = 0, nw;
-	if(sqrt(fdx*fdx) > SIZEX/4)
-		flag |= 1;
-	if(sqrt(fdy*fdy) > SIZEY/4)
-		flag |= 2;
-	if(snrthr > bestz)
-		areset = 1;
-	if(sqrt(fdx*fdx) > xthr)
-		areset += 2;
-	if(sqrt(fdy*fdy) > ythr)
-	areset += 4;
-	if(areset) {
-		flag = 4;
-		patx = startpatx;
-		paty = startpaty;
-		areset = 0; //// XXX do this somewhere else
+	{
+		char outbuf[10000];
+		static char *flags[] = { "", " dx", " dy", " dxy", " dreset" };
+		int flag = 0, nw;
+		if(sqrt(fdx*fdx) > SIZEX/4) {
+			flag |= 1;
+		}
+		if(sqrt(fdy*fdy) > SIZEY/4) {
+			flag |= 2;
+		}
+		if(snrthr > bestz) {
+			areset = 1;
+		}
+		if(sqrt(fdx*fdx) > xthr) {
+			areset += 2;
+		}
+		if(sqrt(fdy*fdy) > ythr) {
+			areset += 4;
+		}
+		if(areset) {
+			flag = 4;
+			patx = startpatx;
+			paty = startpaty;
+			areset = 0; //// XXX do this somewhere else
+		}
+		sprintf(outbuf, "%g: %s %g %g %s %g %g  %g (%g %g %g%s)\n", bestz, fname0, tarx, tary, fname1, patx, paty, rota+besta, fdx, fdy, m0, flags[flag]);
+		nw = write(1, outbuf, strlen(outbuf));
 	}
-sprintf(outbuf, "%g: %s %g %g %s %g %g  %g (%g %g %g%s)\n", bestz, fname0,
-tarx, tary, fname1, patx, paty, rota+besta, fdx, fdy, m0, flags[flag]);
-nw = write(1, outbuf, strlen(outbuf));
-}
 	return(0);
 }
 
@@ -1258,6 +1338,7 @@ char line[LLEN];
 int mkargs(char *oargv[], char *s) {
 	int i, n = 0;
 	char *p = s;
+
 	while(*p) {
 		oargv[n++] = p;
 		while(*p && *p != '\n' && *p != ' ' &&  *p != '\t')
@@ -1272,6 +1353,43 @@ int mkargs(char *oargv[], char *s) {
 int main(int argc, char *argv[]) {
 	int i;
 	char *p;
+
+	if ( (argc<=1) || (strcmp(argv[1],"--help")==0) ) {
+		printf ( "\n" );
+		printf ( "\n" );
+		printf ( "Usage:\n" );
+		printf ( "\n" );
+		//          ----------- argv[0] -------argv[1]--
+		printf ( "  swim WindowSize [Options] ImageName1 ImageName2\n" ); // Exactly 2 arguments after name and options
+		printf ( "  swim WindowSize [Options] ImageName1 tarx tary ImageName2\n" ); // Exactly 4 arguments after name and options
+		printf ( "  swim WindowSize [Options] ImageName1 tarx tary ImageName2 patx\n" ); // Exactly 5 arguments after name and options
+		printf ( "  swim WindowSize [Options] ImageName1 tarx tary ImageName2 patx paty\n" ); // Exactly 6 arguments after name and options
+		printf ( "  swim WindowSize [Options] ImageName1 tarx tary ImageName2 patx paty rota\n" ); // Exactly 7 arguments after name and options
+		printf ( "  swim WindowSize [Options] ImageName1 tarx tary ImageName2 patx paty afm0 afm1 afm2 afm3\n" ); // Exactly 10 arguments after name and options
+		printf ( "  swim WindowSize [Options] ImageName1 tarx tary ImageName2 mf00 mf01 mf02 mf10 mf11 mf12 -\n" ); // Exactly 11 arguments after name and options
+		printf ( "  swim WindowSize [Options] ImageName1 tarx tary ImageName2 mf00 mf01 mf02 mf10 mf11 mf12 ??\n" ); // Exactly 12 arguments after name and options
+		//          ----------- argv[0] -------argv[1]----2----3-------4-------5----6----7----8----9----10
+		printf ( "\n" );
+		printf ( " Where:\n" );
+		printf ( "\n" );
+		printf ( "  WindowSize: either # (x and y) or #x# (x by y, such as \"2048x1024\")\n" );
+		printf ( "  Options:\n" );
+		printf ( "    -x expr: addx = MUL*eval_expr(expr)\n" );
+		printf ( "    -y expr: addy = MUL*eval_expr(expr)\n" );
+		printf ( "    -m expr: MUL = eval_expr(expr)\n" );
+		printf ( "    -i expr: niter = atoi(expr)\n" );
+		printf ( "    -w expr: wht_expon = eval_expr(expr);  whiten = 1;  if(wht_expon == 0.0) whiten = 0;\n" );
+		printf ( "    -A apodize = 0\n" );
+		printf ( "    -V no_vert = 1\n" );
+		printf ( "    -H no_hor = 1\n" );
+		printf ( "    -r reverse = 1\n" );
+		printf ( "    -k str: keepimg = str\n" );
+		printf ( "    -t snrthr,xthr,ythr: set thresholds\n" );
+		exit(0);
+	}
+
+	print_args ( "main:", argc, argv );
+
 	gettimeofday(&tv, NULL);
 	starts = tv.tv_sec;
 	startu = tv.tv_usec;
@@ -1282,8 +1400,9 @@ int main(int argc, char *argv[]) {
 		return(-1);
 	}
 	SIZEX = atoi(p);
-	while(isdigit(*p))
+	while(isdigit(*p)) {
 		p++;
+	}
 	SIZEY = SIZEX;
 	if(*p == 'x') {
 		p++;
@@ -1296,23 +1415,32 @@ int main(int argc, char *argv[]) {
 		SIZEX = 128;
 		SIZEY = 128;
 	}
+
+	print_args ( "main after sizing:", argc, argv );
+	printf ( "    SIZEX=%d, sizeY=%d\n", SIZEX, SIZEY );
+
 	epat = (float *)malloc(SIZEX*SIZEY*sizeof(float));
 	targ = (float *)malloc(SIZEX*SIZEY*sizeof(float));
 	winf = (float *)malloc(SIZEX*SIZEY*sizeof(float));
 	fpat = (float *)malloc(SIZEX*SIZEY*sizeof(float));
 	if(argc > 2) {
 		oldmain(argc, argv); // oldmain is historical vestage!
+		print_args ( "main after oldmain(argc,argv):", nargc, nargv );
 	} else while(fgets(line, LLEN, stdin)) {
 		if(line[0] == 0 || line[0] == '#' || line[0] == '\n') {
-//fprintf(stderr, "%s", line);
+			//fprintf(stderr, "%s", line);
 			continue;
 		}
-//fprintf(stderr, "line -> <%s>\n", line);
+		//fprintf(stderr, "line -> <%s>\n", line);
 		targs -= getticks();
 		nargc = mkargs(nargv, line);
 		targs += getticks();
 		oldmain(nargc, nargv);
+		print_args ( "main after oldmain(nargc,nargv):", nargc, nargv );
 	}
+
+	print_args ( "main after oldmain:", argc, argv );
+
 	total_ticks = getticks() - tstart;
 	gettimeofday(&tv, NULL);
 #ifdef	VERB
@@ -1342,5 +1470,6 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr, "Nforw %d  Nrev %d  EW %d EH %d  %d\n",
 		Nforw, Nrev, EW, EH, EW*EH);
 #endif // VERB
+	print_args ( "main before exit:", argc, argv );
 	return(0);
 }
