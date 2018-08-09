@@ -14,6 +14,8 @@
 
 struct image *im0, *im1;
 
+int verbose = 0;
+
 int mode = -1;
 int pcount = 4;
 unsigned int *intimg;
@@ -44,7 +46,7 @@ float yrampl = 1., yramph = 1.;
 
 int main(int argc, char* argv[]) {
 	int n = 1, i, x, y, size;
-	print_args ( "main:", argc, argv );
+	if (verbose) print_args ( "main:", argc, argv );
 
 	if ( (argc<=1) || (strcmp(argv[1],"--help")==0) ) {
 		printf ( "\n" );
@@ -76,7 +78,7 @@ int main(int argc, char* argv[]) {
 	}
 
 	while(argv[1][0] == '-') {
-		print_args ( "main (top while loop):", argc, argv );
+		if (verbose) print_args ( "main (top while loop):", argc, argv );
 //fprintf(stderr, "arg %s\n", argv[1]);
 		if(argv[1][1] == 'r')
 			reversevid = 1;
@@ -132,8 +134,8 @@ int main(int argc, char* argv[]) {
 		argv++;
 		argc--;
 	}
-	printf ( "Args after parsing options: " );
-	print_args ( "  ", argc, argv );
+	if (verbose) printf ( "Args after parsing options: " );
+	if (verbose) print_args ( "  ", argc, argv );
 
 	//fprintf(stderr, "bw %d %d\n", black, white);
 	if(black != 0 || white != 255) {

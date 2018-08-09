@@ -918,27 +918,27 @@ int oldmain(int argc, char *argv[]) {
 	afm[2] = 0;
 	afm[3] = 1;
 
-	print_args ( "main after parsing options:", argc, argv );
+	if (!quiet) print_args ( "main after parsing options:", argc, argv );
 
 	fname0 = argv[1];
 	if(argc == 3) {
-		printf ( "3 non-option arguments (including 0)\n" );
+	  if (!quiet) printf ( "3 non-option arguments (including 0)\n" );
 		fname1 = argv[2];
 	} else {
-		printf ( "not 3 non-option arguments (including 0)\n" );
+		if (!quiet) printf ( "not 3 non-option arguments (including 0)\n" );
 		tarx = eval_expr(argv[2]);
 		tary = eval_expr(argv[3]);
 		fname1 = argv[4];
 		patx = tarx;
 		paty = tary;
 		if(argc > 5)
-			printf ( "more than 5 non-option arguments (including 0)\n" );
+			if (!quiet) printf ( "more than 5 non-option arguments (including 0)\n" );
 			patx = eval_expr(argv[5]);
 		if(argc > 6)
-			printf ( "more than 6 non-option arguments (including 0)\n" );
+			if (!quiet) printf ( "more than 6 non-option arguments (including 0)\n" );
 			paty = eval_expr(argv[6]);
 		if(argc == 8) {
-			printf ( "exactly 8 non-option arguments (including 0)\n" );
+			if (!quiet) printf ( "exactly 8 non-option arguments (including 0)\n" );
 			rota = eval_expr(argv[7]);
 			a = rota*M_PI/180;
 			afm[0] = cos(a);
@@ -946,14 +946,14 @@ int oldmain(int argc, char *argv[]) {
 			afm[2] = -sin(a);
 			afm[3] = cos(a);
 		} else if(argc == 11) {
-			printf ( "exactly 11 non-option arguments (including 0)\n" );
+			if (!quiet) printf ( "exactly 11 non-option arguments (including 0)\n" );
 			rota = 1024; // XXX magic to use explicit afm
 			afm[0] = eval_expr(argv[7]);
 			afm[1] = eval_expr(argv[8]);
 			afm[2] = eval_expr(argv[9]);
 			afm[3] = eval_expr(argv[10]);
 		} else if(argc == 12) { // affine predict
-			printf ( "exactly 12 non-option arguments (including 0)\n" );
+			if (!quiet) printf ( "exactly 12 non-option arguments (including 0)\n" );
 			rota = 1024; // XXX magic to use explicit afm
 			mf[0][0] = eval_expr(argv[5]);
 			mf[0][1] = eval_expr(argv[6]);
@@ -965,7 +965,7 @@ int oldmain(int argc, char *argv[]) {
 			affine_inverse(&mi[0][0], &mf[0][0]);
 			fprintf(stderr, "MI  %g %g %g  %g %g %g\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
 			if(argv[11][0] == '-') {
-				printf ( "argv[11][0] == -\n" );
+				if (!quiet) printf ( "argv[11][0] == -\n" );
 				patx = tarx*mi[0][0] + tary*mi[0][1] + mi[0][2];
 				paty = tarx*mi[1][0] + tary*mi[1][1] + mi[1][2];
 				afm[0] = mi[0][0];
@@ -973,7 +973,7 @@ int oldmain(int argc, char *argv[]) {
 				afm[2] = mi[1][0];
 				afm[3] = mi[1][1];
 			} else {
-				printf ( "argv[11][0] =/= -\n" );
+				if (!quiet) printf ( "argv[11][0] =/= -\n" );
 				patx = tarx*mf[0][0] + tary*mf[0][1] + mf[0][2];
 				paty = tarx*mf[1][0] + tary*mf[1][1] + mf[1][2];
 				afm[0] = mf[0][0];
@@ -982,7 +982,7 @@ int oldmain(int argc, char *argv[]) {
 				afm[3] = mf[1][1];
 			}
 		} else if(argc != 7 && argc != 5) {
-			printf ( "argc =/= 7 or 5" );
+			if (!quiet) printf ( "argc =/= 7 or 5" );
 			fprintf(stderr, "******** bad argc %d\n", argc);
 		}
 	}
@@ -1416,8 +1416,8 @@ int main(int argc, char *argv[]) {
 		SIZEY = 128;
 	}
 
-	print_args ( "main after sizing:", argc, argv );
-	printf ( "    SIZEX=%d, sizeY=%d\n", SIZEX, SIZEY );
+	if (!quiet) print_args ( "main after sizing:", argc, argv );
+	if (!quiet) printf ( "    SIZEX=%d, sizeY=%d\n", SIZEX, SIZEY );
 
 	epat = (float *)malloc(SIZEX*SIZEY*sizeof(float));
 	targ = (float *)malloc(SIZEX*SIZEY*sizeof(float));

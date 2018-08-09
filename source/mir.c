@@ -105,7 +105,7 @@ float mgi[2][3] = {1, 0, 0, 0, 1, 0};	// global map inverse - init identity
 float mf[2][3] = {1, 0, 0, 0, 1, 0};	// mapping solution
 float mi[2][3] = {1, 0, 0, 0, 1, 0};	// inverse mapping solution
 long npix;	// keep track of output pixel count as FYI stat
-int verbose;
+int verbose = 0;
 int skipval = -1;
 
 void hline(int y, int x0, int x1) {
@@ -545,6 +545,9 @@ char fullname[STRLENS];
 char outname[STRLENS];
 char line[STRLENS];
 int ndraw, nwrite;
+
+int prompt=0;
+
 void main(int argc, char *argv[]) {
 	FILE *fp;
 	int c, i, j, x, y, *trp, pushed, sv;
@@ -552,7 +555,7 @@ void main(int argc, char *argv[]) {
 	float *vp, det, fx, fy;
 	t_ticks -= getticks();
 
-	print_args ( "top of main:", argc, argv );
+	if (verbose) print_args ( "top of main:", argc, argv );
 
 	argc--;
 	argv++;
@@ -637,6 +640,9 @@ fprintf(stderr, "lastpts %d  atoi %d\n", Zval, atoi(p+1));
 			case 'b':
 				bflag++; // save overwrite for intens corr.
 				break;
+			case '?':
+				prompt = 1; // Enable the prompting
+				break;
 			}
 			flagp++;
 		}
@@ -659,11 +665,11 @@ fprintf(stderr, "lastpts %d  atoi %d\n", Zval, atoi(p+1));
 	}
 	set_lut();
 
-	print_args ( "End of argument processing loop:", argc, argv );
+	if (verbose) print_args ( "End of argument processing loop:", argc, argv );
 
 // ?
 for(;;) {
-	printf ( "Enter a MIR command (? for help) > " );
+	if (prompt) printf ( "Enter a MIR command (? for help) > " );
 	if((c = getchar()) == EOF || c == 'E')
 		break;
 //fprintf(stderr, "switch <%c>\n", c);
