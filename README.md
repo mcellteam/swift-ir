@@ -2,5 +2,5 @@
 
 ## Signal Whitening Fourier Transform Image Registration
 
-* **[SWiFT-IR Examples](examples)**
+* **[SWiFT-IR Examples](docs/examples)**
 
