@@ -213,3 +213,123 @@ F Tile_r1-c1_LM9R5CA1series_051.tif
 10288 10288 10060.6 10075
 RW test_50_51_iter2.sw.JPG
 ```
+
+## SWiFT-IR Protocol (early draft based on a specific example)
+```
+# Step 0) use swim to generate intial guess at translation_only transform
+#   Choose golden section image e.g. Tile_r1-c1_LM9R5CA1series_050.tif
+#   and create "iter0" swim command file called  e.g.  test_50_51_iter0.sw
+#   This file contains one swim command like this:
+
+# unused_first_arg -i 2 -k keep_50_51.JPG Tile_r1-c1_LM9R5CA1series_050.tif Tile_r1-c1_LM9R5CA1series_051.tif
+
+# Choose a window size and run swim and capture output
+
+swim 2048 < test_50_51_iter0.sw > test_50_51_iter0.sw.out
+
+# Find output line that looks like this:
+
+#  7.14557: Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6  0 (-266.863 -205.441 336.782)
+
+
+# Step 1)  use swim to generate inital guess at full affine transformation
+#  To get an affine Tform we need to align at least 3 points on the image planes.
+#  Using line above, create "iter1" swim command file  test_50_51_iter1.sw
+#  
+#  Here we'll align 4 points:
+#  Choose delta x and delta y offsets for 4 overlapping windows
+#  i.e. deltas (e.g. 2000) that are smaller than the full window size (e.g. 2048)
+# File test_50_51_iter1.sw:
+  
+swim -i 2 -x +2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6
+swim -i 2 -x +2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6
+swim -i 2 -x -2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6
+swim -i 2 -x -2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6
+
+# run swim and capture output
+
+swim 2048 < test_50_51_iter1.sw > test_50_51_iter1.sw.out
+
+# Using output from above create command file for mir: test_50_51.sw.mir
+  
+F Tile_r1-c1_LM9R5CA1series_051.tif
+14288 14288 13995.8 14120.3
+14288 10288 14026.3 10108.9
+10288 10288 10059.8 10077.8
+10288 14288 10022.2 14085.3
+RW test_50_51.JPG
+
+
+# run mir:
+
+mir test_50_51_iter1.sw.mir > test_50_51_iter1.sw.mir.out
+
+# Locate "AI" line in output file test_50_51_iter1.sw.mir.out:
+# Tile_r1-c1_LM9R5CA1series_051.tif AI  0.992517 -0.008513 -65.4099  0.00826513 1.00237 -320.549
+
+# Full affine transform is translation terms from swim combined with
+# rotation and skew terms from mir:
+
+#  12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
+
+# Step 2) Apply first guess at full affine transform to generate second guess
+# Create "iter2" swim command file:  test_50_50_iter2.sw
+
+swim -i 2 -x +2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
+swim -i 2 -x +2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
+swim -i 2 -x -2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
+swim -i 2 -x -2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
+  
+
+# run swim and capture output:
+
+swim 2048 < test_50_51_iter2.sw > test_50_51_iter2.sw.out
+
+# Use output to create new mir command file: test_50_51_iter2.sw.mir
+
+F Tile_r1-c1_LM9R5CA1series_051.tif
+14288 14288 13995.5 14119.7
+14288 10288 14032 10103.8
+10288 10288 10060.6 10075
+10288 14288 10025.8 14081.5
+RW test_50_51.JPG
+
+
+# run mir and capture output:
+
+mir test_50_51_iter2.sw.mir > test_50_51_iter2.sw.mir.out
+
+# Best guess tranform is obtained from swim and mir:
+
+# Tile_r1-c1_LM9R5CA1series_051.tif AI  0.992636 -0.008911 -59.5354  0.00837204 1.0028 -330.296
+
+# 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+
+
+# Step 3) Refine best guess transform using 9 points on plane
+# Create "iter3" swim command file:  test_50_50_iter3.sw
+
+swim -i 2 -x +2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x +2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x -2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x -2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x +0 -y +0 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x +2000 -y +0 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x +0 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x -2000 -y +0 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+swim -i 2 -x +0 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
+
+
+# run swim and capture output
+
+swim 2048 < test_50_51_iter3.sw > test_50_51_iter3.sw.out
+
+# Final best guess transform obtained from swim and mir:
+# Tile_r1-c1_LM9R5CA1series_051.tif AI  0.992134 -0.00907193 -51.0689  0.00822468 1.00271 -327.496
+
+# 12021.1 12082.6 0.992134 -0.00907193 0.00822468 1.00271
+
+
+# Step 4) optionally repeat step 3 to confirm refined transform
+# Not shown here...
+```
