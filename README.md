@@ -14,4 +14,5 @@
 
 
 * **[SWiFT-IR Examples](docs/examples)**
+* **[SWiFT-IR Commands](docs/commands)**
 
