@@ -187,15 +187,6 @@ R
 W w.png
 ```
 
-### e00.mir
-```
-```
-
-### e00.mir
-```
-```
-
-
 ### test_50_51_iter1.sw
 ```
 swim -i 2  -x +2000 -y +2000  Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6
