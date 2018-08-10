@@ -273,7 +273,7 @@ mir test_50_51_iter1.sw.mir > test_50_51_iter1.sw.mir.out
 #  12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
 
 # Step 2) Apply first guess at full affine transform to generate second guess
-# Create "iter2" swim command file:  test_50_50_iter2.sw
+# Create "iter2" swim command file:  test_50_51_iter2.sw
 
 swim -i 2 -x +2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
 swim -i 2 -x +2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992517 -0.008513 0.00826513 1.00237
@@ -307,7 +307,7 @@ mir test_50_51_iter2.sw.mir > test_50_51_iter2.sw.mir.out
 
 
 # Step 3) Refine best guess transform using 9 points on plane
-# Create "iter3" swim command file:  test_50_50_iter3.sw
+# Create "iter3" swim command file:  test_50_51_iter3.sw
 
 swim -i 2 -x +2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
 swim -i 2 -x +2000 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c1_LM9R5CA1series_051.tif 12021.1 12082.6 0.992636 -0.008911 0.00837204 1.0028
@@ -324,7 +324,28 @@ swim -i 2 -x +0 -y -2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r1-c
 
 swim 2048 < test_50_51_iter3.sw > test_50_51_iter3.sw.out
 
+# Use output to create new mir command file: test_50_51_iter3.sw.mir
+
+```
+F Tile_r1-c1_LM9R5CA1series_051.tif
+14288 14288 13995.6 14119.6
+14288 10288 14032.2 10103.6
+10288 10288 10060.7 10075
+10288 14288 10026.1 14081
+12288 12288 12022.6 12090.4
+14288 12288 14010.7 12110.8
+12288 14288 12004.3 14097.4
+10288 12288 10046.1 12079.3
+12288 10288 12048.3 10089.7
+RW test_50_51.JPG
+```
+
+# run mir and capture output:
+
+mir test_50_51_iter3.sw.mir > test_50_51_iter3.sw.mir.out
+
 # Final best guess transform obtained from swim and mir:
+
 # Tile_r1-c1_LM9R5CA1series_051.tif AI  0.992134 -0.00907193 -51.0689  0.00822468 1.00271 -327.496
 
 # 12021.1 12082.6 0.992134 -0.00907193 0.00822468 1.00271
