@@ -326,7 +326,6 @@ swim 2048 < test_50_51_iter3.sw > test_50_51_iter3.sw.out
 
 # Use output to create new mir command file: test_50_51_iter3.sw.mir
 
-```
 F Tile_r1-c1_LM9R5CA1series_051.tif
 14288 14288 13995.6 14119.6
 14288 10288 14032.2 10103.6
@@ -338,7 +337,6 @@ F Tile_r1-c1_LM9R5CA1series_051.tif
 10288 12288 10046.1 12079.3
 12288 10288 12048.3 10089.7
 RW test_50_51.JPG
-```
 
 # run mir and capture output:
 
