@@ -250,7 +250,7 @@ swim -i 2 -x -2000 -y +2000 Tile_r1-c1_LM9R5CA1series_050.tif 12288 12288 Tile_r
 
 swim 2048 < test_50_51_iter1.sw > test_50_51_iter1.sw.out
 
-# Using output from above create command file for mir: test_50_51.sw.mir
+# Using output from above create command file for mir: test_50_51_iter1.sw.mir
   
 F Tile_r1-c1_LM9R5CA1series_051.tif
 14288 14288 13995.8 14120.3
