@@ -185,31 +185,95 @@ public class run_swift {
       if (output_level > 7) System.out.println ( "Align " + alignment_sequence[i][0] + " to " + alignment_sequence[i][1] );
     }
 
+
+
+    String command_line;
+    String interactive_commands;
+    Runtime rt = Runtime.getRuntime();
+    Process cmd_proc;
+
+    BufferedOutputStream proc_in;
+    BufferedInputStream proc_out;
+    BufferedInputStream proc_err;
+
+    File f;
+    BufferedWriter bw;
+
+    int num_left;
+    String stdout;
+    String stderr;
+
+    if (output_level > 0) System.out.println ();
+
+    try {
+
+      // Use mir to copy the "golden section" to its proper location
+
+      interactive_commands = "F " + image_files[golden_section] + "\n";
+      interactive_commands += "RW " + "aligned_" + golden_section + ".JPG\n";
+
+      f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
+      bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
+      bw.write ( interactive_commands, 0, interactive_commands.length() );
+      bw.close();
+
+      command_line = "mir zeroth.mir";
+      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+      cmd_proc = rt.exec ( command_line );
+
+      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+      //proc_in.write ( interactive_commands.getBytes() );
+      proc_in.close();
+
+      cmd_proc.waitFor();
+
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+
+      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      stdout = "";
+      while ( ( num_left = proc_out.available() ) > 0 ) {
+        byte b[] = new byte[num_left];
+        proc_out.read ( b );
+        stdout += new String(b);
+      }
+      if (output_level > 8) System.out.print ( stdout );
+
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+
+      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      stderr = "";
+      while ( ( num_left = proc_err.available() ) > 0 ) {
+        byte b[] = new byte[num_left];
+        proc_err.read ( b );
+        stderr += new String(b);
+      }
+      if (output_level > 8) System.out.print ( stderr );
+
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+
+    } catch ( Exception some_exception ) {
+
+      if (output_level > 0) System.out.println ( "Error: " + some_exception );
+      if (output_level > 0) System.out.println ( some_exception.getStackTrace() );
+      some_exception.printStackTrace();
+
+    }
+
+    // Align all of the other images to the golden section
+
     for (alignment_index=0; alignment_index<alignment_sequence.length; alignment_index++) {
 
       int fixed_index = alignment_sequence[alignment_index][1];
       int align_index = alignment_sequence[alignment_index][0];
 
-      String command_line;
-      String interactive_commands;
-      Runtime rt = Runtime.getRuntime();
-      Process cmd_proc;
-
-      BufferedOutputStream proc_in;
-      BufferedInputStream proc_out;
-      BufferedInputStream proc_err;
-
       int loop_signs_2x2[][] = { {1,1}, {1,-1}, {-1,-1}, {-1,1} };
       int loop_signs_3x3[][] = { {1,1}, {1,-1}, {-1,-1}, {-1,1}, {0,0}, {1,0}, {0,1}, {-1,0}, {0,-1} };
 
-      int num_left;
-      String stdout;
-      String stderr;
-
       String parts[];
-
-      File f;
-      BufferedWriter bw;
 
       String AI1, AI2, AI3, AI4;
 
