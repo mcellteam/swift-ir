@@ -72,6 +72,7 @@ public class run_swift {
   public static void main(String[] args) throws java.io.FileNotFoundException {
 
 
+    int output_level = 5;
     int align_to = -1;
     int window_size = 2048;
 
@@ -80,21 +81,25 @@ public class run_swift {
 
     int arg_index = 0;
     while (arg_index < args.length) {
-		  System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
+		  if (output_level > 8) System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
 		  if (args[arg_index].startsWith("-") ) {
 		    if (args[arg_index].equals("-?")) {
 		      System.out.println ( "Command Line Arguments:" );
+		      System.out.println ( "  -v # amount of output (0 to 9)" );
 		      System.out.println ( "  -g # specifies \"golden\" image number" );
 		      System.out.println ( "  -w # specifies windows size" );
           System.exit ( 0 );
-		    } else if (args[arg_index].equals("-w")) {
+		    } else if (args[arg_index].equals("-v")) {
 		      arg_index++;
-		      window_size = new Integer ( args[arg_index] );
+		      output_level = new Integer ( args[arg_index] );
 		    } else if (args[arg_index].equals("-g")) {
 		      arg_index++;
 		      align_to = new Integer ( args[arg_index] );
+		    } else if (args[arg_index].equals("-w")) {
+		      arg_index++;
+		      window_size = new Integer ( args[arg_index] );
 		    } else {
-		      System.out.println ( "Unrecognized option: " + args[arg_index] );
+		      if (output_level > 0) System.out.println ( "Unrecognized option: " + args[arg_index] );
 		    }
 		  } else {
 		    file_name_args.add ( args[arg_index] );
@@ -102,7 +107,7 @@ public class run_swift {
 		  arg_index++;
     }
 
-    System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
+    if (output_level > 6) System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
 
     {
       File current_directory = new File ( "." );
@@ -118,13 +123,13 @@ public class run_swift {
       }
     }
 
-    System.out.println ( "Command line specified " + actual_file_names.size() + " actual files:" );
+    if (output_level > 7) System.out.println ( "Command line specified " + actual_file_names.size() + " actual files:" );
     for (int i=0; i<actual_file_names.size(); i++) {
-      System.out.println ( "  " + actual_file_names.get(i) );
+      if (output_level > 7) System.out.println ( "  " + actual_file_names.get(i) );
     }
 
     if ( actual_file_names.size() < 2 ) {
-      System.out.println ( "Must specify at least 2 images to align" );
+      if (output_level > -1) System.out.println ( "Must specify at least 2 images to align" );
       System.exit ( 1 );
     }
 
@@ -147,8 +152,8 @@ public class run_swift {
   	int num_image_files = image_files.length;
 
   	if (num_image_files < 2) {
-  	  System.out.println ( "Need more than 1 image to do alignments" );
-  	  System.exit ( 1 );
+      if (output_level > -1) System.out.println ( "Need more than 1 image to do alignments" );
+      System.exit ( 1 );
   	}
 
     int golden_section = (num_image_files-1) / 2;
@@ -159,7 +164,7 @@ public class run_swift {
     int num_before_golden = golden_section;
     int num_after_golden = num_image_files - (golden_section+1);
 
-    System.out.println ( num_before_golden + " before, and " + num_after_golden + " after" );
+    if (output_level > 7) System.out.println ( num_before_golden + " before, and " + num_after_golden + " after" );
 
     int alignment_sequence[][] = new int[num_image_files-1][2];
     int alignment_index = 0;
@@ -177,7 +182,7 @@ public class run_swift {
     }
 
     for (int i=0; i<alignment_sequence.length; i++) {
-      System.out.println ( "Align " + alignment_sequence[i][0] + " to " + alignment_sequence[i][1] );
+      if (output_level > 7) System.out.println ( "Align " + alignment_sequence[i][0] + " to " + alignment_sequence[i][1] );
     }
 
     for (alignment_index=0; alignment_index<alignment_sequence.length; alignment_index++) {
@@ -185,7 +190,8 @@ public class run_swift {
       int fixed_index = alignment_sequence[alignment_index][1];
       int align_index = alignment_sequence[alignment_index][0];
 
-      String line;
+      String command_line;
+      String interactive_commands;
       Runtime rt = Runtime.getRuntime();
       Process cmd_proc;
 
@@ -213,43 +219,46 @@ public class run_swift {
         // Step 0 - Run first swim
         //////////////////////////////////////
 
-        line = "swim " + window_size;
-        cmd_proc = rt.exec ( line );
+        command_line = "swim " + window_size;
+        if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+        cmd_proc = rt.exec ( command_line );
 
         proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
         proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
         proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-        line = "unused -i 2 -k keep.JPG " + image_files[fixed_index] + " " + image_files[align_index] + "\n";
+        interactive_commands = "unused -i 2 -k keep.JPG " + image_files[fixed_index] + " " + image_files[align_index] + "\n";
 
-        proc_in.write ( line.getBytes() );
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+
+        proc_in.write ( interactive_commands.getBytes() );
         proc_in.close();
 
         cmd_proc.waitFor();
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
         stdout = "";
         while ( ( num_left = proc_out.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_out.read ( b );
           stdout += new String(b);
         }
-        System.out.print ( stdout );
+        if (output_level > 8) System.out.print ( stdout );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
         stderr = "";
         while ( ( num_left = proc_err.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_err.read ( b );
           stderr += new String(b);
         }
-        System.out.print ( stderr );
+        if (output_level > 8) System.out.print ( stderr );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
         //////////////////////////////////////
         // Step 1a - Run second swim
@@ -257,58 +266,59 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
         String tarx = "" + parts[2];
         String tary = "" + parts[3];
         String patx = "" + parts[5];
         String paty = "" + parts[6];
 
-        line = "swim " + window_size;
-        cmd_proc = rt.exec ( line );
+        command_line = "swim " + window_size;
+        if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+        cmd_proc = rt.exec ( command_line );
 
         proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
         proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
         proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-        line = "";
+        interactive_commands = "";
         for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
           int x = loop_signs_2x2[loop_index][0];
           int y = loop_signs_2x2[loop_index][1];
-          line += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
-          line += image_files[fixed_index] + " " + tarx + " " + tary + " ";
-          line += image_files[align_index] + " " + patx + " " + paty + "\n";
+          interactive_commands += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
+          interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
+          interactive_commands += image_files[align_index] + " " + patx + " " + paty + "\n";
         }
-        System.out.println ( "Passing to swim:\n" + line );
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-        proc_in.write ( line.getBytes() );
+        proc_in.write ( interactive_commands.getBytes() );
         proc_in.close();
 
         cmd_proc.waitFor();
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
         stdout = "";
         while ( ( num_left = proc_out.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_out.read ( b );
           stdout += new String(b);
         }
-        System.out.print ( stdout );
+        if (output_level > 8) System.out.print ( stdout );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
         stderr = "";
         while ( ( num_left = proc_err.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_err.read ( b );
           stderr += new String(b);
         }
-        System.out.print ( stderr );
+        if (output_level > 8) System.out.print ( stderr );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
         //////////////////////////////////////
         // Step 1b - Run first mir
@@ -316,58 +326,58 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
-        line = "F " + image_files[align_index] + "\n";
-        line += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-        line += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-        line += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-        line += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
-        line += "RW iter1_mir_out.JPG\n";
-
-        System.out.println ( "Passing to mir:\n" + line );
+        interactive_commands = "F " + image_files[align_index] + "\n";
+        interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+        interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+        interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+        interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+        interactive_commands += "RW iter1_mir_out.JPG\n";
 
         f = new File ( System.getenv("PWD") + File.separator + "first.mir" );
         bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
-        bw.write ( line, 0, line.length() );
+        bw.write ( interactive_commands, 0, interactive_commands.length() );
         bw.close();
 
-        line = "mir first.mir";
-        cmd_proc = rt.exec ( line );
+        command_line = "mir first.mir";
+        if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+        if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+        cmd_proc = rt.exec ( command_line );
 
         proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
         proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
         proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-        //proc_in.write ( line.getBytes() );
+        //proc_in.write ( interactive_commands.getBytes() );
         proc_in.close();
 
         cmd_proc.waitFor();
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
         stdout = "";
         while ( ( num_left = proc_out.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_out.read ( b );
           stdout += new String(b);
         }
-        System.out.print ( stdout );
+        if (output_level > 8) System.out.print ( stdout );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
         stderr = "";
         while ( ( num_left = proc_err.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_err.read ( b );
           stderr += new String(b);
         }
-        System.out.print ( stderr );
+        if (output_level > 8) System.out.print ( stderr );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
         //////////////////////////////////////
         // Step 2a - Run third swim
@@ -375,59 +385,60 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
         AI1 = "" + parts[10];
         AI2 = "" + parts[11];
         AI3 = "" + parts[13];
         AI4 = "" + parts[14];
 
-        line = "swim " + window_size;
-        cmd_proc = rt.exec ( line );
+        command_line = "swim " + window_size;
+        if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+        cmd_proc = rt.exec ( command_line );
 
         proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
         proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
         proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-        line = "";
+        interactive_commands = "";
         for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
           int x = loop_signs_2x2[loop_index][0];
           int y = loop_signs_2x2[loop_index][1];
-          line += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
-          line += image_files[fixed_index] + " " + tarx + " " + tary + " ";
-          line += image_files[align_index] + " " + patx + " " + paty + " ";
-          line += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
+          interactive_commands += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
+          interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
+          interactive_commands += image_files[align_index] + " " + patx + " " + paty + " ";
+          interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
         }
-        System.out.println ( "Passing to swim:\n" + line );
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-        proc_in.write ( line.getBytes() );
+        proc_in.write ( interactive_commands.getBytes() );
         proc_in.close();
 
         cmd_proc.waitFor();
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
         stdout = "";
         while ( ( num_left = proc_out.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_out.read ( b );
           stdout += new String(b);
         }
-        System.out.print ( stdout );
+        if (output_level > 8) System.out.print ( stdout );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
         stderr = "";
         while ( ( num_left = proc_err.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_err.read ( b );
           stderr += new String(b);
         }
-        System.out.print ( stderr );
+        if (output_level > 8) System.out.print ( stderr );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
         //////////////////////////////////////
         // Step 2b - Run second mir
@@ -435,59 +446,58 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
-        line = "F " + image_files[align_index] + "\n";
-        line += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-        line += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-        line += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-        line += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
-        line += "RW iter2_mir_out.JPG\n";
-
-        System.out.println ( "Passing to mir:\n" + line );
-
+        interactive_commands = "F " + image_files[align_index] + "\n";
+        interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+        interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+        interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+        interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+        interactive_commands += "RW iter2_mir_out.JPG\n";
 
         f = new File ( System.getenv("PWD") + File.separator + "second.mir" );
         bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
-        bw.write ( line, 0, line.length() );
+        bw.write ( interactive_commands, 0, interactive_commands.length() );
         bw.close();
 
-        line = "mir second.mir";
-        cmd_proc = rt.exec ( line );
+        command_line = "mir second.mir";
+        if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+        if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+        cmd_proc = rt.exec ( command_line );
 
         proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
         proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
         proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-        //proc_in.write ( line.getBytes() );
+        //proc_in.write ( interactive_commands.getBytes() );
         proc_in.close();
 
         cmd_proc.waitFor();
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
         stdout = "";
         while ( ( num_left = proc_out.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_out.read ( b );
           stdout += new String(b);
         }
-        System.out.print ( stdout );
+        if (output_level > 8) System.out.print ( stdout );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
         stderr = "";
         while ( ( num_left = proc_err.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_err.read ( b );
           stderr += new String(b);
         }
-        System.out.print ( stderr );
+        if (output_level > 8) System.out.print ( stderr );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
         //////////////////////////////////////
         // Step 3a - Run fourth swim
@@ -495,7 +505,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
         AI1 = "" + parts[10];
@@ -503,52 +513,53 @@ public class run_swift {
         AI3 = "" + parts[13];
         AI4 = "" + parts[14];
 
-        line = "swim " + window_size;
-        cmd_proc = rt.exec ( line );
+        command_line = "swim " + window_size;
+        if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+        cmd_proc = rt.exec ( command_line );
 
         proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
         proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
         proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-        line = "";
+        interactive_commands = "";
         for (int loop_index=0; loop_index<loop_signs_3x3.length; loop_index++) {
           int x = loop_signs_3x3[loop_index][0];
           int y = loop_signs_3x3[loop_index][1];
-          line += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
-          line += image_files[fixed_index] + " " + tarx + " " + tary + " ";
-          line += image_files[align_index] + " " + patx + " " + paty + " ";
-          line += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
+          interactive_commands += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
+          interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
+          interactive_commands += image_files[align_index] + " " + patx + " " + paty + " ";
+          interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
         }
-        System.out.println ( "Passing to swim:\n" + line );
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-        proc_in.write ( line.getBytes() );
+        proc_in.write ( interactive_commands.getBytes() );
         proc_in.close();
 
         cmd_proc.waitFor();
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
         stdout = "";
         while ( ( num_left = proc_out.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_out.read ( b );
           stdout += new String(b);
         }
-        System.out.print ( stdout );
+        if (output_level > 8) System.out.print ( stdout );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
         stderr = "";
         while ( ( num_left = proc_err.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_err.read ( b );
           stderr += new String(b);
         }
-        System.out.print ( stderr );
+        if (output_level > 8) System.out.print ( stderr );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
         //////////////////////////////////////
         // Step 3b - Run third mir
@@ -556,74 +567,71 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
-        line = "F " + image_files[align_index] + "\n";
-        line += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-        line += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-        line += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-        line += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+        interactive_commands = "F " + image_files[align_index] + "\n";
+        interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+        interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+        interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+        interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
 
-        line += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
+        interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
 
-        line += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
-        line += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
-        line += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
-        line += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
-        // line += "RW iter3_mir_out.JPG\n";
-        line += "RW " + "aligned_" + align_index + ".JPG\n";
-
-        System.out.println ( "Passing to mir:\n" + line );
-
+        interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
+        interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
+        interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
+        interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
+        // interactive_commands += "RW iter3_mir_out.JPG\n";
+        interactive_commands += "RW " + "aligned_" + align_index + ".JPG\n";
 
 
         // Change the name of the file in this slot to use the newly aligned image:
         image_files[align_index] = "aligned_" + align_index + ".JPG";
 
 
-
-
         f = new File ( System.getenv("PWD") + File.separator + "third.mir" );
         bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
-        bw.write ( line, 0, line.length() );
+        bw.write ( interactive_commands, 0, interactive_commands.length() );
         bw.close();
 
-        line = "mir third.mir";
-        cmd_proc = rt.exec ( line );
+        command_line = "mir third.mir";
+        if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+        if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+        cmd_proc = rt.exec ( command_line );
 
         proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
         proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
         proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-        //proc_in.write ( line.getBytes() );
+        //proc_in.write ( interactive_commands.getBytes() );
         proc_in.close();
 
         cmd_proc.waitFor();
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
         stdout = "";
         while ( ( num_left = proc_out.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_out.read ( b );
           stdout += new String(b);
         }
-        System.out.print ( stdout );
+        if (output_level > 8) System.out.print ( stdout );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
-        System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+        if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
         stderr = "";
         while ( ( num_left = proc_err.available() ) > 0 ) {
           byte b[] = new byte[num_left];
           proc_err.read ( b );
           stderr += new String(b);
         }
-        System.out.print ( stderr );
+        if (output_level > 8) System.out.print ( stderr );
 
-        System.out.println ( "=================================================================================" );
+        if (output_level > 8) System.out.println ( "=================================================================================" );
 
         //////////////////////////////////////
         // Step 3c - Best guess transform
@@ -631,16 +639,19 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
-        System.out.println ( "Final best guess transform:" );
-        System.out.println ( "  " + patx + " " + paty + " " + parts[10] + " " + parts[11] + " " + parts[13] + " " + parts[14] );
+        if (output_level > 1) System.out.println ( "Final best guess transform:" );
+        if (output_level > 1) System.out.println ( "  " + patx + " " + paty + " " + parts[10] + " " + parts[11] + " " + parts[13] + " " + parts[14] );
+        if (output_level > 1) System.out.println ();
 
       } catch ( Exception some_exception ) {
-        System.out.println ( "Error: " + some_exception );
-        System.out.println ( some_exception.getStackTrace() );
+
+        if (output_level > 0) System.out.println ( "Error: " + some_exception );
+        if (output_level > 0) System.out.println ( some_exception.getStackTrace() );
         some_exception.printStackTrace();
+
       }
 
     }
