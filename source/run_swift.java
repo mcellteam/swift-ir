@@ -75,6 +75,8 @@ public class run_swift {
     int output_level = 5;
     int align_to = -1;
     int window_size = 2048;
+    int addx = 2000;
+    int addy = 2000;
 
 
 	  ArrayList<String> file_name_args = new ArrayList<String>();
@@ -88,6 +90,8 @@ public class run_swift {
 		      System.out.println ( "  -v # amount of output (0 to 9)" );
 		      System.out.println ( "  -g # specifies \"golden\" image number" );
 		      System.out.println ( "  -w # specifies windows size" );
+		      System.out.println ( "  -ax # specifies addx (-x option to swim)" );
+		      System.out.println ( "  -ay # specifies addy (-y option to swim)" );
           System.exit ( 0 );
 		    } else if (args[arg_index].equals("-v")) {
 		      arg_index++;
@@ -98,6 +102,12 @@ public class run_swift {
 		    } else if (args[arg_index].equals("-w")) {
 		      arg_index++;
 		      window_size = new Integer ( args[arg_index] );
+		    } else if (args[arg_index].equals("-ax")) {
+		      arg_index++;
+		      addx = new Integer ( args[arg_index] );
+		    } else if (args[arg_index].equals("-ay")) {
+		      arg_index++;
+		      addy = new Integer ( args[arg_index] );
 		    } else {
 		      if (output_level > 0) System.out.println ( "Unrecognized option: " + args[arg_index] );
 		    }
@@ -349,7 +359,7 @@ public class run_swift {
         for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
           int x = loop_signs_2x2[loop_index][0];
           int y = loop_signs_2x2[loop_index][1];
-          interactive_commands += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
+          interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
           interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
           interactive_commands += image_files[align_index] + " " + patx + " " + paty + "\n";
         }
@@ -468,7 +478,7 @@ public class run_swift {
         for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
           int x = loop_signs_2x2[loop_index][0];
           int y = loop_signs_2x2[loop_index][1];
-          interactive_commands += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
+          interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
           interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
           interactive_commands += image_files[align_index] + " " + patx + " " + paty + " ";
           interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
@@ -589,7 +599,7 @@ public class run_swift {
         for (int loop_index=0; loop_index<loop_signs_3x3.length; loop_index++) {
           int x = loop_signs_3x3[loop_index][0];
           int y = loop_signs_3x3[loop_index][1];
-          interactive_commands += "unused -i 2 -x " + (2000*x) + " -y " + (2000*y) + " ";
+          interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
           interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
           interactive_commands += image_files[align_index] + " " + patx + " " + paty + " ";
           interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
