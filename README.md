@@ -17,3 +17,12 @@
 * **[SWiFT-IR Commands](docs/commands)**
 * **[SWiFT-IR Tests](tests)**
 
+
+### Testing: Unaligned:
+
+![Unaligned Images](tests/unaligned.gif?raw=true "Unaligned Images")
+
+
+### Testing: Aligned:
+
+![Unaligned Images](tests/aligned.gif?raw=true "Unaligned Images")
