@@ -277,6 +277,14 @@ public class run_swift {
 
     for (alignment_index=0; alignment_index<alignment_sequence.length; alignment_index++) {
 
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 8) System.out.println ( " Top of alignment loop with alignment index = " + alignment_index );
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 8) System.out.println ( "=================================================================================" );
+
       int fixed_index = alignment_sequence[alignment_index][1];
       int align_index = alignment_sequence[alignment_index][0];
 
@@ -716,8 +724,13 @@ public class run_swift {
           if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
+        if (output_level > 1) System.out.println ( "=================================================================================" );
+        if (output_level > 1) System.out.println ( "---------------------------------------------------------------------------------" );
         if (output_level > 1) System.out.println ( "Final best guess transform:" );
         if (output_level > 1) System.out.println ( "  " + patx + " " + paty + " " + parts[10] + " " + parts[11] + " " + parts[13] + " " + parts[14] );
+        if (output_level > 1) System.out.println ( "---------------------------------------------------------------------------------" );
+        if (output_level > 1) System.out.println ( "=================================================================================" );
+        if (output_level > 1) System.out.println ();
         if (output_level > 1) System.out.println ();
 
       } catch ( Exception some_exception ) {
