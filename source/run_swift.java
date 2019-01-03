@@ -166,7 +166,7 @@ public class run_swift {
       System.exit ( 1 );
   	}
 
-    int golden_section = (num_image_files-1) / 2;
+    int golden_section = (num_image_files-1) / 2;  // Set the default "golden section" in the middle of the list
     if (align_to >= 0) {
       golden_section = align_to;
     }
@@ -174,8 +174,9 @@ public class run_swift {
     int num_before_golden = golden_section;
     int num_after_golden = num_image_files - (golden_section+1);
 
-    if (output_level > 7) System.out.println ( num_before_golden + " before, and " + num_after_golden + " after" );
+    if (output_level > 7) System.out.println ( num_before_golden + " before golden section, and " + num_after_golden + " after golden section" );
 
+    // The alignment_sequence is an array of image index pairs which specify the order of alignment
     int alignment_sequence[][] = new int[num_image_files-1][2];
     int alignment_index = 0;
 
@@ -191,8 +192,10 @@ public class run_swift {
       alignment_index++;
     }
 
-    for (int i=0; i<alignment_sequence.length; i++) {
-      if (output_level > 7) System.out.println ( "Align " + alignment_sequence[i][0] + " to " + alignment_sequence[i][1] );
+    if (output_level > 7) {
+      for (int i=0; i<alignment_sequence.length; i++) {
+        System.out.println ( "Align " + alignment_sequence[i][0] + " to " + alignment_sequence[i][1] );
+      }
     }
 
 
@@ -217,7 +220,7 @@ public class run_swift {
 
     try {
 
-      // Use mir to copy the "golden section" to its proper location
+      // Use mir to copy the "golden section" to its proper location in the final "aligned_#.JPG" file list
 
       interactive_commands = "F " + image_files[golden_section] + "\n";
       interactive_commands += "RW " + "aligned_" + golden_section + ".JPG\n";
@@ -236,7 +239,7 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      //proc_in.write ( interactive_commands.getBytes() );
+      //proc_in.write ( interactive_commands.getBytes() );  // This first run of mir doesn't have any interactive commands
       proc_in.close();
 
       cmd_proc.waitFor();
@@ -273,17 +276,19 @@ public class run_swift {
 
     }
 
-    // Align all of the other images to the golden section
+    // Align all of the images as specified by the alignment sequence
 
     for (alignment_index=0; alignment_index<alignment_sequence.length; alignment_index++) {
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( " Top of alignment loop with alignment index = " + alignment_index );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 8) {
+        System.out.println ( "=================================================================================" );
+        System.out.println ( "=================================================================================" );
+        System.out.println ( "=================================================================================" );
+        System.out.println ( " Top of alignment loop with alignment index = " + alignment_index );
+        System.out.println ( "=================================================================================" );
+        System.out.println ( "=================================================================================" );
+        System.out.println ( "=================================================================================" );
+      }
 
       int fixed_index = alignment_sequence[alignment_index][1];
       int align_index = alignment_sequence[alignment_index][0];
