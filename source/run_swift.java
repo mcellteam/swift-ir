@@ -531,12 +531,31 @@ public class run_swift {
           if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
-        interactive_commands = "F " + image_files[align_index] + "\n";
-        interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-        interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-        interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-        interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
-        interactive_commands += "RW iter2_mir_out.JPG\n";
+        if (parts.length == 44) {
+          if (output_level > 5) System.out.println ( "3rd swim output with 44 items" );
+          /* This is the normal arrangement of output */
+          interactive_commands = "F " + image_files[align_index] + "\n";
+          interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+          interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+          interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+          interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+          interactive_commands += "RW iter2_mir_out.JPG\n";
+        } else if (parts.length == 47) {
+          if (output_level > 5) System.out.println ( "3rd swim output with 47 items" );
+          /* This version of the output has extra strings "dxy", "dx", and "dxy" */
+          interactive_commands = "F " + image_files[align_index] + "\n";
+          interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+          interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+          interactive_commands += parts[25] + " " + parts[26] + " " + parts[28] + " " + parts[29] + "\n";
+          interactive_commands += parts[37] + " " + parts[38] + " " + parts[40] + " " + parts[41] + "\n";
+          interactive_commands += "RW iter2_mir_out.JPG\n";
+        } else if (parts.length == 104) {
+          System.out.println ( "Can't handle 3rd swim output with " + parts.length + " parts.\n" );
+          System.exit ( 2 );
+        } else {
+          System.out.println ( "Unexpected output from 3rd swim contains " + parts.length + " parts.\n" );
+          System.exit ( 2 );
+        }
 
         f = new File ( System.getenv("PWD") + File.separator + "second.mir" );
         bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
@@ -652,20 +671,26 @@ public class run_swift {
           if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
 
-        interactive_commands = "F " + image_files[align_index] + "\n";
-        interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-        interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-        interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-        interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+        if (parts.length == 104) {
+          if (output_level > 5) System.out.println ( "4th swim output with 104 items" );
+          interactive_commands = "F " + image_files[align_index] + "\n";
+          interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+          interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+          interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+          interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
 
-        interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
+          interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
 
-        interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
-        interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
-        interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
-        interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
-        // interactive_commands += "RW iter3_mir_out.JPG\n";
-        interactive_commands += "RW " + "aligned_" + align_index + ".JPG\n";
+          interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
+          interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
+          interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
+          interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
+          // interactive_commands += "RW iter3_mir_out.JPG\n";
+          interactive_commands += "RW " + "aligned_" + align_index + ".JPG\n";
+        } else {
+          System.out.println ( "Unexpected output from 4th swim contains " + parts.length + " parts.\n" );
+          System.exit ( 3 );
+        }
 
 
         // Change the name of the file in this slot to use the newly aligned image:
