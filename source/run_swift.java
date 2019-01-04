@@ -65,9 +65,192 @@ class glob_filter implements FilenameFilter {
 
 }
 
+
+
 public class run_swift {
 
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
+
+
+	public static String get_mir_cmds_from_swim_with_flags ( String stdout, String image_file_name, String output_file_name, int output_level ) {
+
+    String parts[];
+
+    parts = stdout.split ( "[\\s]+" );
+
+    for (int i=0; i<parts.length; i++) {
+      if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+    }
+
+	  String interactive_commands = null;
+
+    if (parts.length == 10) {
+      if (output_level > 5) System.out.println ( "  swim output with 44 items" );
+      /* This is the normal arrangement of output */
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 44) {
+      if (output_level > 5) System.out.println ( "  swim output with 44 items" );
+      /* This is the normal arrangement of output */
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 47) {
+      if (output_level > 5) System.out.println ( "  swim output with 47 items" );
+      /* This version of the output has extra strings "dxy", "dx", and "dxy" */
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[25] + " " + parts[26] + " " + parts[28] + " " + parts[29] + "\n";
+      interactive_commands += parts[37] + " " + parts[38] + " " + parts[40] + " " + parts[41] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 99) {
+      if (output_level > 5) System.out.println ( "  swim output with 99 items" );
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
+      interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
+      interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
+      interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
+      interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 104) {
+      if (output_level > 5) System.out.println ( "  swim output with 104 items" );
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
+      interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
+      interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
+      interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
+      interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else {
+      System.out.println ( "Unexpected output from swim contains " + parts.length + " parts.\n" );
+      System.exit ( 2 );
+    }
+    return ( interactive_commands );
+  }
+
+	public static String get_mir_cmds_from_swim_remove_flags ( String stdout, String image_file_name, String output_file_name, int output_level ) {
+
+    String parts[];
+    String non_flag_parts[] = null;
+
+    parts = stdout.split ( "[\\s]+" );
+
+    System.out.println ( "================= StdOut ==============" );
+    System.out.println ( stdout );
+
+    for (int pass=0; pass<2; pass++) {
+      int num_non_flags = 0;
+      for (int i=0; i<parts.length; i++) {
+        if (parts[i].equals("dreset")) {
+        } else if (parts[i].equals("dx")) {
+        } else if (parts[i].equals("dy")) {
+        } else if (parts[i].equals("dxy")) {
+        } else {
+          if (pass==0) {
+            // Just count
+            num_non_flags += 1;
+          } else {
+            // Move and count
+            non_flag_parts[num_non_flags] = parts[i];
+            num_non_flags += 1;
+          }
+        }
+      }
+      if (pass == 0) {
+        non_flag_parts = new String[num_non_flags];
+      }
+    }
+
+    System.out.println ( "================= Before remove flags" );
+    for (int i=0; i<parts.length; i++) {
+      if (output_level > 0) System.out.println ( "Part " + i + " = " + parts[i] );
+    }
+
+    System.out.println ( "================= After remove flags" );
+    for (int i=0; i<non_flag_parts.length; i++) {
+      if (output_level > 0) System.out.println ( "NFP  " + i + " = " + non_flag_parts[i] );
+    }
+
+    parts = non_flag_parts;
+
+	  String interactive_commands = null;
+
+    if (parts.length == 10) {
+      if (output_level > 5) System.out.println ( "  swim output with 44 items" );
+      /* This is the normal arrangement of output */
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 44) {
+      if (output_level > 5) System.out.println ( "  swim output with 44 items" );
+      /* This is the normal arrangement of output */
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 47) {
+      if (output_level > 5) System.out.println ( "  swim output with 47 items" );
+      /* This version of the output has extra strings "dxy", "dx", and "dxy" */
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[25] + " " + parts[26] + " " + parts[28] + " " + parts[29] + "\n";
+      interactive_commands += parts[37] + " " + parts[38] + " " + parts[40] + " " + parts[41] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 99) {
+      if (output_level > 5) System.out.println ( "  swim output with 99 items" );
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
+      interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
+      interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
+      interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
+      interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else if (parts.length == 104) {
+      if (output_level > 5) System.out.println ( "  swim output with 104 items" );
+      interactive_commands = "F " + image_file_name + "\n";
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
+      interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
+      interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
+      interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
+      interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
+      interactive_commands += "RW " + output_file_name + "\n";
+    } else {
+      System.out.println ( "Unexpected output from swim contains " + parts.length + " parts.\n" );
+      System.exit ( 2 );
+    }
+    return ( interactive_commands );
+  }
+
 
   public static void main(String[] args) throws java.io.FileNotFoundException {
 
@@ -293,6 +476,7 @@ public class run_swift {
       int fixed_index = alignment_sequence[alignment_index][1];
       int align_index = alignment_sequence[alignment_index][0];
 
+      // The loop signs are a convenient way to sample offsets in both directions on each axis in a predefined manner
       int loop_signs_2x2[][] = { {1,1}, {1,-1}, {-1,-1}, {-1,1} };
       int loop_signs_3x3[][] = { {1,1}, {1,-1}, {-1,-1}, {-1,1}, {0,0}, {1,0}, {0,1}, {-1,0}, {0,-1} };
 
@@ -415,6 +599,10 @@ public class run_swift {
         for (int i=0; i<parts.length; i++) {
           if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
         }
+
+        System.out.println ( "======== Calling  get_mir_cmds_from_swim =========" );
+        get_mir_cmds_from_swim_remove_flags ( stdout, image_files[align_index], "iter1_mir_out.JPG", output_level );
+        System.out.println ( "======== Calling  get_mir_cmds_from_swim =========" );
 
         interactive_commands = "F " + image_files[align_index] + "\n";
         interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
