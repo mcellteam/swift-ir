@@ -348,7 +348,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Step 1a: Part " + i + " = " + parts[i] );
         }
         String tarx = "" + parts[2];
         String tary = "" + parts[3];
@@ -408,7 +408,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Step 1b: Part " + i + " = " + parts[i] );
         }
 
         interactive_commands = "F " + image_files[align_index] + "\n";
@@ -467,7 +467,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Step 2a: Part " + i + " = " + parts[i] );
         }
         AI1 = "" + parts[10];
         AI2 = "" + parts[11];
@@ -528,7 +528,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
         }
 
         interactive_commands = "F " + image_files[align_index] + "\n";
@@ -587,7 +587,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Step 3a: Part " + i + " = " + parts[i] );
         }
 
         AI1 = "" + parts[10];
@@ -649,7 +649,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Step 3b: Part " + i + " = " + parts[i] );
         }
 
         interactive_commands = "F " + image_files[align_index] + "\n";
@@ -721,7 +721,7 @@ public class run_swift {
 
         parts = stdout.split ( "[\\s]+" );
         for (int i=0; i<parts.length; i++) {
-          if (output_level > 8) System.out.println ( "Part " + i + " = " + parts[i] );
+          if (output_level > 8) System.out.println ( "Step 3c: Part " + i + " = " + parts[i] );
         }
 
         if (output_level > 1) System.out.println ( "=================================================================================" );
