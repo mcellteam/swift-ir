@@ -77,7 +77,7 @@ public class run_swift {
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
 
 
-  public String[] lines_from_stdout ( String stdout ) {
+  public static String[] lines_from_stdout ( String stdout ) {
     // Note that line ending handling hasn't been tested on non-Linux platforms yet.
     stdout = stdout.replace ( '\r', '\n' );
     String split_lines[] = stdout.split("\n");
@@ -98,8 +98,18 @@ public class run_swift {
     return lines;
   }
 
+  public static String[][] parts_from_stdout ( String stdout ) {
+    String stdout_lines[] = lines_from_stdout ( stdout );
+    String stdout_parts[][] = new String[stdout_lines.length][];
 
-  public void dump_lines_from_stdout ( String stdout ) {
+    for (int i=0; i<stdout_lines.length; i++) {
+      stdout_parts[i] = stdout_lines[i].split ( "[\\s]+" );
+    }
+    return stdout_parts;
+  }
+
+
+  public static void dump_lines_from_stdout ( String stdout ) {
     String lines[] = lines_from_stdout(stdout);
     for (int i=0; i<lines.length; i++) {
       System.out.println ( "  [\"" + lines[i] + "\"]" );
@@ -114,11 +124,14 @@ public class run_swift {
       bis.read ( b );
       s += new String(b);
     }
+    dump_lines_from_stdout ( s );
     return ( s );
   }
 
   public static void align_files_by_index ( Runtime rt, String image_files[], int fixed_index, int align_index, 
                                             int window_size, int addx, int addy, int output_level ) {
+
+    boolean use_line_parts = true;
 
     String command_line;
     String interactive_commands;
@@ -139,6 +152,7 @@ public class run_swift {
     int loop_signs_3x3[][] = { {1,1}, {1,-1}, {-1,-1}, {-1,1}, {0,0}, {1,0}, {0,1}, {-1,0}, {0,-1} };
 
     String parts[];
+    String line_parts[][];
 
     String AI1, AI2, AI3, AI4;
 
@@ -149,7 +163,7 @@ public class run_swift {
       //////////////////////////////////////
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running first swim: " + command_line + " ***" );
       cmd_proc = rt.exec ( command_line );
 
       proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
@@ -203,7 +217,7 @@ public class run_swift {
       String paty = "" + parts[6];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running second swim: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -248,6 +262,26 @@ public class run_swift {
       // Step 1b - Run first mir
       //////////////////////////////////////
 
+if (use_line_parts) {
+
+      //String stdout_lines[] = lines_from_stdout ( stdout );
+      line_parts = parts_from_stdout ( stdout );
+
+      for (int i=0; i<line_parts.length; i++) {
+        for (int j=0; j<line_parts[i].length; j++) {
+          if (output_level > 8) System.out.println ( "Step 1b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+        }
+      }
+
+      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
+      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
+      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
+      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
+      interactive_commands += "RW iter1_mir_out.JPG\n";
+
+} else {
+
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
         if (output_level > 8) System.out.println ( "Step 1b: Part " + i + " = " + parts[i] );
@@ -264,6 +298,7 @@ public class run_swift {
       interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
       interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
       interactive_commands += "RW iter1_mir_out.JPG\n";
+}
 
       f = new File ( System.getenv("PWD") + File.separator + "first.mir" );
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
@@ -271,7 +306,7 @@ public class run_swift {
       bw.close();
 
       command_line = "mir first.mir";
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running first mir: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -323,7 +358,7 @@ public class run_swift {
       AI4 = "" + parts[14];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running third swim: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -369,14 +404,28 @@ public class run_swift {
       // Step 2b - Run second mir
       //////////////////////////////////////
 
+
+if (use_line_parts) {
+      //String stdout_lines[] = lines_from_stdout ( stdout );
+      line_parts = parts_from_stdout ( stdout );
+
+      for (int i=0; i<line_parts.length; i++) {
+        for (int j=0; j<line_parts[i].length; j++) {
+          if (output_level > 8) System.out.println ( "Step 2b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+        }
+      }
+
+      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
+      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
+      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
+      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
+      interactive_commands += "RW iter2_mir_out.JPG\n";
+
+} else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
         if (output_level > 8) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
-      }
-
-      if (parts.length < 40) {
-        System.out.println ( "Error: expected at least 40 parts, but only got " + parts.length + "\n" + stdout );
-        System.exit ( 5 );
       }
 
       interactive_commands = "F " + image_files[align_index] + "\n";
@@ -385,6 +434,7 @@ public class run_swift {
       interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
       interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
       interactive_commands += "RW iter2_mir_out.JPG\n";
+}
 
       f = new File ( System.getenv("PWD") + File.separator + "second.mir" );
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
@@ -392,7 +442,7 @@ public class run_swift {
       bw.close();
 
       command_line = "mir second.mir";
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running second mir: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -444,7 +494,7 @@ public class run_swift {
       AI4 = "" + parts[14];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running fourth swim: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -490,6 +540,32 @@ public class run_swift {
       // Step 3b - Run third mir
       //////////////////////////////////////
 
+
+if (use_line_parts) {
+      //String stdout_lines[] = lines_from_stdout ( stdout );
+      line_parts = parts_from_stdout ( stdout );
+
+      for (int i=0; i<line_parts.length; i++) {
+        for (int j=0; j<line_parts[i].length; j++) {
+          if (output_level > 8) System.out.println ( "Step 3b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+        }
+      }
+
+      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
+      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
+      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
+      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
+
+      interactive_commands += line_parts[4][2] + " " + line_parts[4][3] + " " + line_parts[4][5] + " " + line_parts[4][6] + "\n";
+
+      interactive_commands += line_parts[5][2] + " " + line_parts[5][3] + " " + line_parts[5][5] + " " + line_parts[5][6] + "\n";
+      interactive_commands += line_parts[6][2] + " " + line_parts[6][3] + " " + line_parts[6][5] + " " + line_parts[6][6] + "\n";
+      interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + "\n";
+      interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + "\n";
+
+      interactive_commands += "RW " + "aligned_" + align_index + ".JPG\n";
+} else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
         if (output_level > 8) System.out.println ( "Step 3b: Part " + i + " = " + parts[i] );
@@ -514,6 +590,7 @@ public class run_swift {
       interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
       // interactive_commands += "RW iter3_mir_out.JPG\n";
       interactive_commands += "RW " + "aligned_" + align_index + ".JPG\n";
+}
 
 
       // Change the name of the file in this slot to use the newly aligned image:
@@ -526,7 +603,7 @@ public class run_swift {
       bw.close();
 
       command_line = "mir third.mir";
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running third mir: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -759,7 +836,7 @@ public class run_swift {
       bw.close();
 
       command_line = "mir zeroth.mir";
-      if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running zeroth mir: " + command_line + " ***" );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
 
