@@ -124,7 +124,7 @@ public class run_swift {
       bis.read ( b );
       s += new String(b);
     }
-    dump_lines_from_stdout ( s );
+    // dump_lines_from_stdout ( s );
     return ( s );
   }
 
@@ -837,6 +837,7 @@ if (use_line_parts) {
 
       command_line = "mir zeroth.mir";
       if (output_level > 0) System.out.println ( "*** Running zeroth mir: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + golden_section + ".JPG" );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
 
