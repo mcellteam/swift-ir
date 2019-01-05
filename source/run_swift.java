@@ -158,6 +158,12 @@ public class run_swift {
       for (int i=0; i<parts.length; i++) {
         if (output_level > 8) System.out.println ( "Step 1a: Part " + i + " = " + parts[i] );
       }
+
+      if (parts.length < 7) {
+        System.out.println ( "Error: expected at least 7 parts, but only got " + parts.length + "\n" + stdout );
+        System.exit ( 5 );
+      }
+
       String tarx = "" + parts[2];
       String tary = "" + parts[3];
       String patx = "" + parts[5];
@@ -165,6 +171,7 @@ public class run_swift {
 
       command_line = "swim " + window_size;
       if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
       proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
@@ -219,6 +226,11 @@ public class run_swift {
         if (output_level > 8) System.out.println ( "Step 1b: Part " + i + " = " + parts[i] );
       }
 
+      if (parts.length < 40) {
+        System.out.println ( "Error: expected at least 40 parts, but only got " + parts.length + "\n" + stdout );
+        System.exit ( 5 );
+      }
+
       interactive_commands = "F " + image_files[align_index] + "\n";
       interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
@@ -233,6 +245,7 @@ public class run_swift {
 
       command_line = "mir first.mir";
       if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
 
@@ -277,6 +290,12 @@ public class run_swift {
       for (int i=0; i<parts.length; i++) {
         if (output_level > 8) System.out.println ( "Step 2a: Part " + i + " = " + parts[i] );
       }
+
+      if (parts.length < 15) {
+        System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
+        System.exit ( 5 );
+      }
+
       AI1 = "" + parts[10];
       AI2 = "" + parts[11];
       AI3 = "" + parts[13];
@@ -284,6 +303,7 @@ public class run_swift {
 
       command_line = "swim " + window_size;
       if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
       proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
@@ -339,6 +359,11 @@ public class run_swift {
         if (output_level > 8) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
       }
 
+      if (parts.length < 40) {
+        System.out.println ( "Error: expected at least 40 parts, but only got " + parts.length + "\n" + stdout );
+        System.exit ( 5 );
+      }
+
       interactive_commands = "F " + image_files[align_index] + "\n";
       interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
@@ -353,6 +378,7 @@ public class run_swift {
 
       command_line = "mir second.mir";
       if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
 
@@ -398,6 +424,11 @@ public class run_swift {
         if (output_level > 8) System.out.println ( "Step 3a: Part " + i + " = " + parts[i] );
       }
 
+      if (parts.length < 15) {
+        System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
+        System.exit ( 5 );
+      }
+
       AI1 = "" + parts[10];
       AI2 = "" + parts[11];
       AI3 = "" + parts[13];
@@ -405,6 +436,7 @@ public class run_swift {
 
       command_line = "swim " + window_size;
       if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
       proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
@@ -460,6 +492,11 @@ public class run_swift {
         if (output_level > 8) System.out.println ( "Step 3b: Part " + i + " = " + parts[i] );
       }
 
+      if (parts.length < 95) {
+        System.out.println ( "Error: expected at least 95 parts, but only got " + parts.length + "\n" + stdout );
+        System.exit ( 5 );
+      }
+
       interactive_commands = "F " + image_files[align_index] + "\n";
       interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
@@ -487,6 +524,7 @@ public class run_swift {
 
       command_line = "mir third.mir";
       if (output_level > 0) System.out.println ( "*** Running: " + command_line + " ***" );
+      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
 
@@ -530,6 +568,12 @@ public class run_swift {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
         if (output_level > 8) System.out.println ( "Step 3c: Part " + i + " = " + parts[i] );
+      }
+      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+
+      if (parts.length < 15) {
+        System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
+        System.exit ( 5 );
       }
 
       if (output_level > 1) System.out.println ( "=================================================================================" );
@@ -682,7 +726,7 @@ public class run_swift {
     }
 
     for (int i=0; i<alignment_sequence.length; i++) {
-      if (output_level > 7) System.out.println ( "Align " + alignment_sequence[i][0] + " to " + alignment_sequence[i][1] );
+      if (output_level > 0) System.out.println ( "Align " + alignment_sequence[i][0] + " to " + alignment_sequence[i][1] );
     }
 
 
@@ -763,18 +807,21 @@ public class run_swift {
 
     }
 
+    image_files[golden_section] = "aligned_" + golden_section + ".JPG";
+
     // Align all of the other images to the golden section
 
     for (alignment_index=0; alignment_index<alignment_sequence.length; alignment_index++) {
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( " Top of alignment loop with alignment index = " + alignment_index );
-      if (output_level > 8) System.out.println ( "   Aligning " + alignment_sequence[alignment_index][0] + " to " + alignment_sequence[alignment_index][1] );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 0) System.out.println ( "=================================================================================" );
+      if (output_level > 0) System.out.println ( "=================================================================================" );
+      if (output_level > 0) System.out.println ( "=================================================================================" );
+      if (output_level > 0) System.out.println ( " Top of alignment loop with alignment index = " + alignment_index );
+      if (output_level > 0) System.out.println ( "   Aligning " + alignment_sequence[alignment_index][0] + " to " + alignment_sequence[alignment_index][1] );
+      if (output_level > 0) System.out.println ( "   Aligning file " + image_files[alignment_sequence[alignment_index][0]] + " to " + image_files[alignment_sequence[alignment_index][1]] );
+      if (output_level > 0) System.out.println ( "=================================================================================" );
+      if (output_level > 0) System.out.println ( "=================================================================================" );
+      if (output_level > 0) System.out.println ( "=================================================================================" );
 
 
 
