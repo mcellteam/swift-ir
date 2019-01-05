@@ -77,6 +77,45 @@ public class run_swift {
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
 
 
+  public String[] lines_from_stdout ( String stdout ) {
+    // Note that line ending handling hasn't been tested on non-Linux platforms yet.
+    stdout = stdout.replace ( '\r', '\n' );
+    String split_lines[] = stdout.split("\n");
+    int num_non_empty = 0;
+    for (int i=0; i<split_lines.length; i++) {
+      if (split_lines[i].trim().length() > 0) {
+        num_non_empty += 1;
+      }
+    }
+    String lines[] = new String[num_non_empty];
+    int next = 0;
+    for (int i=0; i<split_lines.length; i++) {
+      if (split_lines[i].trim().length() > 0) {
+        lines[next] = split_lines[i].trim();
+        next += 1;
+      }
+    }
+    return lines;
+  }
+
+
+  public void dump_lines_from_stdout ( String stdout ) {
+    String lines[] = lines_from_stdout(stdout);
+    for (int i=0; i<lines.length; i++) {
+      System.out.println ( "  [\"" + lines[i] + "\"]" );
+    }
+  }
+
+  public static String read_string_from ( BufferedInputStream bis ) throws IOException {
+    String s = "";
+    int num_left = 0;
+    while ( ( num_left = bis.available() ) > 0 ) {
+      byte b[] = new byte[num_left];
+      bis.read ( b );
+      s += new String(b);
+    }
+    return ( s );
+  }
 
   public static void align_files_by_index ( Runtime rt, String image_files[], int fixed_index, int align_index, 
                                             int window_size, int addx, int addy, int output_level ) {
@@ -129,23 +168,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
@@ -196,23 +229,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
@@ -261,23 +288,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
@@ -329,23 +350,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
@@ -394,23 +409,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
@@ -462,23 +471,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
@@ -540,23 +543,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
@@ -778,23 +775,17 @@ public class run_swift {
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-      stdout = "";
-      while ( ( num_left = proc_out.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_out.read ( b );
-        stdout += new String(b);
-      }
+
+      stdout = read_string_from ( proc_out );
+
       if (output_level > 8) System.out.print ( stdout );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
       if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-      stderr = "";
-      while ( ( num_left = proc_err.available() ) > 0 ) {
-        byte b[] = new byte[num_left];
-        proc_err.read ( b );
-        stderr += new String(b);
-      }
+
+      stderr = read_string_from ( proc_err );
+
       if (output_level > 8) System.out.print ( stderr );
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
