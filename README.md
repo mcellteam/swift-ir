@@ -2,6 +2,9 @@
 
 ## Signal Whitening Fourier Transform Image Registration
 
+### Developed by Art Wetzel, Pittsburgh Supercomputing Center
+
+
 ### SWiFT-IR components
 
 * **swim** – Adaptive signal Whitened Image Matching
