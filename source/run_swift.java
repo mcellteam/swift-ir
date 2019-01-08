@@ -203,7 +203,7 @@ public class run_swift {
 
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
-        if (output_level > 8) System.out.println ( "Step 1a: Part " + i + " = " + parts[i] );
+        if (output_level > 10) System.out.println ( "Step 1a: Part " + i + " = " + parts[i] );
       }
 
       if (parts.length < 7) {
@@ -269,7 +269,7 @@ if (use_line_parts) {
 
       for (int i=0; i<line_parts.length; i++) {
         for (int j=0; j<line_parts[i].length; j++) {
-          if (output_level > 8) System.out.println ( "Step 1b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+          if (output_level > 10) System.out.println ( "Step 1b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
         }
       }
 
@@ -284,7 +284,7 @@ if (use_line_parts) {
 
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
-        if (output_level > 8) System.out.println ( "Step 1b: Part " + i + " = " + parts[i] );
+        if (output_level > 10) System.out.println ( "Step 1b: Part " + i + " = " + parts[i] );
       }
 
       if (parts.length < 40) {
@@ -344,7 +344,7 @@ if (use_line_parts) {
 
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
-        if (output_level > 8) System.out.println ( "Step 2a: Part " + i + " = " + parts[i] );
+        if (output_level > 10) System.out.println ( "Step 2a: Part " + i + " = " + parts[i] );
       }
 
       if (parts.length < 15) {
@@ -411,7 +411,7 @@ if (use_line_parts) {
 
       for (int i=0; i<line_parts.length; i++) {
         for (int j=0; j<line_parts[i].length; j++) {
-          if (output_level > 8) System.out.println ( "Step 2b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+          if (output_level > 10) System.out.println ( "Step 2b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
         }
       }
 
@@ -425,7 +425,7 @@ if (use_line_parts) {
 } else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
-        if (output_level > 8) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
+        if (output_level > 10) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
       }
 
       interactive_commands = "F " + image_files[align_index] + "\n";
@@ -480,7 +480,7 @@ if (use_line_parts) {
 
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
-        if (output_level > 8) System.out.println ( "Step 3a: Part " + i + " = " + parts[i] );
+        if (output_level > 10) System.out.println ( "Step 3a: Part " + i + " = " + parts[i] );
       }
 
       if (parts.length < 15) {
@@ -547,7 +547,7 @@ if (use_line_parts) {
 
       for (int i=0; i<line_parts.length; i++) {
         for (int j=0; j<line_parts[i].length; j++) {
-          if (output_level > 8) System.out.println ( "Step 3b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+          if (output_level > 10) System.out.println ( "Step 3b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
         }
       }
 
@@ -568,7 +568,7 @@ if (use_line_parts) {
 } else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
-        if (output_level > 8) System.out.println ( "Step 3b: Part " + i + " = " + parts[i] );
+        if (output_level > 10) System.out.println ( "Step 3b: Part " + i + " = " + parts[i] );
       }
 
       if (parts.length < 95) {
@@ -641,7 +641,7 @@ if (use_line_parts) {
 
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
-        if (output_level > 8) System.out.println ( "Step 3c: Part " + i + " = " + parts[i] );
+        if (output_level > 10) System.out.println ( "Step 3c: Part " + i + " = " + parts[i] );
       }
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
 
