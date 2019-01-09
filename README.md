@@ -28,4 +28,4 @@
 
 ### Testing: Aligned:
 
-![Unaligned Images](tests/aligned.gif?raw=true "Unaligned Images")
+![Aligned Images](tests/aligned.gif?raw=true "Aligned Images")
