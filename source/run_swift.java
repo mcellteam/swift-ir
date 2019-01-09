@@ -189,13 +189,13 @@ public class run_swift {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
       //////////////////////////////////////
       // Step 1a - Run second swim
@@ -250,13 +250,13 @@ public class run_swift {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
       //////////////////////////////////////
       // Step 1b - Run first mir
@@ -330,13 +330,13 @@ if (use_line_parts) {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
       //////////////////////////////////////
       // Step 2a - Run third swim
@@ -392,13 +392,13 @@ if (use_line_parts) {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
       //////////////////////////////////////
       // Step 2b - Run second mir
@@ -466,13 +466,13 @@ if (use_line_parts) {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
       //////////////////////////////////////
       // Step 3a - Run fourth swim
@@ -528,13 +528,13 @@ if (use_line_parts) {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
       //////////////////////////////////////
       // Step 3b - Run third mir
@@ -627,13 +627,13 @@ if (use_line_parts) {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
       //////////////////////////////////////
       // Step 3c - Best guess transform
@@ -860,13 +860,13 @@ if (use_line_parts) {
 
       if (output_level > 8) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
       stderr = read_string_from ( proc_err );
 
-      if (output_level > 8) System.out.print ( stderr );
+      if (output_level > 11) System.out.print ( stderr );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 11) System.out.println ( "=================================================================================" );
 
     } catch ( Exception some_exception ) {
 
