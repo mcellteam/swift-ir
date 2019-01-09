@@ -876,6 +876,7 @@ if (use_line_parts) {
 
     }
 
+    // NOTE: Commenting out the following line will allow aligning two original ".tif" files without an intermediate "aligned_0.JPG"
     image_files[golden_section] = "aligned_" + golden_section + ".JPG";
 
     // Align all of the other images to the golden section
