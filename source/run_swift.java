@@ -163,7 +163,7 @@ public class run_swift {
       //////////////////////////////////////
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running first swim: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running first swim with command line: " + command_line + " ***" );
       cmd_proc = rt.exec ( command_line );
 
       proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
@@ -217,7 +217,7 @@ public class run_swift {
       String paty = "" + parts[6];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running second swim: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running second swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -306,7 +306,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir first.mir";
-      if (output_level > 0) System.out.println ( "*** Running first mir: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running first mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -358,7 +358,7 @@ if (use_line_parts) {
       AI4 = "" + parts[14];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running third swim: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running third swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -442,7 +442,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir second.mir";
-      if (output_level > 0) System.out.println ( "*** Running second mir: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running second mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -494,7 +494,7 @@ if (use_line_parts) {
       AI4 = "" + parts[14];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running fourth swim: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running fourth swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -603,7 +603,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir third.mir";
-      if (output_level > 0) System.out.println ( "*** Running third mir: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running third mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -836,7 +836,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir zeroth.mir";
-      if (output_level > 0) System.out.println ( "*** Running zeroth mir: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "*** Running zeroth mir with command line: " + command_line + " ***" );
       if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + golden_section + ".JPG" );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
