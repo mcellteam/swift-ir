@@ -163,7 +163,7 @@ public class run_swift {
       //////////////////////////////////////
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running first swim with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running first swim with command line: " + command_line + " ***" );
       cmd_proc = rt.exec ( command_line );
 
       proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
@@ -179,15 +179,15 @@ public class run_swift {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
@@ -217,7 +217,7 @@ public class run_swift {
       String paty = "" + parts[6];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running second swim with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running second swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -240,15 +240,15 @@ public class run_swift {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
@@ -306,7 +306,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir first.mir";
-      if (output_level > 0) System.out.println ( "*** Running first mir with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running first mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -320,15 +320,15 @@ if (use_line_parts) {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
@@ -358,7 +358,7 @@ if (use_line_parts) {
       AI4 = "" + parts[14];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running third swim with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running third swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -382,15 +382,15 @@ if (use_line_parts) {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
@@ -442,7 +442,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir second.mir";
-      if (output_level > 0) System.out.println ( "*** Running second mir with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running second mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -456,15 +456,15 @@ if (use_line_parts) {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
@@ -494,7 +494,7 @@ if (use_line_parts) {
       AI4 = "" + parts[14];
 
       command_line = "swim " + window_size;
-      if (output_level > 0) System.out.println ( "*** Running fourth swim with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running fourth swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
 
@@ -518,15 +518,15 @@ if (use_line_parts) {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
@@ -603,7 +603,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir third.mir";
-      if (output_level > 0) System.out.println ( "*** Running third mir with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running third mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -617,15 +617,15 @@ if (use_line_parts) {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
@@ -691,7 +691,7 @@ if (use_line_parts) {
 
     int arg_index = 0;
     while (arg_index < args.length) {
-		  if (output_level > 8) System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
+		  if (output_level > 4) System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
 		  if (args[arg_index].startsWith("-") ) {
 		    if (args[arg_index].equals("-?")) {
 		      System.out.println ( "Command Line Arguments:" );
@@ -836,7 +836,7 @@ if (use_line_parts) {
       bw.close();
 
       command_line = "mir zeroth.mir";
-      if (output_level > 0) System.out.println ( "*** Running zeroth mir with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "\n*** Running zeroth mir with command line: " + command_line + " ***" );
       if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + golden_section + ".JPG" );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
@@ -850,15 +850,15 @@ if (use_line_parts) {
 
       cmd_proc.waitFor();
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
-      if (output_level > 8) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
       stdout = read_string_from ( proc_out );
 
-      if (output_level > 8) System.out.print ( stdout );
+      if (output_level > 4) System.out.print ( stdout );
 
-      if (output_level > 8) System.out.println ( "=================================================================================" );
+      if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
