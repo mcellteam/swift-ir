@@ -686,6 +686,7 @@ if (use_line_parts) {
     int addx = 2000;
     int addy = 2000;
 
+    boolean test2 = false;
 
 	  ArrayList<String> file_name_args = new ArrayList<String>();
 
@@ -700,6 +701,7 @@ if (use_line_parts) {
 		      System.out.println ( "  -w # specifies windows size" );
 		      System.out.println ( "  -ax # specifies addx (-x option to swim)" );
 		      System.out.println ( "  -ay # specifies addy (-y option to swim)" );
+		      System.out.println ( "  -test2 # forces a test mode using only 2 images" );
           System.exit ( 0 );
 		    } else if (args[arg_index].equals("-v")) {
 		      arg_index++;
@@ -716,6 +718,8 @@ if (use_line_parts) {
 		    } else if (args[arg_index].equals("-ay")) {
 		      arg_index++;
 		      addy = new Integer ( args[arg_index] );
+		    } else if (args[arg_index].equals("-test2")) {
+		      test2 = true;
 		    } else {
 		      if (output_level > 0) System.out.println ( "Unrecognized option: " + args[arg_index] );
 		    }
@@ -751,6 +755,10 @@ if (use_line_parts) {
       System.exit ( 1 );
     }
 
+    if ( test2 && (actual_file_names.size()!=2) ) {
+      if (output_level > -1) System.out.println ( "The -test2 option can only be used with exactly 2 image files" );
+      System.exit ( 1 );
+    }
 
     // Convert the list to a normal array (which the code below expects)
     String image_files[] = new String[actual_file_names.size()];
@@ -876,8 +884,11 @@ if (use_line_parts) {
 
     }
 
-    // NOTE: Commenting out the following line will allow aligning two original ".tif" files without an intermediate "aligned_0.JPG"
-    image_files[golden_section] = "aligned_" + golden_section + ".JPG";
+    if (!test2) {
+      // Set the golden section to be the computed JPEG file
+      // NOTE: Commenting out the following line will allow aligning two original ".tif" files without an intermediate "aligned_0.JPG"
+      image_files[golden_section] = "aligned_" + golden_section + ".JPG";
+    }
 
     // Align all of the other images to the golden section
 
