@@ -69,13 +69,36 @@ class glob_filter implements FilenameFilter {
 
 
 
-
-
-
 public class run_swift {
 
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
 	public static String image_type_extension = "JPG";
+
+  public static String translate_exit ( int exit_status ) {
+    String exit_string = " " + exit_status;
+    if (exit_status > 128) {
+      exit_string += " (signal " + (exit_status-128);
+      switch (exit_status-128) {
+        case  1: exit_string += " = SIGHUP";  break;
+        case  2: exit_string += " = SIGINT";  break;
+        case  3: exit_string += " = SIGQUIT"; break;
+        case  4: exit_string += " = SIGILL";  break;
+        case  5: exit_string += " = SIGTRAP"; break;
+        case  6: exit_string += " = SIGABRT"; break;
+        case  7: exit_string += " = SIGBUS";  break;
+        case  8: exit_string += " = SIGFPE";  break;
+        case  9: exit_string += " = SIGKILL"; break;
+        case 10: exit_string += " = SIGUSR1"; break;
+        case 11: exit_string += " = SIGSEGV"; break;
+        case 13: exit_string += " = SIGPIPE"; break;
+        case 14: exit_string += " = SIGALRM"; break;
+        case 15: exit_string += " = SIGTERM"; break;
+        default: break;
+      }
+      exit_string += ")";
+    }
+    return (exit_string);
+  }
 
 
   public static String[] lines_from_stdout ( String stdout ) {
@@ -137,6 +160,7 @@ public class run_swift {
     String command_line;
     String interactive_commands;
     Process cmd_proc;
+    int exit_value;
 
     BufferedOutputStream proc_in;
     BufferedInputStream proc_out;
@@ -179,6 +203,7 @@ public class run_swift {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -240,6 +265,7 @@ public class run_swift {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -320,6 +346,7 @@ if (use_line_parts) {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -382,6 +409,7 @@ if (use_line_parts) {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -456,6 +484,7 @@ if (use_line_parts) {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -518,6 +547,7 @@ if (use_line_parts) {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -617,6 +647,7 @@ if (use_line_parts) {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -830,6 +861,7 @@ if (use_line_parts) {
     String interactive_commands;
     Runtime rt = Runtime.getRuntime();
     Process cmd_proc;
+    int exit_value;
 
     BufferedOutputStream proc_in;
     BufferedInputStream proc_out;
@@ -870,6 +902,7 @@ if (use_line_parts) {
       proc_in.close();
 
       cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
