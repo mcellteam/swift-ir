@@ -75,6 +75,7 @@ class glob_filter implements FilenameFilter {
 public class run_swift {
 
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
+	public static String image_type_extension = "JPG";
 
 
   public static String[] lines_from_stdout ( String stdout ) {
@@ -170,7 +171,7 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      interactive_commands = "unused -i 2 -k keep.JPG " + image_files[fixed_index] + " " + image_files[align_index] + "\n";
+      interactive_commands = "unused -i 2 -k keep."+image_type_extension+" " + image_files[fixed_index] + " " + image_files[align_index] + "\n";
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
@@ -278,7 +279,7 @@ if (use_line_parts) {
       interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
       interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
       interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
-      interactive_commands += "RW iter1_mir_out.JPG\n";
+      interactive_commands += "RW iter1_mir_out."+image_type_extension+"\n";
 
 } else {
 
@@ -297,7 +298,7 @@ if (use_line_parts) {
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
       interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
       interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
-      interactive_commands += "RW iter1_mir_out.JPG\n";
+      interactive_commands += "RW iter1_mir_out."+image_type_extension+"\n";
 }
 
       f = new File ( System.getenv("PWD") + File.separator + "first.mir" );
@@ -420,7 +421,7 @@ if (use_line_parts) {
       interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
       interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
       interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
-      interactive_commands += "RW iter2_mir_out.JPG\n";
+      interactive_commands += "RW iter2_mir_out."+image_type_extension+"\n";
 
 } else {
       parts = stdout.split ( "[\\s]+" );
@@ -433,7 +434,7 @@ if (use_line_parts) {
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
       interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
       interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
-      interactive_commands += "RW iter2_mir_out.JPG\n";
+      interactive_commands += "RW iter2_mir_out."+image_type_extension+"\n";
 }
 
       f = new File ( System.getenv("PWD") + File.separator + "second.mir" );
@@ -564,7 +565,7 @@ if (use_line_parts) {
       interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + "\n";
       interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + "\n";
 
-      interactive_commands += "RW " + "aligned_" + align_index + ".JPG\n";
+      interactive_commands += "RW " + "aligned_" + align_index + "."+image_type_extension+"\n";
 } else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
@@ -588,13 +589,13 @@ if (use_line_parts) {
       interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
       interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
       interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
-      // interactive_commands += "RW iter3_mir_out.JPG\n";
-      interactive_commands += "RW " + "aligned_" + align_index + ".JPG\n";
+      // interactive_commands += "RW iter3_mir_out."+image_type_extension+"\n";
+      interactive_commands += "RW " + "aligned_" + align_index + "."+image_type_extension+"\n";
 }
 
 
       // Change the name of the file in this slot to use the newly aligned image:
-      image_files[align_index] = "aligned_" + align_index + ".JPG";
+      image_files[align_index] = "aligned_" + align_index + "."+image_type_extension+"";
 
 
       f = new File ( System.getenv("PWD") + File.separator + "third.mir" );
@@ -690,18 +691,21 @@ if (use_line_parts) {
 
 	  ArrayList<String> file_name_args = new ArrayList<String>();
 
+    boolean bad_args = false;
     int arg_index = 0;
     while (arg_index < args.length) {
 		  if (output_level > 4) System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
 		  if (args[arg_index].startsWith("-") ) {
 		    if (args[arg_index].equals("-?")) {
 		      System.out.println ( "Command Line Arguments:" );
-		      System.out.println ( "  -v # amount of output (0 to 9)" );
-		      System.out.println ( "  -g # specifies \"golden\" image number" );
-		      System.out.println ( "  -w # specifies windows size" );
-		      System.out.println ( "  -ax # specifies addx (-x option to swim)" );
-		      System.out.println ( "  -ay # specifies addy (-y option to swim)" );
-		      System.out.println ( "  -test2 # forces a test mode using only 2 images" );
+		      System.out.println ( "  -v #    amount of output (0 to 9 or higher)" );
+		      System.out.println ( "  -g #    specifies \"golden\" image number" );
+		      System.out.println ( "  -w #    specifies window size" );
+		      System.out.println ( "  -ax #   specifies addx (-x option to swim)" );
+		      System.out.println ( "  -ay #   specifies addy (-y option to swim)" );
+		      System.out.println ( "  -jpg    produces all output files with \".JPG\" extension" );
+		      System.out.println ( "  -tif    produces all output files with \".TIF\" extension" );
+		      System.out.println ( "  -test2  forces a test mode using only 2 images" );
           System.exit ( 0 );
 		    } else if (args[arg_index].equals("-v")) {
 		      arg_index++;
@@ -718,10 +722,15 @@ if (use_line_parts) {
 		    } else if (args[arg_index].equals("-ay")) {
 		      arg_index++;
 		      addy = new Integer ( args[arg_index] );
-		    } else if (args[arg_index].equals("-test2")) {
+        } else if (args[arg_index].equals("-jpg")) {
+	        image_type_extension = "JPG";
+        } else if (args[arg_index].equals("-tif")) {
+	        image_type_extension = "TIF";
+        } else if (args[arg_index].equals("-test2")) {
 		      test2 = true;
 		    } else {
 		      if (output_level > 0) System.out.println ( "Unrecognized option: " + args[arg_index] );
+		      bad_args = true;
 		    }
 		  } else {
 		    file_name_args.add ( args[arg_index] );
@@ -730,6 +739,10 @@ if (use_line_parts) {
     }
 
     if (output_level > 6) System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
+
+    if (bad_args) {
+      System.out.println ( "\n\nERROR: Unrecognized option, use \"-?\" to list valid options\n\n" );
+    }
 
     {
       File current_directory = new File ( "." );
@@ -836,7 +849,7 @@ if (use_line_parts) {
       // Use mir to copy the "golden section" to its proper location
 
       interactive_commands = "F " + image_files[golden_section] + "\n";
-      interactive_commands += "RW " + "aligned_" + golden_section + ".JPG\n";
+      interactive_commands += "RW " + "aligned_" + golden_section + "."+image_type_extension+"\n";
 
       f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
@@ -845,7 +858,7 @@ if (use_line_parts) {
 
       command_line = "mir zeroth.mir";
       if (output_level > 0) System.out.println ( "\n*** Running zeroth mir with command line: " + command_line + " ***" );
-      if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + golden_section + ".JPG" );
+      if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + golden_section + "."+image_type_extension );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
 
@@ -887,7 +900,7 @@ if (use_line_parts) {
     if (!test2) {
       // Set the golden section to be the computed JPEG file
       // NOTE: Commenting out the following line will allow aligning two original ".tif" files without an intermediate "aligned_0.JPG"
-      image_files[golden_section] = "aligned_" + golden_section + ".JPG";
+      image_files[golden_section] = "aligned_" + golden_section + "."+image_type_extension+"";
     }
 
     // Align all of the other images to the golden section
