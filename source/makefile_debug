@@ -1,19 +1,19 @@
 all: swim iavg iscale mir remod run_swift.jar sha1sum.txt
 
 swim: swim.c swimio.h debug.h makefile_debug
-	gcc -g -Wno-implicit -o swim -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
+	gcc -g -O0 -Wno-implicit -o swim -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
 
 iavg: iavg.c swimio.h debug.h makefile_debug
-	gcc -g -Wno-implicit -o iavg iavg.c -ljpeg -ltiff -lpng
+	gcc -g -O0 -Wno-implicit -o iavg iavg.c -ljpeg -ltiff -lpng
 
 iscale: iscale.c swimio.h debug.h makefile_debug
-	gcc -g -Wno-implicit -o iscale iscale.c -ljpeg -ltiff -lpng
+	gcc -g -O0 -Wno-implicit -o iscale iscale.c -ljpeg -ltiff -lpng
 
 mir: mir.c swimio.h debug.h makefile_debug
-	gcc -g -Wno-implicit -o mir mir.c -ljpeg -ltiff -lpng -lm
+	gcc -g -O0 -Wno-implicit -o mir mir.c -ljpeg -ltiff -lpng -lm
 
 remod: remod.c swimio.h debug.h makefile_debug
-	gcc -g -Wno-implicit -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
+	gcc -g -O0 -Wno-implicit -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
 
 run_swift.jar: run_swift.java makefile_debug
 	javac -g -nowarn -source 1.6 run_swift.java
