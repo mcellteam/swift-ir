@@ -32,7 +32,6 @@ clean:
 	rm -f *.jar
 	rm -f *.class
 	rm -f *.o
-	rm -f swim
 	rm -f a.out
 	rm -f *~
 
