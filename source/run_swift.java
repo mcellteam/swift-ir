@@ -1,6 +1,56 @@
 import java.io.*;
 import java.util.*;
 
+class global_io {
+  public static boolean wait_enabled = false;
+  static BufferedReader command_line_reader = null;
+  public static String read_line() {
+    if ( wait_enabled ) {
+      try {
+        if (command_line_reader == null) {
+          command_line_reader = new BufferedReader ( new InputStreamReader ( System.in ) );
+        }
+        String command_line = command_line_reader.readLine();
+        return ( command_line );
+      } catch ( IOException ioe ) {
+        return ( null );
+      }
+    } else {
+      return ( null );
+    }
+  }
+  public static void wait_for_enter() {
+    if (wait_enabled) {
+      read_line();
+    }
+  }
+  public static void wait_for_enter ( String prompt ) {
+    System.out.print ( prompt );
+    if (wait_enabled) {
+      wait_for_enter();
+    } else {
+      System.out.println();
+    }
+  }
+
+  public static boolean log_enabled = false;
+  static BufferedWriter log_file_writer = null;
+  public static void log_command ( String command ) {
+    if (log_enabled) {
+      try {
+        if (log_file_writer == null) {
+          File f = new File ( System.getenv("PWD") + File.separator + "command_log.bat" );
+          log_file_writer = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
+        }
+        System.out.println ( "LOG: " + command );
+        log_file_writer.write ( command, 0, command.length() );
+        log_file_writer.flush();
+      } catch ( IOException ioe ) {
+      }
+    }
+  }
+}
+
 
 class glob_filter implements FilenameFilter {
 
@@ -202,6 +252,9 @@ public class run_swift {
       proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -222,6 +275,10 @@ public class run_swift {
       if (output_level > 11) System.out.print ( stderr );
 
       if (output_level > 11) System.out.println ( "=================================================================================" );
+
+
+      global_io.wait_for_enter ( "Completed Step 0 (first swim) > " );
+
 
       //////////////////////////////////////
       // Step 1a - Run second swim
@@ -264,6 +321,9 @@ public class run_swift {
       proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -284,6 +344,10 @@ public class run_swift {
       if (output_level > 11) System.out.print ( stderr );
 
       if (output_level > 11) System.out.println ( "=================================================================================" );
+
+
+      global_io.wait_for_enter ( "Completed Step 1a (second swim) > " );
+
 
       //////////////////////////////////////
       // Step 1b - Run first mir
@@ -345,6 +409,9 @@ if (use_line_parts) {
       //proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -365,6 +432,10 @@ if (use_line_parts) {
       if (output_level > 11) System.out.print ( stderr );
 
       if (output_level > 11) System.out.println ( "=================================================================================" );
+
+
+      global_io.wait_for_enter ( "Completed Step 1b (first mir) > " );
+
 
       //////////////////////////////////////
       // Step 2a - Run third swim
@@ -408,6 +479,9 @@ if (use_line_parts) {
       proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -428,6 +502,10 @@ if (use_line_parts) {
       if (output_level > 11) System.out.print ( stderr );
 
       if (output_level > 11) System.out.println ( "=================================================================================" );
+
+
+      global_io.wait_for_enter ( "Completed Step 2a (third swim) > " );
+
 
       //////////////////////////////////////
       // Step 2b - Run second mir
@@ -483,6 +561,9 @@ if (use_line_parts) {
       //proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -503,6 +584,10 @@ if (use_line_parts) {
       if (output_level > 11) System.out.print ( stderr );
 
       if (output_level > 11) System.out.println ( "=================================================================================" );
+
+
+      global_io.wait_for_enter ( "Completed Step 2b (second mir) > " );
+
 
       //////////////////////////////////////
       // Step 3a - Run fourth swim
@@ -546,6 +631,9 @@ if (use_line_parts) {
       proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -566,6 +654,10 @@ if (use_line_parts) {
       if (output_level > 11) System.out.print ( stderr );
 
       if (output_level > 11) System.out.println ( "=================================================================================" );
+
+
+      global_io.wait_for_enter ( "Completed Step 3a (fourth swim) > " );
+
 
       //////////////////////////////////////
       // Step 3b - Run third mir
@@ -646,6 +738,9 @@ if (use_line_parts) {
       //proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -666,6 +761,10 @@ if (use_line_parts) {
       if (output_level > 11) System.out.print ( stderr );
 
       if (output_level > 11) System.out.println ( "=================================================================================" );
+
+
+      global_io.wait_for_enter ( "Completed Step 3b (third mir) > " );
+
 
       //////////////////////////////////////
       // Step 3c - Best guess transform
@@ -690,6 +789,10 @@ if (use_line_parts) {
       if (output_level > 1) System.out.println ( "=================================================================================" );
       if (output_level > 1) System.out.println ();
       if (output_level > 1) System.out.println ();
+
+
+      global_io.wait_for_enter ( "Completed Step 3c (best guess) > " );
+
 
     } catch ( Exception some_exception ) {
 
@@ -736,6 +839,8 @@ if (use_line_parts) {
 		      System.out.println ( "  -ay #   specifies addy (-y option to swim)" );
 		      System.out.println ( "  -jpg    produces all output files with \".JPG\" extension" );
 		      System.out.println ( "  -tif    produces all output files with \".TIF\" extension" );
+		      System.out.println ( "  -wait   pauses for a carriage return after each step" );
+		      System.out.println ( "  -log    writes a log of commands to command_log.bat" );
 		      System.out.println ( "  -test2  forces a test mode using only 2 images" );
           System.exit ( 0 );
 		    } else if (args[arg_index].equals("-v")) {
@@ -757,6 +862,10 @@ if (use_line_parts) {
 	        image_type_extension = "JPG";
         } else if (args[arg_index].equals("-tif")) {
 	        image_type_extension = "TIF";
+        } else if (args[arg_index].equals("-wait")) {
+	        global_io.wait_enabled = true;
+        } else if (args[arg_index].equals("-log")) {
+	        global_io.log_enabled = true;
         } else if (args[arg_index].equals("-test2")) {
 		      test2 = true;
 		    } else {
@@ -901,6 +1010,9 @@ if (use_line_parts) {
       //proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
       cmd_proc.waitFor();
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
@@ -929,6 +1041,10 @@ if (use_line_parts) {
       some_exception.printStackTrace();
 
     }
+
+
+    global_io.wait_for_enter ( "Completed copy (zeroth mir) > " );
+
 
     if (!test2) {
       // Set the golden section to be the computed JPEG file
