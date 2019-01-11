@@ -117,7 +117,7 @@ void mk_fpat(struct image *im, double xc, double yc, double xdx, double ydx, dou
 			// bilinear within pixel from surrounding pixels
 			ix = xc;
 			iy = yc;
-			if(ix < 0 || iy < 0 || ix >= im->wid || iy >= im->ht) {
+			if(ix < 0 || iy < 0 || ix >= im->wid || iy >= im->ht-1) {
 				*fpp++ = -1048576.0; // has an exact fp value
 				continue;
 			}
