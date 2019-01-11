@@ -871,6 +871,10 @@ int oldmain(int argc, char *argv[]) {
 		}
 		if(argv[1][1] == 'i') { // -i
 			niter = atoi(argv[2]);
+			if (niter >= MAXITER) {
+			  fprintf(stderr, "WARNING  niter=%d >= MAXITER=%d  limiting niter to MAXITER-1\n", niter, MAXITER);
+			  niter = MAXITER - 1;
+			}
 			argc--;
 			argv++;
 		}
