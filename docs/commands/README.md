@@ -85,3 +85,24 @@ Commands:
   # for comment to end of line
   E to Exit
 ```
+
+
+## iscale
+
+```
+Scales images down by an integer factor (default is 8).
+
+New files are created with the original name prefixed by "S#" (# is scale).
+
+Usage:
+
+  iscale +scale file file file ...
+  iscale [+scale] [-contr] [-v] file file file ...
+
+ Where:
+
+  scale is an integer reduction factor
+  contr is an integer
+  v is an integer that increases "variance" with each additional "-v" option
+
+```
