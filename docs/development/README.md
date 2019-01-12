@@ -4,14 +4,13 @@
 
 The following instructions assume:
 
- * That the working directory will be: /home/me/code/swift_proj
+ * The project working directory will be: /home/me/code/swift_proj
 
- * That the file containing the GIT bundle is: swift.bundle
+ * The file containing the GIT bundle is named: swift.bundle
 
 
+## Setting up a NEW GIT Repository from a GIT Bundle
 ```
-======= Setting up a NEW GIT Repository from a GIT Bundle =======
-
 Put the new GIT bundle file (swift.bundle) into the directory above your working directory.
 
 So if you plan for your source files to be in:
@@ -63,19 +62,20 @@ The final version should look like this:
 	    filemode = true
 	    bare = false
 	    logallrefupdates = true
+```
 
+## Normal Work Flow
 
-
-======= Normal Work Flow =======
-
+```
 Work in the project directory: /home/me/code/swift_proj
 
 Change files, add files, delete files, commit files.
+```
 
 
 
-======= Send Updates via a GIT Bundle =======
-
+## Send Updates via a GIT Bundle
+```
 Be sure that everything is committed before creating a GIT bundle.
 
 Change directory to the project directory:
@@ -87,11 +87,11 @@ Create a GIT bundle with the commits between the "shared" position and "master":
    $ git bundle create ../swift.bundle shared..master
 
 Send the file "swift.bundle" to the other team members.
+```
 
 
-
-======= Get Updates from a GIT Bundle =======
-
+## Get Updates from a GIT Bundle
+```
 Put the updated GIT bundle file in /home/me/code/swift.bundle
 
 Change directory to the project directory:
@@ -110,6 +110,5 @@ Tag the current commit as the new "shared" position:
 
    $ git tag -f shared
 
-==========================================
 ```
 
