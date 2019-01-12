@@ -64,8 +64,9 @@ The final version should look like this:
 	    logallrefupdates = true
 ```
 
-## Normal Work Flow
 
+
+## Normal Work Flow
 ```
 Work in the project directory: /home/me/code/swift_proj
 
@@ -88,6 +89,7 @@ Create a GIT bundle with the commits between the "shared" position and "master":
 
 Send the file "swift.bundle" to the other team members.
 ```
+
 
 
 ## Get Updates from a GIT Bundle
