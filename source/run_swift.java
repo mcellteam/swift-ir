@@ -687,7 +687,7 @@ if (use_line_parts) {
       interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + "\n";
       interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + "\n";
 
-      interactive_commands += "RW " + "aligned_" + align_index + "."+image_type_extension+"\n";
+      interactive_commands += "RW " + "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"\n";
 } else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
@@ -712,12 +712,12 @@ if (use_line_parts) {
       interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
       interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
       // interactive_commands += "RW iter3_mir_out."+image_type_extension+"\n";
-      interactive_commands += "RW " + "aligned_" + align_index + "."+image_type_extension+"\n";
+      interactive_commands += "RW " + "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"\n";
 }
 
 
       // Change the name of the file in this slot to use the newly aligned image:
-      image_files[align_index] = "aligned_" + align_index + "."+image_type_extension+"";
+      image_files[align_index] = "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"";
 
 
       f = new File ( System.getenv("PWD") + File.separator + "third.mir" );
@@ -990,7 +990,7 @@ if (use_line_parts) {
       // Use mir to copy the "golden section" to its proper location
 
       interactive_commands = "F " + image_files[golden_section] + "\n";
-      interactive_commands += "RW " + "aligned_" + golden_section + "."+image_type_extension+"\n";
+      interactive_commands += "RW " + "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension+"\n";
 
       f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
@@ -999,7 +999,7 @@ if (use_line_parts) {
 
       command_line = "mir zeroth.mir";
       if (output_level > 0) System.out.println ( "\n*** Running zeroth mir with command line: " + command_line + " ***" );
-      if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + golden_section + "."+image_type_extension );
+      if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
       cmd_proc = rt.exec ( command_line );
 
@@ -1048,8 +1048,8 @@ if (use_line_parts) {
 
     if (!test2) {
       // Set the golden section to be the computed JPEG file
-      // NOTE: Commenting out the following line will allow aligning two original ".tif" files without an intermediate "aligned_0.JPG"
-      image_files[golden_section] = "aligned_" + golden_section + "."+image_type_extension+"";
+      // NOTE: Commenting out the following line will allow aligning two original ".tif" files without an intermediate "aligned_000.JPG"
+      image_files[golden_section] = "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension+"";
     }
 
     // Align all of the other images to the golden section
