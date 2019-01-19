@@ -691,6 +691,8 @@ void main(int argc, char *argv[]) {
       printf("\nMIR is Multiple Image Rendering\n");
       printf("\n");
       printf("Commands:\n");
+      printf("  ? for Help\n");
+      printf("  ~ to show mappings\n");
       printf("  X for eXchange\n");
       printf("  I for interpolation 0, 1, 2\n");
       printf("  a new reverse mapping: mi00 mi01 mi02  mi10 mi11 mi12 \n");
@@ -714,6 +716,12 @@ void main(int argc, char *argv[]) {
       continue;
     case '#':                  // its a comment to end of current line
       while ((i = getchar()) != EOF && i != '\n') ;
+      continue;
+    case '~':                  // its a comment to end of current line
+      printf ( "\n" );
+      printf ( "  mf: [ %g %g %g   %g %g %g ]\n", mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2] );
+      printf ( "  mi: [ %g %g %g   %g %g %g ]\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2] );
+      printf ( "  mg: [ %g %g %g   %g %g %g ]\n", mg[0][0], mg[0][1], mg[0][2], mg[1][0], mg[1][1], mg[1][2] );
       continue;
     case 'I':                  // interpolation 0, 1, 2
       sv = scanf("%d\n", &iflag);
