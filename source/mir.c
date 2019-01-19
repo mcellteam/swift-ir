@@ -664,6 +664,31 @@ void main(int argc, char *argv[]) {
   //fprintf(stderr, "argc %d  gflag %d sflag %d\n", argc, gflag, sflag);
   //if(argc > 0) fprintf(stderr, "argv0 -> %s\n", argv[0]);
   if (argc > 0) {
+    // man 2 open:
+    //
+    //   int open(const char *pathname, int flags);
+    //
+    //   Given a pathname for a file, open() returns a file descriptor, a small,
+    //   nonnegative integer for use in subsequent system calls (read(2), write(2),
+    //   lseek(2), fcntl(2), etc.).  The file descriptor returned by a successful
+    //   call will be the  lowest-numbered file descriptor not currently open for
+    //   the process.
+    //
+    //   ... the access mode values O_RDONLY, O_WRONLY, and O_RDWR do  not  specify
+    //   individual  bits.  Rather, they define the low order two bits of flags, and
+    //   are defined respectively as 0, 1, and 2.
+    //
+    // man 3 stdin:
+    //
+    //   On program startup, the integer file descriptors associated with the streams
+    //   stdin, stdout, and stderr are 0, 1, and 2, respectively.
+    //
+    // According to the previous descriptions, closing file handle "0" appears to
+    // free that file descriptor which means that it will be the next (lowest-numbered)
+    // file descriptor used by a subsequent "open" call. This appears to be the file
+    // descriptor of "stdin" for the process which allows "stdin" to be remapped to
+    // the newly opened file. This essentially reassigns stdin from the terminal to
+    // this newly opened file. So subsequent "getchar" calls will read from this file.
     close(0);
     i = open(argv[0], 0);
     if (i != 0) {
