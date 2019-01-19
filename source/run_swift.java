@@ -786,6 +786,12 @@ if (use_line_parts) {
       if (output_level > 1) System.out.println ( "Final best guess transform:" );
       if (output_level > 1) System.out.println ( "  " + patx + " " + paty + " " + parts[10] + " " + parts[11] + " " + parts[13] + " " + parts[14] );
       if (output_level > 1) System.out.println ( "---------------------------------------------------------------------------------" );
+      if (output_level > 1) System.out.println ( "Final best guess mir forward matrix (use with mir \"A\" command):" );
+      if (output_level > 1) System.out.println ( "  " + parts[10] + " " + parts[11] + " " + parts[12] + " " + parts[13] + " " + parts[14] + " " + parts[15] );
+      if (output_level > 1) System.out.println ( "---------------------------------------------------------------------------------" );
+      if (output_level > 1) System.out.println ( "Final best guess mir reverse matrix (use with mir \"a\" command):" );
+      if (output_level > 1) System.out.println ( "  " + parts[2] + " " + parts[3] + " " + parts[4] + " " + parts[5] + " " + parts[6] + " " + parts[7] );
+      if (output_level > 1) System.out.println ( "---------------------------------------------------------------------------------" );
       if (output_level > 1) System.out.println ( "=================================================================================" );
       if (output_level > 1) System.out.println ();
       if (output_level > 1) System.out.println ();
