@@ -15,9 +15,16 @@ mir: mir.c swimio.h debug.h makefile
 remod: remod.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
 
+# "Normal" rule for run_swift.jar
+#run_swift.jar: run_swift.java makefile
+#	javac -nowarn -source 1.6 run_swift.java
+#	jar -cfe run_swift.jar run_swift *.class
+
+# "Fixed Date" rule for run_swift.jar that produces a consistent jar file the same for each compilation
 run_swift.jar: run_swift.java makefile
 	javac -nowarn -source 1.6 run_swift.java
-	jar -cfe run_swift.jar run_swift *.class
+	touch -t 201901181818 *.class
+	zip -X run_swift.jar META-INF/MANIFEST.MF run_swift.java *.class
 
 sha1sum.txt: swim iavg iscale mir remod run_swift.jar
 	sha1sum swim > sha1sum.txt
