@@ -417,7 +417,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       super.mouseWheelMoved ( e );
     } else {
       //if (modify_mode == true) {
-      if (e.isShiftDown()) {
+      if (!e.isShiftDown()) {
         if (frames != null) {
           if (frames.size() > 0) {
             int scroll_wheel_delta = -e.getWheelRotation();
