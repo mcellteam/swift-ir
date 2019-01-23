@@ -180,6 +180,16 @@ class FileListDialog extends JDialog {
 }
 
 
+class AlignmentPanel extends Panel {
+	public void paint (Graphics g) {
+	  int w = size().width;
+	  int h = size().height;
+		g.setColor ( new Color ( 255, 0, 255 ) );
+	  g.drawLine ( 0, 0, w, h );
+	}
+}
+
+
 public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
 
   JFrame parent_frame = null;
@@ -650,12 +660,30 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         zp.parent_frame = app_frame;
         zp.current_directory = System.getProperty("user.dir");
 
-        ZoomPanLib zp2 = new ZoomPanLib();
-        //zp2.parent_frame = app_frame;
-        //zp2.current_directory = System.getProperty("user.dir");
+        AlignmentPanel alignment_panel = new AlignmentPanel();
+        AlignmentPanel control_panel = new AlignmentPanel();
 
-				JSplitPane split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, zp, zp2 );
-				split_pane.setResizeWeight( 0.7 );
+				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, zp, alignment_panel );
+				image_split_pane.setResizeWeight( 0.7 );
+
+				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, control_panel );
+				split_pane.setResizeWeight( 0.9 );
+
+
+				zp.setBackground ( new Color (0,0,0) );
+		    zp.file_chooser = new MyFileChooser ( zp.current_directory );
+
+        for (int i=0; i<actual_file_names.size(); i++) {
+          zp.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
+          zp.frame_index = 0; // set to the first if any frames are loaded
+        }
+        zp.file_list_dialog = new FileListDialog(app_frame, zp);
+        zp.file_list_dialog.pack();
+
+        zp.set_title();
+
+				app_frame.add ( split_pane );
+
 
 				JMenuBar menu_bar = new JMenuBar();
           JMenuItem mi;
@@ -730,19 +758,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 				app_frame.setJMenuBar ( menu_bar );
 				
-				zp.setBackground ( new Color (0,0,0) );
-		    zp.file_chooser = new MyFileChooser ( zp.current_directory );
 
-        for (int i=0; i<actual_file_names.size(); i++) {
-          zp.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
-          zp.frame_index = 0; // set to the first if any frames are loaded
-        }
-        zp.file_list_dialog = new FileListDialog(app_frame, zp);
-        zp.file_list_dialog.pack();
-
-        zp.set_title();
-
-				app_frame.add ( split_pane );
         zp.addKeyListener ( zp );
 				app_frame.pack();
 				app_frame.setSize ( w, h );
