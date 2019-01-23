@@ -24,12 +24,12 @@ class MyFileChooser extends JFileChooser {
   }
 }
 
-class jiv_frame {
+class swift_gui_frame {
   public File f=null;
   public boolean valid=false;
   public BufferedImage image=null;
 
-  jiv_frame ( File f, boolean load ) {
+  swift_gui_frame ( File f, boolean load ) {
     this.f = f;
     this.load_file();
   }
@@ -131,9 +131,9 @@ class glob_filter implements FilenameFilter {
 
 class FileListDialog extends JDialog {
   private JTextArea textArea;
-  private jiv parent_frame=null;
+  private swift_gui parent_frame=null;
 
-  public FileListDialog(Frame par_frame, jiv parent) {
+  public FileListDialog(Frame par_frame, swift_gui parent) {
     super(par_frame, true);
     parent_frame = parent;
 
@@ -180,7 +180,7 @@ class FileListDialog extends JDialog {
 }
 
 
-public class jiv extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
+public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
 
   JFrame parent_frame = null;
 
@@ -195,7 +195,7 @@ public class jiv extends ZoomPanLib implements ActionListener, MouseMotionListen
   int ref_image_h = 1000;
 
 
-	public ArrayList<jiv_frame> frames = new ArrayList<jiv_frame>();  // Argument (if any) specifies initial capacity (default 10)
+	public ArrayList<swift_gui_frame> frames = new ArrayList<swift_gui_frame>();  // Argument (if any) specifies initial capacity (default 10)
   public int frame_index = -1;
 
 
@@ -539,7 +539,7 @@ public class jiv extends ZoomPanLib implements ActionListener, MouseMotionListen
 		      int new_frame_index = this.frames.size();
 		      for (int i=0; i<selected_files.length; i++) {
             System.out.println ( "You chose this file: " + selected_files[i] );
-            this.frames.add ( new jiv_frame ( selected_files[i], true ) );
+            this.frames.add ( new swift_gui_frame ( selected_files[i], true ) );
 		      }
 		      // Set the frame index to the first file just added
 		      if (new_frame_index >= this.frames.size()) {
@@ -570,7 +570,7 @@ public class jiv extends ZoomPanLib implements ActionListener, MouseMotionListen
       repaint();
 		  set_title();
     } else if ( action_source == clear_all_images_menu_item ) {
-      this.frames = new ArrayList<jiv_frame>();
+      this.frames = new ArrayList<swift_gui_frame>();
       this.frame_index = -1;
       repaint();
 		  set_title();
@@ -638,15 +638,15 @@ public class jiv extends ZoomPanLib implements ActionListener, MouseMotionListen
     }
     
 
-		System.out.println ( "jiv: Use the mouse wheel to zoom, and drag to pan." );
+		System.out.println ( "swift_gui: Use the mouse wheel to zoom, and drag to pan." );
 
 
 		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
 			public void run() {
-			  JFrame app_frame = new JFrame("jiv");
+			  JFrame app_frame = new JFrame("swift_gui");
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 				
-        jiv zp = new jiv();
+        swift_gui zp = new swift_gui();
         zp.parent_frame = app_frame;
         zp.current_directory = System.getProperty("user.dir");
 
@@ -727,7 +727,7 @@ public class jiv extends ZoomPanLib implements ActionListener, MouseMotionListen
 		    zp.file_chooser = new MyFileChooser ( zp.current_directory );
 
         for (int i=0; i<actual_file_names.size(); i++) {
-          zp.frames.add ( new jiv_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
+          zp.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
           zp.frame_index = 0; // set to the first if any frames are loaded
         }
         zp.file_list_dialog = new FileListDialog(app_frame, zp);
