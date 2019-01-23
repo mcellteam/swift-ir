@@ -1,4 +1,4 @@
-all: swim iavg iscale mir remod run_swift.jar sha1sum.txt
+all: swim iavg iscale mir remod run_swift.jar swift_gui.jar sha1sum.txt
 
 swim: swim.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o swim -O3 -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -22,17 +22,28 @@ remod: remod.c swimio.h debug.h makefile
 
 # "Fixed Date" rule for run_swift.jar that produces a consistent jar file the same for each compilation
 run_swift.jar: run_swift.java makefile
+	rm -f *.class
+	cp -f run_swift.MF META-INF/MANIFEST.MF
 	javac -nowarn -source 1.6 run_swift.java
 	touch -t 201901181818 *.class
 	zip -X run_swift.jar META-INF/MANIFEST.MF run_swift.java *.class
 
-sha1sum.txt: swim iavg iscale mir remod run_swift.jar
+# "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
+swift_gui.jar: swift_gui.java makefile
+	rm -f *.class
+	cp -f swift_gui.MF META-INF/MANIFEST.MF
+	javac -nowarn -source 1.6 swift_gui.java
+	touch -t 201901181818 *.class
+	zip -X swift_gui.jar META-INF/MANIFEST.MF swift_gui.java *.class
+
+sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum swim > sha1sum.txt
 	sha1sum iavg >> sha1sum.txt
 	sha1sum iscale >> sha1sum.txt
 	sha1sum mir >> sha1sum.txt
 	sha1sum remod >> sha1sum.txt
 	sha1sum run_swift.jar >> sha1sum.txt
+	sha1sum swift_gui.jar >> sha1sum.txt
 
 clean:
 	rm -f swim iavg iscale mir remod
