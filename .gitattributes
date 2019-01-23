@@ -1,0 +1,25 @@
+# Set default behavior as git deciding what to do
+
+* text=auto
+
+# Define binary file patterns
+
+*.class binary
+*.jar binary
+*.bmp binary
+*.gif binary
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.tif binary
+*.tiff binary
+
+# Define text file patterns for fixed file names
+
+*.txt text
+*.md  text
+*.c  text
+*.h  text
+*.java text
+makefile text
+
