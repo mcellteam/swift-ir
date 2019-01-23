@@ -229,19 +229,21 @@ class AlignmentPanel extends JPanel {
 
 class ControlPanel extends JPanel {
   public swift_gui swift;
-	public void paint (Graphics g) {
-	  int w = size().width;
-	  int h = size().height;
-    if (swift.frames != null) {
-      if (swift.frames.size() > 0) {
-        if ( (swift.frame_index >= 0) && (swift.frame_index < swift.frames.size()) ) {
-		      g.setColor ( new Color ( 255, 0, 255 ) );
-	        g.drawLine ( 0, 0, w, h );
-          //frame_image = frames.get(frame_index).image;
-        }
-      }
-    }
-	}
+  public JTextField image_name;
+  public JLabel image_label;
+  public JLabel image_size;
+  public JLabel image_bits;
+  ControlPanel () {
+    image_name = new JTextField("", 40);
+    // image_name.setBounds ( 10, 10, 300, 20 );
+    // add ( image_name );
+    image_label = new JLabel("");
+    add ( image_label );
+    image_size = new JLabel("");
+    add ( image_size );
+    image_bits = new JLabel("");
+    add ( image_bits );
+  }
 }
 
 
@@ -470,6 +472,30 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
   }
 
+  public void update_control_panel() {
+    if (control_panel != null) {
+      if (frames != null) {
+        if (frames.size() > 0) {
+          File f = frames.get(frame_index).f;
+          control_panel.image_name.setText ( f.getName() );
+          BufferedImage frame_image = frames.get(frame_index).image;
+          control_panel.image_size.setText ( "  Size:"+frame_image.getWidth()+"x"+frame_image.getHeight() );
+          control_panel.image_bits.setText ( "  Depth:"+frame_image.getColorModel().getPixelSize() );
+
+        } else {
+          control_panel.image_name.setText ( "" );
+          control_panel.image_size.setText ( "" );
+          control_panel.image_bits.setText ( "" );
+        }
+      } else {
+        control_panel.image_name.setText ( "" );
+        control_panel.image_size.setText ( "" );
+        control_panel.image_bits.setText ( "" );
+      }
+      control_panel.image_label.setText ( control_panel.image_name.getText() );
+    }
+  }
+
   public void change_frame ( int delta ) {
     if (frames != null) {
       if (frames.size() > 0) {
@@ -480,6 +506,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         repaint_panels();
       }
     }
+    update_control_panel();
   }
 
   // MouseWheelListener methods:
@@ -598,6 +625,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           this.frames.get(i).reload();
         }
       }
+      update_control_panel();
       repaint();
       repaint_panels();
 		  set_title();
@@ -627,6 +655,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		        // Automatically center if there were no previous images
 		        center_current_image();
 		      }
+          update_control_panel();
 	        repaint();
           repaint_panels();
 		    }
@@ -645,12 +674,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	    mx = 1.0;
 	    my = 1.0;
       recalculate = false;
+      update_control_panel();
       repaint();
 		  set_title();
     } else if ( action_source == clear_all_images_menu_item ) {
       this.frames = new ArrayList<swift_gui_frame>();
       this.frame_index = -1;
       repaint();
+      update_control_panel();
       repaint_panels();
 		  set_title();
     } else if ( action_source == list_all_images_menu_item ) {
