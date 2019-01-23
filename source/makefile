@@ -29,7 +29,7 @@ run_swift.jar: run_swift.java makefile
 	zip -X run_swift.jar META-INF/MANIFEST.MF run_swift.java *.class
 
 # "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
-swift_gui.jar: swift_gui.java makefile
+swift_gui.jar: swift_gui.java ZoomPanLib.java makefile
 	rm -f *.class
 	cp -f swift_gui.MF META-INF/MANIFEST.MF
 	javac -nowarn -source 1.6 swift_gui.java
