@@ -292,7 +292,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       }
     }
 
-		g.setColor ( new Color ( 47, 77, 96 ) );
+		g.setColor ( new Color ( 60, 60, 60 ) );  // Main window
 	  g.fillRect ( 0, 0, win_w, win_h );
 
 		if (frame_image == null) {
@@ -432,17 +432,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   }
 
   public void mouseClicked ( MouseEvent e ) {
-    System.out.println ( "Mouse clicked" );
+    // System.out.println ( "Mouse clicked" );
     super.mouseClicked(e);
   }
 
   public void mousePressed ( MouseEvent e ) {
-    System.out.println ( "Mouse pressed" );
+    // System.out.println ( "Mouse pressed" );
     super.mousePressed(e);
   }
 
   public void mouseReleased ( MouseEvent e ) {
-    System.out.println ( "Mouse released" );
+    // System.out.println ( "Mouse released" );
     super.mouseReleased(e);
   }
 
@@ -450,12 +450,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   // MouseMotionListener methods:
 
   public void mouseDragged ( MouseEvent e ) {
-    System.out.println ( "Mouse dragged" );
+    // System.out.println ( "Mouse dragged" );
     super.mouseDragged(e);
   }
 
   public void mouseMoved ( MouseEvent e ) {
-    System.out.println ( "Mouse moved" );
+    // System.out.println ( "Mouse moved" );
     super.mouseMoved ( e );
   }
 
@@ -513,7 +513,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   // MouseWheelListener methods:
   public void mouseWheelMoved ( MouseWheelEvent e ) {
-    System.out.println ( "Mouse wheel moved" );
+    System.out.println ( "Mouse wheel moved with shiftDown: " + e.isShiftDown() + " ... full event: " + e );
     /*
     if (e.isShiftDown()) System.out.println ( "Wheel Event with Shift" );
     if (e.isControlDown()) System.out.println ( "Wheel Event with Control" );
@@ -541,7 +541,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   // KeyListener methods:
 
   public void keyTyped ( KeyEvent e ) {
-    System.out.println ( "Key Typed: " + e );
+    // System.out.println ( "Key Typed: " + e );
     if (Character.toUpperCase(e.getKeyChar()) == ' ') {
       // Space bar toggles between drawing mode and move mode
     } else if (Character.toUpperCase(e.getKeyChar()) == 'P') {
@@ -551,7 +551,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     repaint();
   }
   public void keyPressed ( KeyEvent e ) {
-    System.out.println ( "Key Pressed, e = " + e );
+    // System.out.println ( "Key Pressed, e = " + e );
     if ( (e.getKeyCode() == 33) || (e.getKeyCode() == 34) || (e.getKeyCode() == 38) || (e.getKeyCode() == 40) ) {
       // Figure out if there's anything to do
       if (frames != null) {
@@ -572,7 +572,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     //super.keyPressed ( e );
   }
   public void keyReleased ( KeyEvent e ) {
-    System.out.println ( "Key Released" );
+    // System.out.println ( "Key Released" );
     //super.keyReleased ( e );
   }
 
