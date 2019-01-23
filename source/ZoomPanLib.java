@@ -5,7 +5,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 
-public class ZoomPanLib extends Panel implements MouseListener, MouseMotionListener, MouseWheelListener {
+public class ZoomPanLib extends JPanel implements MouseListener, MouseMotionListener, MouseWheelListener {
 
   // The x and y variables in this demo are from an arbitrary user coordinate space
   // The xs and py variables are in screen space
