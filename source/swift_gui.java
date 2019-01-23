@@ -181,11 +181,63 @@ class FileListDialog extends JDialog {
 
 
 class AlignmentPanel extends JPanel {
+  public swift_gui swift;
 	public void paint (Graphics g) {
 	  int w = size().width;
 	  int h = size().height;
-		g.setColor ( new Color ( 255, 0, 255 ) );
-	  g.drawLine ( 0, 0, w, h );
+    if (swift.frames != null) {
+      if (swift.frames.size() > 0) {
+        if ( (swift.frame_index >= 0) && (swift.frame_index < swift.frames.size()) ) {
+		      g.setColor ( new Color ( 255, 255, 255 ) );
+	        g.drawLine ( 0, 0, w, h );
+          BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
+
+		      int img_w = frame_image.getWidth();
+		      int img_h = frame_image.getHeight();
+
+		      // Calculate the size to fit the image in the side pane (assuming width constrained)
+		      int padding = 10;
+		      int xoff = padding;
+		      double img_scale = (w-(2.0*padding)) / img_w;
+		      int scaled_w = (int)(img_w * img_scale);
+		      int scaled_h = (int)(img_h * img_scale);
+
+		      if ( ( (3*scaled_h) + (4*padding) ) > h ) {
+		        // Images are actually height constrained, so recalculate
+		        img_scale = (h-(4.0*padding)) / (3*img_h);
+		        scaled_w = (int)(img_w * img_scale);
+		        scaled_h = (int)(img_h * img_scale);
+		        xoff = (w-scaled_w) / 2;
+		      }
+
+          g.drawImage ( frame_image, xoff, padding, scaled_w, scaled_h, this );
+
+          g.drawImage ( frame_image, xoff, (h/2)-(scaled_h/2), scaled_w, scaled_h, this );
+
+          g.drawImage ( frame_image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
+
+          //frame_image = frames.get(frame_index).image;
+        }
+      }
+    }
+	}
+}
+
+
+class ControlPanel extends JPanel {
+  public swift_gui swift;
+	public void paint (Graphics g) {
+	  int w = size().width;
+	  int h = size().height;
+    if (swift.frames != null) {
+      if (swift.frames.size() > 0) {
+        if ( (swift.frame_index >= 0) && (swift.frame_index < swift.frames.size()) ) {
+		      g.setColor ( new Color ( 255, 0, 255 ) );
+	        g.drawLine ( 0, 0, w, h );
+          //frame_image = frames.get(frame_index).image;
+        }
+      }
+    }
 	}
 }
 
@@ -193,6 +245,8 @@ class AlignmentPanel extends JPanel {
 public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
 
   JFrame parent_frame = null;
+  AlignmentPanel alignment_panel = null;
+  ControlPanel control_panel = null;
 
 	static int w=1024, h=768;
 
@@ -208,6 +262,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	public ArrayList<swift_gui_frame> frames = new ArrayList<swift_gui_frame>();  // Argument (if any) specifies initial capacity (default 10)
   public int frame_index = -1;
 
+
+  public void repaint_panels () {
+    alignment_panel.repaint();
+    control_panel.repaint();
+  }
 
 	public void paint_frame (Graphics g) {
 	  Dimension win_s = getSize();
@@ -230,9 +289,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 		g.setColor ( new Color ( 0, 0, 0 ) );
 	  g.fillRect ( 0, 0, win_w, win_h );
-	  g.setColor ( new Color ( 255, 255, 0 ) );
-	  g.drawLine ( 0,0,1000,1000 );
-    // g_buffer.fillRect (0,0,size().width, size().height);
 
 		if (frame_image == null) {
 		  System.out.println ( "Image is null" );
@@ -418,6 +474,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frame_index < 0) frame_index = 0;
         if (frame_index >= frames.size()) frame_index = frames.size()-1;
         set_title();
+        repaint_panels();
       }
     }
   }
@@ -539,6 +596,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         }
       }
       repaint();
+      repaint_panels();
 		  set_title();
     } else if ( action_source == import_images_menu_item ) {
 		  file_chooser.setMultiSelectionEnabled(true);
@@ -567,6 +625,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		        center_current_image();
 		      }
 	        repaint();
+          repaint_panels();
 		    }
 		  }
 		  set_title();
@@ -589,6 +648,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       this.frames = new ArrayList<swift_gui_frame>();
       this.frame_index = -1;
       repaint();
+      repaint_panels();
 		  set_title();
     } else if ( action_source == list_all_images_menu_item ) {
       if (file_list_dialog != null) {
@@ -666,15 +726,19 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         zp.parent_frame = app_frame;
         zp.current_directory = System.getProperty("user.dir");
 
-        AlignmentPanel alignment_panel = new AlignmentPanel();
-        AlignmentPanel control_panel = new AlignmentPanel();
-        alignment_panel.setBackground ( new Color (0,0,0) );
+        zp.alignment_panel = new AlignmentPanel();
+        zp.control_panel = new ControlPanel();
+        zp.alignment_panel.setBackground ( new Color (0,0,0) );
+        zp.alignment_panel.swift = zp;
+        zp.control_panel.swift = zp;
 
-				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, zp, alignment_panel );
-				image_split_pane.setResizeWeight( 0.7 );
+				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, zp, zp.alignment_panel );
+				image_split_pane.setOneTouchExpandable( true );
+				image_split_pane.setResizeWeight( 0.78 );
 
-				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, control_panel );
+				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, zp.control_panel );
 				split_pane.setResizeWeight( 0.9 );
+				split_pane.setOneTouchExpandable( true );
 
 
 				zp.setBackground ( new Color (0,0,0) );
