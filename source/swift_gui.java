@@ -188,7 +188,7 @@ class AlignmentPanel extends JPanel {
     if (swift.frames != null) {
       if (swift.frames.size() > 0) {
         if ( (swift.frame_index >= 0) && (swift.frame_index < swift.frames.size()) ) {
-		      g.setColor ( new Color ( 238, 238, 238 ) );
+		      g.setColor ( new Color ( 60, 60, 60 ) );
 		      g.fillRect ( 0, 0, w, h );
 
           BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
@@ -292,7 +292,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       }
     }
 
-		g.setColor ( new Color ( 0, 0, 0 ) );
+		g.setColor ( new Color ( 47, 77, 96 ) );
 	  g.fillRect ( 0, 0, win_w, win_h );
 
 		if (frame_image == null) {
@@ -548,16 +548,16 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     repaint();
   }
   public void keyPressed ( KeyEvent e ) {
-    // System.out.println ( "Key Pressed, e = " + e );
-    if ( (e.getKeyCode() == 33) || (e.getKeyCode() == 34) ) {
+    System.out.println ( "Key Pressed, e = " + e );
+    if ( (e.getKeyCode() == 33) || (e.getKeyCode() == 34) || (e.getKeyCode() == 38) || (e.getKeyCode() == 40) ) {
       // Figure out if there's anything to do
       if (frames != null) {
         if (frames.size() > 0) {
           int delta = 0;
-          if (e.getKeyCode() == 33) {
+          if ((e.getKeyCode() == 33) || (e.getKeyCode() == 38)) {
             System.out.println ( "Page Up with " + frames.size() + " frames" );
             delta = 1;
-          } else if (e.getKeyCode() == 34) {
+          } else if ((e.getKeyCode() == 34) || (e.getKeyCode() == 40)) {
             System.out.println ( "Page Down with " + frames.size() + " frames" );
             delta = -1;
           }
@@ -762,7 +762,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         zp.alignment_panel = new AlignmentPanel();
         zp.control_panel = new ControlPanel();
-        zp.alignment_panel.setBackground ( new Color (0,0,0) );
+        zp.alignment_panel.setBackground ( new Color (60,60,60) );
         zp.alignment_panel.swift = zp;
         zp.control_panel.swift = zp;
 
@@ -775,7 +775,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 				split_pane.setOneTouchExpandable( true );
 
 
-				zp.setBackground ( new Color (0,0,0) );
+				zp.setBackground ( new Color (60,60,60) );
 		    zp.file_chooser = new MyFileChooser ( zp.current_directory );
 
         for (int i=0; i<actual_file_names.size(); i++) {
