@@ -1,14 +1,14 @@
 /* This is a java substitute for some qiv functions. */
 
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
+import java.io.*;
+
 import java.awt.*;
 import java.awt.event.*;
-import java.util.*;
-
-import java.io.*;
 import java.awt.image.*;
 import javax.imageio.ImageIO;
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.util.*;
 
 
 class MyFileChooser extends JFileChooser {
@@ -662,6 +662,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         AlignmentPanel alignment_panel = new AlignmentPanel();
         AlignmentPanel control_panel = new AlignmentPanel();
+        alignment_panel.setBackground ( new Color (0,0,0) );
 
 				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, zp, alignment_panel );
 				image_split_pane.setResizeWeight( 0.7 );
