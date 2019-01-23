@@ -23,6 +23,7 @@ remod: remod.c swimio.h debug.h makefile
 # "Fixed Date" rule for run_swift.jar that produces a consistent jar file the same for each compilation
 run_swift.jar: run_swift.java makefile
 	rm -f *.class
+	mkdir -p META-INF
 	cp -f run_swift.MF META-INF/MANIFEST.MF
 	javac -nowarn -source 1.6 run_swift.java
 	touch -t 201901181818 *.class
@@ -31,6 +32,7 @@ run_swift.jar: run_swift.java makefile
 # "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
 swift_gui.jar: swift_gui.java ZoomPanLib.java makefile
 	rm -f *.class
+	mkdir -p META-INF
 	cp -f swift_gui.MF META-INF/MANIFEST.MF
 	javac -nowarn -source 1.6 swift_gui.java
 	touch -t 201901181818 *.class
