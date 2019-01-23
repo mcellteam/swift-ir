@@ -180,7 +180,7 @@ class FileListDialog extends JDialog {
 }
 
 
-class AlignmentPanel extends Panel {
+class AlignmentPanel extends JPanel {
 	public void paint (Graphics g) {
 	  int w = size().width;
 	  int h = size().height;
@@ -227,6 +227,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         frame_image = frames.get(frame_index).image;
       }
     }
+
+		g.setColor ( new Color ( 0, 0, 0 ) );
+	  g.fillRect ( 0, 0, win_w, win_h );
+	  g.setColor ( new Color ( 255, 255, 0 ) );
+	  g.drawLine ( 0,0,1000,1000 );
+    // g_buffer.fillRect (0,0,size().width, size().height);
 
 		if (frame_image == null) {
 		  System.out.println ( "Image is null" );
@@ -405,6 +411,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
   }
 
+  public void change_frame ( int delta ) {
+    if (frames != null) {
+      if (frames.size() > 0) {
+        frame_index += delta;
+        if (frame_index < 0) frame_index = 0;
+        if (frame_index >= frames.size()) frame_index = frames.size()-1;
+        set_title();
+      }
+    }
+  }
+
   // MouseWheelListener methods:
   public void mouseWheelMoved ( MouseWheelEvent e ) {
     /*
@@ -420,16 +437,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       if (!e.isShiftDown()) {
         if (frames != null) {
           if (frames.size() > 0) {
-            int scroll_wheel_delta = -e.getWheelRotation();
-            frame_index += scroll_wheel_delta;
-            if (frame_index < 0) frame_index = 0;
-            if (frame_index >= frames.size()) frame_index = frames.size()-1;
-            set_title();
-            /*
-            if (this.parent_frame != null) {
-              this.parent_frame.setTitle ( "Section: " + (frame_index+1) );
-            }
-            */
+            change_frame ( -e.getWheelRotation() );
           }
         }
       } else {
@@ -466,10 +474,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             System.out.println ( "Page Down with " + frames.size() + " frames" );
             delta = -1;
           }
-          if ((frame_index+delta >= 0) && (frame_index+delta < frames.size())) {
-            frame_index += delta;
-            repaint();
-          }
+          change_frame ( delta );
+          repaint();
         }
       }
     }
@@ -685,6 +691,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 				app_frame.add ( split_pane );
 
+        zp.addKeyListener ( zp );
+				app_frame.pack();
+				app_frame.setSize ( w, h );
+				app_frame.setVisible ( true );
+			  // Request the focus to make the drawing window responsive to keyboard commands without any clicking required
+				zp.requestFocus();
 
 				JMenuBar menu_bar = new JMenuBar();
           JMenuItem mi;
@@ -760,12 +772,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 				app_frame.setJMenuBar ( menu_bar );
 				
 
-        zp.addKeyListener ( zp );
-				app_frame.pack();
-				app_frame.setSize ( w, h );
-				app_frame.setVisible ( true );
-			  // Request the focus to make the drawing window responsive to keyboard commands without any clicking required
-				zp.requestFocus();
 			}
 		} );
 
