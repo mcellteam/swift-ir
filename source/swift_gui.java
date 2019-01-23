@@ -188,8 +188,9 @@ class AlignmentPanel extends JPanel {
     if (swift.frames != null) {
       if (swift.frames.size() > 0) {
         if ( (swift.frame_index >= 0) && (swift.frame_index < swift.frames.size()) ) {
-		      g.setColor ( new Color ( 255, 255, 255 ) );
-	        g.drawLine ( 0, 0, w, h );
+		      g.setColor ( new Color ( 238, 238, 238 ) );
+		      g.fillRect ( 0, 0, w, h );
+
           BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
 
 		      int img_w = frame_image.getWidth();
@@ -210,11 +211,13 @@ class AlignmentPanel extends JPanel {
 		        xoff = (w-scaled_w) / 2;
 		      }
 
-          g.drawImage ( frame_image, xoff, padding, scaled_w, scaled_h, this );
-
+          if (swift.frame_index >= 1) {
+            g.drawImage ( swift.frames.get(swift.frame_index-1).image, xoff, padding, scaled_w, scaled_h, this );
+          }
           g.drawImage ( frame_image, xoff, (h/2)-(scaled_h/2), scaled_w, scaled_h, this );
-
-          g.drawImage ( frame_image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
+          if (swift.frame_index < (swift.frames.size()-1)) {
+            g.drawImage ( swift.frames.get(swift.frame_index+1).image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
+          }
 
           //frame_image = frames.get(frame_index).image;
         }
