@@ -645,10 +645,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 			public void run() {
 			  JFrame app_frame = new JFrame("swift_gui");
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
-				
+
         swift_gui zp = new swift_gui();
         zp.parent_frame = app_frame;
         zp.current_directory = System.getProperty("user.dir");
+
+        ZoomPanLib zp2 = new ZoomPanLib();
+        //zp2.parent_frame = app_frame;
+        //zp2.current_directory = System.getProperty("user.dir");
+
+				JSplitPane split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, zp, zp2 );
+				split_pane.setResizeWeight( 0.7 );
 
 				JMenuBar menu_bar = new JMenuBar();
           JMenuItem mi;
@@ -735,7 +742,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         zp.set_title();
 
-				app_frame.add ( zp );
+				app_frame.add ( split_pane );
         zp.addKeyListener ( zp );
 				app_frame.pack();
 				app_frame.setSize ( w, h );
