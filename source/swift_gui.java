@@ -703,46 +703,46 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 			  JFrame app_frame = new JFrame("swift_gui");
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 
-        swift_gui zp = new swift_gui();
-        zp.parent_frame = app_frame;
-        zp.current_directory = System.getProperty("user.dir");
+        swift_gui swift_gui_panel = new swift_gui();
+        swift_gui_panel.parent_frame = app_frame;
+        swift_gui_panel.current_directory = System.getProperty("user.dir");
 
-        zp.alignment_panel = new AlignmentPanel();
-        zp.control_panel = new ControlPanel();
-        zp.alignment_panel.setBackground ( new Color (60,60,60) );
-        zp.alignment_panel.swift = zp;
-        zp.control_panel.swift = zp;
+        swift_gui_panel.alignment_panel = new AlignmentPanel();
+        swift_gui_panel.control_panel = new ControlPanel();
+        swift_gui_panel.alignment_panel.setBackground ( new Color (60,60,60) );
+        swift_gui_panel.alignment_panel.swift = swift_gui_panel;
+        swift_gui_panel.control_panel.swift = swift_gui_panel;
 
-				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, zp, zp.alignment_panel );
+				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
 				image_split_pane.setOneTouchExpandable( true );
 				image_split_pane.setResizeWeight( 0.78 );
 
-				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, zp.control_panel );
+				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, swift_gui_panel.control_panel );
 				split_pane.setResizeWeight( 0.9 );
 				split_pane.setOneTouchExpandable( true );
 
 
-				zp.setBackground ( new Color (60,60,60) );
-		    zp.file_chooser = new MyFileChooser ( zp.current_directory );
+				swift_gui_panel.setBackground ( new Color (60,60,60) );
+		    swift_gui_panel.file_chooser = new MyFileChooser ( swift_gui_panel.current_directory );
 
         for (int i=0; i<actual_file_names.size(); i++) {
           System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
-          zp.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
-          zp.frame_index = 0; // set to the first if any frames are loaded
+          swift_gui_panel.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
+          swift_gui_panel.frame_index = 0; // set to the first if any frames are loaded
         }
-        zp.file_list_dialog = new FileListDialog(app_frame, zp);
-        zp.file_list_dialog.pack();
+        swift_gui_panel.file_list_dialog = new FileListDialog(app_frame, swift_gui_panel);
+        swift_gui_panel.file_list_dialog.pack();
 
-        zp.set_title();
+        swift_gui_panel.set_title();
 
 				app_frame.add ( split_pane );
 
-        zp.addKeyListener ( zp );
+        swift_gui_panel.addKeyListener ( swift_gui_panel );
 				app_frame.pack();
 				app_frame.setSize ( w, h );
 				app_frame.setVisible ( true );
 			  // Request the focus to make the drawing window responsive to keyboard commands without any clicking required
-				zp.requestFocus();
+				swift_gui_panel.requestFocus();
 
 				JMenuBar menu_bar = new JMenuBar();
           JMenuItem mi;
@@ -750,8 +750,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           JMenu file_menu = new JMenu("File");
 
             JMenu import_menu = new JMenu("Import");
-              import_menu.add ( mi = zp.import_images_menu_item = new JMenuItem("Images...") );
-              mi.addActionListener(zp);
+              import_menu.add ( mi = swift_gui_panel.import_images_menu_item = new JMenuItem("Images...") );
+              mi.addActionListener(swift_gui_panel);
             file_menu.add ( import_menu );
 
             // NOTE: Adding the same JMenuItem to multiple JMenus doesn't work
@@ -762,61 +762,62 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             //      using the same Action object. This hasn't been done here (yet).
             //   For this reason, clear_all_images_menu_item isn't added here.
             //JMenu clear_menu = new JMenu("Clear");
-            //  clear_menu.add ( zp.clear_all_images_menu_item );
+            //  clear_menu.add ( swift_gui_panel.clear_all_images_menu_item );
             //file_menu.add ( clear_menu );
 
             JMenu list_menu = new JMenu("List");
-              list_menu.add ( mi = zp.list_all_images_menu_item = new JMenuItem("All Images") );
-              mi.addActionListener(zp);
+              list_menu.add ( mi = swift_gui_panel.list_all_images_menu_item = new JMenuItem("All Images") );
+              mi.addActionListener(swift_gui_panel);
             file_menu.add ( list_menu );
 
             file_menu.add ( mi = new JMenuItem("Print") );
-            mi.addActionListener(zp);
+            mi.addActionListener(swift_gui_panel);
 
             file_menu.addSeparator();
 
-            file_menu.add ( mi = zp.clear_all_images_menu_item = new JMenuItem("Clear All") );
-            mi.addActionListener(zp);
+            file_menu.add ( mi = swift_gui_panel.clear_all_images_menu_item = new JMenuItem("Clear All") );
+            mi.addActionListener(swift_gui_panel);
 
             file_menu.addSeparator();
 
             file_menu.add ( mi = new JMenuItem("Exit") );
-            mi.addActionListener(zp);
+            mi.addActionListener(swift_gui_panel);
 
             menu_bar.add ( file_menu );
 
           JMenu tools_menu = new JMenu("Images");
 
-            // tools_menu.add ( mi = zp.refresh_images_menu_item = new JMenuItem("Refresh") );
-            // mi.addActionListener(zp);
+            // tools_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+            // mi.addActionListener(swift_gui_panel);
 
             // tools_menu.addSeparator();
 
-            tools_menu.add ( mi = zp.refresh_images_menu_item = new JMenuItem("Refresh") );
-            mi.addActionListener(zp);
+            tools_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+            mi.addActionListener(swift_gui_panel);
 
             tools_menu.addSeparator();
 
-            tools_menu.add ( mi = zp.center_image_menu_item = new JMenuItem("Center") );
-            mi.addActionListener(zp);
+            tools_menu.add ( mi = swift_gui_panel.center_image_menu_item = new JMenuItem("Center") );
+            mi.addActionListener(swift_gui_panel);
 
             tools_menu.addSeparator();
 
-            tools_menu.add ( mi = zp.zoom_actual_menu_item = new JMenuItem("Actual Size") );
-            mi.addActionListener(zp);
+            tools_menu.add ( mi = swift_gui_panel.zoom_actual_menu_item = new JMenuItem("Actual Size") );
+            mi.addActionListener(swift_gui_panel);
 
             menu_bar.add ( tools_menu );
 
           JMenu help_menu = new JMenu("Help");
             help_menu.add ( mi = new JMenuItem("Commands") );
-            mi.addActionListener(zp);
+            mi.addActionListener(swift_gui_panel);
             help_menu.add ( mi = new JMenuItem("Version...") );
-            mi.addActionListener(zp);
+            mi.addActionListener(swift_gui_panel);
             menu_bar.add ( help_menu );
 
 
 				app_frame.setJMenuBar ( menu_bar );
-				
+				swift_gui_panel.update_control_panel();
+				swift_gui_panel.center_current_image();
 
 			}
 		} );
