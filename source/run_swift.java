@@ -504,8 +504,8 @@ public class run_swift {
     return ( s );
   }
 
-  public static void align_files_by_index ( Runtime rt, String image_files[], int fixed_index, int align_index, 
-                                            int window_size, int addx, int addy, int output_level ) {
+  public static void align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
+                                           int window_size, int addx, int addy, int output_level ) {
 
     boolean use_line_parts = true;
 
@@ -547,7 +547,7 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      interactive_commands = "unused -i 2 -k keep."+image_type_extension+" " + image_files[fixed_index] + " " + image_files[align_index] + "\n";
+      interactive_commands = "unused -i 2 -k keep."+image_type_extension+" " + fixed_image_file + " " + align_image_file + "\n";
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
@@ -615,8 +615,8 @@ public class run_swift {
         int x = loop_signs_2x2[loop_index][0];
         int y = loop_signs_2x2[loop_index][1];
         interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
-        interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
-        interactive_commands += image_files[align_index] + " " + patx + " " + paty + "\n";
+        interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
+        interactive_commands += align_image_file + " " + patx + " " + paty + "\n";
       }
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
@@ -666,7 +666,7 @@ if (use_line_parts) {
         }
       }
 
-      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands = "F " + align_image_file + "\n";
       interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
       interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
       interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
@@ -685,7 +685,7 @@ if (use_line_parts) {
         System.exit ( 5 );
       }
 
-      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands = "F " + align_image_file + "\n";
       interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
       interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
@@ -772,8 +772,8 @@ if (use_line_parts) {
         int x = loop_signs_2x2[loop_index][0];
         int y = loop_signs_2x2[loop_index][1];
         interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
-        interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
-        interactive_commands += image_files[align_index] + " " + patx + " " + paty + " ";
+        interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
+        interactive_commands += align_image_file + " " + patx + " " + paty + " ";
         interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
       }
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
@@ -824,7 +824,7 @@ if (use_line_parts) {
         }
       }
 
-      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands = "F " + align_image_file + "\n";
       interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
       interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
       interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
@@ -837,7 +837,7 @@ if (use_line_parts) {
         if (output_level > 10) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
       }
 
-      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands = "F " + align_image_file + "\n";
       interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
       interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
@@ -924,8 +924,8 @@ if (use_line_parts) {
         int x = loop_signs_3x3[loop_index][0];
         int y = loop_signs_3x3[loop_index][1];
         interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
-        interactive_commands += image_files[fixed_index] + " " + tarx + " " + tary + " ";
-        interactive_commands += image_files[align_index] + " " + patx + " " + paty + " ";
+        interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
+        interactive_commands += align_image_file + " " + patx + " " + paty + " ";
         interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
       }
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
@@ -976,7 +976,7 @@ if (use_line_parts) {
         }
       }
 
-      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands = "F " + align_image_file + "\n";
       interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
       interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
       interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
@@ -989,7 +989,7 @@ if (use_line_parts) {
       interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + "\n";
       interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + "\n";
 
-      interactive_commands += "RW " + "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"\n";
+      interactive_commands += "RW " + aligned_image_file + "\n";
 } else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
@@ -1001,7 +1001,7 @@ if (use_line_parts) {
         System.exit ( 5 );
       }
 
-      interactive_commands = "F " + image_files[align_index] + "\n";
+      interactive_commands = "F " + align_image_file + "\n";
       interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
       interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
       interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
@@ -1014,12 +1014,14 @@ if (use_line_parts) {
       interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
       interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
       // interactive_commands += "RW iter3_mir_out."+image_type_extension+"\n";
-      interactive_commands += "RW " + "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"\n";
+      interactive_commands += "RW " + aligned_image_file + "\n";
 }
 
 
       // Change the name of the file in this slot to use the newly aligned image:
-      image_files[align_index] = "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"";
+      // NOTE: This is now done outside of this alignment function
+      // image_files[align_index] = "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"";
+      // image_files[align_index] = aligned_image_file;
 
 
       f = new File ( System.getenv("PWD") + File.separator + "third.mir" );
@@ -1374,13 +1376,16 @@ if (use_line_parts) {
       if (output_level > 0) System.out.println ( "=================================================================================" );
       if (output_level > 0) System.out.println ( "=================================================================================" );
 
+      String new_aligned_image_file_name = "aligned_" + String.format("%03d", alignment_sequence[alignment_index][0]) + "."+image_type_extension;
 
+      align_files_by_name ( rt,
+                            image_files[alignment_sequence[alignment_index][1]],
+                            image_files[alignment_sequence[alignment_index][0]],
+                            new_aligned_image_file_name,
+                            window_size, addx, addy, output_level );
 
-
-      align_files_by_index ( rt, image_files, alignment_sequence[alignment_index][1], alignment_sequence[alignment_index][0],
-                             window_size, addx, addy, output_level );
-
-
+      // Update the name being used in that slot
+      image_files[alignment_sequence[alignment_index][0]] = new_aligned_image_file_name;
 
 
     }
