@@ -296,7 +296,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	  g.fillRect ( 0, 0, win_w, win_h );
 
 		if (frame_image == null) {
-		  System.out.println ( "Image is null" );
+		  // System.out.println ( "Image is null" );
 		} else {
       /*
       // System.out.println ( "Image is NOT null" );
@@ -513,7 +513,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   // MouseWheelListener methods:
   public void mouseWheelMoved ( MouseWheelEvent e ) {
-    System.out.println ( "Mouse wheel moved with shiftDown: " + e.isShiftDown() + " ... full event: " + e );
+    // System.out.println ( "Mouse wheel moved with shiftDown: " + e.isShiftDown() + " ... full event: " + e );
     /*
     if (e.isShiftDown()) System.out.println ( "Wheel Event with Shift" );
     if (e.isControlDown()) System.out.println ( "Wheel Event with Control" );
