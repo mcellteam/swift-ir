@@ -670,6 +670,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
     System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
     
+    /*
     {
       File current_directory = new File ( "." );
       System.out.println ( "File = " + current_directory );
@@ -682,6 +683,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         } catch (Exception e) {
         }
       }
+    }
+    */
+    for (int i=0; i<file_name_args.size(); i++) {
+      actual_file_names.add ( file_name_args.get(i) );
     }
 
     System.out.println ( "Command line specified " + actual_file_names.size() + " actual files:" );
@@ -721,6 +726,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		    zp.file_chooser = new MyFileChooser ( zp.current_directory );
 
         for (int i=0; i<actual_file_names.size(); i++) {
+          System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
           zp.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
           zp.frame_index = 0; // set to the first if any frames are loaded
         }
