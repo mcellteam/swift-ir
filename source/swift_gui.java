@@ -670,7 +670,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
     System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
     
-    /*
+    /* I'm not sure why this was needed in run_swift.java but causes problems here.
     {
       File current_directory = new File ( "." );
       System.out.println ( "File = " + current_directory );
