@@ -65,69 +65,6 @@ class swift_gui_frame {
   }
 }
 
-class glob_filter implements FilenameFilter {
-
-  /* http://shengwangi.blogspot.com/2015/11/glob-in-java-file-related-match.html
-    Here are the rules for glob:
-        * match any char except a directory boundary
-        ** match any char include a directory boundary
-        ? match any ONE char
-        [] same as regular express, like [0-9] match any ONE digit.
-        {} match a collection of patten separated by comma ','. Such as {A*, b} means either a string start with 'A' or a single char 'b'. 
-  */
-
-  String search_pattern = null;
-
-  public glob_filter ( String search_pattern ) {
-    super();
-    this.search_pattern = search_pattern;
-  }
-
-  public boolean matches(String text, String pattern) {
-    String rest = null;
-    int pos = pattern.indexOf('*');
-    if (pos != -1) {
-      rest = pattern.substring(pos + 1);
-      pattern = pattern.substring(0, pos);
-    }
-
-    if (pattern.length() > text.length())
-      return false;
-
-    // handle the part up to the first *
-    for (int i = 0; i < pattern.length(); i++)
-      if (pattern.charAt(i) != '?' && !pattern.substring(i, i + 1).equalsIgnoreCase(text.substring(i, i + 1)))
-        return false;
-
-    // recurse for the part after the first *, if any
-    if (rest == null) {
-      return pattern.length() == text.length();
-    } else {
-      for (int i = pattern.length(); i <= text.length(); i++) {
-        if (matches(text.substring(i), rest))
-          return true;
-      }
-      return false;
-    }
-  }
-
-  public boolean accept ( File dir, String name ) {
-    /*
-      Tests if a specified file should be included in a file list.
-
-      Parameters:
-          dir - the directory in which the file was found.
-          name - the name of the file.
-      Returns:
-          true if and only if the name should be included in the file list; false otherwise.
-    */
-    boolean match = matches ( name, this.search_pattern );
-    // System.out.println ( "accept{" + this.search_pattern + "} called with: " + dir + ", and " + name + " ==> " + match );
-    return ( match );
-  }
-
-}
-
 
 class FileListDialog extends JDialog {
   private JTextArea textArea;
@@ -701,6 +638,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
 
 	public static void main ( String[] args ) {
+
+    System.out.println ( "Translation of 15: " + run_swift.translate_exit ( 128+15 ) );
 
     boolean dont_sort = false;
     boolean start_slide_show = false;
