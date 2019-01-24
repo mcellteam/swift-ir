@@ -27,7 +27,8 @@ run_swift.jar: run_swift.java makefile
 	cp -f run_swift.MF META-INF/MANIFEST.MF
 	javac -nowarn -source 1.6 run_swift.java
 	touch -t 201901181818 *.class
-	zip -X run_swift.jar META-INF/MANIFEST.MF run_swift.java *.class
+	touch -t 201901181818 META-INF/MANIFEST.MF
+	zip -X run_swift.jar META-INF/MANIFEST.MF *.class
 
 # "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
 swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java makefile
@@ -36,7 +37,8 @@ swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java makefile
 	cp -f swift_gui.MF META-INF/MANIFEST.MF
 	javac -nowarn -source 1.6 swift_gui.java
 	touch -t 201901181818 *.class
-	zip -X swift_gui.jar META-INF/MANIFEST.MF swift_gui.java *.class
+	touch -t 201901181818 META-INF/MANIFEST.MF
+	zip -X swift_gui.jar META-INF/MANIFEST.MF *.class
 
 sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum swim > sha1sum.txt
