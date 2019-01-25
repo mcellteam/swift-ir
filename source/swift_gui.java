@@ -761,7 +761,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           f.println ( "{" );
           f.println ( "  \"method\": \"SWiFT-IR\"," );
           f.println ( "  \"data\": {" );
-          f.println ( "    \"defaults\": []," );
+          f.println ( "    \"defaults\": {}," );
           f.println ( "    \"imagestack\": [" );
 
 	        for (int i=0; i<this.frames.size(); i++) {
