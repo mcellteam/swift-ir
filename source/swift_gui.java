@@ -1,4 +1,4 @@
-/* This is a java substitute for some qiv functions. */
+/* Image Alignment Tool based on SWiFT */
 
 import java.io.*;
 
@@ -24,14 +24,25 @@ class MyFileChooser extends JFileChooser {
   }
 }
 
+class alignment_settings {
+  swift_gui_frame prev_frame=null;
+  swift_gui_frame next_frame=null;
+  int window_size=1024;
+}
+
 class swift_gui_frame {
   public File f=null;
   public boolean valid=false;
   public BufferedImage image=null;
 
+  alignment_settings prev_alignment=null;
+  alignment_settings next_alignment=null;
+
   swift_gui_frame ( File f, boolean load ) {
     this.f = f;
-    this.load_file();
+    if (load) {
+      this.load_file();
+    }
   }
 
   public void load_file () {
@@ -91,8 +102,6 @@ class FileListDialog extends JDialog {
         // Build the model from the current text
         System.out.println ( "Dialog closing with text:" );
         System.out.println ( textArea.getText() );
-
-
         setVisible ( false );
         parent_frame.repaint();
       }
@@ -119,6 +128,9 @@ class FileListDialog extends JDialog {
 
 class AlignmentPanel extends JPanel {
   public swift_gui swift;
+  AlignmentPanel (swift_gui swift) {
+    this.swift = swift;
+  }
 	public void paint (Graphics g) {
 	  int w = size().width;
 	  int h = size().height;
@@ -128,32 +140,34 @@ class AlignmentPanel extends JPanel {
     if (swift.frames != null) {
       if (swift.frames.size() > 0) {
         if ( (swift.frame_index >= 0) && (swift.frame_index < swift.frames.size()) ) {
-          BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
+          if (swift.frames.get(swift.frame_index).image != null) {
+            BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
 
-		      int img_w = frame_image.getWidth();
-		      int img_h = frame_image.getHeight();
+		        int img_w = frame_image.getWidth();
+		        int img_h = frame_image.getHeight();
 
-		      // Calculate the size to fit the image in the side pane (assuming width constrained)
-		      int padding = 10;
-		      int xoff = padding;
-		      double img_scale = (w-(2.0*padding)) / img_w;
-		      int scaled_w = (int)(img_w * img_scale);
-		      int scaled_h = (int)(img_h * img_scale);
+		        // Calculate the size to fit the image in the side pane (assuming width constrained)
+		        int padding = 10;
+		        int xoff = padding;
+		        double img_scale = (w-(2.0*padding)) / img_w;
+		        int scaled_w = (int)(img_w * img_scale);
+		        int scaled_h = (int)(img_h * img_scale);
 
-		      if ( ( (3*scaled_h) + (4*padding) ) > h ) {
-		        // Images are actually height constrained, so recalculate
-		        img_scale = (h-(4.0*padding)) / (3*img_h);
-		        scaled_w = (int)(img_w * img_scale);
-		        scaled_h = (int)(img_h * img_scale);
-		        xoff = (w-scaled_w) / 2;
-		      }
+		        if ( ( (3*scaled_h) + (4*padding) ) > h ) {
+		          // Images are actually height constrained, so recalculate
+		          img_scale = (h-(4.0*padding)) / (3*img_h);
+		          scaled_w = (int)(img_w * img_scale);
+		          scaled_h = (int)(img_h * img_scale);
+		          xoff = (w-scaled_w) / 2;
+		        }
 
-          if (swift.frame_index >= 1) {
-            g.drawImage ( swift.frames.get(swift.frame_index-1).image, xoff, padding, scaled_w, scaled_h, this );
-          }
-          g.drawImage ( frame_image, xoff, (h/2)-(scaled_h/2), scaled_w, scaled_h, this );
-          if (swift.frame_index < (swift.frames.size()-1)) {
-            g.drawImage ( swift.frames.get(swift.frame_index+1).image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
+            if (swift.frame_index >= 1) {
+              g.drawImage ( swift.frames.get(swift.frame_index-1).image, xoff, padding, scaled_w, scaled_h, this );
+            }
+            g.drawImage ( frame_image, xoff, (h/2)-(scaled_h/2), scaled_w, scaled_h, this );
+            if (swift.frame_index < (swift.frames.size()-1)) {
+              g.drawImage ( swift.frames.get(swift.frame_index+1).image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
+            }
           }
 
           //frame_image = frames.get(frame_index).image;
@@ -170,7 +184,9 @@ class ControlPanel extends JPanel {
   public JLabel image_label;
   public JLabel image_size;
   public JLabel image_bits;
-  ControlPanel () {
+  public JTextField window_size;
+  ControlPanel (swift_gui swift) {
+    this.swift = swift;
     image_name = new JTextField("", 40);
     // image_name.setBounds ( 10, 10, 300, 20 );
     // add ( image_name );
@@ -180,6 +196,11 @@ class ControlPanel extends JPanel {
     add ( image_size );
     image_bits = new JLabel("");
     add ( image_bits );
+    add ( new JLabel("WW:") );
+    window_size = new JTextField("",8);
+    window_size.addActionListener ( this.swift );
+    window_size.setActionCommand ( "window_size" );
+    add ( window_size );
   }
 }
 
@@ -208,6 +229,31 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   public void repaint_panels () {
     alignment_panel.repaint();
     control_panel.repaint();
+  }
+
+  public void link_frames() {
+    if (frames != null) {
+      if (frames.size() > 1) {
+        for (int fnum=0; fnum<(frames.size()-1); fnum++) {
+          swift_gui_frame prev = frames.get(fnum);
+          swift_gui_frame next = frames.get(fnum+1);
+          if ((prev.next_alignment == null) && (next.prev_alignment == null) ) {
+            // Make a new one
+            prev.next_alignment = new alignment_settings();
+            next.prev_alignment = prev.next_alignment;
+          } else if (prev.next_alignment == null) {
+            // Attach the previous to the next
+            prev.next_alignment = next.prev_alignment;
+          } else if (next.prev_alignment == null) {
+            // Attach the next to the previous
+            next.prev_alignment = prev.next_alignment;
+          }
+          // Ensure that the shared alignment is properly linked
+          prev.next_alignment.prev_frame = prev;
+          prev.next_alignment.next_frame = next;
+        }
+      }
+    }
   }
 
 	public void paint_frame (Graphics g) {
@@ -417,19 +463,30 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frames.size() > 0) {
           File f = frames.get(frame_index).f;
           control_panel.image_name.setText ( f.getName() );
-          BufferedImage frame_image = frames.get(frame_index).image;
-          control_panel.image_size.setText ( "  Size:"+frame_image.getWidth()+"x"+frame_image.getHeight() );
-          control_panel.image_bits.setText ( "  Depth:"+frame_image.getColorModel().getPixelSize() );
-
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame != null) {
+            if (frame.image != null) {
+              BufferedImage frame_image = frames.get(frame_index).image;
+              control_panel.image_size.setText ( "  Size:"+frame_image.getWidth()+"x"+frame_image.getHeight() );
+              control_panel.image_bits.setText ( "  Depth:"+frame_image.getColorModel().getPixelSize() );
+            }
+            if (frame.next_alignment == null) {
+              control_panel.window_size.setText ( "" );
+            } else {
+              control_panel.window_size.setText ( "" + frame.next_alignment.window_size );
+            }
+          }
         } else {
           control_panel.image_name.setText ( "" );
           control_panel.image_size.setText ( "" );
           control_panel.image_bits.setText ( "" );
+          control_panel.window_size.setText ( "" );
         }
       } else {
         control_panel.image_name.setText ( "" );
         control_panel.image_size.setText ( "" );
         control_panel.image_bits.setText ( "" );
+        control_panel.window_size.setText ( "" );
       }
       control_panel.image_label.setText ( control_panel.image_name.getText() );
     }
@@ -544,7 +601,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     Object action_source = e.getSource();
 
 		String cmd = e.getActionCommand();
-		System.out.println ( "ActionPerformed got \"" + cmd + "\"" );
+		System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
 		
 		if (cmd.equalsIgnoreCase("Print")) {
 		  System.out.println ( "Images:" );
@@ -584,8 +641,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		      int new_frame_index = this.frames.size();
 		      for (int i=0; i<selected_files.length; i++) {
             System.out.println ( "You chose this file: " + selected_files[i] );
-            this.frames.add ( new swift_gui_frame ( selected_files[i], true ) );
+            this.frames.add ( new swift_gui_frame ( selected_files[i], load_images ) );
 		      }
+          link_frames();
 		      // Set the frame index to the first file just added
 		      if (new_frame_index >= this.frames.size()) {
 		        new_frame_index = this.frames.size() - 1;
@@ -630,6 +688,18 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       }
       //repaint();
 		  //set_title();
+		} else if (cmd.equalsIgnoreCase("window_size")) {
+			System.out.println ( "Got a window_size change with " + ((JTextField)action_source).getText() );
+
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.window_size = Integer.parseInt ( ((JTextField)action_source).getText() );
+          }
+        }
+      }
+
 		} else if (cmd.equalsIgnoreCase("Exit")) {
 			System.exit ( 0 );
 		}
@@ -637,13 +707,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
 
+  static boolean load_images = true;
+
 	public static void main ( String[] args ) {
 
     System.out.println ( "Translation of 15: " + run_swift.translate_exit ( 128+15 ) );
 
-    boolean dont_sort = false;
-    boolean start_slide_show = false;
-    double slide_show_dt = 3.0;
 
 	  ArrayList<String> file_name_args = new ArrayList<String>();
 
@@ -651,14 +720,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     while (arg_index < args.length) {
 		  System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
 		  if (args[arg_index].startsWith("-") ) {
-		    if (args[arg_index].equals("-D")) {
-		      dont_sort = true;
-		    } else if (args[arg_index].equals("-s")) {
-		      start_slide_show = true;
-		    } else if (args[arg_index].equals("-d")) {
-		      arg_index++;
-		      slide_show_dt = new Double ( args[arg_index] );
-		      start_slide_show = true;
+		    if (args[arg_index].equals("-l")) {
+		      System.out.println ( "Loading images" );
+		      load_images = true;
+		    } else if (args[arg_index].equals("-nl")) {
+		      System.out.println ( "Not loading images" );
+		      load_images = false;
 		    } else {
 		      System.out.println ( "Unrecognized option: " + args[arg_index] );
 		    }
@@ -707,11 +774,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         swift_gui_panel.parent_frame = app_frame;
         swift_gui_panel.current_directory = System.getProperty("user.dir");
 
-        swift_gui_panel.alignment_panel = new AlignmentPanel();
-        swift_gui_panel.control_panel = new ControlPanel();
+        swift_gui_panel.alignment_panel = new AlignmentPanel(swift_gui_panel);
+        swift_gui_panel.control_panel = new ControlPanel(swift_gui_panel);
         swift_gui_panel.alignment_panel.setBackground ( new Color (60,60,60) );
-        swift_gui_panel.alignment_panel.swift = swift_gui_panel;
-        swift_gui_panel.control_panel.swift = swift_gui_panel;
+        // swift_gui_panel.alignment_panel.swift = swift_gui_panel;
+        // swift_gui_panel.control_panel.swift = swift_gui_panel;
 
 				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
 				image_split_pane.setOneTouchExpandable( true );
@@ -727,9 +794,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         for (int i=0; i<actual_file_names.size(); i++) {
           System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
-          swift_gui_panel.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), true ) );  /// Note: use i<=n to only load first n images
+          swift_gui_panel.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), load_images ) );  /// Note: use i<=n to only load first n images
           swift_gui_panel.frame_index = 0; // set to the first if any frames are loaded
         }
+        swift_gui_panel.link_frames();
         swift_gui_panel.file_list_dialog = new FileListDialog(app_frame, swift_gui_panel);
         swift_gui_panel.file_list_dialog.pack();
 
