@@ -28,6 +28,9 @@ class alignment_settings {
   swift_gui_frame prev_frame=null;
   swift_gui_frame next_frame=null;
   int window_size=1024;
+  int addx=800;
+  int addy=800;
+  int output_level=0;
 }
 
 class swift_gui_frame {
@@ -185,22 +188,49 @@ class ControlPanel extends JPanel {
   public JLabel image_size;
   public JLabel image_bits;
   public JTextField window_size;
+  public JTextField addx;
+  public JTextField addy;
+  public JTextField output_level;
+
   ControlPanel (swift_gui swift) {
     this.swift = swift;
     image_name = new JTextField("", 40);
     // image_name.setBounds ( 10, 10, 300, 20 );
     // add ( image_name );
+
     image_label = new JLabel("");
     add ( image_label );
+
     image_size = new JLabel("");
     add ( image_size );
+
     image_bits = new JLabel("");
     add ( image_bits );
+
     add ( new JLabel("WW:") );
     window_size = new JTextField("",8);
     window_size.addActionListener ( this.swift );
     window_size.setActionCommand ( "window_size" );
     add ( window_size );
+
+    add ( new JLabel("Addx:") );
+    addx = new JTextField("",6);
+    addx.addActionListener ( this.swift );
+    addx.setActionCommand ( "addx" );
+    add ( addx );
+
+    add ( new JLabel("Addy:") );
+    addy = new JTextField("",6);
+    addy.addActionListener ( this.swift );
+    addy.setActionCommand ( "addy" );
+    add ( addy );
+
+    add ( new JLabel("Output Level:") );
+    output_level = new JTextField("",4);
+    output_level.addActionListener ( this.swift );
+    output_level.setActionCommand ( "output_level" );
+    add ( output_level );
+
   }
 }
 
@@ -472,8 +502,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             }
             if (frame.next_alignment == null) {
               control_panel.window_size.setText ( "" );
+              control_panel.addx.setText ( "" );
+              control_panel.addy.setText ( "" );
+              control_panel.output_level.setText ( "" );
             } else {
               control_panel.window_size.setText ( "" + frame.next_alignment.window_size );
+              control_panel.addx.setText ( "" + frame.next_alignment.addx );
+              control_panel.addy.setText ( "" + frame.next_alignment.addy );
+              control_panel.output_level.setText ( "" + frame.next_alignment.output_level );
             }
           }
         } else {
@@ -481,16 +517,29 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           control_panel.image_size.setText ( "" );
           control_panel.image_bits.setText ( "" );
           control_panel.window_size.setText ( "" );
+          control_panel.addx.setText ( "" );
+          control_panel.addy.setText ( "" );
+          control_panel.output_level.setText ( "" );
         }
       } else {
         control_panel.image_name.setText ( "" );
         control_panel.image_size.setText ( "" );
         control_panel.image_bits.setText ( "" );
         control_panel.window_size.setText ( "" );
+        control_panel.addx.setText ( "" );
+        control_panel.addy.setText ( "" );
+        control_panel.output_level.setText ( "" );
       }
       control_panel.image_label.setText ( control_panel.image_name.getText() );
     }
   }
+
+
+  public JTextField addx;
+  public JTextField addy;
+  public JTextField output_level;
+
+
 
   public void change_frame ( int delta ) {
     if (frames != null) {
@@ -690,7 +739,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		  //set_title();
 		} else if (cmd.equalsIgnoreCase("window_size")) {
 			System.out.println ( "Got a window_size change with " + ((JTextField)action_source).getText() );
-
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
@@ -699,7 +747,36 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
-
+		} else if (cmd.equalsIgnoreCase("addx")) {
+			System.out.println ( "Got an addx change with " + ((JTextField)action_source).getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.addx = Integer.parseInt ( ((JTextField)action_source).getText() );
+          }
+        }
+      }
+		} else if (cmd.equalsIgnoreCase("addy")) {
+			System.out.println ( "Got an addy change with " + ((JTextField)action_source).getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.addy = Integer.parseInt ( ((JTextField)action_source).getText() );
+          }
+        }
+      }
+		} else if (cmd.equalsIgnoreCase("output_level")) {
+			System.out.println ( "Got an output_level change with " + ((JTextField)action_source).getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.output_level = Integer.parseInt ( ((JTextField)action_source).getText() );
+          }
+        }
+      }
 		} else if (cmd.equalsIgnoreCase("Exit")) {
 			System.exit ( 0 );
 		}
