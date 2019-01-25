@@ -745,6 +745,28 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		    }
 		  }
 		  set_title();
+    } else if ( action_source == open_project_menu_item ) {
+		  project_file_chooser.setMultiSelectionEnabled(false);
+		  project_file_chooser.resetChoosableFileFilters();
+      FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Project", "json");
+      project_file_chooser.setFileFilter(filter);
+      project_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
+		  int returnVal = project_file_chooser.showDialog(this, "Open Project");
+		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+		    project_file = project_file_chooser.getSelectedFile();
+	      System.out.println ( "Project File = " + project_file );
+        control_panel.project_label.setText ( "Project File: "+project_file );
+        json_parser parser = new json_parser ( "{}" );
+        /*
+        try {
+        } catch ( FileNotFoundException fnfe ) {
+        }
+        */
+        update_control_panel();
+        repaint();
+        repaint_panels();
+		  }
+		  set_title();
     } else if ( action_source == save_project_as_menu_item ) {
 		  project_file_chooser.setMultiSelectionEnabled(false);
 		  project_file_chooser.resetChoosableFileFilters();
@@ -759,22 +781,33 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         try {
           PrintStream f = new PrintStream ( project_file );
           f.println ( "{" );
+          f.println ( "  \"version\": 0.0," );
           f.println ( "  \"method\": \"SWiFT-IR\"," );
           f.println ( "  \"data\": {" );
-          f.println ( "    \"defaults\": {}," );
+          f.println ( "    \"source_path\": \"\"," );
+          f.println ( "    \"defaults\": {" );
+          f.println ( "      \"align_to_next_pars\": {" );
+          f.println ( "        \"window_size\": \"" + "1024" + "\"," );
+          f.println ( "        \"addx\": \"" + "800" + "\"," );
+          f.println ( "        \"addy\": \"" + "800" + "\"," );
+          f.println ( "        \"output_level\": \"" + "0" + "\"" );
+          f.println ( "      }" );
+          f.println ( "    }," );
+
           f.println ( "    \"imagestack\": [" );
 
 	        for (int i=0; i<this.frames.size(); i++) {
             swift_gui_frame frame = this.frames.get(i);
 
             f.println ( "      { " );
+            f.print   ( "        \"skip\": false," );
             f.print   ( "        \"filename\": \"" + frame + "\"" );
             if (frame.next_alignment == null) {
               f.println ( "" );
             } else {
               f.println ( "," );
               alignment_settings settings = frame.next_alignment;
-              f.println ( "        \"alignment_to_next\": {" );
+              f.println ( "        \"align_to_next_pars\": {" );
               f.println ( "          \"window_size\": \"" + settings.window_size + "\"," );
               f.println ( "          \"addx\": \"" + settings.addx + "\"," );
               f.println ( "          \"addy\": \"" + settings.addy + "\"," );
@@ -788,26 +821,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               f.println ( "" );
             }
           }
-
-/*
-class alignment_settings {
-  swift_gui_frame prev_frame=null;
-  swift_gui_frame next_frame=null;
-  int window_size=1024;
-  int addx=800;
-  int addy=800;
-  int output_level=0;
-}
-
-
-class swift_gui_frame {
-  public File image_file_path=null;
-  public boolean valid=false;
-  public BufferedImage image=null;
-
-  alignment_settings prev_alignment=null;
-  alignment_settings next_alignment=null;
-*/
 
           f.println ( "    ]" );
           f.println ( "  }" );
@@ -1099,3 +1112,4 @@ class swift_gui_frame {
 	}
 
 }
+
