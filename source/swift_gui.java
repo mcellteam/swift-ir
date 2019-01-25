@@ -11,8 +11,21 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.*;
 
 
-class MyFileChooser extends JFileChooser {
-  MyFileChooser ( String path ) {
+class ProjectFileChooser extends JFileChooser {
+  ProjectFileChooser ( String path ) {
+    super(path);
+  }
+  protected JDialog createDialog(Component parent) throws HeadlessException {
+    JDialog dialog = super.createDialog(parent);
+    dialog.setLocation(300, 200);
+    dialog.setSize ( 1024, 768 );
+    // dialog.setResizable(false);
+    return dialog;
+  }
+}
+
+class ImageFileChooser extends JFileChooser {
+  ImageFileChooser ( String path ) {
     super(path);
   }
   protected JDialog createDialog(Component parent) throws HeadlessException {
@@ -34,15 +47,15 @@ class alignment_settings {
 }
 
 class swift_gui_frame {
-  public File f=null;
+  public File image_file_path=null;
   public boolean valid=false;
   public BufferedImage image=null;
 
   alignment_settings prev_alignment=null;
   alignment_settings next_alignment=null;
 
-  swift_gui_frame ( File f, boolean load ) {
-    this.f = f;
+  swift_gui_frame ( File image_file_path, boolean load ) {
+    this.image_file_path = image_file_path;
     if (load) {
       this.load_file();
     }
@@ -50,22 +63,22 @@ class swift_gui_frame {
 
   public void load_file () {
     this.valid = false;
-    if ( f != null ) {
+    if ( image_file_path != null ) {
       try {
-        this.image = ImageIO.read(f);
+        this.image = ImageIO.read(image_file_path);
         if (this.image == null) {
-          JOptionPane.showMessageDialog(null, "Can't open: " + this.f, "Image Error", JOptionPane.WARNING_MESSAGE);
+          JOptionPane.showMessageDialog(null, "Can't open: " + this.image_file_path, "Image Error", JOptionPane.WARNING_MESSAGE);
         } else {
           this.valid = true;
         }
       } catch (OutOfMemoryError mem_err) {
         this.image = null;
         this.valid = false;
-        JOptionPane.showMessageDialog(null, "Out of Memory for: " + this.f, "Memory Error", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(null, "Out of Memory for: " + this.image_file_path, "Memory Error", JOptionPane.WARNING_MESSAGE);
       } catch (Exception oe) {
         this.image = null;
         this.valid = false;
-        JOptionPane.showMessageDialog(null, "File error for: " + this.f, "File Path Error", JOptionPane.WARNING_MESSAGE);
+        JOptionPane.showMessageDialog(null, "File error for: " + this.image_file_path, "File Path Error", JOptionPane.WARNING_MESSAGE);
       }
     }
   }
@@ -75,7 +88,7 @@ class swift_gui_frame {
   }
 
   public String toString() {
-    return ( "" + this.f );
+    return ( "" + this.image_file_path );
   }
 }
 
@@ -118,7 +131,7 @@ class FileListDialog extends JDialog {
           if (parent_frame.frames != null) {
             textArea.setText ( "Frames:\n" );
             for (int fnum=0; fnum<parent_frame.frames.size(); fnum++) {
-              textArea.append ( "File: " + parent_frame.frames.get(fnum).f + "\n" );
+              textArea.append ( "File: " + parent_frame.frames.get(fnum).image_file_path + "\n" );
             }
           }
         }
@@ -183,10 +196,15 @@ class AlignmentPanel extends JPanel {
 
 class ControlPanel extends JPanel {
   public swift_gui swift;
+
   public JTextField image_name;
+
+  public JLabel project_label;
+
   public JLabel image_label;
   public JLabel image_size;
   public JLabel image_bits;
+
   public JTextField window_size;
   public JTextField addx;
   public JTextField addy;
@@ -194,43 +212,54 @@ class ControlPanel extends JPanel {
 
   ControlPanel (swift_gui swift) {
     this.swift = swift;
+
+    this.setLayout ( new BorderLayout( 0, 20 ) );
+
     image_name = new JTextField("", 40);
     // image_name.setBounds ( 10, 10, 300, 20 );
     // add ( image_name );
 
+    project_label = new JLabel("Project File: "+swift.project_file);
+    add ( project_label, BorderLayout.NORTH );
+
+    JPanel center_panel = new JPanel();
+
     image_label = new JLabel("");
-    add ( image_label );
+    center_panel.add ( image_label );
 
+    center_panel.add ( new JLabel("  Size:") );
     image_size = new JLabel("");
-    add ( image_size );
+    center_panel.add ( image_size );
 
+    center_panel.add ( new JLabel("  Depth:") );
     image_bits = new JLabel("");
-    add ( image_bits );
+    center_panel.add ( image_bits );
 
-    add ( new JLabel("WW:") );
+    center_panel.add ( new JLabel("  WW:") );
     window_size = new JTextField("",8);
     window_size.addActionListener ( this.swift );
     window_size.setActionCommand ( "window_size" );
-    add ( window_size );
+    center_panel.add ( window_size );
 
-    add ( new JLabel("Addx:") );
+    center_panel.add ( new JLabel("  Addx:") );
     addx = new JTextField("",6);
     addx.addActionListener ( this.swift );
     addx.setActionCommand ( "addx" );
-    add ( addx );
+    center_panel.add ( addx );
 
-    add ( new JLabel("Addy:") );
+    center_panel.add ( new JLabel("  Addy:") );
     addy = new JTextField("",6);
     addy.addActionListener ( this.swift );
     addy.setActionCommand ( "addy" );
-    add ( addy );
+    center_panel.add ( addy );
 
-    add ( new JLabel("Output Level:") );
+    center_panel.add ( new JLabel("  Output Level:") );
     output_level = new JTextField("",4);
     output_level.addActionListener ( this.swift );
     output_level.setActionCommand ( "output_level" );
-    add ( output_level );
+    center_panel.add ( output_level );
 
+    add ( center_panel, BorderLayout.CENTER );
   }
 }
 
@@ -241,10 +270,13 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   AlignmentPanel alignment_panel = null;
   ControlPanel control_panel = null;
 
+  File project_file=null;
+
 	static int w=1024, h=768;
 
   String current_directory = "";
-  MyFileChooser file_chooser = null;
+  ImageFileChooser image_file_chooser = null;
+  ProjectFileChooser project_file_chooser = null;
 
   FileListDialog file_list_dialog = null;
 
@@ -352,7 +384,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 
   //  MouseListener methods:
-  
+
 
 	Cursor current_cursor = null;
 	Cursor b_cursor = null;
@@ -478,8 +510,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       if (frames != null) {
         if ( (frames.size() > 0) && (frame_index >= 0) ) {
           title = "Section: " + (frame_index+1);
-          File f = frames.get(frame_index).f;
-          title += ", File: " + f.getName();
+          File image_file_path = frames.get(frame_index).image_file_path;
+          title += ", File: " + image_file_path.getName();
         }
       }
       this.parent_frame.setTitle ( title );
@@ -491,14 +523,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     if (control_panel != null) {
       if (frames != null) {
         if (frames.size() > 0) {
-          File f = frames.get(frame_index).f;
-          control_panel.image_name.setText ( f.getName() );
+          File image_file_path = frames.get(frame_index).image_file_path;
+          control_panel.image_name.setText ( image_file_path.getName() );
           swift_gui_frame frame = frames.get(frame_index);
           if (frame != null) {
             if (frame.image != null) {
               BufferedImage frame_image = frames.get(frame_index).image;
-              control_panel.image_size.setText ( "  Size:"+frame_image.getWidth()+"x"+frame_image.getHeight() );
-              control_panel.image_bits.setText ( "  Depth:"+frame_image.getColorModel().getPixelSize() );
+              control_panel.image_size.setText ( ""+frame_image.getWidth()+"x"+frame_image.getHeight() );
+              control_panel.image_bits.setText ( ""+frame_image.getColorModel().getPixelSize() );
             }
             if (frame.next_alignment == null) {
               control_panel.window_size.setText ( "" );
@@ -620,12 +652,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   }
 
 
-  JMenuItem import_images_menu_item=null;
-  JMenuItem refresh_images_menu_item=null;
-  JMenuItem center_image_menu_item=null;
-  JMenuItem zoom_actual_menu_item=null;
-  JMenuItem clear_all_images_menu_item=null;
-  JMenuItem list_all_images_menu_item=null;
+  JMenuItem new_project_menu_item = null;
+  JMenuItem open_project_menu_item = null;
+  JMenuItem save_project_menu_item = null;
+  JMenuItem save_project_as_menu_item = null;
+
+  JMenuItem import_images_menu_item = null;
+  JMenuItem refresh_images_menu_item = null;
+  JMenuItem center_image_menu_item = null;
+  JMenuItem zoom_actual_menu_item = null;
+  JMenuItem clear_all_images_menu_item = null;
+  JMenuItem list_all_images_menu_item = null;
 
   public void center_current_image() {
     if (frames != null) {
@@ -661,13 +698,13 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       System.out.println ( "Reloading all images:" );
       // Reload the visible frame first for faster response
       if (frame_index >= 0) {
-        System.out.println ( "  Reloading image " + frames.get(frame_index).f.getName() );
+        System.out.println ( "  Reloading image " + frames.get(frame_index).image_file_path.getName() );
         this.frames.get(frame_index).reload();
       }
       // Reload all the other frames
 	    for (int i=0; i<this.frames.size(); i++) {
 	      if (i != frame_index) {
-          System.out.println ( "  Reloading image " + frames.get(i).f.getName() );
+          System.out.println ( "  Reloading image " + frames.get(i).image_file_path.getName() );
           this.frames.get(i).reload();
         }
       }
@@ -676,14 +713,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       repaint_panels();
 		  set_title();
     } else if ( action_source == import_images_menu_item ) {
-		  file_chooser.setMultiSelectionEnabled(true);
-		  file_chooser.resetChoosableFileFilters();
+		  image_file_chooser.setMultiSelectionEnabled(true);
+		  image_file_chooser.resetChoosableFileFilters();
       FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "gif", "png", "tif", "tiff");
-      file_chooser.setFileFilter(filter);
-      file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
-		  int returnVal = file_chooser.showDialog(this, "Import Selected Images");
+      image_file_chooser.setFileFilter(filter);
+      image_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
+		  int returnVal = image_file_chooser.showDialog(this, "Import Selected Images");
 		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
-		    File selected_files[] = file_chooser.getSelectedFiles();
+		    File selected_files[] = image_file_chooser.getSelectedFiles();
 		    if (selected_files.length > 0) {
 		      // Use the current size as the new index (if size is 0, then the new index will be 0 which points to the first)
 		      int num_previous = this.frames.size();
@@ -706,6 +743,83 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	        repaint();
           repaint_panels();
 		    }
+		  }
+		  set_title();
+    } else if ( action_source == save_project_as_menu_item ) {
+		  project_file_chooser.setMultiSelectionEnabled(false);
+		  project_file_chooser.resetChoosableFileFilters();
+      FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Project", "json");
+      project_file_chooser.setFileFilter(filter);
+      project_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
+		  int returnVal = project_file_chooser.showDialog(this, "Save Project");
+		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+		    project_file = project_file_chooser.getSelectedFile();
+	      System.out.println ( "Project File = " + project_file );
+        control_panel.project_label.setText ( "Project File: "+project_file );
+        try {
+          PrintStream f = new PrintStream ( project_file );
+          f.println ( "{" );
+          f.println ( "  \"method\": \"SWiFT-IR\"," );
+          f.println ( "  \"data\": {" );
+          f.println ( "    \"defaults\": []," );
+          f.println ( "    \"imagestack\": [" );
+
+	        for (int i=0; i<this.frames.size(); i++) {
+            swift_gui_frame frame = this.frames.get(i);
+
+            f.println ( "      { " );
+            f.print   ( "        \"filename\": \"" + frame + "\"" );
+            if (frame.next_alignment == null) {
+              f.println ( "" );
+            } else {
+              f.println ( "," );
+              alignment_settings settings = frame.next_alignment;
+              f.println ( "        \"alignment_to_next\": {" );
+              f.println ( "          \"window_size\": \"" + settings.window_size + "\"," );
+              f.println ( "          \"addx\": \"" + settings.addx + "\"," );
+              f.println ( "          \"addy\": \"" + settings.addy + "\"," );
+              f.println ( "          \"output_level\": \"" + settings.output_level + "\"" );
+              f.println ( "        }" );
+            }
+            f.print   ( "      }" );
+            if (i < this.frames.size()-1) {
+              f.println ( "," );
+            } else {
+              f.println ( "" );
+            }
+          }
+
+/*
+class alignment_settings {
+  swift_gui_frame prev_frame=null;
+  swift_gui_frame next_frame=null;
+  int window_size=1024;
+  int addx=800;
+  int addy=800;
+  int output_level=0;
+}
+
+
+class swift_gui_frame {
+  public File image_file_path=null;
+  public boolean valid=false;
+  public BufferedImage image=null;
+
+  alignment_settings prev_alignment=null;
+  alignment_settings next_alignment=null;
+*/
+
+          f.println ( "    ]" );
+          f.println ( "  }" );
+          f.println ( "}" );
+          f.close();
+        } catch ( FileNotFoundException fnfe ) {
+        }
+        /*
+        update_control_panel();
+        repaint();
+        repaint_panels();
+        */
 		  }
 		  set_title();
     } else if ( action_source == center_image_menu_item ) {
@@ -867,7 +981,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 
 				swift_gui_panel.setBackground ( new Color (60,60,60) );
-		    swift_gui_panel.file_chooser = new MyFileChooser ( swift_gui_panel.current_directory );
+		    swift_gui_panel.project_file_chooser = new ProjectFileChooser ( swift_gui_panel.current_directory );
+		    swift_gui_panel.image_file_chooser = new ImageFileChooser ( swift_gui_panel.current_directory );
 
         for (int i=0; i<actual_file_names.size(); i++) {
           System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
@@ -893,6 +1008,20 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           JMenuItem mi;
 
           JMenu file_menu = new JMenu("File");
+
+            file_menu.add ( mi = swift_gui_panel.new_project_menu_item = new JMenuItem("New Project") );
+            mi.addActionListener(swift_gui_panel);
+
+            file_menu.add ( mi = swift_gui_panel.open_project_menu_item = new JMenuItem("Open Project") );
+            mi.addActionListener(swift_gui_panel);
+
+            file_menu.add ( mi = swift_gui_panel.save_project_menu_item = new JMenuItem("Save Project") );
+            mi.addActionListener(swift_gui_panel);
+
+            file_menu.add ( mi = swift_gui_panel.save_project_as_menu_item = new JMenuItem("Save Project As") );
+            mi.addActionListener(swift_gui_panel);
+
+            file_menu.addSeparator();
 
             JMenu import_menu = new JMenu("Import");
               import_menu.add ( mi = swift_gui_panel.import_images_menu_item = new JMenuItem("Images...") );
