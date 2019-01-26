@@ -1033,6 +1033,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 			System.out.println ( "\n\nGot a run_alignment command" );
       if (frames != null) {
         System.out.println ( "Running an alignment" );
+        Runtime rt = Runtime.getRuntime();
         int fixed_frame_num = -1;
         boolean first_pass = true;
 	      for (int i=0; i<this.frames.size(); i++) {
@@ -1046,16 +1047,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
               if (fixed_frame.next_alignment != null) {
                 String fixed_image_name;
+                // Use the previously aligned image name
+                fixed_image_name = "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
                 if (first_pass) {
-                  // This is the first alignment, so use the original image
-                  fixed_image_name = fixed_frame.image_file_path.toString();
+                  // This is the first alignment, so copy the original image
+                  run_swift.copy_files_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
                   first_pass = false;
-                } else {
-                  // Use the previously aligned image name
-                  fixed_image_name = "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
                 }
                 run_swift.align_files_by_name (
-                      Runtime.getRuntime(),
+                      rt,
                       new File(fixed_image_name).getName(),
                       new File(align_frame.image_file_path.toString()).getName(),
                       "aligned_" + String.format("%03d",(i)) + ".JPG",
@@ -1068,7 +1068,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             }
           }
         }
-        
+        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+        System.out.println ( "Alignment completed" );
+        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       }
 		} else if (cmd.equalsIgnoreCase("Exit")) {
 			System.exit ( 0 );
