@@ -48,6 +48,7 @@ class alignment_settings {
 
 class swift_gui_frame {
   public File image_file_path=null;
+  public boolean skip=false;
   public boolean valid=false;
   public BufferedImage image=null;
 
@@ -209,6 +210,7 @@ class ControlPanel extends JPanel {
   public JTextField addx;
   public JTextField addy;
   public JTextField output_level;
+  public JCheckBox skip;
 
   ControlPanel (swift_gui swift) {
     this.swift = swift;
@@ -259,6 +261,12 @@ class ControlPanel extends JPanel {
     output_level.setActionCommand ( "output_level" );
     center_panel.add ( output_level );
 
+    center_panel.add ( new JLabel("  Skip:") );
+    skip = new JCheckBox("",false);
+    skip.addActionListener ( this.swift );
+    skip.setActionCommand ( "skip" );
+    center_panel.add ( skip );
+
     add ( center_panel, BorderLayout.CENTER );
   }
 }
@@ -293,7 +301,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     control_panel.repaint();
   }
 
-  public void link_frames() {
+  public void make_alignments() {
     if (frames != null) {
       if (frames.size() > 1) {
         for (int fnum=0; fnum<(frames.size()-1); fnum++) {
@@ -537,11 +545,13 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               control_panel.addx.setText ( "" );
               control_panel.addy.setText ( "" );
               control_panel.output_level.setText ( "" );
+              control_panel.skip.setSelected ( frame.skip );
             } else {
               control_panel.window_size.setText ( "" + frame.next_alignment.window_size );
               control_panel.addx.setText ( "" + frame.next_alignment.addx );
               control_panel.addy.setText ( "" + frame.next_alignment.addy );
               control_panel.output_level.setText ( "" + frame.next_alignment.output_level );
+              control_panel.skip.setSelected ( frame.skip );
             }
           }
         } else {
@@ -552,6 +562,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           control_panel.addx.setText ( "" );
           control_panel.addy.setText ( "" );
           control_panel.output_level.setText ( "" );
+          control_panel.skip.setSelected ( false );
         }
       } else {
         control_panel.image_name.setText ( "" );
@@ -561,6 +572,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         control_panel.addx.setText ( "" );
         control_panel.addy.setText ( "" );
         control_panel.output_level.setText ( "" );
+        control_panel.skip.setSelected ( false );
       }
       control_panel.image_label.setText ( control_panel.image_name.getText() );
     }
@@ -681,6 +693,59 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
   }
 
+  public void write_project_file ( File project_file ) {
+    try {
+      PrintStream f = new PrintStream ( project_file );
+      f.println ( "{" );
+      f.println ( "  \"version\": 0.0," );
+      f.println ( "  \"method\": \"SWiFT-IR\"," );
+      f.println ( "  \"data\": {" );
+      f.println ( "    \"source_path\": \"\"," );
+      f.println ( "    \"defaults\": {" );
+      f.println ( "      \"align_to_next_pars\": {" );
+      f.println ( "        \"window_size\": 1024," );
+      f.println ( "        \"addx\": 800," );
+      f.println ( "        \"addy\": 800," );
+      f.println ( "        \"output_level\": 0" );
+      f.println ( "      }" );
+      f.println ( "    }," );
+
+      f.println ( "    \"imagestack\": [" );
+
+      for (int i=0; i<this.frames.size(); i++) {
+        swift_gui_frame frame = this.frames.get(i);
+
+        f.println ( "      { " );
+        f.println ( "        \"skip\": " + frame.skip + "," );  // JSON and Java both use lower case for true and false
+        f.print   ( "        \"filename\": \"" + frame + "\"" );
+        if (frame.next_alignment == null) {
+          f.println ( "" );
+        } else {
+          f.println ( "," );
+          alignment_settings settings = frame.next_alignment;
+          f.println ( "        \"align_to_next_pars\": {" );
+          f.println ( "          \"window_size\": " + settings.window_size + "," );
+          f.println ( "          \"addx\": " + settings.addx + "," );
+          f.println ( "          \"addy\": " + settings.addy + "," );
+          f.println ( "          \"output_level\": " + settings.output_level + "" );
+          f.println ( "        }" );
+        }
+        f.print   ( "      }" );
+        if (i < this.frames.size()-1) {
+          f.println ( "," );
+        } else {
+          f.println ( "" );
+        }
+      }
+
+      f.println ( "    ]" );
+      f.println ( "  }" );
+      f.println ( "}" );
+      f.close();
+    } catch ( FileNotFoundException fnfe ) {
+    }
+  }
+
   // ActionPerformed methods (mostly menu responses):
 
 	public void actionPerformed(ActionEvent e) {
@@ -688,7 +753,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 		String cmd = e.getActionCommand();
 		System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
-		
+
 		if (cmd.equalsIgnoreCase("Print")) {
 		  System.out.println ( "Images:" );
 	    for (int i=0; i<this.frames.size(); i++) {
@@ -729,7 +794,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             System.out.println ( "You chose this file: " + selected_files[i] );
             this.frames.add ( new swift_gui_frame ( selected_files[i], load_images ) );
 		      }
-          link_frames();
+          make_alignments();
 		      // Set the frame index to the first file just added
 		      if (new_frame_index >= this.frames.size()) {
 		        new_frame_index = this.frames.size() - 1;
@@ -756,12 +821,72 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		    project_file = project_file_chooser.getSelectedFile();
 	      System.out.println ( "Project File = " + project_file );
         control_panel.project_label.setText ( "Project File: "+project_file );
-        json_parser parser = new json_parser ( "{}" );
-        /*
         try {
-        } catch ( FileNotFoundException fnfe ) {
+          BufferedInputStream f = new BufferedInputStream ( new FileInputStream(project_file) );
+          String text = run_swift.read_string_from(f);
+          json_parser parser = new json_parser ( text );
+          Object o = parser.generate_object_tree();
+          System.out.println ( "\n\nObject = " + o );
+          HashMap<String,Object> obj_dict = (HashMap<String,Object>)o;
+          System.out.println ( "\n\nHashMap = " + obj_dict );
+          System.out.println ( "\n\n" );
+
+          if (obj_dict.containsKey("version")) {
+            if ( ((Double)(obj_dict.get("version")) == 0.0) &&
+                 (obj_dict.get("method") != null) &&
+                 (obj_dict.get("data") != null) ) {
+              // Assume that everything is fine at this point
+              HashMap<String,Object> data = (HashMap<String,Object>)(obj_dict.get("data"));
+              ArrayList<Object> image_stack = (ArrayList<Object>)(data.get("imagestack"));
+
+              frames = new ArrayList<swift_gui_frame>();
+              actual_file_names = new ArrayList<String>();
+              frame_index = -1;
+
+              for (int i=0; i<image_stack.size(); i++) {
+                HashMap<String,Object> stack_image = (HashMap<String,Object>)(image_stack.get(i));
+                System.out.println ( "stack_image keys = " + stack_image.keySet() );
+                actual_file_names.add ( (String)(stack_image.get("filename")) );
+
+                System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
+                swift_gui_frame new_frame = new swift_gui_frame ( new File (actual_file_names.get(i)), load_images );
+                if (stack_image.containsKey("skip")) {
+                  new_frame.skip = (Boolean)(stack_image.get("skip"));
+                }
+                frames.add ( new_frame );  /// Note: use i<=n to only load first n images
+                frame_index = 0; // set to the first if any frames are loaded
+              }
+              make_alignments();
+
+              // Update the alignments based on the JSON input
+
+              for (int i=0; i<image_stack.size(); i++) {
+                HashMap<String,Object> stack_image = (HashMap<String,Object>)(image_stack.get(i));
+                if (stack_image.containsKey ("align_to_next_pars")) {
+                  HashMap<String,Object> alignment_pars = (HashMap<String,Object>)(stack_image.get("align_to_next_pars"));
+                  // System.out.println ( "alignment_pars keys = " + alignment_pars.keySet() );
+                  System.out.println ( "alignment_pars = " + alignment_pars );
+                  swift_gui_frame frame = frames.get(i);
+                  alignment_settings settings = frame.next_alignment;
+                  if (settings != null) {
+                    settings.window_size = (Integer)(alignment_pars.get("window_size"));
+                    settings.addx = (Integer)(alignment_pars.get("addx"));
+                    settings.addy = (Integer)(alignment_pars.get("addy"));
+                    settings.output_level = (Integer)(alignment_pars.get("output_level"));
+                  }
+                }
+              }
+
+            } else {
+              System.out.println ( "Project file version does not match program version or other problem" );
+            }
+          } else {
+            System.out.println ( "Project file has no version" );
+          }
+        } catch ( Exception open_exception ) {
+          System.out.println ( "Unable to open or read from " + project_file );
+          System.out.println ( "  Exception: " + open_exception );
         }
-        */
         update_control_panel();
         repaint();
         repaint_panels();
@@ -778,56 +903,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		    project_file = project_file_chooser.getSelectedFile();
 	      System.out.println ( "Project File = " + project_file );
         control_panel.project_label.setText ( "Project File: "+project_file );
-        try {
-          PrintStream f = new PrintStream ( project_file );
-          f.println ( "{" );
-          f.println ( "  \"version\": 0.0," );
-          f.println ( "  \"method\": \"SWiFT-IR\"," );
-          f.println ( "  \"data\": {" );
-          f.println ( "    \"source_path\": \"\"," );
-          f.println ( "    \"defaults\": {" );
-          f.println ( "      \"align_to_next_pars\": {" );
-          f.println ( "        \"window_size\": \"" + "1024" + "\"," );
-          f.println ( "        \"addx\": \"" + "800" + "\"," );
-          f.println ( "        \"addy\": \"" + "800" + "\"," );
-          f.println ( "        \"output_level\": \"" + "0" + "\"" );
-          f.println ( "      }" );
-          f.println ( "    }," );
+        write_project_file ( project_file );
 
-          f.println ( "    \"imagestack\": [" );
-
-	        for (int i=0; i<this.frames.size(); i++) {
-            swift_gui_frame frame = this.frames.get(i);
-
-            f.println ( "      { " );
-            f.print   ( "        \"skip\": false," );
-            f.print   ( "        \"filename\": \"" + frame + "\"" );
-            if (frame.next_alignment == null) {
-              f.println ( "" );
-            } else {
-              f.println ( "," );
-              alignment_settings settings = frame.next_alignment;
-              f.println ( "        \"align_to_next_pars\": {" );
-              f.println ( "          \"window_size\": \"" + settings.window_size + "\"," );
-              f.println ( "          \"addx\": \"" + settings.addx + "\"," );
-              f.println ( "          \"addy\": \"" + settings.addy + "\"," );
-              f.println ( "          \"output_level\": \"" + settings.output_level + "\"" );
-              f.println ( "        }" );
-            }
-            f.print   ( "      }" );
-            if (i < this.frames.size()-1) {
-              f.println ( "," );
-            } else {
-              f.println ( "" );
-            }
-          }
-
-          f.println ( "    ]" );
-          f.println ( "  }" );
-          f.println ( "}" );
-          f.close();
-        } catch ( FileNotFoundException fnfe ) {
-        }
         /*
         update_control_panel();
         repaint();
@@ -835,6 +912,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         */
 		  }
 		  set_title();
+    } else if ( action_source == save_project_menu_item ) {
+      System.out.println ( "Saving to Project File = " + project_file );
+      write_project_file ( project_file );
     } else if ( action_source == center_image_menu_item ) {
       System.out.println ( "Center image" );
       center_current_image();
@@ -865,42 +945,57 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       //repaint();
 		  //set_title();
 		} else if (cmd.equalsIgnoreCase("window_size")) {
-			System.out.println ( "Got a window_size change with " + ((JTextField)action_source).getText() );
+		  JTextField txt = (JTextField)action_source;
+			System.out.println ( "Got a window_size change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.window_size = Integer.parseInt ( ((JTextField)action_source).getText() );
+            frame.next_alignment.window_size = Integer.parseInt ( txt.getText() );
           }
         }
       }
 		} else if (cmd.equalsIgnoreCase("addx")) {
-			System.out.println ( "Got an addx change with " + ((JTextField)action_source).getText() );
+		  JTextField txt = (JTextField)action_source;
+			System.out.println ( "Got an addx change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.addx = Integer.parseInt ( ((JTextField)action_source).getText() );
+            frame.next_alignment.addx = Integer.parseInt ( txt.getText() );
           }
         }
       }
 		} else if (cmd.equalsIgnoreCase("addy")) {
-			System.out.println ( "Got an addy change with " + ((JTextField)action_source).getText() );
+		  JTextField txt = (JTextField)action_source;
+			System.out.println ( "Got an addy change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.addy = Integer.parseInt ( ((JTextField)action_source).getText() );
+            frame.next_alignment.addy = Integer.parseInt ( txt.getText() );
           }
         }
       }
 		} else if (cmd.equalsIgnoreCase("output_level")) {
-			System.out.println ( "Got an output_level change with " + ((JTextField)action_source).getText() );
+		  JTextField txt = (JTextField)action_source;
+			System.out.println ( "Got an output_level change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.output_level = Integer.parseInt ( ((JTextField)action_source).getText() );
+            frame.next_alignment.output_level = Integer.parseInt ( txt.getText() );
+          }
+        }
+      }
+		} else if (cmd.equalsIgnoreCase("skip")) {
+			JCheckBox box = (JCheckBox)action_source;
+			System.out.println ( "\n\nGot a skip change with Selected = " + box.isSelected() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.skip = box.isSelected();
           }
         }
       }
@@ -1002,7 +1097,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           swift_gui_panel.frames.add ( new swift_gui_frame ( new File (actual_file_names.get(i)), load_images ) );  /// Note: use i<=n to only load first n images
           swift_gui_panel.frame_index = 0; // set to the first if any frames are loaded
         }
-        swift_gui_panel.link_frames();
+        swift_gui_panel.make_alignments();
         swift_gui_panel.file_list_dialog = new FileListDialog(app_frame, swift_gui_panel);
         swift_gui_panel.file_list_dialog.pack();
 

@@ -1,4 +1,4 @@
-all: swim iavg iscale mir remod run_swift.jar swift_gui.jar sha1sum.txt
+all: swim iavg iscale mir remod json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
 
 swim: swim.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o swim -O3 -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -31,7 +31,7 @@ run_swift.jar: run_swift.java makefile
 	zip -X run_swift.jar META-INF/MANIFEST.MF *.class
 
 # "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
-swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java makefile
+swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java makefile
 	rm -f *.class
 	mkdir -p META-INF
 	cp -f swift_gui.MF META-INF/MANIFEST.MF
@@ -39,6 +39,10 @@ swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java makefile
 	touch -t 201901181818 *.class
 	touch -t 201901181818 META-INF/MANIFEST.MF
 	zip -X swift_gui.jar META-INF/MANIFEST.MF *.class
+
+json_parser.jar: json_parser.java makefile
+	javac -nowarn -source 1.6 json_parser.java
+	jar -cfe json_parser.jar json_parser *.class
 
 sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum swim > sha1sum.txt
