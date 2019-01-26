@@ -276,6 +276,12 @@ class ControlPanel extends JPanel {
     set_all.setActionCommand ( "set_all" );
     center_panel.add ( set_all );
 
+    center_panel.add ( new JLabel("  ") );
+    run_alignment = new JButton("Align");
+    run_alignment.addActionListener ( this.swift );
+    run_alignment.setActionCommand ( "run_alignment" );
+    center_panel.add ( run_alignment );
+
     add ( center_panel, BorderLayout.CENTER );
   }
 }
@@ -289,7 +295,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   File project_file=null;
 
-	static int w=1024, h=768;
+	static int w=1200, h=1024;
 
   String current_directory = "";
   ImageFileChooser image_file_chooser = null;
@@ -1022,6 +1028,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
           }
         }
+      }
+		} else if (cmd.equalsIgnoreCase("run_alignment")) {
+			System.out.println ( "\n\nGot a run_alignment command" );
+      if (frames != null) {
+        System.out.println ( "Running an alignment" );
       }
 		} else if (cmd.equalsIgnoreCase("Exit")) {
 			System.exit ( 0 );
