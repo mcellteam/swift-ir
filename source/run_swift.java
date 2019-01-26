@@ -203,7 +203,7 @@ public class run_swift {
   public static void align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                            int window_size, int addx, int addy, int output_level ) {
 
-    if (output_level > 4) {
+    if (output_level > 0) {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "align_files_by_name called with:" );
@@ -836,7 +836,7 @@ if (use_line_parts) {
   public static void main(String[] args) throws java.io.FileNotFoundException {
 
 
-    int output_level = 5;
+    int output_level = 1;
     int align_to = -1;
     int window_size = 2048;
     int addx = 2000;
