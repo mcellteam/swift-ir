@@ -262,6 +262,7 @@ public class json_parser {
     json_element je = pre_store_skipped ( json_element.JSON_VAL_OBJECT, index, index, depth );
     int end = index+1;
     depth += 1;
+    end = skip_sepspace ( end, depth );
     while (text.charAt(end) != '}') {
       end = skip_keyval ( end, depth );
       end = skip_sepspace ( end, depth );
@@ -274,6 +275,7 @@ public class json_parser {
   int skip_array ( int index, int depth ) {
     json_element je = pre_store_skipped ( json_element.JSON_VAL_ARRAY, index, index, depth );
     int end = index+1;
+    end = skip_sepspace ( end, depth );
     depth += 1;
     while (text.charAt(end) != ']') {
       end = skip_element ( end, depth );
@@ -315,11 +317,15 @@ public class json_parser {
 	  //text = "[ [], [1,2,\"x\", \"y\"], {}, true, false, null, 5, -2, 0, 0.3, -3e-7, 2e2, \"Abc\" ]";
 	  //text = "\"a\"";
 	  //text = "[ \"a\", -1, 0, -1.5, 1.5, [\"b\", \"c\"], [], \"d\", {\"a\":3,\"b\":30}, \"e\" ]";
-	  text = " { \"D\": {\"d1\":1,\"d2\":2}, \"L\" : [ 2, -1, {\"a\":1,\"b\":2,\"c\":3}, { \"mc\":[ { \"a\":0 }, 2, true, [9,[0,3],\"a\",3], false, null, 5, [1,2,3], \"xyz\" ], \"x\":\"y\" }, -3, 7 ] }  ";
+	  //text = " { \"D\": {\"d1\":1,\"d2\":2}, \"L\" : [ 2, -1, {\"a\":1,\"b\":2,\"c\":3}, { \"mc\":[ { \"a\":0 }, 2, true, [9,[0,3],\"a\",3], false, null, 5, [1,2,3], \"xyz\" ], \"x\":\"y\" }, -3, 7 ] }  ";
 	  //text = " { \"ALL\" : [\n 2, -1, {\"a\":1,\"b\":2,\"c\":3},\n { \"mc\":[ { \"a\":0 },\n 2, true, [9,[0,3],\"a\",3],\n false, null, 5, [1,2,3], \"xyz\" ],\n \"x\":\"y\" }, -3, 7 ] }  ";
 	  //text = "[ 1,2,3, {\"mc\":[{\"a\":0},2,true,[9,[0.,3],\"a\",3],false,null,5,[1,2.0,0.3],\"xyz\"],\"x\":\"y\",\"y\":33}  ]";
 	  //text = "{\"mcell\": {\"blender_version\": [2, 68, 0], \"api_version\": 0, \"reaction_data_output\": {\"mol_colors\": false, \"reaction_output_list\": [], \"plot_legend\": \"0\", \"combine_seeds\": true, \"plot_layout\": \" plot \"}, \"define_molecules\": {\"molecule_list\": [{\"export_viz\": false, \"diffusion_constant\": \"1e-7\", \"data_model_version\": \"DM_2014_10_24_1638\", \"custom_space_step\": \"\", \"maximum_step_length\": \"\", \"mol_name\": \"a\", \"mol_type\": \"3D\", \"custom_time_step\": \"\", \"target_only\": false}, {\"export_viz\": false, \"diffusion_constant\": \"1e-7\", \"data_model_version\": \"DM_2014_10_24_1638\", \"custom_space_step\": \"\", \"maximum_step_length\": \"\", \"mol_name\": \"b\", \"mol_type\": \"3D\", \"custom_time_step\": \"\", \"target_only\": false}], \"data_model_version\": \"DM_2014_10_24_1638\"}, \"define_reactions\": {\"reaction_list\": []}, \"data_model_version\": \"DM_2014_10_24_1638\", \"define_surface_classes\": {\"surface_class_list\": []}, \"parameter_system\": {\"model_parameters\": []}, \"define_release_patterns\": {\"release_pattern_list\": []}, \"release_sites\": {\"release_site_list\": [{\"object_expr\": \"\", \"location_x\": \"0\", \"location_y\": \"0\", \"release_probability\": \"1\", \"stddev\": \"0\", \"quantity\": \"100\", \"pattern\": \"\", \"site_diameter\": \"0\", \"orient\": \"'\", \"name\": \"ra\", \"shape\": \"CUBIC\", \"quantity_type\": \"NUMBER_TO_RELEASE\", \"molecule\": \"a\", \"location_z\": \"0\"}, {\"object_expr\": \"\", \"location_x\": \"0\", \"location_y\": \".2\", \"release_probability\": \"1\", \"stddev\": \"0\", \"quantity\": \"100\", \"pattern\": \"\", \"site_diameter\": \"0\", \"orient\": \"'\", \"name\": \"rb\", \"shape\": \"CUBIC\", \"quantity_type\": \"NUMBER_TO_RELEASE\", \"molecule\": \"b\", \"location_z\": \"0\"}]}, \"modify_surface_regions\": {\"modify_surface_regions_list\": []}, \"initialization\": {\"center_molecules_on_grid\": false, \"iterations\": \"10\", \"warnings\": {\"missing_surface_orientation\": \"ERROR\", \"high_probability_threshold\": \"1.0\", \"negative_diffusion_constant\": \"WARNING\", \"degenerate_polygons\": \"WARNING\", \"lifetime_too_short\": \"WARNING\", \"negative_reaction_rate\": \"WARNING\", \"high_reaction_probability\": \"IGNORED\", \"missed_reactions\": \"WARNING\", \"lifetime_threshold\": \"50\", \"useless_volume_orientation\": \"WARNING\", \"missed_reaction_threshold\": \"0.0010000000474974513\", \"all_warnings\": \"INDIVIDUAL\"}, \"space_step\": \"\", \"radial_directions\": \"\", \"radial_subdivisions\": \"\", \"vacancy_search_distance\": \"\", \"time_step_max\": \"\", \"accurate_3d_reactions\": true, \"notifications\": {\"probability_report_threshold\": \"0.0\", \"varying_probability_report\": true, \"probability_report\": \"ON\", \"iteration_report\": true, \"progress_report\": true, \"molecule_collision_report\": false, \"box_triangulation_report\": false, \"release_event_report\": true, \"file_output_report\": false, \"partition_location_report\": false, \"all_notifications\": \"INDIVIDUAL\", \"diffusion_constant_report\": \"BRIEF\", \"final_summary\": true}, \"time_step\": \"5e-6\", \"interaction_radius\": \"\", \"surface_grid_density\": \"10000\", \"microscopic_reversibility\": \"OFF\", \"partitions\": {\"x_start\": \"-1.0\", \"x_step\": \"0.019999999552965164\", \"y_step\": \"0.019999999552965164\", \"y_end\": \"1.0\", \"recursion_flag\": false, \"z_end\": \"1.0\", \"x_end\": \"1.0\", \"z_step\": \"0.019999999552965164\", \"include\": false, \"y_start\": \"-1.0\"}}, \"model_objects\": {\"model_object_list\": [{\"name\": \"Cube\"}]}, \"geometrical_objects\": {\"object_list\": [{\"element_connections\": [[4, 5, 0], [5, 6, 1], [6, 7, 2], [7, 4, 3], [0, 1, 3], [7, 6, 4], [6, 2, 1], [6, 5, 4], [5, 1, 0], [7, 3, 2], [1, 2, 3], [4, 0, 3]], \"name\": \"Cube\", \"vertex_list\": [[-0.25, -0.25, -0.25], [-0.25, 0.25, -0.25], [0.25, 0.25, -0.25], [0.25, -0.25, -0.25], [-0.25, -0.25, 0.25], [-0.25, 0.25, 0.25], [0.25, 0.25, 0.25], [0.25, -0.25, 0.25]], \"location\": [0.0, 0.0, 0.0]}]}, \"viz_output\": {\"all_iterations\": true, \"step\": \"1\", \"end\": \"1\", \"export_all\": true, \"start\": \"0\"}, \"materials\": {\"material_dict\": {}}, \"cellblender_version\": \"0.1.54\", \"cellblender_source_sha1\": \"6a572dab58fa0f770c46ce3ac26b01f3a66f2096\"}}";
 		// BufferedReader f = new BufferedReader ( new InputStreamReader ( new FileInputStream ( "dm.json" ) ) );
+
+		// Fails: text = "{\n  \"version\": 0.0,\n  \"method\": \"SWiFT-IR\",\n  \"data\": {\n    \"source_path\": \"\",\n    \"defaults\": {\n      \"align_to_next_pars\": {\n        \"window_size\": 1024,\n        \"addx\": 800,\n        \"addy\": 800,\n        \"output_level\": 0\n      }\n    },\n    \"imagestack\": [\n    ]\n  }\n}";
+		// Fails: text = "{\n  \"version\": [],\n  \"method\": \"SWiFT-IR\",\n  \"data\": {\n    \"source_path\": \"\",\n    \"imagestack\": [\n    ]\n  }\n}";
+		text = "{ \"fine_array\": [], \"fail_array\": [ ], \"fine_dict\": {}, \"fail_dict\": { } }";
 
 	  /*
 	  if (text.indexOf('\n') < 0) {
@@ -328,6 +334,7 @@ public class json_parser {
 	    System.out.println ( "      0         1         2         3         4         5         6         7         8         9         0         1         2         3         4         5         6" );
 	  }
 	  */
+
     System.out.println ( "Text = " + text );
 
 	  json_parser p = new json_parser( text );
