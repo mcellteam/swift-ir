@@ -203,6 +203,21 @@ public class run_swift {
   public static void align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                            int window_size, int addx, int addy, int output_level ) {
 
+    if (output_level > 4) {
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "align_files_by_name called with:" );
+      System.out.println ( "    fixed_image_file   = " + fixed_image_file );
+      System.out.println ( "    align_image_file   = " + align_image_file );
+      System.out.println ( "    aligned_image_file = " + aligned_image_file );
+      System.out.println ( "    window_size        = " + window_size );
+      System.out.println ( "    addx               = " + addx );
+      System.out.println ( "    addy               = " + addy );
+      System.out.println ( "    output_level       = " + output_level );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+    }
+
     boolean use_line_parts = true;
 
     String command_line;

@@ -41,9 +41,9 @@ class alignment_settings {
   swift_gui_frame prev_frame=null;
   swift_gui_frame next_frame=null;
   int window_size=1024;
-  int addx=800;
-  int addy=800;
-  int output_level=0;
+  int addx=500;
+  int addy=500;
+  int output_level=5;
 }
 
 class swift_gui_frame {
@@ -1033,6 +1033,42 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 			System.out.println ( "\n\nGot a run_alignment command" );
       if (frames != null) {
         System.out.println ( "Running an alignment" );
+        int fixed_frame_num = -1;
+        boolean first_pass = true;
+	      for (int i=0; i<this.frames.size(); i++) {
+	        swift_gui_frame align_frame = frames.get(i);
+	        if (align_frame.skip) {
+	          // Omit this frame
+	        } else {
+	          if (fixed_frame_num < 0) {
+	            fixed_frame_num = i;
+	          } else {
+              swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
+              if (fixed_frame.next_alignment != null) {
+                String fixed_image_name;
+                if (first_pass) {
+                  // This is the first alignment, so use the original image
+                  fixed_image_name = fixed_frame.image_file_path.toString();
+                  first_pass = false;
+                } else {
+                  // Use the previously aligned image name
+                  fixed_image_name = "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
+                }
+                run_swift.align_files_by_name (
+                      Runtime.getRuntime(),
+                      new File(fixed_image_name).getName(),
+                      new File(align_frame.image_file_path.toString()).getName(),
+                      "aligned_" + String.format("%03d",(i)) + ".JPG",
+                      fixed_frame.next_alignment.window_size,
+                      fixed_frame.next_alignment.addx,
+                      fixed_frame.next_alignment.addy,
+                      fixed_frame.next_alignment.output_level );
+                fixed_frame_num = i;
+              }
+            }
+          }
+        }
+        
       }
 		} else if (cmd.equalsIgnoreCase("Exit")) {
 			System.exit ( 0 );
