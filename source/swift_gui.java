@@ -212,6 +212,9 @@ class ControlPanel extends JPanel {
   public JTextField output_level;
   public JCheckBox skip;
 
+  public JButton set_all;
+  public JButton run_alignment;
+
   ControlPanel (swift_gui swift) {
     this.swift = swift;
 
@@ -266,6 +269,12 @@ class ControlPanel extends JPanel {
     skip.addActionListener ( this.swift );
     skip.setActionCommand ( "skip" );
     center_panel.add ( skip );
+
+    center_panel.add ( new JLabel("  ") );
+    set_all = new JButton("Set All");
+    set_all.addActionListener ( this.swift );
+    set_all.setActionCommand ( "set_all" );
+    center_panel.add ( set_all );
 
     add ( center_panel, BorderLayout.CENTER );
   }
@@ -545,7 +554,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               control_panel.addx.setText ( "" );
               control_panel.addy.setText ( "" );
               control_panel.output_level.setText ( "" );
-              control_panel.skip.setSelected ( frame.skip );
+              control_panel.skip.setSelected ( false );
             } else {
               control_panel.window_size.setText ( "" + frame.next_alignment.window_size );
               control_panel.addx.setText ( "" + frame.next_alignment.addx );
@@ -996,6 +1005,21 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
             frame.skip = box.isSelected();
+          }
+        }
+      }
+		} else if (cmd.equalsIgnoreCase("set_all")) {
+			System.out.println ( "\n\nGot a set_all command" );
+      if (frames != null) {
+        // Copy these values to all frames
+	      for (int i=0; i<this.frames.size(); i++) {
+	        swift_gui_frame frame = frames.get(i);
+	        frame.skip = control_panel.skip.isSelected();
+          if (frame.next_alignment != null) {
+            frame.next_alignment.window_size = Integer.parseInt ( control_panel.window_size.getText() );
+            frame.next_alignment.addx = Integer.parseInt ( control_panel.addx.getText() );
+            frame.next_alignment.addy = Integer.parseInt ( control_panel.addy.getText() );
+            frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
           }
         }
       }
