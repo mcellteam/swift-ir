@@ -200,6 +200,94 @@ public class run_swift {
     return ( s );
   }
 
+  // copy_files_by_name ( rt, image_files[golden_section], "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension, output_level );
+  public static void copy_files_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
+
+    if (output_level > 0) {
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "copy_files_by_name called with:" );
+      System.out.println ( "    original_file_name = " + original_file_name );
+      System.out.println ( "    new_file_name      = " + new_file_name );
+      System.out.println ( "    output_level       = " + output_level );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+    }
+
+    String command_line;
+    String interactive_commands;
+    Process cmd_proc;
+    int exit_value;
+
+    BufferedOutputStream proc_in;
+    BufferedInputStream proc_out;
+    BufferedInputStream proc_err;
+
+    File f;
+    BufferedWriter bw;
+
+    int num_left;
+    String stdout;
+    String stderr;
+
+    try {
+
+      // Use mir to copy the "golden section" to its proper location
+
+      interactive_commands = "F " + original_file_name + "\n";
+      interactive_commands += "RW " + new_file_name+"\n";
+
+      f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
+      bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
+      bw.write ( interactive_commands, 0, interactive_commands.length() );
+      bw.close();
+
+      command_line = "mir zeroth.mir";
+      if (output_level > 0) System.out.println ( "\n*** Running zeroth mir with command line: " + command_line + " ***" );
+      if (output_level > 0) System.out.println ( "Copying " + original_file_name + " to " + new_file_name );
+      if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+      cmd_proc = rt.exec ( command_line );
+
+      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+      //proc_in.write ( interactive_commands.getBytes() );
+      proc_in.close();
+
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
+      cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+
+      stdout = read_string_from ( proc_out );
+
+      if (output_level > 4) System.out.print ( stdout );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+
+      stderr = read_string_from ( proc_err );
+
+      if (output_level > 11) System.out.print ( stderr );
+
+      if (output_level > 11) System.out.println ( "=================================================================================" );
+
+    } catch ( Exception some_exception ) {
+
+      if (output_level > 0) System.out.println ( "Error: " + some_exception );
+      if (output_level > 0) System.out.println ( some_exception.getStackTrace() );
+      some_exception.printStackTrace();
+
+    }
+  }
+
   public static void align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                            int window_size, int addx, int addy, int output_level ) {
 
@@ -1006,66 +1094,9 @@ if (use_line_parts) {
 
     if (output_level > 0) System.out.println ();
 
-    try {
-
-      // Use mir to copy the "golden section" to its proper location
-
-      interactive_commands = "F " + image_files[golden_section] + "\n";
-      interactive_commands += "RW " + "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension+"\n";
-
-      f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
-      bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
-      bw.write ( interactive_commands, 0, interactive_commands.length() );
-      bw.close();
-
-      command_line = "mir zeroth.mir";
-      if (output_level > 0) System.out.println ( "\n*** Running zeroth mir with command line: " + command_line + " ***" );
-      if (output_level > 0) System.out.println ( "Copying " + image_files[golden_section] + " to " + "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension );
-      if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
-      cmd_proc = rt.exec ( command_line );
-
-      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
-      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
-      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
-
-      //proc_in.write ( interactive_commands.getBytes() );
-      proc_in.close();
-
-      global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
-
-      cmd_proc.waitFor();
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
-
-    } catch ( Exception some_exception ) {
-
-      if (output_level > 0) System.out.println ( "Error: " + some_exception );
-      if (output_level > 0) System.out.println ( some_exception.getStackTrace() );
-      some_exception.printStackTrace();
-
-    }
-
+    copy_files_by_name ( rt, image_files[golden_section], "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension, output_level );
 
     global_io.wait_for_enter ( "Completed copy (zeroth mir) > " );
-
 
     if (!test2) {
       // Set the golden section to be the computed JPEG file
