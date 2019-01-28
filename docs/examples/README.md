@@ -11,6 +11,8 @@ F Aaperture.PNG
 R
 W w.ppm
 ```
+![Before](files/Aaperture.PNG?raw=true "Before")
+![After](files/w.JPG?raw=true "After")
 
 ### cpng.mir
 ```
