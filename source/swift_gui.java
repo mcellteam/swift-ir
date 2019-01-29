@@ -1190,15 +1190,18 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                   run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
                   first_pass = false;
                 }
-                run_swift.align_files_by_name (
+                String results[] = run_swift.align_files_by_name (
                       rt,
-                      new File(fixed_image_name).getName(),
-                      new File(align_frame.image_file_path.toString()).getName(),
+                      (new File(fixed_image_name)).getAbsolutePath(), // .getName(),
+                      (new File(align_frame.image_file_path.toString())).getAbsolutePath(), // .getName(),
                       prefix + "aligned_" + String.format("%03d",(i)) + ".JPG",
                       fixed_frame.next_alignment.window_size,
                       fixed_frame.next_alignment.addx,
                       fixed_frame.next_alignment.addy,
                       fixed_frame.next_alignment.output_level );
+                if (results != null) {
+                  System.out.println ( "Results from run_swift.align_files_by_name:\n\n" + results );
+                }
                 fixed_frame_num = i;
               }
             }
