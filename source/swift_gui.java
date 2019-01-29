@@ -221,7 +221,8 @@ class ControlPanel extends JPanel {
 
 
   // Resizing
-  //public JTextField image_name;
+  public JTextField scale_factor;
+  public JButton run_resize;
 
 
   // Alignment
@@ -238,7 +239,18 @@ class ControlPanel extends JPanel {
   JPanel make_resize_panel() {
     JPanel resize_panel = new JPanel();
 
-    resize_panel.add ( new JLabel("Resizing Panel") );
+    resize_panel.add ( new JLabel("Scale Factor:") );
+    scale_factor = new JTextField("2",6);
+    scale_factor.addActionListener ( this.swift );
+    scale_factor.setActionCommand ( "addx" );
+    resize_panel.add ( scale_factor );
+
+    resize_panel.add ( new JLabel("  ") );
+    run_resize = new JButton("Resize");
+    run_resize.addActionListener ( this.swift );
+    run_resize.setActionCommand ( "run_resize" );
+    resize_panel.add ( run_resize );
+
     return ( resize_panel );
   }
 
@@ -1104,6 +1116,37 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             frame.next_alignment.addy = Integer.parseInt ( control_panel.addy.getText() );
             frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
           }
+        }
+      }
+		} else if (cmd.equalsIgnoreCase("run_resize")) {
+			int scale_factor = Integer.parseInt ( control_panel.scale_factor.getText() );
+			int output_level = Integer.parseInt ( control_panel.output_level.getText() );
+			System.out.println ( "\n\nGot a run_resize command with scale factor of " + scale_factor );
+      if (frames != null) {
+        System.out.println ( "Scaling with destination = \"" + destination + "\"" );
+        if (destination == null) {
+          System.out.println ( "Error: Destination must be set." );
+        } else {
+          String prefix = "";
+          if (destination != null) {
+            if (destination.length() > 0) {
+              prefix = destination + File.separator;
+            }
+          }
+          Runtime rt = Runtime.getRuntime();
+	        for (int i=0; i<this.frames.size(); i++) {
+	          swift_gui_frame frame = frames.get(i);
+	          if (frame.skip) {
+	            // Omit this frame
+	          } else {
+              run_swift.scale_file_with_iscale ( rt, frame.image_file_path.getAbsolutePath(), prefix, scale_factor, output_level );
+            }
+          }
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+          System.out.println ( "Resizing completed" );
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         }
       }
 		} else if (cmd.equalsIgnoreCase("run_alignment")) {
