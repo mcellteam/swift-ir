@@ -116,7 +116,8 @@ int main(int argc, char *argv[]) {
       } else
         fprintf(stderr, "not gray or RGB\n");
     }
-    {
+    if (strlen(outpath) > 0) {
+      // Use the "p=" path
       char *pre, *post, *lasts = NULL;
       pre = argv[0];
       for (post = pre; *post; post++) {
@@ -128,19 +129,34 @@ int main(int argc, char *argv[]) {
         post = lasts;
       }
       printf ( "Outpath = %s\n", outpath );
+      sprintf(outname, "%s/S%d%s", outpath, iscale, post);
+      printf ( "Outname = %s\n", outname );
+    } else {
+      // Use the existing logic unchanged
+      char *pre, *post, *lasts = NULL;
+      pre = argv[0];
+      for (post = pre; *post; post++) {
+        if (*post == '/')
+          lasts = post;
+      }
+      if (lasts) {
+        *lasts++ = 0;
+        post = lasts;
+      }
       if (!variance) {
         if (*post)
-          sprintf(outname, "%s%s/S%d%s", outpath, pre, iscale, post);
+          sprintf(outname, "%s/S%d%s", pre, iscale, post);
         else
-          sprintf(outname, "%sS%d%s", outpath, iscale, argv[0]);
+          sprintf(outname, "S%d%s", iscale, argv[0]);
       } else {
         if (*post)
-          sprintf(outname, "%s%s/V%d%s", outpath, pre, iscale, post);
+          sprintf(outname, "%s/V%d%s", pre, iscale, post);
         else
-          sprintf(outname, "%sV%d%s", outpath, iscale, argv[0]);
+          sprintf(outname, "V%d%s", iscale, argv[0]);
       }
-      printf ( "Outname = %s\n", outname );
     }
+
+
     write_img(outname, im1);
     argv++;
     argc--;
