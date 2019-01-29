@@ -200,13 +200,13 @@ public class run_swift {
     return ( s );
   }
 
-  // copy_files_by_name ( rt, image_files[golden_section], "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension, output_level );
-  public static void copy_files_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
+  // copy_file_by_name ( rt, image_files[golden_section], "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension, output_level );
+  public static void copy_file_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
 
     if (output_level > 0) {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
-      System.out.println ( "copy_files_by_name called with:" );
+      System.out.println ( "copy_file_by_name called with:" );
       System.out.println ( "    original_file_name = " + original_file_name );
       System.out.println ( "    new_file_name      = " + new_file_name );
       System.out.println ( "    output_level       = " + output_level );
@@ -1094,7 +1094,7 @@ if (use_line_parts) {
 
     if (output_level > 0) System.out.println ();
 
-    copy_files_by_name ( rt, image_files[golden_section], "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension, output_level );
+    copy_file_by_name ( rt, image_files[golden_section], "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension, output_level );
 
     global_io.wait_for_enter ( "Completed copy (zeroth mir) > " );
 
