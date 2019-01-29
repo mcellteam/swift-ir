@@ -1051,7 +1051,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                 fixed_image_name = "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
                 if (first_pass) {
                   // This is the first alignment, so copy the original image
-                  run_swift.copy_files_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
+                  run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
                   first_pass = false;
                 }
                 run_swift.align_files_by_name (
