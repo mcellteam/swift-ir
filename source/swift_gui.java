@@ -46,6 +46,7 @@ class ImageFileChooser extends JFileChooser {
     dialog.setLocation(300, 200);
     dialog.setSize ( 1024, 768 );
     // dialog.setResizable(false);
+    // dialog.add ( new JLabel ( "----- NEW -----" ) );
     return dialog;
   }
 }
@@ -760,6 +761,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   JMenuItem set_destination_menu_item = null;
 
+  JCheckBox load_files_on_import = null;
+
   JMenuItem import_images_menu_item = null;
   JMenuItem refresh_images_menu_item = null;
   JMenuItem center_image_menu_item = null;
@@ -876,6 +879,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       image_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
 		  int returnVal = image_file_chooser.showDialog(this, "Import Selected Images");
 		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+        boolean load_on_import = load_files_on_import.isSelected();
+        System.out.println ( "\nImporting with Load on Import = " + load_on_import );
+
 		    File selected_files[] = image_file_chooser.getSelectedFiles();
 		    if (selected_files.length > 0) {
 		      // Use the current size as the new index (if size is 0, then the new index will be 0 which points to the first)
@@ -883,7 +889,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		      int new_frame_index = this.frames.size();
 		      for (int i=0; i<selected_files.length; i++) {
             System.out.println ( "You chose this file: " + selected_files[i] );
-            this.frames.add ( new swift_gui_frame ( selected_files[i], load_images ) );
+            this.frames.add ( new swift_gui_frame ( selected_files[i], load_on_import ) );
 		      }
           make_alignments();
 		      // Set the frame index to the first file just added
@@ -1293,6 +1299,18 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		    swift_gui_panel.project_file_chooser = new ProjectFileChooser ( swift_gui_panel.current_directory );
 		    swift_gui_panel.destination_chooser = new DestinationChooser ( swift_gui_panel.current_directory );
 		    swift_gui_panel.image_file_chooser = new ImageFileChooser ( swift_gui_panel.current_directory );
+		    System.out.println ( "image_file_chooser:\n  " + swift_gui_panel.image_file_chooser );
+		    BorderLayout chooser_layout = (BorderLayout)(swift_gui_panel.image_file_chooser.getLayout());
+		    System.out.println ( "image_file_chooser.layout:\n  " + chooser_layout );
+		    JPanel chooser_controls_panel = (JPanel)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH));
+		    System.out.println ( "image_file_chooser.layout.SOUTH:\n  " + chooser_controls_panel );
+		    swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
+		    chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
+
+		    //BoxLayout chooser_controls_layout = (BoxLayout)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH).getLayout() );
+		    //System.out.println ( "image_file_chooser.layout.controls:\n  " + chooser_controls_layout );
+		    // dialog.add ( new JLabel ( "----- NEW -----" ) );
+
 
         for (int i=0; i<actual_file_names.size(); i++) {
           System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
