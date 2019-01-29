@@ -795,6 +795,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       f.println ( "  \"method\": \"SWiFT-IR\"," );
       f.println ( "  \"data\": {" );
       f.println ( "    \"source_path\": \"\"," );
+      f.println ( "    \"destination_path\": \"" + destination + "\"," );
       f.println ( "    \"defaults\": {" );
       f.println ( "      \"align_to_next_pars\": {" );
       f.println ( "        \"window_size\": 1024," );
@@ -947,6 +948,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                  (obj_dict.get("data") != null) ) {
               // Assume that everything is fine at this point
               HashMap<String,Object> data = (HashMap<String,Object>)(obj_dict.get("data"));
+              destination = new File ( (String)(data.get("destination_path")) );
+              control_panel.destination_label.setText ( "Destination: "+destination );
+
               ArrayList<Object> image_stack = (ArrayList<Object>)(data.get("imagestack"));
 
               frames = new ArrayList<swift_gui_frame>();
