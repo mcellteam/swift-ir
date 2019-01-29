@@ -24,6 +24,19 @@ class ProjectFileChooser extends JFileChooser {
   }
 }
 
+class DestinationChooser extends JFileChooser {
+  DestinationChooser ( String path ) {
+    super(path);
+  }
+  protected JDialog createDialog(Component parent) throws HeadlessException {
+    JDialog dialog = super.createDialog(parent);
+    dialog.setLocation(300, 200);
+    dialog.setSize ( 1024, 768 );
+    // dialog.setResizable(false);
+    return dialog;
+  }
+}
+
 class ImageFileChooser extends JFileChooser {
   ImageFileChooser ( String path ) {
     super(path);
@@ -201,6 +214,7 @@ class ControlPanel extends JPanel {
   public JTextField image_name;
 
   public JLabel project_label;
+  public JLabel destination_label;
 
   public JLabel image_label;
   public JLabel image_size;
@@ -224,8 +238,14 @@ class ControlPanel extends JPanel {
     // image_name.setBounds ( 10, 10, 300, 20 );
     // add ( image_name );
 
+    JPanel top_panel = new JPanel();
+    top_panel.setLayout ( new BorderLayout( 0, 20 ) );
     project_label = new JLabel("Project File: "+swift.project_file);
-    add ( project_label, BorderLayout.NORTH );
+    top_panel.add ( project_label, BorderLayout.NORTH );
+    destination_label = new JLabel("Destination: "+swift.destination);
+    top_panel.add ( destination_label, BorderLayout.CENTER );
+
+    add ( top_panel, BorderLayout.NORTH );
 
     JPanel center_panel = new JPanel();
 
@@ -294,12 +314,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   ControlPanel control_panel = null;
 
   File project_file=null;
+  File destination=null;
 
 	static int w=1200, h=1024;
 
   String current_directory = "";
   ImageFileChooser image_file_chooser = null;
   ProjectFileChooser project_file_chooser = null;
+  DestinationChooser destination_chooser = null;
 
   FileListDialog file_list_dialog = null;
 
@@ -684,6 +706,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   JMenuItem save_project_menu_item = null;
   JMenuItem save_project_as_menu_item = null;
 
+  JMenuItem set_destination_menu_item = null;
+
   JMenuItem import_images_menu_item = null;
   JMenuItem refresh_images_menu_item = null;
   JMenuItem center_image_menu_item = null;
@@ -823,6 +847,19 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	        repaint();
           repaint_panels();
 		    }
+		  }
+		  set_title();
+    } else if ( action_source == set_destination_menu_item ) {
+		  destination_chooser.setMultiSelectionEnabled(false);
+		  destination_chooser.setFileSelectionMode ( JFileChooser.DIRECTORIES_ONLY );
+		  int returnVal = destination_chooser.showDialog(this, "Choose Destination");
+		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+		    destination = destination_chooser.getSelectedFile();
+	      System.out.println ( "Destination = " + destination );
+        control_panel.destination_label.setText ( "Destination: "+destination );
+        update_control_panel();
+        repaint();
+        repaint_panels();
 		  }
 		  set_title();
     } else if ( action_source == open_project_menu_item ) {
@@ -1032,7 +1069,13 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		} else if (cmd.equalsIgnoreCase("run_alignment")) {
 			System.out.println ( "\n\nGot a run_alignment command" );
       if (frames != null) {
-        System.out.println ( "Running an alignment" );
+        System.out.println ( "Running an alignment with destination = \"" + destination + "\"" );
+        String prefix = "";
+        if (destination != null) {
+          if (destination.length() > 0) {
+            prefix = destination + File.separator;
+          }
+        }
         Runtime rt = Runtime.getRuntime();
         int fixed_frame_num = -1;
         boolean first_pass = true;
@@ -1048,7 +1091,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               if (fixed_frame.next_alignment != null) {
                 String fixed_image_name;
                 // Use the previously aligned image name
-                fixed_image_name = "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
+                fixed_image_name = prefix + "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
                 if (first_pass) {
                   // This is the first alignment, so copy the original image
                   run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
@@ -1058,7 +1101,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                       rt,
                       new File(fixed_image_name).getName(),
                       new File(align_frame.image_file_path.toString()).getName(),
-                      "aligned_" + String.format("%03d",(i)) + ".JPG",
+                      prefix + "aligned_" + String.format("%03d",(i)) + ".JPG",
                       fixed_frame.next_alignment.window_size,
                       fixed_frame.next_alignment.addx,
                       fixed_frame.next_alignment.addy,
@@ -1165,6 +1208,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 				swift_gui_panel.setBackground ( new Color (60,60,60) );
 		    swift_gui_panel.project_file_chooser = new ProjectFileChooser ( swift_gui_panel.current_directory );
+		    swift_gui_panel.destination_chooser = new DestinationChooser ( swift_gui_panel.current_directory );
 		    swift_gui_panel.image_file_chooser = new ImageFileChooser ( swift_gui_panel.current_directory );
 
         for (int i=0; i<actual_file_names.size(); i++) {
@@ -1202,6 +1246,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             mi.addActionListener(swift_gui_panel);
 
             file_menu.add ( mi = swift_gui_panel.save_project_as_menu_item = new JMenuItem("Save Project As") );
+            mi.addActionListener(swift_gui_panel);
+
+            file_menu.addSeparator();
+
+            file_menu.add ( mi = swift_gui_panel.set_destination_menu_item = new JMenuItem("Set Destination") );
             mi.addActionListener(swift_gui_panel);
 
             file_menu.addSeparator();
