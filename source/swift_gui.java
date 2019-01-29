@@ -211,15 +211,20 @@ class AlignmentPanel extends JPanel {
 class ControlPanel extends JPanel {
   public swift_gui swift;
 
-  public JTextField image_name;
-
+  // Input/Output Header
   public JLabel project_label;
   public JLabel destination_label;
-
+  public JTextField image_name;
   public JLabel image_label;
   public JLabel image_size;
   public JLabel image_bits;
 
+
+  // Resizing
+  //public JTextField image_name;
+
+
+  // Alignment
   public JTextField window_size;
   public JTextField addx;
   public JTextField addy;
@@ -230,19 +235,15 @@ class ControlPanel extends JPanel {
   public JButton run_alignment;
 
 
+  JPanel make_resize_panel() {
+    JPanel resize_panel = new JPanel();
+
+    resize_panel.add ( new JLabel("Resizing Panel") );
+    return ( resize_panel );
+  }
+
   JPanel make_alignment_panel() {
     JPanel alignment_panel = new JPanel();
-
-    image_label = new JLabel("");
-    alignment_panel.add ( image_label );
-
-    alignment_panel.add ( new JLabel("  Size:") );
-    image_size = new JLabel("");
-    alignment_panel.add ( image_size );
-
-    alignment_panel.add ( new JLabel("  Depth:") );
-    image_bits = new JLabel("");
-    alignment_panel.add ( image_bits );
 
     alignment_panel.add ( new JLabel("  WW:") );
     window_size = new JTextField("",8);
@@ -293,21 +294,46 @@ class ControlPanel extends JPanel {
 
     this.setLayout ( new BorderLayout( 0, 20 ) );
 
-    image_name = new JTextField("", 40);
-    // image_name.setBounds ( 10, 10, 300, 20 );
-    // add ( image_name );
-
     JPanel top_panel = new JPanel();
+
     top_panel.setLayout ( new BorderLayout( 0, 20 ) );
+
     project_label = new JLabel("Project File: "+swift.project_file);
     top_panel.add ( project_label, BorderLayout.NORTH );
     destination_label = new JLabel("Destination: "+swift.destination);
     top_panel.add ( destination_label, BorderLayout.CENTER );
 
+    JPanel file_data_panel = new JPanel();
+    file_data_panel.setLayout ( new FlowLayout( FlowLayout.LEFT ) );
+
+    image_name = new JTextField("", 40);
+    // image_name.setBounds ( 10, 10, 300, 20 );
+    // add ( image_name );
+
+    file_data_panel.add ( new JLabel("Name:") );
+    image_label = new JLabel("");
+    file_data_panel.add ( image_label );
+
+    file_data_panel.add ( new JLabel("  Size:") );
+    image_size = new JLabel("");
+    file_data_panel.add ( image_size );
+
+    file_data_panel.add ( new JLabel("  Depth:") );
+    image_bits = new JLabel("");
+    file_data_panel.add ( image_bits );
+
+    top_panel.add ( file_data_panel, BorderLayout.SOUTH );
+
     add ( top_panel, BorderLayout.NORTH );
 
+
+    JTabbedPane tabbed_pane = new JTabbedPane();
+    
     JPanel alignment_panel = make_alignment_panel();
-    add ( alignment_panel, BorderLayout.CENTER );
+    tabbed_pane.addTab ( "Resizing", make_resize_panel() );
+    tabbed_pane.addTab ( "Alignment", alignment_panel );
+
+    add ( tabbed_pane, BorderLayout.CENTER );
   }
 
   public void update ( swift_gui swift ) {
