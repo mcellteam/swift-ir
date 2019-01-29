@@ -1178,13 +1178,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	          // Omit this frame
 	        } else {
 	          if (fixed_frame_num < 0) {
+	            // This is the first non-skipped frame, so use it as the fixed frame
 	            fixed_frame_num = i;
 	          } else {
+	            // There is a valid fixed frame and this (to be aligned) frame
               swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
               if (fixed_frame.next_alignment != null) {
+                // The fixed frame defines an alignment to the next frame
                 String fixed_image_name;
                 // Use the previously aligned image name
-                fixed_image_name = prefix + "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
+                // fixed_image_name = prefix + "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
+                fixed_image_name = prefix + fixed_frame.image_file_path.getName();
                 if (first_pass) {
                   // This is the first alignment, so copy the original image
                   run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
@@ -1192,9 +1196,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                 }
                 String results[] = run_swift.align_files_by_name (
                       rt,
-                      (new File(fixed_image_name)).getAbsolutePath(), // .getName(),
-                      (new File(align_frame.image_file_path.toString())).getAbsolutePath(), // .getName(),
-                      prefix + "aligned_" + String.format("%03d",(i)) + ".JPG",
+                      (new File(fixed_image_name)).getAbsolutePath(),
+                      (new File(align_frame.image_file_path.toString())).getAbsolutePath(),
+                      prefix + (new File(align_frame.image_file_path.toString())).getName(),
                       fixed_frame.next_alignment.window_size,
                       fixed_frame.next_alignment.addx,
                       fixed_frame.next_alignment.addy,
