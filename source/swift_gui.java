@@ -304,6 +304,60 @@ class ControlPanel extends JPanel {
 
     add ( center_panel, BorderLayout.CENTER );
   }
+
+  public void update ( swift_gui swift ) {
+    if (swift != null) {
+
+      if (swift.frames != null) {
+        if (swift.frames.size() > 0) {
+          File image_file_path = swift.frames.get(swift.frame_index).image_file_path;
+          this.image_name.setText ( image_file_path.getName() );
+          swift_gui_frame frame = swift.frames.get(swift.frame_index);
+          if (frame != null) {
+            if (frame.image != null) {
+              BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
+              this.image_size.setText ( ""+frame_image.getWidth()+"x"+frame_image.getHeight() );
+              this.image_bits.setText ( ""+frame_image.getColorModel().getPixelSize() );
+            }
+            if (frame.next_alignment == null) {
+              this.window_size.setText ( "" );
+              this.addx.setText ( "" );
+              this.addy.setText ( "" );
+              this.output_level.setText ( "" );
+              this.skip.setSelected ( false );
+            } else {
+              this.window_size.setText ( "" + frame.next_alignment.window_size );
+              this.addx.setText ( "" + frame.next_alignment.addx );
+              this.addy.setText ( "" + frame.next_alignment.addy );
+              this.output_level.setText ( "" + frame.next_alignment.output_level );
+              this.skip.setSelected ( frame.skip );
+            }
+          }
+        } else {
+          this.image_name.setText ( "" );
+          this.image_size.setText ( "" );
+          this.image_bits.setText ( "" );
+          this.window_size.setText ( "" );
+          this.addx.setText ( "" );
+          this.addy.setText ( "" );
+          this.output_level.setText ( "" );
+          this.skip.setSelected ( false );
+        }
+      } else {
+        this.image_name.setText ( "" );
+        this.image_size.setText ( "" );
+        this.image_bits.setText ( "" );
+        this.window_size.setText ( "" );
+        this.addx.setText ( "" );
+        this.addy.setText ( "" );
+        this.output_level.setText ( "" );
+        this.skip.setSelected ( false );
+      }
+      this.image_label.setText ( this.image_name.getText() );
+
+    }
+  }
+
 }
 
 
@@ -566,52 +620,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   public void update_control_panel() {
     if (control_panel != null) {
-      if (frames != null) {
-        if (frames.size() > 0) {
-          File image_file_path = frames.get(frame_index).image_file_path;
-          control_panel.image_name.setText ( image_file_path.getName() );
-          swift_gui_frame frame = frames.get(frame_index);
-          if (frame != null) {
-            if (frame.image != null) {
-              BufferedImage frame_image = frames.get(frame_index).image;
-              control_panel.image_size.setText ( ""+frame_image.getWidth()+"x"+frame_image.getHeight() );
-              control_panel.image_bits.setText ( ""+frame_image.getColorModel().getPixelSize() );
-            }
-            if (frame.next_alignment == null) {
-              control_panel.window_size.setText ( "" );
-              control_panel.addx.setText ( "" );
-              control_panel.addy.setText ( "" );
-              control_panel.output_level.setText ( "" );
-              control_panel.skip.setSelected ( false );
-            } else {
-              control_panel.window_size.setText ( "" + frame.next_alignment.window_size );
-              control_panel.addx.setText ( "" + frame.next_alignment.addx );
-              control_panel.addy.setText ( "" + frame.next_alignment.addy );
-              control_panel.output_level.setText ( "" + frame.next_alignment.output_level );
-              control_panel.skip.setSelected ( frame.skip );
-            }
-          }
-        } else {
-          control_panel.image_name.setText ( "" );
-          control_panel.image_size.setText ( "" );
-          control_panel.image_bits.setText ( "" );
-          control_panel.window_size.setText ( "" );
-          control_panel.addx.setText ( "" );
-          control_panel.addy.setText ( "" );
-          control_panel.output_level.setText ( "" );
-          control_panel.skip.setSelected ( false );
-        }
-      } else {
-        control_panel.image_name.setText ( "" );
-        control_panel.image_size.setText ( "" );
-        control_panel.image_bits.setText ( "" );
-        control_panel.window_size.setText ( "" );
-        control_panel.addx.setText ( "" );
-        control_panel.addy.setText ( "" );
-        control_panel.output_level.setText ( "" );
-        control_panel.skip.setSelected ( false );
-      }
-      control_panel.image_label.setText ( control_panel.image_name.getText() );
+      control_panel.update ( this );
     }
   }
 
