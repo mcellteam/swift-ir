@@ -16,8 +16,11 @@
 
 struct image *im0, *im1;
 
+char outpath[32767] = "\0";
+
 int contr, variance;
 int main(int argc, char *argv[]) {
+  int path_prefix_index = -1;
   int iscale = 8, x, y, i, j, v, fd;
   long int no;
   argv++;
@@ -37,12 +40,18 @@ int main(int argc, char *argv[]) {
     argv++;
     argc--;
     goto again;
+  } else if (strncmp (argv[0],"p=", 2) == 0) {
+    strcpy ( outpath, &argv[0][2] );
+    printf ( "Output path = %s\n", outpath );
+    argv++;
+    argc--;
+    goto again;
   }
   fprintf(stderr, "iscale %d  contr %d var %d\n", iscale, contr, variance);
   while (argc > 0) {
     int owid, oht, R, G, B, av = 0;
     unsigned char *ip;
-    char outname[1024];
+    char outname[32767];
     im0 = read_img(argv[0]);
     owid = im0->wid / iscale;
     oht = im0->ht / iscale;
@@ -118,17 +127,19 @@ int main(int argc, char *argv[]) {
         *lasts++ = 0;
         post = lasts;
       }
+      printf ( "Outpath = %s\n", outpath );
       if (!variance) {
         if (*post)
-          sprintf(outname, "%s/S%d%s", pre, iscale, post);
+          sprintf(outname, "%s%s/S%d%s", outpath, pre, iscale, post);
         else
-          sprintf(outname, "S%d%s", iscale, argv[0]);
+          sprintf(outname, "%sS%d%s", outpath, iscale, argv[0]);
       } else {
         if (*post)
-          sprintf(outname, "%s/V%d%s", pre, iscale, post);
+          sprintf(outname, "%s%s/V%d%s", outpath, pre, iscale, post);
         else
-          sprintf(outname, "V%d%s", iscale, argv[0]);
+          sprintf(outname, "%sV%d%s", outpath, iscale, argv[0]);
       }
+      printf ( "Outname = %s\n", outname );
     }
     write_img(outname, im1);
     argv++;
