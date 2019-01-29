@@ -200,6 +200,13 @@ public class run_swift {
     return ( s );
   }
 
+  public static String[] make_string_array ( String code, String description ) {
+    String s[] = new String[2];
+    s[0] = code;
+    s[1] = description;
+    return ( s );
+  }
+
   public static void scale_file_with_iscale ( Runtime rt, String original_file_name, String subdirectory, int factor, int output_level ) {
 
     if (output_level > 0) {
@@ -359,8 +366,8 @@ public class run_swift {
     }
   }
 
-  public static void align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
-                                           int window_size, int addx, int addy, int output_level ) {
+  public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
+                                               int window_size, int addx, int addy, int output_level ) {
 
     if (output_level > 0) {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
@@ -463,7 +470,8 @@ public class run_swift {
 
       if (parts.length < 7) {
         System.out.println ( "Error: expected at least 7 parts, but only got " + parts.length + "\n" + stdout );
-        System.exit ( 5 );
+        return ( make_string_array ( "5", "Error: expected at least 7 parts, but only got " + parts.length + "\n" ) );
+        // System.exit ( 5 );
       }
 
       String tarx = "" + parts[2];
@@ -552,7 +560,8 @@ if (use_line_parts) {
 
       if (parts.length < 40) {
         System.out.println ( "Error: expected at least 40 parts, but only got " + parts.length + "\n" + stdout );
-        System.exit ( 5 );
+        return ( make_string_array ( "5", "Error: expected at least 40 parts, but only got " + parts.length + "\n" + stdout ) );
+        // System.exit ( 5 );
       }
 
       interactive_commands = "F " + align_image_file + "\n";
@@ -620,7 +629,8 @@ if (use_line_parts) {
 
       if (parts.length < 15) {
         System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
-        System.exit ( 5 );
+        return ( make_string_array ( "5", "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout ) );
+        // System.exit ( 5 );
       }
 
       AI1 = "" + parts[10];
@@ -772,7 +782,8 @@ if (use_line_parts) {
 
       if (parts.length < 15) {
         System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
-        System.exit ( 5 );
+        return ( make_string_array ( "5", "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout ) );
+        // System.exit ( 5 );
       }
 
       AI1 = "" + parts[10];
@@ -868,7 +879,8 @@ if (use_line_parts) {
 
       if (parts.length < 95) {
         System.out.println ( "Error: expected at least 95 parts, but only got " + parts.length + "\n" + stdout );
-        System.exit ( 5 );
+        return ( make_string_array ( "5", "Error: expected at least 95 parts, but only got " + parts.length + "\n" + stdout ) );
+        // System.exit ( 5 );
       }
 
       interactive_commands = "F " + align_image_file + "\n";
@@ -952,7 +964,8 @@ if (use_line_parts) {
 
       if (parts.length < 15) {
         System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
-        System.exit ( 5 );
+        return ( make_string_array ( "5", "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout ) );
+        // System.exit ( 5 );
       }
 
       if (output_level > 1) System.out.println ( "=================================================================================" );
@@ -982,6 +995,7 @@ if (use_line_parts) {
 
     }
 
+    return ( null );
   }
 
 
@@ -1209,11 +1223,15 @@ if (use_line_parts) {
 
       String new_aligned_image_file_name = "aligned_" + String.format("%03d", alignment_sequence[alignment_index][0]) + "."+image_type_extension;
 
-      align_files_by_name ( rt,
+      String results[] = align_files_by_name ( rt,
                             image_files[alignment_sequence[alignment_index][1]],
                             image_files[alignment_sequence[alignment_index][0]],
                             new_aligned_image_file_name,
                             window_size, addx, addy, output_level );
+
+      if (results != null) {
+        if (output_level > 0) System.out.println ( results );
+      }
 
       // Update the name being used in that slot
       image_files[alignment_sequence[alignment_index][0]] = new_aligned_image_file_name;
