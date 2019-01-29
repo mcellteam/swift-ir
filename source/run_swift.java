@@ -200,7 +200,78 @@ public class run_swift {
     return ( s );
   }
 
-  // copy_file_by_name ( rt, image_files[golden_section], "aligned_" + String.format("%03d", golden_section) + "."+image_type_extension, output_level );
+  public static void scale_file_with_iscale ( Runtime rt, String original_file_name, String subdirectory, int factor, int output_level ) {
+
+    if (output_level > 0) {
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "scale_file_with_iscale called with:" );
+      System.out.println ( "    original_file_name = " + original_file_name );
+      System.out.println ( "    subdirectory       = " + subdirectory );
+      System.out.println ( "    scale_factor       = " + factor );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+    }
+
+    String command_line;
+    Process cmd_proc;
+    int exit_value;
+
+    BufferedOutputStream proc_in;
+    BufferedInputStream proc_out;
+    BufferedInputStream proc_err;
+
+    File f;
+    BufferedWriter bw;
+
+    int num_left;
+    String stdout;
+    String stderr;
+
+    try {
+
+      command_line = "iscale p=" + subdirectory + " +" + factor + " " + original_file_name;
+      if (output_level > 0) System.out.println ( "\n*** Running iscale with command line: " + command_line + " ***" );
+      cmd_proc = rt.exec ( command_line );
+
+      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+      proc_in.close();
+
+      global_io.log_command ( command_line + "\n" );
+
+      cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+
+      stdout = read_string_from ( proc_out );
+
+      if (output_level > 4) System.out.print ( stdout );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+
+      stderr = read_string_from ( proc_err );
+
+      if (output_level > 11) System.out.print ( stderr );
+
+      if (output_level > 11) System.out.println ( "=================================================================================" );
+
+    } catch ( Exception some_exception ) {
+
+      if (output_level > 0) System.out.println ( "Error: " + some_exception );
+      if (output_level > 0) System.out.println ( some_exception.getStackTrace() );
+      some_exception.printStackTrace();
+
+    }
+  }
+
   public static void copy_file_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
 
     if (output_level > 0) {
@@ -930,6 +1001,8 @@ if (use_line_parts) {
     int addx = 2000;
     int addy = 2000;
 
+    int scale_factor = -1;
+
     boolean test2 = false;
 
 	  ArrayList<String> file_name_args = new ArrayList<String>();
@@ -941,6 +1014,7 @@ if (use_line_parts) {
 		  if (args[arg_index].startsWith("-") ) {
 		    if (args[arg_index].equals("-?")) {
 		      System.out.println ( "Command Line Arguments:" );
+		      System.out.println ( "  -is #   run iscale with # as scale (no other processing)" );
 		      System.out.println ( "  -v #    amount of output (0 to 9 or higher)" );
 		      System.out.println ( "  -g #    specifies \"golden\" image number" );
 		      System.out.println ( "  -w #    specifies window size" );
@@ -951,7 +1025,11 @@ if (use_line_parts) {
 		      System.out.println ( "  -wait   pauses for a carriage return after each step" );
 		      System.out.println ( "  -log    writes a log of commands to command_log.bat" );
 		      System.out.println ( "  -test2  forces a test mode using only 2 images" );
+		      System.out.println ( "  images  all arguments not prefixed with \"-\" are image files" );
           System.exit ( 0 );
+		    } else if (args[arg_index].equals("-is")) {
+		      arg_index++;
+		      scale_factor = new Integer ( args[arg_index] );
 		    } else if (args[arg_index].equals("-v")) {
 		      arg_index++;
 		      output_level = new Integer ( args[arg_index] );
@@ -1010,6 +1088,17 @@ if (use_line_parts) {
     if (output_level > 7) System.out.println ( "Command line specified " + actual_file_names.size() + " actual files:" );
     for (int i=0; i<actual_file_names.size(); i++) {
       if (output_level > 7) System.out.println ( "  " + actual_file_names.get(i) );
+    }
+
+    if (scale_factor > 0) {
+      // Just scale and then exit
+      Runtime rt = Runtime.getRuntime();
+      for (int i=0; i<actual_file_names.size(); i++) {
+        String image_file_name = actual_file_names.get(i);
+        scale_file_with_iscale ( rt, image_file_name, "."+File.separator, scale_factor, output_level );
+      }
+
+      System.exit ( 0 );
     }
 
     if ( actual_file_names.size() < 2 ) {
