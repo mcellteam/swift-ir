@@ -229,6 +229,65 @@ class ControlPanel extends JPanel {
   public JButton set_all;
   public JButton run_alignment;
 
+
+  JPanel make_alignment_panel() {
+    JPanel alignment_panel = new JPanel();
+
+    image_label = new JLabel("");
+    alignment_panel.add ( image_label );
+
+    alignment_panel.add ( new JLabel("  Size:") );
+    image_size = new JLabel("");
+    alignment_panel.add ( image_size );
+
+    alignment_panel.add ( new JLabel("  Depth:") );
+    image_bits = new JLabel("");
+    alignment_panel.add ( image_bits );
+
+    alignment_panel.add ( new JLabel("  WW:") );
+    window_size = new JTextField("",8);
+    window_size.addActionListener ( this.swift );
+    window_size.setActionCommand ( "window_size" );
+    alignment_panel.add ( window_size );
+
+    alignment_panel.add ( new JLabel("  Addx:") );
+    addx = new JTextField("",6);
+    addx.addActionListener ( this.swift );
+    addx.setActionCommand ( "addx" );
+    alignment_panel.add ( addx );
+
+    alignment_panel.add ( new JLabel("  Addy:") );
+    addy = new JTextField("",6);
+    addy.addActionListener ( this.swift );
+    addy.setActionCommand ( "addy" );
+    alignment_panel.add ( addy );
+
+    alignment_panel.add ( new JLabel("  Output Level:") );
+    output_level = new JTextField("",4);
+    output_level.addActionListener ( this.swift );
+    output_level.setActionCommand ( "output_level" );
+    alignment_panel.add ( output_level );
+
+    alignment_panel.add ( new JLabel("  Skip:") );
+    skip = new JCheckBox("",false);
+    skip.addActionListener ( this.swift );
+    skip.setActionCommand ( "skip" );
+    alignment_panel.add ( skip );
+
+    alignment_panel.add ( new JLabel("  ") );
+    set_all = new JButton("Set All");
+    set_all.addActionListener ( this.swift );
+    set_all.setActionCommand ( "set_all" );
+    alignment_panel.add ( set_all );
+
+    alignment_panel.add ( new JLabel("  ") );
+    run_alignment = new JButton("Align");
+    run_alignment.addActionListener ( this.swift );
+    run_alignment.setActionCommand ( "run_alignment" );
+    alignment_panel.add ( run_alignment );
+    return ( alignment_panel );
+  }
+
   ControlPanel (swift_gui swift) {
     this.swift = swift;
 
@@ -247,62 +306,8 @@ class ControlPanel extends JPanel {
 
     add ( top_panel, BorderLayout.NORTH );
 
-    JPanel center_panel = new JPanel();
-
-    image_label = new JLabel("");
-    center_panel.add ( image_label );
-
-    center_panel.add ( new JLabel("  Size:") );
-    image_size = new JLabel("");
-    center_panel.add ( image_size );
-
-    center_panel.add ( new JLabel("  Depth:") );
-    image_bits = new JLabel("");
-    center_panel.add ( image_bits );
-
-    center_panel.add ( new JLabel("  WW:") );
-    window_size = new JTextField("",8);
-    window_size.addActionListener ( this.swift );
-    window_size.setActionCommand ( "window_size" );
-    center_panel.add ( window_size );
-
-    center_panel.add ( new JLabel("  Addx:") );
-    addx = new JTextField("",6);
-    addx.addActionListener ( this.swift );
-    addx.setActionCommand ( "addx" );
-    center_panel.add ( addx );
-
-    center_panel.add ( new JLabel("  Addy:") );
-    addy = new JTextField("",6);
-    addy.addActionListener ( this.swift );
-    addy.setActionCommand ( "addy" );
-    center_panel.add ( addy );
-
-    center_panel.add ( new JLabel("  Output Level:") );
-    output_level = new JTextField("",4);
-    output_level.addActionListener ( this.swift );
-    output_level.setActionCommand ( "output_level" );
-    center_panel.add ( output_level );
-
-    center_panel.add ( new JLabel("  Skip:") );
-    skip = new JCheckBox("",false);
-    skip.addActionListener ( this.swift );
-    skip.setActionCommand ( "skip" );
-    center_panel.add ( skip );
-
-    center_panel.add ( new JLabel("  ") );
-    set_all = new JButton("Set All");
-    set_all.addActionListener ( this.swift );
-    set_all.setActionCommand ( "set_all" );
-    center_panel.add ( set_all );
-
-    center_panel.add ( new JLabel("  ") );
-    run_alignment = new JButton("Align");
-    run_alignment.addActionListener ( this.swift );
-    run_alignment.setActionCommand ( "run_alignment" );
-    center_panel.add ( run_alignment );
-
-    add ( center_panel, BorderLayout.CENTER );
+    JPanel alignment_panel = make_alignment_panel();
+    add ( alignment_panel, BorderLayout.CENTER );
   }
 
   public void update ( swift_gui swift ) {
