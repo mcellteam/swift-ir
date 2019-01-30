@@ -221,6 +221,8 @@ class ControlPanel extends JPanel {
   public JLabel image_bits;
 
 
+  public JCheckBox show_dest;
+
   // Resizing
   public JTextField scale_factor;
   public JButton run_resize;
@@ -315,6 +317,11 @@ class ControlPanel extends JPanel {
     top_panel.add ( project_label, BorderLayout.NORTH );
     destination_label = new JLabel("Destination: "+swift.destination);
     top_panel.add ( destination_label, BorderLayout.CENTER );
+
+    show_dest = new JCheckBox("Show",false);
+    show_dest.addActionListener ( this.swift );
+    show_dest.setActionCommand ( "show_dest" );
+    top_panel.add ( show_dest, BorderLayout.EAST );
 
     JPanel file_data_panel = new JPanel();
     file_data_panel.setLayout ( new FlowLayout( FlowLayout.LEFT ) );
@@ -411,6 +418,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   AlignmentPanel alignment_panel = null;
   ControlPanel control_panel = null;
 
+	JFrame results_frame = null;
+	swift_gui results_panel = null;
+	BufferedImage results_image = null;
+
   File project_file=null;
   File destination=null;
 
@@ -472,11 +483,20 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
     BufferedImage frame_image = null;
 
-    if (frames != null) {
-      if (frames.size() > 0) {
-        if (frame_index < 0) frame_index = 0;
-        if (frame_index >= frames.size()) frame_index = frames.size()-1;
-        frame_image = frames.get(frame_index).image;
+    if (results_image != null) {
+      frame_image = results_image;
+    } else {
+      if (frames != null) {
+        if (frames.size() > 0) {
+          if (frame_index < 0) frame_index = 0;
+          if (frame_index >= frames.size()) frame_index = frames.size()-1;
+          frame_image = frames.get(frame_index).image;
+          if (results_panel != null) {
+            // This is the master
+            results_panel.results_image = frame_image;
+            results_panel.repaint();
+          }
+        }
       }
     }
 
@@ -1113,6 +1133,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
+		} else if (cmd.equalsIgnoreCase("show_dest")) {
+			JCheckBox box = (JCheckBox)action_source;
+			System.out.println ( "\n\nGot a show_dest change with Selected = " + box.isSelected() );
+      if (results_frame != null) {
+        results_frame.setVisible ( box.isSelected() );
+      }
 		} else if (cmd.equalsIgnoreCase("set_all")) {
 			System.out.println ( "\n\nGot a set_all command" );
       if (frames != null) {
@@ -1284,6 +1310,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
 			public void run() {
+
 			  JFrame app_frame = new JFrame("swift_gui");
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 
@@ -1452,6 +1479,27 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 				app_frame.setJMenuBar ( menu_bar );
 				swift_gui_panel.update_control_panel();
 				swift_gui_panel.center_current_image();
+
+
+
+        // Create a results panel
+
+        JFrame results_frame = new JFrame("swift_results");
+        swift_gui swift_results_panel = new swift_gui();
+        swift_results_panel.parent_frame = results_frame;
+        swift_results_panel.current_directory = System.getProperty("user.dir");
+
+				results_frame.add ( swift_results_panel );
+
+        swift_results_panel.addKeyListener ( swift_results_panel );
+				results_frame.pack();
+				results_frame.setSize ( w, h );
+				results_frame.setLocation ( w, 0 );
+				results_frame.setVisible ( false );
+
+				swift_gui_panel.results_frame = results_frame;
+				swift_gui_panel.results_panel = swift_results_panel;
+
 
 			}
 		} );
