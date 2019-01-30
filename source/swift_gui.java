@@ -421,6 +421,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	JFrame results_frame = null;
 	swift_gui results_panel = null;
 	BufferedImage results_image = null;
+	File results_image_file = null;
 
   File project_file=null;
   File destination=null;
@@ -485,16 +486,26 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
     if (results_image != null) {
       frame_image = results_image;
+    } else if (results_image_file != null) {
+      try {
+        frame_image = ImageIO.read(results_image_file);
+      } catch ( IOException ioe ) {
+      }
     } else {
       if (frames != null) {
         if (frames.size() > 0) {
           if (frame_index < 0) frame_index = 0;
           if (frame_index >= frames.size()) frame_index = frames.size()-1;
-          frame_image = frames.get(frame_index).image;
-          if (results_panel != null) {
-            // This is the master
-            results_panel.results_image = frame_image;
-            results_panel.repaint();
+          swift_gui_frame f = frames.get(frame_index);
+          if (f != null) {
+            frame_image = f.image;
+            if (results_panel != null) {
+              // This is the master, so set the slave
+              // results_panel.results_image = frame_image;  // This would set the actual image
+              results_panel.results_image_file = new File ( destination + File.separator + f.image_file_path.getName() );
+              System.out.println ( "Set results_image_file to: " + results_panel.results_image_file );
+              results_panel.repaint();
+            }
           }
         }
       }
