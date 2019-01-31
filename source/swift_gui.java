@@ -1,7 +1,6 @@
 /* Image Alignment Tool based on SWiFT */
 
 import java.io.*;
-
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.*;
@@ -9,8 +8,6 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.*;
-
-
 import javax.swing.text.*;
 import javax.swing.event.*;
 
@@ -280,10 +277,8 @@ class ControlPanel extends JPanel {
     JPanel alignment_panel = new JPanel();
 
     alignment_panel.add ( new JLabel("  WW:") );
-    //window_size = new JTextField("",8);
     window_size = new RespTextField(this.swift,"",8);
     window_size.addKeyListener ( this.swift );
-    //window_size.getDocument().addDocumentListener ( this.swift );
     window_size.addActionListener ( this.swift );
     window_size.setActionCommand ( "window_size" );
     alignment_panel.add ( window_size );
@@ -437,7 +432,7 @@ class ControlPanel extends JPanel {
 }
 
 
-public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener, DocumentListener {
+public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
 
   public int get_int_from_textfield ( JTextComponent c ) {
     String s = c.getText();
@@ -467,20 +462,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
 
 
-  }
-
-  public void changedUpdate(DocumentEvent e) {
-    System.out.println ( "Doc event: " + e );
-    System.out.println ( "Doc: " + e.getDocument() );
-    //System.out.println ( "Src: " + e.getSource() );
-  }
-  public void removeUpdate(DocumentEvent e) {
-    System.out.println ( "Doc event: " + e );
-    System.out.println ( "Doc: " + e.getDocument() );
-  }
-  public void insertUpdate(DocumentEvent e) {
-    System.out.println ( "Doc event: " + e );
-    System.out.println ( "Doc: " + e.getDocument() );
   }
 
   JFrame parent_frame = null;
