@@ -207,6 +207,33 @@ public class run_swift {
     return ( s );
   }
 
+  public static String[] make_string_array ( String code,
+                                             String t00, String t01, String t02, String t10, String t11, String t12,
+                                             String A00, String A01, String A02, String A10, String A11, String A12,
+                                             String a00, String a01, String a02, String a10, String a11, String a12 ) {
+    String s[] = new String[19];
+    s[0] = code;
+    s[1] = t00;
+    s[2] = t01;
+    s[3] = t02;
+    s[4] = t10;
+    s[5] = t11;
+    s[6] = t12;
+    s[7] = A00;
+    s[8] = A01;
+    s[9] = A02;
+    s[10] = A10;
+    s[11] = A11;
+    s[12] = A12;
+    s[13] = a00;
+    s[14] = a01;
+    s[15] = a02;
+    s[16] = a10;
+    s[17] = a11;
+    s[18] = a12;
+    return ( s );
+  }
+
   public static void scale_file_with_iscale ( Runtime rt, String original_file_name, String subdirectory, int factor, int output_level ) {
 
     if (output_level > 0) {
@@ -968,6 +995,8 @@ if (use_line_parts) {
         // System.exit ( 5 );
       }
 
+
+
       if (output_level > 1) System.out.println ( "=================================================================================" );
       if (output_level > 1) System.out.println ( "---------------------------------------------------------------------------------" );
       if (output_level > 1) System.out.println ( "Final best guess transform:" );
@@ -986,6 +1015,13 @@ if (use_line_parts) {
 
       global_io.wait_for_enter ( "Completed Step 3c (best guess) > " );
 
+
+
+      return ( make_string_array ( "m", patx, paty, parts[10], parts[11], parts[13], parts[14],
+                                        parts[10], parts[11], parts[12], parts[13], parts[14], parts[15],
+                                        parts[2], parts[3], parts[4], parts[5], parts[6], parts[7] ) );
+
+      // return ( make_string_array ( "5", "Error: expected at least 7 parts, but only got " + parts.length + "\n" ) );
 
     } catch ( Exception some_exception ) {
 
