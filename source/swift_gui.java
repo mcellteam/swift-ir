@@ -11,6 +11,9 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.*;
 
 
+import javax.swing.text.*;
+import javax.swing.event.*;
+
 class ProjectFileChooser extends JFileChooser {
   ProjectFileChooser ( String path ) {
     super(path);
@@ -208,6 +211,22 @@ class AlignmentPanel extends JPanel {
 	}
 }
 
+class RespTextField extends JTextField {
+  public swift_gui swift;
+  RespTextField(swift_gui swift) {
+    super();
+    this.swift = swift;
+  }
+  RespTextField(swift_gui swift, String s, int w) {
+    super(s,w);
+    this.swift = swift;
+  }
+  protected void processKeyEvent ( KeyEvent e ) {
+    super.processKeyEvent(e);
+    // swift.handle_key_event(this, e);
+    swift.handle_key_event(e);
+  }
+}
 
 class ControlPanel extends JPanel {
   public swift_gui swift;
@@ -229,21 +248,22 @@ class ControlPanel extends JPanel {
 
 
   // Alignment
-  public JTextField window_size;
-  public JTextField addx;
-  public JTextField addy;
-  public JTextField output_level;
+  public RespTextField window_size;
+  public RespTextField addx;
+  public RespTextField addy;
+  public RespTextField output_level;
   public JCheckBox skip;
 
   public JButton set_all;
   public JButton run_alignment;
 
 
-  JPanel make_resize_panel() {
+  JPanel make_resize_panel(swift_gui swift) {
     JPanel resize_panel = new JPanel();
 
     resize_panel.add ( new JLabel("Scale Factor:") );
     scale_factor = new JTextField("2",6);
+    scale_factor.addKeyListener ( this.swift );
     scale_factor.addActionListener ( this.swift );
     scale_factor.setActionCommand ( "addx" );
     resize_panel.add ( scale_factor );
@@ -257,29 +277,35 @@ class ControlPanel extends JPanel {
     return ( resize_panel );
   }
 
-  JPanel make_alignment_panel() {
+  JPanel make_alignment_panel(swift_gui swift) {
     JPanel alignment_panel = new JPanel();
 
     alignment_panel.add ( new JLabel("  WW:") );
-    window_size = new JTextField("",8);
+    //window_size = new JTextField("",8);
+    window_size = new RespTextField(this.swift,"",8);
+    window_size.addKeyListener ( this.swift );
+    //window_size.getDocument().addDocumentListener ( this.swift );
     window_size.addActionListener ( this.swift );
     window_size.setActionCommand ( "window_size" );
     alignment_panel.add ( window_size );
 
     alignment_panel.add ( new JLabel("  Addx:") );
-    addx = new JTextField("",6);
+    addx = new RespTextField(this.swift,"",6);
+    addx.addKeyListener ( this.swift );
     addx.addActionListener ( this.swift );
     addx.setActionCommand ( "addx" );
     alignment_panel.add ( addx );
 
     alignment_panel.add ( new JLabel("  Addy:") );
-    addy = new JTextField("",6);
+    addy = new RespTextField(this.swift,"",6);
+    addy.addKeyListener ( this.swift );
     addy.addActionListener ( this.swift );
     addy.setActionCommand ( "addy" );
     alignment_panel.add ( addy );
 
     alignment_panel.add ( new JLabel("  Output Level:") );
-    output_level = new JTextField("",4);
+    output_level = new RespTextField(this.swift,"",4);
+    output_level.addKeyListener ( this.swift );
     output_level.addActionListener ( this.swift );
     output_level.setActionCommand ( "output_level" );
     alignment_panel.add ( output_level );
@@ -349,8 +375,8 @@ class ControlPanel extends JPanel {
 
     JTabbedPane tabbed_pane = new JTabbedPane();
     
-    JPanel alignment_panel = make_alignment_panel();
-    tabbed_pane.addTab ( "Resizing", make_resize_panel() );
+    JPanel alignment_panel = make_alignment_panel(swift);
+    tabbed_pane.addTab ( "Resizing", make_resize_panel(swift) );
     tabbed_pane.addTab ( "Alignment", alignment_panel );
 
     add ( tabbed_pane, BorderLayout.CENTER );
@@ -412,7 +438,64 @@ class ControlPanel extends JPanel {
 }
 
 
-public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
+public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener, DocumentListener {
+
+  public int get_int_from_textfield ( JTextComponent c ) {
+    String s = c.getText();
+    if (s.length() > 0) {
+      return ( Integer.parseInt ( s ) );
+    } else {
+      return ( 0 );
+    }
+  }
+
+  public void handle_key_event(KeyEvent e) {
+    System.out.println ( "\n\nRespTextField: Key Event: " + e );
+    System.out.println ( "RespTextField: Key Event Component: " + e.getComponent() );
+    // System.out.println ( "\n\nText = " + text_field.getText() );
+    System.out.println ( "\n\n" );
+
+    if (frames != null) {
+      if (frames.size() > 0) {
+        swift_gui_frame frame = frames.get(frame_index);
+        if (e.getComponent() == control_panel.window_size) {
+          System.out.println ( "  --> window_size" );
+          frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
+          // frame.next_alignment.window_size = Integer.parseInt ( control_panel.window_size.getText() );
+        } else if (e.getComponent() == control_panel.addx) {
+          System.out.println ( "  --> addx" );
+          frame.next_alignment.addx = get_int_from_textfield ( control_panel.addx );
+          //frame.next_alignment.addx = Integer.parseInt ( control_panel.addx.getText() );
+        } else if (e.getComponent() == control_panel.addy) {
+          System.out.println ( "  --> addy" );
+          frame.next_alignment.addy = get_int_from_textfield ( control_panel.addy );
+          //frame.next_alignment.addy = Integer.parseInt ( control_panel.addy.getText() );
+        } else if (e.getComponent() == control_panel.output_level) {
+          System.out.println ( "  --> output_level" );
+          frame.next_alignment.output_level = get_int_from_textfield ( control_panel.output_level );
+          //frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
+        } else {
+          // System.out.println ( "  --> ????" );
+        }
+      }
+    }
+
+
+  }
+
+  public void changedUpdate(DocumentEvent e) {
+    System.out.println ( "Doc event: " + e );
+    System.out.println ( "Doc: " + e.getDocument() );
+    //System.out.println ( "Src: " + e.getSource() );
+  }
+  public void removeUpdate(DocumentEvent e) {
+    System.out.println ( "Doc event: " + e );
+    System.out.println ( "Doc: " + e.getDocument() );
+  }
+  public void insertUpdate(DocumentEvent e) {
+    System.out.println ( "Doc event: " + e );
+    System.out.println ( "Doc: " + e.getDocument() );
+  }
 
   JFrame parent_frame = null;
   AlignmentPanel alignment_panel = null;
@@ -749,7 +832,32 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   // KeyListener methods:
 
   public void keyTyped ( KeyEvent e ) {
-    // System.out.println ( "Key Typed: " + e );
+    System.out.println ( "Key Typed: " + e );
+    System.out.println ( "Key Typed is " + e.getKeyChar() );
+    /*
+    if (frames != null) {
+      if (frames.size() > 0) {
+        swift_gui_frame frame = frames.get(frame_index);
+        if (e.getComponent() == control_panel.window_size) {
+          System.out.println ( "  --> window_size" );
+          // control_panel.window_size.keyTyped( e );
+          frame.next_alignment.window_size = Integer.parseInt ( control_panel.window_size.getText() );
+        } else if (e.getComponent() == control_panel.addx) {
+          System.out.println ( "  --> addx" );
+          frame.next_alignment.addx = Integer.parseInt ( control_panel.addx.getText() );
+        } else if (e.getComponent() == control_panel.addy) {
+          System.out.println ( "  --> addy" );
+          frame.next_alignment.addy = Integer.parseInt ( control_panel.addy.getText() );
+        } else if (e.getComponent() == control_panel.output_level) {
+          System.out.println ( "  --> output_level" );
+          frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
+        } else {
+          // System.out.println ( "  --> ????" );
+        }
+      }
+    }
+    */
+
     if (Character.toUpperCase(e.getKeyChar()) == ' ') {
       // Space bar toggles between drawing mode and move mode
     } else if (Character.toUpperCase(e.getKeyChar()) == 'P') {
@@ -759,7 +867,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     repaint();
   }
   public void keyPressed ( KeyEvent e ) {
-    // System.out.println ( "Key Pressed, e = " + e );
+    System.out.println ( "Key Pressed, e = " + e );
     if ( (e.getKeyCode() == 33) || (e.getKeyCode() == 34) || (e.getKeyCode() == 38) || (e.getKeyCode() == 40) ) {
       // Figure out if there's anything to do
       if (frames != null) {
@@ -780,7 +888,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     //super.keyPressed ( e );
   }
   public void keyReleased ( KeyEvent e ) {
-    // System.out.println ( "Key Released" );
+    System.out.println ( "Key Released" );
     //super.keyReleased ( e );
   }
 
@@ -1241,7 +1349,24 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                       fixed_frame.next_alignment.addy,
                       fixed_frame.next_alignment.output_level );
                 if (results != null) {
-                  System.out.println ( "Results from run_swift.align_files_by_name:\n\n" + results );
+                  System.out.println ( "Results from run_swift.align_files_by_name: " + results[0] );
+                  if (results.length == 19) {
+                    // This is 3 transform matrix format (each is 2x3)
+                    for (int m=0; m<3; m++) {
+                      for (int r=0; r<2; r++) {
+                        for (int c=0; c<3; c++) {
+                          System.out.print ( "  " + results[(m*6)+(r*3)+c+1] );
+                        }
+                        System.out.println();
+                      }
+                      System.out.println();
+                    }
+                  } else {
+                    // This is some other format
+                    for (int r=1; r<results.length; r++) {
+                      System.out.println ( "    " + results[r] );
+                    }
+                  }
                 }
                 fixed_frame_num = i;
               }
