@@ -251,8 +251,11 @@ class ControlPanel extends JPanel {
   public JCheckBox skip;
 
   public JButton set_all;
-  public JButton run_alignment;
+  public JButton set_fwd;
+  public JButton align_all;
+  public JButton align_fwd;
 
+  public RespTextField num_to_align;
 
   JPanel make_resize_panel(swift_gui swift) {
     JPanel resize_panel = new JPanel();
@@ -317,10 +320,30 @@ class ControlPanel extends JPanel {
     alignment_panel.add ( set_all );
 
     alignment_panel.add ( new JLabel("  ") );
-    run_alignment = new JButton("Align");
-    run_alignment.addActionListener ( this.swift );
-    run_alignment.setActionCommand ( "run_alignment" );
-    alignment_panel.add ( run_alignment );
+    set_fwd = new JButton("Set Forward");
+    set_fwd.addActionListener ( this.swift );
+    set_fwd.setActionCommand ( "set_fwd" );
+    alignment_panel.add ( set_fwd );
+
+    alignment_panel.add ( new JLabel("  ") );
+    align_all = new JButton("Align All");
+    align_all.addActionListener ( this.swift );
+    align_all.setActionCommand ( "align_all" );
+    alignment_panel.add ( align_all );
+
+    alignment_panel.add ( new JLabel("  ") );
+    align_fwd = new JButton("Align Forward");
+    align_fwd.addActionListener ( this.swift );
+    align_fwd.setActionCommand ( "align_fwd" );
+    alignment_panel.add ( align_fwd );
+
+    alignment_panel.add ( new JLabel("  #") );
+    num_to_align = new RespTextField(this.swift,"",6);
+    num_to_align.addKeyListener ( this.swift );
+    num_to_align.addActionListener ( this.swift );
+    num_to_align.setActionCommand ( "num_to_align" );
+    alignment_panel.add ( num_to_align );
+
     return ( alignment_panel );
   }
 
@@ -476,7 +499,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   File project_file=null;
   File destination=null;
 
-	static int w=1200, h=1024;
+	static int w=1280, h=1024;
 
   String current_directory = "";
   ImageFileChooser image_file_chooser = null;
@@ -1199,11 +1222,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       if (results_frame != null) {
         results_frame.setVisible ( box.isSelected() );
       }
-		} else if (cmd.equalsIgnoreCase("set_all")) {
-			System.out.println ( "\n\nGot a set_all command" );
+		} else if ( (cmd.equalsIgnoreCase("set_all")) || (cmd.equalsIgnoreCase("set_fwd")) ) {
+			System.out.println ( "\n\nGot a set_all / set_fwd command" );
       if (frames != null) {
+        int start = 0;
+        if (cmd.equalsIgnoreCase("set_fwd")) {
+          start = frame_index;
+        }
         // Copy these values to all frames
-	      for (int i=0; i<this.frames.size(); i++) {
+	      for (int i=start; i<this.frames.size(); i++) {
 	        swift_gui_frame frame = frames.get(i);
 	        frame.skip = control_panel.skip.isSelected();
           if (frame.next_alignment != null) {
@@ -1245,8 +1272,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         }
       }
-		} else if (cmd.equalsIgnoreCase("run_alignment")) {
-			System.out.println ( "\n\nGot a run_alignment command" );
+		} else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
+			System.out.println ( "\n\nGot an align_all or align_fwd command" );
       if (frames != null) {
         System.out.println ( "Running an alignment with destination = \"" + destination + "\"" );
         String prefix = "";
