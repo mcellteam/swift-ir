@@ -223,7 +223,6 @@ class RespTextField extends JTextField {
   }
   protected void processKeyEvent ( KeyEvent e ) {
     super.processKeyEvent(e);
-    // swift.handle_key_event(this, e);
     swift.handle_key_event(e);
   }
 }
@@ -450,30 +449,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   }
 
   public void handle_key_event(KeyEvent e) {
-    System.out.println ( "\n\nRespTextField: Key Event: " + e );
-    System.out.println ( "RespTextField: Key Event Component: " + e.getComponent() );
-    // System.out.println ( "\n\nText = " + text_field.getText() );
-    System.out.println ( "\n\n" );
-
     if (frames != null) {
       if (frames.size() > 0) {
         swift_gui_frame frame = frames.get(frame_index);
         if (e.getComponent() == control_panel.window_size) {
-          System.out.println ( "  --> window_size" );
           frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
-          // frame.next_alignment.window_size = Integer.parseInt ( control_panel.window_size.getText() );
         } else if (e.getComponent() == control_panel.addx) {
-          System.out.println ( "  --> addx" );
           frame.next_alignment.addx = get_int_from_textfield ( control_panel.addx );
-          //frame.next_alignment.addx = Integer.parseInt ( control_panel.addx.getText() );
         } else if (e.getComponent() == control_panel.addy) {
-          System.out.println ( "  --> addy" );
           frame.next_alignment.addy = get_int_from_textfield ( control_panel.addy );
-          //frame.next_alignment.addy = Integer.parseInt ( control_panel.addy.getText() );
         } else if (e.getComponent() == control_panel.output_level) {
-          System.out.println ( "  --> output_level" );
           frame.next_alignment.output_level = get_int_from_textfield ( control_panel.output_level );
-          //frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
         } else {
           // System.out.println ( "  --> ????" );
         }
@@ -832,32 +818,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   // KeyListener methods:
 
   public void keyTyped ( KeyEvent e ) {
-    System.out.println ( "Key Typed: " + e );
-    System.out.println ( "Key Typed is " + e.getKeyChar() );
-    /*
-    if (frames != null) {
-      if (frames.size() > 0) {
-        swift_gui_frame frame = frames.get(frame_index);
-        if (e.getComponent() == control_panel.window_size) {
-          System.out.println ( "  --> window_size" );
-          // control_panel.window_size.keyTyped( e );
-          frame.next_alignment.window_size = Integer.parseInt ( control_panel.window_size.getText() );
-        } else if (e.getComponent() == control_panel.addx) {
-          System.out.println ( "  --> addx" );
-          frame.next_alignment.addx = Integer.parseInt ( control_panel.addx.getText() );
-        } else if (e.getComponent() == control_panel.addy) {
-          System.out.println ( "  --> addy" );
-          frame.next_alignment.addy = Integer.parseInt ( control_panel.addy.getText() );
-        } else if (e.getComponent() == control_panel.output_level) {
-          System.out.println ( "  --> output_level" );
-          frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
-        } else {
-          // System.out.println ( "  --> ????" );
-        }
-      }
-    }
-    */
-
     if (Character.toUpperCase(e.getKeyChar()) == ' ') {
       // Space bar toggles between drawing mode and move mode
     } else if (Character.toUpperCase(e.getKeyChar()) == 'P') {
@@ -867,7 +827,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     repaint();
   }
   public void keyPressed ( KeyEvent e ) {
-    System.out.println ( "Key Pressed, e = " + e );
+    // System.out.println ( "Key Pressed, e = " + e );
     if ( (e.getKeyCode() == 33) || (e.getKeyCode() == 34) || (e.getKeyCode() == 38) || (e.getKeyCode() == 40) ) {
       // Figure out if there's anything to do
       if (frames != null) {
@@ -888,7 +848,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     //super.keyPressed ( e );
   }
   public void keyReleased ( KeyEvent e ) {
-    System.out.println ( "Key Released" );
+    // System.out.println ( "Key Released" );
     //super.keyReleased ( e );
   }
 
@@ -1266,10 +1226,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	        swift_gui_frame frame = frames.get(i);
 	        frame.skip = control_panel.skip.isSelected();
           if (frame.next_alignment != null) {
-            frame.next_alignment.window_size = Integer.parseInt ( control_panel.window_size.getText() );
-            frame.next_alignment.addx = Integer.parseInt ( control_panel.addx.getText() );
-            frame.next_alignment.addy = Integer.parseInt ( control_panel.addy.getText() );
-            frame.next_alignment.output_level = Integer.parseInt ( control_panel.output_level.getText() );
+            frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
+            frame.next_alignment.addx = get_int_from_textfield ( control_panel.addx );
+            frame.next_alignment.addy = get_int_from_textfield ( control_panel.addy );
+            frame.next_alignment.output_level = get_int_from_textfield ( control_panel.output_level );
           }
         }
       }
