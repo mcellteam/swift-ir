@@ -1164,7 +1164,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.window_size = Integer.parseInt ( txt.getText() );
+            frame.next_alignment.window_size = get_int_from_textfield ( txt );
           }
         }
       }
@@ -1175,7 +1175,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.addx = Integer.parseInt ( txt.getText() );
+            frame.next_alignment.addx = get_int_from_textfield ( txt );
           }
         }
       }
@@ -1186,7 +1186,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.addy = Integer.parseInt ( txt.getText() );
+            frame.next_alignment.addy = get_int_from_textfield ( txt );
           }
         }
       }
@@ -1197,7 +1197,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
-            frame.next_alignment.output_level = Integer.parseInt ( txt.getText() );
+            frame.next_alignment.output_level = get_int_from_textfield ( txt );
           }
         }
       }
@@ -1234,8 +1234,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         }
       }
 		} else if (cmd.equalsIgnoreCase("run_resize")) {
-			int scale_factor = Integer.parseInt ( control_panel.scale_factor.getText() );
-			int output_level = Integer.parseInt ( control_panel.output_level.getText() );
+			int scale_factor = get_int_from_textfield ( control_panel.scale_factor );
+			int output_level = get_int_from_textfield ( control_panel.output_level );
 			System.out.println ( "\n\nGot a run_resize command with scale factor of " + scale_factor );
       if (frames != null) {
         System.out.println ( "Scaling with destination = \"" + destination + "\"" );
