@@ -267,6 +267,8 @@ class ControlPanel extends JPanel {
 
   public RespTextField num_to_align;
 
+  public JCheckBox pairwise;
+
   JPanel make_resize_panel(swift_gui swift) {
     JPanel resize_panel = new JPanel();
 
@@ -288,71 +290,86 @@ class ControlPanel extends JPanel {
 
   JPanel make_alignment_panel(swift_gui swift) {
     JPanel alignment_panel = new JPanel();
+    alignment_panel.setLayout ( new BorderLayout( 0, 20 ) );
 
-    alignment_panel.add ( new JLabel("  WW:") );
+    JPanel alignment_panel_top = new JPanel();
+    JPanel alignment_panel_mid = new JPanel();
+    JPanel alignment_panel_bot = new JPanel();
+
+    alignment_panel_top.add ( new JLabel("  WW:") );
     window_size = new RespTextField(this.swift,"",8);
     window_size.addKeyListener ( this.swift );
     window_size.addActionListener ( this.swift );
     window_size.setActionCommand ( "window_size" );
-    alignment_panel.add ( window_size );
+    alignment_panel_top.add ( window_size );
 
-    alignment_panel.add ( new JLabel("  Addx:") );
+    alignment_panel_top.add ( new JLabel("  Addx:") );
     addx = new RespTextField(this.swift,"",6);
     addx.addKeyListener ( this.swift );
     addx.addActionListener ( this.swift );
     addx.setActionCommand ( "addx" );
-    alignment_panel.add ( addx );
+    alignment_panel_top.add ( addx );
 
-    alignment_panel.add ( new JLabel("  Addy:") );
+    alignment_panel_top.add ( new JLabel("  Addy:") );
     addy = new RespTextField(this.swift,"",6);
     addy.addKeyListener ( this.swift );
     addy.addActionListener ( this.swift );
     addy.setActionCommand ( "addy" );
-    alignment_panel.add ( addy );
+    alignment_panel_top.add ( addy );
 
-    alignment_panel.add ( new JLabel("  Output Level:") );
+    alignment_panel_top.add ( new JLabel("  Output Level:") );
     output_level = new RespTextField(this.swift,"",4);
     output_level.addKeyListener ( this.swift );
     output_level.addActionListener ( this.swift );
     output_level.setActionCommand ( "output_level" );
-    alignment_panel.add ( output_level );
+    alignment_panel_top.add ( output_level );
 
-    alignment_panel.add ( new JLabel("  Skip:") );
+    alignment_panel_top.add ( new JLabel("  Skip:") );
     skip = new JCheckBox("",false);
     skip.addActionListener ( this.swift );
     skip.setActionCommand ( "skip" );
-    alignment_panel.add ( skip );
+    alignment_panel_top.add ( skip );
 
-    alignment_panel.add ( new JLabel("  ") );
+    alignment_panel_mid.add ( new JLabel("  ") );
     set_all = new JButton("Set All");
     set_all.addActionListener ( this.swift );
     set_all.setActionCommand ( "set_all" );
-    alignment_panel.add ( set_all );
+    alignment_panel_mid.add ( set_all );
 
-    alignment_panel.add ( new JLabel("  ") );
+    alignment_panel_mid.add ( new JLabel("  ") );
     set_fwd = new JButton("Set Forward");
     set_fwd.addActionListener ( this.swift );
     set_fwd.setActionCommand ( "set_fwd" );
-    alignment_panel.add ( set_fwd );
+    alignment_panel_mid.add ( set_fwd );
 
-    alignment_panel.add ( new JLabel("  ") );
+    alignment_panel_bot.add ( new JLabel("  ") );
     align_all = new JButton("Align All");
     align_all.addActionListener ( this.swift );
     align_all.setActionCommand ( "align_all" );
-    alignment_panel.add ( align_all );
+    alignment_panel_bot.add ( align_all );
 
-    alignment_panel.add ( new JLabel("  ") );
+    alignment_panel_bot.add ( new JLabel("  ") );
     align_fwd = new JButton("Align Forward");
     align_fwd.addActionListener ( this.swift );
     align_fwd.setActionCommand ( "align_fwd" );
-    alignment_panel.add ( align_fwd );
+    alignment_panel_bot.add ( align_fwd );
 
-    alignment_panel.add ( new JLabel("  #") );
+    alignment_panel_bot.add ( new JLabel("  #") );
     num_to_align = new RespTextField(this.swift,"",6);
     num_to_align.addKeyListener ( this.swift );
     num_to_align.addActionListener ( this.swift );
     num_to_align.setActionCommand ( "num_to_align" );
-    alignment_panel.add ( num_to_align );
+    alignment_panel_bot.add ( num_to_align );
+
+    alignment_panel_bot.add ( new JLabel("  Pairwise:") );
+    pairwise = new JCheckBox("",false);
+    pairwise.addActionListener ( this.swift );
+    pairwise.setActionCommand ( "pairwise" );
+    alignment_panel_bot.add ( pairwise );
+
+    alignment_panel.add ( alignment_panel_top, BorderLayout.NORTH );
+    alignment_panel.add ( alignment_panel_mid, BorderLayout.CENTER );
+    alignment_panel.add ( alignment_panel_bot, BorderLayout.SOUTH );
 
     return ( alignment_panel );
   }
@@ -509,7 +526,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   File project_file=null;
   File destination=null;
 
-	static int w=1280, h=1024;
+	static int w=1200, h=1024;
 
   String current_directory = "";
   ImageFileChooser image_file_chooser = null;
@@ -1340,6 +1357,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       }
 		} else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
 			System.out.println ( "\n\nGot an align_all or align_fwd command" );
+
+      boolean pairwise = control_panel.pairwise.isSelected();
+      System.out.println ( "Pairwise is " + pairwise );
+
       if (frames != null) {
 
         int num_to_align = 1 + get_int_from_textfield ( control_panel.num_to_align );
@@ -1386,7 +1407,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                 String fixed_image_name;
                 // Use the previously aligned image name
                 // fixed_image_name = prefix + "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
-                fixed_image_name = prefix + fixed_frame.image_file_path.getName();
+                if (pairwise) {
+                  fixed_image_name = (new File(fixed_frame.image_file_path.toString())).getAbsolutePath();
+                } else {
+                  fixed_image_name = prefix + fixed_frame.image_file_path.getName();
+                }
                 if (first_pass) {
                   // This is the first alignment, so copy the original image
                   run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
@@ -1695,6 +1720,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 				swift_gui_panel.results_frame = results_frame;
 				swift_gui_panel.results_panel = swift_results_panel;
 
+        // Force the top pane to be as large as possible
+        split_pane.setDividerLocation ( 0.999 );
 
 			}
 		} );
