@@ -1275,6 +1275,21 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		} else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
 			System.out.println ( "\n\nGot an align_all or align_fwd command" );
       if (frames != null) {
+
+        int num_to_align = 1 + get_int_from_textfield ( control_panel.num_to_align );
+
+        int start = 0;
+        int end = this.frames.size();
+
+        if (cmd.equalsIgnoreCase("align_fwd")) {
+          start = frame_index;
+          end = frame_index + num_to_align;
+        }
+
+        if ( (end <= 0) || (end > this.frames.size()) ) {
+          end = this.frames.size();
+        }
+
         System.out.println ( "Running an alignment with destination = \"" + destination + "\"" );
         String prefix = "";
         if (destination != null) {
@@ -1283,14 +1298,18 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
         Runtime rt = Runtime.getRuntime();
-        int fixed_frame_num = -1;
+        int fixed_frame_num = start-1;
         boolean first_pass = true;
-	      for (int i=0; i<this.frames.size(); i++) {
+        if (start > 0) {
+          first_pass = false;
+        }
+	      for (int i=start; i<end; i++) {
+	        System.out.println ( "Working on frame " + i );
 	        swift_gui_frame align_frame = frames.get(i);
 	        if (align_frame.skip) {
 	          // Omit this frame
 	        } else {
-	          if (fixed_frame_num < 0) {
+	          if (fixed_frame_num < start) {
 	            // This is the first non-skipped frame, so use it as the fixed frame
 	            fixed_frame_num = i;
 	          } else {
