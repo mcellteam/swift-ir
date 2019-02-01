@@ -1571,33 +1571,38 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		    swift_gui_panel.project_file_chooser = new ProjectFileChooser ( swift_gui_panel.current_directory );
 		    swift_gui_panel.destination_chooser = new DestinationChooser ( swift_gui_panel.current_directory );
 		    swift_gui_panel.image_file_chooser = new ImageFileChooser ( swift_gui_panel.current_directory );
-		    //System.out.println ( "image_file_chooser:\n  " + swift_gui_panel.image_file_chooser );
-		    BorderLayout chooser_layout = (BorderLayout)(swift_gui_panel.image_file_chooser.getLayout());
-		    //System.out.println ( "image_file_chooser.layout:\n  " + chooser_layout );
-		    JPanel chooser_controls_panel = (JPanel)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH));
-		    //System.out.println ( "image_file_chooser's chooser_controls_panel:\n  " + chooser_controls_panel );
+		    try {
 
-		    Component parts[] = chooser_controls_panel.getComponents();
-		    //for (int c=0; c<parts.length; c++) {
-		      //System.out.println ( "Component " + c + " = " + parts[c] );
-		    //}
+		      //System.out.println ( "image_file_chooser:\n  " + swift_gui_panel.image_file_chooser );
+		      BorderLayout chooser_layout = (BorderLayout)(swift_gui_panel.image_file_chooser.getLayout());
+		      //System.out.println ( "image_file_chooser.layout:\n  " + chooser_layout );
+		      JPanel chooser_controls_panel = (JPanel)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH));
+		      //System.out.println ( "image_file_chooser's chooser_controls_panel:\n  " + chooser_controls_panel );
 
-		    JPanel button_area = (JPanel)(parts[3]);
-		    //System.out.println ( "Button area = " + button_area );
+		      Component parts[] = chooser_controls_panel.getComponents();
+		      //for (int c=0; c<parts.length; c++) {
+		        //System.out.println ( "Component " + c + " = " + parts[c] );
+		      //}
 
-		    swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
-		    button_area.add ( swift_gui_panel.load_files_on_import, 0 );
+		      JPanel button_area = (JPanel)(parts[3]);
+		      //System.out.println ( "Button area = " + button_area );
+
+		      swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
+		      button_area.add ( swift_gui_panel.load_files_on_import, 0 );
 
 
-		    // chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
+		      // chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
 
-		    //BoxLayout chooser_controls_box = (BoxLayout)(chooser_controls_panel.getLayout());
-		    //System.out.println ( "chooer_controls_box = " + chooser_controls_box );
-		    //System.out.println ( "chooer_controls_box.axis = " + chooser_controls_box.getAxis() );  // returns 1:  0=X_AXIS, 1=Y_AXIS, 2=LINE_AXIS, 3=PAGE_AXIS
+		      //BoxLayout chooser_controls_box = (BoxLayout)(chooser_controls_panel.getLayout());
+		      //System.out.println ( "chooer_controls_box = " + chooser_controls_box );
+		      //System.out.println ( "chooer_controls_box.axis = " + chooser_controls_box.getAxis() );  // returns 1:  0=X_AXIS, 1=Y_AXIS, 2=LINE_AXIS, 3=PAGE_AXIS
 
-		    //BoxLayout chooser_controls_layout = (BoxLayout)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH).getLayout() );
-		    //System.out.println ( "image_file_chooser.layout.controls:\n  " + chooser_controls_layout );
-		    // dialog.add ( new JLabel ( "----- NEW -----" ) );
+		      //BoxLayout chooser_controls_layout = (BoxLayout)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH).getLayout() );
+		      //System.out.println ( "image_file_chooser.layout.controls:\n  " + chooser_controls_layout );
+		      // dialog.add ( new JLabel ( "----- NEW -----" ) );
+		    } catch (Exception bad_layout_ex) {
+		      System.out.println ( "Got an exception trying to add the load check box to file import panel: " + bad_layout_ex );
+		    }
 
 
         for (int i=0; i<actual_file_names.size(); i++) {
