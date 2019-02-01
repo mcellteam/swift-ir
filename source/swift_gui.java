@@ -1320,6 +1320,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       if (results_frame != null) {
         results_frame.setVisible ( box.isSelected() );
       }
+      // Request the focus again?
+			this.requestFocus();
 		} else if ( (cmd.equalsIgnoreCase("set_all")) || (cmd.equalsIgnoreCase("set_fwd")) ) {
 			System.out.println ( "\n\nGot a set_all / set_fwd command" );
       if (frames != null) {
@@ -1715,8 +1717,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 				swift_gui_panel.update_control_panel();
 				swift_gui_panel.center_current_image();
 
-
-
         // Create a results panel
 
         JFrame results_frame = new JFrame("swift_results");
@@ -1737,6 +1737,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         // Force the top pane to be as large as possible
         split_pane.setDividerLocation ( 0.999 );
+
+			  // Request the focus again?
+				swift_gui_panel.requestFocus();
 
 			}
 		} );
