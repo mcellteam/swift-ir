@@ -58,6 +58,7 @@ class alignment_settings {
   int addx=500;
   int addy=500;
   int output_level=5;
+  String[] alignment_values = null;
 }
 
 class swift_gui_frame {
@@ -111,6 +112,11 @@ class swift_gui_frame {
 class FileListDialog extends JDialog {
   private JTextArea textArea;
   private swift_gui parent_frame=null;
+  public String dialog_text=null;
+
+  public void set_text ( String text ) {
+    this.dialog_text = text;
+  }
 
   public FileListDialog(Frame par_frame, swift_gui parent) {
     super(par_frame, true);
@@ -140,13 +146,17 @@ class FileListDialog extends JDialog {
 
     addComponentListener(new ComponentAdapter() {
       public void componentShown(ComponentEvent ce) {
-        // Build the text from the current model every time it's shown
-        if (parent_frame != null) {
-          // Get the list of files from the parent_frame
-          if (parent_frame.frames != null) {
-            textArea.setText ( "Frames:\n" );
-            for (int fnum=0; fnum<parent_frame.frames.size(); fnum++) {
-              textArea.append ( "File: " + parent_frame.frames.get(fnum).image_file_path + "\n" );
+        if (dialog_text != null) {
+          textArea.setText ( dialog_text );
+        } else {
+          // Build the text from the current model every time it's shown
+          if (parent_frame != null) {
+            // Get the list of files from the parent_frame
+            if (parent_frame.frames != null) {
+              textArea.setText ( "Frames:\n" );
+              for (int fnum=0; fnum<parent_frame.frames.size(); fnum++) {
+                textArea.append ( "File: " + parent_frame.frames.get(fnum).image_file_path + "\n" );
+              }
             }
           }
         }
@@ -872,6 +882,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   JMenuItem zoom_actual_menu_item = null;
   JMenuItem clear_all_images_menu_item = null;
   JMenuItem list_all_images_menu_item = null;
+  JMenuItem list_align_shell_script = null;
 
   public void center_current_image() {
     if (frames != null) {
@@ -926,6 +937,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           f.println ( "          \"addx\": " + settings.addx + "," );
           f.println ( "          \"addy\": " + settings.addy + "," );
           f.println ( "          \"output_level\": " + settings.output_level + "" );
+          //f.println ( "          \"affine_fwd\": null," );
+          //f.println ( "          \"affine_rev\": null," );
+          //f.println ( "          \"mir_fwd\": null," );
+          //f.println ( "          \"mir_rev\": null" );
           f.println ( "        }" );
         }
         f.print   ( "      }" );
@@ -1157,6 +1172,57 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		  set_title();
     } else if ( action_source == list_all_images_menu_item ) {
       if (file_list_dialog != null) {
+        file_list_dialog.setTitle ( "Original Image Files" );
+        file_list_dialog.setVisible(true);
+      }
+      //repaint();
+		  //set_title();
+    } else if ( action_source == list_align_shell_script ) {
+      if (file_list_dialog != null) {
+        file_list_dialog.setVisible(false);
+        file_list_dialog.setTitle ( "Alignment Script" );
+        String text = "";
+        if (frames != null) {
+          if (frames.size() > 1) {
+            String fname = frames.get(0).image_file_path.getName();
+            String bars = "==========";
+
+            text += "mkdir -p mir_only_output\n";
+            text += "\n";
+            text += "echo " + bars + " Using mir to copy " + fname + " " + bars + "\n";
+            text += "\n";
+            text += "./mir <<'EOF'\n";
+            text += "F " + fname + "\n";
+            text += "A 1 0 0 0 1 0\n";
+            text += "R\n";
+            text += "W mir_only_output/" + fname + "\n";
+            text += "EOF\n";
+
+	          for (int i=1; i<frames.size(); i++) {
+	            swift_gui_frame prev_frame = frames.get(i-1);
+	            swift_gui_frame this_frame = frames.get(i);
+              fname = this_frame.image_file_path.getName();
+
+              text += "\n";
+              text += "echo " + bars + " Using mir to align " + fname + " " + bars + "\n";
+              text += "\n";
+              text += "./mir <<'EOF'\n";
+              text += "F " + fname + "\n";
+              text += "A";
+              // Extract the values for the forward matrix to put in the "A" command
+              for (int j=7; j<13; j++) {
+                text += " " + prev_frame.next_alignment.alignment_values[j];
+              }
+              text += "\n";
+              text += "R\n";
+              text += "W mir_only_output/" + fname + "\n";
+              text += "EOF\n";
+            }
+            text += "\n";
+            text += "echo " + bars + " Done aligning images " + bars + "\n";
+          }
+        }
+        file_list_dialog.set_text ( text );
         file_list_dialog.setVisible(true);
       }
       //repaint();
@@ -1335,6 +1401,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                       fixed_frame.next_alignment.addx,
                       fixed_frame.next_alignment.addy,
                       fixed_frame.next_alignment.output_level );
+
+                fixed_frame.next_alignment.alignment_values = results;
+
                 if (results != null) {
                   System.out.println ( "Results from run_swift.align_files_by_name: " + results[0] );
                   if (results.length == 19) {
@@ -1552,6 +1621,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             JMenu list_menu = new JMenu("List");
               list_menu.add ( mi = swift_gui_panel.list_all_images_menu_item = new JMenuItem("All Images") );
               mi.addActionListener(swift_gui_panel);
+              list_menu.add ( mi = swift_gui_panel.list_align_shell_script = new JMenuItem("Alignment Script") );
+              mi.addActionListener(swift_gui_panel);
+
             file_menu.add ( list_menu );
 
             file_menu.add ( mi = new JMenuItem("Print") );
