@@ -1223,6 +1223,21 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               text += "\n";
               text += "echo " + bars + " Using mir to align " + fname + " " + bars + "\n";
               text += "\n";
+              // Display all of the values with the echo command for debugging
+              text += "echo ";
+              for (int j=1; j<7; j++) {
+                text += " " + prev_frame.next_alignment.alignment_values[j];
+              }
+              text += "\necho ";
+              for (int j=7; j<13; j++) {
+                text += " " + prev_frame.next_alignment.alignment_values[j];
+              }
+              text += "\necho ";
+              for (int j=13; j<19; j++) {
+                text += " " + prev_frame.next_alignment.alignment_values[j];
+              }
+              text += "\n";
+              text += "\n";
               text += "./mir <<'EOF'\n";
               text += "F " + fname + "\n";
               text += "A";
