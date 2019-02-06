@@ -306,6 +306,21 @@ public class run_swift {
     }
   }
 
+  public static void transform_file_by_name ( Runtime rt, String original_file_name, String new_file_name, double affine_transform[], int output_level ) {
+    if (output_level > 0) {
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "transform_file_by_name with:" );
+      System.out.println ( "    original_file_name = " + original_file_name );
+      System.out.println ( "    new_file_name      = " + new_file_name );
+      System.out.println ( "    affine_transform   = " + affine_transform );
+      System.out.println ( "    output_level       = " + output_level );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+      System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+    }
+    System.out.println ( "\n\n\n %%%%%%%%%%% NEED TO FINISH transform_file_by_name !!! %%%%%%%%\n\n\n" );
+  }
+
   public static void copy_file_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
 
     if (output_level > 0) {
