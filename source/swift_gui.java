@@ -70,6 +70,8 @@ class swift_gui_frame {
   alignment_settings prev_alignment=null;
   alignment_settings next_alignment=null;
 
+  double[] affine_transform=null;
+
   swift_gui_frame ( File image_file_path, boolean load ) {
     this.image_file_path = image_file_path;
     if (load) {
@@ -1459,6 +1461,31 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                       }
                       System.out.println();
                     }
+                    if (pairwise) {
+                      if (fixed_frame.affine_transform == null) {
+                        fixed_frame.affine_transform = new double[6];
+                      }
+                      try {
+                        System.out.println ( "*************************************************************************" );
+                        for (int m=7; m<13; m++) {
+                          fixed_frame.affine_transform[m-7] = Double.parseDouble(results[m]);
+                          // System.out.print ( results[m] + " " );
+                          System.out.print ( "" + fixed_frame.affine_transform[m-7] + " " );
+                        }
+                        System.out.println ();
+                        System.out.println ( "*************************************************************************" );
+
+                        System.out.println ( "\n\n\n %%%%%%%%%%% NEED TO CONCATENATE TRANSFORMS FIRST !!! %%%%%%%%\n\n\n" );
+
+                        run_swift.transform_file_by_name (
+                              rt,
+                              (new File(align_frame.image_file_path.toString())).getAbsolutePath(),
+                              prefix + (new File(align_frame.image_file_path.toString())).getName(),
+                              fixed_frame.affine_transform,
+                              fixed_frame.next_alignment.output_level );
+                      } catch (Exception fmtex) {
+                      }
+                    }
                   } else {
                     // This is some other format
                     for (int r=1; r<results.length; r++) {
@@ -1474,8 +1501,23 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         System.out.println ( "Alignment completed" );
+        if (pairwise) {
+	        for (int i=0; i<this.frames.size(); i++) {
+	          swift_gui_frame frame = frames.get(i);
+	          if (frame.affine_transform == null) {
+	            System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
+	          } else {
+	            System.out.print ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is [ " );
+	            for (int j=0; j<frame.affine_transform.length; j++) {
+	              System.out.print ( "" + frame.affine_transform[j] + " " );
+	            }
+	            System.out.println ( " ]" );
+	          }
+          }
+        }
         System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+
       }
 		} else if (cmd.equalsIgnoreCase("Exit")) {
 			System.exit ( 0 );
