@@ -1525,7 +1525,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                           }
                           System.out.println ();
 
-                          System.out.println ( "\n\n\n %%%%%%%%%%% NEED TO CONCATENATE TRANSFORMS FIRST !!! %%%%%%%%\n\n\n" );
                           double[] propagated = propagate_affine ( start, i );
 
                           System.out.println ( "Affine transform from " + start + " to " + i + ":" );

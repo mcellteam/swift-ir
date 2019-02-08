@@ -409,7 +409,6 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
-    System.out.println ( "\n\n\n %%%%%%%%%%% NEED TO FINISH transform_file_by_name !!! %%%%%%%%\n\n\n" );
 
     String command_line;
     String interactive_commands;
