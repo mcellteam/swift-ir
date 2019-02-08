@@ -70,7 +70,8 @@ class swift_gui_frame {
   alignment_settings prev_alignment=null;
   alignment_settings next_alignment=null;
 
-  double[] affine_transform=null;
+  double[] affine_transform_from_prev=null;
+  double[] affine_transform_from_start=null;
 
   swift_gui_frame ( File image_file_path, boolean load ) {
     this.image_file_path = image_file_path;
@@ -978,6 +979,33 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
   }
 
+  double[] concat_affine ( double[] a, double[] d ) {
+    double[] r = new double[6];
+    r[0] = (a[0] * d[0]) + (a[1] * d[3]);
+    r[1] = (a[0] * d[1]) + (a[1] * d[4]);
+    r[2] = (a[0] * d[2]) + (a[1] * d[5]) + a[2];
+    r[3] = (a[3] * d[0]) + (a[4] * d[3]);
+    r[4] = (a[3] * d[1]) + (a[4] * d[4]);
+    r[5] = (a[3] * d[2]) + (a[4] * d[5]) + a[5];
+    return ( r );
+  }
+
+  double[] propagate_affine ( int first, int last ) {
+    double[] cumulative = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
+    swift_gui_frame frame;
+    for (int i=first; i<=last; i++) {
+      frame = frames.get(i);
+      if (frame != null) {
+        //if (!frame.skip) {
+          if (frame.affine_transform_from_prev != null) {
+            cumulative = concat_affine ( cumulative, frame.affine_transform_from_prev );
+          }
+        //}
+      }
+    }
+    return ( cumulative );
+  }
+
   // ActionPerformed methods (mostly menu responses):
 
 	public void actionPerformed(ActionEvent e) {
@@ -1377,147 +1405,172 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		} else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
 			System.out.println ( "\n\nGot an align_all or align_fwd command" );
 
-      boolean pairwise = control_panel.pairwise.isSelected();
-      System.out.println ( "Pairwise is " + pairwise );
+      if ( (destination == null) || (destination.length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
 
-      if (frames != null) {
+        // Keep from overwriting existing files unless explicitly requested
+        System.out.println ( "Please set an explicit destination before performing an alignment." );
 
-        int num_to_align = 1 + get_int_from_textfield ( control_panel.num_to_align );
+      } else {
 
-        int start = 0;
-        int end = this.frames.size();
+        boolean pairwise = control_panel.pairwise.isSelected();
+        System.out.println ( "Pairwise is " + pairwise );
 
-        if (cmd.equalsIgnoreCase("align_fwd")) {
-          start = frame_index;
-          end = frame_index + num_to_align;
-        }
+        if (frames != null) {
 
-        if ( (end <= 0) || (end > this.frames.size()) ) {
-          end = this.frames.size();
-        }
+          int num_to_align = 1 + get_int_from_textfield ( control_panel.num_to_align );
 
-        System.out.println ( "Running an alignment with destination = \"" + destination + "\"" );
-        String prefix = "";
-        if (destination != null) {
-          if (destination.length() > 0) {
-            prefix = destination + File.separator;
+          int start = 0;
+          int end = this.frames.size();
+
+          if (cmd.equalsIgnoreCase("align_fwd")) {
+            start = frame_index;
+            end = frame_index + num_to_align;
           }
-        }
-        Runtime rt = Runtime.getRuntime();
-        int fixed_frame_num = start-1;
-        boolean first_pass = true;
-        if (start > 0) {
-          first_pass = false;
-        }
-	      for (int i=start; i<end; i++) {
-	        System.out.println ( "Working on frame " + i );
-	        swift_gui_frame align_frame = frames.get(i);
-	        if (align_frame.skip) {
-	          // Omit this frame
-	        } else {
-	          if (fixed_frame_num < start) {
-	            // This is the first non-skipped frame, so use it as the fixed frame
-	            fixed_frame_num = i;
+
+          if ( (end <= 0) || (end > this.frames.size()) ) {
+            end = this.frames.size();
+          }
+
+          System.out.println ( "Running an alignment with destination = \"" + destination + "\"" );
+          String prefix = "";
+          if (destination != null) {
+            if (destination.length() > 0) {
+              prefix = destination + File.separator;
+            }
+          }
+          Runtime rt = Runtime.getRuntime();
+          int fixed_frame_num = start-1;
+          boolean first_pass = true;
+          if (start > 0) {
+            first_pass = false;
+          }
+	        for (int i=start; i<end; i++) {
+	          System.out.println ( "Working on frame " + i );
+	          swift_gui_frame align_frame = frames.get(i);
+	          if (align_frame.skip) {
+	            // Omit this frame
 	          } else {
-	            // There is a valid fixed frame and this (to be aligned) frame
-              swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
-              if (fixed_frame.next_alignment != null) {
-                // The fixed frame defines an alignment to the next frame
-                String fixed_image_name;
-                // Use the previously aligned image name
-                // fixed_image_name = prefix + "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
-                if (pairwise) {
-                  fixed_image_name = (new File(fixed_frame.image_file_path.toString())).getAbsolutePath();
-                } else {
-                  fixed_image_name = prefix + fixed_frame.image_file_path.getName();
-                }
-                if (first_pass) {
-                  // This is the first alignment, so copy the original image
-                  run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
-                  first_pass = false;
-                }
-                String results[] = run_swift.align_files_by_name (
-                      rt,
-                      (new File(fixed_image_name)).getAbsolutePath(),
-                      (new File(align_frame.image_file_path.toString())).getAbsolutePath(),
-                      prefix + (new File(align_frame.image_file_path.toString())).getName(),
-                      fixed_frame.next_alignment.window_size,
-                      fixed_frame.next_alignment.addx,
-                      fixed_frame.next_alignment.addy,
-                      fixed_frame.next_alignment.output_level );
+	            if (fixed_frame_num < start) {
+	              // This is the first non-skipped frame, so use it as the fixed frame
+	              fixed_frame_num = i;
+	            } else {
+	              // There is a valid fixed frame and this (to be aligned) frame
+                swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
+                if (fixed_frame.next_alignment != null) {
+                  // The fixed frame defines an alignment to the next frame
+                  String fixed_image_name;
+                  // Use the previously aligned image name
+                  // fixed_image_name = prefix + "aligned_" + String.format("%03d",(fixed_frame_num)) + ".JPG";
+                  if (pairwise) {
+                    fixed_image_name = (new File(fixed_frame.image_file_path.toString())).getAbsolutePath();
+                    //fixed_image_name = prefix + fixed_frame.image_file_path.getName();
+                  } else {
+                    fixed_image_name = prefix + fixed_frame.image_file_path.getName();
+                  }
+                  if (first_pass) {
+                    // This is the first alignment, so copy the original image
+                    if (pairwise) {
+                      run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), prefix + fixed_frame.image_file_path.getName(), fixed_frame.next_alignment.output_level );
+                    } else {
+                      run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), fixed_image_name, fixed_frame.next_alignment.output_level );
+                    }
+                    first_pass = false;
+                  }
+                  String results[] = run_swift.align_files_by_name (
+                        rt,
+                        (new File(fixed_image_name)).getAbsolutePath(),
+                        (new File(align_frame.image_file_path.toString())).getAbsolutePath(),
+                        prefix + (new File(align_frame.image_file_path.toString())).getName(),
+                        fixed_frame.next_alignment.window_size,
+                        fixed_frame.next_alignment.addx,
+                        fixed_frame.next_alignment.addy,
+                        fixed_frame.next_alignment.output_level );
 
-                fixed_frame.next_alignment.alignment_values = results;
+                  fixed_frame.next_alignment.alignment_values = results;
 
-                if (results != null) {
-                  System.out.println ( "Results from run_swift.align_files_by_name: " + results[0] );
-                  if (results.length == 19) {
-                    // This is 3 transform matrix format (each is 2x3)
-                    for (int m=0; m<3; m++) {
-                      for (int r=0; r<2; r++) {
-                        for (int c=0; c<3; c++) {
-                          System.out.print ( "  " + results[(m*6)+(r*3)+c+1] );
+                  if (results != null) {
+                    System.out.println ( "Results from run_swift.align_files_by_name: " + results[0] );
+                    if (results.length == 19) {
+                      // This is 3 transform matrix format (each is 2x3)
+                      for (int m=0; m<3; m++) {
+                        for (int r=0; r<2; r++) {
+                          for (int c=0; c<3; c++) {
+                            System.out.print ( "  " + results[(m*6)+(r*3)+c+1] );
+                          }
+                          System.out.println();
                         }
                         System.out.println();
                       }
-                      System.out.println();
-                    }
-                    if (pairwise) {
-                      if (fixed_frame.affine_transform == null) {
-                        fixed_frame.affine_transform = new double[6];
-                      }
-                      try {
-                        System.out.println ( "*************************************************************************" );
-                        for (int m=7; m<13; m++) {
-                          fixed_frame.affine_transform[m-7] = Double.parseDouble(results[m]);
-                          // System.out.print ( results[m] + " " );
-                          System.out.print ( "" + fixed_frame.affine_transform[m-7] + " " );
+                      if (pairwise) {
+                        if (align_frame.affine_transform_from_prev == null) {
+                          align_frame.affine_transform_from_prev = new double[6];
                         }
-                        System.out.println ();
-                        System.out.println ( "*************************************************************************" );
+                        try {
+                          System.out.println ( "*************************************************************************" );
+                          System.out.println ( "Affine transform from " + (i-1) + " to " + i + ":" );
+                          System.out.print ( "    " );
+                          for (int m=7; m<13; m++) {
+                            align_frame.affine_transform_from_prev[m-7] = Double.parseDouble(results[m]);
+                            // System.out.print ( results[m] + " " );
+                            System.out.print ( "" + align_frame.affine_transform_from_prev[m-7] + " " );
+                          }
+                          System.out.println ();
 
-                        System.out.println ( "\n\n\n %%%%%%%%%%% NEED TO CONCATENATE TRANSFORMS FIRST !!! %%%%%%%%\n\n\n" );
+                          System.out.println ( "\n\n\n %%%%%%%%%%% NEED TO CONCATENATE TRANSFORMS FIRST !!! %%%%%%%%\n\n\n" );
+                          double[] propagated = propagate_affine ( start, i );
 
-                        run_swift.transform_file_by_name (
-                              rt,
-                              (new File(align_frame.image_file_path.toString())).getAbsolutePath(),
-                              prefix + (new File(align_frame.image_file_path.toString())).getName(),
-                              fixed_frame.affine_transform,
-                              fixed_frame.next_alignment.output_level );
-                      } catch (Exception fmtex) {
+                          System.out.println ( "Affine transform from " + start + " to " + i + ":" );
+                          System.out.print ( "    " );
+                          for (int m=0; m<6; m++) {
+                            System.out.print ( "" + propagated[m] + " " );
+                          }
+                          System.out.println ();
+
+                          System.out.println ( "*************************************************************************" );
+
+                          run_swift.transform_file_by_name (
+                                rt,
+                                (new File(align_frame.image_file_path.toString())).getAbsolutePath(),
+                                prefix + (new File(align_frame.image_file_path.toString())).getName(),
+                                propagated, // fixed_frame.affine_transform_from_prev,
+                                fixed_frame.next_alignment.output_level );
+                        } catch (Exception fmtex) {
+                          System.out.println ( "\n\n Exception: " + fmtex );
+                          align_frame.affine_transform_from_prev = null;  // Signal that it couldn't be done.
+                        }
                       }
-                    }
-                  } else {
-                    // This is some other format
-                    for (int r=1; r<results.length; r++) {
-                      System.out.println ( "    " + results[r] );
+                    } else {
+                      // This is some other format
+                      for (int r=1; r<results.length; r++) {
+                        System.out.println ( "    " + results[r] );
+                      }
                     }
                   }
+                  fixed_frame_num = i;
                 }
-                fixed_frame_num = i;
               }
             }
           }
-        }
-        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
-        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
-        System.out.println ( "Alignment completed" );
-        if (pairwise) {
-	        for (int i=0; i<this.frames.size(); i++) {
-	          swift_gui_frame frame = frames.get(i);
-	          if (frame.affine_transform == null) {
-	            System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
-	          } else {
-	            System.out.print ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is [ " );
-	            for (int j=0; j<frame.affine_transform.length; j++) {
-	              System.out.print ( "" + frame.affine_transform[j] + " " );
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+          System.out.println ( "Alignment completed" );
+          if (pairwise) {
+	          for (int i=0; i<this.frames.size(); i++) {
+	            swift_gui_frame frame = frames.get(i);
+	            if (frame.affine_transform_from_prev == null) {
+	              System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
+	            } else {
+	              System.out.print ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is [ " );
+	              for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
+	                System.out.print ( "" + frame.affine_transform_from_prev[j] + " " );
+	              }
+	              System.out.println ( " ]" );
 	            }
-	            System.out.println ( " ]" );
-	          }
+            }
           }
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+          System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         }
-        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
-        System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
-
       }
 		} else if (cmd.equalsIgnoreCase("Exit")) {
 			System.exit ( 0 );
