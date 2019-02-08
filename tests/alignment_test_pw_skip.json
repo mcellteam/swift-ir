@@ -3,8 +3,8 @@
   "method": "SWiFT-IR",
   "data": {
     "source_path": "",
-    "destination_path": "sequential_output",
-    "pairwise_alignment": false,
+    "destination_path": "pairwise_output_skip",
+    "pairwise_alignment": true,
     "defaults": {
       "align_to_next_pars": {
         "window_size": 1024,
@@ -18,7 +18,7 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_1.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
+          "window_size": 768,
           "addx": 500,
           "addy": 500,
           "output_level": 5
@@ -28,7 +28,7 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_2.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
+          "window_size": 768,
           "addx": 500,
           "addy": 500,
           "output_level": 5
@@ -38,17 +38,17 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_3.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
+          "window_size": 768,
           "addx": 500,
           "addy": 500,
           "output_level": 5
         }
       },
       { 
-        "skip": false,
-        "filename": "vj_097_shift_rot_skew_crop_4.jpg",
+        "skip": true,
+        "filename": "vj_097_shift_rot_skew_crop_4_skip.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
+          "window_size": 768,
           "addx": 500,
           "addy": 500,
           "output_level": 5
@@ -58,7 +58,7 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_5.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
+          "window_size": 768,
           "addx": 500,
           "addy": 500,
           "output_level": 5
@@ -68,9 +68,9 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_6.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
-          "addx": 500,
-          "addy": 500,
+          "window_size": 512,
+          "addx": 400,
+          "addy": 600,
           "output_level": 5
         }
       },
