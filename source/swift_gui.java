@@ -930,6 +930,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       f.println ( "  \"data\": {" );
       f.println ( "    \"source_path\": \"\"," );
       f.println ( "    \"destination_path\": \"" + destination + "\"," );
+      if (control_panel.pairwise.isSelected()) {
+        f.println ( "    \"pairwise_alignment\": " + "true" + "," );
+      } else {
+        f.println ( "    \"pairwise_alignment\": " + "false" + "," );
+      }
       f.println ( "    \"defaults\": {" );
       f.println ( "      \"align_to_next_pars\": {" );
       f.println ( "        \"window_size\": 1024," );
@@ -1115,6 +1120,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               HashMap<String,Object> data = (HashMap<String,Object>)(obj_dict.get("data"));
               destination = new File ( (String)(data.get("destination_path")) );
               control_panel.destination_label.setText ( "Destination: "+destination );
+
+              if (data.containsKey("pairwise_alignment")) {
+                control_panel.pairwise.setSelected ( (Boolean)(data.get("pairwise_alignment")) );
+              }
 
               ArrayList<Object> image_stack = (ArrayList<Object>)(data.get("imagestack"));
 
