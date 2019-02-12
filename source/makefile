@@ -1,4 +1,4 @@
-all: swim iavg iscale mir remod json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
+all: swim iavg iscale mir remod sxox json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
 
 swim: swim.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o swim -O3 -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -14,6 +14,9 @@ mir: mir.c swimio.h debug.h makefile
 
 remod: remod.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
+
+sxox: sxox.c makefile
+	gcc -Wno-implicit -O3 -o sxox sxox.c -lm
 
 # "Normal" rule for run_swift.jar
 #run_swift.jar: run_swift.java makefile
@@ -54,7 +57,7 @@ sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum swift_gui.jar >> sha1sum.txt
 
 clean:
-	rm -f swim iavg iscale mir remod
+	rm -f swim iavg iscale mir remod sxox
 	rm -f *.jar
 	rm -f *.class
 	rm -f *.o
