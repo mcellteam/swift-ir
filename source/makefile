@@ -19,29 +19,35 @@ sxox: sxox.c makefile
 	gcc -Wno-implicit -O3 -o sxox sxox.c -lm
 
 # "Normal" rule for run_swift.jar
-#run_swift.jar: run_swift.java makefile
-#	javac -nowarn -source 1.6 run_swift.java
-#	jar -cfe run_swift.jar run_swift *.class
+run_swift.jar: run_swift.java makefile
+	javac -nowarn -source 1.6 run_swift.java
+	jar -cfe run_swift.jar run_swift *.class
 
 # "Fixed Date" rule for run_swift.jar that produces a consistent jar file the same for each compilation
-run_swift.jar: run_swift.java makefile
-	rm -f *.class
-	mkdir -p META-INF
-	cp -f run_swift.MF META-INF/MANIFEST.MF
-	javac -nowarn -source 1.6 run_swift.java
-	touch -t 201901181818 *.class
-	touch -t 201901181818 META-INF/MANIFEST.MF
-	zip -X run_swift.jar META-INF/MANIFEST.MF *.class
+#run_swift.jar: run_swift.java makefile
+#	rm -f *.class
+#	mkdir -p META-INF
+#	cp -f run_swift.MF META-INF/MANIFEST.MF
+#	javac -nowarn -source 1.6 run_swift.java
+#	touch -t 201901181818 *.class
+#	touch -t 201901181818 META-INF/MANIFEST.MF
+#	zip -X run_swift.jar META-INF/MANIFEST.MF *.class
 
-# "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
+# "Normal" rule for swift_gui.jar
 swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java makefile
 	rm -f *.class
-	mkdir -p META-INF
-	cp -f swift_gui.MF META-INF/MANIFEST.MF
 	javac -nowarn -source 1.6 swift_gui.java
-	touch -t 201901181818 *.class
-	touch -t 201901181818 META-INF/MANIFEST.MF
-	zip -X swift_gui.jar META-INF/MANIFEST.MF *.class
+	jar -cfe swift_gui.jar swift_gui *.class
+
+# "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
+#swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java makefile
+#	rm -f *.class
+#	mkdir -p META-INF
+#	cp -f swift_gui.MF META-INF/MANIFEST.MF
+#	javac -nowarn -source 1.6 swift_gui.java
+#	touch -t 201901181818 *.class
+#	touch -t 201901181818 META-INF/MANIFEST.MF
+#	zip -X swift_gui.jar META-INF/MANIFEST.MF *.class
 
 json_parser.jar: json_parser.java makefile
 	javac -nowarn -source 1.6 json_parser.java
