@@ -1093,30 +1093,22 @@ int oldmain(int argc, char *argv[]) {
 		eo = newimage(EW, EH, 1); // expanded pattern for correlation
 		for(i = 0; i < 256; i++)
 			revlut[i] = 255-i;
-		fft_result0 = (fftwf_complex*)
-			fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
-		fft_result1 = (fftwf_complex*)
-			fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
-		fft_comb = (fftwf_complex*)
-			fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
-		ifft_comb = fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
-		forward_plan0 = fftwf_plan_dft_r2c_1d(
-			size, targ, fft_result0, fftw_mode);
-		backward_plan = fftwf_plan_dft_c2r_1d(
-			size, fft_comb, ifft_comb, fftw_mode);
+		fft_result0 = (fftwf_complex*) fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
+		fft_result1 = (fftwf_complex*) fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
+		fft_comb    = (fftwf_complex*) fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
+		ifft_comb   = fftwf_malloc(sizeof(fftw_complex) * (size/2+1));
+		forward_plan0 = fftwf_plan_dft_r2c_1d(size, targ, fft_result0, fftw_mode);
+		backward_plan = fftwf_plan_dft_c2r_1d(size, fft_comb, ifft_comb, fftw_mode);
 		mk_winf(winf, PW, PH);
 		tinit += getticks();
 		if(fftw_mode == FFTW_MEASURE) {
 			gettimeofday(&tv, NULL);
-			elapsed_sec = (tv.tv_sec-starts) +
-				(tv.tv_usec - startu)/1000000.;
-			fprintf(stderr, "FFTW_MEASURE %12llu ticks  %g sec\n",
-				tinit, elapsed_sec);
+			elapsed_sec = (tv.tv_sec-starts) + (tv.tv_usec - startu)/1000000.;
+			fprintf(stderr, "FFTW_MEASURE %12llu ticks  %g sec\n", tinit, elapsed_sec);
 		}
 	}
 	if(!quiet)
-		fprintf(stderr, "make targ at %g %g EWH %d %d\n",
-			tarx, tary, EW, EH);
+		fprintf(stderr, "make targ at %g %g EWH %d %d\n", tarx, tary, EW, EH);
 	if(oldtarx != tarx || oldtary != tary) {
 		tprep0 -= getticks();
 		mk_ftarg(im0, tarx-EW/2, tary-EH/2, targ, EW, EH);
