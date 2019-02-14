@@ -1691,7 +1691,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		      //System.out.println ( "Button area = " + button_area );
 
 		      swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
-		      button_area.add ( swift_gui_panel.load_files_on_import, 0 );
+		      // This appears to fail on the Macintosh. That dialog box may have a different set of containers
+		      //button_area.add ( swift_gui_panel.load_files_on_import, 0 );
 
 
 		      // chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
