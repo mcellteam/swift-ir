@@ -10,7 +10,9 @@ iscale: iscale.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o iscale iscale.c -ljpeg -ltiff -lpng
 
 mir: mir.c swimio.h debug.h makefile
-	gcc -Wno-implicit -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
+	gcc -Wno-implicit -g -c -o mir.o mir.c
+	gcc -Wno-implicit -g -o mir mir.o -ljpeg -ltiff -lpng -lm
+	#gcc -Wno-implicit -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
 
 remod: remod.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
