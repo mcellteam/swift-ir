@@ -1015,9 +1015,9 @@ void main(int argc, char *argv[]) {
         affine(3, &vert[0][0], ethresh, leastpts);
       } else if (nverts >= 3)   // set mf according to the given points
 		fprintf ( stderr, "Calling affine ( %d, %f, %f, %d )\n", nverts, vert[0][0], ethresh, leastpts );
-        // affine_wrapped(nverts, &vert[0][0], ethresh, leastpts);
+        affine(nverts, &vert[0][0], ethresh, leastpts);
         // affine(nverts, NULL, ethresh, leastpts);
-        affine(nverts, NULL, 3.0, 4);
+        // affine(nverts, NULL, 3.0, 4);
 
       // fprintf(stderr, "after nverts %d selections\n", nverts);
       // fprintf(stderr, "old mf  %g %g %g  %g %g %g\n",
@@ -1350,17 +1350,12 @@ void main(int argc, char *argv[]) {
 #define MAX 1000                // XXX Jan 2016 was 100 but 10000 failed
 #define MINVAL 0.0001
 
-/*
-void affine_wrapped (int inpts, float *v[], float ethresh, int leastpts) {
-
-  fprintf ( stderr, "Inside affine wrapped\n" );
-
-  affine (inpts, v, ethresh, leastpts);
-
-}
-*/
-
-void affine(int inpts, float *v, float ethresh, int leastpts) {
+void affine (
+       int inpts,
+	   float *v,
+	   float ethresh,
+	   int leastpts
+	 ) {
 
   fprintf ( stderr, "Inside affine\n" );
   fflush ( stderr );
