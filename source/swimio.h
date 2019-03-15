@@ -129,6 +129,8 @@ struct image *read_img(char *fname) {
 	struct image *ip;
 	int bpp = 1, wid, ht, range, c, nr;
 	unsigned char *idata;
+
+
 	if(strstr(fname, ".raw") || strstr(fname, ".RAW")
 	    || strstr(fname, ".dat") || strstr(fname, ".DAT")) {
 		int fd;
@@ -152,6 +154,8 @@ fprintf(stderr, "raw fd %d\n", fd);
 		close(fd);
 		return(ip);
 	}
+
+
 	if(strstr(fname, ".tif") || strstr(fname, ".TIF")) { // hits tiff too
 //fprintf(stderr, "use ltiff\n");
 		if(ltiff_reader(fname, &wid, &ht, &bpp, &idata) < 0)
@@ -167,14 +171,23 @@ fprintf(stderr, "raw fd %d\n", fd);
 //fprintf(stderr, "TIFF wid %d ht %d bpp %d -> 0x%lx\n", wid, ht, bpp, idata);
 		return(ip);
 	}
+
+
 	if(!(fp = fopen(fname, "rb"))) {
 		//fprintf(stderr, "Can't open %s\n", fname);
 		return(NULL);
 	}
+
+
 //fprintf(stderr, "fileno %d\n", fileno(fp));
 	c = fgetc(fp);
 	ungetc(c, fp);
+
+
+
 	if(c == 0211) {		// assume its png
+
+
 		int i, o, nr = 0, x, y, number_of_passes, rowbytes;
 		png_bytep *row_ptr;
 		uchar png_hdr[8];
@@ -245,7 +258,11 @@ fprintf(stderr, "raw fd %d\n", fd);
 //fprintf(stderr, "read done\n");
 		ip->pp = idata;
 		ip->trans = -1; // XXX fix later for broader input transparency
+
+
 	} else if(c == 0377) {		// assume its jpeg
+
+
 		int i = 0, l = 0, row_stride;
 		struct jpeg_decompress_struct cinfo;
 		struct jpeg_error_mgr jerr;
@@ -281,7 +298,11 @@ fprintf(stderr, "raw fd %d\n", fd);
 			//jread_ti += getticks();
 			return(NULL);
 		}
+
+
 	} else if(c == 'I') {	// assume its a tiff
+
+
 		int i, o, nr = 0;
 		ushort tiff_hdr[4], ntags, *tags;
 		unsigned char *idata;
@@ -326,7 +347,11 @@ fprintf(stderr, "raw fd %d\n", fd);
 		ip->ydelta = wid;
 		ip->trans = -1;
 		ip->pp = idata;
+
+
 	} else { // ppm or pgm
+
+
 		int ignore = fscanf(fp, "%[^\n] ", tmptxt);
 		if(strcmp(tmptxt, "P5")) {
 			if(strcmp(tmptxt, "P6")) {
@@ -381,7 +406,12 @@ nw = write(fd, ip->pp, (long)ht*wid*bpp);
 close(fd);
 }
 */
+
+
 	}
+
+
+
 	fclose(fp);
 //#define	INGRID 64
 #ifdef	INGRID
@@ -417,7 +447,11 @@ void write_img(char *fname, struct image *ip) {
 	//fd = creat(fname, 0666);
 fprintf(stderr, "write_img %d %s  %d %d %d %d\n",
 fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
+
+
 	if(strstr(fname, "png") || strstr(fname, "PNG")) {
+
+
 		int i;
 		//unsigned char transparent[] = { 56 };
 		//unsigned char transparent[256];
@@ -471,7 +505,11 @@ fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
 		free(row_ptr);
 		png_write_end(png_ptr, NULL);
 		fclose(fp);
+
+
 	} else if(strstr(fname, "tif") || strstr(fname, "TIF")) {
+
+
 		fd = creat(fname, 0666);
 		*(int *)(&tiff_hdr[2]) = ip->wid*ip->ht*ip->bpp+8;
 		nw = write(fd, tiff_hdr, 8);
@@ -485,7 +523,11 @@ fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
 		*(int *)(&tiff_mfd[41]) = ip->wid*ip->ht*ip->bpp; // byte count
 		nw = write(fd, tiff_mfd, sizeof(tiff_mfd));
 		close(fd);
+
+
 	} else if(strstr(fname, "jpg") || strstr(fname, "JPG") || strstr(fname, "jpeg") || strstr(fname, "JPEG")) {
+
+
 		// AU imgfmt/writejpg.c
 		int quality = 90;
 		struct jpeg_compress_struct cinfo;
@@ -520,7 +562,11 @@ fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
 		jpeg_finish_compress(&cinfo);
 		fclose(outfile);
 		jpeg_destroy_compress(&cinfo);
+
+
 	} else { // assume pgm
+
+
 		fd = creat(fname, 0666);
 		if(ip->bpp == 3)
 			sprintf(hdr, "P6\n%d %d\n255\n", ip->wid, ip->ht);
@@ -540,5 +586,8 @@ fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
 			tqw += qw;
 		}
 		close(fd);
+
+
 	}
+
 }
