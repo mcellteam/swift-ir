@@ -5,7 +5,7 @@
 ### Developed by Art Wetzel, Pittsburgh Supercomputing Center
 
 
-### SWiFT-IR components
+### SWiFT-IR Components
 
 * **swim** – Adaptive signal Whitened Image Matching
 * **PSC-VB** - for arbitrary 3D cut-plane viewing
