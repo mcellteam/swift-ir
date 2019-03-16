@@ -1,4 +1,7 @@
-all: swim iavg iscale mir remod sxox json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
+all: test_libs swim iavg iscale mir remod sxox json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
+
+test_libs: test_libs.c swimio.h debug.h makefile
+	gcc -Wno-implicit -o test_libs -O3 -m64 -msse3 test_libs.c -ltiff -ljpeg -lpng -lfftw3f -lm
 
 swim: swim.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o swim -O3 -m64 -msse3 swim.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -10,9 +13,7 @@ iscale: iscale.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o iscale iscale.c -ljpeg -ltiff -lpng
 
 mir: mir.c swimio.h debug.h makefile
-	gcc -std=gnu89 -ggdb -c -o mir.o mir.c
-	gcc -std=gnu89 -ggdb -o mir mir.o -ljpeg -ltiff -lpng -lm
-	#gcc -Wno-implicit -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
+	gcc -Wno-implicit -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
 
 remod: remod.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
