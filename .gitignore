@@ -1,9 +1,27 @@
 tests
 source/META-INF
+source/*.jpg
+source/*.JPG
+source/*.tif
+source/*.tiff
+source/*.png
+source/*.xcf
+source/*.mir
+source/*.txt
+source/*.json
+source/*.sh
+*.tar
 *.class
 iavg
 iscale
 mir
 remod
 swim
+sxox
+fftw
+jpeg
+png
+tiff
+gbm
+libraries
 
