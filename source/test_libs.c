@@ -1306,8 +1306,6 @@ int mkargs(char *oargv[], char *s) {
 }
 
 int main(int argc, char *argv[]) {
-	int i;
-	char *p;
 
 	if ( (argc<=1) || (strcmp(argv[1],"--help")==0) ) {
 		printf ( "\n" );
@@ -1339,6 +1337,31 @@ int main(int argc, char *argv[]) {
     sprintf ( outname, "out_j%d.jpg", file_num );
 		write_img(outname, img); /// XXX should regen after move
   }
+
+  int N;
+  N = 32;
+  double pi = 4 * atan(1.0);
+  double f = 8 * pi;
+
+  printf ( "FFT of %d samples of cos(%f * n / N) + sin(%f * n / N)\n", N, f, 3*f );
+
+  fftwf_complex *in, *out;
+  fftwf_plan p;
+  in  = (fftwf_complex*) fftwf_malloc ( sizeof(fftwf_complex) * N );
+  out = (fftwf_complex*) fftwf_malloc ( sizeof(fftwf_complex) * N );
+  int in_index;
+  for (in_index=0; in_index<N; in_index++) {
+    in[in_index][0] = cos(f*in_index/N) + sin(3*f*in_index/N);
+    in[in_index][1] = 0;
+  }
+  p = fftwf_plan_dft_1d ( N, in, out, FFTW_FORWARD, FFTW_ESTIMATE );
+  fftwf_execute(p);
+  for (in_index=0; in_index<N; in_index++) {
+    printf ( "    %8.4f %8.4f\n", out[in_index][0], out[in_index][1] );
+  }
+  fftwf_destroy_plan(p);
+  fftwf_free(in);
+  fftwf_free(out);
 
 /*
 	if (!quiet) print_args ( "main:", argc, argv );
