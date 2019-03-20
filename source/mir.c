@@ -1351,7 +1351,7 @@ void main(int argc, char *argv[]) {
 #define MINVAL 0.0001
 
 void affine (
-       int inpts,
+     int inpts,
 	   float *v,
 	   float ethresh,
 	   int leastpts
