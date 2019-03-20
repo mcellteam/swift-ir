@@ -10,6 +10,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.util.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
+// import java.net.*;
 
 
 import java.nio.*;  // Needed for relativize function.
@@ -561,6 +562,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   File project_file=null;
   File destination=null;
+  public File install_code_source=null;
 
 	static int w=1200, h=1024;
 
@@ -578,6 +580,13 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 	public ArrayList<swift_gui_frame> frames = new ArrayList<swift_gui_frame>();  // Argument (if any) specifies initial capacity (default 10)
   public int frame_index = -1;
 
+  public void set_install_location() {
+    String install_path_string = getClass().getProtectionDomain().getCodeSource().getLocation().toString();
+    if (install_path_string.startsWith ( "file:" ) ) {
+      install_path_string = install_path_string.substring(5);
+    }
+    install_code_source = new File ( install_path_string );
+  }
 
   public void repaint_panels () {
     alignment_panel.repaint();
@@ -1457,6 +1466,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         // Keep from overwriting existing files unless explicitly requested
         System.out.println ( "Please set an explicit destination before performing an alignment." );
+        JOptionPane.showMessageDialog(this, "Please set an explicit destination before performing an alignment.", "Note", JOptionPane.ERROR_MESSAGE);
 
       } else {
 
@@ -1632,7 +1642,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
     System.out.println ( "Translation of 15: " + run_swift.translate_exit ( 128+15 ) );
 
-
 	  ArrayList<String> file_name_args = new ArrayList<String>();
 
     int arg_index = 0;
@@ -1691,6 +1700,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 
         swift_gui swift_gui_panel = new swift_gui();
+        swift_gui_panel.set_install_location();
+        System.out.println ( "Install Code: " + swift_gui_panel.install_code_source );
+        System.out.println ( "Install Path: " + swift_gui_panel.install_code_source.getParent() );
+        run_swift.code_source = swift_gui_panel.install_code_source.getParent() + File.separator;
         swift_gui_panel.parent_frame = app_frame;
         swift_gui_panel.current_directory = System.getProperty("user.dir");
 
