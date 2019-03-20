@@ -1134,7 +1134,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               for (int i=0; i<image_stack.size(); i++) {
                 HashMap<String,Object> stack_image = (HashMap<String,Object>)(image_stack.get(i));
                 System.out.println ( "stack_image keys = " + stack_image.keySet() );
-                actual_file_names.add ( (String)(stack_image.get("filename")) );
+                String stack_image_file_name = (String)(stack_image.get("filename"));
+                if ( !stack_image_file_name.startsWith(File.separator) ) {
+                  // The path is relative to the location of this JSON project_file
+                  File full_project_file = project_file.getAbsoluteFile ();
+                  stack_image_file_name = full_project_file.getParent() + File.separator + stack_image_file_name;
+                }
+                System.out.println ( "stack_image_file_name = " + stack_image_file_name );
+                actual_file_names.add ( stack_image_file_name );
 
                 System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
                 swift_gui_frame new_frame = new swift_gui_frame ( new File (actual_file_names.get(i)), load_images );
