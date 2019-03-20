@@ -1114,6 +1114,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     } else if ( action_source == set_destination_menu_item ) {
 		  destination_chooser.setMultiSelectionEnabled(false);
 		  destination_chooser.setFileSelectionMode ( JFileChooser.DIRECTORIES_ONLY );
+		  if (destination != null) {
+		    // Set the default to the current destination
+		    destination_chooser.setCurrentDirectory ( destination );
+		  }
 		  int returnVal = destination_chooser.showDialog(this, "Choose Destination");
 		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
 		    destination = destination_chooser.getSelectedFile();
