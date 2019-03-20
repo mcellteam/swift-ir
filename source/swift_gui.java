@@ -11,6 +11,10 @@ import java.util.*;
 import javax.swing.text.*;
 import javax.swing.event.*;
 
+
+import java.nio.*;  // Needed for relativize function.
+
+
 class ProjectFileChooser extends JFileChooser {
   ProjectFileChooser ( String path ) {
     super(path);
@@ -484,8 +488,37 @@ class ControlPanel extends JPanel {
 
 }
 
-
 public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
+
+  public String get_absolute_file_name ( String project_file_name, String other_file_name ) {
+    // This function returns an absolute file name when "other_file" is relative
+    if ( other_file_name.startsWith ( File.separator ) ) {
+      // The other file is absolute already
+      return ( other_file_name );
+    } else {
+      File project_file = new File ( project_file_name );
+      File other_file = new File ( other_file_name );
+      File full_project_file = project_file.getAbsoluteFile();
+      return ( full_project_file.getParent() + File.separator + other_file_name );
+    }
+  }
+
+  String get_relative_file_name ( String project_file_name, String other_file_name ) {
+    // This function could be written without "relativize" to eliminate the need for importing nio.
+    File project_file_path = new File(project_file_name).getParentFile();
+    File other_file_path = new File(other_file_name);
+    File other_file_parent = other_file_path.getParentFile();
+    String relative_path = project_file_path.toPath().relativize(other_file_parent.toPath()).toString();
+    if (relative_path.length() > 0) {
+      relative_path = relative_path + File.separator + other_file_path.getName();
+    } else {
+      relative_path = other_file_path.getName();
+    }
+    // System.out.println ( "Project:  " + project_file_name );
+    // System.out.println ( "Other:    " + other_file_name );
+    // System.out.println ( "Relative: " + relative_path );
+    return ( relative_path );
+  }
 
   public int get_int_from_textfield ( JTextComponent c ) {
     String s = c.getText();
@@ -951,7 +984,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         f.println ( "      { " );
         f.println ( "        \"skip\": " + frame.skip + "," );  // JSON and Java both use lower case for true and false
-        f.print   ( "        \"filename\": \"" + frame + "\"" );
+        f.print   ( "        \"filename\": \"" + get_relative_file_name ( project_file.getPath(), frame.toString() ) + "\"" );
         if (frame.next_alignment == null) {
           f.println ( "" );
         } else {
@@ -1134,12 +1167,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               for (int i=0; i<image_stack.size(); i++) {
                 HashMap<String,Object> stack_image = (HashMap<String,Object>)(image_stack.get(i));
                 System.out.println ( "stack_image keys = " + stack_image.keySet() );
-                String stack_image_file_name = (String)(stack_image.get("filename"));
-                if ( !stack_image_file_name.startsWith(File.separator) ) {
-                  // The path is relative to the location of this JSON project_file
-                  File full_project_file = project_file.getAbsoluteFile ();
-                  stack_image_file_name = full_project_file.getParent() + File.separator + stack_image_file_name;
-                }
+                String stack_image_file_name = get_absolute_file_name ( project_file.getAbsolutePath(), (String)(stack_image.get("filename")) );
                 System.out.println ( "stack_image_file_name = " + stack_image_file_name );
                 actual_file_names.add ( stack_image_file_name );
 
