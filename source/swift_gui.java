@@ -962,7 +962,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       f.println ( "  \"method\": \"SWiFT-IR\"," );
       f.println ( "  \"data\": {" );
       f.println ( "    \"source_path\": \"\"," );
-      f.println ( "    \"destination_path\": \"" + destination + "\"," );
+      f.println ( "    \"destination_path\": \"" + get_relative_file_name ( project_file.getPath(), destination.toString() ) + "\"," );
       if (control_panel.pairwise.isSelected()) {
         f.println ( "    \"pairwise_alignment\": " + "true" + "," );
       } else {
@@ -1151,7 +1151,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                  (obj_dict.get("data") != null) ) {
               // Assume that everything is fine at this point
               HashMap<String,Object> data = (HashMap<String,Object>)(obj_dict.get("data"));
-              destination = new File ( (String)(data.get("destination_path")) );
+              destination = new File ( get_absolute_file_name ( project_file.getAbsolutePath(), (String)(data.get("destination_path")) ) );
               control_panel.destination_label.setText ( "Destination: "+destination );
 
               if (data.containsKey("pairwise_alignment")) {
