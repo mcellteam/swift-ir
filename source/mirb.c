@@ -567,6 +567,171 @@ void main(int argc, char *argv[]) {
   float *vp, det, fx, fy;
   t_ticks -= getticks();
 
+  fprintf ( stdout, "Running mirb\n" );
+
+  int arg_num;
+  for (arg_num=0; arg_num<argc; arg_num++) {
+    fprintf ( stdout, " arg[%d] = %s\n", arg_num, argv[arg_num] );
+  }
+
+  if (argc > 1) {
+    // man 2 open:
+    //
+    //   int open(const char *pathname, int flags);
+    //
+    //   Given a pathname for a file, open() returns a file descriptor, a small,
+    //   nonnegative integer for use in subsequent system calls (read(2), write(2),
+    //   lseek(2), fcntl(2), etc.).  The file descriptor returned by a successful
+    //   call will be the  lowest-numbered file descriptor not currently open for
+    //   the process.
+    //
+    //   ... the access mode values O_RDONLY, O_WRONLY, and O_RDWR do  not  specify
+    //   individual  bits.  Rather, they define the low order two bits of flags, and
+    //   are defined respectively as 0, 1, and 2.
+    //
+    // man 3 stdin:
+    //
+    //   On program startup, the integer file descriptors associated with the streams
+    //   stdin, stdout, and stderr are 0, 1, and 2, respectively.
+    //
+    // According to the previous descriptions, closing file handle "0" appears to
+    // free that file descriptor which means that it will be the next (lowest-numbered)
+    // file descriptor used by a subsequent "open" call. This appears to be the file
+    // descriptor of "stdin" for the process which allows "stdin" to be remapped to
+    // the newly opened file. This essentially reassigns stdin from the terminal to
+    // this newly opened file. So subsequent "getchar" calls will read from this file.
+    close(0);
+    i = open(argv[1], 0);
+    if (i != 0) {
+      fprintf(stderr, "open of <%s> as stdin failed\n", argv[0]);
+      exit(1);
+    }
+    c = getchar();
+    //fprintf(stderr, "stdin is <%s> c is %d <%c>\n", argv[0], c, c);
+    ungetc(c, stdin);
+  }
+
+  ////////////// Read the text from stdin
+
+  char **text_lines = NULL;  // An array of strings that only grows
+  int cur_lines_length = 0;  // Number of strings in current text_lines
+
+  char *text_line = NULL;    // A line of text being built
+  int cur_line_length = 0;   // The length of the current line of text
+
+  int eof = 0;
+  while ( (c = getchar()) != EOF ) {
+    char cc = (char) c;  // Convert to a char for convenience
+    if ( (cc == '\n') || (cc == '\r') ) {
+      // End of line
+      if (text_line != NULL) {
+        // Store what's already been scanned
+        if (text_lines == NULL) {
+          // Allocate the first
+          text_lines = (char **) malloc ( sizeof(char *) * 1 );
+          cur_lines_length = 1;
+        } else {
+          // Expand text_lines by 1
+          char **new_lines;
+          new_lines = (char **) malloc ( sizeof(char *) * (cur_lines_length + 1) );
+          for (i=0; i<cur_lines_length; i++) {
+            new_lines[i] = text_lines[i];
+          }
+          free ( text_lines );
+          text_lines = new_lines;
+          cur_lines_length += 1;
+        }
+        // Add the line
+        text_lines[cur_lines_length-1] = text_line;
+        text_line = NULL;
+        cur_line_length = 0;
+      }
+    } else {
+      // Not end of line
+      if (text_line == NULL) {
+        // Allocate text_line
+        text_line = (char *) malloc ( sizeof(char) * 2 ); // Include allocation for \0
+        cur_line_length = 1;
+      } else {
+        // Expand text_line by 1 (note that larger blocks would be more efficient)
+        char *new_line = (char *) malloc ( cur_line_length+1 + 1 ); // Include allocation for \0
+        strcpy ( new_line, text_line );
+        free ( text_line );
+        text_line = new_line;
+        cur_line_length += 1;
+      }
+      // Add the character and terminating null
+      text_line[cur_line_length-1] = cc;
+      text_line[cur_line_length] = '\0';
+    }
+  }
+
+  //// Duplicate code from above (it would be better to share this via a function:
+  /***/ if (text_line != NULL) {
+  /***/   // Handle any chars on the last line
+  /***/   if (text_lines == NULL) {
+  /***/     // Allocate the first
+  /***/     text_lines = (char **) malloc ( sizeof(char *) * 1 );
+  /***/     cur_lines_length = 1;
+  /***/   } else {
+  /***/     // Expand text_lines by 1
+  /***/     char **new_lines;
+  /***/     new_lines = (char **) malloc ( sizeof(char *) * (cur_lines_length + 1) );
+  /***/     for (i=0; i<cur_lines_length; i++) {
+  /***/       new_lines[i] = text_lines[i];
+  /***/     }
+  /***/     free ( text_lines );
+  /***/     text_lines = new_lines;
+  /***/     cur_lines_length += 1;
+  /***/   }
+  /***/   // Add the line
+  /***/   text_lines[cur_lines_length-1] = text_line;
+  /***/   text_line = NULL;
+  /***/   cur_line_length = 0;
+  /***/ }
+
+  ////////////// Print the text lines
+
+  for (i=0; i<cur_lines_length; i++) {
+    fprintf ( stdout, " -> %s\n", text_lines[i] );
+  }
+
+  ////////////// Process the text lines
+
+  struct image *input_image = NULL;
+  struct image *output_image = NULL;
+
+  char *filename;
+  for (i=0; i<cur_lines_length; i++) {
+    if (text_lines[i][0] == 'F') {
+      filename = &text_lines[i][2];
+      fprintf ( stdout, "  Read from \"%s\"\n", filename );
+      if (input_image != NULL) {
+        free(input_image->pp);
+        free(input_image);
+      }
+      input_image = read_img(filename);
+      if (output_image != NULL) {
+        free(output_image->pp);
+        free(output_image);
+      }
+      output_image = read_img(filename);
+    } else if ( (text_lines[i][0] == 'W') || (text_lines[i][1] == 'W') ) {
+      if (text_lines[i][0] == 'W') {
+        filename = &text_lines[i][2];
+      } else {
+        filename = &text_lines[i][3];
+      }
+      fprintf ( stdout, "  Write to \"%s\"\n", filename );
+      write_img(filename, output_image);
+    }
+  }
+
+  fprintf ( stdout, "Done\n" );
+
+  exit ( 0 );
+
+
   if (verbose)
     print_args("top of main:", argc, argv);
 
