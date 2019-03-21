@@ -1,4 +1,4 @@
-all: test_libs swim iavg iscale mir remod sxox json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
+all: test_libs swim iavg iscale mir mirb remod sxox json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
 
 test_libs: test_libs.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o test_libs -O3 -m64 -msse3 test_libs.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -14,6 +14,9 @@ iscale: iscale.c swimio.h debug.h makefile
 
 mir: mir.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+mirb: mirb.c swimio.h debug.h makefile
+	gcc -Wno-implicit -O3 -o mirb mirb.c -ljpeg -ltiff -lpng -lm
 
 remod: remod.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
@@ -61,12 +64,13 @@ sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum iavg >> sha1sum.txt
 	sha1sum iscale >> sha1sum.txt
 	sha1sum mir >> sha1sum.txt
+	sha1sum mirb >> sha1sum.txt
 	sha1sum remod >> sha1sum.txt
 	sha1sum run_swift.jar >> sha1sum.txt
 	sha1sum swift_gui.jar >> sha1sum.txt
 
 clean:
-	rm -f swim iavg iscale mir remod sxox
+	rm -f swim iavg iscale mir mirb remod sxox
 	rm -f *.jar
 	rm -f *.class
 	rm -f *.o
