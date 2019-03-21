@@ -138,6 +138,9 @@ public class run_swift {
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
 	public static String image_type_extension = "JPG";
 
+	public static String swim_cmd = "swim";
+	public static String mir_cmd = "mir";
+
   public static String translate_exit ( int exit_status ) {
     String exit_string = " " + exit_status;
     if (exit_status > 128) {
@@ -358,12 +361,17 @@ public class run_swift {
       interactive_commands = "F " + original_file_name + "\n";
       interactive_commands += "RW " + new_file_name+"\n";
 
-      f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
+      if (global_io.is_windows()) {
+        f = new File ( System.getProperty("user.dir") + File.separator + "zeroth.mir" );
+      } else {
+        f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
+      }
+
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
       bw.close();
 
-      command_line = code_source + "mir zeroth.mir";
+      command_line = code_source + mir_cmd + " zeroth.mir";
       if (output_level > 0) System.out.println ( "\n*** Running zeroth mir with command line: " + command_line + " ***" );
       if (output_level > 0) System.out.println ( "Copying " + original_file_name + " to " + new_file_name );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
@@ -454,12 +462,17 @@ public class run_swift {
       interactive_commands += "\n";
       interactive_commands += "RW " + new_file_name+"\n";
 
-      f = new File ( System.getenv("PWD") + File.separator + "pairwise.mir" );
+      if (global_io.is_windows()) {
+        f = new File ( System.getProperty("user.dir") + File.separator + "pairwise.mir" );
+      } else {
+        f = new File ( System.getenv("PWD") + File.separator + "pairwise.mir" );
+      }
+
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
       bw.close();
 
-      command_line = code_source + "mir pairwise.mir";
+      command_line = code_source + mir_cmd + " pairwise.mir";
       if (output_level > 0) System.out.println ( "\n*** Running pairwise mir with command line: " + command_line + " ***" );
       if (output_level > 0) System.out.println ( "Copying " + original_file_name + " to " + new_file_name );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
@@ -523,6 +536,12 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
 
+    if (global_io.is_windows()) {
+      System.out.println ( "Running in Windows!!" );
+      swim_cmd = "swim.exe";
+      mir_cmd = "mir.exe";
+    }
+
     boolean use_line_parts = true;
 
     String command_line;
@@ -555,7 +574,7 @@ public class run_swift {
       // Step 0 - Run first swim
       //////////////////////////////////////
 
-      command_line = code_source + "swim " + window_size;
+      command_line = code_source + swim_cmd + " " + window_size;
       if (output_level > 0) System.out.println ( "\n*** Running first swim with command line: " + command_line + " ***" );
       cmd_proc = rt.exec ( command_line );
 
@@ -618,7 +637,7 @@ public class run_swift {
       String patx = "" + parts[5];
       String paty = "" + parts[6];
 
-      command_line = code_source + "swim " + window_size;
+      command_line = code_source + swim_cmd + " " + window_size;
       if (output_level > 0) System.out.println ( "\n*** Running second swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
@@ -711,12 +730,17 @@ if (use_line_parts) {
       interactive_commands += "RW iter1_mir_out."+image_type_extension+"\n";
 }
 
-      f = new File ( System.getenv("PWD") + File.separator + "first.mir" );
+      if (global_io.is_windows()) {
+        f = new File ( System.getProperty("user.dir") + File.separator + "first.mir" );
+      } else {
+        f = new File ( System.getenv("PWD") + File.separator + "first.mir" );
+      }
+
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
       bw.close();
 
-      command_line = code_source + "mir first.mir";
+      command_line = code_source + mir_cmd + " first.mir";
       if (output_level > 0) System.out.println ( "\n*** Running first mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
@@ -777,7 +801,7 @@ if (use_line_parts) {
       AI3 = "" + parts[13];
       AI4 = "" + parts[14];
 
-      command_line = code_source + "swim " + window_size;
+      command_line = code_source + swim_cmd + " " + window_size;
       if (output_level > 0) System.out.println ( "\n*** Running third swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
@@ -864,12 +888,17 @@ if (use_line_parts) {
       interactive_commands += "RW iter2_mir_out."+image_type_extension+"\n";
 }
 
-      f = new File ( System.getenv("PWD") + File.separator + "second.mir" );
+      if (global_io.is_windows()) {
+        f = new File ( System.getProperty("user.dir") + File.separator + "second.mir" );
+      } else {
+        f = new File ( System.getenv("PWD") + File.separator + "second.mir" );
+      }
+
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
       bw.close();
 
-      command_line = code_source + "mir second.mir";
+      command_line = code_source + mir_cmd + " second.mir";
       if (output_level > 0) System.out.println ( "\n*** Running second mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
@@ -930,7 +959,7 @@ if (use_line_parts) {
       AI3 = "" + parts[13];
       AI4 = "" + parts[14];
 
-      command_line = code_source + "swim " + window_size;
+      command_line = code_source + swim_cmd + " " + window_size;
       if (output_level > 0) System.out.println ( "\n*** Running fourth swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
@@ -1045,12 +1074,17 @@ if (use_line_parts) {
       // image_files[align_index] = aligned_image_file;
 
 
-      f = new File ( System.getenv("PWD") + File.separator + "third.mir" );
+      if (global_io.is_windows()) {
+        f = new File ( System.getProperty("user.dir") + File.separator + "third.mir" );
+      } else {
+        f = new File ( System.getenv("PWD") + File.separator + "third.mir" );
+      }
+
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
       bw.close();
 
-      command_line = code_source + "mir third.mir";
+      command_line = code_source + mir_cmd + " third.mir";
       if (output_level > 0) System.out.println ( "\n*** Running third mir with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
@@ -1156,6 +1190,10 @@ if (use_line_parts) {
 
   public static void main(String[] args) throws java.io.FileNotFoundException {
 
+    System.out.println ( "System: " + System.getProperty("os.name").trim().toLowerCase().startsWith("win") );
+    if ( System.getProperty("os.name").trim().toLowerCase().startsWith("win") ) {
+      System.out.println ( "Running in Windows (from main)" );
+    }
 
     int output_level = 1;
     int align_to = -1;
