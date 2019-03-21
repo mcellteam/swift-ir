@@ -2,8 +2,6 @@ import java.io.*;
 import java.util.*;
 
 class global_io {
-  public static boolean is_windows_set = false;
-  public static boolean is_windows_true = false;
   public static boolean wait_enabled = false;
   static BufferedReader command_line_reader = null;
   public static String read_line() {
@@ -41,12 +39,7 @@ class global_io {
     if (log_enabled) {
       try {
         if (log_file_writer == null) {
-          File f = null;
-          if (is_windows()) {
-            f = new File ( System.getProperty("user.dir") + File.separator + "command_log.bat" );
-          } else {
-            f = new File ( System.getenv("PWD") + File.separator + "command_log.bat" );
-          }
+          File f = new File ( System.getenv("PWD") + File.separator + "command_log.bat" );
           log_file_writer = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
         }
         System.out.println ( "LOG: " + command );
@@ -55,14 +48,6 @@ class global_io {
       } catch ( IOException ioe ) {
       }
     }
-  }
-
-  public static boolean is_windows() {
-	if ( !is_windows_set ) {
-		is_windows_true = System.getProperty("os.name").trim().toLowerCase().startsWith("win");
-		is_windows_set = true;
-	}
-	return ( is_windows_true );
   }
 }
 
