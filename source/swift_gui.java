@@ -1439,7 +1439,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         } else {
           String prefix = "";
           if (destination != null) {
-            if (destination.length() > 0) {
+            if (destination.toString().length() > 0) {
               prefix = destination + File.separator;
             }
           }
@@ -1460,9 +1460,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         }
       }
 		} else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
-			System.out.println ( "\n\nGot an align_all or align_fwd command" );
+			System.out.println ( "\n\nGot an align_all or align_fwd command with dest=" + destination );
 
-      if ( (destination == null) || (destination.length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
+      if ( (destination == null) || (destination.toString().length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
 
         // Keep from overwriting existing files unless explicitly requested
         System.out.println ( "Please set an explicit destination before performing an alignment." );
@@ -1492,7 +1492,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           System.out.println ( "Running an alignment with destination = \"" + destination + "\"" );
           String prefix = "";
           if (destination != null) {
-            if (destination.length() > 0) {
+            if (destination.toString().length() > 0) {
               prefix = destination + File.separator;
             }
           }
