@@ -41,12 +41,7 @@ class global_io {
     if (log_enabled) {
       try {
         if (log_file_writer == null) {
-          File f = null;
-          if (is_windows()) {
-            f = new File ( System.getProperty("user.dir") + File.separator + "command_log.bat" );
-          } else {
-            f = new File ( System.getenv("PWD") + File.separator + "command_log.bat" );
-          }
+          File f = new File ( System.getProperty("user.dir") + File.separator + "command_log.bat" );
           log_file_writer = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
         }
         System.out.println ( "LOG: " + command );
@@ -361,11 +356,7 @@ public class run_swift {
       interactive_commands = "F " + original_file_name + "\n";
       interactive_commands += "RW " + new_file_name+"\n";
 
-      if (global_io.is_windows()) {
-        f = new File ( System.getProperty("user.dir") + File.separator + "zeroth.mir" );
-      } else {
-        f = new File ( System.getenv("PWD") + File.separator + "zeroth.mir" );
-      }
+      f = new File ( System.getProperty("user.dir") + File.separator + "zeroth.mir" );
 
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
@@ -462,11 +453,7 @@ public class run_swift {
       interactive_commands += "\n";
       interactive_commands += "RW " + new_file_name+"\n";
 
-      if (global_io.is_windows()) {
-        f = new File ( System.getProperty("user.dir") + File.separator + "pairwise.mir" );
-      } else {
-        f = new File ( System.getenv("PWD") + File.separator + "pairwise.mir" );
-      }
+      f = new File ( System.getProperty("user.dir") + File.separator + "pairwise.mir" );
 
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
@@ -730,11 +717,7 @@ if (use_line_parts) {
       interactive_commands += "RW iter1_mir_out."+image_type_extension+"\n";
 }
 
-      if (global_io.is_windows()) {
-        f = new File ( System.getProperty("user.dir") + File.separator + "first.mir" );
-      } else {
-        f = new File ( System.getenv("PWD") + File.separator + "first.mir" );
-      }
+      f = new File ( System.getProperty("user.dir") + File.separator + "first.mir" );
 
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
@@ -888,11 +871,7 @@ if (use_line_parts) {
       interactive_commands += "RW iter2_mir_out."+image_type_extension+"\n";
 }
 
-      if (global_io.is_windows()) {
-        f = new File ( System.getProperty("user.dir") + File.separator + "second.mir" );
-      } else {
-        f = new File ( System.getenv("PWD") + File.separator + "second.mir" );
-      }
+      f = new File ( System.getProperty("user.dir") + File.separator + "second.mir" );
 
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
@@ -1074,11 +1053,7 @@ if (use_line_parts) {
       // image_files[align_index] = aligned_image_file;
 
 
-      if (global_io.is_windows()) {
-        f = new File ( System.getProperty("user.dir") + File.separator + "third.mir" );
-      } else {
-        f = new File ( System.getenv("PWD") + File.separator + "third.mir" );
-      }
+      f = new File ( System.getProperty("user.dir") + File.separator + "third.mir" );
 
       bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
       bw.write ( interactive_commands, 0, interactive_commands.length() );
