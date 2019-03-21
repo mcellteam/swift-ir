@@ -134,7 +134,8 @@ public class run_swift {
 	public static String image_type_extension = "JPG";
 
 	public static String swim_cmd = "swim";
-	public static String mir_cmd = "mir";
+	// public static String mir_cmd = "mir";
+	public static String mir_cmd = "mirb";
 
   public static String translate_exit ( int exit_status ) {
     String exit_string = " " + exit_status;
@@ -526,7 +527,8 @@ public class run_swift {
     if (global_io.is_windows()) {
       System.out.println ( "Running in Windows!!" );
       swim_cmd = "swim.exe";
-      mir_cmd = "mir.exe";
+      // mir_cmd = "mir.exe";
+      mir_cmd = "mirb.exe";
     }
 
     boolean use_line_parts = true;
