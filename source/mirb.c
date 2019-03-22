@@ -734,6 +734,28 @@ void main(int argc, char *argv[]) {
         for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
           output_image->pp[pixi] = input_image->pp[pixi];
         }
+        /*
+        Images in the "pp" array appear to be RGB bytes in that order.
+
+        // This gave a red image
+        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
+          if ((pixi % 3) != 0) {
+            output_image->pp[pixi] = 0;
+          }
+        }
+        // This gave a green image
+        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
+          if ((pixi % 3) != 1) {
+            output_image->pp[pixi] = 0;
+          }
+        }
+        // This gave a blue image
+        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
+          if ((pixi % 3) != 2) {
+            output_image->pp[pixi] = 0;
+          }
+        }
+        */
 			}
     } else if ( (text_lines[i][0] == 'W') || (text_lines[i][1] == 'W') ) {
       if (text_lines[i][0] == 'W') {
