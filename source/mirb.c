@@ -752,33 +752,28 @@ void main(int argc, char *argv[]) {
 			if (!input_image) {
 				fprintf ( stderr, "Error: No input image for writing output image: \"%s\".\n\n", filename );
 			} else {
+
+        // Create a new image to fill with aligned data
         output_image = newimage ( input_image->wid, input_image->ht, input_image->bpp );
         long pixi;
+
+        // Start with a black background
+        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
+          output_image->pp[pixi] = 0;
+        }
+        
+        // Copy the actual data
         for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
           output_image->pp[pixi] = input_image->pp[pixi];
         }
-        /*
-        Images in the "pp" array appear to be RGB bytes in that order.
 
-        // This gave a red image
-        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
-          if ((pixi % 3) != 0) {
-            output_image->pp[pixi] = 0;
-          }
-        }
-        // This gave a green image
+        // Force a green image as a warning that it's not done yet!!
         for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
           if ((pixi % 3) != 1) {
             output_image->pp[pixi] = 0;
           }
         }
-        // This gave a blue image
-        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
-          if ((pixi % 3) != 2) {
-            output_image->pp[pixi] = 0;
-          }
-        }
-        */
+
       }
       fprintf ( stderr, "  Write to \"%s\"\n", filename );
       write_img(filename, output_image);
