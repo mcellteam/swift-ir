@@ -763,13 +763,23 @@ void main(int argc, char *argv[]) {
         }
         
         // Copy the actual data
-        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
-          output_image->pp[pixi] = input_image->pp[pixi];
+        long rows, cols, planes;
+        rows = input_image->ht;
+        cols = input_image->wid;
+        planes = input_image->bpp;
+        long row, col, plane;
+        for (row=0; row<rows; row++) {
+          for (col=0; col<cols; col++) {
+            for (plane=0; plane<planes; plane++) {
+              long source_index = (row*cols*planes) + (col*planes) + plane;
+              long target_index = (row*cols*planes) + (col*planes) + plane;
+              output_image->pp[target_index] = input_image->pp[source_index];
+            }
+          }
         }
-
         // Force a green image as a warning that it's not done yet!!
         for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
-          if ((pixi % 3) != 1) {
+          if ((pixi % 3) != 0 /* <-- Select color 0=red, 1=green, 2=blue */ ) {
             output_image->pp[pixi] = 0;
           }
         }
