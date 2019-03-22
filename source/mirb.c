@@ -711,11 +711,17 @@ void main(int argc, char *argv[]) {
         free(input_image);
       }
       input_image = read_img(filename);
+			if (!input_image) {
+				fprintf ( stderr, "Error reading input image: \"%s\".\n\n", filename );
+			}
       if (output_image != NULL) {
         free(output_image->pp);
         free(output_image);
       }
       output_image = read_img(filename);
+			if (!output_image) {
+				fprintf ( stderr, "Error reading output image: \"%s\".\n\n", filename );
+			}
     } else if ( (text_lines[i][0] == 'W') || (text_lines[i][1] == 'W') ) {
       if (text_lines[i][0] == 'W') {
         filename = &text_lines[i][2];
