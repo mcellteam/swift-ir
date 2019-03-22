@@ -567,11 +567,11 @@ void main(int argc, char *argv[]) {
   float *vp, det, fx, fy;
   t_ticks -= getticks();
 
-  fprintf ( stdout, "Running mirb\n" );
+  fprintf ( stderr, "Running mirb\n" );
 
   int arg_num;
   for (arg_num=0; arg_num<argc; arg_num++) {
-    fprintf ( stdout, " arg[%d] = %s\n", arg_num, argv[arg_num] );
+    fprintf ( stderr, " arg[%d] = %s\n", arg_num, argv[arg_num] );
   }
 
   if (argc > 1) {
@@ -693,7 +693,7 @@ void main(int argc, char *argv[]) {
   ////////////// Print the text lines
 
   for (i=0; i<cur_lines_length; i++) {
-    fprintf ( stdout, " -> %s\n", text_lines[i] );
+    fprintf ( stderr, " -> %s\n", text_lines[i] );
   }
 
   ////////////// Process the text lines
@@ -709,7 +709,7 @@ void main(int argc, char *argv[]) {
     if (text_lines[i][0] == 'F') {
       // The line starts with "F" to open a file
       filename = &text_lines[i][2];
-      fprintf ( stdout, "  Read from \"%s\"\n", filename );
+      fprintf ( stderr, "  Read from \"%s\"\n", filename );
       if (input_image != NULL) {
         free(input_image->pp);
         free(input_image);
@@ -718,7 +718,7 @@ void main(int argc, char *argv[]) {
 			if (!input_image) {
 				fprintf ( stderr, "Error reading input image: \"%s\".\n\n", filename );
 			} else {
-			  fprintf ( stdout, "  %d x %d at %d bpp\n", input_image->wid, input_image->ht, input_image->bpp );
+			  fprintf ( stderr, "  %d x %d at %d bpp\n", input_image->wid, input_image->ht, input_image->bpp );
 			  if (0) {
 			    // Perform a histogram (for 1200x1200 image, the results should total to 1440000 ... verified)
 			    long hist[256];
@@ -730,7 +730,7 @@ void main(int argc, char *argv[]) {
 			      hist[input_image->pp[h]] += 1;
 			    }
 			    for (h=0; h<256; h++) {
-			      fprintf ( stdout, "  %d: %d\n", h, hist[h] );
+			      fprintf ( stderr, "  %d: %d\n", h, hist[h] );
 			    }
 			  }
         // This is a new input image, so clear out the previous alignment pairs
@@ -778,11 +778,12 @@ void main(int argc, char *argv[]) {
             num_averaged += 1;
           }
         }
+
         if (num_averaged > 0) {
           avg_x = avg_x / num_averaged;
           avg_y = avg_y / num_averaged;
         }
-        fprintf ( stdout, "Average shift: %lf %lf\n", avg_x, avg_y );
+        fprintf ( stderr, "Average shift: %lf %lf\n", avg_x, avg_y );
 
         // Create a new image to fill with aligned data
         output_image = newimage ( cols, rows, planes );
@@ -828,9 +829,14 @@ void main(int argc, char *argv[]) {
 
         // Force a colored image as a warning that it's not done yet!!
         for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
-          if ( (pixi % 3) != 2 ) { // <-- Select color 0=red, 1=green, 2=blue
+          if ( (pixi % 3) != 0 ) { // <-- Select color 0=red, 1=green, 2=blue
             output_image->pp[pixi] = 0;
           }
+        }
+
+        if (num_averaged > 0) {
+          fprintf ( stdout, "%s AF  1.0 0.0 %lf 0.0 1.0 %lf\n", filename, -avg_y, -avg_x );
+          fprintf ( stdout, "%s AI  1.0 0.0 %lf 0.0 1.0 %lf\n", filename,  avg_y,  avg_x );
         }
 
       }
@@ -866,10 +872,35 @@ void main(int argc, char *argv[]) {
       pair[2] = x2;
       pair[3] = y2;
       alignment_pairs[num_alignment_pairs-1] = pair;
+    } else if (text_lines[i][0] == 'A') {
+      // This is an affine transform command
+      fprintf ( stderr, "    Alignments: %s\n", text_lines[i] );
+      double a0, a1, a2, a3, a4, a5;
+      sscanf ( &text_lines[i][1], " %lf %lf %lf %lf %lf %lf",  &a0, &a1, &a2, &a3, &a4, &a5 );
+      fprintf ( stderr, "       %lf %lf %lf %lf %lf %lf\n",     a0,  a1,  a2,  a3,  a4,  a5 );
+
+      // An Affine Transform over-rides any possible alignment pairs
+      if (alignment_pairs != NULL) {
+        for (int ap=0; ap<num_alignment_pairs; ap++) {
+          free ( alignment_pairs[ap] );
+        }
+        free ( alignment_pairs );
+        alignment_pairs = NULL;
+      }
+      // Allocate the alignment pairs for 1 pair
+      alignment_pairs = (double **) malloc ( sizeof(double *) * 1 );
+      num_alignment_pairs = 1;
+      // Allocate the alignment pair block
+      double *pair = (double *) malloc ( sizeof(double) * 4 );
+      pair[0] = 0;
+      pair[1] = 0;
+      pair[2] = a2;
+      pair[3] = a5;
+      alignment_pairs[0] = pair;
     }
   }
 
-  fprintf ( stdout, "Done\n" );
+  fprintf ( stderr, "Done\n" );
 
   exit ( 0 );
 
