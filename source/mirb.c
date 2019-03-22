@@ -753,21 +753,50 @@ void main(int argc, char *argv[]) {
 				fprintf ( stderr, "Error: No input image for writing output image: \"%s\".\n\n", filename );
 			} else {
 
-        // Create a new image to fill with aligned data
-        output_image = newimage ( input_image->wid, input_image->ht, input_image->bpp );
-        long pixi;
-
-        // Start with a black background
-        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
-          output_image->pp[pixi] = 0;
-        }
-        
-        // Copy the actual data
+        // Set some handy values
         long rows, cols, planes;
         rows = input_image->ht;
         cols = input_image->wid;
         planes = input_image->bpp;
+
+        // Average the shifts found so far in the alignment pairs
+        double avg_x, avg_y;
+        avg_x = 0;
+        avg_y = 0;
+        int num_averaged = 0;
+        int api;
+        for (api=0; api<num_alignment_pairs; api++) {
+          double *ap;
+          ap = alignment_pairs[api];
+          if ( (ap[0] >= -cols) && (ap[0] <= cols) &&
+               (ap[1] >= -rows) && (ap[1] <= rows) &&
+               (ap[2] >= -cols) && (ap[2] <= cols) &&
+               (ap[3] >= -rows) && (ap[3] <= rows) ) {
+            // This is (hopefully) a valid shift
+            avg_x += ap[2] - ap[0];
+            avg_y += ap[3] - ap[1];
+            num_averaged += 1;
+          }
+        }
+        if (num_averaged > 0) {
+          avg_x = avg_x / num_averaged;
+          avg_y = avg_y / num_averaged;
+        }
+        fprintf ( stdout, "Average shift: %lf %lf\n", avg_x, avg_y );
+
+        // Create a new image to fill with aligned data
+        output_image = newimage ( cols, rows, planes );
+
+        // Fill with a black background
+        long pixi;
+        for (pixi=0; pixi<(cols * rows * planes); pixi++) {
+          output_image->pp[pixi] = 0;
+        }
+
+        // Copy the actual data
         long row, col, plane;
+
+        /*
         for (row=0; row<rows; row++) {
           for (col=0; col<cols; col++) {
             for (plane=0; plane<planes; plane++) {
@@ -777,9 +806,29 @@ void main(int argc, char *argv[]) {
             }
           }
         }
-        // Force a green image as a warning that it's not done yet!!
+        */
+
+        long srow, scol;
+        for (row=0; row<rows; row++) {
+          srow = row + avg_y;
+          if ( (srow >= 0) && (srow < rows) ) {
+            for (col=0; col<cols; col++) {
+              scol = col + avg_x;
+              if ( (scol >= 0) && (scol < cols) ) {
+                // There is a mapping from source to target
+                for (plane=0; plane<planes; plane++) {
+                  long target_index = (row*cols*planes) + (col*planes) + plane;
+                  long source_index = (srow*cols*planes) + (scol*planes) + plane;
+                  output_image->pp[target_index] = input_image->pp[source_index];
+                }
+              }
+            }
+          }
+        }
+
+        // Force a colored image as a warning that it's not done yet!!
         for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
-          if ((pixi % 3) != 0 /* <-- Select color 0=red, 1=green, 2=blue */ ) {
+          if ( (pixi % 3) != 2 ) { // <-- Select color 0=red, 1=green, 2=blue
             output_image->pp[pixi] = 0;
           }
         }
