@@ -321,6 +321,15 @@ public class run_swift {
     }
   }
 
+  public static String normalize_file_name ( String file_name ) {
+    try {
+      file_name = new File(file_name).getCanonicalPath();
+    } catch (Exception e) {
+      file_name = new File(file_name).getAbsolutePath();
+    }
+    return ( file_name );
+  }
+
   public static void copy_file_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
 
     if (output_level > 0) {
@@ -333,6 +342,11 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
+
+    original_file_name = normalize_file_name ( original_file_name );
+    new_file_name = normalize_file_name ( new_file_name );
+    System.out.println ( "    Translated original_file_name = " + original_file_name );
+    System.out.println ( "    Translated new_file_name      = " + new_file_name );
 
     String command_line;
     String interactive_commands;
@@ -425,6 +439,11 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
+
+    original_file_name = normalize_file_name ( original_file_name );
+    new_file_name = normalize_file_name ( new_file_name );
+    System.out.println ( "    Translated original_file_name = " + original_file_name );
+    System.out.println ( "    Translated new_file_name      = " + new_file_name );
 
     String command_line;
     String interactive_commands;
@@ -523,6 +542,11 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
+
+    fixed_image_file = normalize_file_name ( fixed_image_file );
+    aligned_image_file = normalize_file_name ( aligned_image_file );
+    System.out.println ( "    Translated fixed_image_file   = " + fixed_image_file );
+    System.out.println ( "    Translated aligned_image_file = " + aligned_image_file );
 
     if (global_io.is_windows()) {
       System.out.println ( "Running in Windows!!" );
