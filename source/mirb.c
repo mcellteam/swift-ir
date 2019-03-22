@@ -713,14 +713,27 @@ void main(int argc, char *argv[]) {
       input_image = read_img(filename);
 			if (!input_image) {
 				fprintf ( stderr, "Error reading input image: \"%s\".\n\n", filename );
-			}
-      if (output_image != NULL) {
-        free(output_image->pp);
-        free(output_image);
-      }
-      output_image = read_img(filename);
-			if (!output_image) {
-				fprintf ( stderr, "Error reading output image: \"%s\".\n\n", filename );
+			} else {
+			  fprintf ( stdout, "  %d x %d at %d bpp\n", input_image->wid, input_image->ht, input_image->bpp );
+			  if (0) {
+			    // Perform a histogram (for 1200x1200 image, the results should total to 1440000 ... verified)
+			    long hist[256];
+			    long h;
+			    for (h=0; h<256; h++) {
+			      hist[h] = 0;
+			    }
+			    for (h=0; h<(input_image->wid*1L*input_image->ht); h++) {
+			      hist[input_image->pp[h]] += 1;
+			    }
+			    for (h=0; h<256; h++) {
+			      fprintf ( stdout, "  %d: %d\n", h, hist[h] );
+			    }
+			  }
+        output_image = newimage ( input_image->wid, input_image->ht, input_image->bpp );
+        long pixi;
+        for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
+          output_image->pp[pixi] = input_image->pp[pixi];
+        }
 			}
     } else if ( (text_lines[i][0] == 'W') || (text_lines[i][1] == 'W') ) {
       if (text_lines[i][0] == 'W') {
