@@ -701,9 +701,13 @@ void main(int argc, char *argv[]) {
   struct image *input_image = NULL;
   struct image *output_image = NULL;
 
+  double **alignment_pairs = NULL;
+  int num_alignment_pairs = 0;
+
   char *filename;
   for (i=0; i<cur_lines_length; i++) {
     if (text_lines[i][0] == 'F') {
+      // The line starts with "F" to open a file
       filename = &text_lines[i][2];
       fprintf ( stdout, "  Read from \"%s\"\n", filename );
       if (input_image != NULL) {
@@ -729,6 +733,25 @@ void main(int argc, char *argv[]) {
 			      fprintf ( stdout, "  %d: %d\n", h, hist[h] );
 			    }
 			  }
+        // This is a new input image, so clear out the previous alignment pairs
+        if (alignment_pairs != NULL) {
+          for (int ap=0; ap<num_alignment_pairs; ap++) {
+            free ( alignment_pairs[ap] );
+          }
+          free ( alignment_pairs );
+          alignment_pairs = NULL;
+        }
+			}
+    } else if ( (text_lines[i][0] == 'W') || (text_lines[i][1] == 'W') ) {
+      // The line starts with either "W" or "_W", so assume that this is a write
+      if (text_lines[i][0] == 'W') {
+        filename = &text_lines[i][2];
+      } else {
+        filename = &text_lines[i][3];
+      }
+			if (!input_image) {
+				fprintf ( stderr, "Error: No input image for writing output image: \"%s\".\n\n", filename );
+			} else {
         output_image = newimage ( input_image->wid, input_image->ht, input_image->bpp );
         long pixi;
         for (pixi=0; pixi<(input_image->wid * 1L * input_image->ht * 1L * input_image->bpp); pixi++) {
@@ -756,15 +779,39 @@ void main(int argc, char *argv[]) {
           }
         }
         */
-			}
-    } else if ( (text_lines[i][0] == 'W') || (text_lines[i][1] == 'W') ) {
-      if (text_lines[i][0] == 'W') {
-        filename = &text_lines[i][2];
-      } else {
-        filename = &text_lines[i][3];
       }
-      fprintf ( stdout, "  Write to \"%s\"\n", filename );
+      fprintf ( stderr, "  Write to \"%s\"\n", filename );
       write_img(filename, output_image);
+    } else if ( strchr ( "0123456789+-", text_lines[i][0] ) != NULL ) {
+      // The line starts with a number, so assume that it's an input/output alignment pair
+      fprintf ( stderr, "    Alignments: %s\n", text_lines[i] );
+      double x1, y1, x2, y2;
+      sscanf ( text_lines[i], " %lf %lf %lf %lf",  &x1, &y1, &x2, &y2 );
+      fprintf ( stderr, "       %lf %lf %lf %lf\n", x1,  y1,  x2,  y2 );
+      // Perform the allocation or reallocation as needed
+      if (alignment_pairs == NULL) {
+        // Allocate the alignment pairs for 1 pair
+        alignment_pairs = (double **) malloc ( sizeof(double *) * 1 );
+        num_alignment_pairs = 1;
+      } else {
+        // Allocate space for one more pair
+        double **new_alignment_pairs = (double **) malloc ( sizeof(double *) * (num_alignment_pairs + 1) );
+        // Copy the alignment pairs
+        int pi;
+        for (pi=0; pi<num_alignment_pairs; pi++) {
+          new_alignment_pairs[pi] = alignment_pairs[pi];
+        }
+        free ( alignment_pairs );
+        alignment_pairs = new_alignment_pairs;
+        num_alignment_pairs += 1;
+      }
+      // Allocate the alignment pair block
+      double *pair = (double *) malloc ( sizeof(double) * 4 );
+      pair[0] = x1;
+      pair[1] = y1;
+      pair[2] = x2;
+      pair[3] = y2;
+      alignment_pairs[num_alignment_pairs-1] = pair;
     }
   }
 
