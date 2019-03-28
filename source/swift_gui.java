@@ -377,7 +377,7 @@ class ControlPanel extends JPanel {
     alignment_panel_bot.add ( pairwise );
 
     alignment_panel_bot.add ( new JLabel("  MirB:") );
-    use_mirb = new JCheckBox("",false);
+    use_mirb = new JCheckBox("",true);
     use_mirb.addActionListener ( this.swift );
     use_mirb.setActionCommand ( "use_mirb" );
     alignment_panel_bot.add ( use_mirb );
