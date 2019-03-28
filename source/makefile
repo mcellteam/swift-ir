@@ -56,6 +56,16 @@ json_parser.jar: json_parser.java makefile
 	javac -nowarn -source 1.6 json_parser.java
 	jar -cfe json_parser.jar json_parser *.class
 
+swift_lin.jar: swift_gui.jar makefile swim iavg iscale mir remod
+	javac -nowarn -source 1.6 run_swift.java
+	javac -nowarn -source 1.6 swift_gui.java
+	jar -cfe swift_lin.jar swift_gui *.class swim iavg iscale mir remod
+
+swift_win.jar: swift_gui.jar makefile swim.exe iavg.exe iscale.exe mir.exe remod.exe
+	javac -nowarn -source 1.6 run_swift.java
+	javac -nowarn -source 1.6 swift_gui.java
+	jar -cfe swift_win.jar swift_gui *.class swim.exe iavg.exe iscale.exe mir.exe remod.exe
+
 sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum swim > sha1sum.txt
 	sha1sum iavg >> sha1sum.txt
