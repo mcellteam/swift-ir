@@ -26,7 +26,7 @@ sxox: sxox.c makefile
 
 # "Normal" rule for run_swift.jar
 run_swift.jar: run_swift.java makefile
-	javac -nowarn -source 1.6 run_swift.java
+	javac -nowarn -source 1.6 -target 1.6 run_swift.java
 	jar -cfe run_swift.jar run_swift *.class
 
 # "Fixed Date" rule for run_swift.jar that produces a consistent jar file the same for each compilation
@@ -42,7 +42,7 @@ run_swift.jar: run_swift.java makefile
 # "Normal" rule for swift_gui.jar
 swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java makefile
 	rm -f *.class
-	javac -nowarn -source 1.6 swift_gui.java
+	javac -nowarn -source 1.6 -target 1.6 swift_gui.java
 	jar -cfe swift_gui.jar swift_gui *.class
 
 # "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
@@ -56,7 +56,7 @@ swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java ma
 #	zip -X swift_gui.jar META-INF/MANIFEST.MF *.class
 
 json_parser.jar: json_parser.java makefile
-	javac -nowarn -source 1.6 json_parser.java
+	javac -nowarn -source 1.6 -target 1.6 json_parser.java
 	jar -cfe json_parser.jar json_parser *.class
 
 sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
