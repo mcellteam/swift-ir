@@ -180,9 +180,9 @@ class AlignmentPanel extends JPanel {
   AlignmentPanel (swift_gui swift) {
     this.swift = swift;
   }
-	public void paint (Graphics g) {
-	  int w = size().width;
-	  int h = size().height;
+  public void paint (Graphics g) {
+    int w = size().width;
+    int h = size().height;
     g.setColor ( new Color ( 60, 60, 60 ) );
     g.fillRect ( 0, 0, w, h );
 
@@ -192,23 +192,23 @@ class AlignmentPanel extends JPanel {
           if (swift.frames.get(swift.frame_index).image != null) {
             BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
 
-		        int img_w = frame_image.getWidth();
-		        int img_h = frame_image.getHeight();
+            int img_w = frame_image.getWidth();
+            int img_h = frame_image.getHeight();
 
-		        // Calculate the size to fit the image in the side pane (assuming width constrained)
-		        int padding = 10;
-		        int xoff = padding;
-		        double img_scale = (w-(2.0*padding)) / img_w;
-		        int scaled_w = (int)(img_w * img_scale);
-		        int scaled_h = (int)(img_h * img_scale);
+            // Calculate the size to fit the image in the side pane (assuming width constrained)
+            int padding = 10;
+            int xoff = padding;
+            double img_scale = (w-(2.0*padding)) / img_w;
+            int scaled_w = (int)(img_w * img_scale);
+            int scaled_h = (int)(img_h * img_scale);
 
-		        if ( ( (3*scaled_h) + (4*padding) ) > h ) {
-		          // Images are actually height constrained, so recalculate
-		          img_scale = (h-(4.0*padding)) / (3*img_h);
-		          scaled_w = (int)(img_w * img_scale);
-		          scaled_h = (int)(img_h * img_scale);
-		          xoff = (w-scaled_w) / 2;
-		        }
+            if ( ( (3*scaled_h) + (4*padding) ) > h ) {
+              // Images are actually height constrained, so recalculate
+              img_scale = (h-(4.0*padding)) / (3*img_h);
+              scaled_w = (int)(img_w * img_scale);
+              scaled_h = (int)(img_h * img_scale);
+              xoff = (w-scaled_w) / 2;
+            }
 
             if (swift.frame_index >= 1) {
               g.drawImage ( swift.frames.get(swift.frame_index-1).image, xoff, padding, scaled_w, scaled_h, this );
@@ -223,7 +223,7 @@ class AlignmentPanel extends JPanel {
         }
       }
     }
-	}
+  }
 }
 
 class RespTextField extends JTextField {
@@ -562,16 +562,16 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   AlignmentPanel alignment_panel = null;
   ControlPanel control_panel = null;
 
-	JFrame results_frame = null;
-	swift_gui results_panel = null;
-	BufferedImage results_image = null;
-	File results_image_file = null;
+  JFrame results_frame = null;
+  swift_gui results_panel = null;
+  BufferedImage results_image = null;
+  File results_image_file = null;
 
   File project_file=null;
   File destination=null;
   public File install_code_source=null;
 
-	static int w=1200, h=1024;
+  static int w=1200, h=1024;
 
   String current_directory = "";
   ImageFileChooser image_file_chooser = null;
@@ -584,7 +584,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   int ref_image_h = 1000;
 
 
-	public ArrayList<swift_gui_frame> frames = new ArrayList<swift_gui_frame>();  // Argument (if any) specifies initial capacity (default 10)
+  public ArrayList<swift_gui_frame> frames = new ArrayList<swift_gui_frame>();  // Argument (if any) specifies initial capacity (default 10)
   public int frame_index = -1;
 
   public void set_install_location() {
@@ -625,14 +625,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
   }
 
-	public void paint_frame (Graphics g) {
-	  Dimension win_s = getSize();
-	  int win_w = win_s.width;
-	  int win_h = win_s.height;
-	  if (recalculate) {
+  public void paint_frame (Graphics g) {
+    Dimension win_s = getSize();
+    int win_w = win_s.width;
+    int win_h = win_s.height;
+    if (recalculate) {
       set_scale_to_fit ( 0, ref_image_w, -ref_image_h, 0, win_w, win_h );
-	    recalculate = false;
-	  }
+      recalculate = false;
+    }
 
     BufferedImage frame_image = null;
 
@@ -663,12 +663,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       }
     }
 
-		g.setColor ( new Color ( 60, 60, 60 ) );  // Main window
-	  g.fillRect ( 0, 0, win_w, win_h );
+    g.setColor ( new Color ( 60, 60, 60 ) );  // Main window
+    g.fillRect ( 0, 0, win_w, win_h );
 
-		if (frame_image == null) {
-		  // System.out.println ( "Image is null" );
-		} else {
+    if (frame_image == null) {
+      // System.out.println ( "Image is null" );
+    } else {
       /*
       // System.out.println ( "Image is NOT null" );
       int img_w = frame_image.getWidth();
@@ -691,8 +691,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
 
       // priority_println ( 50, "Image is NOT null" );
-		  int img_w = frame_image.getWidth();
-		  int img_h = frame_image.getHeight();
+      int img_w = frame_image.getWidth();
+      int img_h = frame_image.getHeight();
 
       double img_wf = img_w;
       double img_hf = img_h;
@@ -706,15 +706,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       //g.drawImage ( frame_image, (win_w-img_w)/2, (win_h-img_h)/2, img_w, img_h, this );
 
     }
-	}
+  }
 
 
   //  MouseListener methods:
 
 
-	Cursor current_cursor = null;
-	Cursor b_cursor = null;
-	int cursor_size = 33;
+  Cursor current_cursor = null;
+  Cursor b_cursor = null;
+  int cursor_size = 33;
 
   public void mouseEntered ( MouseEvent e ) {
     if ( b_cursor == null ) {
@@ -1062,15 +1062,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   // ActionPerformed methods (mostly menu responses):
 
-	public void actionPerformed(ActionEvent e) {
+  public void actionPerformed(ActionEvent e) {
     Object action_source = e.getSource();
 
-		String cmd = e.getActionCommand();
-		System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
+    String cmd = e.getActionCommand();
+    System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
 
-		if (cmd.equalsIgnoreCase("Print")) {
-		  System.out.println ( "Images:" );
-	    for (int i=0; i<this.frames.size(); i++) {
+    if (cmd.equalsIgnoreCase("Print")) {
+      System.out.println ( "Images:" );
+      for (int i=0; i<this.frames.size(); i++) {
         System.out.println ( "  " + this.frames.get(i) );
       }
     } else if ( action_source == refresh_images_menu_item ) {
@@ -1081,8 +1081,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         this.frames.get(frame_index).reload();
       }
       // Reload all the other frames
-	    for (int i=0; i<this.frames.size(); i++) {
-	      if (i != frame_index) {
+      for (int i=0; i<this.frames.size(); i++) {
+        if (i != frame_index) {
           System.out.println ( "  Reloading image " + frames.get(i).image_file_path.getName() );
           this.frames.get(i).reload();
         }
@@ -1090,70 +1090,70 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       update_control_panel();
       repaint();
       repaint_panels();
-		  set_title();
+      set_title();
     } else if ( action_source == import_images_menu_item ) {
-		  image_file_chooser.setMultiSelectionEnabled(true);
-		  image_file_chooser.resetChoosableFileFilters();
+      image_file_chooser.setMultiSelectionEnabled(true);
+      image_file_chooser.resetChoosableFileFilters();
       FileNameExtensionFilter filter = new FileNameExtensionFilter("Image Files", "jpg", "jpeg", "gif", "png", "tif", "tiff");
       image_file_chooser.setFileFilter(filter);
       image_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
-		  int returnVal = image_file_chooser.showDialog(this, "Import Selected Images");
-		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+      int returnVal = image_file_chooser.showDialog(this, "Import Selected Images");
+      if ( returnVal == JFileChooser.APPROVE_OPTION ) {
         boolean load_on_import = load_files_on_import.isSelected();
         System.out.println ( "\nImporting with Load on Import = " + load_on_import );
 
-		    File selected_files[] = image_file_chooser.getSelectedFiles();
-		    if (selected_files.length > 0) {
-		      // Use the current size as the new index (if size is 0, then the new index will be 0 which points to the first)
-		      int num_previous = this.frames.size();
-		      int new_frame_index = this.frames.size();
-		      for (int i=0; i<selected_files.length; i++) {
+        File selected_files[] = image_file_chooser.getSelectedFiles();
+        if (selected_files.length > 0) {
+          // Use the current size as the new index (if size is 0, then the new index will be 0 which points to the first)
+          int num_previous = this.frames.size();
+          int new_frame_index = this.frames.size();
+          for (int i=0; i<selected_files.length; i++) {
             System.out.println ( "You chose this file: " + selected_files[i] );
             this.frames.add ( new swift_gui_frame ( selected_files[i], load_on_import ) );
-		      }
+          }
           make_alignments();
-		      // Set the frame index to the first file just added
-		      if (new_frame_index >= this.frames.size()) {
-		        new_frame_index = this.frames.size() - 1;
-		      }
-		      frame_index = new_frame_index;
-		      if ( (frame_index >= 0) && (num_previous <= 0) ) {
-		        // Automatically center if there were no previous images
-		        center_current_image();
-		      }
+          // Set the frame index to the first file just added
+          if (new_frame_index >= this.frames.size()) {
+            new_frame_index = this.frames.size() - 1;
+          }
+          frame_index = new_frame_index;
+          if ( (frame_index >= 0) && (num_previous <= 0) ) {
+            // Automatically center if there were no previous images
+            center_current_image();
+          }
           update_control_panel();
-	        repaint();
+          repaint();
           repaint_panels();
-		    }
-		  }
-		  set_title();
+        }
+      }
+      set_title();
     } else if ( action_source == set_destination_menu_item ) {
-		  destination_chooser.setMultiSelectionEnabled(false);
-		  destination_chooser.setFileSelectionMode ( JFileChooser.DIRECTORIES_ONLY );
-		  if (destination != null) {
-		    // Set the default to the current destination
-		    destination_chooser.setCurrentDirectory ( destination );
-		  }
-		  int returnVal = destination_chooser.showDialog(this, "Choose Destination");
-		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
-		    destination = destination_chooser.getSelectedFile();
-	      System.out.println ( "Destination = " + destination );
+      destination_chooser.setMultiSelectionEnabled(false);
+      destination_chooser.setFileSelectionMode ( JFileChooser.DIRECTORIES_ONLY );
+      if (destination != null) {
+        // Set the default to the current destination
+        destination_chooser.setCurrentDirectory ( destination );
+      }
+      int returnVal = destination_chooser.showDialog(this, "Choose Destination");
+      if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+        destination = destination_chooser.getSelectedFile();
+        System.out.println ( "Destination = " + destination );
         control_panel.destination_label.setText ( "Destination: "+destination );
         update_control_panel();
         repaint();
         repaint_panels();
-		  }
-		  set_title();
+      }
+      set_title();
     } else if ( action_source == open_project_menu_item ) {
-		  project_file_chooser.setMultiSelectionEnabled(false);
-		  project_file_chooser.resetChoosableFileFilters();
+      project_file_chooser.setMultiSelectionEnabled(false);
+      project_file_chooser.resetChoosableFileFilters();
       FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Project", "json");
       project_file_chooser.setFileFilter(filter);
       project_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
-		  int returnVal = project_file_chooser.showDialog(this, "Open Project");
-		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
-		    project_file = project_file_chooser.getSelectedFile();
-	      System.out.println ( "Project File = " + project_file );
+      int returnVal = project_file_chooser.showDialog(this, "Open Project");
+      if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+        project_file = project_file_chooser.getSelectedFile();
+        System.out.println ( "Project File = " + project_file );
         control_panel.project_label.setText ( "Project File: "+project_file );
         try {
           BufferedInputStream f = new BufferedInputStream ( new FileInputStream(project_file) );
@@ -1233,18 +1233,18 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         update_control_panel();
         repaint();
         repaint_panels();
-		  }
-		  set_title();
+      }
+      set_title();
     } else if ( action_source == save_project_as_menu_item ) {
-		  project_file_chooser.setMultiSelectionEnabled(false);
-		  project_file_chooser.resetChoosableFileFilters();
+      project_file_chooser.setMultiSelectionEnabled(false);
+      project_file_chooser.resetChoosableFileFilters();
       FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON Project", "json");
       project_file_chooser.setFileFilter(filter);
       project_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
-		  int returnVal = project_file_chooser.showDialog(this, "Save Project");
-		  if ( returnVal == JFileChooser.APPROVE_OPTION ) {
-		    project_file = project_file_chooser.getSelectedFile();
-	      System.out.println ( "Project File = " + project_file );
+      int returnVal = project_file_chooser.showDialog(this, "Save Project");
+      if ( returnVal == JFileChooser.APPROVE_OPTION ) {
+        project_file = project_file_chooser.getSelectedFile();
+        System.out.println ( "Project File = " + project_file );
         control_panel.project_label.setText ( "Project File: "+project_file );
         write_project_file ( project_file );
 
@@ -1253,8 +1253,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         repaint();
         repaint_panels();
         */
-		  }
-		  set_title();
+      }
+      set_title();
     } else if ( action_source == save_project_menu_item ) {
       System.out.println ( "Saving to Project File = " + project_file );
       write_project_file ( project_file );
@@ -1262,32 +1262,32 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       System.out.println ( "Center image" );
       center_current_image();
       repaint();
-		  set_title();
+      set_title();
     } else if ( action_source == zoom_actual_menu_item ) {
       System.out.println ( "Setting zoom and scale to 1.0" );
       zoom_exp = 0;
-	    scale = 1.0;
-	    scroll_wheel_position = 0;
-	    mx = 1.0;
-	    my = 1.0;
+      scale = 1.0;
+      scroll_wheel_position = 0;
+      mx = 1.0;
+      my = 1.0;
       recalculate = false;
       update_control_panel();
       repaint();
-		  set_title();
+      set_title();
     } else if ( action_source == clear_all_images_menu_item ) {
       this.frames = new ArrayList<swift_gui_frame>();
       this.frame_index = -1;
       repaint();
       update_control_panel();
       repaint_panels();
-		  set_title();
+      set_title();
     } else if ( action_source == list_all_images_menu_item ) {
       if (file_list_dialog != null) {
         file_list_dialog.setTitle ( "Original Image Files" );
         file_list_dialog.setVisible(true);
       }
       //repaint();
-		  //set_title();
+      //set_title();
     } else if ( action_source == list_align_shell_script ) {
       if (file_list_dialog != null) {
         file_list_dialog.setVisible(false);
@@ -1309,9 +1309,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             text += "W mir_only_output/" + fname + "\n";
             text += "EOF\n";
 
-	          for (int i=1; i<frames.size(); i++) {
-	            swift_gui_frame prev_frame = frames.get(i-1);
-	            swift_gui_frame this_frame = frames.get(i);
+            for (int i=1; i<frames.size(); i++) {
+              swift_gui_frame prev_frame = frames.get(i-1);
+              swift_gui_frame this_frame = frames.get(i);
               fname = this_frame.image_file_path.getName();
 
               text += "\n";
@@ -1352,10 +1352,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         file_list_dialog.setVisible(true);
       }
       //repaint();
-		  //set_title();
-		} else if (cmd.equalsIgnoreCase("window_size")) {
-		  JTextField txt = (JTextField)action_source;
-			System.out.println ( "Got a window_size change with " + txt.getText() );
+      //set_title();
+    } else if (cmd.equalsIgnoreCase("window_size")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got a window_size change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
@@ -1364,9 +1364,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
-		} else if (cmd.equalsIgnoreCase("addx")) {
-		  JTextField txt = (JTextField)action_source;
-			System.out.println ( "Got an addx change with " + txt.getText() );
+    } else if (cmd.equalsIgnoreCase("addx")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got an addx change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
@@ -1375,9 +1375,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
-		} else if (cmd.equalsIgnoreCase("addy")) {
-		  JTextField txt = (JTextField)action_source;
-			System.out.println ( "Got an addy change with " + txt.getText() );
+    } else if (cmd.equalsIgnoreCase("addy")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got an addy change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
@@ -1386,9 +1386,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
-		} else if (cmd.equalsIgnoreCase("output_level")) {
-		  JTextField txt = (JTextField)action_source;
-			System.out.println ( "Got an output_level change with " + txt.getText() );
+    } else if (cmd.equalsIgnoreCase("output_level")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got an output_level change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
@@ -1397,9 +1397,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
-		} else if (cmd.equalsIgnoreCase("skip")) {
-			JCheckBox box = (JCheckBox)action_source;
-			System.out.println ( "\n\nGot a skip change with Selected = " + box.isSelected() );
+    } else if (cmd.equalsIgnoreCase("skip")) {
+      JCheckBox box = (JCheckBox)action_source;
+      System.out.println ( "\n\nGot a skip change with Selected = " + box.isSelected() );
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
@@ -1408,33 +1408,33 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
-		} else if (cmd.equalsIgnoreCase("show_dest")) {
-			JCheckBox box = (JCheckBox)action_source;
-			System.out.println ( "\n\nGot a show_dest change with Selected = " + box.isSelected() );
+    } else if (cmd.equalsIgnoreCase("show_dest")) {
+      JCheckBox box = (JCheckBox)action_source;
+      System.out.println ( "\n\nGot a show_dest change with Selected = " + box.isSelected() );
       if (results_frame != null) {
         results_frame.setVisible ( box.isSelected() );
       }
       // Request the focus again after showing or hiding the other window?
-			this.requestFocus();
-		} else if (cmd.equalsIgnoreCase("use_mirb")) {
-			JCheckBox box = (JCheckBox)action_source;
-			System.out.println ( "\n\nGot a use_mirb change with Selected = " + box.isSelected() );
-			if (box.isSelected()) {
-			  run_swift.mir_cmd = "mirb";
-			} else {
-			  run_swift.mir_cmd = "mir";
-			}
-		} else if ( (cmd.equalsIgnoreCase("set_all")) || (cmd.equalsIgnoreCase("set_fwd")) ) {
-			System.out.println ( "\n\nGot a set_all / set_fwd command" );
+      this.requestFocus();
+    } else if (cmd.equalsIgnoreCase("use_mirb")) {
+      JCheckBox box = (JCheckBox)action_source;
+      System.out.println ( "\n\nGot a use_mirb change with Selected = " + box.isSelected() );
+      if (box.isSelected()) {
+        run_swift.mir_cmd = "mirb";
+      } else {
+        run_swift.mir_cmd = "mir";
+      }
+    } else if ( (cmd.equalsIgnoreCase("set_all")) || (cmd.equalsIgnoreCase("set_fwd")) ) {
+      System.out.println ( "\n\nGot a set_all / set_fwd command" );
       if (frames != null) {
         int start = 0;
         if (cmd.equalsIgnoreCase("set_fwd")) {
           start = frame_index;
         }
         // Copy these values to all frames
-	      for (int i=start; i<this.frames.size(); i++) {
-	        swift_gui_frame frame = frames.get(i);
-	        frame.skip = control_panel.skip.isSelected();
+        for (int i=start; i<this.frames.size(); i++) {
+          swift_gui_frame frame = frames.get(i);
+          frame.skip = control_panel.skip.isSelected();
           if (frame.next_alignment != null) {
             frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
             frame.next_alignment.addx = get_int_from_textfield ( control_panel.addx );
@@ -1443,10 +1443,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
-		} else if (cmd.equalsIgnoreCase("run_resize")) {
-			int scale_factor = get_int_from_textfield ( control_panel.scale_factor );
-			int output_level = get_int_from_textfield ( control_panel.output_level );
-			System.out.println ( "\n\nGot a run_resize command with scale factor of " + scale_factor );
+    } else if (cmd.equalsIgnoreCase("run_resize")) {
+      int scale_factor = get_int_from_textfield ( control_panel.scale_factor );
+      int output_level = get_int_from_textfield ( control_panel.output_level );
+      System.out.println ( "\n\nGot a run_resize command with scale factor of " + scale_factor );
       if (frames != null) {
         System.out.println ( "Scaling with destination = \"" + destination + "\"" );
         if (destination == null) {
@@ -1459,11 +1459,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             }
           }
           Runtime rt = Runtime.getRuntime();
-	        for (int i=0; i<this.frames.size(); i++) {
-	          swift_gui_frame frame = frames.get(i);
-	          if (frame.skip) {
-	            // Omit this frame
-	          } else {
+          for (int i=0; i<this.frames.size(); i++) {
+            swift_gui_frame frame = frames.get(i);
+            if (frame.skip) {
+              // Omit this frame
+            } else {
               run_swift.scale_file_with_iscale ( rt, frame.image_file_path.getAbsolutePath(), prefix, scale_factor, output_level );
             }
           }
@@ -1474,8 +1474,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         }
       }
-		} else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
-			System.out.println ( "\n\nGot an align_all or align_fwd command with dest=" + destination );
+    } else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
+      System.out.println ( "\n\nGot an align_all or align_fwd command with dest=" + destination );
 
       if ( (destination == null) || (destination.toString().length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
 
@@ -1517,17 +1517,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           if (start > 0) {
             first_pass = false;
           }
-	        for (int i=start; i<end; i++) {
-	          System.out.println ( "Working on frame " + i );
-	          swift_gui_frame align_frame = frames.get(i);
-	          if (align_frame.skip) {
-	            // Omit this frame
-	          } else {
-	            if (fixed_frame_num < start) {
-	              // This is the first non-skipped frame, so use it as the fixed frame
-	              fixed_frame_num = i;
-	            } else {
-	              // There is a valid fixed frame and this (to be aligned) frame
+          for (int i=start; i<end; i++) {
+            System.out.println ( "Working on frame " + i );
+            swift_gui_frame align_frame = frames.get(i);
+            if (align_frame.skip) {
+              // Omit this frame
+            } else {
+              if (fixed_frame_num < start) {
+                // This is the first non-skipped frame, so use it as the fixed frame
+                fixed_frame_num = i;
+              } else {
+                // There is a valid fixed frame and this (to be aligned) frame
                 swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
                 if (fixed_frame.next_alignment != null) {
                   // The fixed frame defines an alignment to the next frame
@@ -1627,55 +1627,55 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
           System.out.println ( "Alignment completed" );
           if (pairwise) {
-	          for (int i=0; i<this.frames.size(); i++) {
-	            swift_gui_frame frame = frames.get(i);
-	            if (frame.affine_transform_from_prev == null) {
-	              System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
-	            } else {
-	              System.out.print ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is [ " );
-	              for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
-	                System.out.print ( "" + frame.affine_transform_from_prev[j] + " " );
-	              }
-	              System.out.println ( " ]" );
-	            }
+            for (int i=0; i<this.frames.size(); i++) {
+              swift_gui_frame frame = frames.get(i);
+              if (frame.affine_transform_from_prev == null) {
+                System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
+              } else {
+                System.out.print ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is [ " );
+                for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
+                  System.out.print ( "" + frame.affine_transform_from_prev[j] + " " );
+                }
+                System.out.println ( " ]" );
+              }
             }
           }
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
         }
       }
-		} else if (cmd.equalsIgnoreCase("Exit")) {
-			System.exit ( 0 );
-		}
+    } else if (cmd.equalsIgnoreCase("Exit")) {
+      System.exit ( 0 );
+    }
   }
 
-	public static ArrayList<String> actual_file_names = new ArrayList<String>();
+  public static ArrayList<String> actual_file_names = new ArrayList<String>();
 
   static boolean load_images = true;
 
-	public static void main ( String[] args ) {
+  public static void main ( String[] args ) {
 
     System.out.println ( "Translation of 15: " + run_swift.translate_exit ( 128+15 ) );
 
-	  ArrayList<String> file_name_args = new ArrayList<String>();
+    ArrayList<String> file_name_args = new ArrayList<String>();
 
     int arg_index = 0;
     while (arg_index < args.length) {
-		  System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
-		  if (args[arg_index].startsWith("-") ) {
-		    if (args[arg_index].equals("-l")) {
-		      System.out.println ( "Loading images" );
-		      load_images = true;
-		    } else if (args[arg_index].equals("-nl")) {
-		      System.out.println ( "Not loading images" );
-		      load_images = false;
-		    } else {
-		      System.out.println ( "Unrecognized option: " + args[arg_index] );
-		    }
-		  } else {
-		    file_name_args.add ( args[arg_index] );
-		  }
-		  arg_index++;
+      System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
+      if (args[arg_index].startsWith("-") ) {
+        if (args[arg_index].equals("-l")) {
+          System.out.println ( "Loading images" );
+          load_images = true;
+        } else if (args[arg_index].equals("-nl")) {
+          System.out.println ( "Not loading images" );
+          load_images = false;
+        } else {
+          System.out.println ( "Unrecognized option: " + args[arg_index] );
+        }
+      } else {
+        file_name_args.add ( args[arg_index] );
+      }
+      arg_index++;
     }
 
     System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
@@ -1705,14 +1705,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
     
 
-		System.out.println ( "swift_gui: Use the mouse wheel to zoom, and drag to pan." );
+    System.out.println ( "swift_gui: Use the mouse wheel to zoom, and drag to pan." );
 
 
-		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
-			public void run() {
+    javax.swing.SwingUtilities.invokeLater ( new Runnable() {
+      public void run() {
 
-			  JFrame app_frame = new JFrame("swift_gui");
-				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
+        JFrame app_frame = new JFrame("swift_gui");
+        app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 
         swift_gui swift_gui_panel = new swift_gui();
         swift_gui_panel.set_install_location();
@@ -1728,52 +1728,52 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         // swift_gui_panel.alignment_panel.swift = swift_gui_panel;
         // swift_gui_panel.control_panel.swift = swift_gui_panel;
 
-				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
-				image_split_pane.setOneTouchExpandable( true );
-				image_split_pane.setResizeWeight( 0.78 );
+        JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
+        image_split_pane.setOneTouchExpandable( true );
+        image_split_pane.setResizeWeight( 0.78 );
 
-				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, swift_gui_panel.control_panel );
-				split_pane.setResizeWeight( 0.9 );
-				split_pane.setOneTouchExpandable( true );
-
-
-				swift_gui_panel.setBackground ( new Color (60,60,60) );
-		    swift_gui_panel.project_file_chooser = new ProjectFileChooser ( swift_gui_panel.current_directory );
-		    swift_gui_panel.destination_chooser = new DestinationChooser ( swift_gui_panel.current_directory );
-		    swift_gui_panel.image_file_chooser = new ImageFileChooser ( swift_gui_panel.current_directory );
-		    try {
-
-		      //System.out.println ( "image_file_chooser:\n  " + swift_gui_panel.image_file_chooser );
-		      BorderLayout chooser_layout = (BorderLayout)(swift_gui_panel.image_file_chooser.getLayout());
-		      //System.out.println ( "image_file_chooser.layout:\n  " + chooser_layout );
-		      JPanel chooser_controls_panel = (JPanel)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH));
-		      //System.out.println ( "image_file_chooser's chooser_controls_panel:\n  " + chooser_controls_panel );
-
-		      Component parts[] = chooser_controls_panel.getComponents();
-		      //for (int c=0; c<parts.length; c++) {
-		        //System.out.println ( "Component " + c + " = " + parts[c] );
-		      //}
-
-		      JPanel button_area = (JPanel)(parts[3]);
-		      //System.out.println ( "Button area = " + button_area );
-
-		      swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
-		      // This appears to fail on the Macintosh. That dialog box may have a different set of containers
-		      //button_area.add ( swift_gui_panel.load_files_on_import, 0 );
+        JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, swift_gui_panel.control_panel );
+        split_pane.setResizeWeight( 0.9 );
+        split_pane.setOneTouchExpandable( true );
 
 
-		      // chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
+        swift_gui_panel.setBackground ( new Color (60,60,60) );
+        swift_gui_panel.project_file_chooser = new ProjectFileChooser ( swift_gui_panel.current_directory );
+        swift_gui_panel.destination_chooser = new DestinationChooser ( swift_gui_panel.current_directory );
+        swift_gui_panel.image_file_chooser = new ImageFileChooser ( swift_gui_panel.current_directory );
+        try {
 
-		      //BoxLayout chooser_controls_box = (BoxLayout)(chooser_controls_panel.getLayout());
-		      //System.out.println ( "chooer_controls_box = " + chooser_controls_box );
-		      //System.out.println ( "chooer_controls_box.axis = " + chooser_controls_box.getAxis() );  // returns 1:  0=X_AXIS, 1=Y_AXIS, 2=LINE_AXIS, 3=PAGE_AXIS
+          //System.out.println ( "image_file_chooser:\n  " + swift_gui_panel.image_file_chooser );
+          BorderLayout chooser_layout = (BorderLayout)(swift_gui_panel.image_file_chooser.getLayout());
+          //System.out.println ( "image_file_chooser.layout:\n  " + chooser_layout );
+          JPanel chooser_controls_panel = (JPanel)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH));
+          //System.out.println ( "image_file_chooser's chooser_controls_panel:\n  " + chooser_controls_panel );
 
-		      //BoxLayout chooser_controls_layout = (BoxLayout)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH).getLayout() );
-		      //System.out.println ( "image_file_chooser.layout.controls:\n  " + chooser_controls_layout );
-		      // dialog.add ( new JLabel ( "----- NEW -----" ) );
-		    } catch (Exception bad_layout_ex) {
-		      System.out.println ( "Got an exception trying to add the load check box to file import panel: " + bad_layout_ex );
-		    }
+          Component parts[] = chooser_controls_panel.getComponents();
+          //for (int c=0; c<parts.length; c++) {
+            //System.out.println ( "Component " + c + " = " + parts[c] );
+          //}
+
+          JPanel button_area = (JPanel)(parts[3]);
+          //System.out.println ( "Button area = " + button_area );
+
+          swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
+          // This appears to fail on the Macintosh. That dialog box may have a different set of containers
+          //button_area.add ( swift_gui_panel.load_files_on_import, 0 );
+
+
+          // chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
+
+          //BoxLayout chooser_controls_box = (BoxLayout)(chooser_controls_panel.getLayout());
+          //System.out.println ( "chooer_controls_box = " + chooser_controls_box );
+          //System.out.println ( "chooer_controls_box.axis = " + chooser_controls_box.getAxis() );  // returns 1:  0=X_AXIS, 1=Y_AXIS, 2=LINE_AXIS, 3=PAGE_AXIS
+
+          //BoxLayout chooser_controls_layout = (BoxLayout)(chooser_layout.getLayoutComponent(BorderLayout.SOUTH).getLayout() );
+          //System.out.println ( "image_file_chooser.layout.controls:\n  " + chooser_controls_layout );
+          // dialog.add ( new JLabel ( "----- NEW -----" ) );
+        } catch (Exception bad_layout_ex) {
+          System.out.println ( "Got an exception trying to add the load check box to file import panel: " + bad_layout_ex );
+        }
 
 
         for (int i=0; i<actual_file_names.size(); i++) {
@@ -1787,16 +1787,16 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         swift_gui_panel.set_title();
 
-				app_frame.add ( split_pane );
+        app_frame.add ( split_pane );
 
         swift_gui_panel.addKeyListener ( swift_gui_panel );
-				app_frame.pack();
-				app_frame.setSize ( w, h );
-				app_frame.setVisible ( true );
-			  // Request the focus to make the drawing window responsive to keyboard commands without any clicking required
-				swift_gui_panel.requestFocus();
+        app_frame.pack();
+        app_frame.setSize ( w, h );
+        app_frame.setVisible ( true );
+        // Request the focus to make the drawing window responsive to keyboard commands without any clicking required
+        swift_gui_panel.requestFocus();
 
-				JMenuBar menu_bar = new JMenuBar();
+        JMenuBar menu_bar = new JMenuBar();
           JMenuItem mi;
 
           JMenu file_menu = new JMenu("File");
@@ -1889,9 +1889,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             menu_bar.add ( help_menu );
 
 
-				app_frame.setJMenuBar ( menu_bar );
-				swift_gui_panel.update_control_panel();
-				swift_gui_panel.center_current_image();
+        app_frame.setJMenuBar ( menu_bar );
+        swift_gui_panel.update_control_panel();
+        swift_gui_panel.center_current_image();
 
         // Create a results panel
 
@@ -1900,27 +1900,27 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         swift_results_panel.parent_frame = results_frame;
         swift_results_panel.current_directory = System.getProperty("user.dir");
 
-				results_frame.add ( swift_results_panel );
+        results_frame.add ( swift_results_panel );
 
         swift_results_panel.addKeyListener ( swift_results_panel );
-				results_frame.pack();
-				results_frame.setSize ( w, h );
-				results_frame.setLocation ( w, 0 );
-				results_frame.setVisible ( false );
+        results_frame.pack();
+        results_frame.setSize ( w, h );
+        results_frame.setLocation ( w, 0 );
+        results_frame.setVisible ( false );
 
-				swift_gui_panel.results_frame = results_frame;
-				swift_gui_panel.results_panel = swift_results_panel;
+        swift_gui_panel.results_frame = results_frame;
+        swift_gui_panel.results_panel = swift_results_panel;
 
         // Force the top pane to be as large as possible
         split_pane.setDividerLocation ( 0.999 );
 
-			  // Request the focus again?
-				swift_gui_panel.requestFocus();
+        // Request the focus again?
+        swift_gui_panel.requestFocus();
 
-			}
-		} );
+      }
+    } );
 
-	}
+  }
 
 }
 
