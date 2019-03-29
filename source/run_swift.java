@@ -505,6 +505,87 @@ public class run_swift {
     }
   }
 
+  public static String[] run_swim ( Runtime rt, String fixed_image_file, String align_image_file, String window_size, String x, String y, int output_level ) {
+    System.out.println ( "Running Swim with:\n" + fixed_image_file + "\n" + align_image_file + "\n" + window_size + "\n" + x + "\n" + y + "\n" + output_level );
+
+    String command_line;
+    String interactive_commands;
+    Process cmd_proc;
+    int exit_value;
+
+    BufferedOutputStream proc_in;
+    BufferedInputStream proc_out;
+    BufferedInputStream proc_err;
+
+    File f;
+    BufferedWriter bw;
+
+    int num_left;
+    String stdout;
+    String stderr;
+
+    if (global_io.is_windows()) {
+      System.out.println ( "Running in Windows!!" );
+      swim_cmd = "swim.exe";
+      mir_cmd = "mir.exe";
+    }
+
+    try {
+
+      command_line = code_source + swim_cmd + " " + window_size;
+
+      if (output_level > 0) System.out.println ( "\n*** Running swim with command line: " + command_line + " ***" );
+      cmd_proc = rt.exec ( command_line );
+
+      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+      interactive_commands = "unused -i 2 -k keep."+image_type_extension;
+      if (x.trim().length() > 0) interactive_commands += " -x " + x;
+      if (y.trim().length() > 0) interactive_commands += " -y " + y;
+      interactive_commands += " " + fixed_image_file + " " + align_image_file + "\n";
+
+      if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+
+      proc_in.write ( interactive_commands.getBytes() );
+      proc_in.close();
+
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + "\n" );
+
+      cmd_proc.waitFor();
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+
+      stdout = read_string_from ( proc_out );
+
+      if (output_level > 4) System.out.print ( stdout );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+
+      stderr = read_string_from ( proc_err );
+
+      if (output_level > 11) System.out.print ( stderr );
+
+      if (output_level > 11) System.out.println ( "=================================================================================" );
+
+    } catch ( Exception some_exception ) {
+
+      if (output_level > 0) System.out.println ( "Error: " + some_exception );
+      if (output_level > 0) System.out.println ( some_exception.getStackTrace() );
+      some_exception.printStackTrace();
+
+    }
+
+    return ( null );
+  }
+
   public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                                int window_size, int addx, int addy, int output_level ) {
 

@@ -610,6 +610,15 @@ class swim_lab_window extends ZoomPanLib implements ActionListener, MouseMotionL
     }
   }
 
+  public double get_double_from_textfield ( JTextComponent c ) {
+    String s = c.getText();
+    if (s.length() > 0) {
+      return ( Double.parseDouble ( s ) );
+    } else {
+      return ( 0.0 );
+    }
+  }
+
   public void handle_key_event(KeyEvent e) {
     if (frames != null) {
       if (frames.size() > 0) {
@@ -1952,6 +1961,15 @@ class swim_lab_window extends ZoomPanLib implements ActionListener, MouseMotionL
 
 public class swim_lab extends JFrame implements ActionListener {
 
+  swim_lab_panel image_panel_1;
+  swim_lab_panel image_panel_2;
+  swim_lab_panel image_panel_3;
+
+  JTextField ww;
+  JTextField x;
+  JTextField y;
+  JTextField outlev;
+
   public swim_lab ( String s ) {
     super(s);
 
@@ -1974,16 +1992,50 @@ public class swim_lab extends JFrame implements ActionListener {
 		setJMenuBar ( menu_bar );
   }
 
+  public int get_int_from_textfield ( JTextComponent c ) {
+    String s = c.getText();
+    if (s.length() > 0) {
+      return ( Integer.parseInt ( s ) );
+    } else {
+      return ( 0 );
+    }
+  }
+
+  public double get_double_from_textfield ( JTextComponent c ) {
+    String s = c.getText();
+    if (s.length() > 0) {
+      return ( Double.parseDouble ( s ) );
+    } else {
+      return ( 0.0 );
+    }
+  }
+
 	public void actionPerformed(ActionEvent e) {
     Object action_source = e.getSource();
 
 		String cmd = e.getActionCommand();
-		System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
+		// System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
 
 		if (cmd.equalsIgnoreCase("Print")) {
 		  System.out.println ( "Images:" );
     //} else if ( action_source == refresh_images_menu_item ) {
       //System.out.println ( "Reloading all images:" );
+    } else if (cmd.equalsIgnoreCase("run_swim")) {
+      Runtime rt = Runtime.getRuntime();
+      String results[] = run_swift.run_swim (
+                        rt,
+                        "vj_097_shift_rot_skew_crop_1.jpg",
+                        "vj_097_shift_rot_skew_crop_2.jpg",
+                        ww.getText(),
+                        x.getText(),
+                        y.getText(),
+                        get_int_from_textfield ( outlev ) );
+      try {
+        image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
+      } catch ( Exception ex ) {
+        System.out.println ( "Unable to open panel_3 image" );
+      }
+      repaint();
     }
   }
 
@@ -1994,50 +2046,88 @@ public class swim_lab extends JFrame implements ActionListener {
 		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
 			public void run() {
 
-			  swim_lab app_frame = new swim_lab("swim_lab");
-				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
+			  swim_lab swim_lab_frame = new swim_lab("swim_lab");
+				swim_lab_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 				
 				JPanel main_panel = new JPanel();
-				main_panel.setLayout ( new BoxLayout ( main_panel, BoxLayout.X_AXIS ) );
+				main_panel.setLayout ( new BorderLayout() );
+
+
+				JPanel main_box_panel = new JPanel();
+				main_box_panel.setLayout ( new BoxLayout ( main_box_panel, BoxLayout.X_AXIS ) );
 				
 				JPanel image_container_1 = new JPanel ( new BorderLayout() );
-        swim_lab_panel image_panel_1 = new swim_lab_panel();
+        swim_lab_frame.image_panel_1 = new swim_lab_panel();
         try {
-          image_panel_1.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_1.jpg") );
+          swim_lab_frame.image_panel_1.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_1.jpg") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_1 image" );
         }
-        image_container_1.add ( image_panel_1, BorderLayout.CENTER );
+        image_container_1.add ( swim_lab_frame.image_panel_1, BorderLayout.CENTER );
         image_container_1.add ( new JButton ( "B1"), BorderLayout.SOUTH );
-        main_panel.add ( image_container_1 );
+        main_box_panel.add ( image_container_1 );
 
 				JPanel image_container_2 = new JPanel ( new BorderLayout() );
-        swim_lab_panel image_panel_2 = new swim_lab_panel();
+        swim_lab_frame.image_panel_2 = new swim_lab_panel();
         try {
-          image_panel_2.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_2.jpg") );
+          swim_lab_frame.image_panel_2.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_2.jpg") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_2 image" );
         }
-        image_container_2.add ( image_panel_2, BorderLayout.CENTER );
+        image_container_2.add ( swim_lab_frame.image_panel_2, BorderLayout.CENTER );
         image_container_2.add ( new JButton ( "B2"), BorderLayout.SOUTH );
-        main_panel.add ( image_container_2 );
+        main_box_panel.add ( image_container_2 );
 
 				JPanel image_container_3 = new JPanel ( new BorderLayout() );
-        swim_lab_panel image_panel_3 = new swim_lab_panel();
+        swim_lab_frame.image_panel_3 = new swim_lab_panel();
         try {
-          image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
+          swim_lab_frame.image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_3 image" );
         }
-        image_container_3.add ( image_panel_3, BorderLayout.CENTER );
+        image_container_3.add ( swim_lab_frame.image_panel_3, BorderLayout.CENTER );
         image_container_3.add ( new JButton ( "B3"), BorderLayout.SOUTH );
-        main_panel.add ( image_container_3 );
-        
-        app_frame.add ( main_panel );
+        main_box_panel.add ( image_container_3 );
 
-				app_frame.pack();
-				app_frame.setSize ( 1600, 800 );
-				app_frame.setVisible ( true );
+
+        main_panel.add ( main_box_panel, BorderLayout.CENTER );
+        
+        JPanel swim_controls = new JPanel();
+
+        swim_lab_frame.ww = new JTextField("1024",6);
+        swim_controls.add ( new JLabel("ww: ") );
+        swim_controls.add ( swim_lab_frame.ww );
+
+        swim_lab_frame.x = new JTextField("",6);
+        swim_controls.add ( new JLabel("x: ") );
+        swim_controls.add ( swim_lab_frame.x );
+
+        swim_controls.add ( new JLabel("   ") );
+
+        swim_lab_frame.y = new JTextField("",6);
+        swim_controls.add ( new JLabel("y: ") );
+        swim_controls.add ( swim_lab_frame.y );
+
+        swim_controls.add ( new JLabel("   ") );
+
+        swim_lab_frame.outlev = new JTextField("50",6);
+        swim_controls.add ( new JLabel("out: ") );
+        swim_controls.add ( swim_lab_frame.outlev );
+
+        swim_controls.add ( new JLabel("   ") );
+
+        JButton run = new JButton("Run");
+        run.addActionListener ( swim_lab_frame );
+        run.setActionCommand ( "run_swim" );
+        swim_controls.add ( run );
+
+        main_panel.add ( swim_controls, BorderLayout.SOUTH );
+
+        swim_lab_frame.add ( main_panel );
+
+				swim_lab_frame.pack();
+				swim_lab_frame.setSize ( 1600, 800 );
+				swim_lab_frame.setVisible ( true );
 
 			}
 		} );
