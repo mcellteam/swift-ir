@@ -1997,51 +1997,41 @@ public class swim_lab extends JFrame implements ActionListener {
 			  swim_lab app_frame = new swim_lab("swim_lab");
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 				
-				JPanel main_panel = new JPanel( new BorderLayout() );
+				JPanel main_panel = new JPanel();
+				main_panel.setLayout ( new BoxLayout ( main_panel, BoxLayout.X_AXIS ) );
 				
-				JPanel image_panel = new JPanel();
-				image_panel.setLayout ( new BoxLayout ( image_panel, BoxLayout.X_AXIS ) );
-
+				JPanel image_container_1 = new JPanel ( new BorderLayout() );
         swim_lab_panel image_panel_1 = new swim_lab_panel();
         try {
           image_panel_1.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_1.jpg") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_1 image" );
         }
-        image_panel.add ( image_panel_1 );
+        image_container_1.add ( image_panel_1, BorderLayout.CENTER );
+        image_container_1.add ( new JButton ( "B1"), BorderLayout.SOUTH );
+        main_panel.add ( image_container_1 );
 
+				JPanel image_container_2 = new JPanel ( new BorderLayout() );
         swim_lab_panel image_panel_2 = new swim_lab_panel();
         try {
           image_panel_2.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_2.jpg") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_2 image" );
         }
-        image_panel.add ( image_panel_2 );
+        image_container_2.add ( image_panel_2, BorderLayout.CENTER );
+        image_container_2.add ( new JButton ( "B2"), BorderLayout.SOUTH );
+        main_panel.add ( image_container_2 );
 
+				JPanel image_container_3 = new JPanel ( new BorderLayout() );
         swim_lab_panel image_panel_3 = new swim_lab_panel();
         try {
           image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_3 image" );
         }
-        image_panel.add ( image_panel_3 );
-
-        main_panel.add ( image_panel, BorderLayout.CENTER );
-
-        JPanel control_panel = new JPanel();
-        control_panel.setLayout ( new BoxLayout ( control_panel, BoxLayout.X_AXIS ) );
-
-        JButton b1 = new JButton ( "B1" );
-        control_panel.add ( b1 );
-
-        JButton b2 = new JButton ( "B2" );
-        control_panel.add ( b2 );
-
-        JButton b3 = new JButton ( "B3" );
-        control_panel.add ( b3 );
-
-
-        main_panel.add ( control_panel, BorderLayout.SOUTH );
+        image_container_3.add ( image_panel_3, BorderLayout.CENTER );
+        image_container_3.add ( new JButton ( "B3"), BorderLayout.SOUTH );
+        main_panel.add ( image_container_3 );
         
         app_frame.add ( main_panel );
 
