@@ -158,6 +158,7 @@ class FileListDialog extends JDialog {
           textArea.setText ( dialog_text );
         } else {
           // Build the text from the current model every time it's shown
+          /*
           if (parent_frame != null) {
             // Get the list of files from the parent_frame
             if (parent_frame.frames != null) {
@@ -167,6 +168,7 @@ class FileListDialog extends JDialog {
               }
             }
           }
+          */
         }
         textArea.requestFocusInWindow();
       }
@@ -185,44 +187,6 @@ class AlignmentPanel extends JPanel {
 	  int h = size().height;
     g.setColor ( new Color ( 60, 60, 60 ) );
     g.fillRect ( 0, 0, w, h );
-
-    if (swift.frames != null) {
-      if (swift.frames.size() > 0) {
-        if ( (swift.frame_index >= 0) && (swift.frame_index < swift.frames.size()) ) {
-          if (swift.frames.get(swift.frame_index).image != null) {
-            BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
-
-		        int img_w = frame_image.getWidth();
-		        int img_h = frame_image.getHeight();
-
-		        // Calculate the size to fit the image in the side pane (assuming width constrained)
-		        int padding = 10;
-		        int xoff = padding;
-		        double img_scale = (w-(2.0*padding)) / img_w;
-		        int scaled_w = (int)(img_w * img_scale);
-		        int scaled_h = (int)(img_h * img_scale);
-
-		        if ( ( (3*scaled_h) + (4*padding) ) > h ) {
-		          // Images are actually height constrained, so recalculate
-		          img_scale = (h-(4.0*padding)) / (3*img_h);
-		          scaled_w = (int)(img_w * img_scale);
-		          scaled_h = (int)(img_h * img_scale);
-		          xoff = (w-scaled_w) / 2;
-		        }
-
-            if (swift.frame_index >= 1) {
-              g.drawImage ( swift.frames.get(swift.frame_index-1).image, xoff, padding, scaled_w, scaled_h, this );
-            }
-            g.drawImage ( frame_image, xoff, (h/2)-(scaled_h/2), scaled_w, scaled_h, this );
-            if (swift.frame_index < (swift.frames.size()-1)) {
-              g.drawImage ( swift.frames.get(swift.frame_index+1).image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
-            }
-          }
-
-          //frame_image = frames.get(frame_index).image;
-        }
-      }
-    }
 	}
 }
 
@@ -238,7 +202,7 @@ class RespTextField extends JTextField {
   }
   protected void processKeyEvent ( KeyEvent e ) {
     super.processKeyEvent(e);
-    swift.handle_key_event(e);
+    // swift.handle_key_event(e);
   }
 }
 
@@ -277,6 +241,7 @@ class ControlPanel extends JPanel {
 
   public JCheckBox pairwise;
 
+/*
   JPanel make_resize_panel(swim_lab swift) {
     JPanel resize_panel = new JPanel();
 
@@ -381,10 +346,10 @@ class ControlPanel extends JPanel {
 
     return ( alignment_panel );
   }
-
+*/
   ControlPanel (swim_lab swift) {
     this.swift = swift;
-
+/*
     this.setLayout ( new BorderLayout( 0, 20 ) );
 
     JPanel top_panel = new JPanel();
@@ -480,6 +445,7 @@ class ControlPanel extends JPanel {
       this.image_label.setText ( this.image_name.getText() );
 
     }
+*/
   }
 
 }
@@ -519,6 +485,9 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 
 		g.setColor ( new Color ( 160, 60, 60 ) );  // Main window
 	  g.fillRect ( 0, 0, win_w, win_h );
+
+		g.setColor ( new Color ( 0, 0, 0 ) );  // Main window
+	  g.drawRect ( 0, 0, win_w-1, win_h-1 );
 
 		if (frame_image == null) {
 		  System.out.println ( "Image is null" );
@@ -600,7 +569,7 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 }
 
 
-public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
+class swim_lab_window extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
 
   public String get_absolute_file_name ( String project_file_name, String other_file_name ) {
     // This function returns an absolute file name when "other_file" is relative
@@ -931,7 +900,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 
   public void update_control_panel() {
     if (control_panel != null) {
-      control_panel.update ( this );
+      // control_panel.update ( this );
     }
   }
 
@@ -1721,7 +1690,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 	public static ArrayList<String> actual_file_names = new ArrayList<String>();
 
   static boolean load_images = true;
-
+/*
 	public static void main ( String[] args ) {
 
     System.out.println ( "Translation of 15: " + run_swift.translate_exit ( 128+15 ) );
@@ -1768,7 +1737,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 			  swim_lab_frame app_frame = new swim_lab_frame("swim_lab");
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 
-        swim_lab swim_lab_panel_1 = new swim_lab();
+        swim_lab_window swim_lab_panel_1 = new swim_lab_window();
         swim_lab_panel swim_lab_panel_2 = new swim_lab_panel();
         try {
           System.out.println ( "Opening panel2 image" );
@@ -1978,12 +1947,12 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 		} );
 
 	}
-
+*/
 }
 
-class swim_lab_frame extends JFrame implements ActionListener {
+public class swim_lab extends JFrame implements ActionListener {
 
-  public swim_lab_frame ( String s ) {
+  public swim_lab ( String s ) {
     super(s);
 
 		JMenuBar menu_bar = new JMenuBar();
@@ -2021,6 +1990,67 @@ class swim_lab_frame extends JFrame implements ActionListener {
 	public static void main ( String[] args ) {
 
     System.out.println ( "swim_lab frame is main" );
+
+		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
+			public void run() {
+
+			  swim_lab app_frame = new swim_lab("swim_lab");
+				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
+				
+				JPanel main_panel = new JPanel( new BorderLayout() );
+				
+				JPanel image_panel = new JPanel();
+				image_panel.setLayout ( new BoxLayout ( image_panel, BoxLayout.X_AXIS ) );
+
+        swim_lab_panel image_panel_1 = new swim_lab_panel();
+        try {
+          image_panel_1.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_1.jpg") );
+        } catch ( Exception e ) {
+          System.out.println ( "Unable to open panel_1 image" );
+        }
+        image_panel.add ( image_panel_1 );
+
+        swim_lab_panel image_panel_2 = new swim_lab_panel();
+        try {
+          image_panel_2.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_2.jpg") );
+        } catch ( Exception e ) {
+          System.out.println ( "Unable to open panel_2 image" );
+        }
+        image_panel.add ( image_panel_2 );
+
+        swim_lab_panel image_panel_3 = new swim_lab_panel();
+        try {
+          image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
+        } catch ( Exception e ) {
+          System.out.println ( "Unable to open panel_3 image" );
+        }
+        image_panel.add ( image_panel_3 );
+
+        main_panel.add ( image_panel, BorderLayout.CENTER );
+
+        JPanel control_panel = new JPanel();
+        control_panel.setLayout ( new BoxLayout ( control_panel, BoxLayout.X_AXIS ) );
+
+        JButton b1 = new JButton ( "B1" );
+        control_panel.add ( b1 );
+
+        JButton b2 = new JButton ( "B2" );
+        control_panel.add ( b2 );
+
+        JButton b3 = new JButton ( "B3" );
+        control_panel.add ( b3 );
+
+
+        main_panel.add ( control_panel, BorderLayout.SOUTH );
+        
+        app_frame.add ( main_panel );
+
+				app_frame.pack();
+				app_frame.setSize ( 1600, 800 );
+				app_frame.setVisible ( true );
+
+			}
+		} );
 
   }
 
