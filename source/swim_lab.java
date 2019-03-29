@@ -57,8 +57,8 @@ class ImageFileChooser extends JFileChooser {
 }
 
 class alignment_settings {
-  swim_lab_frame prev_frame=null;
-  swim_lab_frame next_frame=null;
+  swim_lab_image_frame prev_frame=null;
+  swim_lab_image_frame next_frame=null;
   int window_size=1024;
   int addx=500;
   int addy=500;
@@ -66,7 +66,7 @@ class alignment_settings {
   String[] alignment_values = null;
 }
 
-class swim_lab_frame {
+class swim_lab_image_frame {
   public File image_file_path=null;
   public boolean skip=false;
   public boolean valid=false;
@@ -78,7 +78,7 @@ class swim_lab_frame {
   double[] affine_transform_from_prev=null;
   double[] affine_transform_from_start=null;
 
-  swim_lab_frame ( File image_file_path, boolean load ) {
+  swim_lab_image_frame ( File image_file_path, boolean load ) {
     this.image_file_path = image_file_path;
     if (load) {
       this.load_file();
@@ -436,7 +436,7 @@ class ControlPanel extends JPanel {
         if (swift.frames.size() > 0) {
           File image_file_path = swift.frames.get(swift.frame_index).image_file_path;
           this.image_name.setText ( image_file_path.getName() );
-          swim_lab_frame frame = swift.frames.get(swift.frame_index);
+          swim_lab_image_frame frame = swift.frames.get(swift.frame_index);
           if (frame != null) {
             if (frame.image != null) {
               BufferedImage frame_image = swift.frames.get(swift.frame_index).image;
@@ -484,6 +484,122 @@ class ControlPanel extends JPanel {
 
 }
 
+
+class swim_lab_panel extends ZoomPanLib implements MouseListener {
+
+  public BufferedImage frame_image = null;
+  
+  /*
+  public swim_lab_panel ( BufferedImage frame_image ) {
+    this.frame_image = frame_image;
+  }*/
+
+	public void paint_frame (Graphics g) {
+	  Dimension win_s = getSize();
+	  int win_w = win_s.width;
+	  int win_h = win_s.height;
+	  if (recalculate) {
+	    if (frame_image != null) {
+        set_scale_to_fit ( 0, frame_image.getWidth(), -frame_image.getHeight(), 0, win_w, win_h );
+	      recalculate = false;
+	    }
+	  }
+
+	  /*
+    if (frames != null) {
+      if (frames.size() > 0) {
+        if (frame_index < 0) frame_index = 0;
+        if (frame_index >= frames.size()) frame_index = frames.size()-1;
+        swim_lab_image_frame f = frames.get(frame_index);
+        if (f != null) {
+          frame_image = f.image;
+        }
+      }
+    } */
+
+		g.setColor ( new Color ( 160, 60, 60 ) );  // Main window
+	  g.fillRect ( 0, 0, win_w, win_h );
+
+		if (frame_image == null) {
+		  System.out.println ( "Image is null" );
+		  g.setColor ( new Color ( 160, 60, 60 ) );  // Main window
+	    g.fillRect ( 0, 0, win_w, win_h );
+		} else {
+      /*
+      System.out.println ( "Image is NOT null" );
+      int img_w = frame_image.getWidth();
+      int img_h = frame_image.getHeight();
+      double img_wf = 200;
+      double img_hf = 200;
+      if (img_w >= img_h) {
+        // Make the image wider to fit
+        img_wf = img_w * img_wf / img_h;
+      } else {
+        // Make the height shorter to fit
+        img_hf = img_h * img_hf / img_w;
+      }
+      int draw_x = x_to_pxi(-img_wf/2.0);
+      int draw_y = y_to_pyi(-img_hf/2.0);
+      int draw_w = x_to_pxi(img_wf/2.0) - draw_x;
+      int draw_h = y_to_pyi(img_hf/2.0) - draw_y;
+      g.drawImage ( frame_image, draw_x, draw_y, draw_w, draw_h, this );
+      */
+
+
+      // priority_println ( 50, "Image is NOT null" );
+		  int img_w = frame_image.getWidth();
+		  int img_h = frame_image.getHeight();
+
+      double img_wf = img_w;
+      double img_hf = img_h;
+
+      int draw_x = x_to_pxi(0);
+      int draw_y = y_to_pyi(0);
+      int draw_w = x_to_pxi(img_wf) - draw_x;
+      int draw_h = y_to_pyi(img_hf) - draw_y;
+
+      g.drawImage ( frame_image, draw_x, draw_y-draw_h, draw_w, draw_h, this );
+      //g.drawImage ( frame_image, (win_w-img_w)/2, (win_h-img_h)/2, img_w, img_h, this );
+
+    }
+	}
+
+
+  //  MouseListener methods:
+
+
+	Cursor current_cursor = null;
+	Cursor b_cursor = null;
+	int cursor_size = 33;
+
+  public void mouseEntered ( MouseEvent e ) {
+    super.mouseEntered(e);
+  }
+
+  public void mouseExited ( MouseEvent e ) {
+    super.mouseExited(e);
+  }
+
+  public void mouseClicked ( MouseEvent e ) {
+    super.mouseClicked(e);
+  }
+
+  public void mousePressed ( MouseEvent e ) {
+    if (e.getButton() == 3) {
+      recalculate = true;
+      repaint();
+    }
+    super.mousePressed(e);
+  }
+
+  public void mouseReleased ( MouseEvent e ) {
+    super.mouseReleased(e);
+  }
+
+
+}
+
+
 public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionListener, MouseListener, KeyListener {
 
   public String get_absolute_file_name ( String project_file_name, String other_file_name ) {
@@ -528,7 +644,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
   public void handle_key_event(KeyEvent e) {
     if (frames != null) {
       if (frames.size() > 0) {
-        swim_lab_frame frame = frames.get(frame_index);
+        swim_lab_image_frame frame = frames.get(frame_index);
         if (e.getComponent() == control_panel.window_size) {
           frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
         } else if (e.getComponent() == control_panel.addx) {
@@ -542,7 +658,6 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
         }
       }
     }
-
 
   }
 
@@ -567,7 +682,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
   int ref_image_h = 1000;
 
 
-	public ArrayList<swim_lab_frame> frames = new ArrayList<swim_lab_frame>();  // Argument (if any) specifies initial capacity (default 10)
+	public ArrayList<swim_lab_image_frame> frames = new ArrayList<swim_lab_image_frame>();  // Argument (if any) specifies initial capacity (default 10)
   public int frame_index = -1;
 
   public void set_install_location() {
@@ -587,8 +702,8 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
     if (frames != null) {
       if (frames.size() > 1) {
         for (int fnum=0; fnum<(frames.size()-1); fnum++) {
-          swim_lab_frame prev = frames.get(fnum);
-          swim_lab_frame next = frames.get(fnum+1);
+          swim_lab_image_frame prev = frames.get(fnum);
+          swim_lab_image_frame next = frames.get(fnum+1);
           if ((prev.next_alignment == null) && (next.prev_alignment == null) ) {
             // Make a new one
             prev.next_alignment = new alignment_settings();
@@ -623,7 +738,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
       if (frames.size() > 0) {
         if (frame_index < 0) frame_index = 0;
         if (frame_index >= frames.size()) frame_index = frames.size()-1;
-        swim_lab_frame f = frames.get(frame_index);
+        swim_lab_image_frame f = frames.get(frame_index);
         if (f != null) {
           frame_image = f.image;
         }
@@ -635,7 +750,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 
 		if (frame_image == null) {
 		  // System.out.println ( "Image is null" );
-		  g.setColor ( new Color ( 160, 60, 60 ) );  // Main window
+		  g.setColor ( new Color ( 60, 60, 60 ) );  // Main window
 	    g.fillRect ( 0, 0, win_w, win_h );
 		} else {
       /*
@@ -965,7 +1080,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
       f.println ( "    \"imagestack\": [" );
 
       for (int i=0; i<this.frames.size(); i++) {
-        swim_lab_frame frame = this.frames.get(i);
+        swim_lab_image_frame frame = this.frames.get(i);
 
         f.println ( "      { " );
         f.println ( "        \"skip\": " + frame.skip + "," );  // JSON and Java both use lower case for true and false
@@ -1015,7 +1130,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 
   double[] propagate_affine ( int first, int last ) {
     double[] cumulative = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
-    swim_lab_frame frame;
+    swim_lab_image_frame frame;
     for (int i=first; i<=last; i++) {
       frame = frames.get(i);
       if (frame != null) {
@@ -1078,7 +1193,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 		      int new_frame_index = this.frames.size();
 		      for (int i=0; i<selected_files.length; i++) {
             System.out.println ( "You chose this file: " + selected_files[i] );
-            this.frames.add ( new swim_lab_frame ( selected_files[i], load_on_import ) );
+            this.frames.add ( new swim_lab_image_frame ( selected_files[i], load_on_import ) );
 		      }
           make_alignments();
 		      // Set the frame index to the first file just added
@@ -1149,7 +1264,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 
               ArrayList<Object> image_stack = (ArrayList<Object>)(data.get("imagestack"));
 
-              frames = new ArrayList<swim_lab_frame>();
+              frames = new ArrayList<swim_lab_image_frame>();
               actual_file_names = new ArrayList<String>();
               frame_index = -1;
 
@@ -1161,7 +1276,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
                 actual_file_names.add ( stack_image_file_name );
 
                 System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
-                swim_lab_frame new_frame = new swim_lab_frame ( new File (actual_file_names.get(i)), load_images );
+                swim_lab_image_frame new_frame = new swim_lab_image_frame ( new File (actual_file_names.get(i)), load_images );
                 if (stack_image.containsKey("skip")) {
                   new_frame.skip = (Boolean)(stack_image.get("skip"));
                 }
@@ -1178,7 +1293,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
                   HashMap<String,Object> alignment_pars = (HashMap<String,Object>)(stack_image.get("align_to_next_pars"));
                   // System.out.println ( "alignment_pars keys = " + alignment_pars.keySet() );
                   System.out.println ( "alignment_pars = " + alignment_pars );
-                  swim_lab_frame frame = frames.get(i);
+                  swim_lab_image_frame frame = frames.get(i);
                   alignment_settings settings = frame.next_alignment;
                   if (settings != null) {
                     settings.window_size = (Integer)(alignment_pars.get("window_size"));
@@ -1244,7 +1359,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
       repaint();
 		  set_title();
     } else if ( action_source == clear_all_images_menu_item ) {
-      this.frames = new ArrayList<swim_lab_frame>();
+      this.frames = new ArrayList<swim_lab_image_frame>();
       this.frame_index = -1;
       repaint();
       update_control_panel();
@@ -1279,8 +1394,8 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
             text += "EOF\n";
 
 	          for (int i=1; i<frames.size(); i++) {
-	            swim_lab_frame prev_frame = frames.get(i-1);
-	            swim_lab_frame this_frame = frames.get(i);
+	            swim_lab_image_frame prev_frame = frames.get(i-1);
+	            swim_lab_image_frame this_frame = frames.get(i);
               fname = this_frame.image_file_path.getName();
 
               text += "\n";
@@ -1327,7 +1442,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 			System.out.println ( "Got a window_size change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
-          swim_lab_frame frame = frames.get(frame_index);
+          swim_lab_image_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
             frame.next_alignment.window_size = get_int_from_textfield ( txt );
           }
@@ -1338,7 +1453,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 			System.out.println ( "Got an addx change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
-          swim_lab_frame frame = frames.get(frame_index);
+          swim_lab_image_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
             frame.next_alignment.addx = get_int_from_textfield ( txt );
           }
@@ -1349,7 +1464,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 			System.out.println ( "Got an addy change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
-          swim_lab_frame frame = frames.get(frame_index);
+          swim_lab_image_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
             frame.next_alignment.addy = get_int_from_textfield ( txt );
           }
@@ -1360,7 +1475,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 			System.out.println ( "Got an output_level change with " + txt.getText() );
       if (frames != null) {
         if (frames.size() > 1) {
-          swim_lab_frame frame = frames.get(frame_index);
+          swim_lab_image_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
             frame.next_alignment.output_level = get_int_from_textfield ( txt );
           }
@@ -1371,7 +1486,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 			System.out.println ( "\n\nGot a skip change with Selected = " + box.isSelected() );
       if (frames != null) {
         if (frames.size() > 1) {
-          swim_lab_frame frame = frames.get(frame_index);
+          swim_lab_image_frame frame = frames.get(frame_index);
           if (frame.next_alignment != null) {
             frame.skip = box.isSelected();
           }
@@ -1386,7 +1501,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
         }
         // Copy these values to all frames
 	      for (int i=start; i<this.frames.size(); i++) {
-	        swim_lab_frame frame = frames.get(i);
+	        swim_lab_image_frame frame = frames.get(i);
 	        frame.skip = control_panel.skip.isSelected();
           if (frame.next_alignment != null) {
             frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
@@ -1413,7 +1528,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
           }
           Runtime rt = Runtime.getRuntime();
 	        for (int i=0; i<this.frames.size(); i++) {
-	          swim_lab_frame frame = frames.get(i);
+	          swim_lab_image_frame frame = frames.get(i);
 	          if (frame.skip) {
 	            // Omit this frame
 	          } else {
@@ -1472,7 +1587,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
           }
 	        for (int i=start; i<end; i++) {
 	          System.out.println ( "Working on frame " + i );
-	          swim_lab_frame align_frame = frames.get(i);
+	          swim_lab_image_frame align_frame = frames.get(i);
 	          if (align_frame.skip) {
 	            // Omit this frame
 	          } else {
@@ -1481,7 +1596,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 	              fixed_frame_num = i;
 	            } else {
 	              // There is a valid fixed frame and this (to be aligned) frame
-                swim_lab_frame fixed_frame = frames.get(fixed_frame_num);
+                swim_lab_image_frame fixed_frame = frames.get(fixed_frame_num);
                 if (fixed_frame.next_alignment != null) {
                   // The fixed frame defines an alignment to the next frame
                   String fixed_image_name;
@@ -1581,7 +1696,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
           System.out.println ( "Alignment completed" );
           if (pairwise) {
 	          for (int i=0; i<this.frames.size(); i++) {
-	            swim_lab_frame frame = frames.get(i);
+	            swim_lab_image_frame frame = frames.get(i);
 	            if (frame.affine_transform_from_prev == null) {
 	              System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
 	            } else {
@@ -1650,40 +1765,45 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
 			public void run() {
 
-			  JFrame app_frame = new JFrame("swim_lab");
+			  swim_lab_frame app_frame = new swim_lab_frame("swim_lab");
 				app_frame.setDefaultCloseOperation ( JFrame.EXIT_ON_CLOSE );
 
         swim_lab swim_lab_panel_1 = new swim_lab();
-        swim_lab swim_lab_panel_2 = new swim_lab();
-
+        swim_lab_panel swim_lab_panel_2 = new swim_lab_panel();
+        try {
+          System.out.println ( "Opening panel2 image" );
+          swim_lab_panel_2.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_1.jpg") );
+        } catch ( Exception e ) {
+          System.out.println ( "Unable to open panel_2 image" );
+        }
 
 
         swim_lab_panel_1.set_install_location();
-        swim_lab_panel_2.set_install_location();
+        //swim_lab_panel_2.set_install_location();
         System.out.println ( "Install Code: " + swim_lab_panel_1.install_code_source );
         System.out.println ( "Install Path: " + swim_lab_panel_1.install_code_source.getParent() );
 
         run_swift.code_source = swim_lab_panel_1.install_code_source.getParent() + File.separator;
 
         swim_lab_panel_1.parent_frame = app_frame;
-        swim_lab_panel_2.parent_frame = app_frame;
+        // swim_lab_panel_2.parent_frame = app_frame;
         swim_lab_panel_1.current_directory = System.getProperty("user.dir");
-        swim_lab_panel_2.current_directory = System.getProperty("user.dir");
+        //swim_lab_panel_2.current_directory = System.getProperty("user.dir");
 
         swim_lab_panel_1.alignment_panel = new AlignmentPanel(swim_lab_panel_1);
         swim_lab_panel_1.control_panel = new ControlPanel(swim_lab_panel_1);
         swim_lab_panel_1.alignment_panel.setBackground ( new Color (60,60,60) );
 
 
-        swim_lab_panel_2.alignment_panel = swim_lab_panel_1.alignment_panel;
-        swim_lab_panel_2.control_panel = swim_lab_panel_1.control_panel;
-        swim_lab_panel_2.setBackground ( new Color (160,60,60) );
+        //swim_lab_panel_2.alignment_panel = swim_lab_panel_1.alignment_panel;
+        //swim_lab_panel_2.control_panel = swim_lab_panel_1.control_panel;
+        //swim_lab_panel_2.setBackground ( new Color (60,60,60) );
 
 
 				JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swim_lab_panel_1, swim_lab_panel_2 );
 				// JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swim_lab_panel_1, swim_lab_panel_1.alignment_panel );
 				image_split_pane.setOneTouchExpandable( false );
-				image_split_pane.setResizeWeight( 0.78 );
+				image_split_pane.setResizeWeight( 0.5 );
 
 				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, swim_lab_panel_1.control_panel );
 				split_pane.setResizeWeight( 0.9 );
@@ -1731,7 +1851,7 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 
         for (int i=0; i<actual_file_names.size(); i++) {
           System.out.println ( "Adding file " + actual_file_names.get(i) + " to stack" );
-          swim_lab_panel_1.frames.add ( new swim_lab_frame ( new File (actual_file_names.get(i)), load_images ) );  /// Note: use i<=n to only load first n images
+          swim_lab_panel_1.frames.add ( new swim_lab_image_frame ( new File (actual_file_names.get(i)), load_images ) );  /// Note: use i<=n to only load first n images
           swim_lab_panel_1.frame_index = 0; // set to the first if any frames are loaded
         }
         swim_lab_panel_1.make_alignments();
@@ -1842,7 +1962,9 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
             menu_bar.add ( help_menu );
 
 
-				app_frame.setJMenuBar ( menu_bar );
+				////////////////  app_frame.setJMenuBar ( menu_bar );
+
+
 				swim_lab_panel_1.update_control_panel();
 				swim_lab_panel_1.center_current_image();
 
@@ -1858,4 +1980,52 @@ public class swim_lab extends ZoomPanLib implements ActionListener, MouseMotionL
 	}
 
 }
+
+class swim_lab_frame extends JFrame implements ActionListener {
+
+  public swim_lab_frame ( String s ) {
+    super(s);
+
+		JMenuBar menu_bar = new JMenuBar();
+      JMenuItem mi;
+
+      JMenu file_menu = new JMenu("File");
+
+        file_menu.add ( mi = new JMenuItem("New Project") );
+        mi.addActionListener(this);
+        menu_bar.add ( file_menu );
+
+      JMenu help_menu = new JMenu("Help");
+        help_menu.add ( mi = new JMenuItem("Commands") );
+        mi.addActionListener(this);
+        help_menu.add ( mi = new JMenuItem("Version...") );
+        mi.addActionListener(this);
+        menu_bar.add ( help_menu );
+
+		setJMenuBar ( menu_bar );
+  }
+
+	public void actionPerformed(ActionEvent e) {
+    Object action_source = e.getSource();
+
+		String cmd = e.getActionCommand();
+		System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
+
+		if (cmd.equalsIgnoreCase("Print")) {
+		  System.out.println ( "Images:" );
+    //} else if ( action_source == refresh_images_menu_item ) {
+      //System.out.println ( "Reloading all images:" );
+    }
+  }
+
+	public static void main ( String[] args ) {
+
+    System.out.println ( "swim_lab frame is main" );
+
+  }
+
+}
+
+
+
 
