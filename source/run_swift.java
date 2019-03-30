@@ -634,6 +634,14 @@ public class run_swift {
     return ( null );
   }
 
+  public static String convert_to_windows ( String cmd ) {
+    if (cmd.toLowerCase().endsWith(".exe")) {
+      return ( cmd );
+    } else {
+      return ( cmd + ".exe" );
+    }
+  }
+
   public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                                int window_size, int addx, int addy, int output_level ) {
 
@@ -659,9 +667,8 @@ public class run_swift {
 
     if (global_io.is_windows()) {
       System.out.println ( "Running in Windows!!" );
-      swim_cmd = "swim.exe";
-      // mir_cmd = "mir.exe";
-      mir_cmd = "mirb.exe";
+      swim_cmd = convert_to_windows ( swim_cmd );
+      mir_cmd  = convert_to_windows ( mir_cmd );
     }
 
     boolean use_line_parts = true;
