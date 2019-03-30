@@ -67,7 +67,7 @@ swift_lin.jar: swift_gui.jar makefile swim iavg iscale mir remod
 swift_win.jar: swift_gui.jar makefile swim.exe iavg.exe iscale.exe mir.exe remod.exe
 	javac -nowarn -source 1.6 run_swift.java
 	javac -nowarn -source 1.6 swift_gui.java
-	jar -cfe swift_win.jar swift_gui *.class swim.exe iavg.exe iscale.exe mir.exe remod.exe cygfftw3f-3.dll cygjbig-2.dll cygjpeg-8.dll cyglzma-5.dll cygpng12.dll cygpng16-16.dll cygtiff-6.dll cygwin1.dll cygz.dll
+	jar -cfe swift_win.jar swift_gui *.class swim.exe iavg.exe iscale.exe mir.exe mirb.exe remod.exe cygfftw3f-3.dll cygjbig-2.dll cygjpeg-8.dll cyglzma-5.dll cygpng12.dll cygpng16-16.dll cygtiff-6.dll cygwin1.dll cygz.dll
 
 bundle: swift_gui.jar run_swift.jar
 	git bundle create ../swift_windows_bundle.dat master windows mirb
