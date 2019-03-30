@@ -69,6 +69,9 @@ swift_win.jar: swift_gui.jar makefile swim.exe iavg.exe iscale.exe mir.exe remod
 	javac -nowarn -source 1.6 swift_gui.java
 	jar -cfe swift_win.jar swift_gui *.class swim.exe iavg.exe iscale.exe mir.exe remod.exe
 
+bundle: swift_gui.jar run_swift.jar
+	git bundle create ../swift_windows_bundle.dat master windows mirb
+
 sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum swim > sha1sum.txt
 	sha1sum iavg >> sha1sum.txt
