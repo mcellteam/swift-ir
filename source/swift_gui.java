@@ -560,7 +560,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   JFrame parent_frame = null;
   AlignmentPanel alignment_panel = null;
-  ControlPanel control_panel = null;
+  public ControlPanel control_panel = null;
 
   JFrame results_frame = null;
   swift_gui results_panel = null;
@@ -1477,6 +1477,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     } else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
       System.out.println ( "\n\nGot an align_all or align_fwd command with dest=" + destination );
 
+      if (control_panel.use_mirb.isSelected()) {
+        run_swift.mir_cmd = "mirb";
+      } else {
+        run_swift.mir_cmd = "mir";
+      }
+
       if ( (destination == null) || (!destination.exists()) || (destination.toString().length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
 
         // Keep from overwriting existing files unless explicitly requested
@@ -1722,11 +1728,30 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         swift_gui_panel.parent_frame = app_frame;
         swift_gui_panel.current_directory = System.getProperty("user.dir");
 
+
         swift_gui_panel.alignment_panel = new AlignmentPanel(swift_gui_panel);
         swift_gui_panel.control_panel = new ControlPanel(swift_gui_panel);
         swift_gui_panel.alignment_panel.setBackground ( new Color (60,60,60) );
         // swift_gui_panel.alignment_panel.swift = swift_gui_panel;
         // swift_gui_panel.control_panel.swift = swift_gui_panel;
+
+
+
+        boolean in_windows = false;
+        if ( System.getProperty("os.name").trim().toLowerCase().startsWith("win") ) {
+          in_windows = true;
+        }
+        if (in_windows) {
+          run_swift.mir_cmd = "mirb";
+          swift_gui_panel.control_panel.use_mirb.setSelected ( true );
+        } else {
+          run_swift.mir_cmd = "mir";
+          swift_gui_panel.control_panel.use_mirb.setSelected ( false );
+        }
+
+
+
+
 
         JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
         image_split_pane.setOneTouchExpandable( true );
