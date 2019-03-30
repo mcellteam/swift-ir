@@ -1434,8 +1434,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 			System.out.println ( "\n\nGot a run_resize command with scale factor of " + scale_factor );
       if (frames != null) {
         System.out.println ( "Scaling with destination = \"" + destination + "\"" );
-        if (destination == null) {
-          System.out.println ( "Error: Destination must be set." );
+        if ( (destination == null) || (!destination.exists()) ) {  // This depends on Java's short-circuit || operator to not throw an exception
+          System.out.println ( "Error: Destination must be set and exist." );
         } else {
           String prefix = "";
           if (destination != null) {
@@ -1462,11 +1462,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 		} else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
 			System.out.println ( "\n\nGot an align_all or align_fwd command with dest=" + destination );
 
-      if ( (destination == null) || (destination.toString().length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
+      if ( (destination == null) || (!destination.exists()) || (destination.toString().length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
 
         // Keep from overwriting existing files unless explicitly requested
-        System.out.println ( "Please set an explicit destination before performing an alignment." );
-        JOptionPane.showMessageDialog(this, "Please set an explicit destination before performing an alignment.", "Note", JOptionPane.ERROR_MESSAGE);
+        System.out.println ( "Please set an explicit existing destination before performing an alignment." );
+        JOptionPane.showMessageDialog(this, "Please set an explicit existing destination before performing an alignment.", "Note", JOptionPane.ERROR_MESSAGE);
 
       } else {
 
