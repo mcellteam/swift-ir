@@ -1,0 +1,19 @@
+write_img 0 newtarg.JPG  1024 1024 1 -1
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+did first FFT
+write_img 0 best.JPG  1024 1024 1 -1
+write_img 0 keep.JPG  1024 1024 1 -1
+sumsq 3.25037e+10
+avg 175.384  var 238.554  sd 15.4452
+max 255 at 473 505 ... 5.15476
+min 0 at 430 598 ... 11.3552
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+write_img 0 best.JPG  1024 1024 1 -1
+write_img 0 keep.JPG  1024 1024 1 -1
+sumsq 3.25041e+10
+avg 175.385  var 238.559  sd 15.4454
+max 255 at 549 421 ... 5.15464
+min 0 at 506 514 ... 11.3552
+keep 11.3898: vj_097_shift_rot_skew_crop_1.jpg 403 390 vj_097_shift_rot_skew_crop_2.jpg 477.74 305.965  0
