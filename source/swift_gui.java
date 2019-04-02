@@ -276,7 +276,7 @@ class ControlPanel extends JPanel {
   public RespTextField num_to_align;
 
   public JCheckBox pairwise;
-  public JCheckBox use_mirb;
+  // public JCheckBox use_mirb;
 
   JPanel make_resize_panel(swift_gui swift) {
     JPanel resize_panel = new JPanel();
@@ -376,11 +376,13 @@ class ControlPanel extends JPanel {
     pairwise.setActionCommand ( "pairwise" );
     alignment_panel_bot.add ( pairwise );
 
+    /*
     alignment_panel_bot.add ( new JLabel("  MirB:") );
     use_mirb = new JCheckBox("",false);
     use_mirb.addActionListener ( this.swift );
     use_mirb.setActionCommand ( "use_mirb" );
     alignment_panel_bot.add ( use_mirb );
+    */
 
     alignment_panel.add ( alignment_panel_top, BorderLayout.NORTH );
     alignment_panel.add ( alignment_panel_mid, BorderLayout.CENTER );
@@ -1416,6 +1418,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       }
       // Request the focus again after showing or hiding the other window?
       this.requestFocus();
+    /*
     } else if (cmd.equalsIgnoreCase("use_mirb")) {
       JCheckBox box = (JCheckBox)action_source;
       System.out.println ( "\n\nGot a use_mirb change with Selected = " + box.isSelected() );
@@ -1424,6 +1427,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       } else {
         run_swift.mir_cmd = "mir";
       }
+    */
     } else if ( (cmd.equalsIgnoreCase("set_all")) || (cmd.equalsIgnoreCase("set_fwd")) ) {
       System.out.println ( "\n\nGot a set_all / set_fwd command" );
       if (frames != null) {
@@ -1477,11 +1481,14 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     } else if ( (cmd.equalsIgnoreCase("align_all")) || (cmd.equalsIgnoreCase("align_fwd")) ) {
       System.out.println ( "\n\nGot an align_all or align_fwd command with dest=" + destination );
 
+      /*
       if (control_panel.use_mirb.isSelected()) {
         run_swift.mir_cmd = "mirb";
       } else {
         run_swift.mir_cmd = "mir";
       }
+      */
+      run_swift.mir_cmd = "mir";
 
       if ( (destination == null) || (!destination.exists()) || (destination.toString().length() <= 0) ) {  // This depends on Java's short-circuit || operator to not throw an exception
 
@@ -1741,16 +1748,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if ( System.getProperty("os.name").trim().toLowerCase().startsWith("win") ) {
           in_windows = true;
         }
-        if (in_windows) {
+        /*
+        if (false && in_windows) {
           run_swift.mir_cmd = "mirb";
           swift_gui_panel.control_panel.use_mirb.setSelected ( true );
         } else {
-          run_swift.mir_cmd = "mir";
-          swift_gui_panel.control_panel.use_mirb.setSelected ( false );
         }
-
-
-
+        */
+        run_swift.mir_cmd = "mir";
+        // swift_gui_panel.control_panel.use_mirb.setSelected ( false );
 
 
         JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
