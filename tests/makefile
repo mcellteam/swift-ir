@@ -1,14 +1,14 @@
 all: swim mir makefile
 	@echo "Copying swim"
-	cp ../swim swim
+	cp ../source/swim swim
 	@echo "Copying mir"
-	cp ../mir mir
+	cp ../source/mir mir
 
 tests:
 	@echo "Copying swim"
-	cp ../swim swim
+	cp ../source/swim swim
 	@echo "Copying mir"
-	cp ../mir mir
+	cp ../source/mir mir
 	sh run_swim_mir.sh
 
 clean:
