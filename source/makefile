@@ -12,8 +12,48 @@ iavg: iavg.c swimio.h debug.h makefile
 iscale: iscale.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o iscale iscale.c -ljpeg -ltiff -lpng
 
+# Detect OS to set an explicit stack size for Windows
+ifeq ($(OS),Windows_NT)  # 2000, XP, Vista, 7, 10 according to stackoverflow.com/questions/714100/os-detecting-makefile
+OSOPTS := -O3 -Wl,--stack,0x1000000
+else
+OSOPTS := -O3
+endif
+
 mir: mir.c swimio.h debug.h makefile
-	gcc -Wno-implicit -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
+	gcc -Wno-implicit $(OSOPTS) -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+
+# These failed in Windows:
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -O3 -Wl,--stack,0x100000 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -O3 -Wl,--stack,0x200000 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+
+# All of these worked in Windows:
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -O3 -Wl,--stack,0x400000 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -O3 -Wl,--stack,0x800000 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -O3 -Wl,--stack,16777216 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -O3 -Wl,--stack,0x1000000 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -O3 -Wl,--stack,0x10000000 -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+#mir: mir.c swimio.h debug.h makefile
+#	gcc -Wno-implicit -ggdb -Og -fstack-check -fstack-protector-all -fstack-protector-strong -fconserve-stack  -c -o mir.o mir.c
+#	gcc -Wno-implicit -ggdb -Og -fstack-check -fstack-protector-all -fstack-protector-strong -fconserve-stack --stack,0x100000000 -o mir mir.o -ljpeg -ltiff -lpng -lm
+
+
 
 mirb: mirb.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o mirb mirb.c -ljpeg -ltiff -lpng -lm
