@@ -61,6 +61,21 @@ class global_io {
   return ( is_windows_true );
   }
 
+
+  public static String read_string_from ( BufferedInputStream bis ) throws IOException {
+    String s = "";
+    int num_left = 0;
+    while ( ( num_left = bis.available() ) > 0 ) {
+      byte b[] = new byte[num_left];
+      bis.read ( b );
+      s += new String(b);
+    }
+    // dump_lines_from_stdout ( s );
+    return ( s );
+  }
+
+
+
   public static int wait_for_proc ( Process proc ) {
     int exval = 0;
     System.out.println ( "In wait_for_proc" );
@@ -79,6 +94,81 @@ class global_io {
     }
     return ( exval );
   }
+
+
+
+  public static String[] wait_for_proc_streams ( Process cmd_proc,
+                                                 BufferedOutputStream proc_in,
+                                                 BufferedInputStream proc_out,
+                                                 BufferedInputStream proc_err ) {
+
+    System.out.println ( "In wait_for_proc_streams" );
+
+    String stdout = "";
+    String stderr = "";
+    int exval = 0;
+
+    if ( ! global_io.is_windows() ) {
+
+      /// Don't do this in Windows because this fourth swim seems to hang:
+
+      exval = global_io.wait_for_proc ( cmd_proc );
+
+      try {
+        stdout = read_string_from ( proc_out );
+        stderr = read_string_from ( proc_err );
+      } catch ( IOException ioe ) {
+      }
+
+    } else {
+
+      /// Do this in Windows:
+
+      try {
+        stdout = read_string_from ( proc_out );
+        stderr = read_string_from ( proc_err );
+      } catch ( IOException ioe ) {
+      }
+
+      boolean waiting = true;
+      do {
+        // if (output_level > 10) System.out.println ( "Waiting for fourth swim ..." );
+        try {
+          // if (output_level > 20) System.out.println ( "Checking Exit value" );
+          exval = cmd_proc.exitValue(); // If the process has not yet terminated, this will throw an exception
+          // if (output_level > 20) System.out.println ( "Got an Exit value = " + exval );
+          try {
+            stdout += read_string_from ( proc_out );
+            stderr += read_string_from ( proc_err );
+          } catch ( IOException ioe ) {
+          }
+          waiting = false;
+        } catch ( Exception e ) {
+          // The process is still active, so read and wait
+          // if (output_level > 20) System.out.println ( "cmd_proc.exitValue() threw exception: " + e );
+          // if (output_level > 20) System.out.println ( "Read more data" );
+          try {
+            stdout += read_string_from ( proc_out );
+            stderr += read_string_from ( proc_err );
+          } catch ( IOException ioe ) {
+          }
+          /*
+          try {
+            System.out.println ( "Call cmd_proc.waitFor() to wait for process to actually finish" );
+            cmd_proc.waitFor();
+          } catch ( Exception ie ) {
+          }
+          */
+        }
+      } while (waiting);
+    }
+
+    String[] stdoe = new String[2];
+    stdoe[0] = stdout;
+    stdoe[1] = stderr;
+    return ( stdoe );
+  }
+
 }
 
 
