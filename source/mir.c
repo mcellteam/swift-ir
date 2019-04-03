@@ -53,10 +53,6 @@
 
 #include "debug.h"
 
-
-// void affine_wrapped (int inpts, float **v, float ethresh, int leastpts);
-
-
 struct image *inimg, *outimg, outtile;
 
 typedef unsigned long long ticks; // the cycle counter is 64 bits
@@ -710,13 +706,11 @@ void main(int argc, char *argv[]) {
 
   // ?
   for (;;) {
-    fprintf(stderr, "Top of for(;;)\n", c);
     if (prompt)
       printf("Enter a MIR command (? for help) > ");
     if ((c = getchar()) == EOF || c == 'E')
       break;
-    fprintf(stderr, "switch <%c>\n", c);
-
+    //fprintf(stderr, "switch <%c>\n", c);
     switch (c) {
     case '?':
       printf("\nMIR is Multiple Image Rendering\n");
@@ -947,7 +941,7 @@ void main(int argc, char *argv[]) {
       continue;
       // XXX AWW fix single point - or perhaps no point R with scale factors
           case 'R':                  // fill bounding box rect from src file & current mf[][]
-      fprintf(stderr, "R %d verts file %s - wh %d %d\n", nverts, fname, iwid, iht);
+      //fprintf(stderr, "R %d verts file %s - wh %d %d\n", nverts, fname, iwid, iht);
       // XXX 2 vect rot + scale
       // XXX rather than bounding box just split into 2 tris
       // XXX maybe for 3 corner case use faster direct trans rather than affine()
@@ -1014,10 +1008,7 @@ void main(int argc, char *argv[]) {
         //vert[2][0], vert[2][1], vert[2][2], vert[2][3]);
         affine(3, &vert[0][0], ethresh, leastpts);
       } else if (nverts >= 3)   // set mf according to the given points
-		fprintf ( stderr, "Calling affine ( %d, %f, %f, %d )\n", nverts, vert[0][0], ethresh, leastpts );
         affine(nverts, &vert[0][0], ethresh, leastpts);
-        // affine(nverts, NULL, ethresh, leastpts);
-        // affine(nverts, NULL, 3.0, 4);
 
       // fprintf(stderr, "after nverts %d selections\n", nverts);
       // fprintf(stderr, "old mf  %g %g %g  %g %g %g\n",
@@ -1193,11 +1184,8 @@ void main(int argc, char *argv[]) {
       nwrite++;
       w_ticks += getticks();
       continue;
-    } /* End Switch */
-
-    fprintf(stderr, "End of Switch\n");
-
-	ungetc(c, stdin);
+    }
+    ungetc(c, stdin);
     vp = &vert[0][0];
     nverts = 0;
     for (;;) {
@@ -1350,18 +1338,7 @@ void main(int argc, char *argv[]) {
 #define MAX 1000                // XXX Jan 2016 was 100 but 10000 failed
 #define MINVAL 0.0001
 
-void affine (
-     int inpts,
-	   float *v,
-	   float ethresh,
-	   int leastpts
-	 ) {
-
-  fprintf ( stderr, "Inside affine\n" );
-  fflush ( stderr );
-
-  fprintf ( stderr, "Called affine with ( %d, %f, %f, %d )\n", inpts, v[0], ethresh, leastpts );
-
+void affine(int inpts, float *v, float ethresh, int leastpts) {
   float aug[MAX][MAX];          // augmented co-efficient matrix
   float solution[MAX];          // simultaneous equation soln
   int i, j, k, neqn, rowlen, temp, minus, maxei, npts;
