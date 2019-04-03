@@ -77,7 +77,7 @@ run_swift.jar: run_swift.java makefile
 #	zip -X run_swift.jar META-INF/MANIFEST.MF *.class
 
 # "Normal" rule for swift_gui.jar
-swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java makefile
+swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java revision.java makefile
 	rm -f *.class
 	javac -nowarn -source 1.6 -target 1.6 swift_gui.java
 	jar -cfe swift_gui.jar swift_gui *.class
@@ -117,6 +117,9 @@ sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum remod >> sha1sum.txt
 	sha1sum run_swift.jar >> sha1sum.txt
 	sha1sum swift_gui.jar >> sha1sum.txt
+
+rev:
+	git log --pretty=format:"public class revision { static String githash=\"%H on %ad\"; }" HEAD^..HEAD > revision.java
 
 clean:
 	rm -f swim iavg iscale mir remod sxox test_libs
