@@ -36,6 +36,32 @@ class global_io {
     }
   }
 
+  public static String translate_exit ( int exit_status ) {
+    String exit_string = " " + exit_status;
+    if (exit_status > 128) {
+      exit_string += " (signal " + (exit_status-128);
+      switch (exit_status-128) {
+        case  1: exit_string += " = SIGHUP";  break;
+        case  2: exit_string += " = SIGINT";  break;
+        case  3: exit_string += " = SIGQUIT"; break;
+        case  4: exit_string += " = SIGILL";  break;
+        case  5: exit_string += " = SIGTRAP"; break;
+        case  6: exit_string += " = SIGABRT"; break;
+        case  7: exit_string += " = SIGBUS";  break;
+        case  8: exit_string += " = SIGFPE";  break;
+        case  9: exit_string += " = SIGKILL"; break;
+        case 10: exit_string += " = SIGUSR1"; break;
+        case 11: exit_string += " = SIGSEGV"; break;
+        case 13: exit_string += " = SIGPIPE"; break;
+        case 14: exit_string += " = SIGALRM"; break;
+        case 15: exit_string += " = SIGTERM"; break;
+        default: break;
+      }
+      exit_string += ")";
+    }
+    return (exit_string);
+  }
+
   public static boolean log_enabled = false;
   static BufferedWriter log_file_writer = null;
   public static void log_command ( String command ) {
@@ -77,12 +103,12 @@ class global_io {
 
 
   public static int wait_for_proc ( Process proc ) {
-    int exval = 0;
+    int exit_value = 0;
     System.out.println ( "In wait_for_proc" );
     try {
       System.out.println ( "Checking Exit value" );
-      exval = proc.exitValue(); // If the process has not yet terminated, this will throw an exception
-      System.out.println ( "Got an Exit value = " + exval );
+      exit_value = proc.exitValue(); // If the process has not yet terminated, this will throw an exception
+      System.out.println ( "Got an Exit value = " + exit_value );
     } catch ( Exception e ) {
       // The process is still active, so wait
       System.out.println ( "proc.exitValue() threw exception: " + e );
@@ -92,7 +118,7 @@ class global_io {
       } catch ( Exception ie ) {
       }
     }
-    return ( exval );
+    return ( exit_value );
   }
 
 
@@ -100,19 +126,23 @@ class global_io {
   public static String[] wait_for_proc_streams ( Process cmd_proc,
                                                  BufferedOutputStream proc_in,
                                                  BufferedInputStream proc_out,
-                                                 BufferedInputStream proc_err ) {
+                                                 BufferedInputStream proc_err,
+                                                 int output_level,
+                                                 String command_line,
+                                                 String interactive_commands,
+                                                 String step_title ) {
 
     System.out.println ( "In wait_for_proc_streams" );
 
     String stdout = "";
     String stderr = "";
-    int exval = 0;
+    int exit_value = 0;
 
-    if ( ! global_io.is_windows() ) {
+    if ( false && ( ! global_io.is_windows() ) ) {
 
       /// Don't do this in Windows because this fourth swim seems to hang:
 
-      exval = global_io.wait_for_proc ( cmd_proc );
+      exit_value = global_io.wait_for_proc ( cmd_proc );
 
       try {
         stdout = read_string_from ( proc_out );
@@ -135,8 +165,8 @@ class global_io {
         // if (output_level > 10) System.out.println ( "Waiting for fourth swim ..." );
         try {
           // if (output_level > 20) System.out.println ( "Checking Exit value" );
-          exval = cmd_proc.exitValue(); // If the process has not yet terminated, this will throw an exception
-          // if (output_level > 20) System.out.println ( "Got an Exit value = " + exval );
+          exit_value = cmd_proc.exitValue(); // If the process has not yet terminated, this will throw an exception
+          // if (output_level > 20) System.out.println ( "Got an Exit value = " + exit_value );
           try {
             stdout += read_string_from ( proc_out );
             stderr += read_string_from ( proc_err );
@@ -163,9 +193,27 @@ class global_io {
       } while (waiting);
     }
 
+    if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+
+    if (output_level > 4) {
+      System.out.println ( "Process finished!!!" );
+      System.out.println ( "=================================================================================" );
+      try { System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" ); } catch ( IOException out_exc ) { System.out.println ( "IOExc (stdout): " + out_exc ); }
+      System.out.print ( stdout );
+      System.out.println ( "=================================================================================" );
+      if (output_level > 11) {
+        try { System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" ); } catch ( IOException err_exc ) { System.out.println ( "IOExc (stderr): " + err_exc ); }
+        System.out.print ( stderr );
+        System.out.println ( "=================================================================================" );
+      }
+    }
+
+    global_io.wait_for_enter ( step_title + " > " );
+
     String[] stdoe = new String[2];
     stdoe[0] = stdout;
     stdoe[1] = stderr;
+
     return ( stdoe );
   }
 
@@ -248,31 +296,8 @@ public class run_swift {
   // public static String mir_cmd = "mirb";
 
   public static String translate_exit ( int exit_status ) {
-    String exit_string = " " + exit_status;
-    if (exit_status > 128) {
-      exit_string += " (signal " + (exit_status-128);
-      switch (exit_status-128) {
-        case  1: exit_string += " = SIGHUP";  break;
-        case  2: exit_string += " = SIGINT";  break;
-        case  3: exit_string += " = SIGQUIT"; break;
-        case  4: exit_string += " = SIGILL";  break;
-        case  5: exit_string += " = SIGTRAP"; break;
-        case  6: exit_string += " = SIGABRT"; break;
-        case  7: exit_string += " = SIGBUS";  break;
-        case  8: exit_string += " = SIGFPE";  break;
-        case  9: exit_string += " = SIGKILL"; break;
-        case 10: exit_string += " = SIGUSR1"; break;
-        case 11: exit_string += " = SIGSEGV"; break;
-        case 13: exit_string += " = SIGPIPE"; break;
-        case 14: exit_string += " = SIGALRM"; break;
-        case 15: exit_string += " = SIGTERM"; break;
-        default: break;
-      }
-      exit_string += ")";
-    }
-    return (exit_string);
+    return (global_io.translate_exit(exit_status));
   }
-
 
   public static String[] lines_from_stdout ( String stdout ) {
     // Note that line ending handling hasn't been tested on non-Linux platforms yet.
@@ -402,7 +427,7 @@ public class run_swift {
       global_io.log_command ( command_line + "\n" );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -512,7 +537,7 @@ public class run_swift {
       global_io.log_command ( interactive_commands + "\n" );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -614,7 +639,7 @@ public class run_swift {
       global_io.log_command ( interactive_commands + global_io.end_of_line );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -693,7 +718,7 @@ public class run_swift {
       global_io.log_command ( interactive_commands + "\n" );
 
       cmd_proc.waitFor();
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -812,7 +837,7 @@ public class run_swift {
       global_io.log_command ( interactive_commands + global_io.end_of_line );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -882,7 +907,7 @@ public class run_swift {
       global_io.log_command ( interactive_commands + global_io.end_of_line );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -972,7 +997,7 @@ if (use_line_parts) {
       global_io.log_command ( interactive_commands + global_io.end_of_line );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -1043,7 +1068,7 @@ if (use_line_parts) {
       global_io.log_command ( interactive_commands + "\n" );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -1126,7 +1151,7 @@ if (use_line_parts) {
       global_io.log_command ( interactive_commands + "\n" );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
@@ -1203,30 +1228,9 @@ if (use_line_parts) {
 
       System.out.println ( "Waiting for subprocess to finish ..." );
 
-      String[] streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err );
+      String[] streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3a (fourth swim)" );
       stdout = streams[0];
       stderr = streams[1];
-
-      System.out.println ( "Process finished!!!" );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
-
-
-      global_io.wait_for_enter ( "Completed Step 3a (fourth swim) > " );
-
 
       //////////////////////////////////////
       // Step 3b - Run third mir
@@ -1315,7 +1319,7 @@ if (use_line_parts) {
       global_io.log_command ( interactive_commands + "\n" );
 
       global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
