@@ -2,6 +2,7 @@ import java.io.*;
 import java.util.*;
 
 class global_io {
+  public static String end_of_line = "\n";
   public static boolean is_windows_set = false;
   public static boolean is_windows_true = false;
   public static boolean wait_enabled = false;
@@ -53,12 +54,121 @@ class global_io {
   }
 
   public static boolean is_windows() {
-	if ( !is_windows_set ) {
-		is_windows_true = System.getProperty("os.name").trim().toLowerCase().startsWith("win");
-		is_windows_set = true;
-	}
-	return ( is_windows_true );
+  if ( !is_windows_set ) {
+    is_windows_true = System.getProperty("os.name").trim().toLowerCase().startsWith("win");
+    is_windows_set = true;
   }
+  return ( is_windows_true );
+  }
+
+
+  public static String read_string_from ( BufferedInputStream bis ) throws IOException {
+    String s = "";
+    int num_left = 0;
+    while ( ( num_left = bis.available() ) > 0 ) {
+      byte b[] = new byte[num_left];
+      bis.read ( b );
+      s += new String(b);
+    }
+    // dump_lines_from_stdout ( s );
+    return ( s );
+  }
+
+
+
+  public static int wait_for_proc ( Process proc ) {
+    int exval = 0;
+    System.out.println ( "In wait_for_proc" );
+    try {
+      System.out.println ( "Checking Exit value" );
+      exval = proc.exitValue(); // If the process has not yet terminated, this will throw an exception
+      System.out.println ( "Got an Exit value = " + exval );
+    } catch ( Exception e ) {
+      // The process is still active, so wait
+      System.out.println ( "proc.exitValue() threw exception: " + e );
+      try {
+        System.out.println ( "Call proc.waitFor() to wait for process to actually finish" );
+        proc.waitFor();
+      } catch ( Exception ie ) {
+      }
+    }
+    return ( exval );
+  }
+
+
+
+  public static String[] wait_for_proc_streams ( Process cmd_proc,
+                                                 BufferedOutputStream proc_in,
+                                                 BufferedInputStream proc_out,
+                                                 BufferedInputStream proc_err ) {
+
+    System.out.println ( "In wait_for_proc_streams" );
+
+    String stdout = "";
+    String stderr = "";
+    int exval = 0;
+
+    if ( ! global_io.is_windows() ) {
+
+      /// Don't do this in Windows because this fourth swim seems to hang:
+
+      exval = global_io.wait_for_proc ( cmd_proc );
+
+      try {
+        stdout = read_string_from ( proc_out );
+        stderr = read_string_from ( proc_err );
+      } catch ( IOException ioe ) {
+      }
+
+    } else {
+
+      /// Do this in Windows:
+
+      try {
+        stdout = read_string_from ( proc_out );
+        stderr = read_string_from ( proc_err );
+      } catch ( IOException ioe ) {
+      }
+
+      boolean waiting = true;
+      do {
+        // if (output_level > 10) System.out.println ( "Waiting for fourth swim ..." );
+        try {
+          // if (output_level > 20) System.out.println ( "Checking Exit value" );
+          exval = cmd_proc.exitValue(); // If the process has not yet terminated, this will throw an exception
+          // if (output_level > 20) System.out.println ( "Got an Exit value = " + exval );
+          try {
+            stdout += read_string_from ( proc_out );
+            stderr += read_string_from ( proc_err );
+          } catch ( IOException ioe ) {
+          }
+          waiting = false;
+        } catch ( Exception e ) {
+          // The process is still active, so read and wait
+          // if (output_level > 20) System.out.println ( "cmd_proc.exitValue() threw exception: " + e );
+          // if (output_level > 20) System.out.println ( "Read more data" );
+          try {
+            stdout += read_string_from ( proc_out );
+            stderr += read_string_from ( proc_err );
+          } catch ( IOException ioe ) {
+          }
+          /*
+          try {
+            System.out.println ( "Call cmd_proc.waitFor() to wait for process to actually finish" );
+            cmd_proc.waitFor();
+          } catch ( Exception ie ) {
+          }
+          */
+        }
+      } while (waiting);
+    }
+
+    String[] stdoe = new String[2];
+    stdoe[0] = stdout;
+    stdoe[1] = stderr;
+    return ( stdoe );
+  }
+
 }
 
 
@@ -130,11 +240,12 @@ class glob_filter implements FilenameFilter {
 public class run_swift {
 
   public static String code_source = "";
-	public static ArrayList<String> actual_file_names = new ArrayList<String>();
-	public static String image_type_extension = "JPG";
+  public static ArrayList<String> actual_file_names = new ArrayList<String>();
+  public static String image_type_extension = "JPG";
 
-	public static String swim_cmd = "swim";
-	public static String mir_cmd = "mir";
+  public static String swim_cmd = "swim";
+  public static String mir_cmd = "mir";
+  // public static String mir_cmd = "mirb";
 
   public static String translate_exit ( int exit_status ) {
     String exit_string = " " + exit_status;
@@ -290,7 +401,7 @@ public class run_swift {
 
       global_io.log_command ( command_line + "\n" );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -320,6 +431,23 @@ public class run_swift {
     }
   }
 
+  public static String normalize_file_name ( String file_name ) {
+    try {
+      file_name = new File(file_name).getCanonicalPath();
+    } catch (Exception e) {
+      file_name = new File(file_name).getAbsolutePath();
+    }
+    return ( file_name );
+  }
+
+  public static void write_to_proc ( BufferedOutputStream proc_in, String data ) throws Exception {
+    proc_in.write ( data.getBytes() );
+    System.out.println ( "Sending end of line and end of file" );
+    proc_in.write ( new byte[]{ 0x04, 0x1a } );  // , 0x0a, 0x04, 0x0d, 0x0a, 0x04 } );
+    System.out.println ( "Flushing proc_in" );
+    proc_in.flush();
+  }
+
   public static void copy_file_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
 
     if (output_level > 0) {
@@ -332,6 +460,11 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
+
+    original_file_name = normalize_file_name ( original_file_name );
+    new_file_name = normalize_file_name ( new_file_name );
+    System.out.println ( "    Translated original_file_name = " + original_file_name );
+    System.out.println ( "    Translated new_file_name      = " + new_file_name );
 
     String command_line;
     String interactive_commands;
@@ -372,13 +505,13 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      //proc_in.write ( interactive_commands.getBytes() );
+      //write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -425,6 +558,11 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
 
+    original_file_name = normalize_file_name ( original_file_name );
+    new_file_name = normalize_file_name ( new_file_name );
+    System.out.println ( "    Translated original_file_name = " + original_file_name );
+    System.out.println ( "    Translated new_file_name      = " + new_file_name );
+
     String command_line;
     String interactive_commands;
     Process cmd_proc;
@@ -445,13 +583,13 @@ public class run_swift {
 
       // Use mir to copy the "golden section" to its proper location
 
-      interactive_commands = "F " + original_file_name + "\n";
+      interactive_commands = "F " + original_file_name + global_io.end_of_line;
       interactive_commands += "A";
       for (int i=0; i<affine_transform.length; i++) {
         interactive_commands += " " + affine_transform[i];
       }
-      interactive_commands += "\n";
-      interactive_commands += "RW " + new_file_name+"\n";
+      interactive_commands += global_io.end_of_line;
+      interactive_commands += "RW " + new_file_name+global_io.end_of_line;
 
       f = new File ( System.getProperty("user.dir") + File.separator + "pairwise.mir" );
 
@@ -469,7 +607,86 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      //proc_in.write ( interactive_commands.getBytes() );
+      //write_to_proc ( proc_in, interactive_commands );
+      proc_in.close();
+
+      global_io.log_command ( command_line + "\n" );
+      global_io.log_command ( interactive_commands + global_io.end_of_line );
+
+      global_io.wait_for_proc ( cmd_proc );
+      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
+
+      stdout = read_string_from ( proc_out );
+
+      if (output_level > 4) System.out.print ( stdout );
+
+      if (output_level > 4) System.out.println ( "=================================================================================" );
+
+      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
+
+      stderr = read_string_from ( proc_err );
+
+      if (output_level > 11) System.out.print ( stderr );
+
+      if (output_level > 11) System.out.println ( "=================================================================================" );
+
+    } catch ( Exception some_exception ) {
+
+      if (output_level > 0) System.out.println ( "Error: " + some_exception );
+      if (output_level > 0) System.out.println ( some_exception.getStackTrace() );
+      some_exception.printStackTrace();
+
+    }
+  }
+
+  public static String[] run_swim ( Runtime rt, String fixed_image_file, String align_image_file, String window_size, String x, String y, int output_level ) {
+    System.out.println ( "Running Swim with:\n" + fixed_image_file + "\n" + align_image_file + "\n" + window_size + "\n" + x + "\n" + y + "\n" + output_level );
+
+    String command_line;
+    String interactive_commands;
+    Process cmd_proc;
+    int exit_value;
+
+    BufferedOutputStream proc_in;
+    BufferedInputStream proc_out;
+    BufferedInputStream proc_err;
+
+    File f;
+    BufferedWriter bw;
+
+    int num_left;
+    String stdout;
+    String stderr;
+
+    if (global_io.is_windows()) {
+      System.out.println ( "Running in Windows!!" );
+      swim_cmd = "swim.exe";
+      mir_cmd = "mir.exe";
+    }
+
+    try {
+
+      command_line = code_source + swim_cmd + " " + window_size;
+
+      if (output_level > 0) System.out.println ( "\n*** Running swim with command line: " + command_line + " ***" );
+      cmd_proc = rt.exec ( command_line );
+
+      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+      interactive_commands = "unused -i 2 -k keep."+image_type_extension;
+      if (x.trim().length() > 0) interactive_commands += " -x " + x;
+      if (y.trim().length() > 0) interactive_commands += " -y " + y;
+      interactive_commands += " " + fixed_image_file + " " + align_image_file + "\n";
+
+      if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+
+      proc_in.write ( interactive_commands.getBytes() );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
@@ -503,6 +720,16 @@ public class run_swift {
       some_exception.printStackTrace();
 
     }
+
+    return ( null );
+  }
+
+  public static String convert_to_windows ( String cmd ) {
+    if (cmd.toLowerCase().endsWith(".exe")) {
+      return ( cmd );
+    } else {
+      return ( cmd + ".exe" );
+    }
   }
 
   public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
@@ -523,10 +750,15 @@ public class run_swift {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
     }
 
+    fixed_image_file = normalize_file_name ( fixed_image_file );
+    aligned_image_file = normalize_file_name ( aligned_image_file );
+    System.out.println ( "    Translated fixed_image_file   = " + fixed_image_file );
+    System.out.println ( "    Translated aligned_image_file = " + aligned_image_file );
+
     if (global_io.is_windows()) {
       System.out.println ( "Running in Windows!!" );
-      swim_cmd = "swim.exe";
-      mir_cmd = "mir.exe";
+      swim_cmd = convert_to_windows ( swim_cmd );
+      mir_cmd  = convert_to_windows ( mir_cmd );
     }
 
     boolean use_line_parts = true;
@@ -569,17 +801,17 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      interactive_commands = "unused -i 2 -k keep."+image_type_extension+" " + fixed_image_file + " " + align_image_file + "\n";
+      interactive_commands = "unused -i 2 -k keep."+image_type_extension+" " + fixed_image_file + " " + align_image_file + global_io.end_of_line;
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-      proc_in.write ( interactive_commands.getBytes() );
+      write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
+      global_io.log_command ( interactive_commands + global_io.end_of_line );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -639,17 +871,17 @@ public class run_swift {
         int y = loop_signs_2x2[loop_index][1];
         interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
         interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
-        interactive_commands += align_image_file + " " + patx + " " + paty + "\n";
+        interactive_commands += align_image_file + " " + patx + " " + paty + global_io.end_of_line;
       }
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-      proc_in.write ( interactive_commands.getBytes() );
+      write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
+      global_io.log_command ( interactive_commands + global_io.end_of_line );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -689,12 +921,12 @@ if (use_line_parts) {
         }
       }
 
-      interactive_commands = "F " + align_image_file + "\n";
-      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
-      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
-      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
-      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
-      interactive_commands += "RW iter1_mir_out."+image_type_extension+"\n";
+      interactive_commands = "F " + align_image_file + global_io.end_of_line;
+      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
+      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
+      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
+      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
+      interactive_commands += "RW iter1_mir_out."+image_type_extension+global_io.end_of_line;
 
 } else {
 
@@ -709,12 +941,12 @@ if (use_line_parts) {
         // System.exit ( 5 );
       }
 
-      interactive_commands = "F " + align_image_file + "\n";
-      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
-      interactive_commands += "RW iter1_mir_out."+image_type_extension+"\n";
+      interactive_commands = "F " + align_image_file + global_io.end_of_line;
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + global_io.end_of_line;
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + global_io.end_of_line;
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + global_io.end_of_line;
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + global_io.end_of_line;
+      interactive_commands += "RW iter1_mir_out."+image_type_extension+global_io.end_of_line;
 }
 
       f = new File ( System.getProperty("user.dir") + File.separator + "first.mir" );
@@ -733,13 +965,13 @@ if (use_line_parts) {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      //proc_in.write ( interactive_commands.getBytes() );
+      //write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
+      global_io.log_command ( interactive_commands + global_io.end_of_line );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -800,17 +1032,17 @@ if (use_line_parts) {
         interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
         interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
         interactive_commands += align_image_file + " " + patx + " " + paty + " ";
-        interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
+        interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
       }
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-      proc_in.write ( interactive_commands.getBytes() );
+      write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -850,12 +1082,12 @@ if (use_line_parts) {
         }
       }
 
-      interactive_commands = "F " + align_image_file + "\n";
-      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
-      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
-      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
-      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
-      interactive_commands += "RW iter2_mir_out."+image_type_extension+"\n";
+      interactive_commands = "F " + align_image_file + global_io.end_of_line;
+      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
+      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
+      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
+      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
+      interactive_commands += "RW iter2_mir_out."+image_type_extension+global_io.end_of_line;
 
 } else {
       parts = stdout.split ( "[\\s]+" );
@@ -863,12 +1095,12 @@ if (use_line_parts) {
         if (output_level > 10) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
       }
 
-      interactive_commands = "F " + align_image_file + "\n";
-      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
-      interactive_commands += "RW iter2_mir_out."+image_type_extension+"\n";
+      interactive_commands = "F " + align_image_file + global_io.end_of_line;
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + global_io.end_of_line;
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + global_io.end_of_line;
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + global_io.end_of_line;
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + global_io.end_of_line;
+      interactive_commands += "RW iter2_mir_out."+image_type_extension+global_io.end_of_line;
 }
 
       f = new File ( System.getProperty("user.dir") + File.separator + "second.mir" );
@@ -887,13 +1119,13 @@ if (use_line_parts) {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      //proc_in.write ( interactive_commands.getBytes() );
+      //write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -942,6 +1174,7 @@ if (use_line_parts) {
       if (output_level > 0) System.out.println ( "\n*** Running fourth swim with command line: " + command_line + " ***" );
       if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
       cmd_proc = rt.exec ( command_line );
+      System.out.println ( "Started subprocess" );
 
       proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
@@ -954,24 +1187,73 @@ if (use_line_parts) {
         interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
         interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
         interactive_commands += align_image_file + " " + patx + " " + paty + " ";
-        interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + "\n";
+        interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
       }
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-      proc_in.write ( interactive_commands.getBytes() );
+      System.out.println ( "Writing to subprocess" );
+      write_to_proc ( proc_in, interactive_commands );
+      System.out.println ( "Flushing stream to subprocess" );
+      proc_in.flush();
+      System.out.println ( "Closing stream to subprocess" );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      cmd_proc.waitFor();
+      System.out.println ( "Waiting for subprocess to finish ..." );
+
+      if ( ! global_io.is_windows() ) {
+
+        /// Don't do this in Windows because this fourth swim seems to hang:
+
+         global_io.wait_for_proc ( cmd_proc );
+
+      } else {
+
+        /// Do this in Windows:
+
+        stdout = read_string_from ( proc_out );
+        stderr = read_string_from ( proc_err );
+
+        int exval = 0;
+        boolean waiting = true;
+        do {
+          if (output_level > 10) System.out.println ( "Waiting for fourth swim ..." );
+          try {
+            if (output_level > 20) System.out.println ( "Checking Exit value" );
+            exval = cmd_proc.exitValue(); // If the process has not yet terminated, this will throw an exception
+            if (output_level > 20) System.out.println ( "Got an Exit value = " + exval );
+            stdout += read_string_from ( proc_out );
+            stderr += read_string_from ( proc_err );
+            waiting = false;
+          } catch ( Exception e ) {
+            // The process is still active, so read and wait
+            if (output_level > 20) System.out.println ( "cmd_proc.exitValue() threw exception: " + e );
+            if (output_level > 20) System.out.println ( "Read more data" );
+            stdout += read_string_from ( proc_out );
+            stderr += read_string_from ( proc_err );
+            /*
+            try {
+              System.out.println ( "Call cmd_proc.waitFor() to wait for process to actually finish" );
+              cmd_proc.waitFor();
+            } catch ( Exception ie ) {
+            }
+            */
+          }
+        } while (waiting);
+      }
+
+      System.out.println ( "Process finished!!!" );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
-      stdout = read_string_from ( proc_out );
+      if ( ! global_io.is_windows() ) {
+        stdout = read_string_from ( proc_out );
+      }
 
       if (output_level > 4) System.out.print ( stdout );
 
@@ -979,7 +1261,9 @@ if (use_line_parts) {
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
 
-      stderr = read_string_from ( proc_err );
+      if ( ! global_io.is_windows() ) {
+        stderr = read_string_from ( proc_err );
+      }
 
       if (output_level > 11) System.out.print ( stderr );
 
@@ -1004,20 +1288,20 @@ if (use_line_parts) {
         }
       }
 
-      interactive_commands = "F " + align_image_file + "\n";
-      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + "\n";
-      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + "\n";
-      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + "\n";
-      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + "\n";
+      interactive_commands = "F " + align_image_file + global_io.end_of_line;
+      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
+      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
+      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
+      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
 
-      interactive_commands += line_parts[4][2] + " " + line_parts[4][3] + " " + line_parts[4][5] + " " + line_parts[4][6] + "\n";
+      interactive_commands += line_parts[4][2] + " " + line_parts[4][3] + " " + line_parts[4][5] + " " + line_parts[4][6] + global_io.end_of_line;
 
-      interactive_commands += line_parts[5][2] + " " + line_parts[5][3] + " " + line_parts[5][5] + " " + line_parts[5][6] + "\n";
-      interactive_commands += line_parts[6][2] + " " + line_parts[6][3] + " " + line_parts[6][5] + " " + line_parts[6][6] + "\n";
-      interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + "\n";
-      interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + "\n";
+      interactive_commands += line_parts[5][2] + " " + line_parts[5][3] + " " + line_parts[5][5] + " " + line_parts[5][6] + global_io.end_of_line;
+      interactive_commands += line_parts[6][2] + " " + line_parts[6][3] + " " + line_parts[6][5] + " " + line_parts[6][6] + global_io.end_of_line;
+      interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + global_io.end_of_line;
+      interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + global_io.end_of_line;
 
-      interactive_commands += "RW " + aligned_image_file + "\n";
+      interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
 } else {
       parts = stdout.split ( "[\\s]+" );
       for (int i=0; i<parts.length; i++) {
@@ -1030,20 +1314,20 @@ if (use_line_parts) {
         // System.exit ( 5 );
       }
 
-      interactive_commands = "F " + align_image_file + "\n";
-      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + "\n";
-      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + "\n";
-      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + "\n";
-      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + "\n";
+      interactive_commands = "F " + align_image_file + global_io.end_of_line;
+      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + global_io.end_of_line;
+      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + global_io.end_of_line;
+      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + global_io.end_of_line;
+      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + global_io.end_of_line;
 
-      interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + "\n";
+      interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + global_io.end_of_line;
 
-      interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + "\n";
-      interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + "\n";
-      interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + "\n";
-      interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + "\n";
-      // interactive_commands += "RW iter3_mir_out."+image_type_extension+"\n";
-      interactive_commands += "RW " + aligned_image_file + "\n";
+      interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + global_io.end_of_line;
+      interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + global_io.end_of_line;
+      interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + global_io.end_of_line;
+      interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + global_io.end_of_line;
+      // interactive_commands += "RW iter3_mir_out."+image_type_extension+global_io.end_of_line;
+      interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
 }
 
 
@@ -1069,13 +1353,13 @@ if (use_line_parts) {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      //proc_in.write ( interactive_commands.getBytes() );
+      //write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      cmd_proc.waitFor();
+      global_io.wait_for_proc ( cmd_proc );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
@@ -1180,64 +1464,64 @@ if (use_line_parts) {
 
     boolean test2 = false;
 
-	  ArrayList<String> file_name_args = new ArrayList<String>();
+    ArrayList<String> file_name_args = new ArrayList<String>();
 
     boolean bad_args = false;
     int arg_index = 0;
     while (arg_index < args.length) {
-		  if (output_level > 4) System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
-		  if (args[arg_index].startsWith("-") ) {
-		    if (args[arg_index].equals("-?")) {
-		      System.out.println ( "Command Line Arguments:" );
-		      System.out.println ( "  -is #   run iscale with # as scale (no other processing)" );
-		      System.out.println ( "  -v #    amount of output (0 to 9 or higher)" );
-		      System.out.println ( "  -g #    specifies \"golden\" image number" );
-		      System.out.println ( "  -w #    specifies window size" );
-		      System.out.println ( "  -ax #   specifies addx (-x option to swim)" );
-		      System.out.println ( "  -ay #   specifies addy (-y option to swim)" );
-		      System.out.println ( "  -jpg    produces all output files with \".JPG\" extension" );
-		      System.out.println ( "  -tif    produces all output files with \".TIF\" extension" );
-		      System.out.println ( "  -wait   pauses for a carriage return after each step" );
-		      System.out.println ( "  -log    writes a log of commands to command_log.bat" );
-		      System.out.println ( "  -test2  forces a test mode using only 2 images" );
-		      System.out.println ( "  images  all arguments not prefixed with \"-\" are image files" );
+      if (output_level > 4) System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
+      if (args[arg_index].startsWith("-") ) {
+        if (args[arg_index].equals("-?")) {
+          System.out.println ( "Command Line Arguments:" );
+          System.out.println ( "  -is #   run iscale with # as scale (no other processing)" );
+          System.out.println ( "  -v #    amount of output (0 to 9 or higher)" );
+          System.out.println ( "  -g #    specifies \"golden\" image number" );
+          System.out.println ( "  -w #    specifies window size" );
+          System.out.println ( "  -ax #   specifies addx (-x option to swim)" );
+          System.out.println ( "  -ay #   specifies addy (-y option to swim)" );
+          System.out.println ( "  -jpg    produces all output files with \".JPG\" extension" );
+          System.out.println ( "  -tif    produces all output files with \".TIF\" extension" );
+          System.out.println ( "  -wait   pauses for a carriage return after each step" );
+          System.out.println ( "  -log    writes a log of commands to command_log.bat" );
+          System.out.println ( "  -test2  forces a test mode using only 2 images" );
+          System.out.println ( "  images  all arguments not prefixed with \"-\" are image files" );
           System.exit ( 0 );
-		    } else if (args[arg_index].equals("-is")) {
-		      arg_index++;
-		      scale_factor = new Integer ( args[arg_index] );
-		    } else if (args[arg_index].equals("-v")) {
-		      arg_index++;
-		      output_level = new Integer ( args[arg_index] );
-		    } else if (args[arg_index].equals("-g")) {
-		      arg_index++;
-		      align_to = new Integer ( args[arg_index] );
-		    } else if (args[arg_index].equals("-w")) {
-		      arg_index++;
-		      window_size = new Integer ( args[arg_index] );
-		    } else if (args[arg_index].equals("-ax")) {
-		      arg_index++;
-		      addx = new Integer ( args[arg_index] );
-		    } else if (args[arg_index].equals("-ay")) {
-		      arg_index++;
-		      addy = new Integer ( args[arg_index] );
+        } else if (args[arg_index].equals("-is")) {
+          arg_index++;
+          scale_factor = new Integer ( args[arg_index] );
+        } else if (args[arg_index].equals("-v")) {
+          arg_index++;
+          output_level = new Integer ( args[arg_index] );
+        } else if (args[arg_index].equals("-g")) {
+          arg_index++;
+          align_to = new Integer ( args[arg_index] );
+        } else if (args[arg_index].equals("-w")) {
+          arg_index++;
+          window_size = new Integer ( args[arg_index] );
+        } else if (args[arg_index].equals("-ax")) {
+          arg_index++;
+          addx = new Integer ( args[arg_index] );
+        } else if (args[arg_index].equals("-ay")) {
+          arg_index++;
+          addy = new Integer ( args[arg_index] );
         } else if (args[arg_index].equals("-jpg")) {
-	        image_type_extension = "JPG";
+          image_type_extension = "JPG";
         } else if (args[arg_index].equals("-tif")) {
-	        image_type_extension = "TIF";
+          image_type_extension = "TIF";
         } else if (args[arg_index].equals("-wait")) {
-	        global_io.wait_enabled = true;
+          global_io.wait_enabled = true;
         } else if (args[arg_index].equals("-log")) {
-	        global_io.log_enabled = true;
+          global_io.log_enabled = true;
         } else if (args[arg_index].equals("-test2")) {
-		      test2 = true;
-		    } else {
-		      if (output_level > 0) System.out.println ( "Unrecognized option: " + args[arg_index] );
-		      bad_args = true;
-		    }
-		  } else {
-		    file_name_args.add ( args[arg_index] );
-		  }
-		  arg_index++;
+          test2 = true;
+        } else {
+          if (output_level > 0) System.out.println ( "Unrecognized option: " + args[arg_index] );
+          bad_args = true;
+        }
+      } else {
+        file_name_args.add ( args[arg_index] );
+      }
+      arg_index++;
     }
 
     if (output_level > 6) System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
@@ -1301,12 +1585,12 @@ if (use_line_parts) {
     };
     */
 
-  	int num_image_files = image_files.length;
+    int num_image_files = image_files.length;
 
-  	if (num_image_files < 2) {
+    if (num_image_files < 2) {
       if (output_level > -1) System.out.println ( "Need more than 1 image to do alignments" );
       System.exit ( 1 );
-  	}
+    }
 
     int golden_section = (num_image_files-1) / 2;
     if (align_to >= 0) {

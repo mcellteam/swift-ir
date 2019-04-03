@@ -1,0 +1,3 @@
+========== Third pass mir to align vj_097_shift_rot_skew_crop_2.jpg ==========
+vj_097_shift_rot_skew_crop_2.jpg AF  1.00016 -0.0264321 -66.5499  0.0282386 1.00001 71.8727
+vj_097_shift_rot_skew_crop_2.jpg AI  0.99909 0.0264078 64.5913  -0.0282127 0.999247 -73.6962
