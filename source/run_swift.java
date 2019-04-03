@@ -1203,46 +1203,9 @@ if (use_line_parts) {
 
       System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if ( ! global_io.is_windows() ) {
-
-        /// Don't do this in Windows because this fourth swim seems to hang:
-
-         global_io.wait_for_proc ( cmd_proc );
-
-      } else {
-
-        /// Do this in Windows:
-
-        stdout = read_string_from ( proc_out );
-        stderr = read_string_from ( proc_err );
-
-        int exval = 0;
-        boolean waiting = true;
-        do {
-          if (output_level > 10) System.out.println ( "Waiting for fourth swim ..." );
-          try {
-            if (output_level > 20) System.out.println ( "Checking Exit value" );
-            exval = cmd_proc.exitValue(); // If the process has not yet terminated, this will throw an exception
-            if (output_level > 20) System.out.println ( "Got an Exit value = " + exval );
-            stdout += read_string_from ( proc_out );
-            stderr += read_string_from ( proc_err );
-            waiting = false;
-          } catch ( Exception e ) {
-            // The process is still active, so read and wait
-            if (output_level > 20) System.out.println ( "cmd_proc.exitValue() threw exception: " + e );
-            if (output_level > 20) System.out.println ( "Read more data" );
-            stdout += read_string_from ( proc_out );
-            stderr += read_string_from ( proc_err );
-            /*
-            try {
-              System.out.println ( "Call cmd_proc.waitFor() to wait for process to actually finish" );
-              cmd_proc.waitFor();
-            } catch ( Exception ie ) {
-            }
-            */
-          }
-        } while (waiting);
-      }
+      String[] streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err );
+      stdout = streams[0];
+      stderr = streams[1];
 
       System.out.println ( "Process finished!!!" );
       if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + translate_exit(exit_value) + "\n\n" );
@@ -1251,19 +1214,11 @@ if (use_line_parts) {
 
       if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
 
-      if ( ! global_io.is_windows() ) {
-        stdout = read_string_from ( proc_out );
-      }
-
       if (output_level > 4) System.out.print ( stdout );
 
       if (output_level > 4) System.out.println ( "=================================================================================" );
 
       if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      if ( ! global_io.is_windows() ) {
-        stderr = read_string_from ( proc_err );
-      }
 
       if (output_level > 11) System.out.print ( stderr );
 
