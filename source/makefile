@@ -1,4 +1,4 @@
-all: test_libs swim iavg iscale mir remod sxox json_parser.jar run_swift.jar swift_gui.jar sha1sum.txt
+all: test_libs swim iavg iscale mir remod sxox json_parser.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
 test_libs: test_libs.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o test_libs -O3 -m64 -msse3 test_libs.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -75,6 +75,12 @@ run_swift.jar: run_swift.java revision.java makefile
 #	touch -t 201901181818 *.class
 #	touch -t 201901181818 META-INF/MANIFEST.MF
 #	zip -X run_swift.jar META-INF/MANIFEST.MF *.class
+
+# "Normal" rule for swim_lab.jar
+swim_lab.jar: swim_lab.java ZoomPanLib.java run_swift.java json_parser.java revision.java makefile
+	rm -f *.class
+	javac -nowarn -source 1.6 -target 1.6 swim_lab.java
+	jar -cfe swim_lab.jar swim_lab *.class
 
 # "Normal" rule for swift_gui.jar
 swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java revision.java makefile
