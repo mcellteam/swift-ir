@@ -1242,7 +1242,6 @@ public class run_swift {
 
   public static void main(String[] args) throws java.io.FileNotFoundException {
 
-    System.out.println ( "System: " + System.getProperty("os.name").trim().toLowerCase().startsWith("win") );
     if ( System.getProperty("os.name").trim().toLowerCase().startsWith("win") ) {
       System.out.println ( "Running in Windows (from main)" );
     }
@@ -1265,6 +1264,7 @@ public class run_swift {
       if (output_level > 4) System.out.println ( "Arg[" + arg_index + "] = \"" + args[arg_index] + "\"" );
       if (args[arg_index].startsWith("-") ) {
         if (args[arg_index].equals("-?")) {
+          System.out.println ( "Git Revision:\n " + revision.githash );
           System.out.println ( "Command Line Arguments:" );
           System.out.println ( "  -is #   run iscale with # as scale (no other processing)" );
           System.out.println ( "  -v #    amount of output (0 to 9 or higher)" );
@@ -1354,7 +1354,7 @@ public class run_swift {
     }
 
     if ( actual_file_names.size() < 2 ) {
-      if (output_level > -1) System.out.println ( "Must specify at least 2 images to align" );
+      if (output_level > -1) System.out.println ( "Must specify at least 2 images to align. Try using -? option for help." );
       System.exit ( 1 );
     }
 

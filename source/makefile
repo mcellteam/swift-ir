@@ -62,7 +62,7 @@ sxox: sxox.c makefile
 	gcc -Wno-implicit -O3 -o sxox sxox.c -lm
 
 # "Normal" rule for run_swift.jar
-run_swift.jar: run_swift.java makefile
+run_swift.jar: run_swift.java revision.java makefile
 	javac -nowarn -source 1.6 -target 1.6 run_swift.java
 	jar -cfe run_swift.jar run_swift *.class
 
