@@ -812,6 +812,8 @@ public class run_swift {
 
     String AI1, AI2, AI3, AI4;
 
+    String streams[];
+
     try {
 
       //////////////////////////////////////
@@ -833,32 +835,16 @@ public class run_swift {
       write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
+
       global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + global_io.end_of_line );
+      global_io.log_command ( interactive_commands + "\n" );
 
-      global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+      System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if (output_level > 4) System.out.println ( "=================================================================================" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 0 (first swim)" );
+      stdout = streams[0];
+      stderr = streams[1];
 
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
-
-
-      global_io.wait_for_enter ( "Completed Step 0 (first swim) > " );
 
 
       //////////////////////////////////////
@@ -904,31 +890,14 @@ public class run_swift {
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + global_io.end_of_line );
+      global_io.log_command ( interactive_commands + "\n" );
 
-      global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+      System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if (output_level > 4) System.out.println ( "=================================================================================" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 1a (second swim)" );
+      stdout = streams[0];
+      stderr = streams[1];
 
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
-
-
-      global_io.wait_for_enter ( "Completed Step 1a (second swim) > " );
 
 
       //////////////////////////////////////
@@ -994,31 +963,14 @@ if (use_line_parts) {
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + global_io.end_of_line );
+      global_io.log_command ( interactive_commands + "\n" );
 
-      global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+      System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if (output_level > 4) System.out.println ( "=================================================================================" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 1b (first mir)" );
+      stdout = streams[0];
+      stderr = streams[1];
 
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
-
-
-      global_io.wait_for_enter ( "Completed Step 1b (first mir) > " );
 
 
       //////////////////////////////////////
@@ -1067,29 +1019,12 @@ if (use_line_parts) {
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+      System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if (output_level > 4) System.out.println ( "=================================================================================" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 2a (third swim)" );
+      stdout = streams[0];
+      stderr = streams[1];
 
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
-
-
-      global_io.wait_for_enter ( "Completed Step 2a (third swim) > " );
 
 
       //////////////////////////////////////
@@ -1150,29 +1085,12 @@ if (use_line_parts) {
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+      System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if (output_level > 4) System.out.println ( "=================================================================================" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 2b (second mir)" );
+      stdout = streams[0];
+      stderr = streams[1];
 
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
-
-
-      global_io.wait_for_enter ( "Completed Step 2b (second mir) > " );
 
 
       //////////////////////////////////////
@@ -1228,14 +1146,15 @@ if (use_line_parts) {
 
       System.out.println ( "Waiting for subprocess to finish ..." );
 
-      String[] streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3a (fourth swim)" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3a (fourth swim)" );
       stdout = streams[0];
       stderr = streams[1];
+
+
 
       //////////////////////////////////////
       // Step 3b - Run third mir
       //////////////////////////////////////
-
 
 if (use_line_parts) {
       //String stdout_lines[] = lines_from_stdout ( stdout );
@@ -1318,29 +1237,13 @@ if (use_line_parts) {
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      global_io.wait_for_proc ( cmd_proc );
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+      System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3b (third mir)" );
+      stdout = streams[0];
+      stderr = streams[1];
 
 
-      global_io.wait_for_enter ( "Completed Step 3b (third mir) > " );
 
 
       //////////////////////////////////////
