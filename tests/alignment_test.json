@@ -3,7 +3,7 @@
   "method": "SWiFT-IR",
   "data": {
     "source_path": "",
-    "destination_path": "sequential_output",
+    "destination_path": "../source/junk",
     "pairwise_alignment": false,
     "defaults": {
       "align_to_next_pars": {

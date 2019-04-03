@@ -1,0 +1,5 @@
+========== Swim Second ==========
+29.9015: vj_097_shift_rot_skew_crop_1.jpg 903 890 vj_097_shift_rot_skew_crop_2.jpg 985.407 798.783  0 (7.60712 -7.20105 10.4749)
+34.1742: vj_097_shift_rot_skew_crop_1.jpg 903 -109 vj_097_shift_rot_skew_crop_2.jpg 972.434 -200.025  0 (-5.36591 -6.00879 8.05596)
+27.3462: vj_097_shift_rot_skew_crop_1.jpg -96 -109 vj_097_shift_rot_skew_crop_2.jpg -26.8771 -185.397  0 (-4.67709 8.6189 9.80615)
+32.2147: vj_097_shift_rot_skew_crop_1.jpg -96 890 vj_097_shift_rot_skew_crop_2.jpg -14.5716 813.271  0 (7.62842 7.28705 10.5496)
