@@ -1070,7 +1070,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     String cmd = e.getActionCommand();
     System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
 
-    if (cmd.equalsIgnoreCase("Print")) {
+    if (cmd.equalsIgnoreCase("Version...")) {
+      System.out.println ( "Git Revision: " + revision.githash );
+      JOptionPane.showMessageDialog(this, "Git Revision:\n " + revision.githash, "Version", JOptionPane.INFORMATION_MESSAGE);
+    } else if (cmd.equalsIgnoreCase("Print")) {
       System.out.println ( "Images:" );
       for (int i=0; i<this.frames.size(); i++) {
         System.out.println ( "  " + this.frames.get(i) );
