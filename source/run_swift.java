@@ -786,8 +786,6 @@ public class run_swift {
       mir_cmd  = convert_to_windows ( mir_cmd );
     }
 
-    boolean use_line_parts = true;
-
     String command_line;
     String interactive_commands;
     Process cmd_proc;
@@ -904,8 +902,6 @@ public class run_swift {
       // Step 1b - Run first mir
       //////////////////////////////////////
 
-if (use_line_parts) {
-
       //String stdout_lines[] = lines_from_stdout ( stdout );
       line_parts = parts_from_stdout ( stdout );
 
@@ -921,27 +917,6 @@ if (use_line_parts) {
       interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
       interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
       interactive_commands += "RW iter1_mir_out."+image_type_extension+global_io.end_of_line;
-
-} else {
-
-      parts = stdout.split ( "[\\s]+" );
-      for (int i=0; i<parts.length; i++) {
-        if (output_level > 10) System.out.println ( "Step 1b: Part " + i + " = " + parts[i] );
-      }
-
-      if (parts.length < 40) {
-        System.out.println ( "Error: expected at least 40 parts, but only got " + parts.length + "\n" + stdout );
-        return ( make_string_array ( "5", "Error: expected at least 40 parts, but only got " + parts.length + "\n" + stdout ) );
-        // System.exit ( 5 );
-      }
-
-      interactive_commands = "F " + align_image_file + global_io.end_of_line;
-      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + global_io.end_of_line;
-      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + global_io.end_of_line;
-      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + global_io.end_of_line;
-      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + global_io.end_of_line;
-      interactive_commands += "RW iter1_mir_out."+image_type_extension+global_io.end_of_line;
-}
 
       f = new File ( System.getProperty("user.dir") + File.separator + "first.mir" );
 
@@ -1032,7 +1007,6 @@ if (use_line_parts) {
       //////////////////////////////////////
 
 
-if (use_line_parts) {
       //String stdout_lines[] = lines_from_stdout ( stdout );
       line_parts = parts_from_stdout ( stdout );
 
@@ -1048,20 +1022,6 @@ if (use_line_parts) {
       interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
       interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
       interactive_commands += "RW iter2_mir_out."+image_type_extension+global_io.end_of_line;
-
-} else {
-      parts = stdout.split ( "[\\s]+" );
-      for (int i=0; i<parts.length; i++) {
-        if (output_level > 10) System.out.println ( "Step 2b: Part " + i + " = " + parts[i] );
-      }
-
-      interactive_commands = "F " + align_image_file + global_io.end_of_line;
-      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + global_io.end_of_line;
-      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + global_io.end_of_line;
-      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + global_io.end_of_line;
-      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + global_io.end_of_line;
-      interactive_commands += "RW iter2_mir_out."+image_type_extension+global_io.end_of_line;
-}
 
       f = new File ( System.getProperty("user.dir") + File.separator + "second.mir" );
 
@@ -1156,7 +1116,6 @@ if (use_line_parts) {
       // Step 3b - Run third mir
       //////////////////////////////////////
 
-if (use_line_parts) {
       //String stdout_lines[] = lines_from_stdout ( stdout );
       line_parts = parts_from_stdout ( stdout );
 
@@ -1180,34 +1139,6 @@ if (use_line_parts) {
       interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + global_io.end_of_line;
 
       interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
-} else {
-      parts = stdout.split ( "[\\s]+" );
-      for (int i=0; i<parts.length; i++) {
-        if (output_level > 10) System.out.println ( "Step 3b: Part " + i + " = " + parts[i] );
-      }
-
-      if (parts.length < 95) {
-        System.out.println ( "Error: expected at least 95 parts, but only got " + parts.length + "\n" + stdout );
-        return ( make_string_array ( "5", "Error: expected at least 95 parts, but only got " + parts.length + "\n" + stdout ) );
-        // System.exit ( 5 );
-      }
-
-      interactive_commands = "F " + align_image_file + global_io.end_of_line;
-      interactive_commands += parts[2] + " " + parts[3] + " " + parts[5] + " " + parts[6] + global_io.end_of_line;
-      interactive_commands += parts[13] + " " + parts[14] + " " + parts[16] + " " + parts[17] + global_io.end_of_line;
-      interactive_commands += parts[24] + " " + parts[25] + " " + parts[27] + " " + parts[28] + global_io.end_of_line;
-      interactive_commands += parts[35] + " " + parts[36] + " " + parts[38] + " " + parts[39] + global_io.end_of_line;
-
-      interactive_commands += parts[46] + " " + parts[47] + " " + parts[49] + " " + parts[50] + global_io.end_of_line;
-
-      interactive_commands += parts[57] + " " + parts[58] + " " + parts[60] + " " + parts[61] + global_io.end_of_line;
-      interactive_commands += parts[68] + " " + parts[69] + " " + parts[71] + " " + parts[72] + global_io.end_of_line;
-      interactive_commands += parts[79] + " " + parts[80] + " " + parts[82] + " " + parts[83] + global_io.end_of_line;
-      interactive_commands += parts[90] + " " + parts[91] + " " + parts[93] + " " + parts[94] + global_io.end_of_line;
-      // interactive_commands += "RW iter3_mir_out."+image_type_extension+global_io.end_of_line;
-      interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
-}
-
 
       // Change the name of the file in this slot to use the newly aligned image:
       // NOTE: This is now done outside of this alignment function
