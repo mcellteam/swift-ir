@@ -246,14 +246,132 @@ class ControlPanel extends JPanel {
   }
 }
 
-class annotation {
-  
+class image_annotations {
+  // Image Annotations may be anything drawn on an image and generally relative to the image
+  public void draw ( Graphics g, swim_lab_panel p ) {
+  }
 }
+
+class point_annotation extends image_annotations {
+  int x;  // x location within the image
+  int y;  // y location within the image
+  int r;
+  Color c;
+  public point_annotation ( int x, int y, int r, Color c ) {
+    this.x = x;
+    this.y = y;
+    this.r = r;
+    this.c = c;
+  }
+  public void draw ( Graphics g, swim_lab_panel p ) {
+	  g.setColor ( c );
+
+	  int img_w = p.frame_image.getWidth();
+	  int img_h = p.frame_image.getHeight();
+
+    int draw_x = p.x_to_pxi(x);
+    int draw_y = p.y_to_pyi(y-img_h);
+
+    g.fillOval ( draw_x-r, draw_y-r, 2*r, 2*r );
+  }
+}
+
+class rect_annotation extends image_annotations {
+  int x;
+  int y;
+  int w;
+  int h;
+  Color c;
+  public rect_annotation ( int x, int y, int w, int h, Color c ) {
+    this.x = x;
+    this.y = y;
+    this.w = w;
+    this.h = h;
+    this.c = c;
+  }
+  public void draw ( Graphics g, swim_lab_panel p ) {
+	  g.setColor ( c );
+
+	  int img_w = p.frame_image.getWidth();
+	  int img_h = p.frame_image.getHeight();
+    int draw_x = p.x_to_pxi(x);
+    int draw_y = p.y_to_pyi(y-img_h);
+    int draw_w = p.x_to_pxi((double)w) - p.x_to_pxi(0);
+    int draw_h = p.y_to_pyi((double)h) - p.y_to_pyi(0);
+    // System.out.println ( "x="+x+", y="+y+", w="+w+", h="+h+", draw_x="+draw_x+", draw_y="+draw_y+", draw_w="+draw_w+", draw_h="+draw_h );
+
+    g.drawRect ( draw_x, draw_y, draw_w, draw_h );
+  }
+}
+
+class text_annotation extends image_annotations {
+  int x;  // x location within the image
+  int y;  // y location within the image
+  String text;
+  Color c;
+  public text_annotation ( int x, int y, String text, Color c ) {
+    this.x = x;
+    this.y = y;
+    this.text = text;
+    this.c = c;
+  }
+  public void draw ( Graphics g, swim_lab_panel p ) {
+	  g.setColor ( c );
+
+	  int img_w = p.frame_image.getWidth();
+	  int img_h = p.frame_image.getHeight();
+
+    int draw_x = p.x_to_pxi(x);
+    int draw_y = p.y_to_pyi(y-img_h);
+
+    g.drawString ( text, draw_x, draw_y );
+  }
+}
+
+
 
 class swim_lab_panel extends ZoomPanLib implements MouseListener {
 
   public BufferedImage frame_image = null;
+  public ArrayList<image_annotations> annotations = new ArrayList<image_annotations>();
   
+  public swim_lab_panel () {
+    super();
+    annotations.add ( new point_annotation(0, 0, 5, new Color(255,255,55)) );
+    annotations.add ( new point_annotation(100, 0, 3, new Color(255,255,55)) );
+    annotations.add ( new point_annotation(0, 200, 4, new Color(255,255,55)) );
+
+    annotations.add ( new point_annotation(0, 0, 3, new Color(0,150,0)) );
+    annotations.add ( new point_annotation(807, 780, 4, new Color(0,150,0)) );
+    annotations.add ( new point_annotation(807, 0, 4, new Color(0,0,150)) );
+    annotations.add ( new point_annotation(0, 780, 4, new Color(0,190,190)) );
+
+    annotations.add ( new rect_annotation(0, 0, 100, 100, new Color(100,255,255)) );
+
+    annotations.add ( new rect_annotation(200, 0, 100, 100, new Color(255,55,55)) );
+
+    annotations.add ( new rect_annotation(0, 200, 100, 100, new Color(255,55,255)) );
+
+    annotations.add ( new rect_annotation(100, 50, 20, 20, new Color(100,255,255)) );
+
+    annotations.add ( new text_annotation(10, 20, "Hello", new Color(0,0,0)) );
+    annotations.add ( new text_annotation(10, 40, "World!", new Color(255,255,255)) );
+  }
+
+  public void set_image ( BufferedImage image ) {
+    frame_image = image;
+    int w = frame_image.getWidth();
+    int h = frame_image.getHeight();
+    // Add an annotation for the border
+    annotations.add ( new rect_annotation ( 0, 0, w, h, new Color(255,255,255) ) );
+    // Add an annotation for a fake window
+    annotations.add ( new rect_annotation ( w/4, h/4, w/2, h/2, new Color(255,255,255) ) );
+    // Add an annotation for a fake center point
+    annotations.add ( new point_annotation ( w/4, h/4, 3, new Color(255,0,0) ) );
+    // Add an annotation for a testing
+    annotations.add ( new point_annotation ( 148, 27, 2, new Color(255,0,255) ) );
+  }
+
   /*
   public swim_lab_panel ( BufferedImage frame_image ) {
     this.frame_image = frame_image;
@@ -270,15 +388,15 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 	    }
 	  }
 
-		g.setColor ( new Color ( 160, 60, 60 ) );  // Main window
+		g.setColor ( new Color ( 160, 60, 60 ) );
 	  g.fillRect ( 0, 0, win_w, win_h );
 
-		g.setColor ( new Color ( 0, 0, 0 ) );  // Main window
+		g.setColor ( new Color ( 0, 0, 0 ) );
 	  g.drawRect ( 0, 0, win_w-1, win_h-1 );
 
 		if (frame_image == null) {
 		  System.out.println ( "Image is null" );
-		  g.setColor ( new Color ( 160, 60, 60 ) );  // Main window
+		  g.setColor ( new Color ( 160, 60, 60 ) );
 	    g.fillRect ( 0, 0, win_w, win_h );
 		} else {
 		  int img_w = frame_image.getWidth();
@@ -294,7 +412,7 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
       
       g.drawImage ( frame_image, draw_x, draw_y-draw_h, draw_w, draw_h, this );
       //g.drawImage ( frame_image, (win_w-img_w)/2, (win_h-img_h)/2, img_w, img_h, this );
-
+/*
       // Draw the window
 		  g.setColor ( new Color ( 255, 255, 255 ) );
 
@@ -312,7 +430,7 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 		  ww_draw_y = draw_y - (3*draw_h/4);
 		  ww_draw_w = draw_w/2;
 		  ww_draw_h = draw_h/2;
-		  
+
 		  g.drawRect ( ww_draw_x, ww_draw_y, ww_draw_w, ww_draw_h );
 
 
@@ -330,7 +448,13 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 		  ww_draw_h = draw_h/2;
 		  
 		  g.fillRect ( ww_draw_x, ww_draw_y, 7, 7 );
-
+*/
+      // Draw the annotations
+      for (int i=0; i<annotations.size(); i++) {
+        image_annotations an = annotations.get(i);
+        // System.out.println ( "Drawing annotation: " + an );
+        an.draw ( g, this );
+      }
     }
 	}
 
@@ -458,8 +582,8 @@ public class swim_lab extends JFrame implements ActionListener {
                         y.getText(),
                         get_int_from_textfield ( outlev ) );
       try {
-        image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
-        image_panel_4.frame_image = ImageIO.read ( new File ("newtarg.JPG") );
+        image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ) );
+        image_panel_4.set_image ( ImageIO.read ( new File ("newtarg.JPG") ) );
       } catch ( Exception ex ) {
         System.out.println ( "Unable to open panel_3 image" );
       }
@@ -517,7 +641,7 @@ public class swim_lab extends JFrame implements ActionListener {
 				JPanel image_container_1 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_1 = new swim_lab_panel();
         try {
-          swim_lab_frame.image_panel_1.frame_image = ImageIO.read ( new File ("vj_097_1_mod.jpg") );
+          swim_lab_frame.image_panel_1.set_image ( ImageIO.read ( new File ("vj_097_1_mod.jpg") ) );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_1 image" );
         }
@@ -528,7 +652,7 @@ public class swim_lab extends JFrame implements ActionListener {
 				JPanel image_container_2 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_2 = new swim_lab_panel();
         try {
-          swim_lab_frame.image_panel_2.frame_image = ImageIO.read ( new File ("vj_097_2_mod.jpg") );
+          swim_lab_frame.image_panel_2.set_image ( ImageIO.read ( new File ("vj_097_2_mod.jpg") ) );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_2 image" );
         }
@@ -539,7 +663,7 @@ public class swim_lab extends JFrame implements ActionListener {
 				JPanel image_container_3 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_3 = new swim_lab_panel();
         try {
-          swim_lab_frame.image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
+          swim_lab_frame.image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ) );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_3 image" );
         }
@@ -550,7 +674,7 @@ public class swim_lab extends JFrame implements ActionListener {
 				JPanel image_container_4 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_4 = new swim_lab_panel();
         try {
-          swim_lab_frame.image_panel_4.frame_image = ImageIO.read ( new File ("newtarg.JPG") );
+          swim_lab_frame.image_panel_4.set_image ( ImageIO.read ( new File ("newtarg.JPG") ) );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_4 image" );
         }
@@ -563,24 +687,24 @@ public class swim_lab extends JFrame implements ActionListener {
         
         JPanel swim_controls = new JPanel();
 
-        swim_lab_frame.ww = new JTextField("1024",6);
+        swim_lab_frame.ww = new JTextField("512",6);
         swim_controls.add ( new JLabel("ww: ") );
         swim_controls.add ( swim_lab_frame.ww );
 
         swim_lab_frame.x = new JTextField("",6);
-        swim_controls.add ( new JLabel("x: ") );
+        swim_controls.add ( new JLabel("-x: ") );
         swim_controls.add ( swim_lab_frame.x );
 
         swim_controls.add ( new JLabel("   ") );
 
         swim_lab_frame.y = new JTextField("",6);
-        swim_controls.add ( new JLabel("y: ") );
+        swim_controls.add ( new JLabel("-y: ") );
         swim_controls.add ( swim_lab_frame.y );
 
         swim_controls.add ( new JLabel("   ") );
 
         swim_lab_frame.outlev = new JTextField("50",6);
-        swim_controls.add ( new JLabel("out: ") );
+        swim_controls.add ( new JLabel("Out: ") );
         swim_controls.add ( swim_lab_frame.outlev );
 
         swim_controls.add ( new JLabel("   ") );
