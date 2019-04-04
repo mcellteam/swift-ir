@@ -372,7 +372,7 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
     // Add an annotation for a fake window
 
 /*
-        swim_lab_frame.ww = new JTextField("512",6);
+        swim_lab_frame.ww_text_field = new JTextField("512",6);
     512
     annotations.add ( new rect_annotation ( w/4, h/4, w/2, h/2, new Color(255,255,255) ) );
 
@@ -477,9 +477,9 @@ public class swim_lab extends JFrame implements ActionListener {
 
   final int NUM_PANELS = 4;
 
-  JTextField ww;
-  JTextField x;
-  JTextField y;
+  JTextField ww_text_field;
+  JTextField x_text_field;
+  JTextField y_text_field;
   JTextField outlev;
 
   JMenuItem new_proj_menu_item = null;
@@ -549,17 +549,36 @@ public class swim_lab extends JFrame implements ActionListener {
       image_panel_4.annotations.clear();
 
       int wwi = -1;
-      String wws = ww.getText().trim();
+      String wws = ww_text_field.getText().trim();
+      int shift_x = 0;
+      int shift_y = 0;
+      String xstring = x_text_field.getText().trim();
+      String ystring = y_text_field.getText().trim();
+      if (xstring.length() > 0) {
+        try {
+          shift_x = Integer.parseInt ( xstring );
+        } catch (Exception e1) {
+          shift_x = 0;
+        }
+      }
+      if (ystring.length() > 0) {
+        try {
+          shift_y = Integer.parseInt ( ystring );
+        } catch (Exception e1) {
+          shift_y = 0;
+        }
+      }
       if (wws.length() > 0) {
         // There some text in the window field
         try {
+          System.out.println ( " -x: " + x_text_field.getText() );
           wwi = Integer.parseInt ( wws );
           int h = image_panel_1.frame_image.getHeight();
           int w = image_panel_1.frame_image.getWidth();
           int win_x = (w - wwi) / 2;
           int win_y = (h - wwi) / 2;
-          image_panel_1.annotations.add ( new rect_annotation(win_x, win_y, wwi, wwi, new Color(100,255,100)) );
-          image_panel_2.annotations.add ( new rect_annotation(win_x, win_y, wwi, wwi, new Color(100,255,100)) );
+          image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
+          image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
         } catch (Exception ei) {
           wwi = -1;
         }
@@ -573,9 +592,9 @@ public class swim_lab extends JFrame implements ActionListener {
                         rt,
                         "vj_097_1_mod.jpg",
                         "vj_097_2_mod.jpg",
-                        ww.getText(),
-                        x.getText(),
-                        y.getText(),
+                        ww_text_field.getText(),
+                        x_text_field.getText(),
+                        y_text_field.getText(),
                         get_int_from_textfield ( outlev ) );
       try {
         image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ) );
@@ -683,19 +702,19 @@ public class swim_lab extends JFrame implements ActionListener {
         
         JPanel swim_controls = new JPanel();
 
-        swim_lab_frame.ww = new JTextField("512",6);
+        swim_lab_frame.ww_text_field = new JTextField("512",6);
         swim_controls.add ( new JLabel("ww: ") );
-        swim_controls.add ( swim_lab_frame.ww );
+        swim_controls.add ( swim_lab_frame.ww_text_field );
 
-        swim_lab_frame.x = new JTextField("",6);
+        swim_lab_frame.x_text_field = new JTextField("",6);
         swim_controls.add ( new JLabel("-x: ") );
-        swim_controls.add ( swim_lab_frame.x );
+        swim_controls.add ( swim_lab_frame.x_text_field );
 
         swim_controls.add ( new JLabel("   ") );
 
-        swim_lab_frame.y = new JTextField("",6);
+        swim_lab_frame.y_text_field = new JTextField("",6);
         swim_controls.add ( new JLabel("-y: ") );
-        swim_controls.add ( swim_lab_frame.y );
+        swim_controls.add ( swim_lab_frame.y_text_field );
 
         swim_controls.add ( new JLabel("   ") );
 
