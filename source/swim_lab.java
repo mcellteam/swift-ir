@@ -301,6 +301,8 @@ class rect_annotation extends image_annotations {
     // System.out.println ( "x="+x+", y="+y+", w="+w+", h="+h+", draw_x="+draw_x+", draw_y="+draw_y+", draw_w="+draw_w+", draw_h="+draw_h );
 
     g.drawRect ( draw_x, draw_y, draw_w, draw_h );
+    g.drawRect ( draw_x-1, draw_y-1, draw_w+2, draw_h+2 );  // Make the line thicker
+    g.drawRect ( draw_x+1, draw_y+1, draw_w-2, draw_h-2 );  // Make the line thicker
   }
 }
 
@@ -337,6 +339,7 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
   
   public swim_lab_panel () {
     super();
+    /*
     annotations.add ( new point_annotation(0, 0, 5, new Color(255,255,55)) );
     annotations.add ( new point_annotation(100, 0, 3, new Color(255,255,55)) );
     annotations.add ( new point_annotation(0, 200, 4, new Color(255,255,55)) );
@@ -356,20 +359,28 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 
     annotations.add ( new text_annotation(10, 20, "Hello", new Color(0,0,0)) );
     annotations.add ( new text_annotation(10, 40, "World!", new Color(255,255,255)) );
+    */
   }
 
   public void set_image ( BufferedImage image ) {
     frame_image = image;
     int w = frame_image.getWidth();
     int h = frame_image.getHeight();
+
     // Add an annotation for the border
     annotations.add ( new rect_annotation ( 0, 0, w, h, new Color(255,255,255) ) );
     // Add an annotation for a fake window
+
+/*
+        swim_lab_frame.ww = new JTextField("512",6);
+    512
     annotations.add ( new rect_annotation ( w/4, h/4, w/2, h/2, new Color(255,255,255) ) );
+
     // Add an annotation for a fake center point
     annotations.add ( new point_annotation ( w/4, h/4, 3, new Color(255,0,0) ) );
     // Add an annotation for a testing
     annotations.add ( new point_annotation ( 148, 27, 2, new Color(255,0,255) ) );
+    */
   }
 
   /*
@@ -411,44 +422,7 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
       int draw_h = y_to_pyi(img_hf) - draw_y;
       
       g.drawImage ( frame_image, draw_x, draw_y-draw_h, draw_w, draw_h, this );
-      //g.drawImage ( frame_image, (win_w-img_w)/2, (win_h-img_h)/2, img_w, img_h, this );
-/*
-      // Draw the window
-		  g.setColor ( new Color ( 255, 255, 255 ) );
 
-      int ww_x = draw_x + (draw_w/4);
-      int ww_y = draw_y + (draw_h/4);
-      int ww_w = (draw_w/2);
-      int ww_h = (draw_h/2);
-
-		  int ww_draw_x = x_to_pxi(ww_x);
-		  int ww_draw_y = y_to_pyi(ww_y);
-		  int ww_draw_w = x_to_pxi(ww_w) - ww_draw_x;
-		  int ww_draw_h = y_to_pyi(ww_h) - ww_draw_y;
-
-		  ww_draw_x = draw_x + (draw_w/4);
-		  ww_draw_y = draw_y - (3*draw_h/4);
-		  ww_draw_w = draw_w/2;
-		  ww_draw_h = draw_h/2;
-
-		  g.drawRect ( ww_draw_x, ww_draw_y, ww_draw_w, ww_draw_h );
-
-
-      // Draw the center
-		  g.setColor ( new Color ( 0, 255, 0 ) );
-
-		  ww_draw_x = x_to_pxi(ww_x);
-		  ww_draw_y = y_to_pyi(ww_y);
-		  ww_draw_w = x_to_pxi(ww_w) - ww_draw_x;
-		  ww_draw_h = y_to_pyi(ww_h) - ww_draw_y;
-
-		  ww_draw_x = draw_x + (draw_w/4);
-		  ww_draw_y = draw_y - (3*draw_h/4);
-		  ww_draw_w = draw_w/2;
-		  ww_draw_h = draw_h/2;
-		  
-		  g.fillRect ( ww_draw_x, ww_draw_y, 7, 7 );
-*/
       // Draw the annotations
       for (int i=0; i<annotations.size(); i++) {
         image_annotations an = annotations.get(i);
@@ -569,6 +543,28 @@ public class swim_lab extends JFrame implements ActionListener {
 		} else if (cmd.equalsIgnoreCase("Commands")) {
 		  System.out.println ( "Commands: " );
     } else if (cmd.equalsIgnoreCase("run_swim")) {
+      image_panel_1.annotations.clear();
+      image_panel_2.annotations.clear();
+      image_panel_3.annotations.clear();
+      image_panel_4.annotations.clear();
+
+      int wwi = -1;
+      String wws = ww.getText().trim();
+      if (wws.length() > 0) {
+        // There some text in the window field
+        try {
+          wwi = Integer.parseInt ( wws );
+          int h = image_panel_1.frame_image.getHeight();
+          int w = image_panel_1.frame_image.getWidth();
+          int win_x = (w - wwi) / 2;
+          int win_y = (h - wwi) / 2;
+          image_panel_1.annotations.add ( new rect_annotation(win_x, win_y, wwi, wwi, new Color(100,255,100)) );
+          image_panel_2.annotations.add ( new rect_annotation(win_x, win_y, wwi, wwi, new Color(100,255,100)) );
+        } catch (Exception ei) {
+          wwi = -1;
+        }
+      }
+
       System.out.println();
       System.out.println();
       System.out.println( "#################################################################################################################" );
