@@ -517,7 +517,7 @@ public class swim_lab extends JFrame implements ActionListener {
 				JPanel image_container_1 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_1 = new swim_lab_panel();
         try {
-          swim_lab_frame.image_panel_1.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_1.jpg") );
+          swim_lab_frame.image_panel_1.frame_image = ImageIO.read ( new File ("vj_097_1_mod.jpg") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_1 image" );
         }
@@ -528,7 +528,7 @@ public class swim_lab extends JFrame implements ActionListener {
 				JPanel image_container_2 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_2 = new swim_lab_panel();
         try {
-          swim_lab_frame.image_panel_2.frame_image = ImageIO.read ( new File ("vj_097_shift_rot_skew_crop_2.jpg") );
+          swim_lab_frame.image_panel_2.frame_image = ImageIO.read ( new File ("vj_097_2_mod.jpg") );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_2 image" );
         }
