@@ -451,8 +451,8 @@ public class swim_lab extends JFrame implements ActionListener {
       Runtime rt = Runtime.getRuntime();
       String results[] = run_swift.run_swim (
                         rt,
-                        "vj_097_shift_rot_skew_crop_1.jpg",
-                        "vj_097_shift_rot_skew_crop_2.jpg",
+                        "vj_097_1_mod.jpg",
+                        "vj_097_2_mod.jpg",
                         ww.getText(),
                         x.getText(),
                         y.getText(),
