@@ -246,6 +246,9 @@ class ControlPanel extends JPanel {
   }
 }
 
+class annotation {
+  
+}
 
 class swim_lab_panel extends ZoomPanLib implements MouseListener {
 
@@ -278,28 +281,6 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 		  g.setColor ( new Color ( 160, 60, 60 ) );  // Main window
 	    g.fillRect ( 0, 0, win_w, win_h );
 		} else {
-      /*
-      System.out.println ( "Image is NOT null" );
-      int img_w = frame_image.getWidth();
-      int img_h = frame_image.getHeight();
-      double img_wf = 200;
-      double img_hf = 200;
-      if (img_w >= img_h) {
-        // Make the image wider to fit
-        img_wf = img_w * img_wf / img_h;
-      } else {
-        // Make the height shorter to fit
-        img_hf = img_h * img_hf / img_w;
-      }
-      int draw_x = x_to_pxi(-img_wf/2.0);
-      int draw_y = y_to_pyi(-img_hf/2.0);
-      int draw_w = x_to_pxi(img_wf/2.0) - draw_x;
-      int draw_h = y_to_pyi(img_hf/2.0) - draw_y;
-      g.drawImage ( frame_image, draw_x, draw_y, draw_w, draw_h, this );
-      */
-
-
-      // priority_println ( 50, "Image is NOT null" );
 		  int img_w = frame_image.getWidth();
 		  int img_h = frame_image.getHeight();
 
@@ -310,9 +291,45 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
       int draw_y = y_to_pyi(0);
       int draw_w = x_to_pxi(img_wf) - draw_x;
       int draw_h = y_to_pyi(img_hf) - draw_y;
-
+      
       g.drawImage ( frame_image, draw_x, draw_y-draw_h, draw_w, draw_h, this );
       //g.drawImage ( frame_image, (win_w-img_w)/2, (win_h-img_h)/2, img_w, img_h, this );
+
+      // Draw the window
+		  g.setColor ( new Color ( 255, 255, 255 ) );
+
+      int ww_x = draw_x + (draw_w/4);
+      int ww_y = draw_y + (draw_h/4);
+      int ww_w = (draw_w/2);
+      int ww_h = (draw_h/2);
+
+		  int ww_draw_x = x_to_pxi(ww_x);
+		  int ww_draw_y = y_to_pyi(ww_y);
+		  int ww_draw_w = x_to_pxi(ww_w) - ww_draw_x;
+		  int ww_draw_h = y_to_pyi(ww_h) - ww_draw_y;
+
+		  ww_draw_x = draw_x + (draw_w/4);
+		  ww_draw_y = draw_y - (3*draw_h/4);
+		  ww_draw_w = draw_w/2;
+		  ww_draw_h = draw_h/2;
+		  
+		  g.drawRect ( ww_draw_x, ww_draw_y, ww_draw_w, ww_draw_h );
+
+
+      // Draw the center
+		  g.setColor ( new Color ( 0, 255, 0 ) );
+
+		  ww_draw_x = x_to_pxi(ww_x);
+		  ww_draw_y = y_to_pyi(ww_y);
+		  ww_draw_w = x_to_pxi(ww_w) - ww_draw_x;
+		  ww_draw_h = y_to_pyi(ww_h) - ww_draw_y;
+
+		  ww_draw_x = draw_x + (draw_w/4);
+		  ww_draw_y = draw_y - (3*draw_h/4);
+		  ww_draw_w = draw_w/2;
+		  ww_draw_h = draw_h/2;
+		  
+		  g.fillRect ( ww_draw_x, ww_draw_y, 7, 7 );
 
     }
 	}
@@ -358,6 +375,9 @@ public class swim_lab extends JFrame implements ActionListener {
   swim_lab_panel image_panel_1;
   swim_lab_panel image_panel_2;
   swim_lab_panel image_panel_3;
+  swim_lab_panel image_panel_4;
+
+  final int NUM_PANELS = 4;
 
   JTextField ww;
   JTextField x;
@@ -439,6 +459,7 @@ public class swim_lab extends JFrame implements ActionListener {
                         get_int_from_textfield ( outlev ) );
       try {
         image_panel_3.frame_image = ImageIO.read ( new File ("best.JPG") );
+        image_panel_4.frame_image = ImageIO.read ( new File ("newtarg.JPG") );
       } catch ( Exception ex ) {
         System.out.println ( "Unable to open panel_3 image" );
       }
@@ -447,11 +468,12 @@ public class swim_lab extends JFrame implements ActionListener {
 		} else if ( (action_source == center_menu_item) || cmd.equalsIgnoreCase("center_image") ) {
 
       System.out.println ( "Centering all ..." );
-      swim_lab_panel panels[] = new swim_lab_panel[3];
+      swim_lab_panel panels[] = new swim_lab_panel[NUM_PANELS];
       panels[0] = image_panel_1;
       panels[1] = image_panel_2;
       panels[2] = image_panel_3;
-      for (int i=0; i<3; i++) {
+      panels[3] = image_panel_4;
+      for (int i=0; i<NUM_PANELS; i++) {
         int h = panels[i].frame_image.getHeight();
         int w = panels[i].frame_image.getWidth();
         // System.out.println ( "Image = " + panels[i].frame_image );
@@ -525,6 +547,17 @@ public class swim_lab extends JFrame implements ActionListener {
         image_container_3.add ( new JButton ( "B3"), BorderLayout.SOUTH );
         main_box_panel.add ( image_container_3 );
 
+				JPanel image_container_4 = new JPanel ( new BorderLayout() );
+        swim_lab_frame.image_panel_4 = new swim_lab_panel();
+        try {
+          swim_lab_frame.image_panel_4.frame_image = ImageIO.read ( new File ("newtarg.JPG") );
+        } catch ( Exception e ) {
+          System.out.println ( "Unable to open panel_4 image" );
+        }
+        image_container_4.add ( swim_lab_frame.image_panel_4, BorderLayout.CENTER );
+        image_container_4.add ( new JButton ( "B4"), BorderLayout.SOUTH );
+        main_box_panel.add ( image_container_4 );
+
 
         main_panel.add ( main_box_panel, BorderLayout.CENTER );
         
@@ -567,7 +600,7 @@ public class swim_lab extends JFrame implements ActionListener {
         swim_lab_frame.add ( main_panel );
 
 				swim_lab_frame.pack();
-				swim_lab_frame.setSize ( 1600, 800 );
+				swim_lab_frame.setSize ( 2000, 800 );
 				swim_lab_frame.setVisible ( true );
 
 			}
