@@ -693,6 +693,8 @@ public class run_swift {
       mir_cmd = "mir.exe";
     }
 
+    String streams[] = null;
+
     try {
 
       command_line = code_source + swim_cmd + " " + window_size;
@@ -711,32 +713,17 @@ public class run_swift {
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-      proc_in.write ( interactive_commands.getBytes() );
+      write_to_proc ( proc_in, interactive_commands );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
       global_io.log_command ( interactive_commands + "\n" );
 
-      cmd_proc.waitFor();
-      if ((exit_value = cmd_proc.exitValue()) != 0) System.out.println ( "\n\nWARNING: Command " + command_line + " finished with exit status " + global_io.translate_exit(exit_value) + "\n\n" );
+      System.out.println ( "Waiting for subprocess to finish ..." );
 
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 4) System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" );
-
-      stdout = read_string_from ( proc_out );
-
-      if (output_level > 4) System.out.print ( stdout );
-
-      if (output_level > 4) System.out.println ( "=================================================================================" );
-
-      if (output_level > 11) System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" );
-
-      stderr = read_string_from ( proc_err );
-
-      if (output_level > 11) System.out.print ( stderr );
-
-      if (output_level > 11) System.out.println ( "=================================================================================" );
+      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed run_swim" );
+      stdout = streams[0];
+      stderr = streams[1];
 
     } catch ( Exception some_exception ) {
 
@@ -746,7 +733,7 @@ public class run_swift {
 
     }
 
-    return ( null );
+    return ( streams );
   }
 
   public static String convert_to_windows ( String cmd ) {

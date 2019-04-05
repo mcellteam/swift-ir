@@ -480,6 +480,8 @@ public class swim_lab extends JFrame implements ActionListener {
   JTextField ww_text_field;
   JTextField x_text_field;
   JTextField y_text_field;
+  JTextField tarx_text_field;
+  JTextField tary_text_field;
   JTextField outlev;
 
   JMenuItem new_proj_menu_item = null;
@@ -602,6 +604,11 @@ public class swim_lab extends JFrame implements ActionListener {
       } catch ( Exception ex ) {
         System.out.println ( "Unable to open panel_3 image" );
       }
+      if ((results == null) || (results.length <= 0) ) {
+        System.out.println ( "No results from swim command" );
+      } else {
+        System.out.println ( "Results[0] = " + results[0] );
+      }
       repaint();
 
 		} else if ( (action_source == center_menu_item) || cmd.equalsIgnoreCase("center_image") ) {
@@ -706,23 +713,38 @@ public class swim_lab extends JFrame implements ActionListener {
         swim_controls.add ( new JLabel("ww: ") );
         swim_controls.add ( swim_lab_frame.ww_text_field );
 
+        swim_controls.add ( new JLabel("      ") );
+
         swim_lab_frame.x_text_field = new JTextField("",6);
         swim_controls.add ( new JLabel("-x: ") );
         swim_controls.add ( swim_lab_frame.x_text_field );
 
-        swim_controls.add ( new JLabel("   ") );
+        swim_controls.add ( new JLabel("  ") );
 
         swim_lab_frame.y_text_field = new JTextField("",6);
         swim_controls.add ( new JLabel("-y: ") );
         swim_controls.add ( swim_lab_frame.y_text_field );
 
-        swim_controls.add ( new JLabel("   ") );
+        swim_controls.add ( new JLabel("      ") );
+
+
+        swim_lab_frame.tarx_text_field = new JTextField("",6);
+        swim_controls.add ( new JLabel("tarx: ") );
+        swim_controls.add ( swim_lab_frame.tarx_text_field );
+
+        swim_controls.add ( new JLabel("  ") );
+
+        swim_lab_frame.tary_text_field = new JTextField("",6);
+        swim_controls.add ( new JLabel("tary: ") );
+        swim_controls.add ( swim_lab_frame.tary_text_field );
+
+        swim_controls.add ( new JLabel("    ") );
 
         swim_lab_frame.outlev = new JTextField("50",6);
         swim_controls.add ( new JLabel("Out: ") );
         swim_controls.add ( swim_lab_frame.outlev );
 
-        swim_controls.add ( new JLabel("   ") );
+        swim_controls.add ( new JLabel("    ") );
 
         JButton run = new JButton("Run");
         run.addActionListener ( swim_lab_frame );
