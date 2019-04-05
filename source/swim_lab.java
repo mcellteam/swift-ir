@@ -362,13 +362,33 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
     */
   }
 
+  public void set_image_text ( String image_text ) {
+    Component[] siblings = this.getParent().getComponents();
+    for (int sibling=0; sibling<siblings.length; sibling++) {
+      // System.out.println ( "  Sibling " + sibling + " = " + siblings[sibling] );
+      if (sibling == 1) {
+        /// NOTE: This should be checking for type rather than position!!!!!
+        JButton jb = (JButton)(siblings[sibling]);
+        jb.setText ( image_text );
+      }
+    }
+  }
+
   public void set_image ( BufferedImage image ) {
     frame_image = image;
     int w = frame_image.getWidth();
     int h = frame_image.getHeight();
+    set_image_text ( "" + w + "x" + h );
 
     // Add an annotation for the border
     annotations.add ( new rect_annotation ( 0, 0, w, h, new Color(255,255,255) ) );
+  }
+
+  public void set_image ( BufferedImage image, String image_name ) {
+    set_image ( image );
+    int w = frame_image.getWidth();
+    int h = frame_image.getHeight();
+    set_image_text ( image_name + ": " + w + "x" + h );
   }
 
   /*
@@ -661,8 +681,8 @@ public class swim_lab extends JFrame implements ActionListener {
       }
 
       try {
-        image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ) );
-        image_panel_4.set_image ( ImageIO.read ( new File ("newtarg.JPG") ) );
+        image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ), "best.JPG" );
+        image_panel_4.set_image ( ImageIO.read ( new File ("newtarg.JPG") ), "newtarg.JPG" );
       } catch ( Exception ex ) {
         System.out.println ( "Unable to open panel_3 image" );
       }
@@ -682,22 +702,7 @@ public class swim_lab extends JFrame implements ActionListener {
       panels[2] = image_panel_3;
       panels[3] = image_panel_4;
       for (int i=0; i<NUM_PANELS; i++) {
-        int h = panels[i].frame_image.getHeight();
-        int w = panels[i].frame_image.getWidth();
-        // System.out.println ( "Image = " + panels[i].frame_image );
-        // System.out.println ( " Image Size = " + w + "x" + h );
         panels[i].recalculate = true;
-        // System.out.println ( "iPanel.parent: " + panels[i].getParent() );
-        Component[] siblings = panels[i].getParent().getComponents();
-        for (int sibling=0; sibling<siblings.length; sibling++) {
-          // System.out.println ( "  Sibling " + sibling + " = " + siblings[sibling] );
-          if (sibling == 1) {
-            /// NOTE: This should be checking for type rather than position!!!!!
-            JButton jb = (JButton)(siblings[sibling]);
-            jb.setText ( "" + w + "x" + h );
-          }
-        }
-        // System.out.println ( "this: " + this );
       }
       repaint();
 		} else if ( action_source == new_proj_menu_item ) {
@@ -724,46 +729,46 @@ public class swim_lab extends JFrame implements ActionListener {
 				
 				JPanel image_container_1 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_1 = new swim_lab_panel();
+        image_container_1.add ( swim_lab_frame.image_panel_1, BorderLayout.CENTER );
+        image_container_1.add ( new JButton ( "B1"), BorderLayout.SOUTH );
         try {
-          swim_lab_frame.image_panel_1.set_image ( ImageIO.read ( new File ("vj_097_1_mod.jpg") ) );
+          swim_lab_frame.image_panel_1.set_image ( ImageIO.read ( new File ("vj_097_1_mod.jpg") ), "vj_097_1_mod.jpg" );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_1 image" );
         }
-        image_container_1.add ( swim_lab_frame.image_panel_1, BorderLayout.CENTER );
-        image_container_1.add ( new JButton ( "B1"), BorderLayout.SOUTH );
         main_box_panel.add ( image_container_1 );
 
 				JPanel image_container_2 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_2 = new swim_lab_panel();
+        image_container_2.add ( swim_lab_frame.image_panel_2, BorderLayout.CENTER );
+        image_container_2.add ( new JButton ( "B2"), BorderLayout.SOUTH );
         try {
-          swim_lab_frame.image_panel_2.set_image ( ImageIO.read ( new File ("vj_097_2_mod.jpg") ) );
+          swim_lab_frame.image_panel_2.set_image ( ImageIO.read ( new File ("vj_097_2_mod.jpg") ), "vj_097_2_mod.jpg" );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_2 image" );
         }
-        image_container_2.add ( swim_lab_frame.image_panel_2, BorderLayout.CENTER );
-        image_container_2.add ( new JButton ( "B2"), BorderLayout.SOUTH );
         main_box_panel.add ( image_container_2 );
 
 				JPanel image_container_3 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_3 = new swim_lab_panel();
+        image_container_3.add ( swim_lab_frame.image_panel_3, BorderLayout.CENTER );
+        image_container_3.add ( new JButton ( "B3"), BorderLayout.SOUTH );
         try {
-          swim_lab_frame.image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ) );
+          swim_lab_frame.image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ), "best.JPG" );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_3 image" );
         }
-        image_container_3.add ( swim_lab_frame.image_panel_3, BorderLayout.CENTER );
-        image_container_3.add ( new JButton ( "B3"), BorderLayout.SOUTH );
         main_box_panel.add ( image_container_3 );
 
 				JPanel image_container_4 = new JPanel ( new BorderLayout() );
         swim_lab_frame.image_panel_4 = new swim_lab_panel();
+        image_container_4.add ( swim_lab_frame.image_panel_4, BorderLayout.CENTER );
+        image_container_4.add ( new JButton ( "B4"), BorderLayout.SOUTH );
         try {
-          swim_lab_frame.image_panel_4.set_image ( ImageIO.read ( new File ("newtarg.JPG") ) );
+          swim_lab_frame.image_panel_4.set_image ( ImageIO.read ( new File ("newtarg.JPG") ), "newtarg.JPG" );
         } catch ( Exception e ) {
           System.out.println ( "Unable to open panel_4 image" );
         }
-        image_container_4.add ( swim_lab_frame.image_panel_4, BorderLayout.CENTER );
-        image_container_4.add ( new JButton ( "B4"), BorderLayout.SOUTH );
         main_box_panel.add ( image_container_4 );
 
 
