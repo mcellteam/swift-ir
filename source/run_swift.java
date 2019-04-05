@@ -668,8 +668,31 @@ public class run_swift {
     }
   }
 
-  public static String[] run_swim ( Runtime rt, String fixed_image_file, String align_image_file, String window_size, String x, String y, int output_level ) {
-    System.out.println ( "Running Swim with:\n" + fixed_image_file + "\n" + align_image_file + "\n" + window_size + "\n" + x + "\n" + y + "\n" + output_level );
+
+  public static String[] run_swim ( Runtime rt, String fixed_image_file, String align_image_file, String window_size, String parameters, int output_level ) {
+    // The "parameters" should be of the form: "options % more options % more options" where the two "%" characters represent the two mandatory file names.
+    System.out.println ( "Running Swim with:\n  " + fixed_image_file + "\n  " + align_image_file + "\n  " + window_size + "\n  " + parameters + "\n  " + output_level );
+
+    String parameter_sections[] = parameters.trim().split ( "%" );
+
+    if (parameter_sections.length < 2) {
+      System.out.println ( "run_swim expects a parameters string containing two file placeholders (\"%\")." );
+      return (null);
+    }
+
+    // Trim the parameter sections
+    for (int i=0; i<parameter_sections.length; i++) {
+      parameter_sections[i] = parameter_sections[i].trim();
+    }
+
+    // Insert the file names and trim
+    String swim_params = parameter_sections[0] + " " + fixed_image_file + " " + parameter_sections[1] + " " + align_image_file;
+    if (parameter_sections.length >= 3) {
+      swim_params += " " + parameter_sections[2];
+    }
+    swim_params = swim_params.trim();
+
+    System.out.println ( "Final parameters: \"" + swim_params + "\"" );
 
     String command_line;
     String interactive_commands;
@@ -706,10 +729,7 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      interactive_commands = "unused -i 2 -k keep."+image_type_extension;
-      if (x.trim().length() > 0) interactive_commands += " -x " + x;
-      if (y.trim().length() > 0) interactive_commands += " -y " + y;
-      interactive_commands += " " + fixed_image_file + " " + align_image_file + "\n";
+      interactive_commands = "unused " + swim_params + "\n";
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
@@ -734,6 +754,17 @@ public class run_swift {
     }
 
     return ( streams );
+  }
+
+  public static String[] run_swim ( Runtime rt, String fixed_image_file, String align_image_file, String window_size, String x, String y, int output_level ) {
+
+    // This supports the older format by writing a parameter string to pass to the new string based version
+    String swim_params = "-i 2 -k keep."+image_type_extension;
+    if (x.trim().length() > 0) swim_params += " -x " + x;
+    if (y.trim().length() > 0) swim_params += " -y " + y;
+    swim_params += " % %\n";
+
+    return run_swim ( rt, fixed_image_file, align_image_file, window_size, swim_params, output_level );
   }
 
   public static String convert_to_windows ( String cmd ) {
