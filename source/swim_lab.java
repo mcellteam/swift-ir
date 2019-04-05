@@ -264,14 +264,15 @@ class point_annotation extends image_annotations {
     this.c = c;
   }
   public void draw ( Graphics g, swim_lab_panel p ) {
-	  g.setColor ( c );
-
-	  int img_w = p.frame_image.getWidth();
-	  int img_h = p.frame_image.getHeight();
+    int img_w = p.frame_image.getWidth();
+    int img_h = p.frame_image.getHeight();
 
     int draw_x = p.x_to_pxi(x);
     int draw_y = p.y_to_pyi(y-img_h);
 
+    g.setColor ( new Color(0,0,0) );
+    g.fillOval ( draw_x-(r+1), draw_y-(r+1), 2*(r+1), 2*(r+1) );
+    g.setColor ( c );
     g.fillOval ( draw_x-r, draw_y-r, 2*r, 2*r );
   }
 }
@@ -303,6 +304,11 @@ class rect_annotation extends image_annotations {
     g.drawRect ( draw_x, draw_y, draw_w, draw_h );
     g.drawRect ( draw_x-1, draw_y-1, draw_w+2, draw_h+2 );  // Make the line thicker
     g.drawRect ( draw_x+1, draw_y+1, draw_w-2, draw_h-2 );  // Make the line thicker
+    g.drawRect ( draw_x-2, draw_y-2, draw_w+4, draw_h+4 );  // Make the line thicker
+    g.drawRect ( draw_x+2, draw_y+2, draw_w-4, draw_h-4 );  // Make the line thicker
+    g.setColor ( new Color(0,0,0) );
+    g.drawRect ( draw_x-3, draw_y-3, draw_w+6, draw_h+6 );  // Make the line thicker
+    g.drawRect ( draw_x+3, draw_y+3, draw_w-6, draw_h-6 );  // Make the line thicker
   }
 }
 
@@ -586,8 +592,8 @@ public class swim_lab extends JFrame implements ActionListener {
               String shift_y_string = swim_parameters.getText().split("-y ")[1].trim().split("[\\s]+")[0];
               shift_y = Integer.parseInt ( shift_y_string );
             }
-            image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
-            image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
+            image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(255,255,50)) );
+            image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(255,255,50)) );
           } catch (Exception ei) {
             wwi = -1;
           }
@@ -633,8 +639,8 @@ public class swim_lab extends JFrame implements ActionListener {
             int w = image_panel_1.frame_image.getWidth();
             int win_x = (w - wwi) / 2;
             int win_y = (h - wwi) / 2;
-            image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
-            image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
+            image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(255,255,50)) );
+            image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(255,255,50)) );
           } catch (Exception ei) {
             wwi = -1;
           }
@@ -669,8 +675,8 @@ public class swim_lab extends JFrame implements ActionListener {
               int y2 = Math.round(Float.parseFloat(resparts[6]));
               System.out.println ( "x,y for 1 = " + x1 + ", " + y1 );
               System.out.println ( "x,y for 2 = " + x2 + ", " + y2 );
-              image_panel_1.annotations.add ( new point_annotation ( x1, y1, 5, new Color(255,100,100) ) );
-              image_panel_2.annotations.add ( new point_annotation ( x2, y2, 5, new Color(255,100,100) ) );
+              image_panel_1.annotations.add ( new point_annotation ( x1, y1, 5, new Color(255,255,50) ) );
+              image_panel_2.annotations.add ( new point_annotation ( x2, y2, 5, new Color(255,255,50) ) );
               // image_panel_1.annotations.add ( new rect_annotation(x1-3, y1-3, 7, 7, new Color(255,100,100)) );
               // image_panel_2.annotations.add ( new rect_annotation(x2-3, y2-3, 7, 7, new Color(255,100,100)) );
             } catch (Exception ei) {
