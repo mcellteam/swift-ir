@@ -198,11 +198,11 @@ class global_io {
     if (output_level > 4) {
       System.out.println ( "Process finished!!!" );
       System.out.println ( "=================================================================================" );
-      try { System.out.println ( "Command finished with " + proc_out.available() + " bytes of output:" ); } catch ( IOException out_exc ) { System.out.println ( "IOExc (stdout): " + out_exc ); }
+      System.out.println ( "Command finished with " + stdout.length() + " bytes of output:" );
       System.out.print ( stdout );
       System.out.println ( "=================================================================================" );
       if (output_level > 11) {
-        try { System.out.println ( "Command finished with " + proc_err.available() + " bytes of error:" ); } catch ( IOException err_exc ) { System.out.println ( "IOExc (stderr): " + err_exc ); }
+        System.out.println ( "Command finished with " + stderr.length() + " bytes of error:" );
         System.out.print ( stderr );
         System.out.println ( "=================================================================================" );
       }
@@ -295,9 +295,11 @@ public class run_swift {
   public static String mir_cmd = "mir";
   // public static String mir_cmd = "mirb";
 
+
   public static String translate_exit ( int exit_status ) {
     return (global_io.translate_exit(exit_status));
   }
+
 
   public static String[] lines_from_stdout ( String stdout ) {
     // Note that line ending handling hasn't been tested on non-Linux platforms yet.
@@ -320,6 +322,7 @@ public class run_swift {
     return lines;
   }
 
+
   public static String[][] parts_from_stdout ( String stdout ) {
     String stdout_lines[] = lines_from_stdout ( stdout );
     String stdout_parts[][] = new String[stdout_lines.length][];
@@ -338,6 +341,7 @@ public class run_swift {
     }
   }
 
+
   public static String read_string_from ( BufferedInputStream bis ) throws IOException {
     String s = "";
     int num_left = 0;
@@ -350,12 +354,14 @@ public class run_swift {
     return ( s );
   }
 
+
   public static String[] make_string_array ( String code, String description ) {
     String s[] = new String[2];
     s[0] = code;
     s[1] = description;
     return ( s );
   }
+
 
   public static String[] make_string_array ( String code,
                                              String t00, String t01, String t02, String t10, String t11, String t12,
@@ -383,6 +389,7 @@ public class run_swift {
     s[18] = a12;
     return ( s );
   }
+
 
   public static void scale_file_with_iscale ( Runtime rt, String original_file_name, String subdirectory, int factor, int output_level ) {
 
@@ -456,6 +463,7 @@ public class run_swift {
     }
   }
 
+
   public static String normalize_file_name ( String file_name ) {
     try {
       file_name = new File(file_name).getCanonicalPath();
@@ -465,6 +473,7 @@ public class run_swift {
     return ( file_name );
   }
 
+
   public static void write_to_proc ( BufferedOutputStream proc_in, String data ) throws Exception {
     proc_in.write ( data.getBytes() );
     System.out.println ( "Sending end of line and end of file" );
@@ -472,6 +481,7 @@ public class run_swift {
     System.out.println ( "Flushing proc_in" );
     proc_in.flush();
   }
+
 
   public static void copy_file_by_name ( Runtime rt, String original_file_name, String new_file_name, int output_level ) {
 
@@ -565,6 +575,7 @@ public class run_swift {
 
     }
   }
+
 
   public static void transform_file_by_name ( Runtime rt, String original_file_name, String new_file_name, double affine_transform[], int output_level ) {
     if (output_level > 0) {
@@ -756,6 +767,7 @@ public class run_swift {
     return ( streams );
   }
 
+
   public static String[] run_swim ( Runtime rt, String fixed_image_file, String align_image_file, String window_size, String x, String y, int output_level ) {
 
     // This supports the older format by writing a parameter string to pass to the new string based version
@@ -767,6 +779,7 @@ public class run_swift {
     return run_swim ( rt, fixed_image_file, align_image_file, window_size, swim_params, output_level );
   }
 
+
   public static String convert_to_windows ( String cmd ) {
     if (cmd.toLowerCase().endsWith(".exe")) {
       return ( cmd );
@@ -774,6 +787,7 @@ public class run_swift {
       return ( cmd + ".exe" );
     }
   }
+
 
   public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                                int window_size, int addx, int addy, int output_level ) {

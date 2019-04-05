@@ -369,18 +369,6 @@ class swim_lab_panel extends ZoomPanLib implements MouseListener {
 
     // Add an annotation for the border
     annotations.add ( new rect_annotation ( 0, 0, w, h, new Color(255,255,255) ) );
-    // Add an annotation for a fake window
-
-/*
-        swim_lab_frame.ww_text_field = new JTextField("512",6);
-    512
-    annotations.add ( new rect_annotation ( w/4, h/4, w/2, h/2, new Color(255,255,255) ) );
-
-    // Add an annotation for a fake center point
-    annotations.add ( new point_annotation ( w/4, h/4, 3, new Color(255,0,0) ) );
-    // Add an annotation for a testing
-    annotations.add ( new point_annotation ( 148, 27, 2, new Color(255,0,255) ) );
-    */
   }
 
   /*
@@ -478,10 +466,13 @@ public class swim_lab extends JFrame implements ActionListener {
   final int NUM_PANELS = 4;
 
   JTextField ww_text_field;
+  JTextField swim_parameters;
+
   JTextField x_text_field;
   JTextField y_text_field;
   JTextField tarx_text_field;
   JTextField tary_text_field;
+
   JTextField outlev;
 
   JMenuItem new_proj_menu_item = null;
@@ -552,52 +543,123 @@ public class swim_lab extends JFrame implements ActionListener {
 
       int wwi = -1;
       String wws = ww_text_field.getText().trim();
-      int shift_x = 0;
-      int shift_y = 0;
-      String xstring = x_text_field.getText().trim();
-      String ystring = y_text_field.getText().trim();
-      if (xstring.length() > 0) {
-        try {
-          shift_x = Integer.parseInt ( xstring );
-        } catch (Exception e1) {
-          shift_x = 0;
+
+      String results[] = null;
+
+      if (swim_parameters.getText().trim().length() > 0) {
+        // Use parameters (new way)
+        if (wws.length() > 0) {
+          // There some text in the window field
+          try {
+            wwi = Integer.parseInt ( wws );
+            int h = image_panel_1.frame_image.getHeight();
+            int w = image_panel_1.frame_image.getWidth();
+            int win_x = (w - wwi) / 2;
+            int win_y = (h - wwi) / 2;
+            int shift_x = 0;
+            int shift_y = 0;
+            if (swim_parameters.getText().split("-x ").length > 1) {
+              String shift_x_string = swim_parameters.getText().split("-x ")[1].trim().split("[\\s]+")[0];
+              shift_x = Integer.parseInt ( shift_x_string );
+            }
+            if (swim_parameters.getText().split("-y ").length > 1) {
+              String shift_y_string = swim_parameters.getText().split("-y ")[1].trim().split("[\\s]+")[0];
+              shift_y = Integer.parseInt ( shift_y_string );
+            }
+            image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
+            image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
+          } catch (Exception ei) {
+            wwi = -1;
+          }
         }
-      }
-      if (ystring.length() > 0) {
-        try {
-          shift_y = Integer.parseInt ( ystring );
-        } catch (Exception e1) {
-          shift_y = 0;
+
+        System.out.println();
+        System.out.println();
+        System.out.println( "#################################################################################################################" );
+        Runtime rt = Runtime.getRuntime();
+        results = run_swift.run_swim (
+                      rt,
+                      "vj_097_1_mod.jpg",
+                      "vj_097_2_mod.jpg",
+                      ww_text_field.getText().trim(),
+                      swim_parameters.getText().trim(),
+                      get_int_from_textfield ( outlev ) );
+      } else {
+        // Use fields (old way)
+        int shift_x = 0;
+        int shift_y = 0;
+        String xstring = x_text_field.getText().trim();
+        String ystring = y_text_field.getText().trim();
+        if (xstring.length() > 0) {
+          try {
+            shift_x = Integer.parseInt ( xstring );
+          } catch (Exception e1) {
+            shift_x = 0;
+          }
         }
+        if (ystring.length() > 0) {
+          try {
+            shift_y = Integer.parseInt ( ystring );
+          } catch (Exception e1) {
+            shift_y = 0;
+          }
+        }
+        if (wws.length() > 0) {
+          // There some text in the window field
+          try {
+            System.out.println ( " -x: " + x_text_field.getText() );
+            wwi = Integer.parseInt ( wws );
+            int h = image_panel_1.frame_image.getHeight();
+            int w = image_panel_1.frame_image.getWidth();
+            int win_x = (w - wwi) / 2;
+            int win_y = (h - wwi) / 2;
+            image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
+            image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
+          } catch (Exception ei) {
+            wwi = -1;
+          }
+        }
+
+        System.out.println();
+        System.out.println();
+        System.out.println( "#################################################################################################################" );
+        Runtime rt = Runtime.getRuntime();
+        results = run_swift.run_swim (
+                      rt,
+                      "vj_097_1_mod.jpg",
+                      "vj_097_2_mod.jpg",
+                      ww_text_field.getText(),
+                      x_text_field.getText(),
+                      y_text_field.getText(),
+                      get_int_from_textfield ( outlev ) );
       }
-      if (wws.length() > 0) {
-        // There some text in the window field
-        try {
-          System.out.println ( " -x: " + x_text_field.getText() );
-          wwi = Integer.parseInt ( wws );
-          int h = image_panel_1.frame_image.getHeight();
-          int w = image_panel_1.frame_image.getWidth();
-          int win_x = (w - wwi) / 2;
-          int win_y = (h - wwi) / 2;
-          image_panel_1.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
-          image_panel_2.annotations.add ( new rect_annotation(win_x+shift_x, win_y+shift_y, wwi, wwi, new Color(100,255,100)) );
-        } catch (Exception ei) {
-          wwi = -1;
+
+      if (results != null) {
+        if (results.length > 0) {
+          String resparts[] = results[0].trim().split("[\\s]+");
+          for (int i=0; i<resparts.length; i++) {
+            resparts[i] = resparts[i].trim();
+          }
+          if (resparts.length >= 7) {
+            System.out.println ( "SNR = " + resparts[0] );
+            try {
+              int x1 = Math.round(Float.parseFloat(resparts[2]));
+              int y1 = Math.round(Float.parseFloat(resparts[3]));
+              int x2 = Math.round(Float.parseFloat(resparts[5]));
+              int y2 = Math.round(Float.parseFloat(resparts[6]));
+              System.out.println ( "x,y for 1 = " + x1 + ", " + y1 );
+              System.out.println ( "x,y for 2 = " + x2 + ", " + y2 );
+              image_panel_1.annotations.add ( new point_annotation ( x1, y1, 5, new Color(255,100,100) ) );
+              image_panel_2.annotations.add ( new point_annotation ( x2, y2, 5, new Color(255,100,100) ) );
+              // image_panel_1.annotations.add ( new rect_annotation(x1-3, y1-3, 7, 7, new Color(255,100,100)) );
+              // image_panel_2.annotations.add ( new rect_annotation(x2-3, y2-3, 7, 7, new Color(255,100,100)) );
+            } catch (Exception ei) {
+              System.out.println ( "Error reading from stdout string" );
+            }
+          }
         }
       }
 
-      System.out.println();
-      System.out.println();
-      System.out.println( "#################################################################################################################" );
-      Runtime rt = Runtime.getRuntime();
-      String results[] = run_swift.run_swim (
-                        rt,
-                        "vj_097_1_mod.jpg",
-                        "vj_097_2_mod.jpg",
-                        ww_text_field.getText(),
-                        x_text_field.getText(),
-                        y_text_field.getText(),
-                        get_int_from_textfield ( outlev ) );
       try {
         image_panel_3.set_image ( ImageIO.read ( new File ("best.JPG") ) );
         image_panel_4.set_image ( ImageIO.read ( new File ("newtarg.JPG") ) );
@@ -709,9 +771,18 @@ public class swim_lab extends JFrame implements ActionListener {
         
         JPanel swim_controls = new JPanel();
 
-        swim_lab_frame.ww_text_field = new JTextField("512",6);
+        swim_lab_frame.ww_text_field = new JTextField("256",6);
         swim_controls.add ( new JLabel("ww: ") );
         swim_controls.add ( swim_lab_frame.ww_text_field );
+
+        swim_controls.add ( new JLabel("      ") );
+
+        swim_lab_frame.swim_parameters = new JTextField("-i 2 -k keep.JPG -x 0 -y 0 % %",40);
+        swim_controls.add ( new JLabel("Pars: ") );
+        swim_controls.add ( swim_lab_frame.swim_parameters );
+
+
+
 
         swim_controls.add ( new JLabel("      ") );
 
@@ -729,18 +800,21 @@ public class swim_lab extends JFrame implements ActionListener {
 
 
         swim_lab_frame.tarx_text_field = new JTextField("",6);
-        swim_controls.add ( new JLabel("tarx: ") );
-        swim_controls.add ( swim_lab_frame.tarx_text_field );
+        // swim_controls.add ( new JLabel("tarx: ") );
+        // swim_controls.add ( swim_lab_frame.tarx_text_field );
 
-        swim_controls.add ( new JLabel("  ") );
+        // swim_controls.add ( new JLabel("  ") );
 
         swim_lab_frame.tary_text_field = new JTextField("",6);
-        swim_controls.add ( new JLabel("tary: ") );
-        swim_controls.add ( swim_lab_frame.tary_text_field );
+        // swim_controls.add ( new JLabel("tary: ") );
+        // swim_controls.add ( swim_lab_frame.tary_text_field );
 
-        swim_controls.add ( new JLabel("    ") );
+        // swim_controls.add ( new JLabel("    ") );
 
-        swim_lab_frame.outlev = new JTextField("50",6);
+
+
+
+        swim_lab_frame.outlev = new JTextField("50",4);
         swim_controls.add ( new JLabel("Out: ") );
         swim_controls.add ( swim_lab_frame.outlev );
 
