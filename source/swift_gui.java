@@ -1668,10 +1668,18 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   public static ArrayList<String> actual_file_names = new ArrayList<String>();
 
   static boolean load_images = true;
+  static boolean load_images_option = false;
 
   public static void main ( String[] args ) {
 
-    System.out.println ( "Translation of 15: " + run_swift.translate_exit ( 128+15 ) );
+    // System.out.println ( "Translation of 15: " + run_swift.translate_exit ( 128+15 ) );
+
+    System.out.println ( "java -jar swift_gui [Options] [Images]" );
+    System.out.println ( "" );
+    System.out.println ( " Options:" );
+    System.out.println ( "  -l:   Load images" );
+    System.out.println ( "  -nl:  Do not load images" );
+    System.out.println ( "  -lio: Show the load images check box (not on Mac)" );
 
     ArrayList<String> file_name_args = new ArrayList<String>();
 
@@ -1685,6 +1693,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         } else if (args[arg_index].equals("-nl")) {
           System.out.println ( "Not loading images" );
           load_images = false;
+        } else if (args[arg_index].equals("-lio")) {
+          System.out.println ( "Show the load images check box (doesn't work on Macintosh)." );
+          load_images_option = true;
         } else {
           System.out.println ( "Unrecognized option: " + args[arg_index] );
         }
@@ -1793,8 +1804,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
           swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
           // This appears to fail on the Macintosh. That dialog box may have a different set of containers
-          //button_area.add ( swift_gui_panel.load_files_on_import, 0 );
-
+          if (load_images_option) {
+            button_area.add ( swift_gui_panel.load_files_on_import, 0 );
+          }
 
           // chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
 
