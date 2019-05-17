@@ -262,6 +262,7 @@ class ControlPanel extends JPanel {
 
 
   // Alignment
+  public JComboBox alignment_mode;
   public RespTextField window_size;
   public RespTextField addx;
   public RespTextField addy;
@@ -304,6 +305,13 @@ class ControlPanel extends JPanel {
     JPanel alignment_panel_top = new JPanel();
     JPanel alignment_panel_mid = new JPanel();
     JPanel alignment_panel_bot = new JPanel();
+
+    String[] modes = { "3x3", "2x2" };
+    alignment_mode = new JComboBox(modes);
+    alignment_mode.addKeyListener ( this.swift );
+    alignment_mode.addActionListener ( this.swift );
+    alignment_mode.setActionCommand ( "mode" );
+    alignment_panel_top.add ( alignment_mode );
 
     alignment_panel_top.add ( new JLabel("  WW:") );
     window_size = new RespTextField(this.swift,"",8);
@@ -973,6 +981,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   }
 
   public void write_project_file ( File project_file ) {
+    if (destination == null) {
+      System.out.println ( "Cannot save project without a destination.\n" );
+      return;
+    }
     try {
       PrintStream f = new PrintStream ( project_file );
       f.println ( "{" );
