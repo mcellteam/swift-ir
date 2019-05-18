@@ -845,6 +845,21 @@ int oldmain(int argc, char *argv[]) {
 	int niter = 1, reverse = 0, no_vert = 0, no_hor = 0, apodize = 1;
 	char *cp;
 	float m0, m1;
+
+
+  // Search for the debug option to turn it on before anything else
+  // Note that this should have been completed in main itself, but
+  // because of the mkargs function (maps stdin to args), the options
+  // wouldn't have been in argv for main. So it's checked here again.
+  for (i=0; i<argc; i++) {
+    if (strcmp(argv[i],"-$")==0) {
+      if (i<(argc-1)) {
+        debug_level = atoi(argv[i+1]);
+      }
+    }
+  }
+
+
 	if (debug_level > 50) print_args ( "oldmain:", argc, argv );
 
 	targs -= getticks();
@@ -855,6 +870,11 @@ int oldmain(int argc, char *argv[]) {
 	tary = -1000000;
 	while(*argv[1] == '-') {
 		if (debug_level > 50) print_args ( "oldmain top of while:", argc, argv );
+		if(argv[1][1] == '$') { // -$
+			debug_level = atoi(argv[2]);
+			argc--;
+			argv++;
+		}
 		if(argv[1][1] == 'x') { // -x
 			addx = MUL*eval_expr(argv[2]);
 			argc--;
@@ -1382,8 +1402,20 @@ int main(int argc, char *argv[]) {
 		printf ( "    -r reverse = 1\n" );
 		printf ( "    -k str: keepimg = str\n" );
 		printf ( "    -t snrthr,xthr,ythr: set thresholds\n" );
+		printf ( "    -$ debug_level\n" );
 		exit(0);
 	}
+
+  // Search for the debug option to turn it on before anything else
+  // Of course, this doesn't work properly here because stdin hasn't
+  // been mapped to the arguments yet via the crazy mkargs function.
+  for (i=0; i<argc; i++) {
+    if (strcmp(argv[i],"-$")==0) {
+      if (i<(argc-1)) {
+        debug_level = atoi(argv[i+1]);
+      }
+    }
+  }
 
 	if (debug_level > 50) print_args ( "main:", argc, argv );
 
