@@ -82,7 +82,8 @@ float fbestx, fbesty, uncert;
 float snrthr = 0, xthr = 1000000, ythr = 1000000;
 int areset = 0; // affine reset on failure of above
 
-int quiet = 1;
+// int quiet = 1;
+int debug_level = 0;
 int whiten = 1; // 0 is no whitening, 1 enables whitening by wht_expon
 double wht_expon = -0.65; // 0 leaves it alone, -1 is phase, -0.5 fast sqrt
 
@@ -96,10 +97,10 @@ void mk_fpat(struct image *im, double xc, double yc, double xdx, double ydx, dou
 	int x, y, ix, iy, v0, v1, v2, v3, n = nx*ny;
 	uchar *pp;
 	float f0, f1, f2, f3, psum = 0, psum2 = 0, *ifpp = fpp;
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "im %p  del %d xy %g %g  %g %g  %g %g  lut %p  flt %p %d %d\n", im, im->ydelta, xc, yc, xdx, ydx, xdy, ydy, lut, fpp, nx, ny);
 	}
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "AFFINE afm %g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
 	}
 	f0 = (nx-1) * xdx/2;
@@ -162,11 +163,11 @@ void mk_ftarg(struct image *im, int xc, int yc, float *fpp, int nx, int ny) {
 	int x, y, ix, iy, v0, v1, v2, v3, n = nx*ny;
 	uchar *pp;
 	float fv = 0, psum = 0, psum2 = 0;
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "im %p  %d x %d del %d cornerxy %d %d flt %p %d %d\n", im, im->wid, im->ht, im->ydelta, xc, yc, fpp, nx, ny);
 	}
 	n = 0; // replace nx*ny by count to handle off edge cases
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "**** xc %d  yc %d\n", xc, yc);
 	}
 	for(y = 0; y < ny; y++, yc++, fpp += nx) {
@@ -195,7 +196,7 @@ void mk_ftarg(struct image *im, int xc, int yc, float *fpp, int nx, int ny) {
 	fpp -= ny*nx;
 	yc -= ny;
 	fv = targavg;
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "restart yc %d fpp %p  fv %g\n", yc, fpp, fv);
 	}
 	for(y = 0; y < ny; y++, yc++, fpp += nx) {
@@ -214,7 +215,7 @@ void mk_ftarg(struct image *im, int xc, int yc, float *fpp, int nx, int ny) {
 			}
 		}
 	}
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "ftarg stats  av %g  va %g  sd %g  n %d\n", targavg, targvar, targsd, n);
 	}
 }
@@ -308,7 +309,7 @@ void mk_winf(float *winf, int nx, int ny) {
 		rad = ny/2;
 	rad *= 1.05; // fudge so we don't waste true 0 edges.
 	rad /= M_PI/2;
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "mk_winf %d %d rad %g\n", nx, ny, rad);
 	}
 	for(y = 0; y < ny; y++, winf += nx) {
@@ -362,7 +363,7 @@ void use_winf(float *winf, float *pat, int nx, int ny) {
 	winavg = wsum / n;
 	winvar = (wsum2 - wsum*wsum/n) / (n-1);
 	winsd = sqrt(winvar);
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "win stats  av %g  va %g  sd %g  n %d\n", winavg, winvar, winsd, n);
 	}
 }
@@ -431,7 +432,7 @@ void stats(float *fp, int nx, int ny) {
 	newbest = 0;
 //fprintf(stderr, "compare %g > %g\n", zscore, bestz);
 	if(zscore > bestz) {
-		if(!quiet) {
+		if(debug_level > 50) {
 			fprintf(stderr, "newbest %g vs %g a %g w %g xy %d %d\n",
 														zscore, bestz, curra, wht_expon, stat_minx, stat_miny);
 		}
@@ -449,7 +450,7 @@ void stats(float *fp, int nx, int ny) {
 		nbests++;
 	} else {
 		float zdiff = bestz-zscore;
-		if(!quiet || zdiff > 1.5) {
+		if ( (debug_level > 50) || (zdiff > 1.5) ) {
 			fprintf(stderr, "%s %g %g GOTWORSE by %g:  %g vs %g a %g xy %d %d\n",
 											fname0, tarx, tary, zdiff, zscore, bestz, curra, stat_minx, stat_miny);
 		}
@@ -470,7 +471,7 @@ float find_xyoff(unsigned char *ip, int wid, int ht) {
 	firstx = firsty = -1;
 	lastx = lasty = 1000000;
 	n = ht * wid;
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "xy %d %d\n", wid, ht);
 	}
 	fh = fha;
@@ -580,7 +581,7 @@ for(x = 0; x < wid; x++)  {
 	halfeh /= 2;
 	halfev /= 2;
 //if(hiprot[0] != 1234.) { fprintf(stderr, "****** D\n"); exit(1); }
-if(!quiet)
+if(debug_level > 50)
 fprintf(stderr, "half %g %g\n", halfeh, halfev);
 	//printf("\n");
 	x10 = y10 = 0;
@@ -605,7 +606,7 @@ fprintf(stderr, "half %g %g\n", halfeh, halfev);
 		//printf("%d %g\n", y, fvc[y]);
 //fprintf(stderr, "y %d: %g\n", y, fvc[y]);
 	}
-if(!quiet) {
+if(debug_level > 50) {
 fprintf(stderr, "matchxy %d %d\n", matchx, matchy);
 fprintf(stderr, "  h (%g - %g) / (%g - %g)\n", halfeh, fhc[matchx], fhc[matchx+1], fhc[matchx]);
 fprintf(stderr, "  v (%g - %g) / (%g - %g)\n", halfev, fvc[matchy], fvc[matchy+1], fvc[matchy]);
@@ -618,7 +619,7 @@ matchx++;
 matchy++;	// XXX Apr 25, 2012 - bump by one to hit actual peak!!! XXX
 frh -= 0.5;
 frv -= 0.5;	// account for 0 pos being at SIZE/2 - off by one/half XXX
-if(!quiet)
+if(debug_level > 50)
 fprintf(stderr, "frac %g %g\n", frh, frv);
 //fprintf(stderr, "final %g %g\n", matchx+frh, matchy+frv); ////////////////
 //fprintf(stderr, "hthresh %g %g %g\n", h10, halfeh, h90);
@@ -633,7 +634,7 @@ fprintf(stderr, "frac %g %g\n", frh, frv);
 	fbesty = matchy+frv;
 	ux = x90 - x10;
 	uy = y90 - y10;
-if(!quiet) {
+if(debug_level > 50) {
 fprintf(stderr, "matchx %d matchy %d\n", matchx, matchy);
 fprintf(stderr, "frh %g frv %g\n", frh, frv);
 fprintf(stderr, "fbestx %g fbesty %g\n", fbestx, fbesty);
@@ -844,7 +845,7 @@ int oldmain(int argc, char *argv[]) {
 	int niter = 1, reverse = 0, no_vert = 0, no_hor = 0, apodize = 1;
 	char *cp;
 	float m0, m1;
-	if (!quiet) print_args ( "oldmain:", argc, argv );
+	if (debug_level > 50) print_args ( "oldmain:", argc, argv );
 
 	targs -= getticks();
 	ncalls++;
@@ -853,7 +854,7 @@ int oldmain(int argc, char *argv[]) {
 	tarx = -1000000;
 	tary = -1000000;
 	while(*argv[1] == '-') {
-		if (!quiet) print_args ( "oldmain top of while:", argc, argv );
+		if (debug_level > 50) print_args ( "oldmain top of while:", argc, argv );
 		if(argv[1][1] == 'x') { // -x
 			addx = MUL*eval_expr(argv[2]);
 			argc--;
@@ -922,27 +923,27 @@ int oldmain(int argc, char *argv[]) {
 	afm[2] = 0;
 	afm[3] = 1;
 
-	if (!quiet) print_args ( "main after parsing options:", argc, argv );
+	if (debug_level > 50) print_args ( "main after parsing options:", argc, argv );
 
 	fname0 = argv[1];
 	if(argc == 3) {
-	  if (!quiet) printf ( "3 non-option arguments (including 0)\n" );
+	  if (debug_level > 50) printf ( "3 non-option arguments (including 0)\n" );
 		fname1 = argv[2];
 	} else {
-		if (!quiet) printf ( "not 3 non-option arguments (including 0)\n" );
+		if (debug_level > 50) printf ( "not 3 non-option arguments (including 0)\n" );
 		tarx = eval_expr(argv[2]);
 		tary = eval_expr(argv[3]);
 		fname1 = argv[4];
 		patx = tarx;
 		paty = tary;
 		if(argc > 5)
-			if (!quiet) printf ( "more than 5 non-option arguments (including 0)\n" );
+			if (debug_level > 50) printf ( "more than 5 non-option arguments (including 0)\n" );
 			patx = eval_expr(argv[5]);
 		if(argc > 6)
-			if (!quiet) printf ( "more than 6 non-option arguments (including 0)\n" );
+			if (debug_level > 50) printf ( "more than 6 non-option arguments (including 0)\n" );
 			paty = eval_expr(argv[6]);
 		if(argc == 8) {
-			if (!quiet) printf ( "exactly 8 non-option arguments (including 0)\n" );
+			if (debug_level > 50) printf ( "exactly 8 non-option arguments (including 0)\n" );
 			rota = eval_expr(argv[7]);
 			a = rota*M_PI/180;
 			afm[0] = cos(a);
@@ -950,14 +951,14 @@ int oldmain(int argc, char *argv[]) {
 			afm[2] = -sin(a);
 			afm[3] = cos(a);
 		} else if(argc == 11) {
-			if (!quiet) printf ( "exactly 11 non-option arguments (including 0)\n" );
+			if (debug_level > 50) printf ( "exactly 11 non-option arguments (including 0)\n" );
 			rota = 1024; // XXX magic to use explicit afm
 			afm[0] = eval_expr(argv[7]);
 			afm[1] = eval_expr(argv[8]);
 			afm[2] = eval_expr(argv[9]);
 			afm[3] = eval_expr(argv[10]);
 		} else if(argc == 12) { // affine predict
-			if (!quiet) printf ( "exactly 12 non-option arguments (including 0)\n" );
+			if (debug_level > 50) printf ( "exactly 12 non-option arguments (including 0)\n" );
 			rota = 1024; // XXX magic to use explicit afm
 			mf[0][0] = eval_expr(argv[5]);
 			mf[0][1] = eval_expr(argv[6]);
@@ -969,7 +970,7 @@ int oldmain(int argc, char *argv[]) {
 			affine_inverse(&mi[0][0], &mf[0][0]);
 			fprintf(stderr, "MI  %g %g %g  %g %g %g\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
 			if(argv[11][0] == '-') {
-				if (!quiet) printf ( "argv[11][0] == -\n" );
+				if (debug_level > 50) printf ( "argv[11][0] == -\n" );
 				patx = tarx*mi[0][0] + tary*mi[0][1] + mi[0][2];
 				paty = tarx*mi[1][0] + tary*mi[1][1] + mi[1][2];
 				afm[0] = mi[0][0];
@@ -977,7 +978,7 @@ int oldmain(int argc, char *argv[]) {
 				afm[2] = mi[1][0];
 				afm[3] = mi[1][1];
 			} else {
-				if (!quiet) printf ( "argv[11][0] =/= -\n" );
+				if (debug_level > 50) printf ( "argv[11][0] =/= -\n" );
 				patx = tarx*mf[0][0] + tary*mf[0][1] + mf[0][2];
 				paty = tarx*mf[1][0] + tary*mf[1][1] + mf[1][2];
 				afm[0] = mf[0][0];
@@ -986,7 +987,7 @@ int oldmain(int argc, char *argv[]) {
 				afm[3] = mf[1][1];
 			}
 		} else if(argc != 7 && argc != 5) {
-			if (!quiet) printf ( "argc =/= 7 or 5" );
+			if (debug_level > 50) printf ( "argc =/= 7 or 5" );
 			fprintf(stderr, "******** bad argc %d\n", argc);
 		}
 	}
@@ -1071,7 +1072,7 @@ int oldmain(int argc, char *argv[]) {
 	tary = (int)(tary + .5);
 	startpatx = patx;
 	startpaty = paty;
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "args  %s %g %g  %s %g %g  MUL %g SIZ %dx%d\n",
 			fname0, tarx, tary, fname1, patx, paty,MUL,SIZEX,SIZEY);
 #ifdef	VERB
@@ -1107,7 +1108,7 @@ int oldmain(int argc, char *argv[]) {
 			fprintf(stderr, "FFTW_MEASURE %12llu ticks  %g sec\n", tinit, elapsed_sec);
 		}
 	}
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "make targ at %g %g EWH %d %d\n", tarx, tary, EW, EH);
 	if(oldtarx != tarx || oldtary != tary) {
 		tprep0 -= getticks();
@@ -1121,10 +1122,10 @@ int oldmain(int argc, char *argv[]) {
 		sumbesty = 0;
 		sum2bestx = 0;
 		sum2besty = 0;
-		if(keepimg || !quiet)
+		if(keepimg || (debug_level > 50))
 			cpfout(targ, EW, EH, eo, 0, 0);
 		tprep0 += getticks();
-		if(keepimg || !quiet)
+		if(keepimg || (debug_level > 50))
 			write_img("newtarg.JPG", eo);
 	}
 	bestz = 0;
@@ -1134,7 +1135,7 @@ int oldmain(int argc, char *argv[]) {
 	sum2bestx = 0;
 	sum2besty = 0;
 loop:
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "LOOP patxy %g %g  bestz %g %d\n",
 			patx, paty, bestz, nbests);
 	bestz = 0; // reinit to fix mpl image bug XXX
@@ -1164,18 +1165,18 @@ loop:
 				fpat, PW, PH);
 		fp = fpat; // XXX is this ever used???
 		expand(fpat, PW, PH, epat, EW, EH, winavg);
-		if(!quiet)
+		if(debug_level > 50)
 			fprintf(stderr, "expanded\n");
 		scalepat(epat, EW, EH);
 		cpfout(epat, EW, EH, eo, 0, 0);
 		scalepat(fpat, PW, PH);
-		if(!quiet)
+		if(debug_level > 50)
 			fprintf(stderr, "scaled\n");
 		cpfout(fpat, PW, PH, io, 0, 0);
 		tprep1 += getticks();
 	}
 	if(oldtarx != tarx || oldtary != tary) {
-		if(!quiet) fprintf(stderr, "need first FFT %g %g  %p\n", tarx, tary, targ);
+		if(debug_level > 50) fprintf(stderr, "need first FFT %g %g  %p\n", tarx, tary, targ);
 		tfft0 -= getticks();
 		fftwf_execute_dft_r2c(forward_plan0, targ, fft_result0);
 		oldtarx = tarx; oldtary = tary; ntargft++;
@@ -1187,7 +1188,7 @@ loop:
 	fdy = paty - oldpaty;
 	m0 = sqrt(fdx*fdx + fdy*fdy);
 	if(oldpatx != patx || oldpaty != paty || oldpata != a || afm[0] != ofm[0] || afm[1] != ofm[1] || afm[2] != ofm[2] || afm[3] != ofm[3]) {
-		if(!quiet) fprintf(stderr, "need second FFT %g %g\n", patx, paty);
+		if(debug_level > 50) fprintf(stderr, "need second FFT %g %g\n", patx, paty);
 		tfft1 -= getticks();
 		fftwf_execute_dft_r2c(forward_plan0, epat, fft_result1);
 		oldpatx = patx; oldpaty = paty; oldpata = a; npatft++;
@@ -1219,7 +1220,7 @@ loop:
 		fft_comb[i][1] = im;
 	}
 	tmult += getticks();
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "ready for backward_plan\n");
 	tfft2 -= getticks();
 	fftwf_execute_dft_c2r(backward_plan, fft_comb, ifft_comb);
@@ -1231,18 +1232,18 @@ loop:
 	stats(ifft_comb, EW, EH); // easier to understand in gray levs
 	cpfout(ifft_comb, EW, EH, eo, 0, 0);
 	if(newbest) {
-		if(keepimg || !quiet) {
+		if(keepimg || (debug_level > 50)) {
 			sprintf(oname, "best.JPG");
 			write_img(oname, eo);
 		}
 		if(keepimg)
 			write_img(keepimg, io); /// XXX should regen after move
 		uncert = find_xyoff(eo->pp, eo->wid, eo->ht);
-		if(!quiet)
+		if(debug_level > 50)
 			fprintf(stderr, "uncert %f\n", uncert);
 	}
 	tpost += getticks();
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "loop all done\n");
 	rng_lft = tarx < patx ? tarx : patx;
 	rng_up = tary < paty ? tary : paty;
@@ -1250,14 +1251,14 @@ loop:
 	rng_dn = im0->ht - tary < im1->ht - paty ? im0->ht - tary : im1->ht - paty;
 	deltx = (rng_rt - rng_lft)/2;
 	delty = (rng_dn - rng_up)/2;
-	if(!quiet)
+	if(debug_level > 50)
 	fprintf(stderr, "up/down %g %g  lft/rt %g %g  del %g %g \n",
 	rng_up, rng_dn, rng_lft, rng_rt, deltx, delty);
 	ntarx = tarx + deltx;
 	ntary = tary + delty;
 	npatx = patx + deltx;
 	npaty = paty + delty;
-	if(!quiet)
+	if(debug_level > 50)
 	fprintf(stderr, "%g: %s %g %g %s %g %g delt %g %g\n", bestz,
 	fname0, ntarx, ntary, fname1, npatx, npaty, deltx, delty);
 	fdx = fbestx-SIZEX/2.;
@@ -1271,20 +1272,20 @@ loop:
 		tdx = 0;
 	if(no_vert)
 		tdy = 0;
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "MOVE by %g-%g=%g  %g-%g=%g   %g\n",
 	fbestx, SIZEX/2., fdx, fbesty, SIZEY/2., fdy, m0);
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "TXY %g %g = %g\n", tdx, tdy, sqrt(tdx*tdx + tdy*tdy));
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "OLD %g %g", patx, paty);
 	patx = patx - tdx;
 	paty = paty - tdy;
-	if(!quiet)
+	if(debug_level > 50)
 		fprintf(stderr, "   NEW patx paty %g %g\n", patx, paty);
 	if(--niter > 0)
 		goto loop;
-	if(!quiet) {
+	if(debug_level > 50) {
 		fprintf(stderr, "tarx %g tary %g\n", tarx, tary);
 		fprintf(stderr, "patx %g paty %g\n", patx, paty);
 		fprintf(stderr, "bstx %g bsty %g\n", fbestx, fbesty);
@@ -1384,7 +1385,7 @@ int main(int argc, char *argv[]) {
 		exit(0);
 	}
 
-	if (!quiet) print_args ( "main:", argc, argv );
+	if (debug_level > 50) print_args ( "main:", argc, argv );
 
 	gettimeofday(&tv, NULL);
 	starts = tv.tv_sec;
@@ -1412,8 +1413,8 @@ int main(int argc, char *argv[]) {
 		SIZEY = 128;
 	}
 
-	if (!quiet) print_args ( "main after sizing:", argc, argv );
-	if (!quiet) printf ( "    SIZEX=%d, sizeY=%d\n", SIZEX, SIZEY );
+	if (debug_level > 50) print_args ( "main after sizing:", argc, argv );
+	if (debug_level > 50) printf ( "    SIZEX=%d, sizeY=%d\n", SIZEX, SIZEY );
 
 	epat = (float *)malloc(SIZEX*SIZEY*sizeof(float));
 	targ = (float *)malloc(SIZEX*SIZEY*sizeof(float));
@@ -1421,7 +1422,7 @@ int main(int argc, char *argv[]) {
 	fpat = (float *)malloc(SIZEX*SIZEY*sizeof(float));
 	if(argc > 2) {
 		oldmain(argc, argv); // oldmain is historical vestage!
-		if (!quiet) print_args ( "main after oldmain(argc,argv):", nargc, nargv );
+		if (debug_level > 50) print_args ( "main after oldmain(argc,argv):", nargc, nargv );
 	} else while(fgets(line, LLEN, stdin)) {
 		if(line[0] == 0 || line[0] == '#' || line[0] == '\n') {
 			//fprintf(stderr, "%s", line);
@@ -1432,10 +1433,10 @@ int main(int argc, char *argv[]) {
 		nargc = mkargs(nargv, line);
 		targs += getticks();
 		oldmain(nargc, nargv);
-		if (!quiet) print_args ( "main after oldmain(nargc,nargv):", nargc, nargv );
+		if (debug_level > 50) print_args ( "main after oldmain(nargc,nargv):", nargc, nargv );
 	}
 
-	if (!quiet) print_args ( "main after oldmain:", argc, argv );
+	if (debug_level > 50) print_args ( "main after oldmain:", argc, argv );
 
 	total_ticks = getticks() - tstart;
 	gettimeofday(&tv, NULL);
@@ -1466,6 +1467,6 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr, "Nforw %d  Nrev %d  EW %d EH %d  %d\n",
 		Nforw, Nrev, EW, EH, EW*EH);
 #endif // VERB
-	if (!quiet) print_args ( "main before exit:", argc, argv );
+	if (debug_level > 50) print_args ( "main before exit:", argc, argv );
 	return(0);
 }
