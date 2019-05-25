@@ -597,6 +597,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   public ArrayList<swift_gui_frame> frames = new ArrayList<swift_gui_frame>();  // Argument (if any) specifies initial capacity (default 10)
   public int frame_index = -1;
 
+  public long time_last_aligned = -1;
+
   public void set_install_location() {
     String install_path_string = getClass().getProtectionDomain().getCodeSource().getLocation().toString();
     if (install_path_string.startsWith ( "file:" ) ) {
@@ -991,6 +993,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       f.println ( "  \"version\": 0.0," );
       f.println ( "  \"method\": \"SWiFT-IR\"," );
       f.println ( "  \"data\": {" );
+
       f.println ( "    \"source_path\": \"\"," );
       f.println ( "    \"destination_path\": \"" + get_relative_file_name ( project_file.getPath(), destination.toString() ) + "\"," );
       if (control_panel.pairwise.isSelected()) {
@@ -998,6 +1001,35 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       } else {
         f.println ( "    \"pairwise_alignment\": " + "false" + "," );
       }
+
+      f.println ( "    \"time_last_aligned\": " + this.time_last_aligned + "," );
+
+      if (control_panel.pairwise.isSelected()) {
+        f.println ( "    \"last_alignment\": [" );
+        for (int i=1; i<this.frames.size(); i++) {
+          swift_gui_frame frame = frames.get(i);
+          f.print ( "      { \"frames\": [ " + (i-1) + ", " + i + " ], " ); ///// Note that this is zero based while display is one based
+          if (frame.affine_transform_from_prev == null) {
+            f.print ( "\"affine\": null" );
+          } else {
+            f.print ( "\"affine\": [ " );
+            for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
+              f.print ( "" + frame.affine_transform_from_prev[j] );
+              if (j < (frame.affine_transform_from_prev.length-1) ) {
+                f.print ( ", " );
+              }
+            }
+            f.print ( " ]" );
+          }
+          f.print ( " }" );
+          if (i < (this.frames.size()-1) ) {
+            f.print ( "," );
+          }
+          f.println();
+        }
+        f.println ( "    ]," );
+      }
+
       f.println ( "    \"defaults\": {" );
       f.println ( "      \"align_to_next_pars\": {" );
       f.println ( "        \"window_size\": 1024," );
@@ -1670,6 +1702,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
+          this.time_last_aligned = System.currentTimeMillis();
         }
       }
     } else if (cmd.equalsIgnoreCase("Exit")) {
