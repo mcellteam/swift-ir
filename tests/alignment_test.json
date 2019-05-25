@@ -3,8 +3,9 @@
   "method": "SWiFT-IR",
   "data": {
     "source_path": "",
-    "destination_path": "../source/junk",
+    "destination_path": "output",
     "pairwise_alignment": false,
+    "time_last_aligned": 1558746825874,
     "defaults": {
       "align_to_next_pars": {
         "window_size": 1024,
@@ -18,9 +19,9 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_1.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
-          "addx": 500,
-          "addy": 500,
+          "window_size": 256,
+          "addx": 200,
+          "addy": 200,
           "output_level": 5
         }
       },
@@ -28,9 +29,9 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_2.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
-          "addx": 500,
-          "addy": 500,
+          "window_size": 256,
+          "addx": 200,
+          "addy": 200,
           "output_level": 5
         }
       },
@@ -38,9 +39,9 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_3.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
-          "addx": 500,
-          "addy": 500,
+          "window_size": 256,
+          "addx": 200,
+          "addy": 200,
           "output_level": 5
         }
       },
@@ -48,9 +49,9 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_4.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
-          "addx": 500,
-          "addy": 500,
+          "window_size": 256,
+          "addx": 200,
+          "addy": 200,
           "output_level": 5
         }
       },
@@ -58,9 +59,9 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_5.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
-          "addx": 500,
-          "addy": 500,
+          "window_size": 256,
+          "addx": 200,
+          "addy": 200,
           "output_level": 5
         }
       },
@@ -68,9 +69,9 @@
         "skip": false,
         "filename": "vj_097_shift_rot_skew_crop_6.jpg",
         "align_to_next_pars": {
-          "window_size": 1024,
-          "addx": 500,
-          "addy": 500,
+          "window_size": 256,
+          "addx": 200,
+          "addy": 200,
           "output_level": 5
         }
       },
