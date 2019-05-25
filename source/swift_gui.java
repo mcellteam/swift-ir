@@ -16,6 +16,12 @@ import javax.swing.event.*;
 import java.nio.*;  // Needed for relativize function.
 
 
+
+
+///// import java.awt.geom.AffineTransform;
+
+
+
 class ProjectFileChooser extends JFileChooser {
   ProjectFileChooser ( String path ) {
     super(path);
@@ -1079,6 +1085,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
   }
 
+  /* The Affine Transforms from SWiFT are of the form:
+        [ [m00 m01 m02] [m10 m11 m12] ]
+     The AffineTransform constructor in Java is of the form:
+        AffineTransform ( m00, m10, m01, m11, m02, m12 )
+  */
   double[] concat_affine ( double[] a, double[] d ) {
     double[] r = new double[6];
     r[0] = (a[0] * d[0]) + (a[1] * d[3]);
@@ -1092,6 +1103,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   double[] propagate_affine ( int first, int last ) {
     double[] cumulative = { 1.0, 0.0, 0.0, 0.0, 1.0, 0.0 };
+    ///// AffineTransform java_cumulative = new AffineTransform ( 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 );
     swift_gui_frame frame;
     for (int i=first; i<=last; i++) {
       frame = frames.get(i);
@@ -1099,10 +1111,20 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         //if (!frame.skip) {
           if (frame.affine_transform_from_prev != null) {
             cumulative = concat_affine ( cumulative, frame.affine_transform_from_prev );
+            ///// java_cumulative.concatenate ( new AffineTransform ( frame.affine_transform_from_prev[0],
+            /////                                                     frame.affine_transform_from_prev[3],
+            /////                                                     frame.affine_transform_from_prev[1],
+            /////                                                     frame.affine_transform_from_prev[4],
+            /////                                                     frame.affine_transform_from_prev[2],
+            /////                                                     frame.affine_transform_from_prev[5] ) );
           }
         //}
       }
     }
+    ///// System.out.print ( "Cumulative:" );
+    ///// for (int ci=0; ci<6; ci++) System.out.print ( " " + cumulative[ci] );
+    ///// System.out.println();
+    ///// System.out.println ( "Java Cumul: " + java_cumulative );
     return ( cumulative );
   }
 
