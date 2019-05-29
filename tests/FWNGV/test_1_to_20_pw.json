@@ -5,7 +5,7 @@
     "source_path": "",
     "destination_path": "output_pw",
     "pairwise_alignment": true,
-    "time_last_aligned": 1558757716439,
+    "time_last_aligned": 1558760295416,
     "last_alignment": [
       { "frames": [ 0, 1 ], "affine": [ 0.998579, -0.0522393, 228.589, 0.0522691, 0.998552, -52.3736 ] },
       { "frames": [ 1, 2 ], "affine": [ 0.997476, 0.069786, -168.888, -0.0696001, 0.997778, 209.136 ] },
