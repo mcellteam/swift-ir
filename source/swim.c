@@ -98,10 +98,10 @@ void mk_fpat(struct image *im, double xc, double yc, double xdx, double ydx, dou
 	uchar *pp;
 	float f0, f1, f2, f3, psum = 0, psum2 = 0, *ifpp = fpp;
 	if(debug_level > 50) {
-		fprintf(stderr, "im %p  del %d xy %.15g %.15g  %.15g %.15g  %.15g %.15g  lut %p  flt %p %d %d\n", im, im->ydelta, xc, yc, xdx, ydx, xdy, ydy, lut, fpp, nx, ny);
+		fprintf(stderr, "im %p  del %d xy %g %g  %g %g  %g %g  lut %p  flt %p %d %d\n", im, im->ydelta, xc, yc, xdx, ydx, xdy, ydy, lut, fpp, nx, ny);
 	}
 	if(debug_level > 50) {
-		fprintf(stderr, "AFFINE afm %.15g %.15g %.15g %.15g\n", afm[0], afm[1], afm[2], afm[3]);
+		fprintf(stderr, "AFFINE afm %g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
 	}
 	f0 = (nx-1) * xdx/2;
 	f1 = (nx-1) * xdy/2;
@@ -197,11 +197,11 @@ void mk_ftarg(struct image *im, int xc, int yc, float *fpp, int nx, int ny) {
 	yc -= ny;
 	fv = targavg;
 	if(debug_level > 50) {
-		fprintf(stderr, "restart yc %d fpp %p  fv %.15g\n", yc, fpp, fv);
+		fprintf(stderr, "restart yc %d fpp %p  fv %g\n", yc, fpp, fv);
 	}
 	for(y = 0; y < ny; y++, yc++, fpp += nx) {
 		if(yc < 0 || yc >= im->ht) {
-			//fprintf(stderr, "fix y %d yc %d to %.15g\n", y, yc, fv); // XXX AWW apodize edges
+			//fprintf(stderr, "fix y %d yc %d to %g\n", y, yc, fv); // XXX AWW apodize edges
 			//alternatively fold back and diffuse on opposite edge to preserve this edge
 			for(x = 0; x < nx; x++) {
 				fpp[x] = fv;
@@ -216,7 +216,7 @@ void mk_ftarg(struct image *im, int xc, int yc, float *fpp, int nx, int ny) {
 		}
 	}
 	if(debug_level > 50) {
-		fprintf(stderr, "ftarg stats  av %.15g  va %.15g  sd %.15g  n %d\n", targavg, targvar, targsd, n);
+		fprintf(stderr, "ftarg stats  av %g  va %g  sd %g  n %d\n", targavg, targvar, targsd, n);
 	}
 }
 
@@ -229,7 +229,7 @@ void scalepat(float *pat, int nx, int ny) {
 			if(fp[x] < fmin) fmin = fp[x];
 		}
 	}
-	//fprintf(stderr, "scalepat minmax %.15g %.15g\n", fmin, fmax);
+	//fprintf(stderr, "scalepat minmax %g %g\n", fmin, fmax);
 	for(y = 0, fp = pat; y < ny; y++, fp += nx) {
 		for(x = 0; x < nx; x++) {
 			fp[x] = 255*(fp[x] - fmin)/(fmax - fmin);
@@ -282,7 +282,7 @@ void cpfout(float *pat, int nx, int ny, struct image *im, int xo, int yo) {
 
 void expand(float *ip, int ix, int iy, float *op, int ox, int oy, float pad) {
 	int x, y;
-//fprintf(stderr, "expand %d %d  to %d %d  pad %.15g\n", ix, iy, ox, oy, pad);
+//fprintf(stderr, "expand %d %d  to %d %d  pad %g\n", ix, iy, ox, oy, pad);
 	for(y = 0; y < iy; y++, ip += ix, op += ox) {
 //fprintf(stderr, "y %d\n", y);
 		for(x = 0; x < ix; x++) {
@@ -310,7 +310,7 @@ void mk_winf(float *winf, int nx, int ny) {
 	rad *= 1.05; // fudge so we don't waste true 0 edges.
 	rad /= M_PI/2;
 	if(debug_level > 50) {
-		fprintf(stderr, "mk_winf %d %d rad %.15g\n", nx, ny, rad);
+		fprintf(stderr, "mk_winf %d %d rad %g\n", nx, ny, rad);
 	}
 	for(y = 0; y < ny; y++, winf += nx) {
 		dy = fabs(y - ny/2.)/(ny/2);
@@ -318,7 +318,7 @@ void mk_winf(float *winf, int nx, int ny) {
 			dy = .5 + cos(5*M_PI*(dy-.8))/2;
 		else
 			dy = 1;
-		//fprintf(stderr, "y %d dy %.15g\n", y, dy);
+		//fprintf(stderr, "y %d dy %g\n", y, dy);
 		for(x = 0; x < nx; x++) {
 			dx = fabs(x - nx/2.)/(nx/2);
 			if(dx > .8) {
@@ -351,7 +351,7 @@ void use_winf(float *winf, float *pat, int nx, int ny) {
 			fsum += pp[x] * wp[x];
 			en += wp[x]; // effective n is weighted n
 		}
-//fprintf(stderr, "fsum %.15g   %.15g\n", fsum, fsum/en);
+//fprintf(stderr, "fsum %g   %g\n", fsum, fsum/en);
 	fsum /= en;
 	for(y = 0, pp = pat, wp = winf; y < ny; y++, pp += nx, wp += nx)
 		for(x = 0; x < nx; x++) {
@@ -364,7 +364,7 @@ void use_winf(float *winf, float *pat, int nx, int ny) {
 	winvar = (wsum2 - wsum*wsum/n) / (n-1);
 	winsd = sqrt(winvar);
 	if(debug_level > 50) {
-		fprintf(stderr, "win stats  av %.15g  va %.15g  sd %.15g  n %d\n", winavg, winvar, winsd, n);
+		fprintf(stderr, "win stats  av %g  va %g  sd %g  n %d\n", winavg, winvar, winsd, n);
 	}
 }
 
@@ -421,19 +421,19 @@ void stats(float *fp, int nx, int ny) {
 	stat_avg = sum/stat_n;
 	stat_var = (sum2 - sum*sum/stat_n)/(stat_n-1);
 	stat_sd = sqrt(stat_var);
-//fprintf(stderr, "call stats  av %.15g  va %.15g  sd %.15g  n %d\n", stat_avg, stat_var, stat_sd, stat_n);
+//fprintf(stderr, "call stats  av %g  va %g  sd %g  n %d\n", stat_avg, stat_var, stat_sd, stat_n);
 	stat_maxz = stat_max - stat_avg;
 	stat_minz = stat_min - stat_avg;
-//fprintf(stderr, "max %.15g at %d %d\n", stat_max, stat_maxx, stat_maxy);
-//fprintf(stderr, "min %.15g at %d %d  *****\n", stat_min, stat_minx, stat_miny);
-//fprintf(stderr, "minmaxz %.15g %.15g  %.15g %.15g  at %d %d\n",
+//fprintf(stderr, "max %g at %d %d\n", stat_max, stat_maxx, stat_maxy);
+//fprintf(stderr, "min %g at %d %d  *****\n", stat_min, stat_minx, stat_miny);
+//fprintf(stderr, "minmaxz %g %g  %g %g  at %d %d\n",
 //stat_minz, stat_maxz, stat_minz/stat_sd, stat_maxz/stat_sd, stat_minx, stat_miny);
 	zscore = -stat_minz/stat_sd;
 	newbest = 0;
-//fprintf(stderr, "compare %.15g > %.15g\n", zscore, bestz);
+//fprintf(stderr, "compare %g > %g\n", zscore, bestz);
 	if(zscore > bestz) {
 		if(debug_level > 50) {
-			fprintf(stderr, "newbest %.15g vs %.15g a %.15g w %.15g xy %d %d\n",
+			fprintf(stderr, "newbest %g vs %g a %g w %g xy %d %d\n",
 														zscore, bestz, curra, wht_expon, stat_minx, stat_miny);
 		}
 		besta = curra;
@@ -451,7 +451,7 @@ void stats(float *fp, int nx, int ny) {
 	} else {
 		float zdiff = bestz-zscore;
 		if ( (debug_level > 50) || (zdiff > 1.5) ) {
-			fprintf(stderr, "%s %.15g %.15g GOTWORSE by %.15g:  %.15g vs %.15g a %.15g xy %d %d\n",
+			fprintf(stderr, "%s %g %g GOTWORSE by %g:  %g vs %g a %g xy %d %d\n",
 											fname0, tarx, tary, zdiff, zscore, bestz, curra, stat_minx, stat_miny);
 		}
 	}
@@ -501,22 +501,22 @@ float find_xyoff(unsigned char *ip, int wid, int ht) {
 			sumsq += v*v;
 		}
 	}
-	fprintf(stderr, "sumsq %.15g\n", sumsq);
+	fprintf(stderr, "sumsq %g\n", sumsq);
 	//if(hiprot[0] != 1234.) { fprintf(stderr, "****** B\n"); exit(1); }
 	av = sum/n;
 	var = (sumsq - sum*sum/n) / (n-1);
 	sd = sqrt(var);
-	fprintf(stderr, "avg %.15g  var %.15g  sd %.15g\n", sum/n, var, sd);
-	fprintf(stderr, "max %d at %d %d ... %.15g\n", maxv, xmax, ymax, (maxv-av)/sd);
-	fprintf(stderr, "min %d at %d %d ... %.15g\n", minv, xmin, ymin, (av-minv)/sd);
+	fprintf(stderr, "avg %g  var %g  sd %g\n", sum/n, var, sd);
+	fprintf(stderr, "max %d at %d %d ... %g\n", maxv, xmax, ymax, (maxv-av)/sd);
+	fprintf(stderr, "min %d at %d %d ... %g\n", minv, xmin, ymin, (av-minv)/sd);
 	worstsd = (maxv-av)/sd;
 	bestsd = (av-minv)/sd;
 	/*
 	for(x = 0; x < wid; x++)
-		fprintf(stderr, "%d %.15g\n", x, -(fh[x]/wid - av));
+		fprintf(stderr, "%d %g\n", x, -(fh[x]/wid - av));
 	printf("\n");
 	for(y = 0; y < ht; y++)
-		fprintf(stderr, "%d %.15g\n", y, -(fv[y]/ht - av));
+		fprintf(stderr, "%d %g\n", y, -(fv[y]/ht - av));
 	*/
 	for(x = 0; x < wid; x++) {
 		fh[x] = 0;
@@ -533,10 +533,10 @@ float find_xyoff(unsigned char *ip, int wid, int ht) {
 			if(v > 0) {
 				f = v/sd;
 				if(f < ETHR) continue;
-				//fprintf(stderr, "f %.15g ETHR %.15g\n", f, ETHR);
-				//fprintf(stderr, "xy %d %d: f %.15g -> ", x, y, f);
+				//fprintf(stderr, "f %g ETHR %g\n", f, ETHR);
+				//fprintf(stderr, "xy %d %d: f %g -> ", x, y, f);
 				f = exp(f/10.); // use Q errf instead XXX
-				//fprintf(stderr, "exp %.15g\n", f); // no div by 10 gave too many nan overflows
+				//fprintf(stderr, "exp %g\n", f); // no div by 10 gave too many nan overflows
 				if(f > 0) {
 					fh[x] += f;
 					fv[y] += f;
@@ -558,8 +558,8 @@ for(x = 0; x < wid; x++)  {
 		fhc[x] += fhc[x-1];
 		halfeh = fhc[x];
 	}
-	//printf("%d %.15g\n", x, fh[x]);
-//fprintf(stderr, "x %d: %.15g\n", x, fh[x]);
+	//printf("%d %g\n", x, fh[x]);
+//fprintf(stderr, "x %d: %g\n", x, fh[x]);
 	}
 	//printf("\n");
 	for(y = 0; y < ht; y++) {
@@ -568,10 +568,10 @@ for(x = 0; x < wid; x++)  {
 			fvc[y] += fvc[y-1];
 			halfev = fvc[y];
 		}
-		//printf("%d %.15g\n", y, fv[y]);
-//fprintf(stderr, "y %d: %.15g\n", y, fv[y]);
+		//printf("%d %g\n", y, fv[y]);
+//fprintf(stderr, "y %d: %g\n", y, fv[y]);
 	}
-//for(y = 0; y < ht; y++) fprintf(stderr, "i %d: %.15g %.15g\n", y, fhc[y], fvc[y]);
+//for(y = 0; y < ht; y++) fprintf(stderr, "i %d: %g %g\n", y, fhc[y], fvc[y]);
 	if(halfeh < 1 || halfev < 1)
 		return(1000000); // return huge uncertainty
 	h10 = .02*halfeh;
@@ -582,7 +582,7 @@ for(x = 0; x < wid; x++)  {
 	halfev /= 2;
 //if(hiprot[0] != 1234.) { fprintf(stderr, "****** D\n"); exit(1); }
 if(debug_level > 50)
-fprintf(stderr, "half %.15g %.15g\n", halfeh, halfev);
+fprintf(stderr, "half %g %g\n", halfeh, halfev);
 	//printf("\n");
 	x10 = y10 = 0;
 	for(x = 0; x < wid; x++) {
@@ -592,8 +592,8 @@ fprintf(stderr, "half %.15g %.15g\n", halfeh, halfev);
 			x10 = x;
 		if(fhc[x] < h90)
 			x90 = x;
-		//printf("%d %.15g\n", x, fhc[x]);
-//fprintf(stderr, "x %d: %.15g\n", x, fhc[x]);
+		//printf("%d %g\n", x, fhc[x]);
+//fprintf(stderr, "x %d: %g\n", x, fhc[x]);
 	}
 	//printf("\n");
 	for(y = 0; y < ht; y++) {
@@ -603,14 +603,14 @@ fprintf(stderr, "half %.15g %.15g\n", halfeh, halfev);
 	 		y10 = y;
 		if(fvc[y] < v90)
 	 		y90 = y;
-		//printf("%d %.15g\n", y, fvc[y]);
-//fprintf(stderr, "y %d: %.15g\n", y, fvc[y]);
+		//printf("%d %g\n", y, fvc[y]);
+//fprintf(stderr, "y %d: %g\n", y, fvc[y]);
 	}
 if(debug_level > 50) {
 fprintf(stderr, "matchxy %d %d\n", matchx, matchy);
-fprintf(stderr, "  h (%.15g - %.15g) / (%.15g - %.15g)\n", halfeh, fhc[matchx], fhc[matchx+1], fhc[matchx]);
-fprintf(stderr, "  v (%.15g - %.15g) / (%.15g - %.15g)\n", halfev, fvc[matchy], fvc[matchy+1], fvc[matchy]);
-fprintf(stderr, "   at 1   %.15g %.15g\n", fhc[matchx+1], fvc[matchy+1]);
+fprintf(stderr, "  h (%g - %g) / (%g - %g)\n", halfeh, fhc[matchx], fhc[matchx+1], fhc[matchx]);
+fprintf(stderr, "  v (%g - %g) / (%g - %g)\n", halfev, fvc[matchy], fvc[matchy+1], fvc[matchy]);
+fprintf(stderr, "   at 1   %g %g\n", fhc[matchx+1], fvc[matchy+1]);
 }
 // XXX lots to check here
 	frh = (halfeh - fhc[matchx]) / (fhc[matchx+1] - fhc[matchx-1]);
@@ -620,10 +620,10 @@ matchy++;	// XXX Apr 25, 2012 - bump by one to hit actual peak!!! XXX
 frh -= 0.5;
 frv -= 0.5;	// account for 0 pos being at SIZE/2 - off by one/half XXX
 if(debug_level > 50)
-fprintf(stderr, "frac %.15g %.15g\n", frh, frv);
-//fprintf(stderr, "final %.15g %.15g\n", matchx+frh, matchy+frv); ////////////////
-//fprintf(stderr, "hthresh %.15g %.15g %.15g\n", h10, halfeh, h90);
-//fprintf(stderr, "vthresh %.15g %.15g %.15g\n", v10, halfev, v90);
+fprintf(stderr, "frac %g %g\n", frh, frv);
+//fprintf(stderr, "final %g %g\n", matchx+frh, matchy+frv); ////////////////
+//fprintf(stderr, "hthresh %g %g %g\n", h10, halfeh, h90);
+//fprintf(stderr, "vthresh %g %g %g\n", v10, halfev, v90);
 //fprintf(stderr, "hlimits %d %d %d\n", x10, matchx, x90);
 //fprintf(stderr, "vlimits %d %d %d\n", y10, matchy, y90);
 	//free(fh);
@@ -636,8 +636,8 @@ fprintf(stderr, "frac %.15g %.15g\n", frh, frv);
 	uy = y90 - y10;
 if(debug_level > 50) {
 fprintf(stderr, "matchx %d matchy %d\n", matchx, matchy);
-fprintf(stderr, "frh %.15g frv %.15g\n", frh, frv);
-fprintf(stderr, "fbestx %.15g fbesty %.15g\n", fbestx, fbesty);
+fprintf(stderr, "frh %g frv %g\n", frh, frv);
+fprintf(stderr, "fbestx %g fbesty %g\n", fbestx, fbesty);
 fprintf(stderr, "firstlast %d %d  %d %d", firstx, lastx, firsty, lasty);
 fprintf(stderr, " xy90 %d %d  %d %d", x90, x10, y90, y10);
 fprintf(stderr, " ux %d uy %d\n", ux, uy);
@@ -676,7 +676,7 @@ void short2byte(struct image *im) {
 			min = v;
 	}
 	m = 255./(max - min);
-fprintf(stderr, "short2byte  %d %.15g %d  %.15g\n", min, sum/(float)n, max, m);
+fprintf(stderr, "short2byte  %d %g %d  %g\n", min, sum/(float)n, max, m);
 	for(i = 0; i < n; i++)
 		cp[i] = m*(sp[i] - min);
 	im->pp = realloc(im->pp, n);
@@ -750,15 +750,15 @@ double eval_expr(char *s) {
 				p++;
 				while(isdigit(*p)) {
 					fr *= .1;
-//fprintf(stderr, "fr %.15g <%c> %.15g\n", fr, *p, vstack[sp]);
+//fprintf(stderr, "fr %g <%c> %g\n", fr, *p, vstack[sp]);
 					vstack[sp] += fr * (*p - '0');
 					p++;
 				}
 			}
-//fprintf(stderr, "testunary# %d %.15g\n", unary, vstack[sp]);
+//fprintf(stderr, "testunary# %d %g\n", unary, vstack[sp]);
 			if(unary < 1)
 				vstack[sp] = -vstack[sp];
-//fprintf(stderr, "final # %.15g\n", vstack[sp]);
+//fprintf(stderr, "final # %g\n", vstack[sp]);
 			sp++;
 			unary = 1;
 		} else if(c == '(')
@@ -788,7 +788,7 @@ double eval_expr(char *s) {
 		}
 		if(c == 0) {
 //			if(sp == 1) {		/* this should be TRUE! */
-//fprintf(stderr, "eval_expr <%s> %.15g\n", s, vstack[0]);
+//fprintf(stderr, "eval_expr <%s> %g\n", s, vstack[0]);
 //				return(vstack[0]);
 //			} else
 //				printf("Error - sp was %d\n", sp);
@@ -818,7 +818,7 @@ float mi[2][3] = {1, 0, 0, 0, 1, 0};	// inverse affine
 
 void affine_inverse(float *mi, float *mf) {
 	float det = mf[0]*mf[3+1] - mf[1]*mf[3+0];
-	fprintf(stderr, "det %.15g -> sc %.15g\n", det, sqrt(1/det));
+	fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1/det));
 	mi[0] = mf[3+1]/det;
 	mi[1] = -mf[1]/det;
 	mi[2] = -mf[2]*mi[0] - mf[3+2]*mi[1];
@@ -986,9 +986,9 @@ int oldmain(int argc, char *argv[]) {
 			mf[1][0] = eval_expr(argv[8]);
 			mf[1][1] = eval_expr(argv[9]);
 			mf[1][2] = eval_expr(argv[10]);
-			fprintf(stderr, "MF  %.15g %.15g %.15g  %.15g %.15g %.15g\n", mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
+			fprintf(stderr, "MF  %g %g %g  %g %g %g\n", mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
 			affine_inverse(&mi[0][0], &mf[0][0]);
-			fprintf(stderr, "MI  %.15g %.15g %.15g  %.15g %.15g %.15g\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
+			fprintf(stderr, "MI  %g %g %g  %g %g %g\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
 			if(argv[11][0] == '-') {
 				if (debug_level > 50) printf ( "argv[11][0] == -\n" );
 				patx = tarx*mi[0][0] + tary*mi[0][1] + mi[0][2];
@@ -1093,10 +1093,10 @@ int oldmain(int argc, char *argv[]) {
 	startpatx = patx;
 	startpaty = paty;
 	if(debug_level > 50)
-		fprintf(stderr, "args  %s %.15g %.15g  %s %.15g %.15g  MUL %.15g SIZ %dx%d\n",
+		fprintf(stderr, "args  %s %g %g  %s %g %g  MUL %g SIZ %dx%d\n",
 			fname0, tarx, tary, fname1, patx, paty,MUL,SIZEX,SIZEY);
 #ifdef	VERB
-	fprintf(stderr, "SWIM %dx%d %s %.15g %.15g %s %.15g %.15g  %.15g %.15g %.15g %.15g\n",
+	fprintf(stderr, "SWIM %dx%d %s %g %g %s %g %g  %g %g %g %g\n",
 		SIZEX, SIZEY, fname0, tarx, tary, fname1,
 		patx, paty, afm[0], afm[1], afm[2], afm[3]);
 #endif // VERB
@@ -1125,11 +1125,11 @@ int oldmain(int argc, char *argv[]) {
 		if(fftw_mode == FFTW_MEASURE) {
 			gettimeofday(&tv, NULL);
 			elapsed_sec = (tv.tv_sec-starts) + (tv.tv_usec - startu)/1000000.;
-			fprintf(stderr, "FFTW_MEASURE %12llu ticks  %.15g sec\n", tinit, elapsed_sec);
+			fprintf(stderr, "FFTW_MEASURE %12llu ticks  %g sec\n", tinit, elapsed_sec);
 		}
 	}
 	if(debug_level > 50)
-		fprintf(stderr, "make targ at %.15g %.15g EWH %d %d\n", tarx, tary, EW, EH);
+		fprintf(stderr, "make targ at %g %g EWH %d %d\n", tarx, tary, EW, EH);
 	if(oldtarx != tarx || oldtary != tary) {
 		tprep0 -= getticks();
 		mk_ftarg(im0, tarx-EW/2, tary-EH/2, targ, EW, EH);
@@ -1156,7 +1156,7 @@ int oldmain(int argc, char *argv[]) {
 	sum2besty = 0;
 loop:
 	if(debug_level > 50)
-		fprintf(stderr, "LOOP patxy %.15g %.15g  bestz %.15g %d\n",
+		fprintf(stderr, "LOOP patxy %g %g  bestz %g %d\n",
 			patx, paty, bestz, nbests);
 	bestz = 0; // reinit to fix mpl image bug XXX
 	nbests = 0;
@@ -1165,14 +1165,14 @@ loop:
 	sum2bestx = 0;
 	sum2besty = 0;
 	ia = 0;
-	fprintf(stderr, "LOOP ia %d  wht_expon %.15g\n", ia, wht_expon);
+	fprintf(stderr, "LOOP ia %d  wht_expon %g\n", ia, wht_expon);
 	curra = 0;
 	currw = wht_expon;
 	a = (rota+curra)*M_PI/180;
 	fdx = cos(a);
 	fdy = sin(a);
 	m0 = sqrt(fdx*fdx + fdy*fdy);
-	fprintf(stderr, "ia %d a %.15g  %.15g %.15g  %.15g\n", ia, a, fdx, fdy, m0);
+	fprintf(stderr, "ia %d a %g  %g %g  %g\n", ia, a, fdx, fdy, m0);
 	if(1 || oldpatx != patx || oldpaty != paty || oldpata != a) { // XXX
 		tprep1 -= getticks();
 		if(a >= -.001 && a <= 0.001)
@@ -1196,7 +1196,7 @@ loop:
 		tprep1 += getticks();
 	}
 	if(oldtarx != tarx || oldtary != tary) {
-		if(debug_level > 50) fprintf(stderr, "need first FFT %.15g %.15g  %p\n", tarx, tary, targ);
+		if(debug_level > 50) fprintf(stderr, "need first FFT %g %g  %p\n", tarx, tary, targ);
 		tfft0 -= getticks();
 		fftwf_execute_dft_r2c(forward_plan0, targ, fft_result0);
 		oldtarx = tarx; oldtary = tary; ntargft++;
@@ -1208,7 +1208,7 @@ loop:
 	fdy = paty - oldpaty;
 	m0 = sqrt(fdx*fdx + fdy*fdy);
 	if(oldpatx != patx || oldpaty != paty || oldpata != a || afm[0] != ofm[0] || afm[1] != ofm[1] || afm[2] != ofm[2] || afm[3] != ofm[3]) {
-		if(debug_level > 50) fprintf(stderr, "need second FFT %.15g %.15g\n", patx, paty);
+		if(debug_level > 50) fprintf(stderr, "need second FFT %g %g\n", patx, paty);
 		tfft1 -= getticks();
 		fftwf_execute_dft_r2c(forward_plan0, epat, fft_result1);
 		oldpatx = patx; oldpaty = paty; oldpata = a; npatft++;
@@ -1272,14 +1272,14 @@ loop:
 	deltx = (rng_rt - rng_lft)/2;
 	delty = (rng_dn - rng_up)/2;
 	if(debug_level > 50)
-	fprintf(stderr, "up/down %.15g %.15g  lft/rt %.15g %.15g  del %.15g %.15g \n",
+	fprintf(stderr, "up/down %g %g  lft/rt %g %g  del %g %g \n",
 	rng_up, rng_dn, rng_lft, rng_rt, deltx, delty);
 	ntarx = tarx + deltx;
 	ntary = tary + delty;
 	npatx = patx + deltx;
 	npaty = paty + delty;
 	if(debug_level > 50)
-	fprintf(stderr, "%.15g: %s %.15g %.15g %s %.15g %.15g delt %.15g %.15g\n", bestz,
+	fprintf(stderr, "%g: %s %g %g %s %g %g delt %g %g\n", bestz,
 	fname0, ntarx, ntary, fname1, npatx, npaty, deltx, delty);
 	fdx = fbestx-SIZEX/2.;
 	fdy = fbesty-SIZEY/2.;
@@ -1293,24 +1293,24 @@ loop:
 	if(no_vert)
 		tdy = 0;
 	if(debug_level > 50)
-		fprintf(stderr, "MOVE by %.15g-%.15g=%.15g  %.15g-%.15g=%.15g   %.15g\n",
+		fprintf(stderr, "MOVE by %g-%g=%g  %g-%g=%g   %g\n",
 	fbestx, SIZEX/2., fdx, fbesty, SIZEY/2., fdy, m0);
 	if(debug_level > 50)
-		fprintf(stderr, "TXY %.15g %.15g = %.15g\n", tdx, tdy, sqrt(tdx*tdx + tdy*tdy));
+		fprintf(stderr, "TXY %g %g = %g\n", tdx, tdy, sqrt(tdx*tdx + tdy*tdy));
 	if(debug_level > 50)
-		fprintf(stderr, "OLD %.15g %.15g", patx, paty);
+		fprintf(stderr, "OLD %g %g", patx, paty);
 	patx = patx - tdx;
 	paty = paty - tdy;
 	if(debug_level > 50)
-		fprintf(stderr, "   NEW patx paty %.15g %.15g\n", patx, paty);
+		fprintf(stderr, "   NEW patx paty %g %g\n", patx, paty);
 	if(--niter > 0)
 		goto loop;
 	if(debug_level > 50) {
-		fprintf(stderr, "tarx %.15g tary %.15g\n", tarx, tary);
-		fprintf(stderr, "patx %.15g paty %.15g\n", patx, paty);
-		fprintf(stderr, "bstx %.15g bsty %.15g\n", fbestx, fbesty);
+		fprintf(stderr, "tarx %g tary %g\n", tarx, tary);
+		fprintf(stderr, "patx %g paty %g\n", patx, paty);
+		fprintf(stderr, "bstx %g bsty %g\n", fbestx, fbesty);
 	}
-	fprintf(stderr, "keep %.15g: %s %d %d %s %.15g %.15g  %.15g\n", bestz, fname0,
+	fprintf(stderr, "keep %g: %s %d %d %s %g %g  %g\n", bestz, fname0,
 		(int)tarx, (int)tary, fname1, patx, paty, rota+besta);
 	fdx = patx - startpatx;
 	fdy = paty - startpaty;
@@ -1340,7 +1340,7 @@ loop:
 			paty = startpaty;
 			areset = 0; //// XXX do this somewhere else
 		}
-		sprintf(outbuf, "%.15g: %s %.15g %.15g %s %.15g %.15g  %.15g (%.15g %.15g %.15g%s)\n", bestz, fname0, tarx, tary, fname1, patx, paty, rota+besta, fdx, fdy, m0, flags[flag]);
+		sprintf(outbuf, "%g: %s %g %g %s %g %g  %g (%g %g %g%s)\n", bestz, fname0, tarx, tary, fname1, patx, paty, rota+besta, fdx, fdy, m0, flags[flag]);
 		nw = write(1, outbuf, strlen(outbuf));
 	}
 	return(0);
@@ -1474,8 +1474,8 @@ int main(int argc, char *argv[]) {
 	gettimeofday(&tv, NULL);
 #ifdef	VERB
 	elapsed_sec = (tv.tv_sec-starts) + (tv.tv_usec - startu)/1000000.;
-	fprintf(stderr, "elapsed_sec %.15g\n", elapsed_sec);
-	fprintf(stderr, "tickrate %.15g\n", total_ticks/elapsed_sec);
+	fprintf(stderr, "elapsed_sec %g\n", elapsed_sec);
+	fprintf(stderr, "tickrate %g\n", total_ticks/elapsed_sec);
 	fprintf(stderr, "targs %12llu\n", targs);
 	fprintf(stderr, "tinit %12llu\n", tinit);
 	fprintf(stderr, "tread %12llu = %12llu + %12llu\n",
@@ -1489,10 +1489,10 @@ int main(int argc, char *argv[]) {
 	fprintf(stderr, "total %12llu\n", total_ticks);
 	fprintf(stderr, "nread %d %d\n", nread0, nread1);
 	fprintf(stderr, "nft %d %d ncalls %d\n", ntargft, npatft, ncalls);
-	fprintf(stderr, "ticks/pixel %.15g\n",
+	fprintf(stderr, "ticks/pixel %g\n",
 		total_ticks/((double)ncalls*SIZEX*SIZEY));
-	fprintf(stderr, "pixels %.15g\n", ncalls*(double)SIZEX*SIZEY);
-	fprintf(stderr, "pixels/sec %.15g\n",
+	fprintf(stderr, "pixels %g\n", ncalls*(double)SIZEX*SIZEY);
+	fprintf(stderr, "pixels/sec %g\n",
 		ncalls*(double)SIZEX*SIZEY/elapsed_sec);
 	fprintf(stderr, "\tpixels/sec %5.0f %dx%d = %d\n",
 		Nrev*ncalls*(double)SIZEX*SIZEY/elapsed_sec, EW, EH, EW*EH);
