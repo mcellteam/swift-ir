@@ -151,7 +151,7 @@ void hline(int y, int x0, int x1) {
   if (iflag == 0) {             // nearest pixel
     tx += .5;                   // half pixel correction only needed for nearest
     ty += .5;
-    //fprintf(stderr, "txy %.15g %.15g  x0 x1  %d %d\n", tx, ty, x0, x1);
+    //fprintf(stderr, "txy %g %g  x0 x1  %d %d\n", tx, ty, x0, x1);
     if (obpp == 1 && ibpp == 1)
       for (x = x0; x <= x1; x++, tx += mf[0][0], ty += mf[1][0]) {
         ix = tx;
@@ -217,7 +217,7 @@ void hline(int y, int x0, int x1) {
     return;
   }
   if (iflag == 1) {             // bilinear interpolation
-    //fprintf(stderr, "txy %.15g %.15g  x0 x1  %d %d  bpp %d %d\n",
+    //fprintf(stderr, "txy %g %g  x0 x1  %d %d  bpp %d %d\n",
     //tx, ty, x0, x1, ibpp, obpp);
     if (ibpp != 1 || obpp != 1) {
       fprintf(stderr, "EXIT\n");
@@ -312,9 +312,9 @@ void dtri(float *v0, float *v1, float *v2) {
   double f0, f1, dx0, dx1, dx2, dy0, dy1, dy2;
   int i;
   /*
-  fprintf(stderr, "dtri %d: %.15g %.15g  %.15g %.15g  %.15g %.15g\n", trival,
+  fprintf(stderr, "dtri %d: %g %g  %g %g  %g %g\n", trival,
   v0[0], v0[1], v1[0], v1[1], v2[0], v2[1]);
-  fprintf(stderr, "\t%.15g %.15g  %.15g %.15g  %.15g %.15g\n",
+  fprintf(stderr, "\t%g %g  %g %g  %g %g\n",
   v0[2], v0[3], v1[2], v1[3], v2[2], v2[3]);
   */
   tri_ticks -= getticks();
@@ -349,7 +349,7 @@ void dtri(float *v0, float *v1, float *v2) {
     f0 = (v1[1] - y0) / dy0;
     f1 = (v2[1] - y0) / dy2;
     if (f0 < 0) {
-      fprintf(stderr, "reset %.15g to 0\n", f0);
+      fprintf(stderr, "reset %g to 0\n", f0);
       f0 = 0;
     }
     for (i = 0; i < VL; i++) {
@@ -400,13 +400,13 @@ void doop(int op) {
   if (pstack[sp - 1] == 'V') {
     // fprintf(stderr, "lookup sp-1 %c\t", (int)vstack[sp-1]);
     vstack[sp - 1] = var[(int)vstack[sp - 1] - 'a'];
-    // fprintf(stderr, "-> %.15g\n", vstack[sp-1]);
+    // fprintf(stderr, "-> %g\n", vstack[sp-1]);
     pstack[sp - 1] = '#';
   }
   if (op != '=' && pstack[sp - 3] == 'V') {
     // fprintf(stderr, "lookup sp-3 %c\t", (int)vstack[sp-3]);
     vstack[sp - 3] = var[(int)vstack[sp - 3] - 'a'];
-    // fprintf(stderr, "-> %.15g\n", vstack[sp-3]);
+    // fprintf(stderr, "-> %g\n", vstack[sp-3]);
     pstack[sp - 3] = '#';
   }
   if (sp < 0)
@@ -431,13 +431,13 @@ void doop(int op) {
     vstack[sp - 3] = pow(vstack[sp - 3], vstack[sp - 1]);
     break;
   case '=':
-    // fprintf(stderr, "= %c %c %.15g\n", pstack[sp-3], (int)vstack[sp-3], vstack[sp-1]);
+    // fprintf(stderr, "= %c %c %g\n", pstack[sp-3], (int)vstack[sp-3], vstack[sp-1]);
     var[(int)vstack[sp - 3] - 'a'] = vstack[sp - 1];
     vstack[sp - 3] = vstack[sp - 1];
     pstack[sp - 3] = '#';
     break;
   }
-  // fprintf(stderr, "doop %c -> %.15g\n", op, vstack[sp-3]);
+  // fprintf(stderr, "doop %c -> %g\n", op, vstack[sp-3]);
   sp -= 2;                      /* used 3 slots to make 1 */
 }
 
@@ -449,7 +449,7 @@ void reducepar() {
   // fprintf(stderr, "final pstack %c\n", pstack[sp]);
   if (pstack[sp] == 'V') {
     vstack[sp] = var[(int)vstack[sp] - 'a'];
-    // fprintf(stderr, "lookup %d = %.15g\n", (int)vstack[sp], vstack[sp]);
+    // fprintf(stderr, "lookup %d = %g\n", (int)vstack[sp], vstack[sp]);
     pstack[sp] = '#';
   }
   vstack[sp - 1] = vstack[sp];  /* move the value down one */
@@ -470,9 +470,9 @@ double eval_expr(char *s) {
   for (;;) {
     char c = *p++;
     // for(i = 0; i < sp; i++) {
-    // if(pstack[i] == 'V') fprintf(stderr, "i %d %c %c %.15g\n",
+    // if(pstack[i] == 'V') fprintf(stderr, "i %d %c %c %g\n",
     // i, pstack[i], (int)vstack[i], var[(int)vstack[i]]);
-    // else fprintf(stderr, "i %d %c %.15g\n", i, pstack[i], vstack[i]);
+    // else fprintf(stderr, "i %d %c %g\n", i, pstack[i], vstack[i]);
     // }
     // fprintf(stderr, "c %d <%c>\n", c, c);
     if (isalpha(c)) {
@@ -499,15 +499,15 @@ double eval_expr(char *s) {
         p++;
         while (isdigit(*p)) {
           fr *= .1;
-          // fprintf(stderr, "fr %.15g <%c> %.15g\n", fr, *p, vstack[sp]);
+          // fprintf(stderr, "fr %g <%c> %g\n", fr, *p, vstack[sp]);
           vstack[sp] += fr * (*p - '0');
           p++;
         }
       }
-      // fprintf(stderr, "testunary# %d %.15g\n", unary, vstack[sp]);
+      // fprintf(stderr, "testunary# %d %g\n", unary, vstack[sp]);
       if (unary < 1)
         vstack[sp] = -vstack[sp];
-      // fprintf(stderr, "final # %.15g\n", vstack[sp]);
+      // fprintf(stderr, "final # %g\n", vstack[sp]);
       sp++;
       unary = 1;
     } else if (c == '(')
@@ -537,7 +537,7 @@ double eval_expr(char *s) {
     }
     if (c == 0) {
       if (sp == 1) {            /* this should be TRUE! */
-        // fprintf(stderr, "eval_expr <%s> %.15g\n", s, vstack[0]);
+        // fprintf(stderr, "eval_expr <%s> %g\n", s, vstack[0]);
         return (vstack[0]);
       } else
         printf("Error - sp was %d\n", sp);
@@ -584,9 +584,9 @@ void main(int argc, char *argv[]) {
         gflag++;
         break;
       case 'S':
-        sv = sscanf(argv[0] + 2, "%.15g,%.15g,%.15g,%.15g\n", &oscalex, &oscaley, &iscalex, &iscaley);
+        sv = sscanf(argv[0] + 2, "%g,%g,%g,%g\n", &oscalex, &oscaley, &iscalex, &iscaley);
         fprintf(stderr, "cmdline scale of %s\n", argv[0] + 2);
-        fprintf(stderr, "cmdline scale %.15g %.15g %.15g %.15g\n", oscalex, oscaley, iscalex, iscaley);
+        fprintf(stderr, "cmdline scale %g %g %g %g\n", oscalex, oscaley, iscalex, iscaley);
         break;
       case 'X':
         exchange ^= 1;
@@ -596,7 +596,7 @@ void main(int argc, char *argv[]) {
           char *p = &argv[0][flagp];
           // XXX why oscalex ???
           Zval = atoi(p + 1) * oscalex;
-          fprintf(stderr, "Zval %d  atoi %d  oscalex %.15g\n", Zval, atoi(p + 1), oscalex);
+          fprintf(stderr, "Zval %d  atoi %d  oscalex %g\n", Zval, atoi(p + 1), oscalex);
           while (argv[0][flagp])
             flagp++;
           flagp--;              // XXX awkward
@@ -607,7 +607,7 @@ void main(int argc, char *argv[]) {
           char *p = &argv[0][flagp];
           // XXX why oscalex ???
           skipval = atoi(p + 1) * oscalex;
-          fprintf(stderr, "skipval %d  atoi %d  oscalex %.15g\n", skipval, atoi(p + 1), oscalex);
+          fprintf(stderr, "skipval %d  atoi %d  oscalex %g\n", skipval, atoi(p + 1), oscalex);
           while (argv[0][flagp])
             flagp++;
           flagp--;              // XXX awkward
@@ -744,9 +744,9 @@ void main(int argc, char *argv[]) {
       continue;
     case '~':                  // its a comment to end of current line
       printf ( "\n" );
-      printf ( "  mf: [ %.15g %.15g %.15g   %.15g %.15g %.15g ]\n", mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2] );
-      printf ( "  mi: [ %.15g %.15g %.15g   %.15g %.15g %.15g ]\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2] );
-      printf ( "  mg: [ %.15g %.15g %.15g   %.15g %.15g %.15g ]\n", mg[0][0], mg[0][1], mg[0][2], mg[1][0], mg[1][1], mg[1][2] );
+      printf ( "  mf: [ %g %g %g   %g %g %g ]\n", mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2] );
+      printf ( "  mi: [ %g %g %g   %g %g %g ]\n", mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2] );
+      printf ( "  mg: [ %g %g %g   %g %g %g ]\n", mg[0][0], mg[0][1], mg[0][2], mg[1][0], mg[1][1], mg[1][2] );
       continue;
     case 'I':                  // interpolation 0, 1, 2
       sv = scanf("%d\n", &iflag);
@@ -766,7 +766,7 @@ void main(int argc, char *argv[]) {
     case 'S':                  // scale multipliers - should it be 'M'?
       sv = scanf("%f %f %f %f\n", // same order as verts
                  &oscalex, &oscaley, &iscalex, &iscaley);
-      fprintf(stderr, "scales %.15g %.15g  %.15g %.15g\n", oscalex, oscaley, iscalex, iscaley);
+      fprintf(stderr, "scales %g %g  %g %g\n", oscalex, oscaley, iscalex, iscaley);
       continue;
     case 'O':                  // offsets
 #ifdef	OLD
@@ -804,7 +804,7 @@ void main(int argc, char *argv[]) {
         ioffx = eval_expr(e2);
         ioffy = eval_expr(e3);
       }
-      fprintf(stderr, "offs %.15g %.15g  %.15g %.15g\n", ooffx, ooffy, ioffx, ioffy);
+      fprintf(stderr, "offs %g %g  %g %g\n", ooffx, ooffy, ioffx, ioffy);
       continue;
     case 'B':                  // bounds of output region
       if (outimg) {
@@ -947,21 +947,21 @@ void main(int argc, char *argv[]) {
       // XXX maybe for 3 corner case use faster direct trans rather than affine()
       // what about nverts == 0 with an existing affine???
       if (nverts == 0) {        // keep and use current affine;
-        fprintf(stderr, "use current af  %.15g %.15g %.15g  %.15g %.15g %.15g\n",
+        fprintf(stderr, "use current af  %g %g %g  %g %g %g\n",
                 mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
-        fprintf(stderr, "and current ai  %.15g %.15g %.15g  %.15g %.15g %.15g\n",
+        fprintf(stderr, "and current ai  %g %g %g  %g %g %g\n",
                 mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
       } else if (nverts == 1) { // changed to use affine shape + 1 point
         float keep[6];
         float ikeep[6];
         float newx, newy;
         //  fprintf(stderr, "nverts is 1\n");
-        //  fprintf(stderr, "vert0   %.15g %.15g  %.15g %.15g\n",
+        //  fprintf(stderr, "vert0   %g %g  %g %g\n",
         //  vert[0][0], vert[0][1], vert[0][2], vert[0][3]);
-        //  fprintf(stderr, "old af  %.15g %.15g %.15g  %.15g %.15g %.15g\n",
+        //  fprintf(stderr, "old af  %g %g %g  %g %g %g\n",
         //  mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
-        //fprintf(stderr, "*** newx %.15g = %.15g - %.15g\n", newx, vert[0][2], vert[0][0]);
-        // fprintf(stderr, "*** newy %.15g = %.15g - %.15g\n", newy, vert[0][3], vert[0][1]);
+        //fprintf(stderr, "*** newx %g = %g - %g\n", newx, vert[0][2], vert[0][0]);
+        // fprintf(stderr, "*** newy %g = %g - %g\n", newy, vert[0][3], vert[0][1]);
 #define nomapx(x,y) (x + mf[0][2])
 #define nomapy(x,y) (y + mf[1][2])
 #define remapx(x,y) (x*mf[0][0] + y*mf[0][1] + mf[0][2])
@@ -976,24 +976,24 @@ void main(int argc, char *argv[]) {
         affine_inverse(&mi[0][0], &mf[0][0]);
       } else if (nverts == 2) {
         float a, b, c, d, dx0, dy0, dx1, dy1, m, s;
-        //fprintf(stderr, "v0  %.15g %.15g %.15g %.15g\n", vert[0][0], vert[0][1], vert[0][2], vert[0][3]);
-        //fprintf(stderr, "v1  %.15g %.15g %.15g %.15g\n", vert[1][0], vert[1][1], vert[1][2], vert[1][3]);
+        //fprintf(stderr, "v0  %g %g %g %g\n", vert[0][0], vert[0][1], vert[0][2], vert[0][3]);
+        //fprintf(stderr, "v1  %g %g %g %g\n", vert[1][0], vert[1][1], vert[1][2], vert[1][3]);
         /*
 	        dx0 = vert[0][0] - vert[1][0];
 	        dy0 = vert[0][1] - vert[1][1];
-        fprintf(stderr, "dxy0  %.15g %.15g\n", dx0, dy0);
+        fprintf(stderr, "dxy0  %g %g\n", dx0, dy0);
 	        dx1 = vert[0][2] - vert[1][2];
 	        dy1 = vert[0][3] - vert[1][3];
-        fprintf(stderr, "dxy1  %.15g %.15g\n", dx1, dy1);
+        fprintf(stderr, "dxy1  %g %g\n", dx1, dy1);
 	        a = sqrt(dx0*dx0 + dy0*dy0);
 	        b = sqrt(dx1*dx1 + dy1*dy1);
 	        m = a/b;
-        fprintf(stderr, "ab  %.15g %.15g ... scale %.15g\n", a, b, m);
+        fprintf(stderr, "ab  %g %g ... scale %g\n", a, b, m);
 	        d = dx0*dx1 + dy0*dy1; // dot
 	        c = d / (a * b); // div mag(a)*mag(b)
 	        s = sqrt(1 - c*c); // sin from cos
-        fprintf(stderr, "csd  %.15g %.15g  %.15g\n", c, s, d);
-        fprintf(stderr, "acos %.15g  asin %.15g  === %.15g %.15g\n",
+        fprintf(stderr, "csd  %g %g  %g\n", c, s, d);
+        fprintf(stderr, "acos %g  asin %g  === %g %g\n",
         acos(c), asin(s), 180*acos(c)/3.14159, 180*asin(s)/3.14159);
 	        mf[0][0] = c; mf[0][1] = -s, mf[0][2] = vert[0][0] - vert[0][2];
 	        mf[1][0] = s; mf[1][1] = c; mf[1][2] = vert[0][1] - vert[0][3];
@@ -1004,16 +1004,16 @@ void main(int argc, char *argv[]) {
         vert[2][1] = vert[0][1] + (vert[0][0] - vert[1][0]);
         vert[2][2] = vert[0][2] - (vert[0][3] - vert[1][3]);
         vert[2][3] = vert[0][3] + (vert[0][2] - vert[1][2]);
-        //fprintf(stderr, "fiction  %.15g %.15g  %.15g %.15g\n",
+        //fprintf(stderr, "fiction  %g %g  %g %g\n",
         //vert[2][0], vert[2][1], vert[2][2], vert[2][3]);
         affine(3, &vert[0][0], ethresh, leastpts);
       } else if (nverts >= 3)   // set mf according to the given points
         affine(nverts, &vert[0][0], ethresh, leastpts);
 
       // fprintf(stderr, "after nverts %d selections\n", nverts);
-      // fprintf(stderr, "old mf  %.15g %.15g %.15g  %.15g %.15g %.15g\n",
+      // fprintf(stderr, "old mf  %g %g %g  %g %g %g\n",
       // mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
-      // fprintf(stderr, "old mi  %.15g %.15g %.15g  %.15g %.15g %.15g\n",
+      // fprintf(stderr, "old mi  %g %g %g  %g %g %g\n",
       // mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
       // fprintf(stderr, "iwid %d  iht %d\n", iwid, iht);
 
@@ -1232,18 +1232,18 @@ void main(int argc, char *argv[]) {
       vp[1] += ooffy;
       vp[2] += ioffx;
       vp[3] += ioffy;
-      //fprintf(stderr, "iverts %.15g %.15g %.15g %.15g\n", vp[0], vp[1], vp[2], vp[3]); // XXX
+      //fprintf(stderr, "iverts %g %g %g %g\n", vp[0], vp[1], vp[2], vp[3]); // XXX
       vp[0] *= oscalex;
       vp[1] *= oscaley;
       vp[2] *= iscalex;
       vp[3] *= iscaley;
-      //fprintf(stderr, "\t%.15g %.15g %.15g %.15g\n", vp[0], vp[1], vp[2], vp[3]);
+      //fprintf(stderr, "\t%g %g %g %g\n", vp[0], vp[1], vp[2], vp[3]);
       // global transform of destination points
       fx = vp[0] * mg[0][0] + vp[1] * mg[0][1] + mg[0][2];
       fy = vp[0] * mg[1][0] + vp[1] * mg[1][1] + mg[1][2];
       vp[0] = fx;
       vp[1] = fy;
-      //fprintf(stderr, "\t%.15g %.15g %.15g %.15g\n", vp[0], vp[1], vp[2], vp[3]);
+      //fprintf(stderr, "\t%g %g %g %g\n", vp[0], vp[1], vp[2], vp[3]);
       vp += 4;
       nverts++;
     }
@@ -1256,7 +1256,7 @@ void main(int argc, char *argv[]) {
     while ((i = getchar()) != EOF && i != '\n') ;
     /* */
     for (i = 0; i < nverts; i++)
-      fprintf(stderr, "%d: %.15g %.15g %.15g %.15g\n", i, vert[i][0], vert[i][1], vert[i][2], vert[i][3]);
+      fprintf(stderr, "%d: %g %g %g %g\n", i, vert[i][0], vert[i][1], vert[i][2], vert[i][3]);
     /* */
     trp = &tri[0][0];
     ntris = 0;
@@ -1367,7 +1367,7 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
     for (j = 0; j < rowlen; j++)
       aug[i][j] = 0;
   for (npts = i = 0; i < inpts; i++) {
-    fprintf(stderr, "i %d: %.15g %.15g  %.15g %.15g  %d\n", i, v[4 * i + 0], v[4 * i + 1], v[4 * i + 2], v[4 * i + 3], reject[i]);
+    fprintf(stderr, "i %d: %g %g  %g %g  %d\n", i, v[4 * i + 0], v[4 * i + 1], v[4 * i + 2], v[4 * i + 3], reject[i]);
     if (reject[i])
       continue;                 // skip this rejected point
     xa[npts] = v[4 * i + 0];
@@ -1380,7 +1380,7 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
   fprintf(stderr, "npts %d\n", npts); // XXX Jan 2016
 
   for (i = 0; i < npts; i++)
-    fprintf(stderr, "orig %d: %.15g %.15g  %.15g %.15g\n", i, xa[i], ya[i], xb[i], yb[i]);
+    fprintf(stderr, "orig %d: %g %g  %g %g\n", i, xa[i], ya[i], xb[i], yb[i]);
 
   //repeat:
   if (neqn != 3 || rowlen != 5) {
@@ -1408,13 +1408,13 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
   /*
   fprintf(stderr, "aug %d %d\n", neqn, rowlen);
 	  for(j = 0; j < rowlen; j++)
-		  fprintf(stderr, " %.15g", aug[0][j]);
+		  fprintf(stderr, " %g", aug[0][j]);
 	  fprintf(stderr, "\n");
 	  for(j = 0; j < rowlen; j++)
-		  fprintf(stderr, " %.15g", aug[1][j]);
+		  fprintf(stderr, " %g", aug[1][j]);
 	  fprintf(stderr, "\n");
 	  for(j = 0; j < rowlen; j++)
-		  fprintf(stderr, " %.15g", aug[2][j]);
+		  fprintf(stderr, " %g", aug[2][j]);
 	  fprintf(stderr, "\n");
   */
 
@@ -1476,7 +1476,7 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
     dx = xb[i] - x00;
     dy = yb[i] - y00;
     e = dx * dx + dy * dy;
-    fprintf(stderr, "%d: %.15g %.15g  %.15g %.15g    %.15g %.15g\n", i, xa[i], ya[i], x00, y00, e, sqrt(e));
+    fprintf(stderr, "%d: %g %g  %g %g    %g %g\n", i, xa[i], ya[i], x00, y00, e, sqrt(e));
     err += e;
     if (e > maxe) {
       maxe = e;
@@ -1484,11 +1484,11 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
     }
   }
   rms = sqrt(err / npts);
-  fprintf(stderr, "maxei %d: %.15g %.15g npts %d rms %.15g\n", maxei, maxe, sqrt(maxe), npts, rms);
+  fprintf(stderr, "maxei %d: %g %g npts %d rms %g\n", maxei, maxe, sqrt(maxe), npts, rms);
 #define	REJECT
 #ifdef	REJECT
   if (rms > ethresh && npts > leastpts) {
-    fprintf(stderr, "reject %d %d %d: %.15g %.15g  %.15g %.15g\n",
+    fprintf(stderr, "reject %d %d %d: %g %g  %g %g\n",
             nreject, maxei, rindex[maxei], xa[maxei], ya[maxei], xb[maxei], yb[maxei]);
     reject[rindex[maxei]] = 1;
     nreject++;
@@ -1496,20 +1496,20 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
   }
 #endif                          // REJECT
   aff_ticks += getticks();
-  fprintf(stderr, "\txtile %.15g %.15g %.15g\n", mf[0][0], mf[0][1], mf[0][2]);
-  fprintf(stderr, "\tytile %.15g %.15g %.15g\n", mf[1][0], mf[1][1], mf[1][2]);
-  fprintf(stderr, "\tnewa %.15g\n", atan((mf[0][1] - mf[1][0]) / (mf[0][0] + mf[1][1])) * 180 / M_PI);
-  fprintf(stderr, "\txout %.15g %.15g %.15g\n", mi[0][0], mi[0][1], mi[0][2]);
-  fprintf(stderr, "\tyout %.15g %.15g %.15g\n", mi[1][0], mi[1][1], mi[1][2]);
-  fprintf(stderr, "\tolda %.15g\n", atan((mi[0][1] - mi[1][0]) / (mi[0][0] + mi[1][1])) * 180 / M_PI);
-  fprintf(stderr, "rms %.15g  npts %d\n", sqrt(err / npts), npts);
-  printf("%s AF  %.15g %.15g %.15g  %.15g %.15g %.15g\n", fname, mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
-  printf("%s AI  %.15g %.15g %.15g  %.15g %.15g %.15g\n", fname, mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
+  fprintf(stderr, "\txtile %g %g %g\n", mf[0][0], mf[0][1], mf[0][2]);
+  fprintf(stderr, "\tytile %g %g %g\n", mf[1][0], mf[1][1], mf[1][2]);
+  fprintf(stderr, "\tnewa %g\n", atan((mf[0][1] - mf[1][0]) / (mf[0][0] + mf[1][1])) * 180 / M_PI);
+  fprintf(stderr, "\txout %g %g %g\n", mi[0][0], mi[0][1], mi[0][2]);
+  fprintf(stderr, "\tyout %g %g %g\n", mi[1][0], mi[1][1], mi[1][2]);
+  fprintf(stderr, "\tolda %g\n", atan((mi[0][1] - mi[1][0]) / (mi[0][0] + mi[1][1])) * 180 / M_PI);
+  fprintf(stderr, "rms %g  npts %d\n", sqrt(err / npts), npts);
+  printf("%s AF  %g %g %g  %g %g %g\n", fname, mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
+  printf("%s AI  %g %g %g  %g %g %g\n", fname, mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
 }
 
 void affine_inverse(float *mi, float *mf) {
   float det = mf[0] * mf[3 + 1] - mf[1] * mf[3 + 0];
-  fprintf(stderr, "det %.15g -> sc %.15g\n", det, sqrt(1 / det));
+  fprintf(stderr, "det %g -> sc %g\n", det, sqrt(1 / det));
   mi[0] = mf[3 + 1] / det;
   mi[1] = -mf[1] / det;
   mi[2] = -mf[2] * mi[0] - mf[3 + 2] * mi[1];
