@@ -499,8 +499,8 @@ class ControlPanel extends JPanel {
     JTabbedPane tabbed_pane = new JTabbedPane();
     
     tabbed_pane.addTab ( "Resizing", make_resize_panel(swift) );
-    tabbed_pane.addTab ( "Recipe 1", make_recipe_panel(swift,1) );
-    tabbed_pane.addTab ( "Recipe 2", make_recipe_panel(swift,2) );  // This call overwrites this ControlPanel's instance variables
+    // tabbed_pane.addTab ( "Recipe 1", make_recipe_panel(swift,1) );
+    tabbed_pane.addTab ( "Alignment", make_recipe_panel(swift,2) );  // Use this as the only version for now.
 
     add ( tabbed_pane, BorderLayout.CENTER );
   }
