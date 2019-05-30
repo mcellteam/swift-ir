@@ -4,4 +4,4 @@ a0e62a900ed8f1de2760ff741f4b043fe4c703a5  iscale
 c664058cb656ada35075b0fc70b15b9cef549681  mir
 013b33430a9701b97bdd1bcac86795074f0ed93f  remod
 3d677ee4f7e83ad0fb6cacae978daada6c87e9e9  run_swift.jar
-97bcaab5e95a8709f1f00cdb9dd450c376d25cd6  swift_gui.jar
+08ea3d76df7f58726cd24c5f7bba0e4462a22f57  swift_gui.jar
