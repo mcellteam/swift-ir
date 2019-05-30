@@ -68,6 +68,9 @@ class alignment_settings {
   int window_size=1024;
   int addx=500;
   int addy=500;
+  int aff_window_size=1024;
+  int aff_addx=500;
+  int aff_addy=500;
   int output_level=5;
   String[] alignment_values = null;
 }
@@ -272,6 +275,9 @@ class ControlPanel extends JPanel {
   public RespTextField window_size;
   public RespTextField addx;
   public RespTextField addy;
+  public RespTextField aff_window_size;
+  public RespTextField aff_addx;
+  public RespTextField aff_addy;
   public RespTextField output_level;
   public JCheckBox skip;
 
@@ -304,7 +310,7 @@ class ControlPanel extends JPanel {
     return ( resize_panel );
   }
 
-  JPanel make_alignment_panel(swift_gui swift) {
+  JPanel make_recipe_panel(swift_gui swift, int flavor) {
     JPanel alignment_panel = new JPanel();
     alignment_panel.setLayout ( new BorderLayout( 0, 20 ) );
 
@@ -317,7 +323,11 @@ class ControlPanel extends JPanel {
     alignment_mode.addKeyListener ( this.swift );
     alignment_mode.addActionListener ( this.swift );
     alignment_mode.setActionCommand ( "mode" );
-    alignment_panel_top.add ( alignment_mode );
+    if (flavor == 1) {
+      alignment_panel_top.add ( alignment_mode );
+    } else {
+      alignment_panel_top.add ( new JLabel("Translation Pass:   ") );
+    }
 
     alignment_panel_top.add ( new JLabel("  WW:") );
     window_size = new RespTextField(this.swift,"",8);
@@ -353,17 +363,55 @@ class ControlPanel extends JPanel {
     skip.setActionCommand ( "skip" );
     alignment_panel_top.add ( skip );
 
+    if (flavor == 2) {
+      alignment_panel_mid.add ( new JLabel("Affine Pass:   ") );
+
+      alignment_panel_mid.add ( new JLabel("  WW:") );
+      aff_window_size = new RespTextField(this.swift,"",8);
+      aff_window_size.addKeyListener ( this.swift );
+      aff_window_size.addActionListener ( this.swift );
+      aff_window_size.setActionCommand ( "aff_window_size" );
+      alignment_panel_mid.add ( aff_window_size );
+
+      alignment_panel_mid.add ( new JLabel("  Addx:") );
+      aff_addx = new RespTextField(this.swift,"",6);
+      aff_addx.addKeyListener ( this.swift );
+      aff_addx.addActionListener ( this.swift );
+      aff_addx.setActionCommand ( "aff_addx" );
+      alignment_panel_mid.add ( aff_addx );
+
+      alignment_panel_mid.add ( new JLabel("  Addy:") );
+      aff_addy = new RespTextField(this.swift,"",6);
+      aff_addy.addKeyListener ( this.swift );
+      aff_addy.addActionListener ( this.swift );
+      aff_addy.setActionCommand ( "aff_addy" );
+      alignment_panel_mid.add ( aff_addy );
+
+    }
+
     alignment_panel_mid.add ( new JLabel("  ") );
     set_all = new JButton("Set All");
     set_all.addActionListener ( this.swift );
-    set_all.setActionCommand ( "set_all" );
-    alignment_panel_mid.add ( set_all );
+    set_all.setActionCommand ( "set_all_" + flavor );
+    if (flavor == 1) {
+      alignment_panel_mid.add ( set_all );
+    } else {
+      alignment_panel_bot.add ( set_all );
+    }
 
-    alignment_panel_mid.add ( new JLabel("  ") );
+    if (flavor == 1) {
+      alignment_panel_mid.add ( new JLabel("  ") );
+    } else {
+      alignment_panel_bot.add ( new JLabel("  ") );
+    }
     set_fwd = new JButton("Set Forward");
     set_fwd.addActionListener ( this.swift );
     set_fwd.setActionCommand ( "set_fwd" );
-    alignment_panel_mid.add ( set_fwd );
+    if (flavor == 1) {
+      alignment_panel_mid.add ( set_fwd );
+    } else {
+      alignment_panel_bot.add ( set_fwd );
+    }
 
     alignment_panel_bot.add ( new JLabel("  ") );
     align_all = new JButton("Align All");
@@ -450,9 +498,9 @@ class ControlPanel extends JPanel {
 
     JTabbedPane tabbed_pane = new JTabbedPane();
     
-    JPanel alignment_panel = make_alignment_panel(swift);
     tabbed_pane.addTab ( "Resizing", make_resize_panel(swift) );
-    tabbed_pane.addTab ( "Alignment", alignment_panel );
+    tabbed_pane.addTab ( "Recipe 1", make_recipe_panel(swift,1) );
+    tabbed_pane.addTab ( "Recipe 2", make_recipe_panel(swift,2) );  // This call overwrites this ControlPanel's instance variables
 
     add ( tabbed_pane, BorderLayout.CENTER );
   }
@@ -475,12 +523,18 @@ class ControlPanel extends JPanel {
               this.window_size.setText ( "" );
               this.addx.setText ( "" );
               this.addy.setText ( "" );
+              this.aff_window_size.setText ( "" );
+              this.aff_addx.setText ( "" );
+              this.aff_addy.setText ( "" );
               this.output_level.setText ( "" );
               this.skip.setSelected ( false );
             } else {
               this.window_size.setText ( "" + frame.next_alignment.window_size );
               this.addx.setText ( "" + frame.next_alignment.addx );
               this.addy.setText ( "" + frame.next_alignment.addy );
+              this.aff_window_size.setText ( "" + frame.next_alignment.aff_window_size );
+              this.aff_addx.setText ( "" + frame.next_alignment.aff_addx );
+              this.aff_addy.setText ( "" + frame.next_alignment.aff_addy );
               this.output_level.setText ( "" + frame.next_alignment.output_level );
               this.skip.setSelected ( frame.skip );
             }
@@ -492,6 +546,9 @@ class ControlPanel extends JPanel {
           this.window_size.setText ( "" );
           this.addx.setText ( "" );
           this.addy.setText ( "" );
+          this.aff_window_size.setText ( "" );
+          this.aff_addx.setText ( "" );
+          this.aff_addy.setText ( "" );
           this.output_level.setText ( "" );
           this.skip.setSelected ( false );
         }
@@ -502,6 +559,9 @@ class ControlPanel extends JPanel {
         this.window_size.setText ( "" );
         this.addx.setText ( "" );
         this.addy.setText ( "" );
+        this.aff_window_size.setText ( "" );
+        this.aff_addx.setText ( "" );
+        this.aff_addy.setText ( "" );
         this.output_level.setText ( "" );
         this.skip.setSelected ( false );
       }
@@ -563,6 +623,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           frame.next_alignment.addx = get_int_from_textfield ( control_panel.addx );
         } else if (e.getComponent() == control_panel.addy) {
           frame.next_alignment.addy = get_int_from_textfield ( control_panel.addy );
+        } else if (e.getComponent() == control_panel.aff_window_size) {
+          frame.next_alignment.aff_window_size = get_int_from_textfield ( control_panel.aff_window_size );
+        } else if (e.getComponent() == control_panel.aff_addx) {
+          frame.next_alignment.aff_addx = get_int_from_textfield ( control_panel.aff_addx );
+        } else if (e.getComponent() == control_panel.aff_addy) {
+          frame.next_alignment.aff_addy = get_int_from_textfield ( control_panel.aff_addy );
         } else if (e.getComponent() == control_panel.output_level) {
           frame.next_alignment.output_level = get_int_from_textfield ( control_panel.output_level );
         } else {
@@ -870,9 +936,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   }
 
 
+  /*
   public JTextField addx;
   public JTextField addy;
+
+  public JTextField aff_addx;
+  public JTextField aff_addy;
+
   public JTextField output_level;
+  */
 
 
 
@@ -1041,6 +1113,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       f.println ( "        \"window_size\": 1024," );
       f.println ( "        \"addx\": 800," );
       f.println ( "        \"addy\": 800," );
+      f.println ( "        \"aff_window_size\": 1024," );
+      f.println ( "        \"aff_addx\": 800," );
+      f.println ( "        \"aff_addy\": 800," );
       f.println ( "        \"output_level\": 0" );
       f.println ( "      }" );
       f.println ( "    }," );
@@ -1062,6 +1137,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           f.println ( "          \"window_size\": " + settings.window_size + "," );
           f.println ( "          \"addx\": " + settings.addx + "," );
           f.println ( "          \"addy\": " + settings.addy + "," );
+          f.println ( "          \"aff_window_size\": " + settings.aff_window_size + "," );
+          f.println ( "          \"aff_addx\": " + settings.aff_addx + "," );
+          f.println ( "          \"aff_addy\": " + settings.aff_addy + "," );
           f.println ( "          \"output_level\": " + settings.output_level + "" );
           //f.println ( "          \"affine_fwd\": null," );
           //f.println ( "          \"affine_rev\": null," );
@@ -1286,6 +1364,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                     settings.window_size = (Integer)(alignment_pars.get("window_size"));
                     settings.addx = (Integer)(alignment_pars.get("addx"));
                     settings.addy = (Integer)(alignment_pars.get("addy"));
+                    if (alignment_pars.containsKey("aff_window_size")) settings.aff_window_size = (Integer)(alignment_pars.get("aff_window_size"));
+                    if (alignment_pars.containsKey("aff_addx")) settings.aff_addx = (Integer)(alignment_pars.get("aff_addx"));
+                    if (alignment_pars.containsKey("aff_addy")) settings.aff_addy = (Integer)(alignment_pars.get("aff_addy"));
+
                     settings.output_level = (Integer)(alignment_pars.get("output_level"));
                   }
                 }
@@ -1457,6 +1539,39 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
+    } else if (cmd.equalsIgnoreCase("aff_window_size")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got an aff_window_size change with " + txt.getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.aff_window_size = get_int_from_textfield ( txt );
+          }
+        }
+      }
+    } else if (cmd.equalsIgnoreCase("aff_addx")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got an aff_addx change with " + txt.getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.aff_addx = get_int_from_textfield ( txt );
+          }
+        }
+      }
+    } else if (cmd.equalsIgnoreCase("aff_addy")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got an aff_addy change with " + txt.getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.aff_addy = get_int_from_textfield ( txt );
+          }
+        }
+      }
     } else if (cmd.equalsIgnoreCase("output_level")) {
       JTextField txt = (JTextField)action_source;
       System.out.println ( "Got an output_level change with " + txt.getText() );
@@ -1497,7 +1612,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         run_swift.mir_cmd = "mir";
       }
     */
-    } else if ( (cmd.equalsIgnoreCase("set_all")) || (cmd.equalsIgnoreCase("set_fwd")) ) {
+    } else if ( (cmd.toLowerCase().startsWith("set_all")) || (cmd.equalsIgnoreCase("set_fwd")) ) {
       System.out.println ( "\n\nGot a set_all / set_fwd command" );
       if (frames != null) {
         int start = 0;
@@ -1512,6 +1627,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
             frame.next_alignment.addx = get_int_from_textfield ( control_panel.addx );
             frame.next_alignment.addy = get_int_from_textfield ( control_panel.addy );
+            frame.next_alignment.aff_window_size = get_int_from_textfield ( control_panel.aff_window_size );
+            frame.next_alignment.aff_addx = get_int_from_textfield ( control_panel.aff_addx );
+            frame.next_alignment.aff_addy = get_int_from_textfield ( control_panel.aff_addy );
             frame.next_alignment.output_level = get_int_from_textfield ( control_panel.output_level );
           }
         }
