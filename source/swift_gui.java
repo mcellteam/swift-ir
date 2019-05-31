@@ -350,7 +350,7 @@ class ControlPanel extends JPanel {
     addy.setActionCommand ( "addy" );
     alignment_panel_top.add ( addy );
 
-    alignment_panel_top.add ( new JLabel("  Output Level:") );
+    alignment_panel_top.add ( new JLabel("          Output Level:") );
     output_level = new RespTextField(this.swift,"",4);
     output_level.addKeyListener ( this.swift );
     output_level.addActionListener ( this.swift );
@@ -1757,6 +1757,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                         fixed_frame.next_alignment.window_size,
                         fixed_frame.next_alignment.addx,
                         fixed_frame.next_alignment.addy,
+                        fixed_frame.next_alignment.aff_window_size,
+                        fixed_frame.next_alignment.aff_addx,
+                        fixed_frame.next_alignment.aff_addy,
                         fixed_frame.next_alignment.output_level );
 
                   fixed_frame.next_alignment.alignment_values = results;

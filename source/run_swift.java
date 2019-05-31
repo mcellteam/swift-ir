@@ -1269,7 +1269,9 @@ public class run_swift {
 
 
   public static String[] align_files_by_name_2 ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
-                                                 int window_size, int addx, int addy, int output_level ) {
+                                                 int trans_window_size, int trans_addx, int trans_addy,
+                                                 int window_size, int addx, int addy,
+                                                 int output_level ) {
 
     if (output_level > 0) {
       System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
@@ -1329,7 +1331,7 @@ public class run_swift {
       // Step 0 - Run first swim
       //////////////////////////////////////
 
-      command_line = code_source + swim_cmd + " " + window_size;
+      command_line = code_source + swim_cmd + " " + trans_window_size;
       if (output_level > 0) System.out.println ( "\n*** Running first swim with command line: " + command_line + " ***" );
       cmd_proc = rt.exec ( command_line );
 
@@ -1337,7 +1339,7 @@ public class run_swift {
       proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
       proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      interactive_commands = "unused -i 2 -k keep."+image_type_extension+" " + fixed_image_file + " " + align_image_file + global_io.end_of_line;
+      interactive_commands = "unused -i 2 -x " + trans_addx + " -y " + trans_addy + " -k keep."+image_type_extension+" " + fixed_image_file + " " + align_image_file + global_io.end_of_line;
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
