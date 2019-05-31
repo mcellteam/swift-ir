@@ -68,6 +68,7 @@ class alignment_settings {
   int window_size=1024;
   int addx=500;
   int addy=500;
+  boolean do_affine=true;
   int aff_window_size=1024;
   int aff_addx=500;
   int aff_addy=500;
@@ -275,6 +276,7 @@ class ControlPanel extends JPanel {
   public RespTextField window_size;
   public RespTextField addx;
   public RespTextField addy;
+  public JCheckBox do_affine_checkbox;
   public RespTextField aff_window_size;
   public RespTextField aff_addx;
   public RespTextField aff_addy;
@@ -318,15 +320,8 @@ class ControlPanel extends JPanel {
     JPanel alignment_panel_mid = new JPanel();
     JPanel alignment_panel_bot = new JPanel();
 
-    String[] modes = { "3x3", "2x2" };
-    alignment_mode = new JComboBox(modes);
-    alignment_mode.addKeyListener ( this.swift );
-    alignment_mode.addActionListener ( this.swift );
-    alignment_mode.setActionCommand ( "mode" );
-    if (flavor == 1) {
-      alignment_panel_top.add ( alignment_mode );
-    } else {
-      alignment_panel_top.add ( new JLabel("Translation Pass:   ") );
+    if (flavor == 2) {
+      alignment_panel_top.add ( new JLabel("   Translation Pass:   ") );
     }
 
     alignment_panel_top.add ( new JLabel("  WW:") );
@@ -364,6 +359,13 @@ class ControlPanel extends JPanel {
     alignment_panel_top.add ( skip );
 
     if (flavor == 2) {
+
+      do_affine_checkbox = new JCheckBox("",true);
+      do_affine_checkbox.addActionListener ( this.swift );
+      do_affine_checkbox.setActionCommand ( "do_affine" );
+      alignment_panel_mid.add ( do_affine_checkbox );
+
+
       alignment_panel_mid.add ( new JLabel("Affine Pass:   ") );
 
       alignment_panel_mid.add ( new JLabel("  WW:") );
@@ -388,6 +390,15 @@ class ControlPanel extends JPanel {
       alignment_panel_mid.add ( aff_addy );
 
     }
+
+    String[] modes = { "3x3", "2x2" };
+    alignment_mode = new JComboBox(modes);
+    alignment_mode.addKeyListener ( this.swift );
+    alignment_mode.addActionListener ( this.swift );
+    alignment_mode.setActionCommand ( "mode" );
+    alignment_panel_mid.add ( new JLabel("    Swims:") );
+    alignment_panel_mid.add ( alignment_mode );
+
 
     alignment_panel_mid.add ( new JLabel("  ") );
     set_all = new JButton("Set All");
@@ -523,6 +534,7 @@ class ControlPanel extends JPanel {
               this.window_size.setText ( "" );
               this.addx.setText ( "" );
               this.addy.setText ( "" );
+              this.do_affine_checkbox.setSelected ( true );
               this.aff_window_size.setText ( "" );
               this.aff_addx.setText ( "" );
               this.aff_addy.setText ( "" );
@@ -532,6 +544,7 @@ class ControlPanel extends JPanel {
               this.window_size.setText ( "" + frame.next_alignment.window_size );
               this.addx.setText ( "" + frame.next_alignment.addx );
               this.addy.setText ( "" + frame.next_alignment.addy );
+              this.do_affine_checkbox.setSelected ( frame.next_alignment.do_affine );
               this.aff_window_size.setText ( "" + frame.next_alignment.aff_window_size );
               this.aff_addx.setText ( "" + frame.next_alignment.aff_addx );
               this.aff_addy.setText ( "" + frame.next_alignment.aff_addy );
@@ -546,6 +559,7 @@ class ControlPanel extends JPanel {
           this.window_size.setText ( "" );
           this.addx.setText ( "" );
           this.addy.setText ( "" );
+          this.do_affine_checkbox.setSelected ( true );
           this.aff_window_size.setText ( "" );
           this.aff_addx.setText ( "" );
           this.aff_addy.setText ( "" );
@@ -559,6 +573,7 @@ class ControlPanel extends JPanel {
         this.window_size.setText ( "" );
         this.addx.setText ( "" );
         this.addy.setText ( "" );
+        this.do_affine_checkbox.setSelected ( true );
         this.aff_window_size.setText ( "" );
         this.aff_addx.setText ( "" );
         this.aff_addy.setText ( "" );
@@ -1113,9 +1128,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       f.println ( "        \"window_size\": 1024," );
       f.println ( "        \"addx\": 800," );
       f.println ( "        \"addy\": 800," );
+      f.println ( "        \"do_affine\": true," );
       f.println ( "        \"aff_window_size\": 1024," );
-      f.println ( "        \"aff_addx\": 800," );
-      f.println ( "        \"aff_addy\": 800," );
+      f.println ( "        \"aff_addx\": 768," );
+      f.println ( "        \"aff_addy\": 768," );
       f.println ( "        \"output_level\": 0" );
       f.println ( "      }" );
       f.println ( "    }," );
@@ -1137,6 +1153,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           f.println ( "          \"window_size\": " + settings.window_size + "," );
           f.println ( "          \"addx\": " + settings.addx + "," );
           f.println ( "          \"addy\": " + settings.addy + "," );
+          f.println ( "          \"do_affine\": " + settings.do_affine + "," );  // JSON and Java both use lower case for true and false
           f.println ( "          \"aff_window_size\": " + settings.aff_window_size + "," );
           f.println ( "          \"aff_addx\": " + settings.aff_addx + "," );
           f.println ( "          \"aff_addy\": " + settings.aff_addy + "," );
@@ -1364,6 +1381,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                     settings.window_size = (Integer)(alignment_pars.get("window_size"));
                     settings.addx = (Integer)(alignment_pars.get("addx"));
                     settings.addy = (Integer)(alignment_pars.get("addy"));
+                    if (alignment_pars.containsKey("do_affine")) settings.do_affine = (Boolean)(alignment_pars.get("do_affine"));
                     if (alignment_pars.containsKey("aff_window_size")) settings.aff_window_size = (Integer)(alignment_pars.get("aff_window_size"));
                     if (alignment_pars.containsKey("aff_addx")) settings.aff_addx = (Integer)(alignment_pars.get("aff_addx"));
                     if (alignment_pars.containsKey("aff_addy")) settings.aff_addy = (Integer)(alignment_pars.get("aff_addy"));
@@ -1539,6 +1557,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
+    } else if (cmd.equalsIgnoreCase("do_affine")) {
+      JCheckBox box = (JCheckBox)action_source;
+      System.out.println ( "Got a do_affine change with Selected = " + box.isSelected() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.do_affine = box.isSelected();
+          }
+        }
+      }
     } else if (cmd.equalsIgnoreCase("aff_window_size")) {
       JTextField txt = (JTextField)action_source;
       System.out.println ( "Got an aff_window_size change with " + txt.getText() );
@@ -1627,6 +1656,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             frame.next_alignment.window_size = get_int_from_textfield ( control_panel.window_size );
             frame.next_alignment.addx = get_int_from_textfield ( control_panel.addx );
             frame.next_alignment.addy = get_int_from_textfield ( control_panel.addy );
+            frame.next_alignment.do_affine = control_panel.do_affine_checkbox.isSelected();
             frame.next_alignment.aff_window_size = get_int_from_textfield ( control_panel.aff_window_size );
             frame.next_alignment.aff_addx = get_int_from_textfield ( control_panel.aff_addx );
             frame.next_alignment.aff_addy = get_int_from_textfield ( control_panel.aff_addy );
@@ -1757,6 +1787,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                         fixed_frame.next_alignment.window_size,
                         fixed_frame.next_alignment.addx,
                         fixed_frame.next_alignment.addy,
+                        fixed_frame.next_alignment.do_affine,
                         fixed_frame.next_alignment.aff_window_size,
                         fixed_frame.next_alignment.aff_addx,
                         fixed_frame.next_alignment.aff_addy,

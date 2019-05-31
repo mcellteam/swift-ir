@@ -796,6 +796,7 @@ public class run_swift {
     // Just call the more general version with the same window size and zero offsets (trans_addx=0 and trans_addy=0)
     return align_files_by_name ( rt, fixed_image_file, align_image_file, aligned_image_file,
                                  window_size, 0, 0,  // This form of the function uses these parameters for the initial translation step
+                                 true, // This form defaults to doing the affine transforms
                                  window_size, addx, addy,
                                  output_level );
   }
@@ -804,6 +805,7 @@ public class run_swift {
   // This form does specify separate alignment parameters for the initial translation step
   public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                                int trans_window_size, int trans_addx, int trans_addy,
+                                               boolean do_affine,
                                                int window_size, int addx, int addy,
                                                int output_level ) {
 
