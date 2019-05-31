@@ -1749,7 +1749,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                     }
                     first_pass = false;
                   }
-                  String results[] = run_swift.align_files_by_name (
+                  String results[] = run_swift.align_files_by_name_2 (
                         rt,
                         (new File(fixed_image_name)).getAbsolutePath(),
                         (new File(align_frame.image_file_path.toString())).getAbsolutePath(),
@@ -1762,7 +1762,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                   fixed_frame.next_alignment.alignment_values = results;
 
                   if (results != null) {
-                    System.out.println ( "Results from run_swift.align_files_by_name: " + results[0] );
+                    System.out.println ( "Results from run_swift.align_files_by_name_2: " + results[0] );
                     if (results.length == 19) {
                       // This is 3 transform matrix format (each is 2x3)
                       for (int m=0; m<3; m++) {
