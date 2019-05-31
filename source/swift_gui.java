@@ -1992,9 +1992,30 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         // swift_gui_panel.control_panel.use_mirb.setSelected ( false );
 
 
-        JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
+        //// Results
+        swift_gui swift_results_panel = new swift_gui();
+        swift_results_panel.parent_frame = app_frame;
+        swift_results_panel.current_directory = System.getProperty("user.dir");
+
+        /*
+        results_frame.add ( swift_results_panel );
+
+        swift_results_panel.addKeyListener ( swift_results_panel );
+        results_frame.pack();
+        results_frame.setSize ( w, h );
+        results_frame.setLocation ( w, 0 );
+        results_frame.setVisible ( false );
+
+        swift_gui_panel.results_frame = results_frame; */
+        swift_gui_panel.results_panel = swift_results_panel;
+        //// Results
+
+
+
+        // JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.alignment_panel );
+        JSplitPane image_split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, swift_gui_panel, swift_gui_panel.results_panel );
         image_split_pane.setOneTouchExpandable( true );
-        image_split_pane.setResizeWeight( 0.78 );
+        image_split_pane.setResizeWeight( 0.5 );
 
         JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, image_split_pane, swift_gui_panel.control_panel );
         split_pane.setResizeWeight( 0.9 );
@@ -2159,7 +2180,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         swift_gui_panel.center_current_image();
 
         // Create a results panel
-
+/*
         JFrame results_frame = new JFrame("swift_results");
         swift_gui swift_results_panel = new swift_gui();
         swift_results_panel.parent_frame = results_frame;
@@ -2175,7 +2196,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         swift_gui_panel.results_frame = results_frame;
         swift_gui_panel.results_panel = swift_results_panel;
-
+*/
         // Force the top pane to be as large as possible
         split_pane.setDividerLocation ( 0.999 );
 
