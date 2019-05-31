@@ -875,6 +875,9 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                  1                     2   3               4                       5       6     7    8        9       10
+      // 36.3771: Tile_r1-c1_LM9R5CA1series_017.jpg 512 512 Tile_r1-c1_LM9R5CA1series_018.jpg 506.866 504.853  0 (-5.13367 -7.14676 8.79947)
 
 
       //////////////////////////////////////
@@ -928,6 +931,12 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                         1                     2   3                4                       5       6        7    8        9       10
+      // 49.1292: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.16 1004.7     0 (2.29333 -0.15564 2.29861)
+      // 22.4931: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1003.49 -0.523743  0 (-3.37482 -5.38275 6.35322)
+      // 31.2584: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.7988  2.21826    0 (-4.06619 -2.64075 4.84845)
+      // 58.7499: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 8.69444 1007.01    0 (1.82945 2.14697 2.82071)
 
 
       //////////////////////////////////////
@@ -978,6 +987,10 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //              0                     1    2         3           4         5          6        7
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999407 -0.00575053  9.15865   0.00251182 0.995003 9.89321
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00058   0.00578275 -9.22115  -0.0025259  1.00501 -9.91962
 
 
       //////////////////////////////////////
@@ -1032,6 +1045,12 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                         1                      2    3               4                       5       6        7      8        9       10
+      // 59.4171: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.19  1003.47  1024 (-0.858154 -2.62854 2.76508)
+      // 30.0668: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1002.23 -1.42319  1024 (-2.03265  -2.51425 3.23313)
+      // 38.8941: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg  2.3043  2.22272  1024 (-1.37932  -1.39422 1.96122)
+      // 59.5567: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg   9.077  1006.68  1024 (-0.3894   -1.95184 1.99031)
 
 
       //////////////////////////////////////
@@ -1083,6 +1102,10 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //              0                     1    2         3           4         5          6        7
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999957 -0.00683413  9.75702   0.00341172 0.995323 9.88854
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00002   0.00686638 -9.82511  -0.00342782 1.00468 -9.90133
 
 
       //////////////////////////////////////
@@ -1142,6 +1165,17 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                         1                      2    3               4                       5        6       7      8        9       10
+      // 59.6657: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.25  1003.41  1024 (-1.05634 -2.07587 2.32918)
+      // 31.8235: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1001.96 -1.63561  1024 (-1.48199 -2.4407  2.8554)
+      // 35.8937: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.36482  2.51362  1024 (-1.05696 -1.71926 2.01817)
+      // 58.2213: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 9.33534  1006.78  1024 (-0.95284 -2.13593 2.33882)
+      // 55.3926: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512  512 Tile_r1-c1_LM9R5CA1series_018.jpg 505.187  503.068  1024 (-1.67838 -1.79062 2.45423)
+      // 61.4603: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012  512 Tile_r1-c1_LM9R5CA1series_018.jpg 1005.33  501.508  1024 (-1.54633 -1.63705 2.2519)
+      // 51.5881: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 508.613  1005.08  1024 (-1.68539 -2.12262 2.71036)
+      // 59.0445: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12  512 Tile_r1-c1_LM9R5CA1series_018.jpg 5.80735  505.496  1024 (-1.04763 -1.07721 1.50263)
+      // 41.8738: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512   12 Tile_r1-c1_LM9R5CA1series_018.jpg 501.536  1.02411  1024 (-1.89609 -1.49487 2.41449)
 
 
       //////////////////////////////////////
@@ -1206,7 +1240,10 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
-
+      // stdout will look like:
+      //              0                     1    2        3          4         5          6        7
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  1.0003  -0.00708304 9.92646   0.00381993 0.995537 9.28708
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  0.999677 0.0071125 -9.98931  -0.00383582 1.00446 -9.29038
 
 
       //////////////////////////////////////
@@ -1356,6 +1393,9 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                  1                     2   3               4                       5       6     7    8        9       10
+      // 36.3771: Tile_r1-c1_LM9R5CA1series_017.jpg 512 512 Tile_r1-c1_LM9R5CA1series_018.jpg 506.866 504.853  0 (-5.13367 -7.14676 8.79947)
 
 
       //////////////////////////////////////
@@ -1409,6 +1449,12 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                         1                     2   3                4                       5       6        7    8        9       10
+      // 49.1292: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.16 1004.7     0 (2.29333 -0.15564 2.29861)
+      // 22.4931: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1003.49 -0.523743  0 (-3.37482 -5.38275 6.35322)
+      // 31.2584: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.7988  2.21826    0 (-4.06619 -2.64075 4.84845)
+      // 58.7499: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 8.69444 1007.01    0 (1.82945 2.14697 2.82071)
 
 
       //////////////////////////////////////
@@ -1459,6 +1505,10 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //              0                     1    2         3           4         5          6        7
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999407 -0.00575053  9.15865   0.00251182 0.995003 9.89321
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00058   0.00578275 -9.22115  -0.0025259  1.00501 -9.91962
 
 
       //////////////////////////////////////
@@ -1513,6 +1563,12 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                         1                      2    3               4                       5       6        7      8        9       10
+      // 59.4171: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.19  1003.47  1024 (-0.858154 -2.62854 2.76508)
+      // 30.0668: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1002.23 -1.42319  1024 (-2.03265  -2.51425 3.23313)
+      // 38.8941: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg  2.3043  2.22272  1024 (-1.37932  -1.39422 1.96122)
+      // 59.5567: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg   9.077  1006.68  1024 (-0.3894   -1.95184 1.99031)
 
 
       //////////////////////////////////////
@@ -1564,6 +1620,10 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //              0                     1    2         3           4         5          6        7
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999957 -0.00683413  9.75702   0.00341172 0.995323 9.88854
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00002   0.00686638 -9.82511  -0.00342782 1.00468 -9.90133
 
 
       //////////////////////////////////////
@@ -1623,6 +1683,17 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
+      // stdout will look like:
+      //    0                         1                      2    3               4                       5        6       7      8        9       10
+      // 59.6657: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.25  1003.41  1024 (-1.05634 -2.07587 2.32918)
+      // 31.8235: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1001.96 -1.63561  1024 (-1.48199 -2.4407  2.8554)
+      // 35.8937: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.36482  2.51362  1024 (-1.05696 -1.71926 2.01817)
+      // 58.2213: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 9.33534  1006.78  1024 (-0.95284 -2.13593 2.33882)
+      // 55.3926: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512  512 Tile_r1-c1_LM9R5CA1series_018.jpg 505.187  503.068  1024 (-1.67838 -1.79062 2.45423)
+      // 61.4603: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012  512 Tile_r1-c1_LM9R5CA1series_018.jpg 1005.33  501.508  1024 (-1.54633 -1.63705 2.2519)
+      // 51.5881: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 508.613  1005.08  1024 (-1.68539 -2.12262 2.71036)
+      // 59.0445: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12  512 Tile_r1-c1_LM9R5CA1series_018.jpg 5.80735  505.496  1024 (-1.04763 -1.07721 1.50263)
+      // 41.8738: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512   12 Tile_r1-c1_LM9R5CA1series_018.jpg 501.536  1.02411  1024 (-1.89609 -1.49487 2.41449)
 
 
       //////////////////////////////////////
@@ -1687,7 +1758,10 @@ public class run_swift {
       stdout = streams[0];
       stderr = streams[1];
 
-
+      // stdout will look like:
+      //              0                     1    2        3          4         5          6        7
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  1.0003  -0.00708304 9.92646   0.00381993 0.995537 9.28708
+      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  0.999677 0.0071125 -9.98931  -0.00383582 1.00446 -9.29038
 
 
       //////////////////////////////////////
