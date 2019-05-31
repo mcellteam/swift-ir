@@ -819,6 +819,7 @@ public class run_swift {
       System.out.println ( "    trans_window_size  = " + trans_window_size );
       System.out.println ( "    trans_addx         = " + trans_addx );
       System.out.println ( "    trans_addy         = " + trans_addy );
+      System.out.println ( "    do_affine          = " + do_affine );
       System.out.println ( "    window_size        = " + window_size );
       System.out.println ( "    addx               = " + addx );
       System.out.println ( "    addy               = " + addy );
@@ -899,372 +900,466 @@ public class run_swift {
       //    0                  1                     2   3               4                       5       6     7    8        9       10
       // 36.3771: Tile_r1-c1_LM9R5CA1series_017.jpg 512 512 Tile_r1-c1_LM9R5CA1series_018.jpg 506.866 504.853  0 (-5.13367 -7.14676 8.79947)
 
+      String tarx = "";
+      String tary = "";
+      String patx = "";
+      String paty = "";
 
-      //////////////////////////////////////
-      // Step 1a - Run second swim
-      //////////////////////////////////////
+      if ( do_affine ) {
 
-      parts = stdout.split ( "[\\s]+" );
-      for (int i=0; i<parts.length; i++) {
-        if (output_level > 10) System.out.println ( "Step 1a: Part " + i + " = " + parts[i] );
-      }
+        //////////////////////////////////////
+        // Step 1a - Run second swim
+        //////////////////////////////////////
 
-      if (parts.length < 7) {
-        System.out.println ( "Error: expected at least 7 parts, but only got " + parts.length + "\n" + stdout );
-        return ( make_string_array ( "5", "Error: expected at least 7 parts, but only got " + parts.length + "\n" ) );
-        // System.exit ( 5 );
-      }
-
-      String tarx = "" + parts[2];
-      String tary = "" + parts[3];
-      String patx = "" + parts[5];
-      String paty = "" + parts[6];
-
-      command_line = code_source + swim_cmd + " " + window_size;
-      if (output_level > 0) System.out.println ( "\n*** Running second swim with command line: " + command_line + " ***" );
-      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
-      cmd_proc = rt.exec ( command_line );
-
-      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
-      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
-      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
-
-      interactive_commands = "";
-      for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
-        int x = loop_signs_2x2[loop_index][0];
-        int y = loop_signs_2x2[loop_index][1];
-        interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
-        interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
-        interactive_commands += align_image_file + " " + patx + " " + paty + global_io.end_of_line;
-      }
-      if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
-
-      write_to_proc ( proc_in, interactive_commands );
-      proc_in.close();
-
-      global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
-
-      System.out.println ( "Waiting for subprocess to finish ..." );
-
-      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 1a (second swim)" );
-      stdout = streams[0];
-      stderr = streams[1];
-
-      // stdout will look like:
-      //    0                         1                     2   3                4                       5       6        7    8        9       10
-      // 49.1292: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.16 1004.7     0 (2.29333 -0.15564 2.29861)
-      // 22.4931: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1003.49 -0.523743  0 (-3.37482 -5.38275 6.35322)
-      // 31.2584: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.7988  2.21826    0 (-4.06619 -2.64075 4.84845)
-      // 58.7499: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 8.69444 1007.01    0 (1.82945 2.14697 2.82071)
-
-
-      //////////////////////////////////////
-      // Step 1b - Run first mir
-      //////////////////////////////////////
-
-      //String stdout_lines[] = lines_from_stdout ( stdout );
-      line_parts = parts_from_stdout ( stdout );
-
-      for (int i=0; i<line_parts.length; i++) {
-        for (int j=0; j<line_parts[i].length; j++) {
-          if (output_level > 10) System.out.println ( "Step 1b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+        parts = stdout.split ( "[\\s]+" );
+        for (int i=0; i<parts.length; i++) {
+          if (output_level > 10) System.out.println ( "Step 1a: Part " + i + " = " + parts[i] );
         }
-      }
 
-      interactive_commands = "F " + align_image_file + global_io.end_of_line;
-      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
-      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
-      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
-      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
-      interactive_commands += "RW iter1_mir_out."+image_type_extension+global_io.end_of_line;
-
-      f = new File ( System.getProperty("user.dir") + File.separator + "first.mir" );
-
-      bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
-      bw.write ( interactive_commands, 0, interactive_commands.length() );
-      bw.close();
-
-      command_line = code_source + mir_cmd + " first.mir";
-      if (output_level > 0) System.out.println ( "\n*** Running first mir with command line: " + command_line + " ***" );
-      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
-      if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
-      cmd_proc = rt.exec ( command_line );
-
-      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
-      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
-      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
-
-      //write_to_proc ( proc_in, interactive_commands );
-      proc_in.close();
-
-      global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
-
-      System.out.println ( "Waiting for subprocess to finish ..." );
-
-      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 1b (first mir)" );
-      stdout = streams[0];
-      stderr = streams[1];
-
-      // stdout will look like:
-      //              0                     1    2         3           4         5          6        7
-      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999407 -0.00575053  9.15865   0.00251182 0.995003 9.89321
-      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00058   0.00578275 -9.22115  -0.0025259  1.00501 -9.91962
-
-
-      //////////////////////////////////////
-      // Step 2a - Run third swim
-      //////////////////////////////////////
-
-      parts = stdout.split ( "[\\s]+" );
-      for (int i=0; i<parts.length; i++) {
-        if (output_level > 10) System.out.println ( "Step 2a: Part " + i + " = " + parts[i] );
-      }
-
-      if (parts.length < 15) {
-        System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
-        return ( make_string_array ( "5", "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout ) );
-        // System.exit ( 5 );
-      }
-
-      AI1 = "" + parts[10];
-      AI2 = "" + parts[11];
-      AI3 = "" + parts[13];
-      AI4 = "" + parts[14];
-
-      command_line = code_source + swim_cmd + " " + window_size;
-      if (output_level > 0) System.out.println ( "\n*** Running third swim with command line: " + command_line + " ***" );
-      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
-      cmd_proc = rt.exec ( command_line );
-
-      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
-      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
-      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
-
-      interactive_commands = "";
-      for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
-        int x = loop_signs_2x2[loop_index][0];
-        int y = loop_signs_2x2[loop_index][1];
-        interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
-        interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
-        interactive_commands += align_image_file + " " + patx + " " + paty + " ";
-        interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
-      }
-      if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
-
-      write_to_proc ( proc_in, interactive_commands );
-      proc_in.close();
-
-      global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
-
-      System.out.println ( "Waiting for subprocess to finish ..." );
-
-      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 2a (third swim)" );
-      stdout = streams[0];
-      stderr = streams[1];
-
-      // stdout will look like:
-      //    0                         1                      2    3               4                       5       6        7      8        9       10
-      // 59.4171: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.19  1003.47  1024 (-0.858154 -2.62854 2.76508)
-      // 30.0668: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1002.23 -1.42319  1024 (-2.03265  -2.51425 3.23313)
-      // 38.8941: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg  2.3043  2.22272  1024 (-1.37932  -1.39422 1.96122)
-      // 59.5567: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg   9.077  1006.68  1024 (-0.3894   -1.95184 1.99031)
-
-
-      //////////////////////////////////////
-      // Step 2b - Run second mir
-      //////////////////////////////////////
-
-
-      //String stdout_lines[] = lines_from_stdout ( stdout );
-      line_parts = parts_from_stdout ( stdout );
-
-      for (int i=0; i<line_parts.length; i++) {
-        for (int j=0; j<line_parts[i].length; j++) {
-          if (output_level > 10) System.out.println ( "Step 2b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+        if (parts.length < 7) {
+          System.out.println ( "Error: expected at least 7 parts, but only got " + parts.length + "\n" + stdout );
+          return ( make_string_array ( "5", "Error: expected at least 7 parts, but only got " + parts.length + "\n" ) );
+          // System.exit ( 5 );
         }
-      }
 
-      interactive_commands = "F " + align_image_file + global_io.end_of_line;
-      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
-      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
-      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
-      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
-      interactive_commands += "RW iter2_mir_out."+image_type_extension+global_io.end_of_line;
+        tarx = "" + parts[2];
+        tary = "" + parts[3];
+        patx = "" + parts[5];
+        paty = "" + parts[6];
 
-      f = new File ( System.getProperty("user.dir") + File.separator + "second.mir" );
+        command_line = code_source + swim_cmd + " " + window_size;
+        if (output_level > 0) System.out.println ( "\n*** Running second swim with command line: " + command_line + " ***" );
+        if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+        cmd_proc = rt.exec ( command_line );
 
-      bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
-      bw.write ( interactive_commands, 0, interactive_commands.length() );
-      bw.close();
+        proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+        proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+        proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
 
-      command_line = code_source + mir_cmd + " second.mir";
-      if (output_level > 0) System.out.println ( "\n*** Running second mir with command line: " + command_line + " ***" );
-      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
-      if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
-      cmd_proc = rt.exec ( command_line );
-
-      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
-      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
-      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
-
-      //write_to_proc ( proc_in, interactive_commands );
-      proc_in.close();
-
-      global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
-
-      System.out.println ( "Waiting for subprocess to finish ..." );
-
-      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 2b (second mir)" );
-      stdout = streams[0];
-      stderr = streams[1];
-
-      // stdout will look like:
-      //              0                     1    2         3           4         5          6        7
-      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999957 -0.00683413  9.75702   0.00341172 0.995323 9.88854
-      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00002   0.00686638 -9.82511  -0.00342782 1.00468 -9.90133
-
-
-      //////////////////////////////////////
-      // Step 3a - Run fourth swim
-      //////////////////////////////////////
-
-      parts = stdout.split ( "[\\s]+" );
-      for (int i=0; i<parts.length; i++) {
-        if (output_level > 10) System.out.println ( "Step 3a: Part " + i + " = " + parts[i] );
-      }
-
-      if (parts.length < 15) {
-        System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
-        return ( make_string_array ( "5", "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout ) );
-        // System.exit ( 5 );
-      }
-
-      AI1 = "" + parts[10];
-      AI2 = "" + parts[11];
-      AI3 = "" + parts[13];
-      AI4 = "" + parts[14];
-
-      command_line = code_source + swim_cmd + " " + window_size;
-      if (output_level > 0) System.out.println ( "\n*** Running fourth swim with command line: " + command_line + " ***" );
-      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
-      cmd_proc = rt.exec ( command_line );
-      System.out.println ( "Started subprocess" );
-
-      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
-      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
-      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
-
-      interactive_commands = "";
-      for (int loop_index=0; loop_index<loop_signs_3x3.length; loop_index++) {
-        int x = loop_signs_3x3[loop_index][0];
-        int y = loop_signs_3x3[loop_index][1];
-        interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
-        interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
-        interactive_commands += align_image_file + " " + patx + " " + paty + " ";
-        interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
-      }
-      if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
-
-      System.out.println ( "Writing to subprocess" );
-      write_to_proc ( proc_in, interactive_commands );
-      System.out.println ( "Flushing stream to subprocess" );
-      proc_in.flush();
-      System.out.println ( "Closing stream to subprocess" );
-      proc_in.close();
-
-      global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
-
-      System.out.println ( "Waiting for subprocess to finish ..." );
-
-      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3a (fourth swim)" );
-      stdout = streams[0];
-      stderr = streams[1];
-
-      // stdout will look like:
-      //    0                         1                      2    3               4                       5        6       7      8        9       10
-      // 59.6657: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.25  1003.41  1024 (-1.05634 -2.07587 2.32918)
-      // 31.8235: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1001.96 -1.63561  1024 (-1.48199 -2.4407  2.8554)
-      // 35.8937: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.36482  2.51362  1024 (-1.05696 -1.71926 2.01817)
-      // 58.2213: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 9.33534  1006.78  1024 (-0.95284 -2.13593 2.33882)
-      // 55.3926: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512  512 Tile_r1-c1_LM9R5CA1series_018.jpg 505.187  503.068  1024 (-1.67838 -1.79062 2.45423)
-      // 61.4603: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012  512 Tile_r1-c1_LM9R5CA1series_018.jpg 1005.33  501.508  1024 (-1.54633 -1.63705 2.2519)
-      // 51.5881: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 508.613  1005.08  1024 (-1.68539 -2.12262 2.71036)
-      // 59.0445: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12  512 Tile_r1-c1_LM9R5CA1series_018.jpg 5.80735  505.496  1024 (-1.04763 -1.07721 1.50263)
-      // 41.8738: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512   12 Tile_r1-c1_LM9R5CA1series_018.jpg 501.536  1.02411  1024 (-1.89609 -1.49487 2.41449)
-
-
-      //////////////////////////////////////
-      // Step 3b - Run third mir
-      //////////////////////////////////////
-
-      //String stdout_lines[] = lines_from_stdout ( stdout );
-      line_parts = parts_from_stdout ( stdout );
-
-      for (int i=0; i<line_parts.length; i++) {
-        for (int j=0; j<line_parts[i].length; j++) {
-          if (output_level > 10) System.out.println ( "Step 3b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+        interactive_commands = "";
+        for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
+          int x = loop_signs_2x2[loop_index][0];
+          int y = loop_signs_2x2[loop_index][1];
+          interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
+          interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
+          interactive_commands += align_image_file + " " + patx + " " + paty + global_io.end_of_line;
         }
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+
+        write_to_proc ( proc_in, interactive_commands );
+        proc_in.close();
+
+        global_io.log_command ( command_line + "\n" );
+        global_io.log_command ( interactive_commands + "\n" );
+
+        System.out.println ( "Waiting for subprocess to finish ..." );
+
+        streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 1a (second swim)" );
+        stdout = streams[0];
+        stderr = streams[1];
+
+        // stdout will look like:
+        //    0                         1                     2   3                4                       5       6        7    8        9       10
+        // 49.1292: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.16 1004.7     0 (2.29333 -0.15564 2.29861)
+        // 22.4931: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1003.49 -0.523743  0 (-3.37482 -5.38275 6.35322)
+        // 31.2584: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.7988  2.21826    0 (-4.06619 -2.64075 4.84845)
+        // 58.7499: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 8.69444 1007.01    0 (1.82945 2.14697 2.82071)
+
+
+        //////////////////////////////////////
+        // Step 1b - Run first mir
+        //////////////////////////////////////
+
+        //String stdout_lines[] = lines_from_stdout ( stdout );
+        line_parts = parts_from_stdout ( stdout );
+
+        for (int i=0; i<line_parts.length; i++) {
+          for (int j=0; j<line_parts[i].length; j++) {
+            if (output_level > 10) System.out.println ( "Step 1b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+          }
+        }
+
+        interactive_commands = "F " + align_image_file + global_io.end_of_line;
+        interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
+        interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
+        interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
+        interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
+        interactive_commands += "RW iter1_mir_out."+image_type_extension+global_io.end_of_line;
+
+        f = new File ( System.getProperty("user.dir") + File.separator + "first.mir" );
+
+        bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
+        bw.write ( interactive_commands, 0, interactive_commands.length() );
+        bw.close();
+
+        command_line = code_source + mir_cmd + " first.mir";
+        if (output_level > 0) System.out.println ( "\n*** Running first mir with command line: " + command_line + " ***" );
+        if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+        if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+        cmd_proc = rt.exec ( command_line );
+
+        proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+        proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+        proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+        //write_to_proc ( proc_in, interactive_commands );
+        proc_in.close();
+
+        global_io.log_command ( command_line + "\n" );
+        global_io.log_command ( interactive_commands + "\n" );
+
+        System.out.println ( "Waiting for subprocess to finish ..." );
+
+        streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 1b (first mir)" );
+        stdout = streams[0];
+        stderr = streams[1];
+
+        // stdout will look like:
+        //              0                     1    2         3           4         5          6        7
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999407 -0.00575053  9.15865   0.00251182 0.995003 9.89321
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00058   0.00578275 -9.22115  -0.0025259  1.00501 -9.91962
+
+
+        //////////////////////////////////////
+        // Step 2a - Run third swim
+        //////////////////////////////////////
+
+        parts = stdout.split ( "[\\s]+" );
+        for (int i=0; i<parts.length; i++) {
+          if (output_level > 10) System.out.println ( "Step 2a: Part " + i + " = " + parts[i] );
+        }
+
+        if (parts.length < 15) {
+          System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
+          return ( make_string_array ( "5", "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout ) );
+          // System.exit ( 5 );
+        }
+
+        AI1 = "" + parts[10];
+        AI2 = "" + parts[11];
+        AI3 = "" + parts[13];
+        AI4 = "" + parts[14];
+
+        command_line = code_source + swim_cmd + " " + window_size;
+        if (output_level > 0) System.out.println ( "\n*** Running third swim with command line: " + command_line + " ***" );
+        if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+        cmd_proc = rt.exec ( command_line );
+
+        proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+        proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+        proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+        interactive_commands = "";
+        for (int loop_index=0; loop_index<loop_signs_2x2.length; loop_index++) {
+          int x = loop_signs_2x2[loop_index][0];
+          int y = loop_signs_2x2[loop_index][1];
+          interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
+          interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
+          interactive_commands += align_image_file + " " + patx + " " + paty + " ";
+          interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
+        }
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+
+        write_to_proc ( proc_in, interactive_commands );
+        proc_in.close();
+
+        global_io.log_command ( command_line + "\n" );
+        global_io.log_command ( interactive_commands + "\n" );
+
+        System.out.println ( "Waiting for subprocess to finish ..." );
+
+        streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 2a (third swim)" );
+        stdout = streams[0];
+        stderr = streams[1];
+
+        // stdout will look like:
+        //    0                         1                      2    3               4                       5       6        7      8        9       10
+        // 59.4171: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.19  1003.47  1024 (-0.858154 -2.62854 2.76508)
+        // 30.0668: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1002.23 -1.42319  1024 (-2.03265  -2.51425 3.23313)
+        // 38.8941: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg  2.3043  2.22272  1024 (-1.37932  -1.39422 1.96122)
+        // 59.5567: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg   9.077  1006.68  1024 (-0.3894   -1.95184 1.99031)
+
+
+        //////////////////////////////////////
+        // Step 2b - Run second mir
+        //////////////////////////////////////
+
+
+        //String stdout_lines[] = lines_from_stdout ( stdout );
+        line_parts = parts_from_stdout ( stdout );
+
+        for (int i=0; i<line_parts.length; i++) {
+          for (int j=0; j<line_parts[i].length; j++) {
+            if (output_level > 10) System.out.println ( "Step 2b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+          }
+        }
+
+        interactive_commands = "F " + align_image_file + global_io.end_of_line;
+        interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
+        interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
+        interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
+        interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
+        interactive_commands += "RW iter2_mir_out."+image_type_extension+global_io.end_of_line;
+
+        f = new File ( System.getProperty("user.dir") + File.separator + "second.mir" );
+
+        bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
+        bw.write ( interactive_commands, 0, interactive_commands.length() );
+        bw.close();
+
+        command_line = code_source + mir_cmd + " second.mir";
+        if (output_level > 0) System.out.println ( "\n*** Running second mir with command line: " + command_line + " ***" );
+        if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+        if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+        cmd_proc = rt.exec ( command_line );
+
+        proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+        proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+        proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+        //write_to_proc ( proc_in, interactive_commands );
+        proc_in.close();
+
+        global_io.log_command ( command_line + "\n" );
+        global_io.log_command ( interactive_commands + "\n" );
+
+        System.out.println ( "Waiting for subprocess to finish ..." );
+
+        streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 2b (second mir)" );
+        stdout = streams[0];
+        stderr = streams[1];
+
+        // stdout will look like:
+        //              0                     1    2         3           4         5          6        7
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AF  0.999957 -0.00683413  9.75702   0.00341172 0.995323 9.88854
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AI  1.00002   0.00686638 -9.82511  -0.00342782 1.00468 -9.90133
+
+
+        //////////////////////////////////////
+        // Step 3a - Run fourth swim
+        //////////////////////////////////////
+
+        parts = stdout.split ( "[\\s]+" );
+        for (int i=0; i<parts.length; i++) {
+          if (output_level > 10) System.out.println ( "Step 3a: Part " + i + " = " + parts[i] );
+        }
+
+        if (parts.length < 15) {
+          System.out.println ( "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout );
+          return ( make_string_array ( "5", "Error: expected at least 15 parts, but only got " + parts.length + "\n" + stdout ) );
+          // System.exit ( 5 );
+        }
+
+        AI1 = "" + parts[10];
+        AI2 = "" + parts[11];
+        AI3 = "" + parts[13];
+        AI4 = "" + parts[14];
+
+        command_line = code_source + swim_cmd + " " + window_size;
+        if (output_level > 0) System.out.println ( "\n*** Running fourth swim with command line: " + command_line + " ***" );
+        if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+        cmd_proc = rt.exec ( command_line );
+        System.out.println ( "Started subprocess" );
+
+        proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+        proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+        proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+        interactive_commands = "";
+        for (int loop_index=0; loop_index<loop_signs_3x3.length; loop_index++) {
+          int x = loop_signs_3x3[loop_index][0];
+          int y = loop_signs_3x3[loop_index][1];
+          interactive_commands += "unused -i 2 -x " + (addx*x) + " -y " + (addy*y) + " ";
+          interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
+          interactive_commands += align_image_file + " " + patx + " " + paty + " ";
+          interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
+        }
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+
+        System.out.println ( "Writing to subprocess" );
+        write_to_proc ( proc_in, interactive_commands );
+        System.out.println ( "Flushing stream to subprocess" );
+        proc_in.flush();
+        System.out.println ( "Closing stream to subprocess" );
+        proc_in.close();
+
+        global_io.log_command ( command_line + "\n" );
+        global_io.log_command ( interactive_commands + "\n" );
+
+        System.out.println ( "Waiting for subprocess to finish ..." );
+
+        streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3a (fourth swim)" );
+        stdout = streams[0];
+        stderr = streams[1];
+
+        // stdout will look like:
+        //    0                         1                      2    3               4                       5        6       7      8        9       10
+        // 59.6657: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 1009.25  1003.41  1024 (-1.05634 -2.07587 2.32918)
+        // 31.8235: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012   12 Tile_r1-c1_LM9R5CA1series_018.jpg 1001.96 -1.63561  1024 (-1.48199 -2.4407  2.8554)
+        // 35.8937: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12   12 Tile_r1-c1_LM9R5CA1series_018.jpg 2.36482  2.51362  1024 (-1.05696 -1.71926 2.01817)
+        // 58.2213: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 9.33534  1006.78  1024 (-0.95284 -2.13593 2.33882)
+        // 55.3926: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512  512 Tile_r1-c1_LM9R5CA1series_018.jpg 505.187  503.068  1024 (-1.67838 -1.79062 2.45423)
+        // 61.4603: output/Tile_r1-c1_LM9R5CA1series_017.jpg 1012  512 Tile_r1-c1_LM9R5CA1series_018.jpg 1005.33  501.508  1024 (-1.54633 -1.63705 2.2519)
+        // 51.5881: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512 1012 Tile_r1-c1_LM9R5CA1series_018.jpg 508.613  1005.08  1024 (-1.68539 -2.12262 2.71036)
+        // 59.0445: output/Tile_r1-c1_LM9R5CA1series_017.jpg   12  512 Tile_r1-c1_LM9R5CA1series_018.jpg 5.80735  505.496  1024 (-1.04763 -1.07721 1.50263)
+        // 41.8738: output/Tile_r1-c1_LM9R5CA1series_017.jpg  512   12 Tile_r1-c1_LM9R5CA1series_018.jpg 501.536  1.02411  1024 (-1.89609 -1.49487 2.41449)
+
+
+        //////////////////////////////////////
+        // Step 3b - Run third mir
+        //////////////////////////////////////
+
+        //String stdout_lines[] = lines_from_stdout ( stdout );
+        line_parts = parts_from_stdout ( stdout );
+
+        for (int i=0; i<line_parts.length; i++) {
+          for (int j=0; j<line_parts[i].length; j++) {
+            if (output_level > 10) System.out.println ( "Step 3b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+          }
+        }
+
+        interactive_commands = "F " + align_image_file + global_io.end_of_line;
+        interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
+        interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
+        interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
+        interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
+
+        interactive_commands += line_parts[4][2] + " " + line_parts[4][3] + " " + line_parts[4][5] + " " + line_parts[4][6] + global_io.end_of_line;
+
+        interactive_commands += line_parts[5][2] + " " + line_parts[5][3] + " " + line_parts[5][5] + " " + line_parts[5][6] + global_io.end_of_line;
+        interactive_commands += line_parts[6][2] + " " + line_parts[6][3] + " " + line_parts[6][5] + " " + line_parts[6][6] + global_io.end_of_line;
+        interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + global_io.end_of_line;
+        interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + global_io.end_of_line;
+
+        interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
+
+        // Change the name of the file in this slot to use the newly aligned image:
+        // NOTE: This is now done outside of this alignment function
+        // image_files[align_index] = "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"";
+        // image_files[align_index] = aligned_image_file;
+
+
+        f = new File ( System.getProperty("user.dir") + File.separator + "third.mir" );
+
+        bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
+        bw.write ( interactive_commands, 0, interactive_commands.length() );
+        bw.close();
+
+        command_line = code_source + mir_cmd + " third.mir";
+        if (output_level > 0) System.out.println ( "\n*** Running third mir with command line: " + command_line + " ***" );
+        if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+        if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+        cmd_proc = rt.exec ( command_line );
+
+        proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+        proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+        proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+        //write_to_proc ( proc_in, interactive_commands );
+        proc_in.close();
+
+        global_io.log_command ( command_line + "\n" );
+        global_io.log_command ( interactive_commands + "\n" );
+
+        System.out.println ( "Waiting for subprocess to finish ..." );
+
+        streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3b (third mir)" );
+        stdout = streams[0];
+        stderr = streams[1];
+
+        // stdout will look like:
+        //              0                     1    2        3          4         5          6        7
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AF  1.0003  -0.00708304 9.92646   0.00381993 0.995537 9.28708
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AI  0.999677 0.0071125 -9.98931  -0.00383582 1.00446 -9.29038
+
+      } else {
+
+        // Don't do the affine
+        // Just run third mir based on the first swim data
+
+        parts = stdout.split ( "[\\s]+" );
+        for (int i=0; i<parts.length; i++) {
+          if (output_level > -1) System.out.println ( "No Affine: Part " + i + " = " + parts[i] );
+        }
+
+        //////////////////////////////////////
+        // Step 3b - Run third mir
+        //////////////////////////////////////
+
+        //String stdout_lines[] = lines_from_stdout ( stdout );
+        line_parts = parts_from_stdout ( stdout );
+
+        for (int i=0; i<line_parts.length; i++) {
+          for (int j=0; j<line_parts[i].length; j++) {
+            if (output_level > 10) System.out.println ( "Step 3b: Part[" + i + "][" + j + "] = " + line_parts[i][j] );
+          }
+        }
+
+        tarx = "" + parts[2];
+        tary = "" + parts[3];
+        patx = "" + parts[5];
+        paty = "" + parts[6];
+
+        double tarxf, taryf, patxf, patyf;
+        tarxf = Double.parseDouble(tarx);
+        taryf = Double.parseDouble(tary);
+        patxf = Double.parseDouble(patx);
+        patyf = Double.parseDouble(paty);
+        interactive_commands = "F " + align_image_file + global_io.end_of_line;
+        // interactive_commands += tarx + " " + tary + " " + patx + " " + paty + global_io.end_of_line;
+        for (int fake_num=0; fake_num<4; fake_num++) {
+          double vals[] = new double[4];
+          vals[0] = tarxf + Math.random();
+          vals[1] = taryf + Math.random();
+          vals[2] = patxf + Math.random();
+          vals[3] = patyf + Math.random();
+          interactive_commands += vals[0] + " " + vals[1] + " " + vals[2] + " " + vals[3] + global_io.end_of_line;
+        }
+        /*
+        interactive_commands += (tarxf+0.12234) + " " + (taryf+0.04232) + " " + (patxf+0.02387) + " " + (patyf+0.03751) + global_io.end_of_line;
+        interactive_commands += (tarxf+0.02298) + " " + (taryf+0.01572) + " " + (patxf+0.06283) + " " + (patyf+0.01372) + global_io.end_of_line;
+        interactive_commands += (tarxf+0.08723) + " " + (taryf+0.06273) + " " + (patxf+0.02438) + " " + (patyf+0.02749) + global_io.end_of_line;
+        interactive_commands += (tarxf+0.03948) + " " + (taryf+0.09273) + " " + (patxf+0.09263) + " " + (patyf+0.01372) + global_io.end_of_line;
+        */
+        interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
+
+        f = new File ( System.getProperty("user.dir") + File.separator + "third.mir" );
+
+        bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
+        bw.write ( interactive_commands, 0, interactive_commands.length() );
+        bw.close();
+
+        command_line = code_source + mir_cmd + " third.mir";
+        if (output_level > 0) System.out.println ( "\n*** Running third mir with command line: " + command_line + " ***" );
+        if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
+        if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
+        cmd_proc = rt.exec ( command_line );
+
+        proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
+        proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
+        proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
+
+        //write_to_proc ( proc_in, interactive_commands );
+        proc_in.close();
+
+        global_io.log_command ( command_line + "\n" );
+        global_io.log_command ( interactive_commands + "\n" );
+
+        System.out.println ( "Waiting for subprocess to finish ..." );
+
+        streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3b (third mir)" );
+        stdout = streams[0];
+        stderr = streams[1];
+
+        // stdout will look like:
+        //              0                     1    2        3          4         5          6        7
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AF  1.0003  -0.00708304 9.92646   0.00381993 0.995537 9.28708
+        // Tile_r1-c1_LM9R5CA1series_018.jpg AI  0.999677 0.0071125 -9.98931  -0.00383582 1.00446 -9.29038
+
+
+        // return ( make_string_array ( "m", parts[5], parts[6], "1", "0", "0", "1",
+
       }
-
-      interactive_commands = "F " + align_image_file + global_io.end_of_line;
-      interactive_commands += line_parts[0][2] + " " + line_parts[0][3] + " " + line_parts[0][5] + " " + line_parts[0][6] + global_io.end_of_line;
-      interactive_commands += line_parts[1][2] + " " + line_parts[1][3] + " " + line_parts[1][5] + " " + line_parts[1][6] + global_io.end_of_line;
-      interactive_commands += line_parts[2][2] + " " + line_parts[2][3] + " " + line_parts[2][5] + " " + line_parts[2][6] + global_io.end_of_line;
-      interactive_commands += line_parts[3][2] + " " + line_parts[3][3] + " " + line_parts[3][5] + " " + line_parts[3][6] + global_io.end_of_line;
-
-      interactive_commands += line_parts[4][2] + " " + line_parts[4][3] + " " + line_parts[4][5] + " " + line_parts[4][6] + global_io.end_of_line;
-
-      interactive_commands += line_parts[5][2] + " " + line_parts[5][3] + " " + line_parts[5][5] + " " + line_parts[5][6] + global_io.end_of_line;
-      interactive_commands += line_parts[6][2] + " " + line_parts[6][3] + " " + line_parts[6][5] + " " + line_parts[6][6] + global_io.end_of_line;
-      interactive_commands += line_parts[7][2] + " " + line_parts[7][3] + " " + line_parts[7][5] + " " + line_parts[7][6] + global_io.end_of_line;
-      interactive_commands += line_parts[8][2] + " " + line_parts[8][3] + " " + line_parts[8][5] + " " + line_parts[8][6] + global_io.end_of_line;
-
-      interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
-
-      // Change the name of the file in this slot to use the newly aligned image:
-      // NOTE: This is now done outside of this alignment function
-      // image_files[align_index] = "aligned_" + String.format("%03d", align_index) + "."+image_type_extension+"";
-      // image_files[align_index] = aligned_image_file;
-
-
-      f = new File ( System.getProperty("user.dir") + File.separator + "third.mir" );
-
-      bw = new BufferedWriter ( new OutputStreamWriter ( new FileOutputStream ( f ) ) );
-      bw.write ( interactive_commands, 0, interactive_commands.length() );
-      bw.close();
-
-      command_line = code_source + mir_cmd + " third.mir";
-      if (output_level > 0) System.out.println ( "\n*** Running third mir with command line: " + command_line + " ***" );
-      if (output_level > 2) System.out.println ( "    Number of parts = " + parts.length );
-      if (output_level > 1) System.out.println ( "Passing to mir:\n" + interactive_commands );
-      cmd_proc = rt.exec ( command_line );
-
-      proc_in = new BufferedOutputStream ( cmd_proc.getOutputStream() );
-      proc_out = new BufferedInputStream ( cmd_proc.getInputStream() );
-      proc_err = new BufferedInputStream ( cmd_proc.getErrorStream() );
-
-      //write_to_proc ( proc_in, interactive_commands );
-      proc_in.close();
-
-      global_io.log_command ( command_line + "\n" );
-      global_io.log_command ( interactive_commands + "\n" );
-
-      System.out.println ( "Waiting for subprocess to finish ..." );
-
-      streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3b (third mir)" );
-      stdout = streams[0];
-      stderr = streams[1];
-
-      // stdout will look like:
-      //              0                     1    2        3          4         5          6        7
-      // Tile_r1-c1_LM9R5CA1series_018.jpg AF  1.0003  -0.00708304 9.92646   0.00381993 0.995537 9.28708
-      // Tile_r1-c1_LM9R5CA1series_018.jpg AI  0.999677 0.0071125 -9.98931  -0.00383582 1.00446 -9.29038
-
 
       //////////////////////////////////////
       // Step 3c - Best guess transform
