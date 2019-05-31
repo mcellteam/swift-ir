@@ -9,6 +9,7 @@ source/*.mir
 source/*.txt
 source/*.json
 source/*.sh
+tests/*
 *.tar
 *.class
 iavg
