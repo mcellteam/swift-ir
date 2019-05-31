@@ -1295,32 +1295,13 @@ public class run_swift {
           }
         }
 
-        tarx = "" + parts[2];
-        tary = "" + parts[3];
-        patx = "" + parts[5];
-        paty = "" + parts[6];
+        double tarxf = Double.parseDouble(parts[2]);
+        double taryf = Double.parseDouble(parts[3]);
+        double patxf = Double.parseDouble(parts[5]);
+        double patyf = Double.parseDouble(parts[6]);
 
-        double tarxf, taryf, patxf, patyf;
-        tarxf = Double.parseDouble(tarx);
-        taryf = Double.parseDouble(tary);
-        patxf = Double.parseDouble(patx);
-        patyf = Double.parseDouble(paty);
         interactive_commands = "F " + align_image_file + global_io.end_of_line;
-        // interactive_commands += tarx + " " + tary + " " + patx + " " + paty + global_io.end_of_line;
-        for (int fake_num=0; fake_num<4; fake_num++) {
-          double vals[] = new double[4];
-          vals[0] = tarxf + Math.random();
-          vals[1] = taryf + Math.random();
-          vals[2] = patxf + Math.random();
-          vals[3] = patyf + Math.random();
-          interactive_commands += vals[0] + " " + vals[1] + " " + vals[2] + " " + vals[3] + global_io.end_of_line;
-        }
-        /*
-        interactive_commands += (tarxf+0.12234) + " " + (taryf+0.04232) + " " + (patxf+0.02387) + " " + (patyf+0.03751) + global_io.end_of_line;
-        interactive_commands += (tarxf+0.02298) + " " + (taryf+0.01572) + " " + (patxf+0.06283) + " " + (patyf+0.01372) + global_io.end_of_line;
-        interactive_commands += (tarxf+0.08723) + " " + (taryf+0.06273) + " " + (patxf+0.02438) + " " + (patyf+0.02749) + global_io.end_of_line;
-        interactive_commands += (tarxf+0.03948) + " " + (taryf+0.09273) + " " + (patxf+0.09263) + " " + (patyf+0.01372) + global_io.end_of_line;
-        */
+        interactive_commands += "A 1 0 " + (patxf-tarxf) + " 0 1 " + (patyf-taryf) + global_io.end_of_line;
         interactive_commands += "RW " + aligned_image_file + global_io.end_of_line;
 
         f = new File ( System.getProperty("user.dir") + File.separator + "third.mir" );
