@@ -1274,7 +1274,7 @@ public class run_swift {
 
       } else {
 
-        // Don't do the affine
+        // Don't do the affine at all
         // Just run third mir based on the first swim data
 
         parts = stdout.split ( "[\\s]+" );
@@ -1295,6 +1295,8 @@ public class run_swift {
           }
         }
 
+        patx = parts[5];
+        paty = parts[6];
         double tarxf = Double.parseDouble(parts[2]);
         double taryf = Double.parseDouble(parts[3]);
         double patxf = Double.parseDouble(parts[5]);
@@ -1331,6 +1333,12 @@ public class run_swift {
         streams = global_io.wait_for_proc_streams ( cmd_proc, proc_in, proc_out, proc_err, output_level, command_line, interactive_commands, "Completed Step 3b (third mir)" );
         stdout = streams[0];
         stderr = streams[1];
+
+        // Generate fake stdout to be used below:
+        stdout  = parts[4] + " AF 1 0 " +  (patxf-tarxf) + " 0 1 " +  (patyf-taryf) + global_io.end_of_line;
+        stdout += parts[4] + " AI 1 0 " + -(patxf-tarxf) + " 0 1 " + -(patyf-taryf) + global_io.end_of_line;
+        // "/nadata/cnl/home/bobkuczewski/proj/Reconstruct/SWiFT-IR/source/Workshop2019/Tile_r1-c1_LM9R5CA1series_018.jpg AF  1.00051 -0.00808209 10.4217  0.00353054 0.995241 9.70082\n" +
+        // "/nadata/cnl/home/bobkuczewski/proj/Reconstruct/SWiFT-IR/source/Workshop2019/Tile_r1-c1_LM9R5CA1series_018.jpg AI  0.999458 0.00811633 -10.4948  -0.0035455 1.00475 -9.70997";
 
         // stdout will look like:
         //              0                     1    2        3          4         5          6        7
