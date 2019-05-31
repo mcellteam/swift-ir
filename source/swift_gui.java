@@ -668,7 +668,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   File destination=null;
   public File install_code_source=null;
 
-  static int w=1200, h=1024;
+  static int w=1600, h=1024;
 
   String current_directory = "";
   ImageFileChooser image_file_chooser = null;
@@ -697,6 +697,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   public void repaint_panels () {
     alignment_panel.repaint();
     control_panel.repaint();
+    if (results_panel != null) results_panel.repaint();
   }
 
   public void make_alignments() {
@@ -1059,6 +1060,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   JMenuItem list_align_shell_script = null;
 
   public void center_current_image() {
+    System.out.println ( "Centering current image" );
     if (frames != null) {
       if (frames.size() > 0) {
         if (frame_index >= 0) {
@@ -1072,6 +1074,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
+    }
+    if (results_panel != null) {
+      System.out.println ( " --- Centering results image" );
+      results_panel.center_current_image();
+      results_panel.recalculate = true;
     }
   }
 
@@ -1286,6 +1293,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           if ( (frame_index >= 0) && (num_previous <= 0) ) {
             // Automatically center if there were no previous images
             center_current_image();
+            if (results_panel != null) results_panel.center_current_image();
           }
           update_control_panel();
           repaint();
@@ -1432,6 +1440,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     } else if ( action_source == center_image_menu_item ) {
       System.out.println ( "Center image" );
       center_current_image();
+      if (results_panel != null) results_panel.center_current_image();
       repaint();
       set_title();
     } else if ( action_source == zoom_actual_menu_item ) {
@@ -2178,6 +2187,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         app_frame.setJMenuBar ( menu_bar );
         swift_gui_panel.update_control_panel();
         swift_gui_panel.center_current_image();
+        if (swift_gui_panel.results_panel != null) swift_gui_panel.results_panel.center_current_image();
 
         // Create a results panel
 /*
