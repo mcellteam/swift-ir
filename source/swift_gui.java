@@ -1779,7 +1779,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                   } else {
                     fixed_image_name = prefix + fixed_frame.image_file_path.getName();
                   }
-                  if (first_pass) {
+                  if (first_pass && (start==0)) {
                     // This is the first alignment, so copy the original image
                     if (pairwise) {
                       run_swift.copy_file_by_name ( rt, fixed_frame.image_file_path.toString(), prefix + fixed_frame.image_file_path.getName(), fixed_frame.next_alignment.output_level );
@@ -1832,7 +1832,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                           }
                           System.out.println ();
 
-                          double[] propagated = propagate_affine ( start, i );
+                          // double[] propagated = propagate_affine ( start, i );
+                          double[] propagated = propagate_affine ( 0, i );  // Always propagate from the beginning
 
                           System.out.println ( "Affine transform from " + start + " to " + i + ":" );
                           System.out.print ( "    " );
