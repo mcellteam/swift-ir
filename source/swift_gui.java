@@ -72,6 +72,9 @@ class alignment_settings {
   int aff_window_size=1024;
   int aff_addx=500;
   int aff_addy=500;
+  boolean do_bias=true;
+  double bias_x_per_image=0;
+  double bias_y_per_image=0;
   int output_level=5;
   String[] alignment_values = null;
 }
@@ -280,6 +283,9 @@ class ControlPanel extends JPanel {
   public RespTextField aff_window_size;
   public RespTextField aff_addx;
   public RespTextField aff_addy;
+  public JCheckBox do_bias_checkbox;
+  public RespTextField bias_x_per_image;
+  public RespTextField bias_y_per_image;
   public RespTextField output_level;
   public JCheckBox skip;
 
@@ -316,78 +322,79 @@ class ControlPanel extends JPanel {
     JPanel alignment_panel = new JPanel();
     alignment_panel.setLayout ( new BoxLayout( alignment_panel, BoxLayout.Y_AXIS ) );
 
-    JPanel alignment_panel_top = new JPanel();
-    JPanel alignment_panel_mid = new JPanel();
-    JPanel alignment_panel_bot = new JPanel();
+    JPanel alignment_panel_translation = new JPanel();
+    JPanel alignment_panel_affine = new JPanel();
+    JPanel alignment_panel_bias = new JPanel();
+    JPanel alignment_panel_actions = new JPanel();
 
     if (flavor == 2) {
-      alignment_panel_top.add ( new JLabel("   Translation Pass:   ") );
+      alignment_panel_translation.add ( new JLabel("   Translation Pass:   ") );
     }
 
-    alignment_panel_top.add ( new JLabel("  WW:") );
+    alignment_panel_translation.add ( new JLabel("  WW:") );
     window_size = new RespTextField(this.swift,"",8);
     window_size.addKeyListener ( this.swift );
     window_size.addActionListener ( this.swift );
     window_size.setActionCommand ( "window_size" );
-    alignment_panel_top.add ( window_size );
+    alignment_panel_translation.add ( window_size );
 
-    alignment_panel_top.add ( new JLabel("  Addx:") );
+    alignment_panel_translation.add ( new JLabel("  Addx:") );
     addx = new RespTextField(this.swift,"",6);
     addx.addKeyListener ( this.swift );
     addx.addActionListener ( this.swift );
     addx.setActionCommand ( "addx" );
-    alignment_panel_top.add ( addx );
+    alignment_panel_translation.add ( addx );
 
-    alignment_panel_top.add ( new JLabel("  Addy:") );
+    alignment_panel_translation.add ( new JLabel("  Addy:") );
     addy = new RespTextField(this.swift,"",6);
     addy.addKeyListener ( this.swift );
     addy.addActionListener ( this.swift );
     addy.setActionCommand ( "addy" );
-    alignment_panel_top.add ( addy );
+    alignment_panel_translation.add ( addy );
 
-    alignment_panel_top.add ( new JLabel("          Output Level:") );
+    alignment_panel_translation.add ( new JLabel("          Output Level:") );
     output_level = new RespTextField(this.swift,"",4);
     output_level.addKeyListener ( this.swift );
     output_level.addActionListener ( this.swift );
     output_level.setActionCommand ( "output_level" );
-    alignment_panel_top.add ( output_level );
+    alignment_panel_translation.add ( output_level );
 
-    alignment_panel_top.add ( new JLabel("  Skip:") );
+    alignment_panel_translation.add ( new JLabel("  Skip:") );
     skip = new JCheckBox("",false);
     skip.addActionListener ( this.swift );
     skip.setActionCommand ( "skip" );
-    alignment_panel_top.add ( skip );
+    alignment_panel_translation.add ( skip );
 
     if (flavor == 2) {
 
       do_affine_checkbox = new JCheckBox("",true);
       do_affine_checkbox.addActionListener ( this.swift );
       do_affine_checkbox.setActionCommand ( "do_affine" );
-      alignment_panel_mid.add ( do_affine_checkbox );
+      alignment_panel_affine.add ( do_affine_checkbox );
 
 
-      alignment_panel_mid.add ( new JLabel("Affine Pass:   ") );
+      alignment_panel_affine.add ( new JLabel("Affine Pass:   ") );
 
-      alignment_panel_mid.add ( new JLabel("  WW:") );
+      alignment_panel_affine.add ( new JLabel("  WW:") );
       aff_window_size = new RespTextField(this.swift,"",8);
       aff_window_size.addKeyListener ( this.swift );
       aff_window_size.addActionListener ( this.swift );
       aff_window_size.setActionCommand ( "aff_window_size" );
-      alignment_panel_mid.add ( aff_window_size );
+      alignment_panel_affine.add ( aff_window_size );
 
-      alignment_panel_mid.add ( new JLabel("  Addx:") );
+      alignment_panel_affine.add ( new JLabel("  Addx:") );
       aff_addx = new RespTextField(this.swift,"",6);
       aff_addx.addKeyListener ( this.swift );
       aff_addx.addActionListener ( this.swift );
       aff_addx.setActionCommand ( "aff_addx" );
-      alignment_panel_mid.add ( aff_addx );
+      alignment_panel_affine.add ( aff_addx );
 
-      alignment_panel_mid.add ( new JLabel("  Addy:") );
+      alignment_panel_affine.add ( new JLabel("  Addy:") );
       aff_addy = new RespTextField(this.swift,"",6);
       aff_addy.addKeyListener ( this.swift );
       aff_addy.addActionListener ( this.swift );
       aff_addy.setActionCommand ( "aff_addy" );
-      alignment_panel_mid.add ( aff_addy );
+      alignment_panel_affine.add ( aff_addy );
 
     }
 
@@ -396,70 +403,93 @@ class ControlPanel extends JPanel {
     alignment_mode.addKeyListener ( this.swift );
     alignment_mode.addActionListener ( this.swift );
     alignment_mode.setActionCommand ( "mode" );
-    alignment_panel_mid.add ( new JLabel("    Swims:") );
-    alignment_panel_mid.add ( alignment_mode );
+    alignment_panel_affine.add ( new JLabel("    Swims:") );
+    alignment_panel_affine.add ( alignment_mode );
 
 
-    alignment_panel_mid.add ( new JLabel("  ") );
+    do_bias_checkbox = new JCheckBox("",true);
+    do_bias_checkbox.addActionListener ( this.swift );
+    do_bias_checkbox.setActionCommand ( "do_bias" );
+    alignment_panel_bias.add ( do_bias_checkbox );
+
+    alignment_panel_bias.add ( new JLabel("Bias Pass:   ") );
+
+    alignment_panel_bias.add ( new JLabel("    dx per image:") );
+    bias_x_per_image = new RespTextField(this.swift,"",8);
+    bias_x_per_image.addKeyListener ( this.swift );
+    bias_x_per_image.addActionListener ( this.swift );
+    bias_x_per_image.setActionCommand ( "bias_x_per_image" );
+    alignment_panel_bias.add ( bias_x_per_image );
+
+    alignment_panel_bias.add ( new JLabel("    dy per image:") );
+    bias_y_per_image = new RespTextField(this.swift,"",8);
+    bias_y_per_image.addKeyListener ( this.swift );
+    bias_y_per_image.addActionListener ( this.swift );
+    bias_y_per_image.setActionCommand ( "bias_y_per_image" );
+    alignment_panel_bias.add ( bias_y_per_image );
+
+
+    alignment_panel_affine.add ( new JLabel("  ") );
     set_all = new JButton("Set All");
     set_all.addActionListener ( this.swift );
     set_all.setActionCommand ( "set_all_" + flavor );
     if (flavor == 1) {
-      alignment_panel_mid.add ( set_all );
+      alignment_panel_affine.add ( set_all );
     } else {
-      alignment_panel_bot.add ( set_all );
+      alignment_panel_actions.add ( set_all );
     }
 
     if (flavor == 1) {
-      alignment_panel_mid.add ( new JLabel("  ") );
+      alignment_panel_affine.add ( new JLabel("  ") );
     } else {
-      alignment_panel_bot.add ( new JLabel("  ") );
+      alignment_panel_actions.add ( new JLabel("  ") );
     }
     set_fwd = new JButton("Set Forward");
     set_fwd.addActionListener ( this.swift );
     set_fwd.setActionCommand ( "set_fwd" );
     if (flavor == 1) {
-      alignment_panel_mid.add ( set_fwd );
+      alignment_panel_affine.add ( set_fwd );
     } else {
-      alignment_panel_bot.add ( set_fwd );
+      alignment_panel_actions.add ( set_fwd );
     }
 
-    alignment_panel_bot.add ( new JLabel("  ") );
+    alignment_panel_actions.add ( new JLabel("         ") );
     align_all = new JButton("Align All");
     align_all.addActionListener ( this.swift );
     align_all.setActionCommand ( "align_all" );
-    alignment_panel_bot.add ( align_all );
+    alignment_panel_actions.add ( align_all );
 
-    alignment_panel_bot.add ( new JLabel("  ") );
+    alignment_panel_actions.add ( new JLabel("  ") );
     align_fwd = new JButton("Align Forward");
     align_fwd.addActionListener ( this.swift );
     align_fwd.setActionCommand ( "align_fwd" );
-    alignment_panel_bot.add ( align_fwd );
+    alignment_panel_actions.add ( align_fwd );
 
-    alignment_panel_bot.add ( new JLabel("  #") );
+    alignment_panel_actions.add ( new JLabel("  #") );
     num_to_align = new RespTextField(this.swift,"",6);
     num_to_align.addKeyListener ( this.swift );
     num_to_align.addActionListener ( this.swift );
     num_to_align.setActionCommand ( "num_to_align" );
-    alignment_panel_bot.add ( num_to_align );
+    alignment_panel_actions.add ( num_to_align );
 
-    alignment_panel_bot.add ( new JLabel("  Pairwise:") );
+    alignment_panel_actions.add ( new JLabel("         Pairwise:") );
     pairwise = new JCheckBox("",false);
     pairwise.addActionListener ( this.swift );
     pairwise.setActionCommand ( "pairwise" );
-    alignment_panel_bot.add ( pairwise );
+    alignment_panel_actions.add ( pairwise );
 
     /*
-    alignment_panel_bot.add ( new JLabel("  MirB:") );
+    alignment_panel_actions.add ( new JLabel("  MirB:") );
     use_mirb = new JCheckBox("",false);
     use_mirb.addActionListener ( this.swift );
     use_mirb.setActionCommand ( "use_mirb" );
-    alignment_panel_bot.add ( use_mirb );
+    alignment_panel_actions.add ( use_mirb );
     */
 
-    alignment_panel.add ( alignment_panel_top );
-    alignment_panel.add ( alignment_panel_mid );
-    alignment_panel.add ( alignment_panel_bot );
+    alignment_panel.add ( alignment_panel_translation );
+    alignment_panel.add ( alignment_panel_affine );
+    alignment_panel.add ( alignment_panel_bias );
+    alignment_panel.add ( alignment_panel_actions );
 
     return ( alignment_panel );
   }
@@ -538,6 +568,9 @@ class ControlPanel extends JPanel {
               this.aff_window_size.setText ( "" );
               this.aff_addx.setText ( "" );
               this.aff_addy.setText ( "" );
+              this.do_bias_checkbox.setSelected ( true );
+              this.bias_x_per_image.setText ( "" );
+              this.bias_y_per_image.setText ( "" );
               this.output_level.setText ( "" );
               this.skip.setSelected ( false );
             } else {
@@ -548,6 +581,9 @@ class ControlPanel extends JPanel {
               this.aff_window_size.setText ( "" + frame.next_alignment.aff_window_size );
               this.aff_addx.setText ( "" + frame.next_alignment.aff_addx );
               this.aff_addy.setText ( "" + frame.next_alignment.aff_addy );
+              this.do_bias_checkbox.setSelected ( frame.next_alignment.do_bias );
+              this.bias_x_per_image.setText ( "" + frame.next_alignment.bias_x_per_image );
+              this.bias_y_per_image.setText ( "" + frame.next_alignment.bias_y_per_image );
               this.output_level.setText ( "" + frame.next_alignment.output_level );
               this.skip.setSelected ( frame.skip );
             }
@@ -563,6 +599,9 @@ class ControlPanel extends JPanel {
           this.aff_window_size.setText ( "" );
           this.aff_addx.setText ( "" );
           this.aff_addy.setText ( "" );
+          this.do_bias_checkbox.setSelected ( true );
+          this.bias_x_per_image.setText ( "" );
+          this.bias_y_per_image.setText ( "" );
           this.output_level.setText ( "" );
           this.skip.setSelected ( false );
         }
@@ -577,6 +616,9 @@ class ControlPanel extends JPanel {
         this.aff_window_size.setText ( "" );
         this.aff_addx.setText ( "" );
         this.aff_addy.setText ( "" );
+        this.do_bias_checkbox.setSelected ( true );
+        this.bias_x_per_image.setText ( "" );
+        this.bias_y_per_image.setText ( "" );
         this.output_level.setText ( "" );
         this.skip.setSelected ( false );
       }
