@@ -314,7 +314,7 @@ class ControlPanel extends JPanel {
 
   JPanel make_recipe_panel(swift_gui swift, int flavor) {
     JPanel alignment_panel = new JPanel();
-    alignment_panel.setLayout ( new BorderLayout( 0, 20 ) );
+    alignment_panel.setLayout ( new BoxLayout( alignment_panel, BoxLayout.Y_AXIS ) );
 
     JPanel alignment_panel_top = new JPanel();
     JPanel alignment_panel_mid = new JPanel();
@@ -457,9 +457,9 @@ class ControlPanel extends JPanel {
     alignment_panel_bot.add ( use_mirb );
     */
 
-    alignment_panel.add ( alignment_panel_top, BorderLayout.NORTH );
-    alignment_panel.add ( alignment_panel_mid, BorderLayout.CENTER );
-    alignment_panel.add ( alignment_panel_bot, BorderLayout.SOUTH );
+    alignment_panel.add ( alignment_panel_top );
+    alignment_panel.add ( alignment_panel_mid );
+    alignment_panel.add ( alignment_panel_bot );
 
     return ( alignment_panel );
   }
@@ -1832,7 +1832,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                           }
                           System.out.println ();
 
-                          // double[] propagated = propagate_affine ( start, i );
                           double[] propagated = propagate_affine ( 0, i );  // Always propagate from the beginning
 
                           System.out.println ( "Affine transform from " + start + " to " + i + ":" );
