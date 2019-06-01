@@ -670,6 +670,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
   }
 
+  public double get_double_from_textfield ( JTextComponent c ) {
+    String s = c.getText();
+    if (s.length() > 0) {
+      return ( Double.parseDouble ( s ) );
+    } else {
+      return ( 0 );
+    }
+  }
+
   public void handle_key_event(KeyEvent e) {
     if (frames != null) {
       if (frames.size() > 0) {
@@ -686,6 +695,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           frame.next_alignment.aff_addx = get_int_from_textfield ( control_panel.aff_addx );
         } else if (e.getComponent() == control_panel.aff_addy) {
           frame.next_alignment.aff_addy = get_int_from_textfield ( control_panel.aff_addy );
+        } else if (e.getComponent() == control_panel.bias_x_per_image) {
+          frame.next_alignment.bias_x_per_image = get_double_from_textfield ( control_panel.bias_x_per_image );
+        } else if (e.getComponent() == control_panel.bias_y_per_image) {
+          frame.next_alignment.bias_y_per_image = get_double_from_textfield ( control_panel.bias_y_per_image );
         } else if (e.getComponent() == control_panel.output_level) {
           frame.next_alignment.output_level = get_int_from_textfield ( control_panel.output_level );
         } else {
@@ -1181,6 +1194,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       f.println ( "        \"aff_window_size\": 1024," );
       f.println ( "        \"aff_addx\": 768," );
       f.println ( "        \"aff_addy\": 768," );
+      f.println ( "        \"do_bias\": true," );
+      f.println ( "        \"bias_x_per_image\": 0.0," );
+      f.println ( "        \"bias_y_per_image\": 0.0," );
       f.println ( "        \"output_level\": 0" );
       f.println ( "      }" );
       f.println ( "    }," );
@@ -1206,6 +1222,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           f.println ( "          \"aff_window_size\": " + settings.aff_window_size + "," );
           f.println ( "          \"aff_addx\": " + settings.aff_addx + "," );
           f.println ( "          \"aff_addy\": " + settings.aff_addy + "," );
+          f.println ( "          \"do_bias\": " + settings.do_bias + "," );  // JSON and Java both use lower case for true and false
+          f.println ( "          \"bias_x_per_image\": " + settings.bias_x_per_image + "," );
+          f.println ( "          \"bias_y_per_image\": " + settings.bias_y_per_image + "," );
           f.println ( "          \"output_level\": " + settings.output_level + "" );
           //f.println ( "          \"affine_fwd\": null," );
           //f.println ( "          \"affine_rev\": null," );
@@ -1435,7 +1454,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                     if (alignment_pars.containsKey("aff_window_size")) settings.aff_window_size = (Integer)(alignment_pars.get("aff_window_size"));
                     if (alignment_pars.containsKey("aff_addx")) settings.aff_addx = (Integer)(alignment_pars.get("aff_addx"));
                     if (alignment_pars.containsKey("aff_addy")) settings.aff_addy = (Integer)(alignment_pars.get("aff_addy"));
-
+                    if (alignment_pars.containsKey("do_bias")) settings.do_bias = (Boolean)(alignment_pars.get("do_bias"));
+                    if (alignment_pars.containsKey("bias_x_per_image")) settings.bias_x_per_image = (Double)(alignment_pars.get("bias_x_per_image"));
+                    if (alignment_pars.containsKey("bias_y_per_image")) settings.bias_y_per_image = (Double)(alignment_pars.get("bias_y_per_image"));
                     settings.output_level = (Integer)(alignment_pars.get("output_level"));
                   }
                 }
@@ -1652,6 +1673,39 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
+    } else if (cmd.equalsIgnoreCase("do_bias")) {
+      JCheckBox box = (JCheckBox)action_source;
+      System.out.println ( "Got a do_bias change with Selected = " + box.isSelected() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.do_bias = box.isSelected();
+          }
+        }
+      }
+    } else if (cmd.equalsIgnoreCase("bias_x_per_image")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got a bias_x_per_image change with " + txt.getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.bias_x_per_image = get_double_from_textfield ( txt );
+          }
+        }
+      }
+    } else if (cmd.equalsIgnoreCase("bias_y_per_image")) {
+      JTextField txt = (JTextField)action_source;
+      System.out.println ( "Got a bias_y_per_image change with " + txt.getText() );
+      if (frames != null) {
+        if (frames.size() > 1) {
+          swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.bias_y_per_image = get_double_from_textfield ( txt );
+          }
+        }
+      }
     } else if (cmd.equalsIgnoreCase("output_level")) {
       JTextField txt = (JTextField)action_source;
       System.out.println ( "Got an output_level change with " + txt.getText() );
@@ -1711,6 +1765,9 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             frame.next_alignment.aff_window_size = get_int_from_textfield ( control_panel.aff_window_size );
             frame.next_alignment.aff_addx = get_int_from_textfield ( control_panel.aff_addx );
             frame.next_alignment.aff_addy = get_int_from_textfield ( control_panel.aff_addy );
+            frame.next_alignment.do_bias = control_panel.do_bias_checkbox.isSelected();
+            frame.next_alignment.bias_x_per_image = get_double_from_textfield ( control_panel.bias_x_per_image );
+            frame.next_alignment.bias_y_per_image = get_double_from_textfield ( control_panel.bias_y_per_image );
             frame.next_alignment.output_level = get_int_from_textfield ( control_panel.output_level );
           }
         }
@@ -1830,6 +1887,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                     }
                     first_pass = false;
                   }
+                  double bias_x = fixed_frame.next_alignment.bias_x_per_image * i;
+                  double bias_y = fixed_frame.next_alignment.bias_y_per_image * i;
                   String results[] = run_swift.align_files_by_name (
                         rt,
                         (new File(fixed_image_name)).getAbsolutePath(),
@@ -1842,6 +1901,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                         fixed_frame.next_alignment.aff_window_size,
                         fixed_frame.next_alignment.aff_addx,
                         fixed_frame.next_alignment.aff_addy,
+                        bias_x,
+                        bias_y,
                         fixed_frame.next_alignment.output_level );
 
                   fixed_frame.next_alignment.alignment_values = results;
