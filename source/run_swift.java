@@ -789,41 +789,24 @@ public class run_swift {
   }
 
 
-  // This form doesn't specify separate alignment parameters for the initial translation step or the biases
+  // This form doesn't specify separate alignment parameters for the initial translation step
   public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                                int window_size, int addx, int addy, int output_level ) {
-
-    // Just call the more general version with the same window size and zero offsets (trans_addx=0 and trans_addy=0) and zero biases
-    return align_files_by_name ( rt, fixed_image_file, align_image_file, aligned_image_file,
-                                 window_size, 0, 0,  // This form of the function uses these parameters for the initial translation step
-                                 true, // This form defaults to doing the affine transforms
-                                 window_size, addx, addy, 0, 0,
-                                 output_level );
-  }
-
-
-  // This form specifies separate alignment parameters for the initial translation step but not the biases
-  public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
-                                               int trans_window_size, int trans_addx, int trans_addy,
-                                               boolean do_affine,
-                                               int window_size, int addx, int addy,
-                                               int output_level ) {
 
     // Just call the more general version with the same window size and zero offsets (trans_addx=0 and trans_addy=0)
     return align_files_by_name ( rt, fixed_image_file, align_image_file, aligned_image_file,
                                  window_size, 0, 0,  // This form of the function uses these parameters for the initial translation step
                                  true, // This form defaults to doing the affine transforms
-                                 window_size, addx, addy, 0, 0,
+                                 window_size, addx, addy,
                                  output_level );
   }
 
 
-  // This form specifies separate alignment parameters for the initial translation step and the biases
+  // This form does specify separate alignment parameters for the initial translation step
   public static String[] align_files_by_name ( Runtime rt, String fixed_image_file, String align_image_file, String aligned_image_file,
                                                int trans_window_size, int trans_addx, int trans_addy,
                                                boolean do_affine,
                                                int window_size, int addx, int addy,
-                                               double bias_x, double bias_y,
                                                int output_level ) {
 
     if (output_level > 0) {
@@ -1366,11 +1349,6 @@ public class run_swift {
         // return ( make_string_array ( "m", parts[5], parts[6], "1", "0", "0", "1",
 
       }
-
-      if ( (bias_x != 0) || (bias_y != 0) ) {
-        System.out.println ( "\n\n\n Applying Bias (" + bias_x + "," + bias_y + ") to " + aligned_image_file + "\n\n\n" );
-      }
-
 
       //////////////////////////////////////
       // Step 3c - Best guess transform
