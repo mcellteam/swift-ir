@@ -1284,10 +1284,30 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         //}
       }
     }
-    ///// System.out.print ( "Cumulative:" );
+    ///// System.out.print ( "Cumulative Affine:" );
     ///// for (int ci=0; ci<6; ci++) System.out.print ( " " + cumulative[ci] );
     ///// System.out.println();
     ///// System.out.println ( "Java Cumul: " + java_cumulative );
+    return ( cumulative );
+  }
+
+  double[] propagate_biases ( int first, int last ) {
+    double[] cumulative = { 0.0, 0.0 };
+    swift_gui_frame frame;
+    for (int i=first; i<=last; i++) {
+      frame = frames.get(i);
+      if (frame != null) {
+        //if (!frame.skip) {
+          if (frame.next_alignment != null) {
+            cumulative[0] += frame.next_alignment.bias_x_per_image;
+            cumulative[1] += frame.next_alignment.bias_y_per_image;
+          }
+        //}
+      }
+    }
+    System.out.print ( "Cumulative Biases:" );
+    for (int ci=0; ci<2; ci++) System.out.print ( " " + cumulative[ci] );
+    System.out.println();
     return ( cumulative );
   }
 
@@ -1887,8 +1907,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                     }
                     first_pass = false;
                   }
-                  double bias_x = fixed_frame.next_alignment.bias_x_per_image * i;
-                  double bias_y = fixed_frame.next_alignment.bias_y_per_image * i;
                   String results[] = run_swift.align_files_by_name (
                         rt,
                         (new File(fixed_image_name)).getAbsolutePath(),
@@ -1901,8 +1919,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                         fixed_frame.next_alignment.aff_window_size,
                         fixed_frame.next_alignment.aff_addx,
                         fixed_frame.next_alignment.aff_addy,
-                        bias_x,
-                        bias_y,
                         fixed_frame.next_alignment.output_level );
 
                   fixed_frame.next_alignment.alignment_values = results;
@@ -1935,7 +1951,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                           }
                           System.out.println ();
 
+                          // Propagate the affine and the biases
                           double[] propagated = propagate_affine ( 0, i );  // Always propagate from the beginning
+                          
+                          if (fixed_frame.next_alignment.do_bias) {
+                            double[] propagated_biases = propagate_biases ( 0, i );  // Always propagate from the beginning
+                            // Apply the user-specified biases to the affine
+                            propagated[2] += -propagated_biases[0];
+                            propagated[5] += -propagated_biases[1];
+                          }
 
                           System.out.println ( "Affine transform from " + start + " to " + i + ":" );
                           System.out.print ( "    " );
