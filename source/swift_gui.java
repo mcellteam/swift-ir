@@ -1707,6 +1707,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     } else if (cmd.equalsIgnoreCase("bias_x_per_image")) {
       JTextField txt = (JTextField)action_source;
       System.out.println ( "Got a bias_x_per_image change with " + txt.getText() );
+      /*
+      // This code changes just the one for this frame
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
@@ -1715,12 +1717,34 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           }
         }
       }
+      */
+      // This code changes them all (making them effectively global)
+      if (frames != null) {
+        for (int i=0; i<frames.size(); i++) {
+          swift_gui_frame frame = frames.get(i);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.bias_x_per_image = get_double_from_textfield ( txt );
+          }
+        }
+      }
     } else if (cmd.equalsIgnoreCase("bias_y_per_image")) {
       JTextField txt = (JTextField)action_source;
       System.out.println ( "Got a bias_y_per_image change with " + txt.getText() );
+      /*
+      // This code changes just the one for this frame
       if (frames != null) {
         if (frames.size() > 1) {
           swift_gui_frame frame = frames.get(frame_index);
+          if (frame.next_alignment != null) {
+            frame.next_alignment.bias_y_per_image = get_double_from_textfield ( txt );
+          }
+        }
+      }
+      */
+      // This code changes them all (making them effectively global)
+      if (frames != null) {
+        for (int i=0; i<frames.size(); i++) {
+          swift_gui_frame frame = frames.get(i);
           if (frame.next_alignment != null) {
             frame.next_alignment.bias_y_per_image = get_double_from_textfield ( txt );
           }
