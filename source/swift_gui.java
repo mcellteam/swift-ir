@@ -1353,7 +1353,13 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       image_file_chooser.setSelectedFiles(new File[0]); // This is a failed attempt to clear the files in the text line list
       int returnVal = image_file_chooser.showDialog(this, "Import Selected Images");
       if ( returnVal == JFileChooser.APPROVE_OPTION ) {
-        boolean load_on_import = load_files_on_import.isSelected();
+//        boolean load_on_import = load_files_on_import.isSelected();
+        boolean load_on_import = true;
+        try {
+          load_on_import = load_files_on_import.isSelected();
+        } catch ( Exception load_ex )  {
+          load_on_import = true;
+        }
         System.out.println ( "\nImporting with Load on Import = " + load_on_import );
 
         File selected_files[] = image_file_chooser.getSelectedFiles();
@@ -2205,7 +2211,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           swift_gui_panel.load_files_on_import = new JCheckBox ( "Load", true );
           // This appears to fail on the Macintosh. That dialog box may have a different set of containers
           if (load_images_option) {
-            button_area.add ( swift_gui_panel.load_files_on_import, 0 );
+            // button_area.add ( swift_gui_panel.load_files_on_import, 0 );
           }
 
           // chooser_controls_panel.add ( swift_gui_panel.load_files_on_import );
