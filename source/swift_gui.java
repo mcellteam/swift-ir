@@ -1840,11 +1840,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           Runtime rt = Runtime.getRuntime();
           for (int i=0; i<this.frames.size(); i++) {
             swift_gui_frame frame = frames.get(i);
-            if (frame.skip) {
-              // Omit this frame
-            } else {
-              run_swift.scale_file_with_iscale ( rt, frame.image_file_path.getAbsolutePath(), prefix, scale_factor, output_level );
-            }
+            // Always scale images whether skipping or not
+            run_swift.scale_file_with_iscale ( rt, frame.image_file_path.getAbsolutePath(), prefix, scale_factor, output_level );
           }
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
