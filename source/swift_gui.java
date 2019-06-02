@@ -65,13 +65,13 @@ class ImageFileChooser extends JFileChooser {
 class alignment_settings {
   swift_gui_frame prev_frame=null;
   swift_gui_frame next_frame=null;
-  int window_size=1024;
-  int addx=500;
-  int addy=500;
+  int window_size=256;
+  int addx=0;
+  int addy=0;
   boolean do_affine=true;
-  int aff_window_size=1024;
-  int aff_addx=500;
-  int aff_addy=500;
+  int aff_window_size=256;
+  int aff_addx=256;
+  int aff_addy=256;
   boolean do_bias=true;
   double bias_x_per_image=0;
   double bias_y_per_image=0;
@@ -538,7 +538,7 @@ class ControlPanel extends JPanel {
 
 
     JTabbedPane tabbed_pane = new JTabbedPane();
-    
+
     tabbed_pane.addTab ( "Resizing", make_resize_panel(swift) );
     // tabbed_pane.addTab ( "Recipe 1", make_recipe_panel(swift,1) );
     tabbed_pane.addTab ( "Alignment", make_recipe_panel(swift,2) );  // Use this as the only version for now.
@@ -1983,7 +1983,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
                           // Propagate the affine and the biases
                           double[] propagated = propagate_affine ( 0, i );  // Always propagate from the beginning
-                          
+
                           if (fixed_frame.next_alignment.do_bias) {
                             double[] propagated_biases = propagate_biases ( 0, i );  // Always propagate from the beginning
                             // Apply the user-specified biases to the affine
@@ -2091,7 +2091,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
 
     System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
-    
+
     /* I'm not sure why this was needed in run_swift.java but causes problems here.
     {
       File current_directory = new File ( "." );
@@ -2115,7 +2115,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     for (int i=0; i<actual_file_names.size(); i++) {
       System.out.println ( "  " + actual_file_names.get(i) );
     }
-    
+
 
     System.out.println ( "swift_gui: Use the mouse wheel to zoom, and drag to pan." );
 
