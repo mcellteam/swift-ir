@@ -473,7 +473,7 @@ class ControlPanel extends JPanel {
     alignment_panel_actions.add ( num_to_align );
 
     alignment_panel_actions.add ( new JLabel("         Pairwise:") );
-    pairwise = new JCheckBox("",false);
+    pairwise = new JCheckBox("",true);
     pairwise.addActionListener ( this.swift );
     pairwise.setActionCommand ( "pairwise" );
     alignment_panel_actions.add ( pairwise );
