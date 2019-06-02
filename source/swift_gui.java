@@ -89,7 +89,7 @@ class swift_gui_frame {
   alignment_settings next_alignment=null;
 
   double[] affine_transform_from_prev=null;
-  double[] affine_transform_from_start=null;
+  // double[] affine_transform_from_start=null;  // NOT CURRENTLY USED
 
   swift_gui_frame ( File image_file_path, boolean load ) {
     this.image_file_path = image_file_path;
@@ -1905,15 +1905,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           if (start > 0) {
             first_pass = false;
           }
-          for (int i=start; i<end; i++) {
-            System.out.println ( "Working on frame " + i );
-            swift_gui_frame align_frame = frames.get(i);
+          for (int frame_num=start; frame_num<end; frame_num++) {
+            System.out.println ( "Working on frame " + frame_num );
+            swift_gui_frame align_frame = frames.get(frame_num);
             if (align_frame.skip) {
               // Omit this frame
             } else {
               if (fixed_frame_num < start) {
                 // This is the first non-skipped frame, so use it as the fixed frame
-                fixed_frame_num = i;
+                fixed_frame_num = frame_num;
               } else {
                 // There is a valid fixed frame and this (to be aligned) frame
                 swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
@@ -1972,7 +1972,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                         }
                         try {
                           System.out.println ( "*************************************************************************" );
-                          System.out.println ( "Affine transform from " + (i-1) + " to " + i + ":" );
+                          System.out.println ( "Affine transform from " + (frame_num-1) + " to " + frame_num + ":" );
                           System.out.print ( "    " );
                           for (int m=7; m<13; m++) {
                             align_frame.affine_transform_from_prev[m-7] = Double.parseDouble(results[m]);
@@ -1982,16 +1982,16 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                           System.out.println ();
 
                           // Propagate the affine and the biases
-                          double[] propagated = propagate_affine ( 0, i );  // Always propagate from the beginning
+                          double[] propagated = propagate_affine ( 0, frame_num );  // Always propagate from the beginning
 
                           if (fixed_frame.next_alignment.do_bias) {
-                            double[] propagated_biases = propagate_biases ( 0, i );  // Always propagate from the beginning
+                            double[] propagated_biases = propagate_biases ( 0, frame_num );  // Always propagate from the beginning
                             // Apply the user-specified biases to the affine
                             propagated[2] += -propagated_biases[0];
                             propagated[5] += -propagated_biases[1];
                           }
 
-                          System.out.println ( "Affine transform from " + start + " to " + i + ":" );
+                          System.out.println ( "Affine transform from " + start + " to " + frame_num + ":" );
                           System.out.print ( "    " );
                           for (int m=0; m<6; m++) {
                             System.out.print ( "" + propagated[m] + " " );
@@ -2018,7 +2018,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                       }
                     }
                   }
-                  fixed_frame_num = i;
+                  fixed_frame_num = frame_num;
                 }
               }
             }
@@ -2027,12 +2027,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
           System.out.println ( "Alignment completed" );
           if (pairwise) {
-            for (int i=0; i<this.frames.size(); i++) {
-              swift_gui_frame frame = frames.get(i);
+            for (int frame_num=0; frame_num<this.frames.size(); frame_num++) {
+              swift_gui_frame frame = frames.get(frame_num);
               if (frame.affine_transform_from_prev == null) {
-                System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
+                System.out.println ( "  Pairwise Affine Transform " + frame_num + " to " + (frame_num+1) + " is null" );
               } else {
-                System.out.print ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is [ " );
+                System.out.print ( "  Pairwise Affine Transform " + frame_num + " to " + (frame_num+1) + " is [ " );
                 for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
                   System.out.print ( "" + frame.affine_transform_from_prev[j] + " " );
                 }
