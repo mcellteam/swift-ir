@@ -499,28 +499,30 @@ class ControlPanel extends JPanel {
 
     this.setLayout ( new BorderLayout( 0, 20 ) );
 
-    JPanel top_panel = new JPanel();
 
-    top_panel.setLayout ( new BorderLayout( 0, 20 ) );
+    JPanel top_panel = new JPanel();
+    top_panel.setLayout ( new BoxLayout( top_panel, BoxLayout.Y_AXIS ) );
+    top_panel.setAlignmentX ( Component.LEFT_ALIGNMENT );
+
 
     project_label = new JLabel("Project File: "+swift.project_file);
-    top_panel.add ( project_label, BorderLayout.NORTH );
-    destination_label = new JLabel("Destination: "+swift.destination);
-    top_panel.add ( destination_label, BorderLayout.CENTER );
+    JPanel project_label_panel = new JPanel();
+    project_label_panel.setLayout ( new FlowLayout(FlowLayout.LEFT) );
+    project_label_panel.add ( project_label );
+    top_panel.add ( project_label_panel );
 
-    show_dest = new JCheckBox("Show",false);
-    show_dest.addActionListener ( this.swift );
-    show_dest.setActionCommand ( "show_dest" );
-    top_panel.add ( show_dest, BorderLayout.EAST );
+    destination_label = new JLabel("Destination: "+swift.destination);
+    JPanel destination_label_panel = new JPanel();
+    destination_label_panel.setLayout ( new FlowLayout(FlowLayout.LEFT) );
+    destination_label_panel.add ( destination_label );
+    top_panel.add ( destination_label_panel );
 
     JPanel file_data_panel = new JPanel();
     file_data_panel.setLayout ( new FlowLayout( FlowLayout.LEFT ) );
 
     image_name = new JTextField("", 40);
-    // image_name.setBounds ( 10, 10, 300, 20 );
-    // add ( image_name );
 
-    file_data_panel.add ( new JLabel("Name:") );
+    file_data_panel.add ( new JLabel("Image:") );
     image_label = new JLabel("");
     file_data_panel.add ( image_label );
 
@@ -532,7 +534,15 @@ class ControlPanel extends JPanel {
     image_bits = new JLabel("");
     file_data_panel.add ( image_bits );
 
-    top_panel.add ( file_data_panel, BorderLayout.SOUTH );
+    file_data_panel.add ( new JLabel("       ") );
+
+    show_dest = new JCheckBox("",false);
+    show_dest.addActionListener ( this.swift );
+    show_dest.setActionCommand ( "show_dest" );
+    file_data_panel.add ( show_dest );
+
+
+    top_panel.add ( file_data_panel );
 
     add ( top_panel, BorderLayout.NORTH );
 
