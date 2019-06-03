@@ -65,13 +65,13 @@ class ImageFileChooser extends JFileChooser {
 class alignment_settings {
   swift_gui_frame prev_frame=null;
   swift_gui_frame next_frame=null;
-  int window_size=1024;
-  int addx=500;
-  int addy=500;
+  int window_size=256;
+  int addx=0;
+  int addy=0;
   boolean do_affine=true;
-  int aff_window_size=1024;
-  int aff_addx=500;
-  int aff_addy=500;
+  int aff_window_size=256;
+  int aff_addx=256;
+  int aff_addy=256;
   boolean do_bias=true;
   double bias_x_per_image=0;
   double bias_y_per_image=0;
@@ -89,7 +89,7 @@ class swift_gui_frame {
   alignment_settings next_alignment=null;
 
   double[] affine_transform_from_prev=null;
-  double[] affine_transform_from_start=null;
+  // double[] affine_transform_from_start=null;  // NOT CURRENTLY USED
 
   swift_gui_frame ( File image_file_path, boolean load ) {
     this.image_file_path = image_file_path;
@@ -473,7 +473,7 @@ class ControlPanel extends JPanel {
     alignment_panel_actions.add ( num_to_align );
 
     alignment_panel_actions.add ( new JLabel("         Pairwise:") );
-    pairwise = new JCheckBox("",false);
+    pairwise = new JCheckBox("",true);
     pairwise.addActionListener ( this.swift );
     pairwise.setActionCommand ( "pairwise" );
     alignment_panel_actions.add ( pairwise );
@@ -538,7 +538,7 @@ class ControlPanel extends JPanel {
 
 
     JTabbedPane tabbed_pane = new JTabbedPane();
-    
+
     tabbed_pane.addTab ( "Resizing", make_resize_panel(swift) );
     // tabbed_pane.addTab ( "Recipe 1", make_recipe_panel(swift,1) );
     tabbed_pane.addTab ( "Alignment", make_recipe_panel(swift,2) );  // Use this as the only version for now.
@@ -1840,11 +1840,8 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           Runtime rt = Runtime.getRuntime();
           for (int i=0; i<this.frames.size(); i++) {
             swift_gui_frame frame = frames.get(i);
-            if (frame.skip) {
-              // Omit this frame
-            } else {
-              run_swift.scale_file_with_iscale ( rt, frame.image_file_path.getAbsolutePath(), prefix, scale_factor, output_level );
-            }
+            // Always scale images whether skipping or not
+            run_swift.scale_file_with_iscale ( rt, frame.image_file_path.getAbsolutePath(), prefix, scale_factor, output_level );
           }
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
@@ -1905,15 +1902,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           if (start > 0) {
             first_pass = false;
           }
-          for (int i=start; i<end; i++) {
-            System.out.println ( "Working on frame " + i );
-            swift_gui_frame align_frame = frames.get(i);
+          for (int frame_num=start; frame_num<end; frame_num++) {
+            System.out.println ( "Working on frame " + frame_num );
+            swift_gui_frame align_frame = frames.get(frame_num);
             if (align_frame.skip) {
               // Omit this frame
             } else {
               if (fixed_frame_num < start) {
                 // This is the first non-skipped frame, so use it as the fixed frame
-                fixed_frame_num = i;
+                fixed_frame_num = frame_num;
               } else {
                 // There is a valid fixed frame and this (to be aligned) frame
                 swift_gui_frame fixed_frame = frames.get(fixed_frame_num);
@@ -1972,7 +1969,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                         }
                         try {
                           System.out.println ( "*************************************************************************" );
-                          System.out.println ( "Affine transform from " + (i-1) + " to " + i + ":" );
+                          System.out.println ( "Affine transform from " + (frame_num-1) + " to " + frame_num + ":" );
                           System.out.print ( "    " );
                           for (int m=7; m<13; m++) {
                             align_frame.affine_transform_from_prev[m-7] = Double.parseDouble(results[m]);
@@ -1982,16 +1979,16 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                           System.out.println ();
 
                           // Propagate the affine and the biases
-                          double[] propagated = propagate_affine ( 0, i );  // Always propagate from the beginning
-                          
+                          double[] propagated = propagate_affine ( 0, frame_num );  // Always propagate from the beginning
+
                           if (fixed_frame.next_alignment.do_bias) {
-                            double[] propagated_biases = propagate_biases ( 0, i );  // Always propagate from the beginning
+                            double[] propagated_biases = propagate_biases ( 0, frame_num );  // Always propagate from the beginning
                             // Apply the user-specified biases to the affine
                             propagated[2] += -propagated_biases[0];
                             propagated[5] += -propagated_biases[1];
                           }
 
-                          System.out.println ( "Affine transform from " + start + " to " + i + ":" );
+                          System.out.println ( "Affine transform from " + start + " to " + frame_num + ":" );
                           System.out.print ( "    " );
                           for (int m=0; m<6; m++) {
                             System.out.print ( "" + propagated[m] + " " );
@@ -2018,7 +2015,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                       }
                     }
                   }
-                  fixed_frame_num = i;
+                  fixed_frame_num = frame_num;
                 }
               }
             }
@@ -2027,12 +2024,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
           System.out.println ( "|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||" );
           System.out.println ( "Alignment completed" );
           if (pairwise) {
-            for (int i=0; i<this.frames.size(); i++) {
-              swift_gui_frame frame = frames.get(i);
+            for (int frame_num=0; frame_num<this.frames.size(); frame_num++) {
+              swift_gui_frame frame = frames.get(frame_num);
               if (frame.affine_transform_from_prev == null) {
-                System.out.println ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is null" );
+                System.out.println ( "  Pairwise Affine Transform " + frame_num + " to " + (frame_num+1) + " is null" );
               } else {
-                System.out.print ( "  Pairwise Affine Transform " + i + " to " + (i+1) + " is [ " );
+                System.out.print ( "  Pairwise Affine Transform " + frame_num + " to " + (frame_num+1) + " is [ " );
                 for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
                   System.out.print ( "" + frame.affine_transform_from_prev[j] + " " );
                 }
@@ -2091,7 +2088,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     }
 
     System.out.println ( "Command line specified " + file_name_args.size() + " file name patterns." );
-    
+
     /* I'm not sure why this was needed in run_swift.java but causes problems here.
     {
       File current_directory = new File ( "." );
@@ -2115,7 +2112,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     for (int i=0; i<actual_file_names.size(); i++) {
       System.out.println ( "  " + actual_file_names.get(i) );
     }
-    
+
 
     System.out.println ( "swift_gui: Use the mouse wheel to zoom, and drag to pan." );
 

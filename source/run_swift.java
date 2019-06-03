@@ -300,6 +300,45 @@ public class run_swift {
     return (global_io.translate_exit(exit_status));
   }
 
+  public static String remove_sci ( String cmd ) {
+    System.out.println ( "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" );
+    System.out.println ( "Orig: " + cmd );
+
+
+    String lines[] = cmd.split ( "\n" );
+    String fixed_lines[] = new String[lines.length];
+
+    for (int l=0; l<lines.length; l++) {
+	    String parts[] = lines[l].split ( "[\\s]+" );
+	    fixed_lines[l] = "";
+      for (int i=0; i<parts.length; i++) {
+        System.out.println ( "Parts: " + parts[i] );
+        if (i != 0) {
+          fixed_lines[l] += " ";
+        }
+        try {
+          double d = Double.parseDouble(parts[i]);
+          if (Math.abs(d) < 1) {
+            fixed_lines[l] += String.format("%.9f",d);
+          } else {
+            fixed_lines[l] += d;
+          }
+        } catch (Exception e) {
+          fixed_lines[l] += parts[i];
+        }
+      }
+	  }
+	  String fixed = "";
+    for (int l=0; l<fixed_lines.length; l++) {
+	    if (l != 0) fixed += "\n";
+	    fixed += fixed_lines[l];
+	  }
+	  fixed += "\n";
+
+    System.out.println ( "Fixd: " + fixed );
+    System.out.println ( "$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$" );
+    return ( fixed );
+  }
 
   public static String[] lines_from_stdout ( String stdout ) {
     // Note that line ending handling hasn't been tested on non-Linux platforms yet.
@@ -744,7 +783,7 @@ public class run_swift {
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-      write_to_proc ( proc_in, interactive_commands );
+      write_to_proc ( proc_in, remove_sci(interactive_commands) );
       proc_in.close();
 
       global_io.log_command ( command_line + "\n" );
@@ -883,7 +922,7 @@ public class run_swift {
 
       if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-      write_to_proc ( proc_in, interactive_commands );
+      write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
       proc_in.close();
 
 
@@ -946,7 +985,7 @@ public class run_swift {
         }
         if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-        write_to_proc ( proc_in, interactive_commands );
+        write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
         proc_in.close();
 
         global_io.log_command ( command_line + "\n" );
@@ -1060,7 +1099,7 @@ public class run_swift {
         }
         if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
-        write_to_proc ( proc_in, interactive_commands );
+        write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
         proc_in.close();
 
         global_io.log_command ( command_line + "\n" );
@@ -1177,7 +1216,7 @@ public class run_swift {
         if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
 
         System.out.println ( "Writing to subprocess" );
-        write_to_proc ( proc_in, interactive_commands );
+        write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
         System.out.println ( "Flushing stream to subprocess" );
         proc_in.flush();
         System.out.println ( "Closing stream to subprocess" );

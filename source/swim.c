@@ -717,6 +717,7 @@ void reducepar() {
 }
 
 double eval_expr(char *s) {
+	/* This is where we should handle scientific notation */
 	char *p = s;
 	int i, unary = 1;
 	if(prec['+'] == 0) {
