@@ -1325,7 +1325,16 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     } else if (cmd.equalsIgnoreCase("Print")) {
       System.out.println ( "Images:" );
       for (int i=0; i<this.frames.size(); i++) {
-        System.out.println ( "  " + this.frames.get(i) );
+        swift_gui_frame frame = this.frames.get(i);
+        System.out.println ( "  " + i + ": " + frame );
+        double tf[] = frame.affine_transform_from_prev;
+        if (tf == null) {
+          System.out.println ( "     Null" );
+        } else {
+          for (int j=0; j<tf.length; j++) {
+            System.out.println ( "     " + tf[j] );
+          }
+        }
       }
     } else if ( action_source == refresh_images_menu_item ) {
       System.out.println ( "Reloading all images:" );
@@ -1490,6 +1499,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
               // Fill in any transforms already read from the JSON file
 
+              if (frames != null) {
+                swift_gui_frame frame = frames.get(0);
+                frame.affine_transform_from_prev = null;
+              }
+
               if (data.containsKey("last_alignment")) {
                 ArrayList<Object> last_alignment_affines = (ArrayList<Object>)(data.get("last_alignment"));
                 System.out.println ( "Got last alignment" );
@@ -1516,7 +1530,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                         affine_transform[av] = affine_values.get(av).doubleValue();
                         System.out.println ( "      Affine Value: " + affine_transform[av] );
                       }
-                      swift_gui_frame frame = frames.get(i);
+                      swift_gui_frame frame = frames.get(i+1);
                       frame.affine_transform_from_prev = affine_transform;
 /*
                       swift_gui_frame frame = frames.get(i);
