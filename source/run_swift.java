@@ -781,7 +781,7 @@ public class run_swift {
 
       interactive_commands = "unused " + swim_params + "\n";
 
-      if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+      if (output_level > 1) System.out.println ( "Passing to swim:\n" + remove_sci(interactive_commands) );
 
       write_to_proc ( proc_in, remove_sci(interactive_commands) );
       proc_in.close();
@@ -920,7 +920,7 @@ public class run_swift {
 
       interactive_commands = "unused -i 2 -x " + trans_addx + " -y " + trans_addy + " -k keep."+image_type_extension+" " + fixed_image_file + " " + align_image_file + global_io.end_of_line;
 
-      if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+      if (output_level > 1) System.out.println ( "Passing to swim:\n" + remove_sci(interactive_commands) );
 
       write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
       proc_in.close();
@@ -983,7 +983,7 @@ public class run_swift {
           interactive_commands += fixed_image_file + " " + tarx + " " + tary + " ";
           interactive_commands += align_image_file + " " + patx + " " + paty + global_io.end_of_line;
         }
-        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + remove_sci(interactive_commands) );
 
         write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
         proc_in.close();
@@ -1097,7 +1097,7 @@ public class run_swift {
           interactive_commands += align_image_file + " " + patx + " " + paty + " ";
           interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
         }
-        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + remove_sci(interactive_commands) );
 
         write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
         proc_in.close();
@@ -1213,7 +1213,7 @@ public class run_swift {
           interactive_commands += align_image_file + " " + patx + " " + paty + " ";
           interactive_commands += AI1 + " " + AI2 + " " + AI3 + " " + AI4 + " " + global_io.end_of_line;
         }
-        if (output_level > 1) System.out.println ( "Passing to swim:\n" + interactive_commands );
+        if (output_level > 1) System.out.println ( "Passing to swim:\n" + remove_sci(interactive_commands) );
 
         System.out.println ( "Writing to subprocess" );
         write_to_proc ( proc_in, remove_sci ( interactive_commands ) );
