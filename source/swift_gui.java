@@ -1488,6 +1488,67 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                 }
               }
 
+              // Fill in any transforms already read from the JSON file
+
+              if (data.containsKey("last_alignment")) {
+                ArrayList<Object> last_alignment_affines = (ArrayList<Object>)(data.get("last_alignment"));
+                System.out.println ( "Got last alignment" );
+                // control_panel.pairwise.setSelected ( (Boolean)(data.get("pairwise_alignment")) );
+
+                for (int i=0; i<last_alignment_affines.size(); i++) {
+                  System.out.println ( " Have an alignment for " + i );
+                  HashMap<String,Object> affine_data = (HashMap<String,Object>)(last_alignment_affines.get(i));
+                  if (affine_data.containsKey("frames")) {
+                    System.out.println ( "   Contains frames" );
+                    ArrayList<Integer> frame_numbers = (ArrayList<Integer>)(affine_data.get("frames"));
+                    for (int fn=0; fn<frame_numbers.size(); fn++) {
+                      System.out.println ( "      Frame Number: " + frame_numbers.get(fn) );
+                    }
+                  }
+                  if (affine_data.containsKey("affine")) {
+                    System.out.println ( "   Contains affine" );
+                    ArrayList<Double> affine_values = (ArrayList<Double>)(affine_data.get("affine"));
+                    if (affine_values == null) {
+                      System.out.println ( "      Affine Value: null" );
+                    } else {
+                      double[] affine_transform = new double [ affine_values.size() ];
+                      for (int av=0; av<affine_values.size(); av++) {
+                        affine_transform[av] = affine_values.get(av).doubleValue();
+                        System.out.println ( "      Affine Value: " + affine_transform[av] );
+                      }
+                      swift_gui_frame frame = frames.get(i);
+                      frame.affine_transform_from_prev = affine_transform;
+/*
+                      swift_gui_frame frame = frames.get(i);
+                      f.print ( "      { \"frames\": [ " + (i-1) + ", " + i + " ], " ); ///// Note that this is zero based while display is one based
+                      if (frame.affine_transform_from_prev == null) {
+                        f.print ( "\"affine\": null" );
+                      } else {
+                        f.print ( "\"affine\": [ " );
+                        for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
+                          f.print ( "" + frame.affine_transform_from_prev[j] );
+                          if (j < (frame.affine_transform_from_prev.length-1) ) {
+                            f.print ( ", " );
+                          }
+                        }
+                        f.print ( " ]" );
+                      }
+                      f.print ( " }" );
+                      if (i < (this.frames.size()-1) ) {
+                        f.print ( "," );
+                      }
+                      f.println();
+                    }
+*/
+
+
+                    }
+                  }
+                }
+
+              }
+
+
             } else {
               System.out.println ( "Project file version does not match program version or other problem" );
             }
