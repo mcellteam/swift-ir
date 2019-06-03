@@ -540,6 +540,7 @@ class ControlPanel extends JPanel {
     show_dest.addActionListener ( this.swift );
     show_dest.setActionCommand ( "show_dest" );
     file_data_panel.add ( show_dest );
+    file_data_panel.add ( new JLabel("(focus)") );
 
 
     top_panel.add ( file_data_panel );
@@ -1120,6 +1121,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   JMenuItem refresh_images_menu_item = null;
   JMenuItem center_image_menu_item = null;
   JMenuItem zoom_actual_menu_item = null;
+  JMenuItem clear_out_images_menu_item = null;
   JMenuItem clear_all_images_menu_item = null;
   JMenuItem list_all_images_menu_item = null;
   JMenuItem list_align_shell_script = null;
@@ -1332,7 +1334,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     if (cmd.equalsIgnoreCase("Version...")) {
       System.out.println ( "Git Revision: " + revision.githash );
       JOptionPane.showMessageDialog(this, "Git Revision:\n " + revision.githash, "Version", JOptionPane.INFORMATION_MESSAGE);
-    } else if (cmd.equalsIgnoreCase("Print")) {
+    } else if (cmd.equalsIgnoreCase("Dump")) {
       System.out.println ( "Images:" );
       for (int i=0; i<this.frames.size(); i++) {
         swift_gui_frame frame = this.frames.get(i);
@@ -1627,6 +1629,40 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       recalculate = false;
       update_control_panel();
       repaint();
+      set_title();
+    } else if ( action_source == clear_out_images_menu_item ) {
+      // Clear the destination images
+      //this.frames = new ArrayList<swift_gui_frame>();
+      //this.frame_index = -1;
+
+
+      System.out.println ( "\n\nClearing output images from  = \"" + destination + "\" ..." );
+      if (frames != null) {
+        if ( (destination == null) || (!destination.exists()) ) {  // This depends on Java's short-circuit || operator to not throw an exception
+          System.out.println ( "No destination images to clear." );
+        } else {
+          String prefix = "";
+          if (destination != null) {
+            if (destination.toString().length() > 0) {
+              prefix = destination + File.separator;
+              for (int i=0; i<this.frames.size(); i++) {
+                swift_gui_frame frame = frames.get(i);
+                File f = new File( prefix + (new File(frame.image_file_path.getAbsolutePath().toString())).getName() );
+                System.out.println ( "Deleting file: " + f );
+                try {
+                  f.delete();
+                } catch (Exception del_exc) {
+                }
+              }
+            }
+          }
+        }
+      }
+
+
+      repaint();
+      update_control_panel();
+      repaint_panels();
       set_title();
     } else if ( action_source == clear_all_images_menu_item ) {
       this.frames = new ArrayList<swift_gui_frame>();
@@ -2354,11 +2390,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
             file_menu.addSeparator();
 
-            JMenu import_menu = new JMenu("Import");
-              import_menu.add ( mi = swift_gui_panel.import_images_menu_item = new JMenuItem("Images...") );
-              mi.addActionListener(swift_gui_panel);
-            file_menu.add ( import_menu );
-
             // NOTE: Adding the same JMenuItem to multiple JMenus doesn't work
             //   The explanation given is that a JMenuItem can only have one parent.
             //   It's not clear that adding a JMenuItem to a JMenu changes parenting,
@@ -2375,16 +2406,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               mi.addActionListener(swift_gui_panel);
               list_menu.add ( mi = swift_gui_panel.list_align_shell_script = new JMenuItem("Alignment Script") );
               mi.addActionListener(swift_gui_panel);
+              list_menu.add ( mi = new JMenuItem("Dump") );
+              mi.addActionListener(swift_gui_panel);
+
 
             file_menu.add ( list_menu );
-
-            file_menu.add ( mi = new JMenuItem("Print") );
-            mi.addActionListener(swift_gui_panel);
-
-            file_menu.addSeparator();
-
-            file_menu.add ( mi = swift_gui_panel.clear_all_images_menu_item = new JMenuItem("Clear All") );
-            mi.addActionListener(swift_gui_panel);
 
             file_menu.addSeparator();
 
@@ -2393,27 +2419,43 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
             menu_bar.add ( file_menu );
 
-          JMenu tools_menu = new JMenu("Images");
+          JMenu image_menu = new JMenu("Images");
 
-            // tools_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+            // image_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
             // mi.addActionListener(swift_gui_panel);
 
-            // tools_menu.addSeparator();
+            // image_menu.addSeparator();
 
-            tools_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+
+            image_menu.add ( mi = swift_gui_panel.import_images_menu_item = new JMenuItem("Import...") );
             mi.addActionListener(swift_gui_panel);
 
-            tools_menu.addSeparator();
+            image_menu.addSeparator();
 
-            tools_menu.add ( mi = swift_gui_panel.center_image_menu_item = new JMenuItem("Center") );
+            image_menu.add ( mi = swift_gui_panel.center_image_menu_item = new JMenuItem("Center") );
             mi.addActionListener(swift_gui_panel);
 
-            tools_menu.addSeparator();
+            //image_menu.addSeparator();
 
-            tools_menu.add ( mi = swift_gui_panel.zoom_actual_menu_item = new JMenuItem("Actual Size") );
+            image_menu.add ( mi = swift_gui_panel.zoom_actual_menu_item = new JMenuItem("Actual Size") );
             mi.addActionListener(swift_gui_panel);
 
-            menu_bar.add ( tools_menu );
+            //image_menu.addSeparator();
+
+            image_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+            mi.addActionListener(swift_gui_panel);
+
+            image_menu.addSeparator();
+
+            image_menu.add ( mi = swift_gui_panel.clear_out_images_menu_item = new JMenuItem("Clear Out Images") );
+            mi.addActionListener(swift_gui_panel);
+
+            image_menu.addSeparator();
+
+            image_menu.add ( mi = swift_gui_panel.clear_all_images_menu_item = new JMenuItem("Clear All Images") );
+            mi.addActionListener(swift_gui_panel);
+
+            menu_bar.add ( image_menu );
 
           JMenu help_menu = new JMenu("Help");
             help_menu.add ( mi = new JMenuItem("Commands") );
