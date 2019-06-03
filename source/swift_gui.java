@@ -231,7 +231,6 @@ class AlignmentPanel extends JPanel {
               g.drawImage ( swift.frames.get(swift.frame_index+1).image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
             }
           }
-
           //frame_image = frames.get(frame_index).image;
         }
       }
@@ -872,6 +871,19 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       //g.drawImage ( frame_image, (win_w-img_w)/2, (win_h-img_h)/2, img_w, img_h, this );
 
     }
+
+    if (frames.size() > 0) {
+      if (frames.get(frame_index).skip == true) {
+        g.setColor ( new Color ( 255, 0, 0 ) );
+        for (int dx=0; dx<10; dx++) {
+          g.drawLine ( dx, 0, win_w+dx, win_h );
+          g.drawLine ( -dx, 0, win_w-dx, win_h );
+          g.drawLine ( dx, win_h, win_w+dx, 0 );
+          g.drawLine ( -dx, win_h, win_w-dx, 0 );
+        }
+      }
+    }
+
   }
 
 
@@ -1338,7 +1350,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       System.out.println ( "Images:" );
       for (int i=0; i<this.frames.size(); i++) {
         swift_gui_frame frame = this.frames.get(i);
-        System.out.println ( "  " + i + ": " + frame );
+        System.out.println ( "  " + i + ": " + frame + ", skip=" + frame.skip );
         double tf[] = frame.affine_transform_from_prev;
         if (tf == null) {
           System.out.println ( "     Null" );
@@ -1905,6 +1917,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             frame.skip = box.isSelected();
           }
         }
+        repaint();
+        update_control_panel();
+        repaint_panels();
+        set_title();
       }
     } else if (cmd.equalsIgnoreCase("show_dest")) {
       JCheckBox box = (JCheckBox)action_source;
