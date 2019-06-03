@@ -2051,6 +2051,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             swift_gui_frame align_frame = frames.get(frame_num);
             if (align_frame.skip) {
               // Omit this frame
+              if (pairwise) {
+                if (align_frame.affine_transform_from_prev == null) {
+                  align_frame.affine_transform_from_prev = new double[6];
+                }
+                align_frame.affine_transform_from_prev[0] = 1;
+                align_frame.affine_transform_from_prev[1] = 0;
+                align_frame.affine_transform_from_prev[2] = 0;
+                align_frame.affine_transform_from_prev[3] = 0;
+                align_frame.affine_transform_from_prev[4] = 1;
+                align_frame.affine_transform_from_prev[5] = 0;
+              }
             } else {
               if (fixed_frame_num < start) {
                 // This is the first non-skipped frame, so use it as the fixed frame
