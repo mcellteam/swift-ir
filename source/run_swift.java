@@ -311,16 +311,27 @@ public class run_swift {
     for (int l=0; l<lines.length; l++) {
 	    String parts[] = lines[l].split ( "[\\s]+" );
 	    fixed_lines[l] = "";
-	    for (int i=0; i<parts.length; i++) {
-	      System.out.println ( "Parts: " + parts[i] );
-	      if (i != 0) fixed_lines[l] += " ";
-	      fixed_lines[l] += parts[i];
-	    }
+      for (int i=0; i<parts.length; i++) {
+        System.out.println ( "Parts: " + parts[i] );
+        if (i != 0) {
+          fixed_lines[l] += " ";
+        }
+        try {
+          double d = Double.parseDouble(parts[i]);
+          if (Math.abs(d) < 1) {
+            fixed_lines[l] += String.format("%.9f",d);
+          } else {
+            fixed_lines[l] += d;
+          }
+        } catch (Exception e) {
+          fixed_lines[l] += parts[i];
+        }
+      }
 	  }
 	  String fixed = "";
-    for (int l=0; l<lines.length; l++) {
+    for (int l=0; l<fixed_lines.length; l++) {
 	    if (l != 0) fixed += "\n";
-	    fixed += lines[l];
+	    fixed += fixed_lines[l];
 	  }
 	  fixed += "\n";
 
