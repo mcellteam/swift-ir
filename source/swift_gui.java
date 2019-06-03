@@ -1635,42 +1635,49 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       //this.frames = new ArrayList<swift_gui_frame>();
       //this.frame_index = -1;
 
+      int response = JOptionPane.showConfirmDialog(this, "Delete all generated output images?", "Confirm Delete", JOptionPane.WARNING_MESSAGE, JOptionPane.YES_NO_OPTION);
 
-      System.out.println ( "\n\nClearing output images from  = \"" + destination + "\" ..." );
-      if (frames != null) {
-        if ( (destination == null) || (!destination.exists()) ) {  // This depends on Java's short-circuit || operator to not throw an exception
-          System.out.println ( "No destination images to clear." );
-        } else {
-          String prefix = "";
-          if (destination != null) {
-            if (destination.toString().length() > 0) {
-              prefix = destination + File.separator;
-              for (int i=0; i<this.frames.size(); i++) {
-                swift_gui_frame frame = frames.get(i);
-                File f = new File( prefix + (new File(frame.image_file_path.getAbsolutePath().toString())).getName() );
-                System.out.println ( "Deleting file: " + f );
-                try {
-                  f.delete();
-                } catch (Exception del_exc) {
+      if (response == JOptionPane.YES_OPTION) {
+
+        System.out.println ( "\n\nClearing output images from  = \"" + destination + "\" ..." );
+        if (frames != null) {
+          if ( (destination == null) || (!destination.exists()) ) {  // This depends on Java's short-circuit || operator to not throw an exception
+            System.out.println ( "No destination images to clear." );
+          } else {
+            String prefix = "";
+            if (destination != null) {
+              if (destination.toString().length() > 0) {
+                prefix = destination + File.separator;
+                for (int i=0; i<this.frames.size(); i++) {
+                  swift_gui_frame frame = frames.get(i);
+                  File f = new File( prefix + (new File(frame.image_file_path.getAbsolutePath().toString())).getName() );
+                  System.out.println ( "Deleting file: " + f );
+                  try {
+                    f.delete();
+                  } catch (Exception del_exc) {
+                  }
                 }
               }
             }
           }
         }
-      }
 
+      }
 
       repaint();
       update_control_panel();
       repaint_panels();
       set_title();
     } else if ( action_source == clear_all_images_menu_item ) {
-      this.frames = new ArrayList<swift_gui_frame>();
-      this.frame_index = -1;
-      repaint();
-      update_control_panel();
-      repaint_panels();
-      set_title();
+      int response = JOptionPane.showConfirmDialog(this, "Remove all images from project?", "Confirm Remove", JOptionPane.WARNING_MESSAGE, JOptionPane.YES_NO_OPTION);
+      if (response == JOptionPane.YES_OPTION) {
+        this.frames = new ArrayList<swift_gui_frame>();
+        this.frame_index = -1;
+        repaint();
+        update_control_panel();
+        repaint_panels();
+        set_title();
+      }
     } else if ( action_source == list_all_images_menu_item ) {
       if (file_list_dialog != null) {
         file_list_dialog.setTitle ( "Original Image Files" );
@@ -2164,7 +2171,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         }
       }
     } else if (cmd.equalsIgnoreCase("Exit")) {
-      System.exit ( 0 );
+      int response = JOptionPane.showConfirmDialog(this, "Exit from SWiFT GUI?", "Confirm Exit", JOptionPane.INFORMATION_MESSAGE, JOptionPane.YES_NO_OPTION);
+      if (response == JOptionPane.YES_OPTION) {
+        System.exit ( 0 );
+      }
     }
   }
 
