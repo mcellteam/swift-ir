@@ -1,0 +1,74 @@
+IAVG(1)
+======
+:doctype: manpage
+
+Name
+----
+iavg - Image combiner
+
+Synopsis
+--------
+*iavg* [options] imagefile1 imagefile2 ...
+
+Description
+-----------
+
+In default mode, *iavg* calculates an average of a stack of images.
+
+Options
+-------
+
+**-b__n__**:: Set black level to _n_ + 2.
+
+**-e**:: Fill black area near top edge with first nonblack
+   pixel. (This is mainly a hack for a specific application.)
+
+**-h**:: Calculate ``HV'' histograms.
+
+**-m**:: Enable use of x-ramps. (This is a hack for a specific
+   application.)
+
+**-q**:: Quiet (may be repeated to suppress yet more verbosity).
+
+**-r**:: Invert black/white in input images.
+
+**-w__n__**:: Set white level to _n_ + 2.
+
+Other options select modes as in the following table:
+
+|======================================================================
+| *Option* | *Mode*
+|   -0 or -a   | Average of images with contrast rescaling (``adaptive'')
+|           -1   | Range (maximum - minimum) of images           
+|           -2   | Minimum of images                             
+|           -3   | Minimum of images                             
+|           -4   | Average of horizontal contrast image
+|   -5 or -s   | Stack (output raw image data without headers) 
+|   -6 or -i   | Stack of cumulative sums in z (no headers)    
+|   -7   or -p   | Average only of non-black pixels
+|   -+           | Add all images together
+|   -&#45;           | Subtract sum of secondary images from first image
+|======================================================================
+
+Of these, **-p** (only) takes an optional argument that specifies the
+minimum number of images to consider. (Default is 4; if fewer are
+nonblack, the output value is 150.)
+
+If no mode is specified, the default is simply averaging all pixel values.
+
+Output is always written to stdout as a pgm image.
+
+Notes
+-----
+In mode 7, an additional image file called ``pixcnt.pgm'' is created that
+holds the counts of nonblack pixels.
+
+If histograms are enabled, a (normalized) histogram image is created
+that is 256 x (W+H) pixels large and contains the gray-value
+histograms taken over rows and columns of the source images. This
+image is saved as ``xy_hists.pgm''.
+
+Authors
+-------
+*iavg* was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar.
