@@ -536,7 +536,7 @@ def main():
 
 
 
-  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "test.png" )
+  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_1_mod.jpg" )
 
 
   # Show the main window
