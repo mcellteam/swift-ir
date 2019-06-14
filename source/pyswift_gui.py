@@ -165,6 +165,36 @@ def expose_callback ( drawing_area, event, zpa ):
   return False
 
 
+
+def expose_callback2 ( drawing_area, event, zpa ):
+  diff_2d_sim = zpa.user_data['diff_2d_sim']
+  display_time_index = zpa.user_data['display_time_index']
+  x, y, width, height = event.area  # This is the area of the portion newly exposed
+  width, height = drawing_area.window.get_size()  # This is the area of the entire window
+  x, y = drawing_area.window.get_origin()
+  drawable = drawing_area.window
+  colormap = drawing_area.get_colormap()
+  gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+  # Save the current color
+  old_fg = gc.foreground
+  # Clear the screen with black
+  gc.foreground = colormap.alloc_color(0,0,0)
+  drawable.draw_rectangle(gc, True, 0, 0, width, height)
+  # Draw the current state referenced by display_time_index
+  t = 0
+
+  if zpa.user_data['image_frame']:
+    pix_buf = zpa.user_data['image_frame']
+    pbw = pix_buf.get_width()
+    pbh = pix_buf.get_height()
+    scale_w = zpa.ww(pbw) / pbw
+    scale_h = zpa.wh(pbh) / pbh
+    scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
+    drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+  gc.foreground = old_fg
+  return False
+
+
 def step_callback(zpa):
   diff_2d_sim = zpa.user_data['diff_2d_sim']
   display_time_index = zpa.user_data['display_time_index']
@@ -299,8 +329,25 @@ def main():
   window.set_title ( "Python GTK version of SWiFT-GUI" )
 
   # Create a zoom/pan area to hold all of the drawing
+  zpa2 = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa2.user_data = {
+                    'image_frame'        : None,
+                    'image_frames'       : [],
+                    'frame_number'       : -1,
+                    'diff_2d_sim'        : diff_2d_sim(),
+                    'display_time_index' : -1,
+                    'running'            : False,
+                    'last_update'        : -1,
+                    'show_legend'        : True,
+                    'frame_delay'        : 0.1,
+                    'size'               : 1.0
+                  }
+  zpa2.set_x_scale ( 0.0, 300, 100.0, 400 )
+  zpa2.set_y_scale ( 0.0, 250 ,100.0, 350 )
+
+
   zpa = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
-  zpa.user_data = { 
+  zpa.user_data = {
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
@@ -378,18 +425,20 @@ def main():
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   drawing_area = zpa.get_drawing_area()
+  drawing_area2 = zpa2.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
   image_hbox.pack_start(drawing_area, True, True, 0)
-  fake_out_panel = gtk.Button("Output")
-  image_hbox.pack_start(fake_out_panel, True, True, 0)
-  fake_out_panel.show()
+  # fake_out_panel = gtk.Button("Output")
+  image_hbox.pack_start(drawing_area2, True, True, 0)
   image_hbox.show()
   main_win_vbox.pack_start(image_hbox, True, True, 0)
   drawing_area.show()
+  drawing_area2.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
   drawing_area.connect ( "expose_event", expose_callback, zpa )
+  drawing_area2.connect ( "expose_event", expose_callback2, zpa2 )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
@@ -435,6 +484,7 @@ def main():
 
 
   zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_1_mod.jpg" )
+  zpa2.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_2_mod.jpg" )
 
 
   # Show the main window
@@ -443,6 +493,7 @@ def main():
   zpa.set_cursor ( gtk.gdk.HAND2 )
 
   gtk.idle_add ( background_callback, zpa )
+  gtk.idle_add ( background_callback, zpa2 )
 
   # Turn control over to GTK to run everything from here onward.
   gtk.main()
