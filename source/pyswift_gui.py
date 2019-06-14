@@ -276,6 +276,9 @@ def menu_callback ( widget, data=None ):
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
+    elif command == "ImImport":
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      zpa.queue_draw()
     else:
       print ( "Menu option \"" + command + "\" is not handled yet." )
   return True
@@ -336,8 +339,9 @@ def main():
 
   # Create a zoom/pan area to hold all of the drawing
 
-  zpa = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
-  zpa.user_data = {
+  zpa_original = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa_aligned = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa_original.user_data = {
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
@@ -350,8 +354,7 @@ def main():
                     'size'               : 1.0
                   }
 
-  zpa2 = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
-  zpa2.user_data = {
+  zpa_aligned.user_data = {
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
@@ -363,13 +366,14 @@ def main():
                     'frame_delay'        : 0.1,
                     'size'               : 1.0
                   }
-  zpa2.set_x_scale ( 0.0, 300, 100.0, 400 )
-  zpa2.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
+  # Set the relationships between "user" coordinates and "screen" coordinates
 
-  # Set the relationship between "user" coordinates and "screen" coordinates
-  zpa.set_x_scale ( 0.0, 300, 100.0, 400 )
-  zpa.set_y_scale ( 0.0, 250 ,100.0, 350 )
+  zpa_aligned.set_x_scale ( 0.0, 300, 100.0, 400 )
+  zpa_aligned.set_y_scale ( 0.0, 250 ,100.0, 350 )
+
+  zpa_original.set_x_scale ( 0.0, 300, 100.0, 400 )
+  zpa_original.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
   # Create a vertical box to hold the menu, drawing area, and buttons
   main_win_vbox = gtk.VBox ( homogeneous=False, spacing=0 )
@@ -384,40 +388,40 @@ def main():
   main_win_vbox.pack_start(menu_bar, expand=False, fill=False, padding=0)
 
   # Create a "File" menu
-  (file_menu, file_item) = zpa.add_menu ( "_File" )
+  (file_menu, file_item) = zpa_original.add_menu ( "_File" )
   if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( file_menu, menu_callback, "New Project",  ("NewProj", zpa ) )
-    zpa.add_menu_item ( file_menu, menu_callback, "Open Project",  ("OpenProj", zpa ) )
-    zpa.add_menu_item ( file_menu, menu_callback, "Save Project",  ("SaveProj", zpa ) )
-    zpa.add_menu_item ( file_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa ) )
-    zpa.add_menu_sep  ( file_menu )
-    zpa.add_menu_item ( file_menu, menu_callback, "Set Destination",  ("SetDest", zpa ) )
-    zpa.add_menu_sep  ( file_menu )
-    zpa.add_menu_item ( file_menu, menu_callback, "List >",  ("List", zpa ) )
-    zpa.add_menu_item ( file_menu, menu_callback, "Exit",       ("Exit", zpa ) )
+    zpa_original.add_menu_item ( file_menu, menu_callback, "New Project",  ("NewProj", zpa_original ) )
+    zpa_original.add_menu_item ( file_menu, menu_callback, "Open Project",  ("OpenProj", zpa_original ) )
+    zpa_original.add_menu_item ( file_menu, menu_callback, "Save Project",  ("SaveProj", zpa_original ) )
+    zpa_original.add_menu_item ( file_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa_original ) )
+    zpa_original.add_menu_sep  ( file_menu )
+    zpa_original.add_menu_item ( file_menu, menu_callback, "Set Destination",  ("SetDest", zpa_original ) )
+    zpa_original.add_menu_sep  ( file_menu )
+    zpa_original.add_menu_item ( file_menu, menu_callback, "List >",  ("List", zpa_original ) )
+    zpa_original.add_menu_item ( file_menu, menu_callback, "Exit",       ("Exit", zpa_original ) )
 
   # Create an "Images" menu
-  (image_menu, image_item) = zpa.add_menu ( "_Images" )
+  (image_menu, image_item) = zpa_original.add_menu ( "_Images" )
   if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( image_menu, menu_callback, "Import...",  ("ImImport", zpa ) )
-    zpa.add_menu_sep  ( image_menu )
-    zpa.add_menu_item ( image_menu, menu_callback, "Center",  ("ImCenter", zpa ) )
-    zpa.add_menu_item ( image_menu, menu_callback, "Actual Size",  ("ActSize", zpa ) )
-    zpa.add_menu_item ( image_menu, menu_callback, "Refresh",  ("Refresh", zpa ) )
-    zpa.add_menu_sep  ( image_menu )
-    zpa.add_menu_item ( image_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa ) )
-    zpa.add_menu_sep  ( image_menu )
-    zpa.add_menu_item ( image_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa ) )
+    zpa_original.add_menu_item ( image_menu, menu_callback, "Import...",  ("ImImport", zpa_original ) )
+    zpa_original.add_menu_sep  ( image_menu )
+    zpa_original.add_menu_item ( image_menu, menu_callback, "Center",  ("ImCenter", zpa_original ) )
+    zpa_original.add_menu_item ( image_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
+    zpa_original.add_menu_item ( image_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
+    zpa_original.add_menu_sep  ( image_menu )
+    zpa_original.add_menu_item ( image_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
+    zpa_original.add_menu_sep  ( image_menu )
+    zpa_original.add_menu_item ( image_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
 
   # Create a "Help" menu
-  (help_menu, help_item) = zpa.add_menu ( "_Help" )
+  (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
   if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( help_menu, menu_callback, "Manual...",   ("Manual", zpa ) )
-    zpa.add_menu_item ( help_menu, menu_callback, "Key commands...",   ("Key Commands", zpa ) )
-    zpa.add_menu_item ( help_menu, menu_callback, "Mouse clicks...",   ("Mouse Clicks", zpa ) )
-    zpa.add_menu_sep  ( help_menu )
-    zpa.add_menu_item ( help_menu, menu_callback, "License...",   ("License", zpa ) )
-    zpa.add_menu_item ( help_menu, menu_callback, "Version...",   ("Version", zpa ) )
+    zpa_original.add_menu_item ( help_menu, menu_callback, "Manual...",   ("Manual", zpa_original ) )
+    zpa_original.add_menu_item ( help_menu, menu_callback, "Key commands...",   ("Key Commands", zpa_original ) )
+    zpa_original.add_menu_item ( help_menu, menu_callback, "Mouse clicks...",   ("Mouse Clicks", zpa_original ) )
+    zpa_original.add_menu_sep  ( help_menu )
+    zpa_original.add_menu_item ( help_menu, menu_callback, "License...",   ("License", zpa_original ) )
+    zpa_original.add_menu_item ( help_menu, menu_callback, "Version...",   ("Version", zpa_original ) )
 
   # Append the menus to the menu bar itself
   menu_bar.append ( file_item )
@@ -431,8 +435,8 @@ def main():
   image_hbox = gtk.HBox ( True, 0 )
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
-  drawing_area = zpa.get_drawing_area()
-  drawing_area2 = zpa2.get_drawing_area()
+  drawing_area = zpa_original.get_drawing_area()
+  drawing_area2 = zpa_aligned.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
   image_hbox.pack_start(drawing_area, True, True, 0)
@@ -444,8 +448,8 @@ def main():
   drawing_area2.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
-  drawing_area.connect ( "expose_event", expose_callback, zpa )
-  drawing_area2.connect ( "expose_event", expose_callback2, zpa2 )
+  drawing_area.connect ( "expose_event", expose_callback, zpa_original )
+  drawing_area2.connect ( "expose_event", expose_callback2, zpa_aligned )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
@@ -465,42 +469,42 @@ def main():
 
   step_button = gtk.Button("Step")
   controls_hbox.pack_start ( step_button, True, True, 0 )
-  step_button.connect_object ( "clicked", step_callback, zpa )
+  step_button.connect_object ( "clicked", step_callback, zpa_original )
   step_button.show()
 
   run_button = gtk.Button("Run")
   controls_hbox.pack_start ( run_button, True, True, 0 )
-  run_button.connect_object ( "clicked", run_callback, zpa )
+  run_button.connect_object ( "clicked", run_callback, zpa_original )
   run_button.show()
 
   stop_button = gtk.Button("Stop")
   controls_hbox.pack_start ( stop_button, True, True, 0 )
-  stop_button.connect_object ( "clicked", stop_callback, zpa )
+  stop_button.connect_object ( "clicked", stop_callback, zpa_original )
   stop_button.show()
 
   dump_button = gtk.Button("Dump")
   controls_hbox.pack_start ( dump_button, True, True, 0 )
-  dump_button.connect_object ( "clicked", dump_callback, zpa )
+  dump_button.connect_object ( "clicked", dump_callback, zpa_original )
   dump_button.show()
 
   reset_button = gtk.Button("Reset")
   controls_hbox.pack_start ( reset_button, True, True, 0 )
-  reset_button.connect_object ( "clicked", reset_callback, zpa )
+  reset_button.connect_object ( "clicked", reset_callback, zpa_original )
   reset_button.show()
 
 
 
-  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_1_mod.jpg" )
-  zpa2.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_2_mod.jpg" )
+  zpa_original.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_1_mod.jpg" )
+  zpa_aligned.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_2_mod.jpg" )
 
 
   # Show the main window
   window.show()
 
-  zpa.set_cursor ( gtk.gdk.HAND2 )
+  zpa_original.set_cursor ( gtk.gdk.HAND2 )
 
-  gtk.idle_add ( background_callback, zpa )
-  gtk.idle_add ( background_callback, zpa2 )
+  gtk.idle_add ( background_callback, zpa_original )
+  gtk.idle_add ( background_callback, zpa_aligned )
 
   # Turn control over to GTK to run everything from here onward.
   gtk.main()
