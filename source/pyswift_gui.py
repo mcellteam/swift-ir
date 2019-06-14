@@ -160,6 +160,9 @@ def expose_callback ( drawing_area, event, zpa ):
 
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+  gc.foreground = colormap.alloc_color(32767,32767,32767)
+  drawable.draw_line ( gc, width-1, 0, width-1, height )
+
   # Restore the previous color
   gc.foreground = old_fg
   return False
@@ -191,6 +194,9 @@ def expose_callback2 ( drawing_area, event, zpa ):
     scale_h = zpa.wh(pbh) / pbh
     scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
     drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+
+  gc.foreground = colormap.alloc_color(32767,32767,32767)
+  drawable.draw_line ( gc, 0, 0, 0, height )
   gc.foreground = old_fg
   return False
 
