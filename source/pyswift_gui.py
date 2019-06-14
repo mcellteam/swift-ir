@@ -329,6 +329,21 @@ def main():
   window.set_title ( "Python GTK version of SWiFT-GUI" )
 
   # Create a zoom/pan area to hold all of the drawing
+
+  zpa = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa.user_data = {
+                    'image_frame'        : None,
+                    'image_frames'       : [],
+                    'frame_number'       : -1,
+                    'diff_2d_sim'        : diff_2d_sim(),
+                    'display_time_index' : -1,
+                    'running'            : False,
+                    'last_update'        : -1,
+                    'show_legend'        : True,
+                    'frame_delay'        : 0.1,
+                    'size'               : 1.0
+                  }
+
   zpa2 = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
   zpa2.user_data = {
                     'image_frame'        : None,
@@ -345,20 +360,6 @@ def main():
   zpa2.set_x_scale ( 0.0, 300, 100.0, 400 )
   zpa2.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
-
-  zpa = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
-  zpa.user_data = {
-                    'image_frame'        : None,
-                    'image_frames'       : [],
-                    'frame_number'       : -1,
-                    'diff_2d_sim'        : diff_2d_sim(),
-                    'display_time_index' : -1,
-                    'running'            : False,
-                    'last_update'        : -1,
-                    'show_legend'        : True,
-                    'frame_delay'        : 0.1,
-                    'size'               : 1.0
-                  }
 
   # Set the relationship between "user" coordinates and "screen" coordinates
   zpa.set_x_scale ( 0.0, 300, 100.0, 400 )
