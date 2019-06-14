@@ -184,6 +184,11 @@ class zoom_pan_area:
     user_y_at_zoom = self.y(at_y)
     # Perform the zoom by changing the zoom scale
     self.scroll_count += zoom_delta
+    #### Limit for now until image drawing can be optimized for large zooms:
+    if self.scroll_count > 10:
+      self.scroll_count = 10
+    if self.scroll_count < -15:
+      self.scroll_count = -15
     self.zoom_scale = pow (self.scroll_factor, self.scroll_count)
     # Get the new window coordinates of the previously saved user space location
     win_x_after_zoom = self.wx ( user_x_at_zoom )
