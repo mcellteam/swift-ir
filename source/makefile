@@ -126,6 +126,8 @@ sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum remod >> sha1sum.txt
 	sha1sum run_swift.jar >> sha1sum.txt
 	sha1sum swift_gui.jar >> sha1sum.txt
+	sha1sum pyswift_gui.py >> sha1sum.txt
+	sha1sum app_window.py >> sha1sum.txt
 
 rev:
 	git log --pretty=format:"public class revision { static String githash=\"%H on %ad\"; }" HEAD^..HEAD > revision.java

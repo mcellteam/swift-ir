@@ -160,29 +160,6 @@ def expose_callback ( drawing_area, event, zpa ):
 
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-  # Draw objects (from the original example)
-  for obj in zpa.user_data['diff_2d_sim'].objects:
-    #print ( "Drawing object " + o['name'] )
-    o = { 'name':obj.name, 'x':obj.x, 'y':obj.y, 'c':obj.color, 'points':[p for p in obj.points], 'faces':[f for f in obj.faces] }
-    gc.foreground = colormap.alloc_color(int(65535*o['c'][0]),int(65535*o['c'][1]),int(65535*o['c'][2]))
-    cx = o['x']
-    cy = o['y']
-    for f in o['faces']:
-      p1 = ( cx+o['x']+o['points'][f[0]][0], cy+o['y']+o['points'][f[0]][1] )
-      p2 = ( cx+o['x']+o['points'][f[1]][0], cy+o['y']+o['points'][f[1]][1] )
-      drawable.draw_line ( gc, zpa.wxi(p1[0]), zpa.wyi(p1[1]), zpa.wxi(p2[0]), zpa.wyi(p2[1]) )
-
-  if zpa.user_data['show_legend']:
-    # Draw the current time (seconds) to show something that doesn't zoom or pan
-    cr = drawable.cairo_create()
-    cr.set_source_rgb (1,1,1)
-    cr.move_to(15,21)
-    legend = "Sim Time: " + str(diff_2d_sim.t) + ", Showing: t-" + str(abs(display_time_index+1)) + " = " + str(t)
-    cr.show_text ( legend )
-    # Underline the text (uses a crude estimate since text is variable width)
-    gc.foreground = colormap.alloc_color(65535,0,0)
-    drawable.draw_rectangle(gc, True, 10, 25, 12+int(round(145*len(legend)/28.0)), 2)
-
   # Restore the previous color
   gc.foreground = old_fg
   return False
@@ -299,10 +276,6 @@ class diff_2d_sim:
     self.t = 0
     self.dt = 2
 
-  def diffuse ( self ):
-    print ( "Start diffuse" )
-    print ( "End diffuse" )
-
   def step ( self ):
     print ( "Before run(1): t=" + str(self.t) )
     self.t += self.dt
@@ -323,13 +296,14 @@ def main():
 
   # Create a top-level GTK window
   window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
-  window.set_title ( "Reconstruct Python GTK Demonstration" )
+  window.set_title ( "Python GTK version of SWiFT-GUI" )
 
   # Create a zoom/pan area to hold all of the drawing
-  zpa = app_window.zoom_pan_area(window,720,540,"Reconstruct Python GTK Demonstration")
+  zpa = app_window.zoom_pan_area(window,1600,800,"Python GTK version of SWiFT-GUI")
   zpa.user_data = { 
                     'image_frame'        : None,
                     'image_frames'       : [],
+                    'frame_number'       : -1,
                     'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
                     'running'            : False,
@@ -355,90 +329,31 @@ def main():
   menu_bar = gtk.MenuBar()
   vbox.pack_start(menu_bar, expand=False, fill=False, padding=0)
 
-  # Create a "Program" menu
-  (program_menu, program_item) = zpa.add_menu ( "_Program" )
+  # Create a "File" menu
+  (file_menu, file_item) = zpa.add_menu ( "_File" )
   if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( program_menu, menu_callback, "Windows >",  ("Windows", zpa ) )
-    zpa.add_menu_sep  ( program_menu )
-    zpa.add_menu_item ( program_menu, menu_callback, "Debug >",    ("Debug", zpa ) )
-    zpa.add_menu_item ( program_menu, menu_callback, "Exit",       ("Exit", zpa ) )
+    zpa.add_menu_item ( file_menu, menu_callback, "New Project",  ("NewProj", zpa ) )
+    zpa.add_menu_item ( file_menu, menu_callback, "Open Project",  ("OpenProj", zpa ) )
+    zpa.add_menu_item ( file_menu, menu_callback, "Save Project",  ("SaveProj", zpa ) )
+    zpa.add_menu_item ( file_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa ) )
+    zpa.add_menu_sep  ( file_menu )
+    zpa.add_menu_item ( file_menu, menu_callback, "Set Destination",  ("SetDest", zpa ) )
+    zpa.add_menu_sep  ( file_menu )
+    zpa.add_menu_item ( file_menu, menu_callback, "List >",  ("List", zpa ) )
+    zpa.add_menu_item ( file_menu, menu_callback, "Exit",       ("Exit", zpa ) )
 
-  # Create a "Series" menu
-  (series_menu, series_item) = zpa.add_menu ( "_Series" )
+  # Create an "Images" menu
+  (image_menu, image_item) = zpa.add_menu ( "_Images" )
   if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( series_menu, menu_callback, "Open...",   ("Open", zpa ) )
-    zpa.add_menu_item ( series_menu, menu_callback, "Close",     ("Close", zpa ) )
-    zpa.add_menu_sep  ( series_menu )
-    zpa.add_menu_item ( series_menu, menu_callback, "New...",     ("New Series", zpa ) )
-    zpa.add_menu_item ( series_menu, menu_callback, "Save",       ("Save Series", zpa ) )
-    zpa.add_menu_item ( series_menu, menu_callback, "Options...", ("Options", zpa ) )
-    zpa.add_menu_sep  ( series_menu )
-    zpa.add_menu_item ( series_menu, menu_callback, "Export >",     ("Export", zpa ) )
-    zpa.add_menu_item ( series_menu, menu_callback, "Import >",     ("Import", zpa ) )
-
-  # Create a "Section" menu
-  (section_menu, section_item) = zpa.add_menu ( "_Section" )
-  if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( section_menu, menu_callback, "List Sections...",   ("List Sections", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Thumbnails...",      ("Thumbnails", zpa ) )
-    zpa.add_menu_sep  ( section_menu )
-    zpa.add_menu_item ( section_menu, menu_callback, "New...",   ("New Section", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Save",   ("Save Section", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Thickness...",   ("Thickness", zpa ) )
-    zpa.add_menu_sep  ( section_menu )
-    zpa.add_menu_item ( section_menu, menu_callback, "Undo",   ("Undo", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Redo",   ("Redo", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Reset",   ("Reset", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Blend",   ("Blend", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Zoom >",   ("Zoom", zpa ) )
-    zpa.add_menu_item ( section_menu, menu_callback, "Movement >",   ("Movement", zpa ) )
-
-  # Create a "Domain" menu
-  (domain_menu, domain_item) = zpa.add_menu ( "_Domain" )
-  if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( domain_menu, menu_callback, "List image domains...",   ("List Domains", zpa ) )
-    zpa.add_menu_item ( domain_menu, menu_callback, "Import image...",   ("Import Image", zpa ) )
-    zpa.add_menu_sep  ( domain_menu )
-    zpa.add_menu_item ( domain_menu, menu_callback, "Merge front",   ("Merge Front", zpa ) )
-    zpa.add_menu_item ( domain_menu, menu_callback, "Merge rear",   ("Merge Rear", zpa ) )
-    zpa.add_menu_item ( domain_menu, menu_callback, "Attributes...",   ("Attributes", zpa ) )
-    zpa.add_menu_item ( domain_menu, menu_callback, "Reinitialize >",   ("Reinitialize", zpa ) )
-    zpa.add_menu_sep  ( domain_menu )
-    zpa.add_menu_item ( domain_menu, menu_callback, "Delete",   ("Delete Domain", zpa ) )
-
-  # Create a "Trace" menu
-  (trace_menu, trace_item) = zpa.add_menu ( "_Trace" )
-  if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( trace_menu, menu_callback, "List traces...",   ("List traces", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Find...",   ("Find Trace", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Select all",   ("Select All Traces", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Deselect all",   ("Deselect All Traces", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Zoom to",   ("Zoom to", zpa ) )
-    zpa.add_menu_sep  ( trace_menu )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Attributes...",   ("Trace Attributes", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Palette...",   ("Trace Palette", zpa ) )
-    zpa.add_menu_sep  ( trace_menu )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Cut",   ("Cut", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Copy",   ("Copy", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Paste",   ("Past", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Paste attributes",   ("Paste Attributes", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Delete",   ("Delete Trace", zpa ) )
-    zpa.add_menu_sep  ( trace_menu )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Align Section",   ("Align Section", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Calibrate...",   ("Calibrate", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Merge",   ("Merge Trace", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Reverse",   ("Reverse Trace", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Simplify",   ("Simplify Trace", zpa ) )
-    zpa.add_menu_item ( trace_menu, menu_callback, "Smooth",   ("Smooth Trace", zpa ) )
-
-  # Create a "Object" menu
-  (object_menu, object_item) = zpa.add_menu ( "_Object" )
-  if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( object_menu, menu_callback, "List Objects...",   ("List Objects", zpa ) )
-    zpa.add_menu_sep  ( object_menu )
-    zpa.add_menu_item ( object_menu, menu_callback, "3D Scene...",   ("3D Scene", zpa ) )
-    zpa.add_menu_item ( object_menu, menu_callback, "Z-Traces...",   ("Z-Traces", zpa ) )
-    zpa.add_menu_item ( object_menu, menu_callback, "Distances...",   ("Distances", zpa ) )
+    zpa.add_menu_item ( image_menu, menu_callback, "Import...",  ("ImImport", zpa ) )
+    zpa.add_menu_sep  ( image_menu )
+    zpa.add_menu_item ( image_menu, menu_callback, "Center",  ("ImCenter", zpa ) )
+    zpa.add_menu_item ( image_menu, menu_callback, "Actual Size",  ("ActSize", zpa ) )
+    zpa.add_menu_item ( image_menu, menu_callback, "Refresh",  ("Refresh", zpa ) )
+    zpa.add_menu_sep  ( image_menu )
+    zpa.add_menu_item ( image_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa ) )
+    zpa.add_menu_sep  ( image_menu )
+    zpa.add_menu_item ( image_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa.add_menu ( "_Help" )
@@ -450,35 +365,10 @@ def main():
     zpa.add_menu_item ( help_menu, menu_callback, "License...",   ("License", zpa ) )
     zpa.add_menu_item ( help_menu, menu_callback, "Version...",   ("Version", zpa ) )
 
-
-  # Create a "Mode" menu
-  (mode_menu, mode_item) = zpa.add_menu ( "_Mode" )
-
-  # Create an "Options" menu
-  (options_menu, options_item) = zpa.add_menu ( "_Options" )
-  if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( options_menu, menu_callback, "Toggle Legend", ("ToggleLegend",zpa) )
-
-
-  # Create a "Speed" menu
-  (speed_menu, speed_item) = zpa.add_menu ( "_Speed" )
-  if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( speed_menu, menu_callback, "Fast",   ("Fast",zpa ) )
-    zpa.add_menu_item ( speed_menu, menu_callback, "Medium", ("Med", zpa ) )
-    zpa.add_menu_item ( speed_menu, menu_callback, "Slow",   ("Slow",zpa ) )
-
   # Append the menus to the menu bar itself
-  menu_bar.append ( program_item )
-  menu_bar.append ( series_item )
-  menu_bar.append ( section_item )
-  menu_bar.append ( domain_item )
-  menu_bar.append ( trace_item )
-  menu_bar.append ( object_item )
+  menu_bar.append ( file_item )
+  menu_bar.append ( image_item )
   menu_bar.append ( help_item )
-  menu_bar.append ( mode_item )
-
-  menu_bar.append ( options_item )
-  menu_bar.append ( speed_item )
 
   # Show the menu bar itself (everything must be shown!!)
   menu_bar.show()
