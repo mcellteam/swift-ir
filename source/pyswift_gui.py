@@ -299,7 +299,7 @@ def main():
   window.set_title ( "Python GTK version of SWiFT-GUI" )
 
   # Create a zoom/pan area to hold all of the drawing
-  zpa = app_window.zoom_pan_area(window,1600,800,"Python GTK version of SWiFT-GUI")
+  zpa = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
   zpa.user_data = { 
                     'image_frame'        : None,
                     'image_frames'       : [],
@@ -318,16 +318,16 @@ def main():
   zpa.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
   # Create a vertical box to hold the menu, drawing area, and buttons
-  vbox = gtk.VBox ( homogeneous=False, spacing=0 )
-  window.add(vbox)
-  vbox.show()
+  main_win_vbox = gtk.VBox ( homogeneous=False, spacing=0 )
+  window.add(main_win_vbox)
+  main_win_vbox.show()
 
   # Connect GTK's "main_quit" function to the window's "destroy" event
   window.connect ( "destroy", lambda w: gtk.main_quit() )
 
   # Create a menu bar and add it to the vertical box
   menu_bar = gtk.MenuBar()
-  vbox.pack_start(menu_bar, expand=False, fill=False, padding=0)
+  main_win_vbox.pack_start(menu_bar, expand=False, fill=False, padding=0)
 
   # Create a "File" menu
   (file_menu, file_item) = zpa.add_menu ( "_File" )
@@ -373,11 +373,19 @@ def main():
   # Show the menu bar itself (everything must be shown!!)
   menu_bar.show()
 
+  # Create the horizontal image box
+  image_hbox = gtk.HBox ( True, 0 )
+
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   drawing_area = zpa.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
-  vbox.pack_start(drawing_area, True, True, 0)
+  image_hbox.pack_start(drawing_area, True, True, 0)
+  fake_out_panel = gtk.Button("Output")
+  image_hbox.pack_start(fake_out_panel, True, True, 0)
+  fake_out_panel.show()
+  image_hbox.show()
+  main_win_vbox.pack_start(image_hbox, True, True, 0)
   drawing_area.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
@@ -393,34 +401,34 @@ def main():
                           | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
   # Create a horizontal box to hold application buttons
-  hbox = gtk.HBox ( True, 0 )
-  hbox.show()
-  vbox.pack_start ( hbox, False, False, 0 )
+  controls_hbox = gtk.HBox ( True, 0 )
+  controls_hbox.show()
+  main_win_vbox.pack_start ( controls_hbox, False, False, 0 )
 
   # Add some application specific buttons and their callbacks
 
   step_button = gtk.Button("Step")
-  hbox.pack_start ( step_button, True, True, 0 )
+  controls_hbox.pack_start ( step_button, True, True, 0 )
   step_button.connect_object ( "clicked", step_callback, zpa )
   step_button.show()
 
   run_button = gtk.Button("Run")
-  hbox.pack_start ( run_button, True, True, 0 )
+  controls_hbox.pack_start ( run_button, True, True, 0 )
   run_button.connect_object ( "clicked", run_callback, zpa )
   run_button.show()
 
   stop_button = gtk.Button("Stop")
-  hbox.pack_start ( stop_button, True, True, 0 )
+  controls_hbox.pack_start ( stop_button, True, True, 0 )
   stop_button.connect_object ( "clicked", stop_callback, zpa )
   stop_button.show()
 
   dump_button = gtk.Button("Dump")
-  hbox.pack_start ( dump_button, True, True, 0 )
+  controls_hbox.pack_start ( dump_button, True, True, 0 )
   dump_button.connect_object ( "clicked", dump_callback, zpa )
   dump_button.show()
 
   reset_button = gtk.Button("Reset")
-  hbox.pack_start ( reset_button, True, True, 0 )
+  controls_hbox.pack_start ( reset_button, True, True, 0 )
   reset_button.connect_object ( "clicked", reset_callback, zpa )
   reset_button.show()
 
