@@ -52,7 +52,11 @@ import gtk
 # There was no way to pass the zoom/pan window
 # into the mouse scroll callback. So it was made
 # global here.  : (
-global_zpa = None
+global_zpaL = None
+global_zpaR = None
+
+global_daL = None
+global_daR = None
 
 class zoom_pan_area:
 
@@ -86,8 +90,16 @@ class zoom_pan_area:
     
     self.user_data = None
 
-    global global_zpa
-    global_zpa = self
+    global global_zpaL
+    global global_zpaR
+    global global_daR
+    global global_daL
+    if global_zpaL == None:
+      global_zpaL = self
+      global_daL = self.drawing_area
+    elif global_zpaR == None:
+      global_zpaR = self
+      global_daR = self.drawing_area
 
   def set_defaults ( self ):
     self.x_offset = self.reset_x_offset = 0.0
@@ -207,9 +219,15 @@ class zoom_pan_area:
 
 
 def mouse_scroll_callback ( canvas, event ):
-  global global_zpa
+  global global_zpaL
+  global global_zpaR
+  global global_daR
   # print ( "Mouse Scroll: " + str(canvas) + " event at (" + str() + "," + str(event.y) + ") : " + str(event) )
+  global_zpa = global_zpaL
+  #print ( "event.x = " + str(event.x) )
   #__import__('code').interact(local = locals())
+  if canvas == global_daR:
+    global_zpa = global_zpaR
   if event.direction == gtk.gdk.SCROLL_UP:
     global_zpa.zoom_at_point (  1, event.x, event.y )
     # print ( "Mouse scrolled up = zoom in (make everything larger)" )
@@ -232,9 +250,15 @@ def mouse_scroll_callback ( canvas, event ):
 
 
 def button_press_callback ( widget, event ):
-  global global_zpa
+  global global_zpaL
+  global global_zpaR
+  global global_daR
   # print ( "A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
   if event.button == 1:
+    #print ( "event.x = " + str(event.x) )
+    global_zpa = global_zpaL
+    if widget == global_daR:
+      global_zpa = global_zpaR
     global_zpa.last_x = event.x
     global_zpa.last_y = event.y
     global_zpa.dragging = True
@@ -243,9 +267,15 @@ def button_press_callback ( widget, event ):
 
 
 def button_release_callback ( widget, event ):
-  global global_zpa
+  global global_zpaL
+  global global_zpaR
+  global global_daR
   # print ( "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
   if event.button == 1:
+    print ( "event.x = " + str(event.x) )
+    global_zpa = global_zpaL
+    if widget == global_daR:
+      global_zpa = global_zpaR
     global_zpa.x_offset += (event.x - global_zpa.last_x)
     global_zpa.y_offset += (event.y - global_zpa.last_y)
     global_zpa.last_x = event.x
@@ -257,12 +287,19 @@ def button_release_callback ( widget, event ):
 
 def mouse_motion_callback ( canvas, event ):
   # width, height = canvas.window.get_size()
+  global global_zpaL
+  global global_zpaR
+  global global_daR
   if event.state == 0:
     #print ( "Hover: x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     pass
   elif event.state & gtk.gdk.BUTTON1_MASK:
     #print ( "Drag:  x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     #__import__('code').interact(local = locals())
+    #print ( "event.x = " + str(event.x) )
+    global_zpa = global_zpaL
+    if canvas == global_daR:
+      global_zpa = global_zpaR
     global_zpa.x_offset += (event.x - global_zpa.last_x)
     global_zpa.y_offset += (event.y - global_zpa.last_y)
     global_zpa.last_x = event.x
@@ -277,7 +314,13 @@ def key_press_callback ( widget, event ):
   handled = False
   if event.type == gtk.gdk.KEY_PRESS:
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    global global_zpa
+    global global_zpaL
+    global global_zpaR
+    global global_daR
+    #print ( "event.x = " + str(event.x) )
+    global_zpa = global_zpaL
+    if widget == global_daR:
+      global_zpa = global_zpaR
     if event.keyval == 65363:  # Right arrow: increase the x offset
       # print ("increasing offset from " + str(global_zpa.x_offset) )
       global_zpa.x_offset += -10
