@@ -277,7 +277,35 @@ def menu_callback ( widget, data=None ):
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
     elif command == "ImImport":
-      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      file_chooser = gtk.FileChooserDialog(title="Select Images", action=gtk.FILE_CHOOSER_ACTION_OPEN,
+		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+      file_chooser.set_select_multiple(True)
+      file_chooser.set_default_response(gtk.RESPONSE_OK)
+      #file_chooser.show()
+
+
+      image_filter=gtk.FileFilter()
+      image_filter.set_name("Images")
+      image_filter.add_pattern("*.[Jj][Pp][Gg]")
+      image_filter.add_pattern("*.[Jj][Pp][Ee][Gg]")
+      image_filter.add_pattern("*.[Pp][Nn][Gg]")
+      image_filter.add_pattern("*.[Jj][Pp][Ee][Gg]")
+      file_chooser.add_filter(image_filter)
+      image_filter=gtk.FileFilter()
+      image_filter.set_name("All Files")
+      image_filter.add_pattern("*")
+      file_chooser.add_filter(image_filter)
+      response = file_chooser.run()
+
+      if response == gtk.RESPONSE_OK:
+        file_name_list = file_chooser.get_filenames()
+        print ( "Selected Files: " + str(file_name_list) )
+        #filename = file_chooser.get_filename()
+        #file_chooser.destroy()
+
+      file_chooser.destroy()
+      print ( "Done with dialog" )
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
     else:
       print ( "Menu option \"" + command + "\" is not handled yet." )
