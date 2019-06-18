@@ -2,6 +2,7 @@
 
 #__import__('code').interact(local = locals())
 import time
+import os
 
 import pygtk
 pygtk.require('2.0')
@@ -524,8 +525,8 @@ def main():
 
 
 
-  zpa_original.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_1_mod.jpg" )
-  zpa_aligned.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_2_mod.jpg" )
+  zpa_original.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
+  zpa_aligned.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_2_mod.jpg" )
 
 
   # Show the main window
