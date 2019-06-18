@@ -25,6 +25,7 @@ class zoom_window ( app_window.zoom_pan_area ):
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
     else:
       # Use normal (unshifted) scroll wheel to move through the stack
+      print ( "Moving through the stack" )
       return True
 
 def expose_callback ( drawing_area, event, zpa ):
@@ -263,13 +264,29 @@ def menu_callback ( widget, data=None ):
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
+    elif command == "SetDest":
+      file_chooser = gtk.FileChooserDialog(title="Select Images", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+      file_chooser.set_select_multiple(False)
+      file_chooser.set_default_response(gtk.RESPONSE_OK)
+      response = file_chooser.run()
+      if response == gtk.RESPONSE_OK:
+        file_name_list = file_chooser.get_filename()
+        print ( "Selected Directory: " + str(file_name_list) )
+        #filename = file_chooser.get_filename()
+        #file_chooser.destroy()
+
+      file_chooser.destroy()
+      print ( "Done with dialog" )
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      zpa.queue_draw()
+
     elif command == "ImImport":
       file_chooser = gtk.FileChooserDialog(title="Select Images", action=gtk.FILE_CHOOSER_ACTION_OPEN,
 		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
       file_chooser.set_select_multiple(True)
       file_chooser.set_default_response(gtk.RESPONSE_OK)
       #file_chooser.show()
-
 
       image_filter=gtk.FileFilter()
       image_filter.set_name("Images")
@@ -296,17 +313,27 @@ def menu_callback ( widget, data=None ):
       print ( "Done with dialog" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
+
     elif command == "LimScroll":
       zpa_original.max_zoom_count = 10
       zpa_original.min_zoom_count = -15
       zpa_aligned.max_zoom_count = 10
       zpa_aligned.min_zoom_count = -15
+
     elif command == "UnLimScroll":
       zpa_original.max_zoom_count = 100
       zpa_original.min_zoom_count = -150
       zpa_aligned.max_zoom_count = 100
       zpa_aligned.min_zoom_count = -150
 
+    elif command == "Exit":
+      get_exit = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Exit?")
+      response = get_exit.run()
+      if response == gtk.RESPONSE_OK:
+        print ( "Exiting." )
+        get_exit.destroy()
+        exit()
+      get_exit.destroy()
     else:
       print ( "Menu option \"" + command + "\" is not handled yet." )
   return True
