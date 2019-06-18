@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 
-import cv2
 import numpy as np
-import imageio
-import glob
 import subprocess as sp
-import os
 
 
 '''
+  Note:
   swim outputs a line of the form
 
   SNR: target xtgt ytgt source xsrc ysrc φsrc (Δx Δy m0 flags)
@@ -38,201 +35,165 @@ exceeded (“dreset”)
 
 
 
-class align_pair_recipe():
+class align_image_pair_recipe():
 
-  def __init__(self,im1,im2):
-    self.im1 = im1
-    self.im2 = im2
+  def __init__(self,im_base,im_adjust):
+    self.im_base = im_base
+    self.im_adjust= im_adjust
     self.af = np.eye(2, 3, dtype=np.float32)
     self.recipe = []
 
+  def mir_get_affine(self,swim_requests):
+    mir_script=''
+    for req in swim_requests:
+      mir_script += '%.15g %.15g %.15g %.15g\n' % (req.base_x, req.base_y, req.adjust_x, req.adjust_y)
+    print('mir_script:\n\n' + mir_script + '\n')
 
-class swim_pair():
+    mir_proc = sp.Popen(['mir'],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+    mir_stdout, mir_stderr = mir_proc.communicate(mir_script)
+    print('mir stdout: \n\n' + mir_stdout + '\n')
+    print('mir stderr: \n\n' + mir_stderr + '\n')
 
-  def __init__(self,ww,im_base,im_float,iters='2',whiten='-0.65',addx='0',addy='0,keep=None,tarx=None,tary=None,patx=None,paty=None,rota=None,afm=None):
-    self.swim_cmd_list=[]
-    self.add_swim_cmd(ww,im_base,im_float,iters=iters,whiten=whiten,addx=addx,addy=addy,keep=keep,tarx=tarx,tary=tary,patx=patx,paty=paty,rota=rota,afm=afm)
 
-  def add_swim_cmd(self,ww,im_base,im_float,iters='2',whiten='-0.65',addx='0',addy='0',keep=None,tarx=None,tary=None,patx=None,paty=None,rota=None,afm=None):
-    self.im_base = im_base
-    self.im_float = im_float
+class swim_request:
+  def __init__(self,ww,im_base,im_adjust,iters='2',whiten='-0.65',offset_x='0',offset_y='0',keep=None,base_x=None,base_y=None,adjust_x=None,adjust_y=None,rota=None,afm=None):
+
     self.ww = ww
+    self.im_base = im_base
+    self.im_adjust = im_adjust
     self.iters = iters
-    self.addx = addx
-    self.addy = addy
+    self.offset_x = offset_x
+    self.offset_y = offset_y
     self.whiten=whiten
 
     self.keep=keep
-    if self.keep==None:
-      keep_arg = ''
-    else:
-      keep_arg = '-k %s' % (self.keep)
+    self.keep_arg = ''
+    if self.keep!=None:
+      self.keep_arg = '-k %s' % (self.keep)
 
-    self.tarx=tarx
-    self.tary=tary
-    if not self.tarx or not self.tary:
-      tar_arg = ''
-    else:
-      tar_arg = '%s %s' % (self.tarx, self.tary)
+    self.base_x=base_x
+    self.base_y=base_y
+    self.tar_arg = ''
+    if self.base_x!=None and self.base_y!=None:
+      self.tar_arg = '%s %s' % (self.base_x, self.base_y)
 
-    self.patx=patx
-    self.paty=paty
-    if not self.patx or not self.paty:
-      pat_arg = ''
-    else:
-      pat_arg = '%s %s' % (self.patx, self.paty)
+    self.adjust_x=adjust_x
+    self.adjust_y=adjust_y
+    self.pat_arg = ''
+    if self.adjust_x!=None and self.adjust_y!=None:
+      self.pat_arg = '%s %s' % (self.adjust_x, self.adjust_y)
 
     self.rota=rota
-    if not self.rota:
-      rota_arg = ''
-    else:
-      rota_arg = '%s' % (self.rota)
+    self.rota_arg = ''
+    if self.rota!=None:
+      self.rota_arg = '%s' % (self.rota)
 
     self.afm = afm
-    if not self.afm:
-      afm_arg = ''
-    else:
-      afm_arg = '%s %s %s %s' % (self.afm[0], self.afm[1], self.afm[2], self.afm[3])
+    self.afm_arg = ''
+    if self.afm!=None:
+      self.afm_arg = '%s %s %s %s' % (self.afm[0], self.afm[1], self.afm[2], self.afm[3])
 
-    self.swim_cmd_list.append('swim%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s %s %s %s' % (self.ww, self.iters, self.whiten, self.addx, self.addy, self.keep, self.im_base, tar_arg, self.im_float, pat_arg, rota_arg, afm_arg))
+    self.swim_stdout = None
+    self.swim_stderr = None
+    self.swim_results = None
+    self.make_swim_request_string()
 
 
-  def run_swim(self,arg_dict):
-    for swim_cmd in self.swim_cmd_list:
-      swim_script = '%s\n' % (swim_cmd)
-    
-    swim_proc = sp.Popen(['swim',self.ww],stdin=sp.PIPE,stdout=sp.PIPE,universal_newlines=True)
-    swim_stdout, swim_stderr = swim_proc.communicate(swim_cmd))
+  def make_swim_request_string(self):
+    self.swim_request_string = 'swim_ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (self.ww, self.iters, self.whiten, self.offset_x, self.offset_y, self.keep_arg, self.im_base, self.tar_arg, self.im_adjust, self.pat_arg, self.rota_arg, self.afm_arg)
+
+
+  def run_swim(self):
+    if self.swim_request_string == None:
+      self.make_swim_request_string()
+
+    swim_script = '%s\n' % (self.swim_request_string)
+    print('swim_script:\n\n' + swim_script + '\n')
+
+    swim_proc = sp.Popen(['swim',self.ww],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+    swim_stdout, swim_stderr = swim_proc.communicate(swim_script)
+
 
     # Note: decode bytes if universal_newlines=False in Popen
     #swim_stdout = swim_stdout.decode('utf-8')
     #swim_stderr = swim_stderr.decode('utf-8')
+    print('swim output: \n\n' + swim_stdout + '\n')
 
-    toks = swim_stdout.split()
-    print('swim output: \n  ' + swim_stdout)
-    snr = float(toks[0][0:-1])
-    dx = float(toks[8][1:])
-    dy = float(toks[9])
-    warp_matrix[0,2]=dx
-    warp_matrix[1,2]=dy
-    print('%s : swim match:  SNR: %g  dX: %g  dY: %g' % (im_fn, snr, dx, dy))
-    print(warp_matrix)
+    self.set_swim_results(swim_stdout,swim_stderr)
+
+
+  def set_swim_results(self,swim_stdout,swim_stderr):
+    
+    toks = swim_stdout.replace('(',' ').replace(')',' ').strip().split()
+
+    self.snr = float(toks[0][0:-1])
+    self.base_x = float(toks[2])
+    self.base_y = float(toks[3])
+    self.adjust_x = float(toks[5])
+    self.adjust_y = float(toks[6])
+    self.dx = float(toks[8])
+    self.dy = float(toks[9])
+    self.m0 = float(toks[10])
+    self.flags = None
+    if len(toks)>11:
+      self.flags = toks[11:]  # Note flags: will be a str or list of strs
+
+#    warp_matrix[0,2]=dx
+#    warp_matrix[1,2]=dy
+    print('%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
+    pass
+
+
+
+class swim_image_pair:
+
+  def __init__(self,ww,im_base,im_adjust,iters='2',whiten='-0.65',offset_x='0',offset_y='0',keep=None,base_x=None,base_y=None,adjust_x=None,adjust_y=None,rota=None,afm=None):
+    self.swim_request_list=[]
+    self.ww = ww
+    self.im_base = im_base
+    self.im_adjust = im_adjust
+    self.add_swim_request(iters=iters,whiten=whiten,offset_x=offset_x,offset_y=offset_y,keep=keep,base_x=base_x,base_y=base_y,adjust_x=adjust_x,adjust_y=adjust_y,rota=rota,afm=afm)
+
+
+  def add_swim_request(self,iters='2',whiten='-0.65',offset_x='0',offset_y='0',keep=None,base_x=None,base_y=None,adjust_x=None,adjust_y=None,rota=None,afm=None):
+
+    self.swim_request_list.append(swim_request(self.ww,self.im_base,self.im_adjust,iters=iters,whiten=whiten,offset_x=offset_x,offset_y=offset_y,keep=keep,base_x=base_x,base_y=base_y,adjust_x=adjust_x,adjust_y=adjust_y,rota=rota,afm=afm))
+    
 
   def run_swim(self):
-    swim_log = sp.run([swim_cmd],shell=True,stdout=sp.PIPE,stderr=sp.PIPE)
-    self.swim_stdout = swim_log.stdout.decode('utf-8')
-    self.swim_stderr = swim_log.stdout.decode('utf-8')
-    toks = self.swim_stdout.split()
-    print('swim output: \n  ' + self.swim_stdout)
-    self.snr = float(toks[0][0:-1])
-    self.dx = float(toks[8][1:])
-    self.dy = float(toks[9])
-    self.rot = float(toks[10])
+    swim_script = ''
+    for swim_request_item in self.swim_request_list:
+      swim_script += '%s\n' % (swim_request_item.swim_request_string)
+    print('swim_script:\n\n' + swim_script + '\n')
+
+    swim_proc = sp.Popen(['swim',self.ww],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+    swim_stdout, swim_stderr = swim_proc.communicate(swim_script)
+
+    # Note: decode bytes if universal_newlines=False in Popen
+    #swim_stdout = swim_stdout.decode('utf-8')
+    #swim_stderr = swim_stderr.decode('utf-8')
+    print('swim output: \n\n' + swim_stdout + '\n')
+
+    swim_stdout_lines = swim_stdout.splitlines()
+    for i in range(len(self.swim_request_list)):
+      swim_request_item = self.swim_request_list[i]
+      swim_request_item.set_swim_results(swim_stdout_lines[i],swim_stderr)
     
-    
 
-# get list of jpeg images to be aligned:
-im_dir_input = './linear_jpgs/'
-im_dir_input = './linear_jpgs/'
-jpg_files = sorted(glob.glob(im_dir_input + '*.jpg'))
-
-# choose base image for alignment
-base_im = 0
-im0_fn = jpg_files.pop(base_im)
-png_file = './linear_pngs/' + os.path.splitext(os.path.split(im0_fn)[1])[0] + '.png'
-im0 = cv2.imread(png_file,cv2.IMREAD_UNCHANGED)
-
-png_file_aligned = './aligned_pngs/' + os.path.splitext(os.path.split(im0_fn)[1])[0] + '.png'
-cv2.imwrite(png_file_aligned,im0)
-
-# Find size of image1
-sz = im0.shape
-print('\naligning to image: ' + im0_fn)
-print('image size: ' + str(sz))
-
-swim_cmd_template = 'swim 4000 -i 2 -w -0.61 -k keep.JPG %s %s' 
-warp_matrix = np.eye(2, 3, dtype=np.float32)
-
-for im_fn in jpg_files:
-  swim_cmd = swim_cmd_template % (im0_fn,im_fn)
-  swim_log = sp.run([swim_cmd],shell=True,stdout=sp.PIPE,stderr=sp.PIPE)
-  swim_stdout = swim_log.stdout.decode('utf-8')
-  swim_stderr = swim_log.stdout.decode('utf-8')
-  toks = swim_stdout.split()
-  print('swim output: \n  ' + swim_stdout)
-  snr = float(toks[0][0:-1])
-  dx = float(toks[8][1:])
-  dy = float(toks[9])
-  warp_matrix[0,2]=dx
-  warp_matrix[1,2]=dy
-  print('%s : swim match:  SNR: %g  dX: %g  dY: %g' % (im_fn, snr, dx, dy))
-  print(warp_matrix)
-  png_file = './linear_pngs/' + os.path.splitext(os.path.split(im_fn)[1])[0] + '.png'
-  png_file_aligned = './aligned_pngs/' + os.path.splitext(os.path.split(im_fn)[1])[0] + '.png'
-  im2 =  cv2.imread(png_file,cv2.IMREAD_UNCHANGED)
-  im2_aligned = cv2.warpAffine(im2, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
-  print('writing aligned image: %s' % (png_file_aligned))
-  cv2.imwrite(png_file_aligned,im2_aligned)
-
-exit(0)
+def run_swim_requests(swim_requests):
+  for req in swim_requests:
+    req.run_swim()
 
 
-tiff_file = './aligned_tiffs/' + os.path.splitext(os.path.split(im1_fn)[1])[0] + '.tiff'
-cv2.imwrite(tiff_file,im1)
- 
-# Convert 16bit color images to 8bit grayscale
-im1_gray = (cv2.cvtColor(im1,cv2.COLOR_BGR2GRAY)/256.).astype('uint8')
- 
-# Find size of image1
-sz = im1.shape
-print('aligning to image: ' + tiff_file)
-print('image size: ' + str(sz))
- 
-# Define the motion model
-warp_mode = cv2.MOTION_TRANSLATION
- 
-# Define 2x3 or 3x3 matrices and initialize the matrix to identity
-if warp_mode == cv2.MOTION_HOMOGRAPHY :
-    warp_matrix = np.eye(3, 3, dtype=np.float32)
-else :
-    warp_matrix = np.eye(2, 3, dtype=np.float32)
- 
-# Specify the number of iterations.
-number_of_iterations = 10000;
- 
-# Specify the threshold of the increment
-# in the correlation coefficient between two iterations
-termination_eps = 1e-10;
- 
-# Define termination criteria
-criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, number_of_iterations,  termination_eps)
- 
+swim_test = swim_image_pair('256','test_im_1.jpg','test_im_2.jpg')
+swim_test.run_swim()
 
-for im2_fn in tiff_files:
-  print('Aligning image: %s' % (im2_fn))
-  im2 =  cv2.imread(im2_fn,cv2.IMREAD_UNCHANGED)
-  im2_gray = (cv2.cvtColor(im2,cv2.COLOR_BGR2GRAY)/256.).astype('uint8')
+swim_requests = []
+swim_requests.append(swim_request('256','test_im_1.jpg','test_im_2.jpg'))
+swim_requests.append(swim_request('256','test_im_2.jpg','test_im_1.jpg'))
+swim_requests.append(swim_request('256','test_im_1.jpg','test_im_1.jpg'))
+run_swim_requests(swim_requests)
 
-  # Run the ECC algorithm. The results are stored in warp_matrix.
-  (cc, warp_matrix) = cv2.findTransformECC (im1_gray, im2_gray, warp_matrix, warp_mode, criteria)
- 
-  if warp_mode == cv2.MOTION_HOMOGRAPHY :
-    # Use warpPerspective for Homography 
-    im2_aligned = cv2.warpPerspective (im2, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP)
-  else :
-    # Use warpAffine for Translation, Euclidean and Affine
-    im2_aligned = cv2.warpAffine(im2, warp_matrix, (sz[1],sz[0]), flags=cv2.INTER_LINEAR + cv2.WARP_INVERSE_MAP);
- 
-  # Show final results
-  #cv2.namedWindow("Image 1", cv2.WINDOW_NORMAL)
-  #cv2.namedWindow("Image 2", cv2.WINDOW_NORMAL)
-  #cv2.namedWindow("Aligned Image 2", cv2.WINDOW_NORMAL)
-  #cv2.imshow("Image 1", im1)
-  #cv2.imshow("Image 2", im2)
-  #cv2.imshow("Aligned Image 2", im2_aligned)
-  #cv2.waitKey(0)
-
-  tiff_file = './aligned_tiffs/' + os.path.splitext(os.path.split(im2_fn)[1])[0] + '.tiff'
-
-  cv2.imwrite(tiff_file,im2_aligned)
+align_test = align_image_pair_recipe('test_im_1.jpg','test_im_2.jpg')
+align_test.mir_get_affine(swim_requests)
 
