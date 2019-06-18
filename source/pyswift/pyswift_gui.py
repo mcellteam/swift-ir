@@ -14,6 +14,32 @@ import app_window
 global zpa_original
 global zpa_aligned
 
+global alignment_list
+alignment_list = []
+global alignment_index
+alignment_index = -1
+
+global destination_path
+
+
+class alignment:
+  def __init__ ( self, base=None, adjust=None ):
+    print ( "Constructing new alignment with base " + base )
+    self.base_image_name = base
+    self.adjust_image_name = adjust
+    self.base_image = None
+    self.adjust_image = None
+    try:
+      #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
+      self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
+    except:
+      print ( "Got an exception reading the base image " + str(self.base_image_name) )
+    #try:
+    #  self.adjust_image = gtk.gdk.pixbuf_new_from_file ( self.adjust_image_name )
+    #except:
+    #  print ( "Got an exception reading the adjust image " + str(self.adjust_image_name) )
+
+
 class zoom_window ( app_window.zoom_pan_area ):
   def __init__ ( self, window, win_width, win_height, name="" ):
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
@@ -25,8 +51,26 @@ class zoom_window ( app_window.zoom_pan_area ):
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
     else:
       # Use normal (unshifted) scroll wheel to move through the stack
-      print ( "Moving through the stack" )
+      global alignment_list
+      global alignment_index
+      print ( "Moving through the stack with alignment_index = " + str(alignment_index) )
+      if len(alignment_list) <= 0:
+        alignment_index = -1
+        print ( "Index = " + str(alignment_index) )
+      else:
+        if event.direction == gtk.gdk.SCROLL_UP:
+          alignment_index += 1
+          if alignment_index >= len(alignment_list):
+            alignment_index =  len(alignment_list)-1
+        elif event.direction == gtk.gdk.SCROLL_DOWN:
+          alignment_index += -1
+          if alignment_index < 0:
+            alignment_index = 0
+        print ( "Index = " + str(alignment_index) + ", base_name = " + alignment_list[alignment_index].base_image_name )
+      zpa_original.queue_draw()
+      zpa_aligned.queue_draw()
       return True
+
 
 def expose_callback ( drawing_area, event, zpa ):
   diff_2d_sim = zpa.user_data['diff_2d_sim']
@@ -45,7 +89,78 @@ def expose_callback ( drawing_area, event, zpa ):
   # Draw the current state referenced by display_time_index
   t = 0
 
-  if zpa.user_data['image_frame']:
+  global alignment_list
+  global alignment_index
+
+  print ( "Painting with len(alignment_list) = " + str(len(alignment_list)) )
+
+  pix_buf = None
+  if len(alignment_list) > 0:
+    pix_buf = alignment_list[alignment_index].base_image
+
+  #if zpa.user_data['image_frame']:
+  #  pix_buf = zpa.user_data['image_frame']
+
+  if pix_buf != None:
+    pbw = pix_buf.get_width()
+    pbh = pix_buf.get_height()
+    scale_w = zpa.ww(pbw) / pbw
+    scale_h = zpa.wh(pbh) / pbh
+    ##scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_BILINEAR )
+    #scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
+    #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+
+    #(dw,dh) = drawable.get_size()
+    #pbcs = pix_buf.get_colorspace()
+    # dest_pm = gtk.gdk.Pixmap ( drawable, dw, dh )
+    #dest = gtk.gdk.Pixbuf ( pbcs, False, drawable.get_depth(), dw, dh )
+    #dest = gtk.gdk.Pixbuf ( pbcs, False, 8, dw, dh )  # For some reason the depth seems to have to be 8
+    #pix_buf.scale(dest, 0, 0, 10, 10, 0, 0, 1, 1, gtk.gdk.INTERP_NEAREST)
+    #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+
+    #gtk.gdk
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    # Note: The Java code scales the image as it is drawn and doesn't create large images as is done here.
+    #       However, the Python call ("gdk_draw_pixbuf") doesn't provide a scaling term (see call below).
+    #
+    #   The scale_simple call can create huge images that quickly overwhelm the available memory.
+    #   This code should be re-written to scale only the portion of the image to actually be rendered.
+    #
+    #   It should likely use "scale" rather than "scale_simple":
+    #     (from https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html#gdk-pixbuf-scale-simple)
+    #
+    #      gdk_pixbuf_scale_simple (const GdkPixbuf *src,  // a GdkPixbuf - in Python, this is the object itself
+    #                        int dest_width,               // the width of the region to render
+    #                        int dest_height,              // the height of the region to render
+    #                        GdkInterpType interp_type);   // the interpolation type for the transformation.
+    #
+    #      gdk_pixbuf_scale (const GdkPixbuf *src,   // a GdkPixbuf - in Python, this is the object itself
+    #                        GdkPixbuf *dest,        // the GdkPixbuf into which to render the results
+    #                        int dest_x,             // the left coordinate for region to render
+    #                        int dest_y,             // the top coordinate for region to render
+    #                        int dest_width,         // the width of the region to render
+    #                        int dest_height,        // the height of the region to render
+    #                        double offset_x,        // the offset in the X direction (currently rounded to an integer)
+    #                        double offset_y,        // the offset in the Y direction (currently rounded to an integer)
+    #                        double scale_x,         // the scale factor in the X direction
+    #                        double scale_y,         // the scale factor in the Y direction
+    #                        GdkInterpType interp_type); // the interpolation type for the transformation.
+    #
+    #      (from https://developer.gnome.org/gdk2/stable/gdk2-Drawing-Primitives.html#gdk-draw-pixbuf)
+    #      gdk_draw_pixbuf (GdkDrawable *drawable,   // a GdkDrawable - in Python, this is the drawable object itself
+    #                       GdkGC *gc,               // a GdkGC, used for clipping, or NULL. 
+    #                       const GdkPixbuf *pixbuf, // a GdkPixbuf
+    #                       gint src_x,              // Source X coordinate within pixbuf.
+    #                       gint src_y,              // Source Y coordinates within pixbuf.
+    #                       gint dest_x,             // Destination X coordinate within drawable.
+    #                       gint dest_y,             // Destination Y coordinate within drawable.
+    #                       gint width,              // Width of region to render, in pixels, or -1 to use pixbuf width.
+    #                       gint height,             // Height of region to render, in pixels, or -1 to use pixbuf height.
+    #                       GdkRgbDither dither,     // Dithering mode for GdkRGB.
+    #                       gint x_dither,           // X offset for dither.
+    #                       gint y_dither);          // Y offset for dither.
 
     """
     def draw_pixbuf(gc, pixbuf, src_x, src_y, dest_x, dest_y, width=-1, height=-1, dither=gtk.gdk.RGB_DITHER_NORMAL, x_dither=0, y_dither=0)
@@ -109,66 +224,6 @@ def expose_callback ( drawing_area, event, zpa ):
           scale_y      the scale factor in the Y direction
           interp_type  the interpolation type for the transformation.
     """
-    pix_buf = zpa.user_data['image_frame']
-    pbw = pix_buf.get_width()
-    pbh = pix_buf.get_height()
-    scale_w = zpa.ww(pbw) / pbw
-    scale_h = zpa.wh(pbh) / pbh
-    ##scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_BILINEAR )
-    #scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
-    #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-
-    #(dw,dh) = drawable.get_size()
-    #pbcs = pix_buf.get_colorspace()
-    # dest_pm = gtk.gdk.Pixmap ( drawable, dw, dh )
-    #dest = gtk.gdk.Pixbuf ( pbcs, False, drawable.get_depth(), dw, dh )
-    #dest = gtk.gdk.Pixbuf ( pbcs, False, 8, dw, dh )  # For some reason the depth seems to have to be 8
-    #pix_buf.scale(dest, 0, 0, 10, 10, 0, 0, 1, 1, gtk.gdk.INTERP_NEAREST)
-    #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-
-    #gtk.gdk
-
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    # Note: The Java code scales the image as it is drawn and doesn't create large images as is done here.
-    #       However, the Python call ("gdk_draw_pixbuf") doesn't provide a scaling term (see call below).
-    #
-    #   The scale_simple call can create huge images that quickly overwhelm the available memory.
-    #   This code should be re-written to scale only the portion of the image to actually be rendered.
-    #
-    #   It should likely use "scale" rather than "scale_simple":
-    #     (from https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html#gdk-pixbuf-scale-simple)
-    #
-    #      gdk_pixbuf_scale_simple (const GdkPixbuf *src,  // a GdkPixbuf - in Python, this is the object itself
-    #                        int dest_width,               // the width of the region to render
-    #                        int dest_height,              // the height of the region to render
-    #                        GdkInterpType interp_type);   // the interpolation type for the transformation.
-    #
-    #      gdk_pixbuf_scale (const GdkPixbuf *src,   // a GdkPixbuf - in Python, this is the object itself
-    #                        GdkPixbuf *dest,        // the GdkPixbuf into which to render the results
-    #                        int dest_x,             // the left coordinate for region to render
-    #                        int dest_y,             // the top coordinate for region to render
-    #                        int dest_width,         // the width of the region to render
-    #                        int dest_height,        // the height of the region to render
-    #                        double offset_x,        // the offset in the X direction (currently rounded to an integer)
-    #                        double offset_y,        // the offset in the Y direction (currently rounded to an integer)
-    #                        double scale_x,         // the scale factor in the X direction
-    #                        double scale_y,         // the scale factor in the Y direction
-    #                        GdkInterpType interp_type); // the interpolation type for the transformation.
-    #
-    #      (from https://developer.gnome.org/gdk2/stable/gdk2-Drawing-Primitives.html#gdk-draw-pixbuf)
-    #      gdk_draw_pixbuf (GdkDrawable *drawable,   // a GdkDrawable - in Python, this is the drawable object itself
-    #                       GdkGC *gc,               // a GdkGC, used for clipping, or NULL. 
-    #                       const GdkPixbuf *pixbuf, // a GdkPixbuf
-    #                       gint src_x,              // Source X coordinate within pixbuf.
-    #                       gint src_y,              // Source Y coordinates within pixbuf.
-    #                       gint dest_x,             // Destination X coordinate within drawable.
-    #                       gint dest_y,             // Destination Y coordinate within drawable.
-    #                       gint width,              // Width of region to render, in pixels, or -1 to use pixbuf width.
-    #                       gint height,             // Height of region to render, in pixels, or -1 to use pixbuf height.
-    #                       GdkRgbDither dither,     // Dithering mode for GdkRGB.
-    #                       gint x_dither,           // X offset for dither.
-    #                       gint y_dither);          // Y offset for dither.
 
     scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
     drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
@@ -265,16 +320,15 @@ def menu_callback ( widget, data=None ):
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
     elif command == "SetDest":
-      file_chooser = gtk.FileChooserDialog(title="Select Images", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+      file_chooser = gtk.FileChooserDialog(title="Select Destination Directory", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
+		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
       file_chooser.set_select_multiple(False)
       file_chooser.set_default_response(gtk.RESPONSE_OK)
       response = file_chooser.run()
       if response == gtk.RESPONSE_OK:
-        file_name_list = file_chooser.get_filename()
-        print ( "Selected Directory: " + str(file_name_list) )
-        #filename = file_chooser.get_filename()
-        #file_chooser.destroy()
+        global destination_path
+        destination_path = file_chooser.get_filename()
+        print ( "Selected Directory: " + str(destination_path) )
 
       file_chooser.destroy()
       print ( "Done with dialog" )
@@ -306,13 +360,27 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         file_name_list = file_chooser.get_filenames()
         print ( "Selected Files: " + str(file_name_list) )
-        #filename = file_chooser.get_filename()
-        #file_chooser.destroy()
+        global alignment_list
+        # alignment_list = []
+        for f in file_name_list:
+          a = alignment ( f, None )
+          alignment_list.append ( a )
 
       file_chooser.destroy()
       print ( "Done with dialog" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
+
+    elif command == "ClearAll":
+
+      global zpa_original
+      global zpa_aligned
+      global alignment_list
+      global alignment_index
+      alignment_index = 0
+      alignment_list = []
+      zpa_original.queue_draw()
+      zpa_aligned.queue_draw()
 
     elif command == "LimScroll":
       zpa_original.max_zoom_count = 10
@@ -325,6 +393,10 @@ def menu_callback ( widget, data=None ):
       zpa_original.min_zoom_count = -150
       zpa_aligned.max_zoom_count = 100
       zpa_aligned.min_zoom_count = -150
+
+    elif command == "Debug":
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      zpa.queue_draw()
 
     elif command == "Exit":
       get_exit = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Exit?")
@@ -477,6 +549,7 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa_original.add_menu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
+    zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
