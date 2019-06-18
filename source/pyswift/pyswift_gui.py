@@ -44,6 +44,26 @@ class zoom_window ( app_window.zoom_pan_area ):
   def __init__ ( self, window, win_width, win_height, name="" ):
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
+    #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+
+  def button_press_callback ( self, canvas, event, zpa ):
+    # print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+    if 'GDK_SHIFT_MASK' in event.get_state().value_names:
+      # Do special processing
+      # Print the mouse location in screen coordinates:
+      print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+      # Print the mouse location in image coordinates:
+      print ( "pyswift_gui:   Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+      # return ( app_window.zoom_pan_area.button_press_callback ( self, canvas, event, zpa ) )
+      return True # Event has been handled
+    else:
+      # Call the parent's function to handle the click
+      return ( app_window.zoom_pan_area.button_press_callback ( self, canvas, event, zpa ) )
+    return True  # Event has been handled, do not propagate further
+
+  def button_release_callback ( self, canvas, event, zpa ):
+    #print ( "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+    return ( app_window.zoom_pan_area.button_release_callback ( self, canvas, event, zpa ) )
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
@@ -261,17 +281,24 @@ def background_callback ( zpa ):
   if zpa.user_data['running']:
     t = time.time()
     if t - zpa.user_data['last_update'] > zpa.user_data['frame_delay']:
-      zpa.user_data['last_update'] = t
-      step_callback(zpa)
+      #zpa.user_data['last_update'] = t
+      #step_callback(zpa)
       print ( "  Running at time = " + str(t) )
-      zpa.queue_draw()
+      #zpa.queue_draw()
   return True
 
 import pyswim
+import thread
 
 def run_callback ( zpa ):
   # print ( "Run " )
-  zpa.user_data['running'] = True
+  # zpa.user_data['running'] = True
+  print ( "Starting a thread" )
+  try:
+    thread.start_new_thread ( pyswim.do_alignment, ("data",5,) )
+  except:
+    print ( "Unable to start thread" )
+  print ( "Done starting a thread" )
   return True
 
 def stop_callback ( zpa ):
