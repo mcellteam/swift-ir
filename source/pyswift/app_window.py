@@ -64,8 +64,8 @@ class zoom_pan_area:
     # self.drawing_area.connect ( "expose_event", expose_callback, self )
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
     self.drawing_area.connect ( "key_press_event", key_press_callback, self )
-    self.drawing_area.connect ( "button_press_event", button_press_callback, self )
-    self.drawing_area.connect ( "button_release_event", button_release_callback, self )
+    self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+    self.drawing_area.connect ( "button_release_event", self.button_release_callback, self )
     self.drawing_area.connect ( "motion_notify_event", mouse_motion_callback, self )
 
     self.drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
@@ -229,28 +229,28 @@ class zoom_pan_area:
     return True  # Event has been handled, do not propagate further
 
 
-def button_press_callback ( widget, event, zpa ):
-  # print ( "A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-  if event.button == 1:
-    #print ( "event.x = " + str(event.x) )
-    zpa.last_x = event.x
-    zpa.last_y = event.y
-    zpa.dragging = True
-  widget.queue_draw()
-  return True  # Event has been handled, do not propagate further
+  def button_press_callback ( self, widget, event, zpa ):
+    # print ( "A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+    if event.button == 1:
+      #print ( "event.x = " + str(event.x) )
+      zpa.last_x = event.x
+      zpa.last_y = event.y
+      zpa.dragging = True
+    widget.queue_draw()
+    return True  # Event has been handled, do not propagate further
 
 
-def button_release_callback ( widget, event, zpa ):
-  # print ( "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-  if event.button == 1:
-    print ( "event.x = " + str(event.x) )
-    zpa.x_offset += (event.x - zpa.last_x)
-    zpa.y_offset += (event.y - zpa.last_y)
-    zpa.last_x = event.x
-    zpa.last_y = event.y
-    zpa.dragging = False
-  widget.queue_draw()
-  return True  # Event has been handled, do not propagate further
+  def button_release_callback ( self, widget, event, zpa ):
+    # print ( "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+    if event.button == 1:
+      print ( "event.x = " + str(event.x) )
+      zpa.x_offset += (event.x - zpa.last_x)
+      zpa.y_offset += (event.y - zpa.last_y)
+      zpa.last_x = event.x
+      zpa.last_y = event.y
+      zpa.dragging = False
+    widget.queue_draw()
+    return True  # Event has been handled, do not propagate further
 
 
 def mouse_motion_callback ( canvas, event, zpa ):
