@@ -49,14 +49,6 @@ pygtk.require('2.0')
 import gobject
 import gtk
 
-# There was no way to pass the zoom/pan window
-# into the mouse scroll callback. So it was made
-# global here.  : (
-global_zpaL = None
-global_zpaR = None
-
-global_daL = None
-global_daR = None
 
 class zoom_pan_area:
 
@@ -70,11 +62,11 @@ class zoom_pan_area:
     self.drawing_area.set_size_request(win_width,win_height)
 
     # self.drawing_area.connect ( "expose_event", expose_callback, self )
-    self.drawing_area.connect ( "scroll_event", mouse_scroll_callback )
-    self.drawing_area.connect ( "key_press_event", key_press_callback )
-    self.drawing_area.connect ( "button_press_event", button_press_callback )
-    self.drawing_area.connect ( "button_release_event", button_release_callback )
-    self.drawing_area.connect ( "motion_notify_event", mouse_motion_callback )
+    self.drawing_area.connect ( "scroll_event", mouse_scroll_callback, self )
+    self.drawing_area.connect ( "key_press_event", key_press_callback, self )
+    self.drawing_area.connect ( "button_press_event", button_press_callback, self )
+    self.drawing_area.connect ( "button_release_event", button_release_callback, self )
+    self.drawing_area.connect ( "motion_notify_event", mouse_motion_callback, self )
 
     self.drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
                                  | gtk.gdk.ENTER_NOTIFY_MASK
@@ -90,17 +82,6 @@ class zoom_pan_area:
     
     self.user_data = None
 
-    global global_zpaL
-    global global_zpaR
-    global global_daR
-    global global_daL
-    if global_zpaL == None:
-      global_zpaL = self
-      global_daL = self.drawing_area
-    elif global_zpaR == None:
-      global_zpaR = self
-      global_daR = self.drawing_area
-
   def set_defaults ( self ):
     self.x_offset = self.reset_x_offset = 0.0
     self.y_offset = self.reset_y_offset = 0.0
@@ -113,6 +94,8 @@ class zoom_pan_area:
     self.dragging = False
     self.last_x = 0
     self.last_y = 0
+    self.max_zoom_count = 10
+    self.min_zoom_count = -15
 
   def reset_view ( self ):
     #self.set_defaults()
@@ -185,10 +168,10 @@ class zoom_pan_area:
     # Perform the zoom by changing the zoom scale
     self.scroll_count += zoom_delta
     #### Limit for now until image drawing can be optimized for large zooms:
-    if self.scroll_count > 10:
-      self.scroll_count = 10
-    if self.scroll_count < -15:
-      self.scroll_count = -15
+    if self.scroll_count > self.max_zoom_count:
+      self.scroll_count = self.max_zoom_count
+    if self.scroll_count < self.min_zoom_count:
+      self.scroll_count = self.min_zoom_count
     self.zoom_scale = pow (self.scroll_factor, self.scroll_count)
     # Get the new window coordinates of the previously saved user space location
     win_x_after_zoom = self.wx ( user_x_at_zoom )
@@ -223,21 +206,13 @@ class zoom_pan_area:
 
 
 
-def mouse_scroll_callback ( canvas, event ):
-  global global_zpaL
-  global global_zpaR
-  global global_daR
+def mouse_scroll_callback ( canvas, event, zpa ):
   # print ( "Mouse Scroll: " + str(canvas) + " event at (" + str() + "," + str(event.y) + ") : " + str(event) )
-  global_zpa = global_zpaL
-  #print ( "event.x = " + str(event.x) )
-  #__import__('code').interact(local = locals())
-  if canvas == global_daR:
-    global_zpa = global_zpaR
   if event.direction == gtk.gdk.SCROLL_UP:
-    global_zpa.zoom_at_point (  1, event.x, event.y )
+    zpa.zoom_at_point (  1, event.x, event.y )
     # print ( "Mouse scrolled up = zoom in (make everything larger)" )
   elif event.direction == gtk.gdk.SCROLL_DOWN:
-    global_zpa.zoom_at_point ( -1, event.x, event.y )
+    zpa.zoom_at_point ( -1, event.x, event.y )
     # print ( "Mouse scrolled down = zoom out (make everything smaller)" )
   elif event.direction == gtk.gdk.SCROLL_LEFT:
     pass
@@ -249,52 +224,37 @@ def mouse_scroll_callback ( canvas, event ):
     pass
     # print ( "Mouse scrolled other?" )
 
-  global_zpa.drawing_area.queue_draw()
+  zpa.drawing_area.queue_draw()
 
   return True  # Event has been handled, do not propagate further
 
 
-def button_press_callback ( widget, event ):
-  global global_zpaL
-  global global_zpaR
-  global global_daR
+def button_press_callback ( widget, event, zpa ):
   # print ( "A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
   if event.button == 1:
     #print ( "event.x = " + str(event.x) )
-    global_zpa = global_zpaL
-    if widget == global_daR:
-      global_zpa = global_zpaR
-    global_zpa.last_x = event.x
-    global_zpa.last_y = event.y
-    global_zpa.dragging = True
+    zpa.last_x = event.x
+    zpa.last_y = event.y
+    zpa.dragging = True
   widget.queue_draw()
   return True  # Event has been handled, do not propagate further
 
 
-def button_release_callback ( widget, event ):
-  global global_zpaL
-  global global_zpaR
-  global global_daR
+def button_release_callback ( widget, event, zpa ):
   # print ( "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
   if event.button == 1:
     print ( "event.x = " + str(event.x) )
-    global_zpa = global_zpaL
-    if widget == global_daR:
-      global_zpa = global_zpaR
-    global_zpa.x_offset += (event.x - global_zpa.last_x)
-    global_zpa.y_offset += (event.y - global_zpa.last_y)
-    global_zpa.last_x = event.x
-    global_zpa.last_y = event.y
-    global_zpa.dragging = False
+    zpa.x_offset += (event.x - zpa.last_x)
+    zpa.y_offset += (event.y - zpa.last_y)
+    zpa.last_x = event.x
+    zpa.last_y = event.y
+    zpa.dragging = False
   widget.queue_draw()
   return True  # Event has been handled, do not propagate further
 
 
-def mouse_motion_callback ( canvas, event ):
+def mouse_motion_callback ( canvas, event, zpa ):
   # width, height = canvas.window.get_size()
-  global global_zpaL
-  global global_zpaR
-  global global_daR
   if event.state == 0:
     #print ( "Hover: x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     pass
@@ -302,46 +262,37 @@ def mouse_motion_callback ( canvas, event ):
     #print ( "Drag:  x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     #__import__('code').interact(local = locals())
     #print ( "event.x = " + str(event.x) )
-    global_zpa = global_zpaL
-    if canvas == global_daR:
-      global_zpa = global_zpaR
-    global_zpa.x_offset += (event.x - global_zpa.last_x)
-    global_zpa.y_offset += (event.y - global_zpa.last_y)
-    global_zpa.last_x = event.x
-    global_zpa.last_y = event.y
+    zpa.x_offset += (event.x - zpa.last_x)
+    zpa.y_offset += (event.y - zpa.last_y)
+    zpa.last_x = event.x
+    zpa.last_y = event.y
     canvas.queue_draw()
 
   return False  # Event has been handled, do not propagate further
 
 
-def key_press_callback ( widget, event ):
+def key_press_callback ( widget, event, zpa ):
   print ( "Key press event: " + str(event.keyval) + " = " + str(event) )
   handled = False
   if event.type == gtk.gdk.KEY_PRESS:
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    global global_zpaL
-    global global_zpaR
-    global global_daR
     #print ( "event.x = " + str(event.x) )
-    global_zpa = global_zpaL
-    if widget == global_daR:
-      global_zpa = global_zpaR
     if event.keyval == 65363:  # Right arrow: increase the x offset
-      # print ("increasing offset from " + str(global_zpa.x_offset) )
-      global_zpa.x_offset += -10
-      # print ("                    to " + str(global_zpa.x_offset) )
+      # print ("increasing offset from " + str(zpa.x_offset) )
+      zpa.x_offset += -10
+      # print ("                    to " + str(zpa.x_offset) )
     if event.keyval == 65361:  # Left arrow: decrease the x offset
-      # print ("decreasing offset from " + str(global_zpa.x_offset) )
-      global_zpa.x_offset += 10
-      # print ("                    to " + str(global_zpa.x_offset) )
+      # print ("decreasing offset from " + str(zpa.x_offset) )
+      zpa.x_offset += 10
+      # print ("                    to " + str(zpa.x_offset) )
     if event.keyval == 65362:  # Up arrow: increase the y offset
-      # print ("increasing offset from " + str(global_zpa.y_offset) )
-      global_zpa.y_offset += 10
-      # print ("                    to " + str(global_zpa.y_offset) )
+      # print ("increasing offset from " + str(zpa.y_offset) )
+      zpa.y_offset += 10
+      # print ("                    to " + str(zpa.y_offset) )
     if event.keyval == 65364:  # Down arrow: decrease the y offset
-      # print ("decreasing offset from " + str(global_zpa.y_offset) )
-      global_zpa.y_offset += -10
-      # print ("                    to " + str(global_zpa.y_offset) )
+      # print ("decreasing offset from " + str(zpa.y_offset) )
+      zpa.y_offset += -10
+      # print ("                    to " + str(zpa.y_offset) )
     widget.queue_draw()
     handled = True  # Event has been handled, do not propagate further
   return handled
