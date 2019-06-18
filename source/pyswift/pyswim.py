@@ -1,39 +1,9 @@
 #!/usr/bin/env python3
 
+#### Comments with UNICODE characters were removed to work in Python 2.7
+
 import numpy as np
 import subprocess as sp
-
-
-'''
-  Note:
-  swim outputs a line of the form
-
-  SNR: target xtgt ytgt source xsrc ysrc φsrc (Δx Δy m0 flags)
-
-  Here:
-
-SNR
-  is the signal to noise value of the match.
-target
-  is the file name of the target image copied from the command line
-xtgt ytgt
-  are the coordinates of ptgt modified by the -x and -y command line options.
-source
-  is the file name of the source image copied from the command line
-xsrc ysrc
-  are the optimized coordinates of psrc that match ptgt.
-φsrc
-  is the optimized rotation.
-
-Information in parentheses is somewhat redundant. Δx and Δy are the pixel
-shifts applied to psrc and m0 := √(Δx2 + Δy2). The flags can indicate bad
-matches in x (“dx”), in y (“dy”), in both (“dxy”) if any shift is greater than
-a quarter of the window size. It can also indicate that a threshold has been
-exceeded (“dreset”)
-
-'''
-
-
 
 class align_image_pair_recipe():
 
@@ -185,15 +155,25 @@ def run_swim_requests(swim_requests):
     req.run_swim()
 
 
-swim_test = swim_image_pair('256','test_im_1.jpg','test_im_2.jpg')
-swim_test.run_swim()
+# The following stub was used to test with concurrent processing in swift_gui.py
 
-swim_requests = []
-swim_requests.append(swim_request('256','test_im_1.jpg','test_im_2.jpg'))
-swim_requests.append(swim_request('256','test_im_2.jpg','test_im_1.jpg'))
-swim_requests.append(swim_request('256','test_im_1.jpg','test_im_1.jpg'))
-run_swim_requests(swim_requests)
+def do_alignment ( swim_command_structure_of_some_kind ):
+  print ( "running a swim_command" )
 
-align_test = align_image_pair_recipe('test_im_1.jpg','test_im_2.jpg')
-align_test.mir_get_affine(swim_requests)
+
+# The following test code was sheltered from execution during import
+
+if __name__ == "__main__":
+
+  swim_test = swim_image_pair('256','test_im_1.jpg','test_im_2.jpg')
+  swim_test.run_swim()
+
+  swim_requests = []
+  swim_requests.append(swim_request('256','test_im_1.jpg','test_im_2.jpg'))
+  swim_requests.append(swim_request('256','test_im_2.jpg','test_im_1.jpg'))
+  swim_requests.append(swim_request('256','test_im_1.jpg','test_im_1.jpg'))
+  run_swim_requests(swim_requests)
+
+  align_test = align_image_pair_recipe('test_im_1.jpg','test_im_2.jpg')
+  align_test.mir_get_affine(swim_requests)
 
