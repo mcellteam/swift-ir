@@ -293,6 +293,12 @@ def stop_callback ( zpa ):
   zpa.user_data['running'] = False
   return True
 
+def affine_checked_callback ( zpa ):
+  print ( "Affine Checked " )
+  return True
+
+
+
 
 def menu_callback ( widget, data=None ):
   # Menu items will trigger this call
@@ -305,8 +311,13 @@ def menu_callback ( widget, data=None ):
     # Any tuple passed is assumed to be: (command, zpa)
     command = data[0]
     zpa = data[1]
+
     global zpa_original
     global zpa_aligned
+    global alignment_list
+    global alignment_index
+    global destination_path
+
     if command == "Fast":
       zpa.user_data['frame_delay'] = 0.01
     elif command == "Med":
@@ -326,7 +337,6 @@ def menu_callback ( widget, data=None ):
       file_chooser.set_default_response(gtk.RESPONSE_OK)
       response = file_chooser.run()
       if response == gtk.RESPONSE_OK:
-        global destination_path
         destination_path = file_chooser.get_filename()
         print ( "Selected Directory: " + str(destination_path) )
 
@@ -360,12 +370,10 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         file_name_list = file_chooser.get_filenames()
         print ( "Selected Files: " + str(file_name_list) )
-        global alignment_list
         # alignment_list = []
         for f in file_name_list:
           a = alignment ( f, None )
           alignment_list.append ( a )
-
       file_chooser.destroy()
       print ( "Done with dialog" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -373,14 +381,15 @@ def menu_callback ( widget, data=None ):
 
     elif command == "ClearAll":
 
-      global zpa_original
-      global zpa_aligned
-      global alignment_list
-      global alignment_index
-      alignment_index = 0
-      alignment_list = []
+      clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All?")
+      response = clear_all.run()
+      if response == gtk.RESPONSE_OK:
+        print ( "Clearing all images..." )
+        alignment_index = 0
+        alignment_list = []
       zpa_original.queue_draw()
       zpa_aligned.queue_draw()
+      clear_all.destroy()
 
     elif command == "LimScroll":
       zpa_original.max_zoom_count = 10
@@ -468,9 +477,9 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = zoom_window(window,600,600,"Python GTK version of SWiFT-GUI")
+  zpa_original = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
   global zpa_aligned
-  zpa_aligned = zoom_window(window,600,600,"Python GTK version of SWiFT-GUI")
+  zpa_aligned = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
@@ -579,8 +588,8 @@ def main():
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
   image_hbox.pack_start(original_drawing_area, True, True, 0)
-  # fake_out_panel = gtk.Button("Output")
   image_hbox.pack_start(aligned_drawing_area, True, True, 0)
+
   image_hbox.show()
   main_win_vbox.pack_start(image_hbox, True, True, 0)
   original_drawing_area.show()
@@ -605,37 +614,122 @@ def main():
                                    | gtk.gdk.POINTER_MOTION_MASK
                                    | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
-  # Create a horizontal box to hold application buttons
-  controls_hbox = gtk.HBox ( True, 0 )
+  # Create a Vertical box to hold rows of buttons
+  controls_vbox = gtk.VBox ( True, 10 )
+  controls_vbox.show()
+  main_win_vbox.pack_start ( controls_vbox, False, False, 0 )
+
+  # Add some rows of application specific controls and their callbacks
+
+  # Create a horizontal box to hold a row of controls
+  controls_hbox = gtk.HBox ( True, 10 )
   controls_hbox.show()
-  main_win_vbox.pack_start ( controls_hbox, False, False, 0 )
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
 
-  # Add some application specific buttons and their callbacks
+  button = gtk.Label("Translation Pass")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
 
-  step_button = gtk.Button("Step")
-  controls_hbox.pack_start ( step_button, True, True, 0 )
-  step_button.connect_object ( "clicked", step_callback, zpa_original )
-  step_button.show()
+  button = gtk.Button("WW")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
 
-  run_button = gtk.Button("Run")
-  controls_hbox.pack_start ( run_button, True, True, 0 )
-  run_button.connect_object ( "clicked", run_callback, zpa_original )
-  run_button.show()
+  button = gtk.Button("Addx")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
 
-  stop_button = gtk.Button("Stop")
-  controls_hbox.pack_start ( stop_button, True, True, 0 )
-  stop_button.connect_object ( "clicked", stop_callback, zpa_original )
-  stop_button.show()
+  button = gtk.Button("Addy")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
 
-  dump_button = gtk.Button("Dump")
-  controls_hbox.pack_start ( dump_button, True, True, 0 )
-  dump_button.connect_object ( "clicked", dump_callback, zpa_original )
-  dump_button.show()
+  button = gtk.Button("Skip")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
 
-  reset_button = gtk.Button("Reset")
-  controls_hbox.pack_start ( reset_button, True, True, 0 )
-  reset_button.connect_object ( "clicked", reset_callback, zpa_original )
-  reset_button.show()
+
+  # Create a horizontal box to hold a row of controls
+  controls_hbox = gtk.HBox ( True, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+
+  button = gtk.Label(" ")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.CheckMenuItem("  Affine Pass:")
+  button.set_active(True)
+  button.connect ( "toggled", affine_checked_callback, zpa_original )
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.Button("WW")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.Button("Addx")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.Button("Addy")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.Label(" ")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+
+  # Create a horizontal box to hold a row of controls
+  controls_hbox = gtk.HBox ( True, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+
+  button = gtk.Label(" ")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.CheckMenuItem("  Bias Pass:")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.Button("dx")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.Button("dy")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+  button = gtk.Label(" ")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.show()
+
+
+
+  # Create a horizontal box to hold a row of controls
+  controls_hbox = gtk.HBox ( True, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+
+  button = gtk.Button("Set All")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", step_callback, zpa_original )
+  button.show()
+
+  button = gtk.Button("Set Forward")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", run_callback, zpa_original )
+  button.show()
+
+  button = gtk.Button("Align All")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", stop_callback, zpa_original )
+  button.show()
+
+  button = gtk.Button("Align Forward")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", dump_callback, zpa_original )
+  button.show()
 
 
 
