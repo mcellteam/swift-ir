@@ -267,6 +267,8 @@ def background_callback ( zpa ):
       zpa.queue_draw()
   return True
 
+import pyswim
+
 def run_callback ( zpa ):
   # print ( "Run " )
   zpa.user_data['running'] = True
