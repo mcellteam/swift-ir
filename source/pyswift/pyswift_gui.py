@@ -14,6 +14,19 @@ import app_window
 global zpa_original
 global zpa_aligned
 
+class zoom_window ( app_window.zoom_pan_area ):
+  def __init__ ( self, window, win_width, win_height, name="" ):
+    app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
+    self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
+
+  def mouse_scroll_callback ( self, canvas, event, zpa ):
+    if 'GDK_SHIFT_MASK' in event.get_state().value_names:
+      # Use shifted scroll wheel to zoom the image size
+      return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
+    else:
+      # Use normal (unshifted) scroll wheel to move through the stack
+      return True
+
 def expose_callback ( drawing_area, event, zpa ):
   diff_2d_sim = zpa.user_data['diff_2d_sim']
   display_time_index = zpa.user_data['display_time_index']
@@ -164,6 +177,8 @@ def expose_callback ( drawing_area, event, zpa ):
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   gc.foreground = colormap.alloc_color(32767,32767,32767)
+  # Draw a separator between the panes
+  drawable.draw_line ( gc, 0, 0, 0, height )
   drawable.draw_line ( gc, width-1, 0, width-1, height )
 
   # Restore the previous color
@@ -354,9 +369,9 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa_original = zoom_window(window,600,600,"Python GTK version of SWiFT-GUI")
   global zpa_aligned
-  zpa_aligned = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa_aligned = zoom_window(window,600,600,"Python GTK version of SWiFT-GUI")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
@@ -459,30 +474,36 @@ def main():
   image_hbox = gtk.HBox ( True, 0 )
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
-  drawing_area = zpa_original.get_drawing_area()
-  drawing_area2 = zpa_aligned.get_drawing_area()
+  original_drawing_area = zpa_original.get_drawing_area()
+  aligned_drawing_area = zpa_aligned.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
-  image_hbox.pack_start(drawing_area, True, True, 0)
+  image_hbox.pack_start(original_drawing_area, True, True, 0)
   # fake_out_panel = gtk.Button("Output")
-  image_hbox.pack_start(drawing_area2, True, True, 0)
+  image_hbox.pack_start(aligned_drawing_area, True, True, 0)
   image_hbox.show()
   main_win_vbox.pack_start(image_hbox, True, True, 0)
-  drawing_area.show()
-  drawing_area2.show()
+  original_drawing_area.show()
+  aligned_drawing_area.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
-  drawing_area.connect ( "expose_event", expose_callback, zpa_original )
-  drawing_area2.connect ( "expose_event", expose_callback, zpa_aligned )
+  original_drawing_area.connect ( "expose_event", expose_callback, zpa_original )
+  aligned_drawing_area.connect ( "expose_event", expose_callback, zpa_aligned )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
   #  Other events can be set and handled by user code as well
-  drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
-                          | gtk.gdk.LEAVE_NOTIFY_MASK
-                          | gtk.gdk.BUTTON_PRESS_MASK
-                          | gtk.gdk.POINTER_MOTION_MASK
-                          | gtk.gdk.POINTER_MOTION_HINT_MASK )
+  original_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
+                                   | gtk.gdk.LEAVE_NOTIFY_MASK
+                                   | gtk.gdk.BUTTON_PRESS_MASK
+                                   | gtk.gdk.POINTER_MOTION_MASK
+                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
+
+  aligned_drawing_area.set_events  ( gtk.gdk.EXPOSURE_MASK
+                                   | gtk.gdk.LEAVE_NOTIFY_MASK
+                                   | gtk.gdk.BUTTON_PRESS_MASK
+                                   | gtk.gdk.POINTER_MOTION_MASK
+                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
   # Create a horizontal box to hold application buttons
   controls_hbox = gtk.HBox ( True, 0 )

@@ -62,7 +62,7 @@ class zoom_pan_area:
     self.drawing_area.set_size_request(win_width,win_height)
 
     # self.drawing_area.connect ( "expose_event", expose_callback, self )
-    self.drawing_area.connect ( "scroll_event", mouse_scroll_callback, self )
+    self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
     self.drawing_area.connect ( "key_press_event", key_press_callback, self )
     self.drawing_area.connect ( "button_press_event", button_press_callback, self )
     self.drawing_area.connect ( "button_release_event", button_release_callback, self )
@@ -206,27 +206,27 @@ class zoom_pan_area:
 
 
 
-def mouse_scroll_callback ( canvas, event, zpa ):
-  # print ( "Mouse Scroll: " + str(canvas) + " event at (" + str() + "," + str(event.y) + ") : " + str(event) )
-  if event.direction == gtk.gdk.SCROLL_UP:
-    zpa.zoom_at_point (  1, event.x, event.y )
-    # print ( "Mouse scrolled up = zoom in (make everything larger)" )
-  elif event.direction == gtk.gdk.SCROLL_DOWN:
-    zpa.zoom_at_point ( -1, event.x, event.y )
-    # print ( "Mouse scrolled down = zoom out (make everything smaller)" )
-  elif event.direction == gtk.gdk.SCROLL_LEFT:
-    pass
-    # print ( "Mouse scrolled left" )
-  elif event.direction == gtk.gdk.SCROLL_RIGHT:
-    pass
-    # print ( "Mouse scrolled right" )
-  else:
-    pass
-    # print ( "Mouse scrolled other?" )
+  def mouse_scroll_callback ( self, canvas, event, zpa ):
+    # print ( "Mouse Scroll: " + str(canvas) + " event at (" + str() + "," + str(event.y) + ") : " + str(event) )
+    if event.direction == gtk.gdk.SCROLL_UP:
+      zpa.zoom_at_point (  1, event.x, event.y )
+      # print ( "Mouse scrolled up = zoom in (make everything larger)" )
+    elif event.direction == gtk.gdk.SCROLL_DOWN:
+      zpa.zoom_at_point ( -1, event.x, event.y )
+      # print ( "Mouse scrolled down = zoom out (make everything smaller)" )
+    elif event.direction == gtk.gdk.SCROLL_LEFT:
+      pass
+      # print ( "Mouse scrolled left" )
+    elif event.direction == gtk.gdk.SCROLL_RIGHT:
+      pass
+      # print ( "Mouse scrolled right" )
+    else:
+      pass
+      # print ( "Mouse scrolled other?" )
 
-  zpa.drawing_area.queue_draw()
+    zpa.drawing_area.queue_draw()
 
-  return True  # Event has been handled, do not propagate further
+    return True  # Event has been handled, do not propagate further
 
 
 def button_press_callback ( widget, event, zpa ):
