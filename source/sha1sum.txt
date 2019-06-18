@@ -3,5 +3,7 @@ fdeb8d1fb9da3efbb3862234726b896e4c2b076a  iavg
 a0e62a900ed8f1de2760ff741f4b043fe4c703a5  iscale
 c664058cb656ada35075b0fc70b15b9cef549681  mir
 013b33430a9701b97bdd1bcac86795074f0ed93f  remod
-c40a8b75e1caf24f7a817160b6f362eff8a43e15  run_swift.jar
-8b375d6a2313696abf4f8761cd0a1a0fa1bfdd42  swift_gui.jar
+7944276b02f47cab33fd6ecf196e9463ccee75ef  run_swift.jar
+eed99eeb054aa1b7d128bc6499659b554f420d7e  swift_gui.jar
+2bbb2d56d3e9869293c7aa0d3be42d04916352e9  pyswift_gui.py
+bc63027e036f9a48dd85c9d1cd373f2f16c84f2e  app_window.py
