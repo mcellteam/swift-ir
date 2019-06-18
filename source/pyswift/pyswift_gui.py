@@ -91,6 +91,13 @@ class zoom_window ( app_window.zoom_pan_area ):
       zpa_aligned.queue_draw()
       return True
 
+  def mouse_motion_callback ( self, canvas, event, zpa ):
+    if 'GDK_SHIFT_MASK' in event.get_state().value_names:
+      # Ignore the event
+      return False
+    else:
+      # Call the parent's function to handle the motion
+      return ( app_window.zoom_pan_area.mouse_motion_callback ( self, canvas, event, zpa ) )
 
 def expose_callback ( drawing_area, event, zpa ):
   diff_2d_sim = zpa.user_data['diff_2d_sim']
