@@ -11,6 +11,8 @@ import gtk
 
 import app_window
 
+global zpa_original
+global zpa_aligned
 
 def expose_callback ( drawing_area, event, zpa ):
   diff_2d_sim = zpa.user_data['diff_2d_sim']
@@ -169,39 +171,6 @@ def expose_callback ( drawing_area, event, zpa ):
   return False
 
 
-
-def expose_callback2 ( drawing_area, event, zpa ):
-  diff_2d_sim = zpa.user_data['diff_2d_sim']
-  display_time_index = zpa.user_data['display_time_index']
-  x, y, width, height = event.area  # This is the area of the portion newly exposed
-  width, height = drawing_area.window.get_size()  # This is the area of the entire window
-  x, y = drawing_area.window.get_origin()
-  drawable = drawing_area.window
-  colormap = drawing_area.get_colormap()
-  gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
-  # Save the current color
-  old_fg = gc.foreground
-  # Clear the screen with black
-  gc.foreground = colormap.alloc_color(0,0,0)
-  drawable.draw_rectangle(gc, True, 0, 0, width, height)
-  # Draw the current state referenced by display_time_index
-  t = 0
-
-  if zpa.user_data['image_frame']:
-    pix_buf = zpa.user_data['image_frame']
-    pbw = pix_buf.get_width()
-    pbh = pix_buf.get_height()
-    scale_w = zpa.ww(pbw) / pbw
-    scale_h = zpa.wh(pbh) / pbh
-    scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
-    drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-
-  gc.foreground = colormap.alloc_color(32767,32767,32767)
-  drawable.draw_line ( gc, 0, 0, 0, height )
-  gc.foreground = old_fg
-  return False
-
-
 def step_callback(zpa):
   diff_2d_sim = zpa.user_data['diff_2d_sim']
   display_time_index = zpa.user_data['display_time_index']
@@ -265,6 +234,8 @@ def menu_callback ( widget, data=None ):
     # Any tuple passed is assumed to be: (command, zpa)
     command = data[0]
     zpa = data[1]
+    global zpa_original
+    global zpa_aligned
     if command == "Fast":
       zpa.user_data['frame_delay'] = 0.01
     elif command == "Med":
@@ -310,9 +281,21 @@ def menu_callback ( widget, data=None ):
       print ( "Done with dialog" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
+    elif command == "LimScroll":
+      zpa_original.max_zoom_count = 10
+      zpa_original.min_zoom_count = -15
+      zpa_aligned.max_zoom_count = 10
+      zpa_aligned.min_zoom_count = -15
+    elif command == "UnLimScroll":
+      zpa_original.max_zoom_count = 100
+      zpa_original.min_zoom_count = -150
+      zpa_aligned.max_zoom_count = 100
+      zpa_aligned.min_zoom_count = -150
+
     else:
       print ( "Menu option \"" + command + "\" is not handled yet." )
   return True
+
 
 # Minimized stub of the previous 2D Simulation
 class point_face_object:
@@ -370,8 +353,11 @@ def main():
 
   # Create a zoom/pan area to hold all of the drawing
 
+  global zpa_original
   zpa_original = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+  global zpa_aligned
   zpa_aligned = app_window.zoom_pan_area(window,800,800,"Python GTK version of SWiFT-GUI")
+
   zpa_original.user_data = {
                     'image_frame'        : None,
                     'image_frames'       : [],
@@ -444,6 +430,12 @@ def main():
     zpa_original.add_menu_sep  ( image_menu )
     zpa_original.add_menu_item ( image_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
 
+  # Create a "Set" menu
+  (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
+  if True: # An easy way to indent and still be legal Python
+    zpa_original.add_menu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
+    zpa_original.add_menu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
+
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
   if True: # An easy way to indent and still be legal Python
@@ -457,6 +449,7 @@ def main():
   # Append the menus to the menu bar itself
   menu_bar.append ( file_item )
   menu_bar.append ( image_item )
+  menu_bar.append ( set_item )
   menu_bar.append ( help_item )
 
   # Show the menu bar itself (everything must be shown!!)
@@ -480,7 +473,7 @@ def main():
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
   drawing_area.connect ( "expose_event", expose_callback, zpa_original )
-  drawing_area2.connect ( "expose_event", expose_callback2, zpa_aligned )
+  drawing_area2.connect ( "expose_event", expose_callback, zpa_aligned )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
