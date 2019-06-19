@@ -25,9 +25,20 @@ class ImagePane extends ZoomPanLib {
 
 }
 
-class ImagePaneFrame extends JFrame {
+class ImagePaneFrame extends JFrame implements ActionListener {
   ImagePaneFrame ( String title ) {
     super(title);
+  }
+  public void actionPerformed(ActionEvent e) {
+    Object action_source = e.getSource();
+    String cmd = e.getActionCommand();
+    System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
+    if (cmd.equalsIgnoreCase("Exit")) {
+      int response = JOptionPane.showConfirmDialog(this, "Exit from ImageAlign?", "Confirm Exit", JOptionPane.INFORMATION_MESSAGE, JOptionPane.YES_NO_OPTION);
+      if (response == JOptionPane.YES_OPTION) {
+        System.exit ( 0 );
+      }
+    }
   }
 }
 
@@ -39,8 +50,8 @@ public class ImageAlign {
 		System.out.println ( "Use the mouse wheel to zoom, and drag to pan." );
 		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
 			public void run() {
-			  ImagePaneFrame f = new ImagePaneFrame("ImageAlign");
-				f.setDefaultCloseOperation ( ImagePaneFrame.EXIT_ON_CLOSE );
+			  ImagePaneFrame app_frame = new ImagePaneFrame("ImageAlign");
+				app_frame.setDefaultCloseOperation ( ImagePaneFrame.EXIT_ON_CLOSE );
 				
 				ImagePane zp_top = new ImagePane();
 				zp_top.setBackground ( new Color (0,0,0) );
@@ -59,10 +70,28 @@ public class ImageAlign {
 				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, zp_top, zp_bot );
 				split_pane.setResizeWeight ( 0.8 );
 
-				f.add ( split_pane );
-				f.pack();
-				f.setSize ( w, h );
-				f.setVisible ( true );
+				app_frame.add ( split_pane );
+				app_frame.pack();
+				app_frame.setSize ( w, h );
+				app_frame.setVisible ( true );
+
+        JMenuBar menu_bar = new JMenuBar();
+          JMenuItem mi;
+
+          JMenu file_menu = new JMenu("File");
+
+            file_menu.add ( mi = new JMenuItem("New Project") );
+            mi.addActionListener(app_frame);
+
+            file_menu.add ( mi = new JMenuItem("Exit") );
+            mi.addActionListener(app_frame);
+
+            menu_bar.add ( file_menu );
+
+        app_frame.setJMenuBar ( menu_bar );
+        //app_frame.update_control_panel();
+        //app_frame.center_current_image();
+
 			}
 		} );
 	}
