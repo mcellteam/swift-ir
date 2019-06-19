@@ -40,6 +40,28 @@ class ImagePaneFrame extends JFrame implements ActionListener, WindowListener {
     this.addWindowListener(this);
   }
 
+  public void build_panels(int w, int h) {
+    ImagePane base_pane = new ImagePane();
+    base_pane.setBackground ( new Color (0,0,0) );
+    base_pane.addMouseListener ( base_pane );
+    base_pane.addMouseWheelListener ( base_pane );
+    base_pane.addMouseMotionListener ( base_pane );
+
+    ImagePane adjust_pane = new ImagePane();
+    adjust_pane.setBackground ( new Color (0,0,0) );
+    adjust_pane.addMouseListener ( adjust_pane );
+    adjust_pane.addMouseWheelListener ( adjust_pane );
+    adjust_pane.addMouseMotionListener ( adjust_pane );
+
+    JSplitPane split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, base_pane, adjust_pane );
+    split_pane.setResizeWeight ( 0.5 );
+
+    this.add ( split_pane );
+    this.pack();
+    this.setSize ( w, h );
+    this.setVisible ( true );
+  }
+
   void view_2_image() {
     System.out.println ( "View 2 Image" );
   }
@@ -91,27 +113,7 @@ public class ImageAlign {
 			  ImagePaneFrame app_frame = new ImagePaneFrame("ImageAlign");
 				app_frame.setDefaultCloseOperation(ImagePaneFrame.DO_NOTHING_ON_CLOSE);
 				
-				ImagePane zp_top = new ImagePane();
-				zp_top.setBackground ( new Color (0,0,0) );
-				zp_top.addMouseListener ( zp_top );
-				zp_top.addMouseWheelListener ( zp_top );
-				zp_top.addMouseMotionListener ( zp_top );
-
-				ImagePane zp_bot = new ImagePane();
-				zp_bot.lock_x(true);
-				zp_bot.lock_y(true);
-				zp_bot.setBackground ( new Color (64,64,64) );
-				zp_bot.addMouseListener ( zp_bot );
-				zp_bot.addMouseWheelListener ( zp_bot );
-				zp_bot.addMouseMotionListener ( zp_bot );
-
-				JSplitPane split_pane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, true, zp_top, zp_bot );
-				split_pane.setResizeWeight ( 0.8 );
-
-				app_frame.add ( split_pane );
-				app_frame.pack();
-				app_frame.setSize ( w, h );
-				app_frame.setVisible ( true );
+				app_frame.build_panels(w,h);
 
         JMenuBar menu_bar = new JMenuBar();
           JMenuItem mi;
