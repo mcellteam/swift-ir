@@ -33,46 +33,81 @@ class ImagePaneFrame extends JFrame implements ActionListener, WindowListener {
   ImagePane adjust_pane = null;
   ImagePane other_pane_1 = null;
   ImagePane other_pane_2 = null;
+  public JPanel image_box = null;
   int view_mode = 2;
+  int border_dim = 2;
 
   ImagePaneFrame ( String title ) {
     super(title);
     this.addWindowListener(this);
   }
 
-  public void build_panels(int w, int h) {
-    ImagePane base_pane = new ImagePane();
-    base_pane.setBackground ( new Color (0,0,0) );
-    base_pane.addMouseListener ( base_pane );
-    base_pane.addMouseWheelListener ( base_pane );
-    base_pane.addMouseMotionListener ( base_pane );
+  public void build_panels() {
+    if (base_pane == null) {
+      base_pane = new ImagePane();
+      base_pane.setBackground ( new Color (0,0,0) );
+      base_pane.addMouseListener ( base_pane );
+      base_pane.addMouseWheelListener ( base_pane );
+      base_pane.addMouseMotionListener ( base_pane );
+    }
 
-    ImagePane adjust_pane = new ImagePane();
-    adjust_pane.setBackground ( new Color (0,0,0) );
-    adjust_pane.addMouseListener ( adjust_pane );
-    adjust_pane.addMouseWheelListener ( adjust_pane );
-    adjust_pane.addMouseMotionListener ( adjust_pane );
+    if (adjust_pane == null) {
+      adjust_pane = new ImagePane();
+      adjust_pane.setBackground ( new Color (0,0,0) );
+      adjust_pane.addMouseListener ( adjust_pane );
+      adjust_pane.addMouseWheelListener ( adjust_pane );
+      adjust_pane.addMouseMotionListener ( adjust_pane );
+    }
 
-    JPanel image_box = new JPanel();
-    BoxLayout hbox = new BoxLayout(image_box, BoxLayout.X_AXIS);
-    image_box.setLayout ( hbox );
-    image_box.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+    if (other_pane_1 == null) {
+      other_pane_1 = new ImagePane();
+      other_pane_1.setBackground ( new Color (0,0,0) );
+      other_pane_1.addMouseListener ( other_pane_1 );
+      other_pane_1.addMouseWheelListener ( other_pane_1 );
+      other_pane_1.addMouseMotionListener ( other_pane_1 );
+    }
+
+    if (other_pane_2 == null) {
+      other_pane_2 = new ImagePane();
+      other_pane_2.setBackground ( new Color (0,0,0) );
+      other_pane_2.addMouseListener ( other_pane_2 );
+      other_pane_2.addMouseWheelListener ( other_pane_2 );
+      other_pane_2.addMouseMotionListener ( other_pane_2 );
+    }
+
+    if (image_box == null) {
+      image_box = new JPanel();
+      BoxLayout hbox = new BoxLayout(image_box, BoxLayout.X_AXIS);
+      image_box.setLayout ( hbox );
+      image_box.setBorder(BorderFactory.createEmptyBorder(border_dim, border_dim, border_dim, border_dim));
+    }
+
+    image_box.removeAll();
+
     image_box.add ( base_pane );
-    image_box.add(Box.createRigidArea(new Dimension(4,0)));
+    image_box.add(Box.createRigidArea(new Dimension(border_dim,0)));
     image_box.add ( adjust_pane );
 
-    this.add ( image_box );
-    this.pack();
-    this.setSize ( w, h );
-    this.setVisible ( true );
+    if (view_mode == 4) {
+      image_box.add(Box.createRigidArea(new Dimension(border_dim,0)));
+      image_box.add ( other_pane_1 );
+      image_box.add(Box.createRigidArea(new Dimension(border_dim,0)));
+      image_box.add ( other_pane_2 );
+    }
+    image_box.validate();
+
   }
 
   void view_2_image() {
     System.out.println ( "View 2 Image" );
+    view_mode = 2;
+    this.build_panels();
   }
 
   void view_4_image() {
     System.out.println ( "View 4 Image" );
+    view_mode = 4;
+    this.build_panels();
   }
 
   void exit_as_needed() {
@@ -118,7 +153,8 @@ public class ImageAlign {
 			  ImagePaneFrame app_frame = new ImagePaneFrame("ImageAlign");
 				app_frame.setDefaultCloseOperation(ImagePaneFrame.DO_NOTHING_ON_CLOSE);
 				
-				app_frame.build_panels(w,h);
+				app_frame.build_panels();
+        app_frame.add ( app_frame.image_box );
 
         JMenuBar menu_bar = new JMenuBar();
           JMenuItem mi;
@@ -144,8 +180,9 @@ public class ImageAlign {
             menu_bar.add ( view_menu );
 
         app_frame.setJMenuBar ( menu_bar );
-        //app_frame.update_control_panel();
-        //app_frame.center_current_image();
+        app_frame.pack();
+        app_frame.setSize ( w, h );
+        app_frame.setVisible ( true );
 
 			}
 		} );
