@@ -12,11 +12,11 @@ class ImagePane extends ZoomPanLib {
 
 	public void paint_frame (Graphics g) {
 	  if (recalculate) {
-      // set_scale_to_fit ( -100, 100, -100, 100, getSize().width, getSize().height );
+      set_scale_to_fit ( -100, 100, -100, 100, getSize().width, getSize().height );
 	    recalculate = false;
 	  }
 	  fill_background(g);
-    for (int r=0; r<10; r++) {
+    for (int r=0; r<100; r++) {
   		g.setColor ( new Color ( 255*(r&0x04)/4, 255*(r&0x02)/2, 255*(r&0x01) ) );
 		  g.drawLine (  x_to_pxi(-r),  y_to_pyi(-r),  x_to_pxi(-r),  y_to_pyi(r) );
 		  g.drawLine (  x_to_pxi(-r),  y_to_pyi(r),   x_to_pxi(r),   y_to_pyi(r) );
@@ -53,10 +53,15 @@ class ImagePaneFrame extends JFrame implements ActionListener, WindowListener {
     adjust_pane.addMouseWheelListener ( adjust_pane );
     adjust_pane.addMouseMotionListener ( adjust_pane );
 
-    JSplitPane split_pane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, true, base_pane, adjust_pane );
-    split_pane.setResizeWeight ( 0.5 );
+    JPanel image_box = new JPanel();
+    BoxLayout hbox = new BoxLayout(image_box, BoxLayout.X_AXIS);
+    image_box.setLayout ( hbox );
+    image_box.setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
+    image_box.add ( base_pane );
+    image_box.add(Box.createRigidArea(new Dimension(4,0)));
+    image_box.add ( adjust_pane );
 
-    this.add ( split_pane );
+    this.add ( image_box );
     this.pack();
     this.setSize ( w, h );
     this.setVisible ( true );
@@ -104,7 +109,7 @@ class ImagePaneFrame extends JFrame implements ActionListener, WindowListener {
 
 public class ImageAlign {
 
-	static int w=800, h=600;
+	static int w=1200, h=600;
 
 	public static void main ( String[] args ) {
 		System.out.println ( "Use the mouse wheel to zoom, and drag to pan." );
