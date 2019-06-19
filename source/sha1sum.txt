@@ -3,5 +3,5 @@ fdeb8d1fb9da3efbb3862234726b896e4c2b076a  iavg
 a0e62a900ed8f1de2760ff741f4b043fe4c703a5  iscale
 c664058cb656ada35075b0fc70b15b9cef549681  mir
 013b33430a9701b97bdd1bcac86795074f0ed93f  remod
-3c2ab2d2aa095844cd2fddc0cd1c3bb5dc41bcae  run_swift.jar
-7c81904afd83932bfb60278c253e19e22b4637c8  swift_gui.jar
+bc1d6f5298055052ae1f3f4e8d1c4bbb0c8562db  run_swift.jar
+49b9f395a08f17139afeddf38614ef5245dd8635  swift_gui.jar
