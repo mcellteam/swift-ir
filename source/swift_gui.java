@@ -231,7 +231,6 @@ class AlignmentPanel extends JPanel {
               g.drawImage ( swift.frames.get(swift.frame_index+1).image, xoff, h-(padding+scaled_h), scaled_w, scaled_h, this );
             }
           }
-
           //frame_image = frames.get(frame_index).image;
         }
       }
@@ -499,28 +498,30 @@ class ControlPanel extends JPanel {
 
     this.setLayout ( new BorderLayout( 0, 20 ) );
 
-    JPanel top_panel = new JPanel();
 
-    top_panel.setLayout ( new BorderLayout( 0, 20 ) );
+    JPanel top_panel = new JPanel();
+    top_panel.setLayout ( new BoxLayout( top_panel, BoxLayout.Y_AXIS ) );
+    top_panel.setAlignmentX ( Component.LEFT_ALIGNMENT );
+
 
     project_label = new JLabel("Project File: "+swift.project_file);
-    top_panel.add ( project_label, BorderLayout.NORTH );
-    destination_label = new JLabel("Destination: "+swift.destination);
-    top_panel.add ( destination_label, BorderLayout.CENTER );
+    JPanel project_label_panel = new JPanel();
+    project_label_panel.setLayout ( new FlowLayout(FlowLayout.LEFT) );
+    project_label_panel.add ( project_label );
+    top_panel.add ( project_label_panel );
 
-    show_dest = new JCheckBox("Show",false);
-    show_dest.addActionListener ( this.swift );
-    show_dest.setActionCommand ( "show_dest" );
-    top_panel.add ( show_dest, BorderLayout.EAST );
+    destination_label = new JLabel("Destination: "+swift.destination);
+    JPanel destination_label_panel = new JPanel();
+    destination_label_panel.setLayout ( new FlowLayout(FlowLayout.LEFT) );
+    destination_label_panel.add ( destination_label );
+    top_panel.add ( destination_label_panel );
 
     JPanel file_data_panel = new JPanel();
     file_data_panel.setLayout ( new FlowLayout( FlowLayout.LEFT ) );
 
     image_name = new JTextField("", 40);
-    // image_name.setBounds ( 10, 10, 300, 20 );
-    // add ( image_name );
 
-    file_data_panel.add ( new JLabel("Name:") );
+    file_data_panel.add ( new JLabel("Image:") );
     image_label = new JLabel("");
     file_data_panel.add ( image_label );
 
@@ -532,7 +533,16 @@ class ControlPanel extends JPanel {
     image_bits = new JLabel("");
     file_data_panel.add ( image_bits );
 
-    top_panel.add ( file_data_panel, BorderLayout.SOUTH );
+    file_data_panel.add ( new JLabel("       ") );
+
+    show_dest = new JCheckBox("",false);
+    show_dest.addActionListener ( this.swift );
+    show_dest.setActionCommand ( "show_dest" );
+    file_data_panel.add ( show_dest );
+    file_data_panel.add ( new JLabel("(focus)") );
+
+
+    top_panel.add ( file_data_panel );
 
     add ( top_panel, BorderLayout.NORTH );
 
@@ -861,6 +871,19 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       //g.drawImage ( frame_image, (win_w-img_w)/2, (win_h-img_h)/2, img_w, img_h, this );
 
     }
+
+    if (frames.size() > 0) {
+      if (frames.get(frame_index).skip == true) {
+        g.setColor ( new Color ( 255, 0, 0 ) );
+        for (int dx=0; dx<10; dx++) {
+          g.drawLine ( dx, 0, win_w+dx, win_h );
+          g.drawLine ( -dx, 0, win_w-dx, win_h );
+          g.drawLine ( dx, win_h, win_w+dx, 0 );
+          g.drawLine ( -dx, win_h, win_w-dx, 0 );
+        }
+      }
+    }
+
   }
 
 
@@ -1110,6 +1133,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   JMenuItem refresh_images_menu_item = null;
   JMenuItem center_image_menu_item = null;
   JMenuItem zoom_actual_menu_item = null;
+  JMenuItem clear_out_images_menu_item = null;
   JMenuItem clear_all_images_menu_item = null;
   JMenuItem list_all_images_menu_item = null;
   JMenuItem list_align_shell_script = null;
@@ -1322,10 +1346,19 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
     if (cmd.equalsIgnoreCase("Version...")) {
       System.out.println ( "Git Revision: " + revision.githash );
       JOptionPane.showMessageDialog(this, "Git Revision:\n " + revision.githash, "Version", JOptionPane.INFORMATION_MESSAGE);
-    } else if (cmd.equalsIgnoreCase("Print")) {
+    } else if (cmd.equalsIgnoreCase("Dump")) {
       System.out.println ( "Images:" );
       for (int i=0; i<this.frames.size(); i++) {
-        System.out.println ( "  " + this.frames.get(i) );
+        swift_gui_frame frame = this.frames.get(i);
+        System.out.println ( "  " + i + ": " + frame + ", skip=" + frame.skip );
+        double tf[] = frame.affine_transform_from_prev;
+        if (tf == null) {
+          System.out.println ( "     Null" );
+        } else {
+          for (int j=0; j<tf.length; j++) {
+            System.out.println ( "     " + tf[j] );
+          }
+        }
       }
     } else if ( action_source == refresh_images_menu_item ) {
       System.out.println ( "Reloading all images:" );
@@ -1488,6 +1521,72 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
                 }
               }
 
+              // Fill in any transforms already read from the JSON file
+
+              if (frames != null) {
+                swift_gui_frame frame = frames.get(0);
+                frame.affine_transform_from_prev = null;
+              }
+
+              if (data.containsKey("last_alignment")) {
+                ArrayList<Object> last_alignment_affines = (ArrayList<Object>)(data.get("last_alignment"));
+                System.out.println ( "Got last alignment" );
+                // control_panel.pairwise.setSelected ( (Boolean)(data.get("pairwise_alignment")) );
+
+                for (int i=0; i<last_alignment_affines.size(); i++) {
+                  System.out.println ( " Have an alignment for " + i );
+                  HashMap<String,Object> affine_data = (HashMap<String,Object>)(last_alignment_affines.get(i));
+                  if (affine_data.containsKey("frames")) {
+                    System.out.println ( "   Contains frames" );
+                    ArrayList<Integer> frame_numbers = (ArrayList<Integer>)(affine_data.get("frames"));
+                    for (int fn=0; fn<frame_numbers.size(); fn++) {
+                      System.out.println ( "      Frame Number: " + frame_numbers.get(fn) );
+                    }
+                  }
+                  if (affine_data.containsKey("affine")) {
+                    System.out.println ( "   Contains affine" );
+                    ArrayList<Double> affine_values = (ArrayList<Double>)(affine_data.get("affine"));
+                    if (affine_values == null) {
+                      System.out.println ( "      Affine Value: null" );
+                    } else {
+                      double[] affine_transform = new double [ affine_values.size() ];
+                      for (int av=0; av<affine_values.size(); av++) {
+                        affine_transform[av] = affine_values.get(av).doubleValue();
+                        System.out.println ( "      Affine Value: " + affine_transform[av] );
+                      }
+                      swift_gui_frame frame = frames.get(i+1);
+                      frame.affine_transform_from_prev = affine_transform;
+/*
+                      swift_gui_frame frame = frames.get(i);
+                      f.print ( "      { \"frames\": [ " + (i-1) + ", " + i + " ], " ); ///// Note that this is zero based while display is one based
+                      if (frame.affine_transform_from_prev == null) {
+                        f.print ( "\"affine\": null" );
+                      } else {
+                        f.print ( "\"affine\": [ " );
+                        for (int j=0; j<frame.affine_transform_from_prev.length; j++) {
+                          f.print ( "" + frame.affine_transform_from_prev[j] );
+                          if (j < (frame.affine_transform_from_prev.length-1) ) {
+                            f.print ( ", " );
+                          }
+                        }
+                        f.print ( " ]" );
+                      }
+                      f.print ( " }" );
+                      if (i < (this.frames.size()-1) ) {
+                        f.print ( "," );
+                      }
+                      f.println();
+                    }
+*/
+
+
+                    }
+                  }
+                }
+
+              }
+
+
             } else {
               System.out.println ( "Project file version does not match program version or other problem" );
             }
@@ -1543,13 +1642,54 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
       update_control_panel();
       repaint();
       set_title();
-    } else if ( action_source == clear_all_images_menu_item ) {
-      this.frames = new ArrayList<swift_gui_frame>();
-      this.frame_index = -1;
+    } else if ( action_source == clear_out_images_menu_item ) {
+      // Clear the destination images
+      //this.frames = new ArrayList<swift_gui_frame>();
+      //this.frame_index = -1;
+
+      int response = JOptionPane.showConfirmDialog(this, "Delete all generated output images?", "Confirm Delete", JOptionPane.WARNING_MESSAGE, JOptionPane.YES_NO_OPTION);
+
+      if (response == JOptionPane.YES_OPTION) {
+
+        System.out.println ( "\n\nClearing output images from  = \"" + destination + "\" ..." );
+        if (frames != null) {
+          if ( (destination == null) || (!destination.exists()) ) {  // This depends on Java's short-circuit || operator to not throw an exception
+            System.out.println ( "No destination images to clear." );
+          } else {
+            String prefix = "";
+            if (destination != null) {
+              if (destination.toString().length() > 0) {
+                prefix = destination + File.separator;
+                for (int i=0; i<this.frames.size(); i++) {
+                  swift_gui_frame frame = frames.get(i);
+                  File f = new File( prefix + (new File(frame.image_file_path.getAbsolutePath().toString())).getName() );
+                  System.out.println ( "Deleting file: " + f );
+                  try {
+                    f.delete();
+                  } catch (Exception del_exc) {
+                  }
+                }
+              }
+            }
+          }
+        }
+
+      }
+
       repaint();
       update_control_panel();
       repaint_panels();
       set_title();
+    } else if ( action_source == clear_all_images_menu_item ) {
+      int response = JOptionPane.showConfirmDialog(this, "Remove all images from project?", "Confirm Remove", JOptionPane.WARNING_MESSAGE, JOptionPane.YES_NO_OPTION);
+      if (response == JOptionPane.YES_OPTION) {
+        this.frames = new ArrayList<swift_gui_frame>();
+        this.frame_index = -1;
+        repaint();
+        update_control_panel();
+        repaint_panels();
+        set_title();
+      }
     } else if ( action_source == list_all_images_menu_item ) {
       if (file_list_dialog != null) {
         file_list_dialog.setTitle ( "Original Image Files" );
@@ -1777,6 +1917,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             frame.skip = box.isSelected();
           }
         }
+        repaint();
+        update_control_panel();
+        repaint_panels();
+        set_title();
       }
     } else if (cmd.equalsIgnoreCase("show_dest")) {
       JCheckBox box = (JCheckBox)action_source;
@@ -1907,6 +2051,17 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
             swift_gui_frame align_frame = frames.get(frame_num);
             if (align_frame.skip) {
               // Omit this frame
+              if (pairwise) {
+                if (align_frame.affine_transform_from_prev == null) {
+                  align_frame.affine_transform_from_prev = new double[6];
+                }
+                align_frame.affine_transform_from_prev[0] = 1;
+                align_frame.affine_transform_from_prev[1] = 0;
+                align_frame.affine_transform_from_prev[2] = 0;
+                align_frame.affine_transform_from_prev[3] = 0;
+                align_frame.affine_transform_from_prev[4] = 1;
+                align_frame.affine_transform_from_prev[5] = 0;
+              }
             } else {
               if (fixed_frame_num < start) {
                 // This is the first non-skipped frame, so use it as the fixed frame
@@ -2043,7 +2198,10 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         }
       }
     } else if (cmd.equalsIgnoreCase("Exit")) {
-      System.exit ( 0 );
+      int response = JOptionPane.showConfirmDialog(this, "Exit from SWiFT GUI?", "Confirm Exit", JOptionPane.INFORMATION_MESSAGE, JOptionPane.YES_NO_OPTION);
+      if (response == JOptionPane.YES_OPTION) {
+        System.exit ( 0 );
+      }
     }
   }
 
@@ -2269,11 +2427,6 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
             file_menu.addSeparator();
 
-            JMenu import_menu = new JMenu("Import");
-              import_menu.add ( mi = swift_gui_panel.import_images_menu_item = new JMenuItem("Images...") );
-              mi.addActionListener(swift_gui_panel);
-            file_menu.add ( import_menu );
-
             // NOTE: Adding the same JMenuItem to multiple JMenus doesn't work
             //   The explanation given is that a JMenuItem can only have one parent.
             //   It's not clear that adding a JMenuItem to a JMenu changes parenting,
@@ -2290,16 +2443,11 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
               mi.addActionListener(swift_gui_panel);
               list_menu.add ( mi = swift_gui_panel.list_align_shell_script = new JMenuItem("Alignment Script") );
               mi.addActionListener(swift_gui_panel);
+              list_menu.add ( mi = new JMenuItem("Dump") );
+              mi.addActionListener(swift_gui_panel);
+
 
             file_menu.add ( list_menu );
-
-            file_menu.add ( mi = new JMenuItem("Print") );
-            mi.addActionListener(swift_gui_panel);
-
-            file_menu.addSeparator();
-
-            file_menu.add ( mi = swift_gui_panel.clear_all_images_menu_item = new JMenuItem("Clear All") );
-            mi.addActionListener(swift_gui_panel);
 
             file_menu.addSeparator();
 
@@ -2308,27 +2456,43 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
             menu_bar.add ( file_menu );
 
-          JMenu tools_menu = new JMenu("Images");
+          JMenu image_menu = new JMenu("Images");
 
-            // tools_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+            // image_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
             // mi.addActionListener(swift_gui_panel);
 
-            // tools_menu.addSeparator();
+            // image_menu.addSeparator();
 
-            tools_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+
+            image_menu.add ( mi = swift_gui_panel.import_images_menu_item = new JMenuItem("Import...") );
             mi.addActionListener(swift_gui_panel);
 
-            tools_menu.addSeparator();
+            image_menu.addSeparator();
 
-            tools_menu.add ( mi = swift_gui_panel.center_image_menu_item = new JMenuItem("Center") );
+            image_menu.add ( mi = swift_gui_panel.center_image_menu_item = new JMenuItem("Center") );
             mi.addActionListener(swift_gui_panel);
 
-            tools_menu.addSeparator();
+            //image_menu.addSeparator();
 
-            tools_menu.add ( mi = swift_gui_panel.zoom_actual_menu_item = new JMenuItem("Actual Size") );
+            image_menu.add ( mi = swift_gui_panel.zoom_actual_menu_item = new JMenuItem("Actual Size") );
             mi.addActionListener(swift_gui_panel);
 
-            menu_bar.add ( tools_menu );
+            //image_menu.addSeparator();
+
+            image_menu.add ( mi = swift_gui_panel.refresh_images_menu_item = new JMenuItem("Refresh") );
+            mi.addActionListener(swift_gui_panel);
+
+            image_menu.addSeparator();
+
+            image_menu.add ( mi = swift_gui_panel.clear_out_images_menu_item = new JMenuItem("Clear Out Images") );
+            mi.addActionListener(swift_gui_panel);
+
+            image_menu.addSeparator();
+
+            image_menu.add ( mi = swift_gui_panel.clear_all_images_menu_item = new JMenuItem("Clear All Images") );
+            mi.addActionListener(swift_gui_panel);
+
+            menu_bar.add ( image_menu );
 
           JMenu help_menu = new JMenu("Help");
             help_menu.add ( mi = new JMenuItem("Commands") );
