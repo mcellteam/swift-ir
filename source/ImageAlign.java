@@ -25,21 +25,37 @@ class ImagePane extends ZoomPanLib {
 
 }
 
-class ImagePaneFrame extends JFrame implements ActionListener {
+class ImagePaneFrame extends JFrame implements ActionListener, WindowListener {
   ImagePaneFrame ( String title ) {
     super(title);
+    this.addWindowListener(this);
   }
+
+  void exit_as_needed() {
+    int response = JOptionPane.showConfirmDialog(this, "Exit from ImageAlign?", "Confirm Exit", JOptionPane.INFORMATION_MESSAGE, JOptionPane.YES_NO_OPTION);
+    if (response == JOptionPane.YES_OPTION) {
+      System.exit ( 0 );
+    }
+  }
+
+  /** ActionListener Interface Methods **/
   public void actionPerformed(ActionEvent e) {
     Object action_source = e.getSource();
     String cmd = e.getActionCommand();
     System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
     if (cmd.equalsIgnoreCase("Exit")) {
-      int response = JOptionPane.showConfirmDialog(this, "Exit from ImageAlign?", "Confirm Exit", JOptionPane.INFORMATION_MESSAGE, JOptionPane.YES_NO_OPTION);
-      if (response == JOptionPane.YES_OPTION) {
-        System.exit ( 0 );
-      }
+      exit_as_needed();
     }
   }
+
+  /** WindowListener Interface Methods **/
+  public void windowActivated(WindowEvent e) {}
+  public void windowClosed(WindowEvent e) {}
+  public void windowClosing(WindowEvent e) { exit_as_needed(); }
+  public void windowDeactivated(WindowEvent e) {}
+  public void windowDeiconified(WindowEvent e) {}
+  public void windowIconified(WindowEvent e) {}
+  public void windowOpened(WindowEvent e) {}
 }
 
 public class ImageAlign {
@@ -51,7 +67,7 @@ public class ImageAlign {
 		javax.swing.SwingUtilities.invokeLater ( new Runnable() {
 			public void run() {
 			  ImagePaneFrame app_frame = new ImagePaneFrame("ImageAlign");
-				app_frame.setDefaultCloseOperation ( ImagePaneFrame.EXIT_ON_CLOSE );
+				app_frame.setDefaultCloseOperation(ImagePaneFrame.DO_NOTHING_ON_CLOSE);
 				
 				ImagePane zp_top = new ImagePane();
 				zp_top.setBackground ( new Color (0,0,0) );
