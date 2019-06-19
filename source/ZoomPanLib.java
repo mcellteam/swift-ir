@@ -101,21 +101,32 @@ public class ZoomPanLib extends JPanel implements MouseListener, MouseMotionList
   Image img_buffer = null;
   Graphics g_buffer = null;
   boolean recalculate = true;
+  boolean draw_fill = true;
+
+  void fill_background(Graphics g) {
+    if (draw_fill) {
+      g.setColor ( this.getBackground() );
+      g.fillRect (0,0,size().width, size().height);
+    }
+  }
 
   void init_gbuffer() {
     if ( (img_buffer == null) || (g_buffer == null) || (size().width != img_buffer.getWidth(this)) || (size().height != img_buffer.getHeight(this)) ) {
       img_buffer = createImage ( size().width, size().height );
       g_buffer = img_buffer.getGraphics();
-      g_buffer.setColor ( this.getBackground() );
-      g_buffer.fillRect (0,0,size().width, size().height);
+      fill_background(g_buffer);
+      // g_buffer.setColor ( this.getBackground() );
+      // g_buffer.fillRect (0,0,size().width, size().height);
       // recalculate = true;
     }
   }
 
+
   public void update(Graphics g) {
     init_gbuffer();
-    g_buffer.setColor ( this.getBackground() );
-    g_buffer.fillRect (0,0,size().width, size().height);
+    fill_background(g);
+    // g_buffer.setColor ( this.getBackground() );
+    // g_buffer.fillRect (0,0,size().width, size().height);
     paint ( g );
   }
 
@@ -130,6 +141,7 @@ public class ZoomPanLib extends JPanel implements MouseListener, MouseMotionList
       // set_scale_to_fit ( -100, 100, -100, 100, getSize().width, getSize().height );
 	    recalculate = false;
 	  }
+	  fill_background(g);
     for (int r=0; r<100; r++) {
   		g.setColor ( new Color ( 255*(r&0x04)/4, 255*(r&0x02)/2, 255*(r&0x01) ) );
 		  g.drawLine (  x_to_pxi(-r),  y_to_pyi(-r),  x_to_pxi(-r),  y_to_pyi(r) );
