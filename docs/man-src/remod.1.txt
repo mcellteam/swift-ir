@@ -1,0 +1,43 @@
+REMOD(1)
+======
+:doctype: manpage
+
+Name
+----
+remod - Image combiner
+
+Synopsis
+--------
+*remod* [options] -__span__ [-__skip__] imagefile1 imagefile2 ...
+
+Description
+-----------
+
+Remod takes a stack of _n_ images, loads them all into memory, and
+outputs a stack of _n_ ``gral'' images with names constructed by
+replacing the three character suffix (plus the preceding period) by
+``&#95;MDL.PNG''.
+
+A ``gral'' image is the average of 2 __span__ + 1 consecutive images except
+for the central __skip__ images. The _span_ *must* be specified
+on the command line. The _skip_ *may* be given; it defaults to 1. Note
+the asymmetry between _span_, which specifies the half-range, and
+_skip_, which specifies the total number of central images to
+skip. Typically, _skip_ will be odd.
+
+The purpose of *remod* is to then align the central image to its
+neighbors with *swim*.
+
+Options
+-------
+
+**-e**:: Do ends. Normally, no output is generated for the first _span_ and last _span_ images. If **-e** is given, such output _is_ generated, but the _skip_ value is ignored for these outputs (only).
+
+**-a**:: Adaptive mode. Normally, *remod* calculates a simple
+   average. With **-a** given, it stretches the contrast of each
+   individual output image.
+
+Authors
+-------
+*remod* was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar.
