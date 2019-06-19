@@ -7,6 +7,8 @@ import java.util.*;
 
 
 class ImagePane extends ZoomPanLib {
+  // This class shows one image with possible decorations
+  ImagePaneFrame parent_frame=null;
 
 	public void paint_frame (Graphics g) {
 	  if (recalculate) {
@@ -26,9 +28,24 @@ class ImagePane extends ZoomPanLib {
 }
 
 class ImagePaneFrame extends JFrame implements ActionListener, WindowListener {
+  // This is the main application frame.
+  ImagePane base_pane = null;
+  ImagePane adjust_pane = null;
+  ImagePane other_pane_1 = null;
+  ImagePane other_pane_2 = null;
+  int view_mode = 2;
+
   ImagePaneFrame ( String title ) {
     super(title);
     this.addWindowListener(this);
+  }
+
+  void view_2_image() {
+    System.out.println ( "View 2 Image" );
+  }
+
+  void view_4_image() {
+    System.out.println ( "View 4 Image" );
   }
 
   void exit_as_needed() {
@@ -42,9 +59,14 @@ class ImagePaneFrame extends JFrame implements ActionListener, WindowListener {
   public void actionPerformed(ActionEvent e) {
     Object action_source = e.getSource();
     String cmd = e.getActionCommand();
-    System.out.println ( "ActionPerformed got \"" + cmd + "\" from " + action_source );
     if (cmd.equalsIgnoreCase("Exit")) {
       exit_as_needed();
+    } else if (cmd.equalsIgnoreCase("2 Image")) {
+      view_2_image();
+    } else if (cmd.equalsIgnoreCase("4 Image")) {
+      view_4_image();
+    } else {
+      System.out.println ( "Unknown command: " + cmd );
     }
   }
 
@@ -103,6 +125,16 @@ public class ImageAlign {
             mi.addActionListener(app_frame);
 
             menu_bar.add ( file_menu );
+
+          JMenu view_menu = new JMenu("View");
+
+            view_menu.add ( mi = new JMenuItem("2 Image") );
+            mi.addActionListener(app_frame);
+
+            view_menu.add ( mi = new JMenuItem("4 Image") );
+            mi.addActionListener(app_frame);
+
+            menu_bar.add ( view_menu );
 
         app_frame.setJMenuBar ( menu_bar );
         //app_frame.update_control_panel();
