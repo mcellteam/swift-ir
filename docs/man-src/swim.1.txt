@@ -1,0 +1,143 @@
+SWIM(1)
+======
+:doctype: manpage
+
+Name
+----
+swim - Fourier-based image aligner
+
+Synopsis
+--------
+1. *swim* __size__ [options] _target_ _source_ 
+
+2. *swim* __size__ [options] _target_ __x__~tgt~ __y__~tgt~ _source_ 
+
+3. *swim* __size__ [options] _target_ __x__~tgt~ __y__~tgt~ _source_ __x__~src~ __y__~src~
+
+4. *swim* __size__ [options] _target_ __x__~tgt~ __y__~tgt~ _source_ __x__~src~ __y__~src~ __φ__~src~
+
+5.  *swim* __size__ [options] _target_ __x__~tgt~ __y__~tgt~ _source_ __x__~src~ __y__~src~ __M__~00~ __M__~01~ __M__~10~ __M__~11~
+
+6.  *swim* __size__ [options] _target_ __x__~tgt~ __y__~tgt~ _source_ __A__~00~ __A__^-1^~01~ __A__^-1^~02~ __A__^-1^~10~ __A__^-1^~11~ __A__^-1^~12~ -
+
+7.  *swim* __size__ [options] _target_ __x__~tgt~ __y__~tgt~ _source_ __A__~00~ __A__~01~ __A__~02~ __A__~10~ __A__~11~ __A__~12~ x
+
+8.  *swim* __size__
+
+Description
+-----------
+*swim* aligns a subsection of the image file _source_ with a subsection of
+ the image file _target_ using the SWiFT-IR algorithm described in Wetzel et al. (2016).
+
+__size__ specifies the size of the subsection to use and may be specified as a single number or in the form __W__x__H__. 
+
+In general, we need to have a point __**p**__~tgt~ = (__x__~tgt~,
+__y__~tgt~) and a corresponding point __**p**__~src~ = (__x__~src~,
+__y__~src~). These can be explicitly given, or __**p**__~src~ can be
+inferred from an affine transformation __**p**__~src~ = __**M**__
+__**p**__~tgt~ + __**b**__.
+
+In form (1),  __**p**__~tgt~ and  __**p**__~src~ are the center of the respective images.
+
+In form (2), __x__~src~ is implicitly the same is __x__~tgt~ and
+__y__~src~ the same as __y__~tgt~. The transformation matrix __**M**__ = [1 0; 0 1] with zero translation.
+
+In form (3), the transformation matrix __**M**__ = [1 0; 0 1], and the translation __**b**__ is taken from __**p**__~tgt~ and __**p**__~src~.
+
+In form (4), the transformation matrix __**M**__ is set to [cos(φ) sin(φ); -sin(φ) cos(φ)], where φ is the angle specified (in degrees).
+
+In form (5), the transformation matrix is specified explicitly.
+
+In forms (6) and (7), an affine transformation matrix __**A**__ is
+specified. There *must* a final argument after the number. If that
+argument starts with a hyphen, __**p**__~src~ = __**A**__^-1^
+__**p**__~tgt~ and the transformation matrix __**M**__ is likewise
+taken from __**A**__^-1^. Otherwise, __**p**__~src~ = __**A**__
+__**p**__~tgt~.
+
+(Note that __**A**__ __**p**__ := __**M**__ __**p**__ + __**b**__ if
+__**A**__ = [ __M__~00~ __M__~01~ __b__~0~; __M__~10~ __M__~11~
+__b__~1~].)
+
+In form (8), commands are read from stdin. Lines starting with hash (``&#35;'') are ignored.
+
+Options
+-------
+
+**-A**:: Disable apodization. (Apodization is blending the edges to gray to avoid false spectral content.)
+
+**-H**:: Do not optimize horizontal translation.
+
+**-k __str__**:: Keep image. This causes apodized and transformed images to be saved to disk.
+
+**-i __expr__**:: Specify number of iterations. Default is one. Three may be a good choice.
+
+**-m __expr__**:: Specify multiplier applied to __-x__ and __-y__ arguments.
+
+**-r**:: Reverse video
+
+**-t __snrthr__,__xthr__,__ythr__**:: Set rejection thresholds for SNR
+   value and for shifts in pixels. Values are separated by
+   commas. __x__~thr~ and __y__~thr~ are applied to coordinates that
+   have been multiplied by the value given with **-m**. Arithmetic is
+   not allowed.
+
+**-V**:: Do not optimize vertical translation.
+
+**-w __expr__**: Specify whitening exponent. If set to zero, whitening is disabled.
+
+**-x __expr__**: Specify additional shift for x-coordinate of center of patch
+
+**-y __expr__**: Specifiy additional shift for y-coordinate of center of path
+
+**-$ __n__**: Specify debug level
+
+Expressions may contain addition, subtraction, multiplication,
+division, and exponentiation. Parentheses are supported. Variables are
+not supported.
+Note that unlike for *mir*, there must be a space between the option
+name and the option value.
+
+The translation specified by the **-x** and **-y** command line
+options are applied directly to __**p**__~tgt~. Transformed by
+__**M**__ they are applied to __**p**__~src~. The multiplier specified
+by **-m** is applied to all coordinates.
+
+Output
+------
+*swim* outputs a line of the form
+
+_SNR_: _target_ __x__~tgt~ __y__~tgt~ _source_ __x__~src~ __y__~src~ __φ__~src~ (Δ__x__ Δ__y__ __m__~0~ __flags__)
+
+Here:
+
+_SNR_:: is the signal to noise value of the match.
+
+_target_:: is the file name of the target image copied from the command line
+
+__x__~tgt~ __y__~tgt~:: are the coordinates of __**p**__~tgt~ modified by the **-x** and **-y** command line options.
+
+_source_:: is the file name of the source image copied from the command line
+
+__x__~src~ __y__~src~:: are the optimized coordinates of __**p**__~src~ that match __**p**__~tgt~.
+
+__φ__~src~:: is the optimized rotation.
+
+Information in parentheses is somewhat redundant. Δ__x__ and Δ__y__ are the pixel shifts applied to __**p**__~src~ and__m__~0~ := √(Δ__x__^2^ + Δ__y__^2^). The __flags__ can indicate bad matches in x (``dx''), in y (``dy''), in both (``dxy'') if any shift is greater than a quarter of the window size. It can also indicate that a threshold has been exceeded (``dreset'')
+
+Usage note
+----------
+Note that *mir* uses output and input coordinates to place a source image in a target space and returns a ``forward'' transform that maps source to target as well as an ``inverse'' transform that maps target back to source. It is this inverse transform that can be fed to *swim* as the __**M**__ transformation matrix on a refinement pass.
+
+Reference
+---------
+
+Wetzel AW, Bakal J, Dittrich M, Hildebrand DGC, Morgan JL, Lichtman
+JW, 2016. Registering large volume serial-section electron microscopy
+image sets for neural circuit reconstruction using FFT signal
+whitening. arXiv:1612.04787. https://arxiv.org/abs/1612.04787.
+
+Author
+------
+*swim* was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar.

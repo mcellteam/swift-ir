@@ -107,7 +107,7 @@ Commands:
   E to Exit
 ```
 
-
+![mir 2 point](../docs/images/mir_mapping_2_point.png?raw=true "Mir 2 Point")
 
 
 

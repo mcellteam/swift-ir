@@ -1,0 +1,44 @@
+ISCALE(1)
+=========
+:doctype: manpage
+
+Name
+----
+iscale - Image scaler
+
+Synopsis
+--------
+*iscale* -v +__scale__ -__contrast__ p=__outpath__ __infile__ ...
+
+Description
+-----------
+The *iscale* command loads any number of input files, reduces their
+sizes by a given scale factor in both x and y directions, and writes
+the results to a common output folder.
+
+The scale factor may be specified on the command line following a plus
+sign. The default is 8.
+
+An integer contrast may be specified to increase the image
+contrast. This works in a slightly unusual way: If <__x__>
+is the average intensity of the image, then a pixel with intensity _x_
+is mapped to 128 + _c_ * (_x_ - <__x__>).
+
+Normally, each output pixel is the average of a block of _scale_ x
+_scale_ input pixels. If, however, one or more -v arguments are given,
+the output is instead the | _x_ - <__x__> | noise in each block.
+
+If an input file is /path/to/file.ext and the scale factor is
+_n_, then the output file is /path/to/S__n__file.ext.
+
+Exception: if ``p=__outpath__'' is specified on the command line, the
+output file is outpath/S__n__file.ext.
+
+**iscale** is primarily intended for grayscale images. It will run on
+  RGB images as well, but contrast adjustment and variance measurement
+  are not supported.
+
+Authors
+-------
+*iscale* was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar.

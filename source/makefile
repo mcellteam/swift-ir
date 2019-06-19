@@ -1,4 +1,4 @@
-all: test_libs swim iavg iscale mir remod sxox json_parser.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+all: test_libs swim iavg iscale mir remod remod_old sxox json_parser.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
 test_libs: test_libs.c swimio.h debug.h makefile
 	gcc -Wno-implicit -o test_libs -O3 -m64 -msse3 test_libs.c -ltiff -ljpeg -lpng -lfftw3f -lm
@@ -58,6 +58,9 @@ mir: mir.c swimio.h debug.h makefile
 remod: remod.c swimio.h debug.h makefile
 	gcc -Wno-implicit -O3 -o remod remod.c -lfftw3f -ltiff -ljpeg -lpng -lm
 
+remod_old: remod_old.c swimio.h debug.h makefile
+	gcc -Wno-implicit -O3 -o remod_old remod_old.c -lfftw3f -ltiff -ljpeg -lpng -lm
+
 sxox: sxox.c makefile
 	gcc -Wno-implicit -O3 -o sxox sxox.c -lm
 
@@ -87,6 +90,12 @@ swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java re
 	rm -f *.class
 	javac -nowarn -source 1.6 -target 1.6 swift_gui.java
 	jar -cfe swift_gui.jar swift_gui *.class
+
+# "Normal" rule for ImageAlign.jar
+ImageAlign.jar: ImageAlign.java ZoomPanLib.java run_swift.java json_parser.java revision.java makefile
+	rm -f *.class
+	javac -nowarn -source 1.6 -target 1.6 ImageAlign.java
+	jar -cfe ImageAlign.jar ImageAlign *.class
 
 # "Fixed Date" rule for swift_gui.jar that produces a consistent jar file the same for each compilation
 #swift_gui.jar: swift_gui.java ZoomPanLib.java run_swift.java json_parser.java makefile
@@ -123,6 +132,8 @@ sha1sum.txt: swim iavg iscale mir remod run_swift.jar swift_gui.jar
 	sha1sum remod >> sha1sum.txt
 	sha1sum run_swift.jar >> sha1sum.txt
 	sha1sum swift_gui.jar >> sha1sum.txt
+#sha1sum pyswift_gui.py >> sha1sum.txt
+#sha1sum app_window.py >> sha1sum.txt
 
 rev:
 	git log --pretty=format:"public class revision { static String githash=\"%H on %ad\"; }" HEAD^..HEAD > revision.java
