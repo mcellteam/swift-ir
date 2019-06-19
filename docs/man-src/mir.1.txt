@@ -1,0 +1,264 @@
+MIR(1)
+======
+:doctype: manpage
+
+Name
+----
+mir - Multi Image Renderer
+
+Synopsis
+--------
+*mir* [-'options'] ['scriptfile']
+
+Description
+-----------
+The *mir*(1) command runs the *mir* interpreter on the named file. If no
+file is given, *mir* reads from stdin.
+
+*mir* is intended to apply geometric transformations to an image. It
+renders input files onto an output canvas by mapping points
+(__x__~in~, __y__~in~) from the source file onto points (__x__~out~,
+__y__~out~) on the output canvas. It can do so using a single affine
+transformation for the entire image, or by applying distinct affine
+transformations for triangular areas of the image. In the latter case,
+areas of the source image that are not covered by the triangulation
+are simply ignored.
+
+*mir* reads a program that may consist of commands, blocks of vertex
+definitions, and blocks of triangle definitions. Typically, a program
+will consist of a ``setup'' section, followed by one or more ``image
+placement'' sections, followed by a command to write the output to a
+file.
+
+Any command may appear in any section, although some obviously make more
+sense in certain contexts. Commands are all single letters followed by
+optional arguments. Multiple commands that do not take arguments may
+appear on the same line. The available commands are detailed
+below. A few commands (like **?**, **~**, and **E**) are mainly for
+interactive use and testing purposes.
+
+*mir* allows comments almost anywhere in its input: The hash
+ character (``&#35;'') and any text following it up to the next new line are ignored.
+
+Commands in the *mir* language
+------------------------------
+
+**?**:: Show a brief help text about the available commands.
+
+**~**:: Display current transformation matrices.
+
+**A** MF~00~ MF~01~ MF~02~ MF~10~ MF~11~ MF~12~:: Directly
+    specify new ``forward'' mapping. The ``reverse'' mapping is
+    automatically recalculated.
+
+**a** MI~00~ MI~01~ MI~02~ MI~10~ MI~11~ MI~12~:: Directly
+    specify new ``reverse'' mapping. The ``forward'' mapping is
+    automatically recalculated.
+
+**B** _w_~out~ _h_~out~ _bpp_~out~ _w_~tile~ _h_~tile~_ _trans_:: Specify
+    output width and height, output bytes per pixel, tile width and height,
+    and transparent input value.  _w_~out~ _h_~out~, but not the other
+    parameters, are interpreted as multiples of the _x_ and _y_ output scales.
+    _bpp_ may be one (8 bits) or two (16 bits).
+
+**D** 'name':: Directory prefix for all input filenames. There must be precisely
+    one space between the ``D'' and the directory name. The entire rest of the
+    line (up to the next newline) is interpreted as the prefix, including any
+    spaces.
+
+**E**:: Exit the program.
+
+**F** 'name':: Read a new file. Any number of spaces and tab characters may
+    appear between the ``F'' and the filename. The filename may not contain
+    any spaces. The actual file loaded is determined by concatenating the
+    filename to the current directory prefix (without inserting a slash or
+    anything else). The program aborts if no filename is given, but quietly
+    substitutes a 1x1 image if the file cannot be read. If this is the first
+    image read, the size of the output image is set by the size of the image
+    loaded (unless explicitly given by a **B** command or **-B** option).
+    Reading a new image does not reset the transformation matrices.
+
+**G**  MG~00~ MG~01~ MG~02~ MG~10~ MG~11~ MG~12~:: Directly
+    specify new ``global'' mapping. This mapping is not actually used
+    for rendering.
+
+**I**_n_:: Set interpolation level. _n_ must be 0, 1, or 2 for nearest
+    neighbor, bilinear, or bicubic interpolation.
+
+**O** _dx_~out~ _dy_~out~ _dx_~in~ _dy_~in~:: Specify pixel offsets.
+    Arguments may contain basic math: Addition, subtraction, multiplication,
+    division, modulo, power, and parentheses are supported.
+
+**S** _S_~x~^out^ _S_~x~^out^ _S_~x~^in^ _S_~y~^in^:: Specify scale factors.
+  These factors are applied to all subsequent vertex definitions and
+  also to the arguments of the **B** command.
+
+**R**:: Render image directly. See below.
+
+**V**:: Toggle reverse video.
+
+**W** 'name':: Write output image. Any number of spaces and tab characters may
+    appear between the ``W'' and the filename. The filename may not contain
+    any spaces. The ``directory prefix'' is not used. If tiling is enabled
+    (by specifying nonzero _w_~tile~ and _h_~tile~_ to the **B** command),
+    the 'name' must contain two `%i` place holders for `sprintf` to insert
+    the row and column indices of the tile (both counted from zero).
+    Writing an output image does not reset the transformation
+    matrices. If no **W** command is given ever, the final output is
+    written to stdout in PGM format unless the program is terminated
+    by the **E** command.
+
+**X**:: Following the **X** command, lines that specify vertices are
+  interpreted as __x__~in~ __y__~in~ __x__~out~ __y__~out~ rather than
+   __x__~out~ __y__~out~ __x__~in~ __y__~in~. A subsequent **X**
+  command cancels this mode of operation.
+
+**Z** _n_:: Zero the drawing space to the given gray value _n_. If _n_ is
+    not given, the default is 0 (unless specified with the **-Z**
+    command line option).
+
+Rendering images with an explicit transformation matrix
+-------------------------------------------------------
+
+The coordinate transformations used for rendering images may be
+specified explicitly with the **A** or **a** commands. In that case,
+after setup, the **R** command may be issued directly.
+
+Commonly, however, **mir** is used to determine coordinate
+transformations from specified matchings between points in the output
+space and points in the input space. This can be done either in a
+global fashion, or in a local fashion using a triangular mesh over the
+image.
+
+Rendering images with a global affine transformation based on matched vertices
+------------------------------------------------------------------------------
+
+If ``vertex'' lines precede the **R** command, any previously
+specified matrices (see the **A** and **a** commands) are discarded,
+and the transformation is determined by a least-square optimization
+process over the given vertex pairs. Vertex lines consist of four
+coordinates on a line:
+
+_x_~out~ _y_~out~ _x_~in~ _y_~in~
+
+(If the **X** command is in effect, the order is
+_x_~in~ _y_~in~ _x_~out~ _y_~out~ instead.)
+Coordinates may be given directly as floating point numbers, but basic
+arithmetic is allowed: *mir* understands
+multiplication, division, addition, subtraction, modulo, and power. It also
+understands parentheses. Importantly, however, spaces are not allowed
+inside equations. *mir* also appears to allow for variable assignment
+and dereference, but the author of this page doesn't yet understand
+how that works.
+
+After evaluation, the current offset (**O** command) is applied and
+then (!) the current scale (**S** command).
+
+Any number of vertex pairs may appear on consecutive lines. 
+
+After the last vertex line, the **R** command should appear
+immediately without any other intervening commands.
+
+The number of vertex pairs given determines how the affine
+transformation is constructed:
+* If zero, the matrices set by **A** or **a** are used.
+* If one, the vertex specifies a linear shift on top of existing scaling and/or
+    rotation set by **A** or **a**.
+* If two, calculates an affine transformation based on the two points and
+    a fictional point created as
+    (_x_~1~ + _y_~2~ − _y_~1~, _y_~1~ + _x_~1~ − _x_~2~).
+* If three or more, calculates an affine transformation by
+  least-squares optimization.
+
+Rendering images with local affine transformations
+--------------------------------------------------
+
+To render with locally defined transformations, first specify the
+vertices of any number of triangles using vertex lines as before, but
+do not issue an **R** command immediately afterward. Instead, follow
+the vertex lines with a line consisting of a single ``T'' (for
+Triangles), followed by any number of ``triangle lines.''
+
+Triangles are defined by triplets _i_ _j_ _k_ which must
+be indices into the previously defined vertices (counting from
+zero). Specifying vertices that do not exist is likely to crash the
+program. Each triangle definition must be given its own line.
+
+The triangles must be followed by the **R** command.
+
+Command line options
+--------------------
+
+**-B**_w_,_h_:: Output width and height in pixels. The numbers are
+    multiplied by any scale factors set by a preceding **-S** option.
+    Default: Determined from first-loaded input image.
+
+**-b**:: Save overlap images for later intensity correction.
+    Filename is constructed as 'input'.back.pgm, where 'input' is the
+    source filename with a three letter extension removed.
+
+*-g*:: Overlay a grid. If given twice, input image pixels are ignored entirely.
+
+**-i**:: Increase interpolation level:
+
+* Default level is zero: nearest neighbor.
+* Level one: bilinear.
+* Level two (or more): bicubic.
+
+**-N**_n_:: Least points. The result of inferring the affine transformation
+    may be rejected (forcing a recalculation) if the average error is too large,
+    but only if at least _n_ points remain available for the inference process.
+    Default value is 4.
+
+**-o**:: Show outline triangles instead of normal image output.
+
+**-r**:: Reverse video. Output image has reverse polarity of input images.
+
+**-S**_S_~x~^out^,_S_~x~^out^,_S_~x~^in^,_S_~y~^in^:: Scale.
+    These scale factors are applied to all vertex coordinates.
+    Default values are 1 for all. [Interpretation of arguments is not
+    affected by the **-X** option.]
+
+**-s**:: Show solid triangles instead of normal image output.
+
+**-T**_n_:: Transparent input value.
+    Pixels of this color are not copied to output. (Useful for out-of-bounds
+    areas.)
+     For unknown reasons, the value used to be interpreted as a multiple of the 
+    _x_~out~ scale in force at the time the option is seen, but DAW changed
+    that. Now it is simply a value between 0 and 255.
+
+*-X*:: Same as the **X** command, this affects lines that consist of
+    four numbers.
+    With the *-X* flag given, lines are interpreted as 
+    __x__~in~ __y__~in~ __x__~out~ __y__~out~ rather than
+    __x__~out~ __y__~out~  __x__~in~ __y__~in~.
+
+**-Z**_n_:: Specifies background gray value for output. (The default is 0.)
+    For unknown reasons, the value used to be interpreted as a multiple of the 
+    _x_~out~ scale in force at the time the option is seen, but DAW changed
+    that. Now it is simply a value between 0 and 255.
+
+**-?**:: Enable prompting. (That is, show the text ``Enter a MIR command >''
+    when *mir* is ready for command input.)
+
+Options that do not take arguments can be combined. There may not be any
+spaces between options and their arguments.
+
+Output
+------
+
+**mir**'s output consists of the constructed image file, lots of
+  debugging information on stderr, and information about computed
+  transformations on stdout. The latter has the form ``_filename_ AF
+  __m__~00~ __m__~01~ __m__~02~ __m__~10~ __m__~11~ __m__~12~''. 
+  Precisely one such line appears for each **R** command for which
+  **mir** calculated a global affine transformation. **R** commands
+  with triangulation result in one line for each triangle. Each
+  ``AF'' line is followed by an ``AI'' line with the inverse
+  transformation.
+  
+Author
+------
+*mir* was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar. DW does not yet fully understand *mir*.
