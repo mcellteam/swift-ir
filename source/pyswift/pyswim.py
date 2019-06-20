@@ -9,7 +9,7 @@ from math import *
   Note:
   swim outputs a line of the form
 
-  SNR: target xtgt ytgt source xsrc ysrc φsrc (Δx Δy m0 flags)
+  SNR: target xtgt ytgt source xsrc ysrc phi_src (dx dy m0 flags)
 
   Here:
 
@@ -23,14 +23,14 @@ source
   is the file name of the source image copied from the command line
 xsrc ysrc
   are the optimized coordinates of psrc that match ptgt.
-φsrc
+phi_src
   is the optimized rotation.
 
-Information in parentheses is somewhat redundant. Δx and Δy are the pixel
-shifts applied to psrc and m0 := √(Δx2 + Δy2). The flags can indicate bad
-matches in x (“dx”), in y (“dy”), in both (“dxy”) if any shift is greater than
+Information in parentheses is somewhat redundant. dx and dy are the pixel
+shifts applied to psrc and m0 := sqrt(dx^2 + dy^2). The flags can indicate bad
+matches in x ("dx"), in y ("dy"), in both ("dxy") if any shift is greater than
 a quarter of the window size. It can also indicate that a threshold has been
-exceeded (“dreset”)
+exceeded ("dreset")
 
 '''
 
