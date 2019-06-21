@@ -21,14 +21,30 @@ alignment_index = -1
 
 global destination_path
 
+global trans_ww_entry
+global trans_addx_entry
+global trans_addy_entry
+global skip_check_box
+global affine_check_box
+global affine_ww_entry
+global affine_addx_entry
+global affine_addy_entry
+global bias_check_box
+global bias_dx_entry
+global bias_dy_entry
 
 class alignment:
+  ''' An alignment is everything needed to align 2 images in the stack '''
   def __init__ ( self, base=None, adjust=None ):
     print ( "Constructing new alignment with base " + base )
     self.base_image_name = base
     self.adjust_image_name = adjust
     self.base_image = None
     self.adjust_image = None
+    self.ww = 256
+    self.addx = 256
+    self.addy = 256
+    self.skip = False
     try:
       #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
       self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
@@ -41,6 +57,18 @@ class alignment:
 
 
 class zoom_window ( app_window.zoom_pan_area ):
+  global trans_ww_entry
+  global trans_addx_entry
+  global trans_addy_entry
+  global skip_check_box
+  global affine_check_box
+  global affine_ww_entry
+  global affine_addx_entry
+  global affine_addy_entry
+  global bias_check_box
+  global bias_dx_entry
+  global bias_dy_entry
+
   def __init__ ( self, window, win_width, win_height, name="" ):
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
@@ -78,6 +106,14 @@ class zoom_window ( app_window.zoom_pan_area ):
         alignment_index = -1
         print ( "Index = " + str(alignment_index) )
       else:
+        # Store the values into the section being exited
+        a = alignment_list[alignment_index]
+        a.ww = int(trans_ww_entry.get_text())
+        a.addx = int(trans_addx_entry.get_text())
+        a.addy = int(trans_addy_entry.get_text())
+        a.skip = skip_check_box.get_active()
+
+        # Move to the next location (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
           alignment_index += 1
           if alignment_index >= len(alignment_list):
@@ -86,7 +122,17 @@ class zoom_window ( app_window.zoom_pan_area ):
           alignment_index += -1
           if alignment_index < 0:
             alignment_index = 0
-        print ( "Index = " + str(alignment_index) + ", base_name = " + alignment_list[alignment_index].base_image_name )
+        # Display the values from the new section being viewed
+        a = alignment_list[alignment_index]
+        print ( "Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
+        print ( "  ww = " + str(a.ww) + ", addx = " + str(a.addx) + ", addy = " + str(a.addy) )
+        trans_ww_entry.set_text ( str(a.ww) )
+        trans_addx_entry.set_text ( str(a.addx) )
+        trans_addy_entry.set_text ( str(a.addy) )
+        skip_check_box.set_active ( a.skip )
+        
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        
       zpa_original.queue_draw()
       zpa_aligned.queue_draw()
       return True
@@ -383,11 +429,16 @@ def menu_callback ( widget, data=None ):
       response = file_chooser.run()
 
       if response == gtk.RESPONSE_OK:
+        i = 0
         file_name_list = file_chooser.get_filenames()
         print ( "Selected Files: " + str(file_name_list) )
         # alignment_list = []
         for f in file_name_list:
           a = alignment ( f, None )
+          a.ww = 256
+          a.addx = 256 + i
+          a.addy = 256 + i
+          i += 1
           alignment_list.append ( a )
       file_chooser.destroy()
       print ( "Done with dialog" )
@@ -437,6 +488,18 @@ def menu_callback ( widget, data=None ):
 
 # Create the window and connect the events
 def main():
+
+  global trans_ww_entry
+  global trans_addx_entry
+  global trans_addy_entry
+  global skip_check_box
+  global affine_check_box
+  global affine_ww_entry
+  global affine_addx_entry
+  global affine_addy_entry
+  global bias_check_box
+  global bias_dx_entry
+  global bias_dy_entry
 
   # Create a top-level GTK window
   window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
@@ -592,54 +655,55 @@ def main():
   controls_hbox.show()
   controls_vbox.pack_start ( controls_hbox, False, False, 0 )
 
-  button = gtk.Label("Translation Pass:")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("Translation Pass:")
+  controls_hbox.pack_start ( a_label, True, True, 0 )
+  a_label.show()
 
-
+  # The variable "label_entry" is used for a transient hbox containing a label and an entry
+  # The variable 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("WW:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(5)
-  button.set_text ( "256" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("WW:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  trans_ww_entry = gtk.Entry(5)
+  trans_ww_entry.set_text ( "256" )
+  label_entry.pack_start ( trans_ww_entry, True, True, 0 )
+  trans_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("Addx:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(6)
-  button.set_text ( "256" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("Addx:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  trans_addx_entry = gtk.Entry(6)
+  trans_addx_entry.set_text ( "256" )
+  label_entry.pack_start ( trans_addx_entry, True, True, 0 )
+  trans_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("Addy:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(6)
-  button.set_text ( "256" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("Addy:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  trans_addy_entry = gtk.Entry(6)
+  trans_addy_entry.set_text ( "256" )
+  label_entry.pack_start ( trans_addy_entry, True, True, 0 )
+  trans_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label(" ")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.CheckButton("Skip")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label(" ")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  skip_check_box = gtk.CheckButton("Skip")
+  label_entry.pack_start ( skip_check_box, True, True, 0 )
+  skip_check_box.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -649,56 +713,56 @@ def main():
   controls_hbox.show()
   controls_vbox.pack_start ( controls_hbox, False, False, 0 )
 
-  button = gtk.Label(" ")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label(" ")
+  controls_hbox.pack_start ( a_label, True, True, 0 )
+  a_label.show()
 
-  button = gtk.CheckButton("  Affine Pass:")
-  button.set_active(True)
-  button.connect ( "toggled", affine_checked_callback, zpa_original )
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.show()
+  a_checkbox = gtk.CheckButton("  Affine Pass:")
+  a_checkbox.set_active(True)
+  a_checkbox.connect ( "toggled", affine_checked_callback, zpa_original )
+  controls_hbox.pack_start ( a_checkbox, True, True, 0 )
+  a_checkbox.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("WW:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(5)
-  button.set_text ( "256" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("WW:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  an_entry = gtk.Entry(5)
+  an_entry.set_text ( "256" )
+  label_entry.pack_start ( an_entry, True, True, 0 )
+  an_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("Addx:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(6)
-  button.set_text ( "256" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("Addx:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  an_entry = gtk.Entry(6)
+  an_entry.set_text ( "256" )
+  label_entry.pack_start ( an_entry, True, True, 0 )
+  an_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("Addy:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(6)
-  button.set_text ( "256" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("Addy:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  an_entry = gtk.Entry(6)
+  an_entry.set_text ( "256" )
+  label_entry.pack_start ( an_entry, True, True, 0 )
+  an_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
-  button = gtk.Label(" ")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label(" ")
+  controls_hbox.pack_start ( a_label, True, True, 0 )
+  a_label.show()
 
 
   # Create a horizontal box to hold a row of controls
@@ -706,42 +770,42 @@ def main():
   controls_hbox.show()
   controls_vbox.pack_start ( controls_hbox, False, False, 0 )
 
-  button = gtk.Label(" ")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label(" ")
+  controls_hbox.pack_start ( a_label, True, True, 0 )
+  a_label.show()
 
-  button = gtk.CheckButton("  Bias Pass:")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.show()
+  a_checkbox = gtk.CheckButton("  Bias Pass:")
+  controls_hbox.pack_start ( a_checkbox, True, True, 0 )
+  a_checkbox.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("dx per image:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(5)
-  button.set_text ( "0" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("dx per image:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  an_entry = gtk.Entry(5)
+  an_entry.set_text ( "0" )
+  label_entry.pack_start ( an_entry, True, True, 0 )
+  an_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("dy per image:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
-  button = gtk.Entry(5)
-  button.set_text ( "0" )
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("dy per image:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  an_entry = gtk.Entry(5)
+  an_entry.set_text ( "0" )
+  label_entry.pack_start ( an_entry, True, True, 0 )
+  an_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
 
-  button = gtk.Label(" ")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label(" ")
+  controls_hbox.pack_start ( a_label, True, True, 0 )
+  a_label.show()
 
 
 
@@ -772,9 +836,9 @@ def main():
 
 
   label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Label("# Forward")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  a_label = gtk.Label("# Forward")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
   button = gtk.Entry(6)
   label_entry.pack_start ( button, True, True, 0 )
   button.show()
