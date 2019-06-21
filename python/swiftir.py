@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 '''SWiFT-IR - Image registration tools using partially whitened spectra
@@ -22,7 +22,6 @@ Example scripts that implement the most common use cases of the original
 programs are planned.'''
 
 import numpy as np
-import matplotlib.pyplot as plt
 import cv2
 
 apo = []
@@ -125,11 +124,11 @@ def mirAffine(pa, pb):
     if N==0:
         return (np.array([[1., 0, 0], [0, 1, 0]]), 0, None)    
     elif N==1:
-        return (np.array([[1., 0, pb[0]-pa[0]], [0, 1, pb[1]-pa[1]]]), 0, 0)
+        return (np.array([[1., 0, (pb[0]-pa[0])[0]], [0, 1, (pb[1]-pa[1])[0]]]), 0, 0)
     elif N==2:
         # Add a fictive point, by rotating the second point 90 degrees
         # around the first point.
-        # This trick is due to Tom Wetzel.
+        # This trick is due to Art Wetzel.
         pa = np.hstack((pa, [[pa[0,0] - (pa[1,0]-pa[1,1])],
                              [pa[1,0] + (pa[0,0]-pa[0,1])]]))
         pb = np.hstack((pb, [[pb[0,0] - (pb[1,0]-pb[1,1])],
@@ -146,7 +145,7 @@ def mirAffine(pa, pb):
     pb = np.vstack((pb, np.ones((1,N))))
 
     # Python solves a M = b rather than M a = b, so transpose everything
-    afm = np.linalg.lstsq(pa.transpose(), pb.transpose())[0].transpose()
+    afm = np.linalg.lstsq(pa.transpose(), pb.transpose(), rcond=-1)[0].transpose()
     afm[2,:] = [0, 0, 1] # This should already be more or less true
 
     # lstsq doesn't return individual residuals, so must recalculate    
@@ -743,6 +742,7 @@ def copyTriangle(dst, src, tria, afm):
 if __name__=='__main__':
 
     import time
+    import matplotlib.pyplot as plt
     
     def simpleTest(img, im2):
         cut1 = extractStraightWindow(img)
