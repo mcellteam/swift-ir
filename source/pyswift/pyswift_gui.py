@@ -41,11 +41,17 @@ class alignment:
     self.adjust_image_name = adjust
     self.base_image = None
     self.adjust_image = None
-    self.ww = 256
-    self.addx = 256
-    self.addy = 256
+    self.trans_ww = 256
+    self.trans_addx = 256
+    self.trans_addy = 256
     self.skip = False
     self.affine = True
+    self.affine_ww = 256
+    self.affine_addx = 256
+    self.affine_addy = 256
+    self.bias_enabled = True
+    self.bias_dx = 0
+    self.bias_dy = 0
     try:
       #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
       self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
@@ -109,9 +115,9 @@ class zoom_window ( app_window.zoom_pan_area ):
       else:
         # Store the values into the section being exited
         a = alignment_list[alignment_index]
-        a.ww = int(trans_ww_entry.get_text())
-        a.addx = int(trans_addx_entry.get_text())
-        a.addy = int(trans_addy_entry.get_text())
+        a.trans_ww = int(trans_ww_entry.get_text())
+        a.trans_addx = int(trans_addx_entry.get_text())
+        a.trans_addy = int(trans_addy_entry.get_text())
         a.skip = skip_check_box.get_active()
         a.affine = affine_check_box.get_active()
         a.affine_ww = int(affine_ww_entry.get_text())
@@ -128,10 +134,10 @@ class zoom_window ( app_window.zoom_pan_area ):
         # Display the values from the new section being viewed
         a = alignment_list[alignment_index]
         print ( "Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
-        print ( "  ww = " + str(a.ww) + ", addx = " + str(a.addx) + ", addy = " + str(a.addy) )
-        trans_ww_entry.set_text ( str(a.ww) )
-        trans_addx_entry.set_text ( str(a.addx) )
-        trans_addy_entry.set_text ( str(a.addy) )
+        print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
+        trans_ww_entry.set_text ( str(a.trans_ww) )
+        trans_addx_entry.set_text ( str(a.trans_addx) )
+        trans_addy_entry.set_text ( str(a.trans_addy) )
         skip_check_box.set_active ( a.skip )
         affine_check_box.set_active ( a.affine )
         affine_ww_entry.set_text ( str(a.affine_ww) )
@@ -440,9 +446,9 @@ def menu_callback ( widget, data=None ):
         # alignment_list = []
         for f in file_name_list:
           a = alignment ( f, None )
-          a.ww = 256
-          a.addx = 256 + i
-          a.addy = 256 + i
+          a.trans_ww = 256
+          a.trans_addx = 256 + i
+          a.trans_addy = 256 + i
           i += 1
           alignment_list.append ( a )
       file_chooser.destroy()
