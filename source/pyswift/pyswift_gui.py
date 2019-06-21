@@ -45,6 +45,7 @@ class alignment:
     self.addx = 256
     self.addy = 256
     self.skip = False
+    self.affine = True
     try:
       #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
       self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
@@ -112,6 +113,8 @@ class zoom_window ( app_window.zoom_pan_area ):
         a.addx = int(trans_addx_entry.get_text())
         a.addy = int(trans_addy_entry.get_text())
         a.skip = skip_check_box.get_active()
+        a.affine = affine_check_box.get_active()
+        a.affine_ww = int(affine_ww_entry.get_text())
 
         # Move to the next location (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
@@ -130,7 +133,9 @@ class zoom_window ( app_window.zoom_pan_area ):
         trans_addx_entry.set_text ( str(a.addx) )
         trans_addy_entry.set_text ( str(a.addy) )
         skip_check_box.set_active ( a.skip )
-        
+        affine_check_box.set_active ( a.affine )
+        affine_ww_entry.set_text ( str(a.affine_ww) )
+
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         
       zpa_original.queue_draw()
@@ -717,21 +722,21 @@ def main():
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
 
-  a_checkbox = gtk.CheckButton("  Affine Pass:")
-  a_checkbox.set_active(True)
-  a_checkbox.connect ( "toggled", affine_checked_callback, zpa_original )
-  controls_hbox.pack_start ( a_checkbox, True, True, 0 )
-  a_checkbox.show()
+  affine_check_box = gtk.CheckButton("  Affine Pass:")
+  affine_check_box.set_active(True)
+  #affine_check_box.connect ( "toggled", affine_checked_callback, zpa_original )
+  controls_hbox.pack_start ( affine_check_box, True, True, 0 )
+  affine_check_box.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
   a_label = gtk.Label("WW:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  an_entry = gtk.Entry(5)
-  an_entry.set_text ( "256" )
-  label_entry.pack_start ( an_entry, True, True, 0 )
-  an_entry.show()
+  affine_ww_entry = gtk.Entry(5)
+  affine_ww_entry.set_text ( "256" )
+  label_entry.pack_start ( affine_ww_entry, True, True, 0 )
+  affine_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
