@@ -100,7 +100,6 @@ class zoom_window ( app_window.zoom_pan_area ):
       return ( app_window.zoom_pan_area.mouse_motion_callback ( self, canvas, event, zpa ) )
 
 def expose_callback ( drawing_area, event, zpa ):
-  diff_2d_sim = zpa.user_data['diff_2d_sim']
   display_time_index = zpa.user_data['display_time_index']
   x, y, width, height = event.area  # This is the area of the portion newly exposed
   width, height = drawing_area.window.get_size()  # This is the area of the entire window
@@ -270,16 +269,12 @@ def expose_callback ( drawing_area, event, zpa ):
 
 
 def step_callback(zpa):
-  diff_2d_sim = zpa.user_data['diff_2d_sim']
   display_time_index = zpa.user_data['display_time_index']
-  diff_2d_sim.step()
   zpa.get_drawing_area().queue_draw()
   return True
 
 
 def step_in_callback(zpa):
-  diff_2d_sim = zpa.user_data['diff_2d_sim']
-  diff_2d_sim.step_in()
   zpa.get_drawing_area().queue_draw()
   return True
 
@@ -440,53 +435,6 @@ def menu_callback ( widget, data=None ):
   return True
 
 
-# Minimized stub of the previous 2D Simulation
-class point_face_object:
-  def __init__( self, name="", x=0, y=0, color=(32000,32000,32000), points=[], faces=[] ):
-    self.name = name
-    self.color = color
-    self.points = [ p for p in points ]
-    self.faces = [ f for f in faces ]
-    self.x = x
-    self.y = y
-    if (len(points) > 0) and (len(faces) == 0):
-      # Make faces for the points
-      for i in range(len(self.points)):
-        print ( "  Making face with " + str(i) + "," + str((i+1)%len(self.points)) )
-        self.faces.append ( (i, (i+1)%len(self.points)) )
-  def print_self ( self ):
-    print ( "Object " + self.name + ": x,y = (" + str(self.x) + "," + str(self.y) )
-    for point in self.points:
-      print ( "  " + str(point) )
-    for face in self.faces:
-      print ( "  " + str(face) )
-
-class diff_2d_sim:
-  def __init__ ( self ):
-    print ( " Constructing a new minimal simulation" )
-    self.objects = [
-        point_face_object ( "Triangle 1", x=80, y=0, points=[[0,100], [50,-10], [-50,-10]] ),
-        point_face_object ( "Square 1", x=0, y=0, points=[[-90,-90], [-90,90], [90,90], [90,-90]] )
-      ]
-    # Set some simulation values
-    self.t = 0
-    self.dt = 2
-
-  def step ( self ):
-    print ( "Before run(1): t=" + str(self.t) )
-    self.t += self.dt
-    print ( "After run(1): t=" + str(self.t) )
-
-  def step_in ( self ):
-    print ( "Before step_in(): t=" + str(self.t) )
-    self.t += self.dt
-    print ( "After step_in(): t=" + str(self.t) )
-
-  def print_self ( self ):
-    print ( "t = " + str(self.t) )
-
-
-
 # Create the window and connect the events
 def main():
 
@@ -505,7 +453,6 @@ def main():
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
-                    'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
                     'running'            : False,
                     'last_update'        : -1,
@@ -518,7 +465,6 @@ def main():
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
-                    'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
                     'running'            : False,
                     'last_update'        : -1,
