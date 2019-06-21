@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import swiftir
 import numpy as np
@@ -16,6 +16,7 @@ def showdiff(ima, imb):
     dif[blk] = imb[blk] - ima[blk]
     plt.clf()
     plt.imshow(dif, cmap='gray')
+    plt.show()
 
 showdiff(orig, muck)
 
