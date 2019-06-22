@@ -41,14 +41,18 @@ class alignment:
     self.adjust_image_name = adjust
     self.base_image = None
     self.adjust_image = None
+
     self.trans_ww = 256
     self.trans_addx = 256
     self.trans_addy = 256
+
     self.skip = False
+
     self.affine = True
     self.affine_ww = 256
     self.affine_addx = 256
     self.affine_addy = 256
+
     self.bias_enabled = True
     self.bias_dx = 0
     self.bias_dy = 0
@@ -122,6 +126,12 @@ class zoom_window ( app_window.zoom_pan_area ):
         a.affine = affine_check_box.get_active()
         a.affine_ww = int(affine_ww_entry.get_text())
 
+        a.affine_addx = int(affine_addx_entry.get_text())
+        a.affine_addy = int(affine_addy_entry.get_text())
+        a.bias_enabled = bias_check_box.get_active()
+        a.bias_dx = float(bias_dx_entry.get_text())
+        a.bias_dy = float(bias_dy_entry.get_text())
+
         # Move to the next location (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
           alignment_index += 1
@@ -141,6 +151,12 @@ class zoom_window ( app_window.zoom_pan_area ):
         skip_check_box.set_active ( a.skip )
         affine_check_box.set_active ( a.affine )
         affine_ww_entry.set_text ( str(a.affine_ww) )
+
+        affine_addx_entry.set_text(str(a.affine_addx))
+        affine_addy_entry.set_text(str(a.affine_addy))
+        bias_check_box.set_active(a.bias_enabled)
+        bias_dx_entry.set_text(str(a.bias_dx))
+        bias_dy_entry.set_text(str(a.bias_dy))
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         
@@ -751,10 +767,10 @@ def main():
   a_label = gtk.Label("Addx:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  an_entry = gtk.Entry(6)
-  an_entry.set_text ( "256" )
-  label_entry.pack_start ( an_entry, True, True, 0 )
-  an_entry.show()
+  affine_addx_entry = gtk.Entry(6)
+  affine_addx_entry.set_text ( "256" )
+  label_entry.pack_start ( affine_addx_entry, True, True, 0 )
+  affine_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -763,10 +779,10 @@ def main():
   a_label = gtk.Label("Addy:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  an_entry = gtk.Entry(6)
-  an_entry.set_text ( "256" )
-  label_entry.pack_start ( an_entry, True, True, 0 )
-  an_entry.show()
+  affine_addy_entry = gtk.Entry(6)
+  affine_addy_entry.set_text ( "256" )
+  label_entry.pack_start ( affine_addy_entry, True, True, 0 )
+  affine_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -785,19 +801,19 @@ def main():
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
 
-  a_checkbox = gtk.CheckButton("  Bias Pass:")
-  controls_hbox.pack_start ( a_checkbox, True, True, 0 )
-  a_checkbox.show()
+  bias_check_box = gtk.CheckButton("  Bias Pass:")
+  controls_hbox.pack_start ( bias_check_box, True, True, 0 )
+  bias_check_box.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
   a_label = gtk.Label("dx per image:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  an_entry = gtk.Entry(5)
-  an_entry.set_text ( "0" )
-  label_entry.pack_start ( an_entry, True, True, 0 )
-  an_entry.show()
+  bias_dx_entry = gtk.Entry(5)
+  bias_dx_entry.set_text ( "0" )
+  label_entry.pack_start ( bias_dx_entry, True, True, 0 )
+  bias_dx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -806,10 +822,10 @@ def main():
   a_label = gtk.Label("dy per image:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  an_entry = gtk.Entry(5)
-  an_entry.set_text ( "0" )
-  label_entry.pack_start ( an_entry, True, True, 0 )
-  an_entry.show()
+  bias_dy_entry = gtk.Entry(5)
+  bias_dy_entry.set_text ( "0" )
+  label_entry.pack_start ( bias_dy_entry, True, True, 0 )
+  bias_dy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
