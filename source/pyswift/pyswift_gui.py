@@ -345,6 +345,52 @@ class zoom_window ( app_window.zoom_pan_area ):
     return False
 
 
+def set_all_or_fwd_callback ( set_all ):
+  if set_all:
+    print ( "Setting All ..." )
+  else:
+    print ( "Setting Forward ..." )
+  global alignment_list
+  global alignment_index
+  if alignment_list != None:
+    if len(alignment_list) > 0:
+      template = alignment_list[alignment_index]
+
+      # Store the current values from the gui into the template structure
+      template.trans_ww = int(gui_fields.trans_ww_entry.get_text())
+      template.trans_addx = int(gui_fields.trans_addx_entry.get_text())
+      template.trans_addy = int(gui_fields.trans_addy_entry.get_text())
+      template.skip = gui_fields.skip_check_box.get_active()
+      template.affine_enabled = gui_fields.affine_check_box.get_active()
+      template.affine_ww = int(gui_fields.affine_ww_entry.get_text())
+      template.affine_addx = int(gui_fields.affine_addx_entry.get_text())
+      template.affine_addy = int(gui_fields.affine_addy_entry.get_text())
+      template.bias_enabled = gui_fields.bias_check_box.get_active()
+      template.bias_dx = float(gui_fields.bias_dx_entry.get_text())
+      template.bias_dy = float(gui_fields.bias_dy_entry.get_text())
+
+      # Copy the template into all other sections as appropriate
+      copy = False
+      for a in alignment_list:
+        if set_all or (a == template):
+          copy = True
+        if copy and (a != template):
+          # print ( "Copying " + str(a) )
+          a.trans_ww = template.trans_ww
+          a.trans_addx = template.trans_addx
+          a.trans_addy = template.trans_addy
+          # a.skip = template.skip
+          a.affine_enabled = template.affine_enabled
+          a.affine_ww = template.affine_ww
+          a.affine_addx = template.affine_addx
+          a.affine_addy = template.affine_addy
+          a.bias_enabled = template.bias_enabled
+          a.bias_dx = template.bias_dx
+          a.bias_dy = template.bias_dy
+
+  return True
+
+
 def step_callback(zpa):
   display_time_index = zpa.user_data['display_time_index']
   zpa.get_drawing_area().queue_draw()
@@ -524,6 +570,7 @@ def menu_callback ( widget, data=None ):
             if 'imagestack' in proj_dict['data']:
               imagestack = proj_dict['data']['imagestack']
               if len(imagestack) > 0:
+                alignment_index = 0
                 alignment_list = []
                 for json_alignment in imagestack:
                   a = alignment ( json_alignment['filename'], None )
@@ -980,12 +1027,12 @@ def main():
 
   button = gtk.Button("Set All")
   controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", step_callback, zpa_original )
+  button.connect_object ( "clicked", set_all_or_fwd_callback, True )
   button.show()
 
   button = gtk.Button("Set Forward")
   controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", step_callback, zpa_original )
+  button.connect_object ( "clicked", set_all_or_fwd_callback, False )
   button.show()
 
   button = gtk.Button("Align All")
