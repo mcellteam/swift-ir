@@ -20,10 +20,15 @@ alignment_list = []
 global alignment_index
 alignment_index = -1
 
+global project_file_name
+project_file_name = ""
 global destination_path
+destination_path = ""
 
 class gui_fields_class:
   def __init__(self):
+    self.proj_label = None
+    self.dest_label = None
     self.trans_ww_entry = None
     self.trans_addx_entry = None
     self.trans_addy_entry = None
@@ -415,6 +420,43 @@ def background_callback ( zpa ):
 import pyswim
 import thread
 
+
+def run_alignment_callback ( align_all ):
+  global alignment_list
+  global alignment_index
+  global destination_path
+
+  index_list = range(len(alignment_list))
+  if not align_all:
+    index_list = range(alignment_index,len(alignment_list))
+
+  print ( "" )
+  print ( "" )
+  print ( "Aligning sections " + str(index_list) )
+  print ( "Destination Path = " + destination_path )
+
+  for i in index_list[0:-1]:
+    print ( "===============================================================================" )
+    print ( "Aligning " + str(i) + " to " + str(i+1) + " with:" )
+    print ( "" )
+    print ( "  base                     = " + str(alignment_list[i].base_image_name) )
+    print ( "  adjust                   = " + str(alignment_list[i+1].base_image_name) )
+    print ( "  skip                     = " + str(alignment_list[i].skip) )
+    print ( "" )
+    print ( "  translation window width = " + str(alignment_list[i].trans_ww) )
+    print ( "  translation addx         = " + str(alignment_list[i].trans_addx) )
+    print ( "  translation addy         = " + str(alignment_list[i].trans_addy) )
+    print ( "" )
+    print ( "  affine enabled           = " + str(alignment_list[i].affine_enabled) )
+    print ( "  affine window width      = " + str(alignment_list[i].affine_ww) )
+    print ( "  affine addx              = " + str(alignment_list[i].affine_addx) )
+    print ( "  affine addy              = " + str(alignment_list[i].affine_addy) )
+    print ( "" )
+    print ( "  bias enabled             = " + str(alignment_list[i].bias_enabled) )
+    print ( "  bias dx                  = " + str(alignment_list[i].bias_dx) )
+    print ( "  bias dy                  = " + str(alignment_list[i].bias_dy) )
+
+
 def run_callback ( zpa ):
   # print ( "Run " )
   # zpa.user_data['running'] = True
@@ -473,6 +515,8 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         destination_path = file_chooser.get_filename()
         print ( "Selected Directory: " + str(destination_path) )
+
+        gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
 
       file_chooser.destroy()
       print ( "Done with dialog" )
@@ -559,6 +603,11 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         open_name = file_chooser.get_filename()
         if open_name != None:
+          global project_file_name
+          project_file_name = open_name
+
+          gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+
           f = open ( open_name, 'r' )
           text = f.read()
 
@@ -567,6 +616,9 @@ def menu_callback ( widget, data=None ):
           print ( "Project file version " + str(proj_dict['version']) )
           print ( "Project file method " + str(proj_dict['method']) )
           if 'data' in proj_dict:
+            if 'destination_path' in proj_dict['data']:
+              destination_path = proj_dict['data']['destination_path']
+              gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
             if 'imagestack' in proj_dict['data']:
               imagestack = proj_dict['data']['imagestack']
               if len(imagestack) > 0:
@@ -618,13 +670,19 @@ def menu_callback ( widget, data=None ):
         if response == gtk.RESPONSE_OK:
           save_name = file_chooser.get_filename()
           if save_name != None:
+            global project_file_name
+            project_file_name = save_name
+
+            gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+
+            print ( "Saving destination path = " + str(destination_path) )
             f = open ( save_name, 'w' )
             f.write ( '{\n' )
             f.write ( '  "version": 0.0,\n' )
             f.write ( '  "method": "SWiFT-IR",\n' )
             f.write ( '  "data": {\n' )
             f.write ( '    "source_path": "",\n' )
-            f.write ( '    "destination_path": "",\n' )
+            f.write ( '    "destination_path": "' + str(destination_path) + '",\n' )
             f.write ( '    "pairwise_alignment": true,\n' )
             f.write ( '    "defaults": {\n' )
             f.write ( '      "align_to_next_pars": {\n' )
@@ -863,6 +921,26 @@ def main():
   # Add some rows of application specific controls and their callbacks
 
   # Create a horizontal box to hold a row of controls
+
+  global project_file_name
+  global destination_path
+
+  controls_hbox = gtk.HBox ( False, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+  gui_fields.proj_label = gtk.Label("Project File: " + str(project_file_name))
+  controls_hbox.pack_start ( gui_fields.proj_label, True, True, 0 )
+  gui_fields.proj_label.show()
+
+  controls_hbox = gtk.HBox ( False, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+  gui_fields.dest_label = gtk.Label("Destination: " + str(destination_path))
+  controls_hbox.pack_start ( gui_fields.dest_label, True, True, 0 )
+  gui_fields.dest_label.show()
+
+
+  # Create a horizontal box to hold a row of controls
   controls_hbox = gtk.HBox ( False, 10 )
   controls_hbox.show()
   controls_vbox.pack_start ( controls_hbox, False, False, 0 )
@@ -1037,12 +1115,12 @@ def main():
 
   button = gtk.Button("Align All")
   controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", run_callback, zpa_original )
+  button.connect_object ( "clicked", run_alignment_callback, True )
   button.show()
 
   button = gtk.Button("Align Forward")
   controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", run_callback, zpa_original )
+  button.connect_object ( "clicked", run_alignment_callback, False )
   button.show()
 
 
