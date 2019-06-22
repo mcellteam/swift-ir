@@ -3,6 +3,7 @@
 #__import__('code').interact(local = locals())
 import time
 import os
+import json
 
 import pygtk
 pygtk.require('2.0')
@@ -36,6 +37,9 @@ class gui_fields_class:
     self.bias_dy_entry = None
 
 gui_fields = gui_fields_class()
+
+global project_path
+project_path = None
 
 class alignment:
   ''' An alignment is everything needed to align 2 images in the stack '''
@@ -72,6 +76,7 @@ class alignment:
 
 
 class zoom_window ( app_window.zoom_pan_area ):
+  '''zoom_window - provide a drawing area that can be zoomed and panned.'''
   global gui_fields
 
   def __init__ ( self, window, win_width, win_height, name="" ):
@@ -99,6 +104,7 @@ class zoom_window ( app_window.zoom_pan_area ):
     return ( app_window.zoom_pan_area.button_release_callback ( self, canvas, event, zpa ) )
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
+    ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
       # Use shifted scroll wheel to zoom the image size
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
@@ -111,7 +117,7 @@ class zoom_window ( app_window.zoom_pan_area ):
         alignment_index = -1
         print ( "Index = " + str(alignment_index) )
       else:
-        # Store the values into the section being exited
+        # Store the alignment values into the section being exited
         a = alignment_list[alignment_index]
         a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
         a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
@@ -126,7 +132,7 @@ class zoom_window ( app_window.zoom_pan_area ):
         a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
         a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
 
-        # Move to the next location (potentially)
+        # Move to the next section (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
           alignment_index += 1
           if alignment_index >= len(alignment_list):
@@ -135,7 +141,8 @@ class zoom_window ( app_window.zoom_pan_area ):
           alignment_index += -1
           if alignment_index < 0:
             alignment_index = 0
-        # Display the values from the new section being viewed
+
+        # Display the alignment values from the new section being viewed
         a = alignment_list[alignment_index]
         print ( "Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
         print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
@@ -154,11 +161,13 @@ class zoom_window ( app_window.zoom_pan_area ):
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         
+      # Draw the windows
       zpa_original.queue_draw()
       zpa_aligned.queue_draw()
       return True
 
   def mouse_motion_callback ( self, canvas, event, zpa ):
+    ''' Overload the base mouse_motion_callback when shifted '''
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
       # Ignore the event
       return False
@@ -167,6 +176,7 @@ class zoom_window ( app_window.zoom_pan_area ):
       return ( app_window.zoom_pan_area.mouse_motion_callback ( self, canvas, event, zpa ) )
 
   def expose_callback ( self, drawing_area, event, zpa ):
+    ''' Draw all the elements in this window '''
     display_time_index = zpa.user_data['display_time_index']
     x, y, width, height = event.area  # This is the area of the portion newly exposed
     width, height = drawing_area.window.get_size()  # This is the area of the entire window
@@ -185,7 +195,7 @@ class zoom_window ( app_window.zoom_pan_area ):
     global alignment_list
     global alignment_index
 
-    print ( "Painting with len(alignment_list) = " + str(len(alignment_list)) )
+    # print ( "Painting with len(alignment_list) = " + str(len(alignment_list)) )
 
     pix_buf = None
     if len(alignment_list) > 0:
@@ -375,10 +385,6 @@ def stop_callback ( zpa ):
   zpa.user_data['running'] = False
   return True
 
-def affine_checked_callback ( self, zpa ):
-  print ( "Affine Checked " )
-  return True
-
 
 
 
@@ -428,6 +434,7 @@ def menu_callback ( widget, data=None ):
       zpa.queue_draw()
 
     elif command == "ImImport":
+
       file_chooser = gtk.FileChooserDialog(title="Select Images", action=gtk.FILE_CHOOSER_ACTION_OPEN,
 		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
       file_chooser.set_select_multiple(True)
@@ -477,10 +484,137 @@ def menu_callback ( widget, data=None ):
 
           i += 1
           alignment_list.append ( a )
+
       file_chooser.destroy()
       print ( "Done with dialog" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      zpa.queue_draw()
+      # zpa.queue_draw()
+      # Draw the windows
+      zpa_original.queue_draw()
+      zpa_aligned.queue_draw()
+
+    elif command == "OpenProj":
+
+      file_chooser = gtk.FileChooserDialog(title="Open Project", action=gtk.FILE_CHOOSER_ACTION_OPEN,
+	                                         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+      file_chooser.set_select_multiple(False)
+      file_chooser.set_default_response(gtk.RESPONSE_OK)
+
+      image_filter=gtk.FileFilter()
+      image_filter.set_name("JSON")
+      image_filter.add_pattern("*.json")
+      file_chooser.add_filter(image_filter)
+      image_filter=gtk.FileFilter()
+      image_filter.set_name("All Files")
+      image_filter.add_pattern("*")
+      file_chooser.add_filter(image_filter)
+      response = file_chooser.run()
+
+      if response == gtk.RESPONSE_OK:
+        open_name = file_chooser.get_filename()
+        if open_name != None:
+          f = open ( open_name, 'r' )
+          text = f.read()
+
+          proj_dict = json.loads ( text )
+          print ( str(proj_dict) )
+          print ( "Project file version " + str(proj_dict['version']) )
+          print ( "Project file method " + str(proj_dict['method']) )
+          if 'data' in proj_dict:
+            if 'imagestack' in proj_dict['data']:
+              imagestack = proj_dict['data']['imagestack']
+              if len(imagestack) > 0:
+                alignment_list = []
+                for json_alignment in imagestack:
+                  a = alignment ( json_alignment['filename'], None )
+                  if 'skip' in json_alignment:
+                    a.skip = json_alignment['skip']
+                  if 'align_to_next_pars' in json_alignment:
+                    pars = json_alignment['align_to_next_pars']
+                    a.trans_ww = pars['window_size']
+                    a.trans_addx = pars['addx']
+                    a.trans_addy = pars['addy']
+                    a.affine_enabled = True
+                    a.affine_ww = pars['window_size']
+                    a.affine_addx = pars['addx']
+                    a.affine_addy = pars['addy']
+                    a.bias_enabled = False
+                    a.bias_dx = 0
+                    a.bias_dy = 0
+                  alignment_list.append ( a )
+      file_chooser.destroy()
+      print ( "Done with dialog" )
+      zpa_original.queue_draw()
+      zpa_aligned.queue_draw()
+
+    elif (command == "SaveProj") or (command == "SaveProjAs"):
+
+      if (project_path == None) or (command == "SaveProjAs"):
+        # Prompt for a file name
+
+        file_chooser = gtk.FileChooserDialog(title="Save Project", action=gtk.FILE_CHOOSER_ACTION_SAVE,
+		                                         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+        file_chooser.set_select_multiple(False)
+        file_chooser.set_default_response(gtk.RESPONSE_OK)
+        #file_chooser.show()
+
+        image_filter=gtk.FileFilter()
+        image_filter.set_name("JSON")
+        image_filter.add_pattern("*.json")
+        file_chooser.add_filter(image_filter)
+        image_filter=gtk.FileFilter()
+        image_filter.set_name("All Files")
+        image_filter.add_pattern("*")
+        file_chooser.add_filter(image_filter)
+        response = file_chooser.run()
+
+        if response == gtk.RESPONSE_OK:
+          save_name = file_chooser.get_filename()
+          if save_name != None:
+            f = open ( save_name, 'w' )
+            f.write ( '{\n' )
+            f.write ( '  "version": 0.0,\n' )
+            f.write ( '  "method": "SWiFT-IR",\n' )
+            f.write ( '  "data": {\n' )
+            f.write ( '    "source_path": "",\n' )
+            f.write ( '    "destination_path": "",\n' )
+            f.write ( '    "pairwise_alignment": true,\n' )
+            f.write ( '    "defaults": {\n' )
+            f.write ( '      "align_to_next_pars": {\n' )
+            f.write ( '        "window_size": 1024,\n' )
+            f.write ( '        "addx": 800,\n' )
+            f.write ( '        "addy": 800,\n' )
+            f.write ( '        "output_level": 0\n' )
+            f.write ( '      }\n' )
+            f.write ( '    },\n' )
+
+            if alignment_list != None:
+              if len(alignment_list) > 0:
+                f.write ( '    "imagestack": [\n' )
+                for a in alignment_list:
+                  f.write ( '      {\n' )
+                  f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
+                  if a != alignment_list[-1]:
+                    f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '",\n' )
+                    f.write ( '        "align_to_next_pars": {\n' )
+                    f.write ( '          "window_size": ' + str(a.trans_ww) + ',\n' )
+                    f.write ( '          "addx": ' + str(a.trans_addx) + ',\n' )
+                    f.write ( '          "addy": ' + str(a.trans_addy) + ',\n' )
+                    f.write ( '          "output_level": 0\n' )
+                    f.write ( '        }\n' )
+                    f.write ( '      },\n' )
+                  else:
+                    f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '"\n' )
+                    f.write ( '      }\n' )
+                f.write ( '    ]\n' )
+                f.write ( '  }\n' )
+                f.write ( '}\n' )
+
+        #global project_path
+        #project_path = None
+        file_chooser.destroy()
+        print ( "Done with dialog" )
+
 
     elif command == "ClearAll":
 
@@ -750,7 +884,6 @@ def main():
 
   gui_fields.affine_check_box = gtk.CheckButton("  Affine Pass:")
   gui_fields.affine_check_box.set_active(True)
-  #gui_fields.affine_check_box.connect ( "toggled", affine_checked_callback, zpa_original )
   controls_hbox.pack_start ( gui_fields.affine_check_box, True, True, 0 )
   gui_fields.affine_check_box.show()
 
