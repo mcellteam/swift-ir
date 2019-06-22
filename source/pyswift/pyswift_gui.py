@@ -21,22 +21,26 @@ alignment_index = -1
 
 global destination_path
 
-global trans_ww_entry
-global trans_addx_entry
-global trans_addy_entry
-global skip_check_box
-global affine_check_box
-global affine_ww_entry
-global affine_addx_entry
-global affine_addy_entry
-global bias_check_box
-global bias_dx_entry
-global bias_dy_entry
+class gui_fields_class:
+  def __init__(self):
+    self.trans_ww_entry = None
+    self.trans_addx_entry = None
+    self.trans_addy_entry = None
+    self.skip_check_box = None
+    self.affine_check_box = None
+    self.affine_ww_entry = None
+    self.affine_addx_entry = None
+    self.affine_addy_entry = None
+    self.bias_check_box = None
+    self.bias_dx_entry = None
+    self.bias_dy_entry = None
+
+gui_fields = gui_fields_class()
 
 class alignment:
   ''' An alignment is everything needed to align 2 images in the stack '''
   def __init__ ( self, base=None, adjust=None ):
-    print ( "Constructing new alignment with base " + base )
+    print ( "Constructing new alignment with base " + str(base) )
     self.base_image_name = base
     self.adjust_image_name = adjust
     self.base_image = None
@@ -48,7 +52,7 @@ class alignment:
 
     self.skip = False
 
-    self.affine = True
+    self.affine_enabled = True
     self.affine_ww = 256
     self.affine_addx = 256
     self.affine_addy = 256
@@ -68,17 +72,7 @@ class alignment:
 
 
 class zoom_window ( app_window.zoom_pan_area ):
-  global trans_ww_entry
-  global trans_addx_entry
-  global trans_addy_entry
-  global skip_check_box
-  global affine_check_box
-  global affine_ww_entry
-  global affine_addx_entry
-  global affine_addy_entry
-  global bias_check_box
-  global bias_dx_entry
-  global bias_dy_entry
+  global gui_fields
 
   def __init__ ( self, window, win_width, win_height, name="" ):
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
@@ -119,18 +113,18 @@ class zoom_window ( app_window.zoom_pan_area ):
       else:
         # Store the values into the section being exited
         a = alignment_list[alignment_index]
-        a.trans_ww = int(trans_ww_entry.get_text())
-        a.trans_addx = int(trans_addx_entry.get_text())
-        a.trans_addy = int(trans_addy_entry.get_text())
-        a.skip = skip_check_box.get_active()
-        a.affine = affine_check_box.get_active()
-        a.affine_ww = int(affine_ww_entry.get_text())
+        a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
+        a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
+        a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
+        a.skip = gui_fields.skip_check_box.get_active()
+        a.affine_enabled = gui_fields.affine_check_box.get_active()
+        a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
 
-        a.affine_addx = int(affine_addx_entry.get_text())
-        a.affine_addy = int(affine_addy_entry.get_text())
-        a.bias_enabled = bias_check_box.get_active()
-        a.bias_dx = float(bias_dx_entry.get_text())
-        a.bias_dy = float(bias_dy_entry.get_text())
+        a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
+        a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
+        a.bias_enabled = gui_fields.bias_check_box.get_active()
+        a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
+        a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
 
         # Move to the next location (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
@@ -145,18 +139,18 @@ class zoom_window ( app_window.zoom_pan_area ):
         a = alignment_list[alignment_index]
         print ( "Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
         print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
-        trans_ww_entry.set_text ( str(a.trans_ww) )
-        trans_addx_entry.set_text ( str(a.trans_addx) )
-        trans_addy_entry.set_text ( str(a.trans_addy) )
-        skip_check_box.set_active ( a.skip )
-        affine_check_box.set_active ( a.affine )
-        affine_ww_entry.set_text ( str(a.affine_ww) )
+        gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
+        gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
+        gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
+        gui_fields.skip_check_box.set_active ( a.skip )
+        gui_fields.affine_check_box.set_active ( a.affine_enabled )
+        gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
 
-        affine_addx_entry.set_text(str(a.affine_addx))
-        affine_addy_entry.set_text(str(a.affine_addy))
-        bias_check_box.set_active(a.bias_enabled)
-        bias_dx_entry.set_text(str(a.bias_dx))
-        bias_dy_entry.set_text(str(a.bias_dy))
+        gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
+        gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
+        gui_fields.bias_check_box.set_active(a.bias_enabled)
+        gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
+        gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         
@@ -456,7 +450,7 @@ def menu_callback ( widget, data=None ):
       response = file_chooser.run()
 
       if response == gtk.RESPONSE_OK:
-        i = 0
+        i = 1
         file_name_list = file_chooser.get_filenames()
         print ( "Selected Files: " + str(file_name_list) )
         # alignment_list = []
@@ -465,6 +459,22 @@ def menu_callback ( widget, data=None ):
           a.trans_ww = 256
           a.trans_addx = 256 + i
           a.trans_addy = 256 + i
+
+          a.trans_ww = 10 + i
+          a.trans_addx = 20 + i
+          a.trans_addy = 30 + i
+
+          a.skip = ((i%2) == 0)
+
+          a.affine_enabled = ((i%2) == 1)
+          a.affine_ww = 40 + i
+          a.affine_addx = 50 + i
+          a.affine_addy = 60 + i
+
+          a.bias_enabled = ((i%2) == 0)
+          a.bias_dx = 70 + i
+          a.bias_dy = 80 + i
+
           i += 1
           alignment_list.append ( a )
       file_chooser.destroy()
@@ -516,17 +526,7 @@ def menu_callback ( widget, data=None ):
 # Create the window and connect the events
 def main():
 
-  global trans_ww_entry
-  global trans_addx_entry
-  global trans_addy_entry
-  global skip_check_box
-  global affine_check_box
-  global affine_ww_entry
-  global affine_addx_entry
-  global affine_addy_entry
-  global bias_check_box
-  global bias_dx_entry
-  global bias_dy_entry
+  global gui_fields
 
   # Create a top-level GTK window
   window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
@@ -670,6 +670,10 @@ def main():
                                    | gtk.gdk.POINTER_MOTION_MASK
                                    | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
+
+  alignment_defaults = alignment()
+
+
   # Create a Vertical box to hold rows of buttons
   controls_vbox = gtk.VBox ( True, 10 )
   controls_vbox.show()
@@ -692,10 +696,10 @@ def main():
   a_label = gtk.Label("WW:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  trans_ww_entry = gtk.Entry(5)
-  trans_ww_entry.set_text ( "256" )
-  label_entry.pack_start ( trans_ww_entry, True, True, 0 )
-  trans_ww_entry.show()
+  gui_fields.trans_ww_entry = gtk.Entry(5)
+  gui_fields.trans_ww_entry.set_text ( str(alignment_defaults.trans_ww) )
+  label_entry.pack_start ( gui_fields.trans_ww_entry, True, True, 0 )
+  gui_fields.trans_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -704,10 +708,10 @@ def main():
   a_label = gtk.Label("Addx:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  trans_addx_entry = gtk.Entry(6)
-  trans_addx_entry.set_text ( "256" )
-  label_entry.pack_start ( trans_addx_entry, True, True, 0 )
-  trans_addx_entry.show()
+  gui_fields.trans_addx_entry = gtk.Entry(6)
+  gui_fields.trans_addx_entry.set_text ( str(alignment_defaults.trans_addx) )
+  label_entry.pack_start ( gui_fields.trans_addx_entry, True, True, 0 )
+  gui_fields.trans_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -716,10 +720,10 @@ def main():
   a_label = gtk.Label("Addy:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  trans_addy_entry = gtk.Entry(6)
-  trans_addy_entry.set_text ( "256" )
-  label_entry.pack_start ( trans_addy_entry, True, True, 0 )
-  trans_addy_entry.show()
+  gui_fields.trans_addy_entry = gtk.Entry(6)
+  gui_fields.trans_addy_entry.set_text ( str(alignment_defaults.trans_addy) )
+  label_entry.pack_start ( gui_fields.trans_addy_entry, True, True, 0 )
+  gui_fields.trans_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -728,9 +732,9 @@ def main():
   a_label = gtk.Label(" ")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  skip_check_box = gtk.CheckButton("Skip")
-  label_entry.pack_start ( skip_check_box, True, True, 0 )
-  skip_check_box.show()
+  gui_fields.skip_check_box = gtk.CheckButton("Skip")
+  label_entry.pack_start ( gui_fields.skip_check_box, True, True, 0 )
+  gui_fields.skip_check_box.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -744,21 +748,21 @@ def main():
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
 
-  affine_check_box = gtk.CheckButton("  Affine Pass:")
-  affine_check_box.set_active(True)
-  #affine_check_box.connect ( "toggled", affine_checked_callback, zpa_original )
-  controls_hbox.pack_start ( affine_check_box, True, True, 0 )
-  affine_check_box.show()
+  gui_fields.affine_check_box = gtk.CheckButton("  Affine Pass:")
+  gui_fields.affine_check_box.set_active(True)
+  #gui_fields.affine_check_box.connect ( "toggled", affine_checked_callback, zpa_original )
+  controls_hbox.pack_start ( gui_fields.affine_check_box, True, True, 0 )
+  gui_fields.affine_check_box.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
   a_label = gtk.Label("WW:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  affine_ww_entry = gtk.Entry(5)
-  affine_ww_entry.set_text ( "256" )
-  label_entry.pack_start ( affine_ww_entry, True, True, 0 )
-  affine_ww_entry.show()
+  gui_fields.affine_ww_entry = gtk.Entry(5)
+  gui_fields.affine_ww_entry.set_text ( str(alignment_defaults.affine_ww) )
+  label_entry.pack_start ( gui_fields.affine_ww_entry, True, True, 0 )
+  gui_fields.affine_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -767,10 +771,10 @@ def main():
   a_label = gtk.Label("Addx:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  affine_addx_entry = gtk.Entry(6)
-  affine_addx_entry.set_text ( "256" )
-  label_entry.pack_start ( affine_addx_entry, True, True, 0 )
-  affine_addx_entry.show()
+  gui_fields.affine_addx_entry = gtk.Entry(6)
+  gui_fields.affine_addx_entry.set_text ( str(alignment_defaults.affine_addx) )
+  label_entry.pack_start ( gui_fields.affine_addx_entry, True, True, 0 )
+  gui_fields.affine_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -779,10 +783,10 @@ def main():
   a_label = gtk.Label("Addy:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  affine_addy_entry = gtk.Entry(6)
-  affine_addy_entry.set_text ( "256" )
-  label_entry.pack_start ( affine_addy_entry, True, True, 0 )
-  affine_addy_entry.show()
+  gui_fields.affine_addy_entry = gtk.Entry(6)
+  gui_fields.affine_addy_entry.set_text ( str(alignment_defaults.affine_addy) )
+  label_entry.pack_start ( gui_fields.affine_addy_entry, True, True, 0 )
+  gui_fields.affine_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -801,19 +805,19 @@ def main():
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
 
-  bias_check_box = gtk.CheckButton("  Bias Pass:")
-  controls_hbox.pack_start ( bias_check_box, True, True, 0 )
-  bias_check_box.show()
+  gui_fields.bias_check_box = gtk.CheckButton("  Bias Pass:")
+  controls_hbox.pack_start ( gui_fields.bias_check_box, True, True, 0 )
+  gui_fields.bias_check_box.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
   a_label = gtk.Label("dx per image:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  bias_dx_entry = gtk.Entry(5)
-  bias_dx_entry.set_text ( "0" )
-  label_entry.pack_start ( bias_dx_entry, True, True, 0 )
-  bias_dx_entry.show()
+  gui_fields.bias_dx_entry = gtk.Entry(5)
+  gui_fields.bias_dx_entry.set_text ( str(alignment_defaults.bias_dx) )
+  label_entry.pack_start ( gui_fields.bias_dx_entry, True, True, 0 )
+  gui_fields.bias_dx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
@@ -822,10 +826,10 @@ def main():
   a_label = gtk.Label("dy per image:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  bias_dy_entry = gtk.Entry(5)
-  bias_dy_entry.set_text ( "0" )
-  label_entry.pack_start ( bias_dy_entry, True, True, 0 )
-  bias_dy_entry.show()
+  gui_fields.bias_dy_entry = gtk.Entry(5)
+  gui_fields.bias_dy_entry.set_text ( str(alignment_defaults.bias_dy) )
+  label_entry.pack_start ( gui_fields.bias_dy_entry, True, True, 0 )
+  gui_fields.bias_dy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
