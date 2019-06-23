@@ -40,6 +40,7 @@ class gui_fields_class:
     self.bias_check_box = None
     self.bias_dx_entry = None
     self.bias_dy_entry = None
+    self.num_align_forward = None
 
 gui_fields = gui_fields_class()
 
@@ -425,10 +426,21 @@ def run_alignment_callback ( align_all ):
   global alignment_list
   global alignment_index
   global destination_path
+  global gui_fields
 
   index_list = range(len(alignment_list))
   if not align_all:
-    index_list = range(alignment_index,len(alignment_list))
+    first = alignment_index
+    last = len(alignment_list)
+    num_forward_str = gui_fields.num_align_forward.get_text()
+    num_forward = -1
+    if len(num_forward_str.strip()) > 0:
+      num_forward = int(num_forward_str.strip())
+      if (alignment_index + num_forward + 1) < len(alignment_list):
+        last = alignment_index + num_forward + 1
+      else:
+        last = len(alignment_index)
+    index_list = range(first,last)
 
   print ( "" )
   print ( "" )
@@ -1128,9 +1140,10 @@ def main():
   a_label = gtk.Label("# Forward")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  button = gtk.Entry(6)
-  label_entry.pack_start ( button, True, True, 0 )
-  button.show()
+  gui_fields.num_align_forward = gtk.Entry(6)
+  gui_fields.num_align_forward.set_text ( '1' )
+  label_entry.pack_start ( gui_fields.num_align_forward, True, True, 0 )
+  gui_fields.num_align_forward.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
