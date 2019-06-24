@@ -47,6 +47,36 @@ gui_fields = gui_fields_class()
 global project_path
 project_path = None
 
+class graphic_primitive:
+  def __init__ ( self ):
+    self.color = [1.0, 0, 0]
+    pass
+
+class graphic_line (graphic_primitive):
+  def __init__ ( self, x, y, dx, dy ):
+    self.x = x
+    self.y = y
+    self.dx = dx
+    self.dy = dy
+
+class graphic_dot (graphic_primitive):
+  def __init__ ( self, x, y, r ):
+    self.x = x
+    self.y = y
+    self.r = r
+
+
+class annotated_image:
+  ''' An image with a series of drawing primitives defined in
+      the pixel coordinates of the image. '''
+  def __init__ ( self, file_name=None ):
+    self.file_name = file_name
+    self.graphics_items = []
+  def add_graphic ( self, item ):
+    self.graphics_items.append ( item )
+
+
+
 class alignment:
   ''' An alignment is everything needed to align 2 images in the stack '''
   def __init__ ( self, base=None, adjust=None ):
