@@ -468,6 +468,14 @@ def run_alignment_callback ( align_all ):
     print ( "  bias dx                  = " + str(alignment_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(alignment_list[i].bias_dy) )
 
+  # For now, just copy some files
+  for i in index_list[0:]:
+    print ( "===============================================================================" )
+    if alignment_list[i].skip:
+      print ( "Skipping " + str(alignment_list[i].base_image_name) )
+    else:
+      print ( "Copying " + str(alignment_list[i].base_image_name) + " to " + destination_path )
+
 
 def run_callback ( zpa ):
   # print ( "Run " )
