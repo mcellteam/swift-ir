@@ -20,12 +20,13 @@ alignment_list = []
 global alignment_index
 alignment_index = -1
 
-global project_file_name
 project_file_name = ""
 global destination_path
 destination_path = ""
 
+
 class gui_fields_class:
+  ''' This class holds GUI widgets and not the persistent data. '''
   def __init__(self):
     self.proj_label = None
     self.dest_label = None
@@ -42,12 +43,14 @@ class gui_fields_class:
     self.bias_dy_entry = None
     self.num_align_forward = None
 
+''' This variable gives global access to the GUI widgets '''
 gui_fields = gui_fields_class()
 
 global project_path
 project_path = None
 
 class graphic_primitive:
+  ''' This base class defines something that can be drawn '''
   def __init__ ( self ):
     self.color = [1.0, 0, 0]
     pass
@@ -533,6 +536,7 @@ def menu_callback ( widget, data=None ):
   # or a plain string:
   #  command_string
   # Checking the type() of data will determine which
+
   if type(data) == type((True,False)):
     # Any tuple passed is assumed to be: (command, zpa)
     command = data[0]
@@ -543,6 +547,7 @@ def menu_callback ( widget, data=None ):
     global alignment_list
     global alignment_index
     global destination_path
+    global project_file_name
 
     if command == "Fast":
       zpa.user_data['frame_delay'] = 0.01
@@ -653,7 +658,6 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         open_name = file_chooser.get_filename()
         if open_name != None:
-          global project_file_name
           project_file_name = open_name
 
           gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
@@ -720,7 +724,6 @@ def menu_callback ( widget, data=None ):
         if response == gtk.RESPONSE_OK:
           save_name = file_chooser.get_filename()
           if save_name != None:
-            global project_file_name
             project_file_name = save_name
 
             gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
@@ -971,9 +974,6 @@ def main():
   # Add some rows of application specific controls and their callbacks
 
   # Create a horizontal box to hold a row of controls
-
-  global project_file_name
-  global destination_path
 
   controls_hbox = gtk.HBox ( False, 10 )
   controls_hbox.show()
