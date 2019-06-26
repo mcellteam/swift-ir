@@ -95,12 +95,11 @@ class annotated_image:
 
 class alignment:
   ''' An alignment is everything needed to align 2 images in the stack '''
-  def __init__ ( self, base=None, adjust=None ):
+  def __init__ ( self, base=None ):
     print ( "Constructing new alignment with base " + str(base) )
     self.base_image_name = base
-    self.adjust_image_name = adjust
     self.base_image = None
-    self.adjust_image = None
+    self.image_list = []
 
     self.trans_ww = 256
     self.trans_addx = 256
@@ -116,19 +115,13 @@ class alignment:
     self.bias_enabled = True
     self.bias_dx = 0
     self.bias_dy = 0
+
     try:
       #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
       self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
     except:
       #print ( "Got an exception reading the base image " + str(self.base_image_name) )
       self.base_image = None
-    self.image_list = []
-    '''
-    try:
-      self.image_list.append ( annotated_image("red_" + self.base_image_name) )
-    except:
-      print ( "Got an exception reading the red image " + str(self.adjust_image_name) )
-    '''
 
 
 
@@ -237,7 +230,6 @@ class zoom_window ( app_window.zoom_pan_area ):
 
   def expose_callback ( self, drawing_area, event, zpa ):
     ''' Draw all the elements in this window '''
-    print ( "Drawing in self = " + str(self) )
     display_time_index = zpa.user_data['display_time_index']
     x, y, width, height = event.area  # This is the area of the portion newly exposed
     width, height = drawing_area.window.get_size()  # This is the area of the entire window
@@ -542,10 +534,6 @@ def rem_window_callback ( zpa ):
     image_hbox.remove(extra_windows_list[-1]['drawing_area'])
     extra_windows_list.pop(-1)
 
-  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-  #win_and_area = { "win":new_win, "drawing_area":new_win_drawing_area }
-  #extra_windows_list.append ( win_and_area )
-
   return True
 
 
@@ -660,6 +648,7 @@ def menu_callback ( widget, data=None ):
     global alignment_index
     global destination_path
     global project_file_name
+    global extra_windows_list
 
     if command == "Fast":
       zpa.user_data['frame_delay'] = 0.01
@@ -719,7 +708,7 @@ def menu_callback ( widget, data=None ):
         print ( "Selected Files: " + str(file_name_list) )
         # alignment_list = []
         for f in file_name_list:
-          a = alignment ( f, None )
+          a = alignment ( f )
           a.trans_ww = 256
           a.trans_addx = 256 + i
           a.trans_addy = 256 + i
@@ -789,7 +778,7 @@ def menu_callback ( widget, data=None ):
                 alignment_index = 0
                 alignment_list = []
                 for json_alignment in imagestack:
-                  a = alignment ( json_alignment['filename'], None )
+                  a = alignment ( json_alignment['filename'] )
                   if 'skip' in json_alignment:
                     a.skip = json_alignment['skip']
                   if 'align_to_next_pars' in json_alignment:
@@ -901,6 +890,22 @@ def menu_callback ( widget, data=None ):
     elif command == "UnLimScroll":
       zpa_original.max_zoom_count = 1000
       zpa_original.min_zoom_count = -1500
+
+    elif command == "Refresh":
+      # Determine how many windows are needed and create them as needed
+      max_extra_images = 0
+      for a in alignment_list:
+        if len(a.image_list) > 0:
+          max_extra_images = max(max_extra_images, len(a.image_list))
+      print ( "Max extra = " + str(max_extra_images) )
+      cur_extra_images = len(extra_windows_list)
+      for i in range(cur_extra_images):
+        rem_window_callback ( zpa_original )
+      for i in range(max_extra_images):
+        add_window_callback ( zpa_original )
+
+    elif command == "ImCenter":
+      print ( "Centering images" )
 
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
