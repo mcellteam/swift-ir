@@ -82,6 +82,13 @@ class annotated_image:
   def __init__ ( self, file_name=None ):
     self.file_name = file_name
     self.graphics_items = []
+    self.image = None
+    try:
+      self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+      print ( "Loaded " + str(self.file_name) )
+    except:
+      print ( "Got an exception reading annotated image " + str(self.file_name) )
+      self.image = None
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
 
@@ -116,10 +123,12 @@ class alignment:
     except:
       #print ( "Got an exception reading the base image " + str(self.base_image_name) )
       self.base_image = None
-    #try:
-    #  self.adjust_image = gtk.gdk.pixbuf_new_from_file ( self.adjust_image_name )
-    #except:
-    #  print ( "Got an exception reading the adjust image " + str(self.adjust_image_name) )
+    self.image_list = []
+    try:
+      self.image_list.append ( annotated_image("red_" + self.base_image_name) )
+    except:
+      print ( "Got an exception reading the red image " + str(self.adjust_image_name) )
+
 
 
 class zoom_window ( app_window.zoom_pan_area ):
@@ -127,6 +136,7 @@ class zoom_window ( app_window.zoom_pan_area ):
   global gui_fields
 
   def __init__ ( self, window, win_width, win_height, name="" ):
+    self.extra_index = -1
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
     #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
@@ -250,7 +260,12 @@ class zoom_window ( app_window.zoom_pan_area ):
 
     pix_buf = None
     if len(alignment_list) > 0:
-      pix_buf = alignment_list[alignment_index].base_image
+      if self.extra_index < 0:
+        # Draw the base image
+        pix_buf = alignment_list[alignment_index].base_image
+      else:
+        # Draw one of the extra images
+        pix_buf = alignment_list[alignment_index].image_list[self.extra_index].image
 
     #if zpa.user_data['image_frame']:
     #  pix_buf = zpa.user_data['image_frame']
@@ -471,6 +486,7 @@ def add_window_callback ( zpa ):
   global window
 
   new_win = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
+  new_win.extra_index = 0
 
   new_win.user_data = {
                     'image_frame'        : None,
