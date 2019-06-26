@@ -13,7 +13,6 @@ import gtk
 import app_window
 
 global zpa_original
-global zpa_aligned
 
 global alignment_list
 alignment_list = []
@@ -223,7 +222,6 @@ class zoom_window ( app_window.zoom_pan_area ):
         
       # Draw the windows
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
       for win_and_area in extra_windows_list:
         win_and_area['win'].queue_draw()
       return True
@@ -658,7 +656,6 @@ def menu_callback ( widget, data=None ):
     zpa = data[1]
 
     global zpa_original
-    global zpa_aligned
     global alignment_list
     global alignment_index
     global destination_path
@@ -747,11 +744,9 @@ def menu_callback ( widget, data=None ):
 
       file_chooser.destroy()
       print ( "Done with dialog" )
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      # zpa.queue_draw()
       # Draw the windows
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
+
 
     elif command == "OpenProj":
 
@@ -813,7 +808,6 @@ def menu_callback ( widget, data=None ):
       file_chooser.destroy()
       print ( "Done with dialog" )
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
 
     elif (command == "SaveProj") or (command == "SaveProjAs"):
 
@@ -898,20 +892,15 @@ def menu_callback ( widget, data=None ):
         alignment_index = 0
         alignment_list = []
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
       clear_all.destroy()
 
     elif command == "LimScroll":
       zpa_original.max_zoom_count = 10
       zpa_original.min_zoom_count = -15
-      zpa_aligned.max_zoom_count = 10
-      zpa_aligned.min_zoom_count = -15
 
     elif command == "UnLimScroll":
-      zpa_original.max_zoom_count = 100
-      zpa_original.min_zoom_count = -150
-      zpa_aligned.max_zoom_count = 100
-      zpa_aligned.min_zoom_count = -150
+      zpa_original.max_zoom_count = 1000
+      zpa_original.min_zoom_count = -1500
 
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -944,8 +933,6 @@ def main():
 
   global zpa_original
   zpa_original = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
-  global zpa_aligned
-  zpa_aligned = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
@@ -959,22 +946,7 @@ def main():
                     'size'               : 1.0
                   }
 
-  zpa_aligned.user_data = {
-                    'image_frame'        : None,
-                    'image_frames'       : [],
-                    'frame_number'       : -1,
-                    'display_time_index' : -1,
-                    'running'            : False,
-                    'last_update'        : -1,
-                    'show_legend'        : True,
-                    'frame_delay'        : 0.1,
-                    'size'               : 1.0
-                  }
-
   # Set the relationships between "user" coordinates and "screen" coordinates
-
-  zpa_aligned.set_x_scale ( 0.0, 300, 100.0, 400 )
-  zpa_aligned.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
   zpa_original.set_x_scale ( 0.0, 300, 100.0, 400 )
   zpa_original.set_y_scale ( 0.0, 250 ,100.0, 350 )
@@ -1051,20 +1023,16 @@ def main():
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   original_drawing_area = zpa_original.get_drawing_area()
-  aligned_drawing_area = zpa_aligned.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
   image_hbox.pack_start(original_drawing_area, True, True, 0)
-  image_hbox.pack_start(aligned_drawing_area, True, True, 0)
 
   image_hbox.show()
   main_win_vbox.pack_start(image_hbox, True, True, 0)
   original_drawing_area.show()
-  aligned_drawing_area.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
   original_drawing_area.connect ( "expose_event", zpa_original.expose_callback, zpa_original )
-  aligned_drawing_area.connect ( "expose_event", zpa_aligned.expose_callback, zpa_aligned )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
@@ -1075,15 +1043,7 @@ def main():
                                    | gtk.gdk.POINTER_MOTION_MASK
                                    | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
-  aligned_drawing_area.set_events  ( gtk.gdk.EXPOSURE_MASK
-                                   | gtk.gdk.LEAVE_NOTIFY_MASK
-                                   | gtk.gdk.BUTTON_PRESS_MASK
-                                   | gtk.gdk.POINTER_MOTION_MASK
-                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
-
-
   alignment_defaults = alignment()
-
 
   # Create a Vertical box to hold rows of buttons
   controls_vbox = gtk.VBox ( True, 10 )
@@ -1319,19 +1279,12 @@ def main():
   button.connect_object ( "clicked", rem_window_callback, zpa_original )
   button.show()
 
-
-
-  #zpa_original.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
-  #zpa_aligned.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_2_mod.jpg" )
-
-
   # Show the main window
   window.show()
 
   zpa_original.set_cursor ( gtk.gdk.HAND2 )
 
   gtk.idle_add ( background_callback, zpa_original )
-  gtk.idle_add ( background_callback, zpa_aligned )
 
   # Turn control over to GTK to run everything from here onward.
   gtk.main()
