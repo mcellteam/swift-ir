@@ -107,7 +107,8 @@ class alignment:
       #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
       self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
     except:
-      print ( "Got an exception reading the base image " + str(self.base_image_name) )
+      #print ( "Got an exception reading the base image " + str(self.base_image_name) )
+      self.base_image = None
     #try:
     #  self.adjust_image = gtk.gdk.pixbuf_new_from_file ( self.adjust_image_name )
     #except:
@@ -1193,8 +1194,8 @@ def main():
 
 
 
-  zpa_original.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
-  zpa_aligned.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_2_mod.jpg" )
+  #zpa_original.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
+  #zpa_aligned.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_2_mod.jpg" )
 
 
   # Show the main window
