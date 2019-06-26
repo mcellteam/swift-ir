@@ -907,6 +907,61 @@ def menu_callback ( widget, data=None ):
     elif command == "ImCenter":
       print ( "Centering images" )
 
+      # Draw the windows
+      zpa_original.queue_draw()
+      for win_and_area in extra_windows_list:
+        win_and_area['win'].queue_draw()
+      return True
+
+      ''' Java version of centering:
+
+      public void set_scale_to_fit ( double x_min, double x_max, double y_min, double y_max, int w, int h ) {
+        mx = w / (x_max - x_min);
+        // px_offset = (int)( -mx * x_min );
+        my = h / (y_max - y_min);
+        // py_offset = (int)( -my * y_min );
+        scale = Math.min(mx,my);
+	      scroll_wheel_position = - (int) Math.floor ( Math.log(scale) / Math.log(zoom_base) );
+	      // System.out.println ( "Scroll wheel = " + scroll_wheel_position );
+        zoom_exp = -scroll_wheel_position;
+        scale = Math.pow(zoom_base, zoom_exp);
+        mx = my = scale;
+
+        int width_of_points = (int) ( (x_max * mx) - (x_min * mx) );
+        int height_of_points = (int) ( (y_max * my) - (y_min * my) );
+
+        // For centering, start with offsets = 0 and work back
+        px_offset = 0;
+        py_offset = 0;
+
+        px_offset = - x_to_pxi(x_min);
+        py_offset = - y_to_pyi(y_min);
+
+        px_offset += (w - width_of_points) / 2;
+        py_offset += (h - height_of_points) / 2;
+      }
+
+      if (frames != null) {
+        if (frames.size() > 0) {
+          if (frame_index >= 0) {
+            if (frame_index < frames.size()) {
+              BufferedImage frame_image = frames.get(frame_index).image;
+              if (frame_image != null) {
+                ref_image_w = frame_image.getWidth();
+                ref_image_h = frame_image.getHeight();
+                recalculate = true;
+              }
+            }
+          }
+        }
+      }
+      if (results_panel != null) {
+        System.out.println ( " --- Centering results image" );
+        results_panel.center_current_image();
+        results_panel.recalculate = true;
+      }
+      '''
+
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
