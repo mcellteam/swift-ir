@@ -282,9 +282,9 @@ def run_swim_requests(swim_requests):
 # The following stub was used to test with concurrent processing in swift_gui.py
 def do_alignment ( swim_data_1, swim_data_2 ):
   print ( "running a swim_command" )
-  for i in range(10000):
+  for i in range(100):
     print ( " i = " + str(i) )
-    for j in range(10000):
+    for j in range(10):
       print ( "  j = " + str(j) )
       print ( "    " + str(sqrt(i+10) * cos(j)) )
 
