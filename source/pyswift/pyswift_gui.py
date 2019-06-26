@@ -24,6 +24,13 @@ project_file_name = ""
 global destination_path
 destination_path = ""
 
+global image_hbox
+image_hbox = None
+global extra_windows_list
+extra_windows_list = []
+global window
+window = None
+
 
 class gui_fields_class:
   ''' This class holds GUI widgets and not the persistent data. '''
@@ -145,6 +152,7 @@ class zoom_window ( app_window.zoom_pan_area ):
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
     ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
+    global extra_windows_list
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
       # Use shifted scroll wheel to zoom the image size
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
@@ -204,6 +212,8 @@ class zoom_window ( app_window.zoom_pan_area ):
       # Draw the windows
       zpa_original.queue_draw()
       zpa_aligned.queue_draw()
+      for win_and_area in extra_windows_list:
+        win_and_area['win'].queue_draw()
       return True
 
   def mouse_motion_callback ( self, canvas, event, zpa ):
@@ -217,6 +227,7 @@ class zoom_window ( app_window.zoom_pan_area ):
 
   def expose_callback ( self, drawing_area, event, zpa ):
     ''' Draw all the elements in this window '''
+    print ( "Drawing in self = " + str(self) )
     display_time_index = zpa.user_data['display_time_index']
     x, y, width, height = event.area  # This is the area of the portion newly exposed
     width, height = drawing_area.window.get_size()  # This is the area of the entire window
@@ -451,6 +462,75 @@ def background_callback ( zpa ):
       print ( "  Running at time = " + str(t) )
       #zpa.queue_draw()
   return True
+
+
+def add_window_callback ( zpa ):
+  print ( "Add a Window" )
+  global image_hbox
+  global extra_windows_list
+  global window
+
+  new_win = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
+
+  new_win.user_data = {
+                    'image_frame'        : None,
+                    'image_frames'       : [],
+                    'frame_number'       : -1,
+                    'display_time_index' : -1,
+                    'running'            : False,
+                    'last_update'        : -1,
+                    'show_legend'        : True,
+                    'frame_delay'        : 0.1,
+                    'size'               : 1.0
+                  }
+
+  # Set the relationships between "user" coordinates and "screen" coordinates
+
+  new_win.set_x_scale ( 0.0, 300, 100.0, 400 )
+  new_win.set_y_scale ( 0.0, 250 ,100.0, 350 )
+
+  # The zoom/pan area has its own drawing area (that it zooms and pans)
+  new_win_drawing_area = new_win.get_drawing_area()
+
+  # Add the zoom/pan area to the vertical box (becomes the main area)
+  image_hbox.pack_start(new_win_drawing_area, True, True, 0)
+
+  new_win_drawing_area.show()
+
+  # The zoom/pan area doesn't draw anything, so add our custom expose callback
+  new_win_drawing_area.connect ( "expose_event", new_win.expose_callback, new_win )
+
+  # Set the events that the zoom/pan area must respond to
+  #  Note that zooming and panning requires button press and pointer motion
+  #  Other events can be set and handled by user code as well
+  new_win_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
+                                   | gtk.gdk.LEAVE_NOTIFY_MASK
+                                   | gtk.gdk.BUTTON_PRESS_MASK
+                                   | gtk.gdk.POINTER_MOTION_MASK
+                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
+
+  win_and_area = { "win":new_win, "drawing_area":new_win_drawing_area }
+  extra_windows_list.append ( win_and_area )
+
+  return True
+
+
+def rem_window_callback ( zpa ):
+  print ( "Remove a Window" )
+  global image_hbox
+  global extra_windows_list
+  global window
+
+  if len(extra_windows_list) > 0:
+    image_hbox.remove(extra_windows_list[-1]['drawing_area'])
+    extra_windows_list.pop(-1)
+
+  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  #win_and_area = { "win":new_win, "drawing_area":new_win_drawing_area }
+  #extra_windows_list.append ( win_and_area )
+
+  return True
+
 
 import pyswim
 import thread
@@ -820,6 +900,7 @@ def menu_callback ( widget, data=None ):
 def main():
 
   global gui_fields
+  global window
 
   # Create a top-level GTK window
   window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
@@ -929,7 +1010,10 @@ def main():
   menu_bar.show()
 
   # Create the horizontal image box
+  global image_hbox
   image_hbox = gtk.HBox ( True, 0 )
+  global extra_windows_list
+  extra_windows_list = []
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   original_drawing_area = zpa_original.get_drawing_area()
@@ -1186,10 +1270,19 @@ def main():
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
-
   button = gtk.Button("Abort")
   controls_hbox.pack_start ( button, True, True, 0 )
   button.connect_object ( "clicked", stop_callback, zpa_original )
+  button.show()
+
+  button = gtk.Button("+")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", add_window_callback, zpa_original )
+  button.show()
+
+  button = gtk.Button("-")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", rem_window_callback, zpa_original )
   button.show()
 
 
