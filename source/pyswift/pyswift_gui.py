@@ -124,10 +124,12 @@ class alignment:
       #print ( "Got an exception reading the base image " + str(self.base_image_name) )
       self.base_image = None
     self.image_list = []
+    '''
     try:
       self.image_list.append ( annotated_image("red_" + self.base_image_name) )
     except:
       print ( "Got an exception reading the red image " + str(self.adjust_image_name) )
+    '''
 
 
 
@@ -485,8 +487,9 @@ def add_window_callback ( zpa ):
   global extra_windows_list
   global window
 
-  new_win = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
+  new_win = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
   new_win.extra_index = 0
+  new_win.extra_index = len(extra_windows_list)
 
   new_win.user_data = {
                     'image_frame'        : None,
@@ -598,13 +601,28 @@ def run_alignment_callback ( align_all ):
     print ( "  bias dx                  = " + str(alignment_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(alignment_list[i].bias_dy) )
 
-  # For now, just copy some files
+
   for i in index_list[0:]:
     print ( "===============================================================================" )
+    alignment_list[i].image_list = []
     if alignment_list[i].skip:
       print ( "Skipping " + str(alignment_list[i].base_image_name) )
     else:
-      print ( "Copying " + str(alignment_list[i].base_image_name) + " to " + destination_path )
+      # This is where the actual alignment should happen
+      # For now, just try to lighten and darken the files
+      new_name = os.path.join ( destination_path, "light_" + alignment_list[i].base_image_name )
+      print ( "Lightening " + str(alignment_list[i].base_image_name) + " to " + new_name )
+      modified_image = alignment_list[i].base_image.copy();
+      modified_image.saturate_and_pixelate ( modified_image, 300.0, True )
+      modified_image.save(new_name, 'jpeg')
+      alignment_list[i].image_list.append ( annotated_image(new_name) )
+
+      new_name = os.path.join ( destination_path, "dark_" + alignment_list[i].base_image_name )
+      print ( "Darkening " + str(alignment_list[i].base_image_name) + " to " + new_name )
+      modified_image = alignment_list[i].base_image.copy();
+      modified_image.saturate_and_pixelate ( modified_image, 0.003, True )
+      modified_image.save(new_name, 'jpeg')
+      alignment_list[i].image_list.append ( annotated_image(new_name) )
 
 
 def run_callback ( zpa ):
@@ -925,9 +943,9 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa_original = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
   global zpa_aligned
-  zpa_aligned = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa_aligned = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
