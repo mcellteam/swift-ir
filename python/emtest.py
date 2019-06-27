@@ -5,7 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 orig = swiftir.loadImage('emtest.jpg')
-muck = swiftir.loadImage('emtest-persp.jpg')
+#muck = swiftir.loadImage('emtest-persp.jpg')
+muck = swiftir.loadImage('emtest-shear.jpg')
+
 
 def showdiff(ima, imb):
     err = ima.astype('float32') - imb.astype('float32')
@@ -39,7 +41,7 @@ print(err)
 mcki = swiftir.affineImage(afm, orig)
 showdiff(muck, mcki)
 
-AGAIN = False
+AGAIN = True
 if AGAIN:
     sta = swiftir.stationaryPatches(muck, psta, 512)
     mov = swiftir.movingPatches(orig, pmov, afm, 512)
