@@ -583,7 +583,7 @@ def scaleImage(img, fac=2):
     K = (S[0]//fac, S[1]//fac)
     if fac*K[0] < S[0] or fac*K[1] < S[1]:
         img = img[0:fac*K[0],0:fac*K[1]]
-    return cv2.resize(img, None, None, 1/fac, 1/fac, cv2.INTER_AREA)
+    return cv2.resize(img, None, None, 1.0/fac, 1.0/fac, cv2.INTER_AREA)
     
 def meanImage(ifns, stretch=False):
     '''MEANIMAGE - Calculate average image from multiple files
