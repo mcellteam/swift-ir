@@ -66,15 +66,39 @@ class graphic_primitive:
 
 
 class graphic_line (graphic_primitive):
-  def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
-    self.x = x
-    self.y = y
-    self.dx = dx
-    self.dy = dy
+  def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x1 = x1
+    self.y1 = y1
+    self.x2 = x2
+    self.y2 = y2
     self.coordsys = coordsys
     self.color = color
-  def draw ( self, drawing_area, pgl ):
-    pass
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x1 = self.x1
+    y1 = self.y1
+    x2 = self.x2
+    y2 = self.y2
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x1 = zpa.wxi(x1)
+      y1 = zpa.wyi(y1)
+      x2 = zpa.wxi(x2)
+      y2 = zpa.wyi(y2)
+    drawable.draw_line ( gc, x1,   y1,   x2,   y2   )
+    drawable.draw_line ( gc, x1+1, y1,   x2+1, y2   )
+    drawable.draw_line ( gc, x1,   y1+1, x2,   y2+1 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
 
 class graphic_rect (graphic_primitive):
   def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
@@ -84,27 +108,7 @@ class graphic_rect (graphic_primitive):
     self.dy = dy
     self.coordsys = coordsys
     self.color = color
-  def draw ( self, drawing_area, pgl ):
-    pass
-
-class graphic_dot (graphic_primitive):
-  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
-    self.x = x
-    self.y = y
-    self.r = r
-    self.coordsys = coordsys
-    self.color = color
-  def draw ( self, drawing_area, pgl ):
-    pass
-
-class graphic_text (graphic_primitive):
-  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
-    self.x = x
-    self.y = y
-    self.s = s
-    self.coordsys = coordsys
-    self.color = color
-  def draw ( self, drawing_area, pgl ):
+  def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
     gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
@@ -113,10 +117,77 @@ class graphic_text (graphic_primitive):
     old_fg = gc.foreground
     gc.foreground = self.alloc_color ( colormap )
 
-    # drawable.draw_rectangle(gc, True, 0, 0, width, height)
-    drawable.draw_line ( gc, 0, 0, width-1, height-1 )
+    x = self.x
+    y = self.y
+    dx = self.dx
+    dy = self.dy
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+      dx = zpa.wwi(dx)
+      dy = zpa.whi(dy)
+    drawable.draw_rectangle ( gc, False, x, y, dx, dy )
+    drawable.draw_rectangle ( gc, False, x-1, y-1, dx+2, dy+2 )
+    drawable.draw_rectangle ( gc, False, x-2, y-2, dx+4, dy+4 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+class graphic_dot (graphic_primitive):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x = x
+    self.y = y
+    self.r = r
+    self.coordsys = coordsys
+    self.color = color
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    r = self.r
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+    drawable.draw_arc ( gc, True, x-r, y-r, 2*r, 2*r, 0, 360*64 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+class graphic_text (graphic_primitive):
+  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x = x
+    self.y = y
+    self.s = s
+    self.coordsys = coordsys
+    self.color = color
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
     pgl.set_text ( self.s )
-    drawable.draw_layout ( gc, self.x, self.y, pgl )
+    drawable.draw_layout ( gc, x, y, pgl )
 
     # Restore the previous color
     gc.foreground = old_fg
@@ -137,8 +208,8 @@ class annotated_image:
       print ( "Got an exception reading annotated image " + str(self.file_name) )
       self.image = None
     if self.file_name != None:
-      self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[0.8, 0.8, 0.8]) )
-      self.graphics_items.append ( graphic_text(10, 40, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
+      self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+      self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
 
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
@@ -452,7 +523,7 @@ class zoom_window ( app_window.zoom_pan_area ):
         # Draw the annotations
         image_to_draw = alignment_list[alignment_index].image_list[self.extra_index]
         for graphics_item in image_to_draw.graphics_items:
-          graphics_item.draw ( drawing_area, self.pangolayout )
+          graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
 
     gc.foreground = colormap.alloc_color(32767,32767,32767)
@@ -657,20 +728,47 @@ def run_alignment_callback ( align_all ):
       print ( "Skipping " + str(alignment_list[i].base_image_name) )
     else:
       # This is where the actual alignment should happen
-      # For now, just try to lighten and darken the files
+      # For now, just to lighten and darken the files and add annotations
+
+      # This creates a lighter file with some annotations
       new_name = os.path.join ( destination_path, "light_" + alignment_list[i].base_image_name )
       print ( "Lightening " + str(alignment_list[i].base_image_name) + " to " + new_name )
       modified_image = alignment_list[i].base_image.copy();
       modified_image.saturate_and_pixelate ( modified_image, 300.0, True )
       modified_image.save(new_name, 'jpeg')
-      alignment_list[i].image_list.append ( annotated_image(new_name) )
+      anim = annotated_image(new_name)
+      # This adds some annotations
+      anim.graphics_items.append ( graphic_text(10, 70, "Lighter", coordsys='p', color=[0, 1.0, 1.0]) )
+      anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
+      anim.graphics_items.append ( graphic_line(490,90,400,90,'p',[1, 1, 0]) )
+      anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0.5, 1, 1]) )
+      anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_dot(10,2,6,'i',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_rect(100,100,100,100,'i',[0, 0, 1]) )
+      anim.graphics_items.append ( graphic_line(100,100,200,200,'i',[1, 1, 0]) )
+      anim.graphics_items.append ( graphic_text(220, 130, "WW=100", coordsys='i', color=[0,0,0]) )
+      alignment_list[i].image_list.append ( anim )
 
+      # This creates a darker file with some annotations
       new_name = os.path.join ( destination_path, "dark_" + alignment_list[i].base_image_name )
       print ( "Darkening " + str(alignment_list[i].base_image_name) + " to " + new_name )
       modified_image = alignment_list[i].base_image.copy();
       modified_image.saturate_and_pixelate ( modified_image, 0.003, True )
       modified_image.save(new_name, 'jpeg')
-      alignment_list[i].image_list.append ( annotated_image(new_name) )
+      anim = annotated_image(new_name)
+      # This adds some annotations
+      anim.graphics_items.append ( graphic_text(10, 70, "Darker", coordsys='p', color=[0, 0.5, 0.5]) )
+      anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
+      anim.graphics_items.append ( graphic_line(490,90,400,110,'p',[1, 1, 0]) )
+      anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0, 0.1, 1]) )
+      anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_dot(10,7,6,'i',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_rect(120,160,60,100,'i',[0, 0, 1]) )
+      anim.graphics_items.append ( graphic_text(200, 200, "WW=100", coordsys='i', color=[0,0,0]) )
+      anim.graphics_items.append ( graphic_text(201, 200, "WW=100", coordsys='i', color=[0,0,0]) )
+      anim.graphics_items.append ( graphic_text(200, 201, "WW=100", coordsys='i', color=[0,0,0]) )
+      alignment_list[i].image_list.append ( anim )
+
 
 
 def run_callback ( zpa ):
