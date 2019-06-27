@@ -108,12 +108,88 @@ class zoom_pan_area:
     self.drawing_area.queue_draw()
 
   def set_x_scale ( self, user_x1, win_x1, user_x2, win_x2 ):
+    # Note that this sets the scale regardless of the scrolling zoom
     self.x_scale  = self.reset_x_scale = float(win_x2 - win_x1) / (user_x2 - user_x1)
     self.x_offset = self.reset_x_offset = win_x1 - ( user_x1 * self.x_scale )
     
   def set_y_scale ( self, user_y1, win_y1, user_y2, win_y2 ):
+    # Note that this sets the scale regardless of the scrolling zoom
     self.y_scale  = self.reset_y_scale = float(win_y2 - win_y1) / (user_y2 - user_y1)
     self.y_offset = self.reset_y_offset = win_y1 - ( user_y1 * self.y_scale )
+
+  def set_fixed_aspect ( self, fixed_aspect ):
+    pass
+  def fitwidth  ( self, user_xmin, user_xmax, keep_aspect=False ):
+    pass  # implies left to right
+  def fitheight ( self, user_ymin, user_ymax, keep_aspect=False ):
+    pass # implies top to bottom
+
+  def set_scroll_factor ( self, scroll_factor ):
+    pass
+
+  def set_scale_to_fit ( self, x_min, x_max, y_min, y_max, w, h ):
+    print ( "Call to set_scale_to_fit with ( " + str(x_min) + ", " + str(x_max) + ", " + str(y_min) + ", " + str(y_max) + ", " + str(w) + ", " + str(h) + " )" )
+    if False:
+      # This will fill the window completely stretching the image as needed
+      # This will also ignore the scroll wheel settings completely
+      self.set_x_scale ( x_min, 0, x_max, w )
+      self.set_y_scale ( y_min, 0, y_max, h )
+    else:
+      # Compute the proper scale and offsets to center the image
+      # This will be the new scroll_count=0
+      # Note that positive scroll counts show a larger image, and negative scroll counts show a smaller image
+      # Compute the slopes in x and y to fit exactly in each
+      mx = w / float(x_max - x_min);
+      my = h / float(y_max - y_min);
+
+      # The desired scale will be just under the minimum of the slopes to keep the image square and in the window
+      scale = 0.96 * min(mx,my);
+
+      print ( "Scales (x,y,both) = " + str(mx) + ", " + str(my) + ", " + str(scale) )
+
+      # Compute the scroll count that would be needed to get this scale
+
+      print ( "Current scroll_count = " + str(self.scroll_count) )
+
+      self.scroll_count = 0
+      self.zoom_scale = 1.0
+
+      mx = my = scale;
+
+      width_of_points = int ( (x_max * mx) - (x_min * mx) );
+      height_of_points = int ( (y_max * my) - (y_min * my) );
+
+      # For centering, start with offsets = 0 and work back
+      self.x_offset = 0;
+      self.y_offset = 0;
+
+      self.x_offset = - self.wxi(x_min);
+      self.y_offset = - self.wyi(y_min);
+
+      self.x_offset += (w - width_of_points) / 2;
+      self.y_offset += (h - height_of_points) / 2;
+
+      self.x_scale = scale
+      self.y_scale = scale
+
+  def zoom_at_point ( self, zoom_delta, at_x, at_y ):
+    # First save the mouse location in user space before the zoom
+    user_x_at_zoom = self.x(at_x)
+    user_y_at_zoom = self.y(at_y)
+    # Perform the zoom by changing the zoom scale
+    self.scroll_count += zoom_delta
+    #### Limit for now until image drawing can be optimized for large zooms:
+    if self.scroll_count > self.max_zoom_count:
+      self.scroll_count = self.max_zoom_count
+    if self.scroll_count < self.min_zoom_count:
+      self.scroll_count = self.min_zoom_count
+    self.zoom_scale = pow (self.scroll_factor, self.scroll_count)
+    # Get the new window coordinates of the previously saved user space location
+    win_x_after_zoom = self.wx ( user_x_at_zoom )
+    win_y_after_zoom = self.wy ( user_y_at_zoom )
+    # Adjust the offsets (window coordinates) to keep user point at same location
+    self.x_offset += at_x - win_x_after_zoom
+    self.y_offset += at_y - win_y_after_zoom
 
 
   def get_drawing_area ( self ):
@@ -151,35 +227,6 @@ class zoom_pan_area:
   def h ( self, win_h ):
     return ( win_h / (self.y_scale * self.zoom_scale) )
     
-  def set_fixed_aspect ( self, fixed_aspect ):
-    pass
-  def fitwidth  ( self, user_xmin, user_xmax, keep_aspect=False ):
-    pass  # implies left to right
-  def fitheight ( self, user_ymin, user_ymax, keep_aspect=False ):
-    pass # implies top to bottom
-
-  def set_scroll_factor ( self, scroll_factor ):
-    pass
-
-  def zoom_at_point ( self, zoom_delta, at_x, at_y ):
-    # First save the mouse location in user space before the zoom
-    user_x_at_zoom = self.x(at_x)
-    user_y_at_zoom = self.y(at_y)
-    # Perform the zoom by changing the zoom scale
-    self.scroll_count += zoom_delta
-    #### Limit for now until image drawing can be optimized for large zooms:
-    if self.scroll_count > self.max_zoom_count:
-      self.scroll_count = self.max_zoom_count
-    if self.scroll_count < self.min_zoom_count:
-      self.scroll_count = self.min_zoom_count
-    self.zoom_scale = pow (self.scroll_factor, self.scroll_count)
-    # Get the new window coordinates of the previously saved user space location
-    win_x_after_zoom = self.wx ( user_x_at_zoom )
-    win_y_after_zoom = self.wy ( user_y_at_zoom )
-    # Adjust the offsets (window coordinates) to keep user point at same location
-    self.x_offset += at_x - win_x_after_zoom
-    self.y_offset += at_y - win_y_after_zoom
-
   def set_cursor ( self, gtk_gdk_cursor ):
     self.drawing_area.window.set_cursor ( gtk.gdk.Cursor(gtk_gdk_cursor) )  # gtk.gdk.HAND2 DRAFT_SMALL TARGET HAND1 SB_UP_ARROW CROSS CROSSHAIR CENTER_PTR CIRCLE DIAMOND_CROSS IRON_CROSS PLUS CROSS_REVERSE DOT DOTBOX FLEUR
 
@@ -207,23 +254,25 @@ class zoom_pan_area:
 
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
-    # print ( "Mouse Scroll: " + str(canvas) + " event at (" + str() + "," + str(event.y) + ") : " + str(event) )
+    print ( "Mouse Scroll: " + str(canvas) + " event at (" + str() + "," + str(event.y) + ") : " + str(event) )
+    print ( "  Before changing: self.scroll_count = " + str(self.scroll_count) )
     if event.direction == gtk.gdk.SCROLL_UP:
       zpa.zoom_at_point (  1, event.x, event.y )
-      # print ( "Mouse scrolled up = zoom in (make everything larger)" )
+      print ( "    Mouse scrolled up = zoom in (make everything larger)" )
     elif event.direction == gtk.gdk.SCROLL_DOWN:
       zpa.zoom_at_point ( -1, event.x, event.y )
-      # print ( "Mouse scrolled down = zoom out (make everything smaller)" )
+      print ( "    Mouse scrolled down = zoom out (make everything smaller)" )
     elif event.direction == gtk.gdk.SCROLL_LEFT:
       pass
-      # print ( "Mouse scrolled left" )
+      print ( "    Mouse scrolled left" )
     elif event.direction == gtk.gdk.SCROLL_RIGHT:
       pass
-      # print ( "Mouse scrolled right" )
+      print ( "    Mouse scrolled right" )
     else:
       pass
-      # print ( "Mouse scrolled other?" )
+      print ( "    Mouse scrolled other?" )
 
+    print ( "  After changing: self.scroll_count = " + str(self.scroll_count) )
     zpa.drawing_area.queue_draw()
 
     return True  # Event has been handled, do not propagate further
