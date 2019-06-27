@@ -670,7 +670,7 @@ def rem_window_callback ( zpa ):
   return True
 
 
-import pyswim
+# import pyswim
 import thread
 
 
@@ -776,7 +776,8 @@ def run_callback ( zpa ):
   # zpa.user_data['running'] = True
   print ( "Starting a thread" )
   try:
-    thread.start_new_thread ( pyswim.do_alignment, ("data",5,) )
+    # thread.start_new_thread ( pyswim.do_alignment, ("data",5,) )
+    pass
   except:
     print ( "Unable to start thread" )
   print ( "Done starting a thread" )
