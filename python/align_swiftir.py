@@ -109,7 +109,10 @@ def showdiff(ima, imb):
     plt.show()
 
 
-def align_images(im_sta_fn, im_mov_fn, align_dir):
+def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
+
+  if type(global_afm) == type(None):
+    global_afm = swiftir.identityAffine()
 
   im_sta = swiftir.loadImage(im_sta_fn)
   im_mov = swiftir.loadImage(im_mov_fn)
@@ -157,13 +160,12 @@ def align_images(im_sta_fn, im_mov_fn, align_dir):
 
   recipe.execute()
 
-  global_afm = swiftir.identityAffine()
-
   global_afm = swiftir.composeAffine(global_afm,recipe.afm)
   im_aligned = swiftir.affineImage(global_afm,im_mov)
   ofn = align_dir + os.path.basename(im_mov_fn)
   swiftir.saveImage(im_aligned,ofn)
 
+  return global_afm
 
 
 if __name__=='__main__':
@@ -173,7 +175,9 @@ if __name__=='__main__':
   im_sta_fn = image_dir + 'Tile_r1-c1_LM9R5CA1series_247.jpg'
   im_mov_fn = image_dir + 'Tile_r1-c1_LM9R5CA1series_248.jpg'
 
-  align_images(im_sta_fn, im_mov_fn, align_dir)
+  global_afm = swiftir.identityAffine()
+
+  align_images(im_sta_fn, im_mov_fn, align_dir, global_afm)
 
 
   '''
