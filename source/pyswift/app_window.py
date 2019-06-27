@@ -128,16 +128,15 @@ class zoom_pan_area:
     pass
 
   def set_scale_to_fit ( self, x_min, x_max, y_min, y_max, w, h ):
-    print ( "Call to set_scale_to_fit with ( " + str(x_min) + ", " + str(x_max) + ", " + str(y_min) + ", " + str(y_max) + ", " + str(w) + ", " + str(h) + " )" )
     if False:
       # This will fill the window completely stretching the image as needed
       # This will also ignore the scroll wheel settings completely
       self.set_x_scale ( x_min, 0, x_max, w )
       self.set_y_scale ( y_min, 0, y_max, h )
     else:
-      # Compute the proper scale and offsets to center the image
-      # This will be the new scroll_count=0
+      # Compute the proper scales and offsets to center the image
       # Note that positive scroll counts show a larger image, and negative scroll counts show a smaller image
+
       # Compute the slopes in x and y to fit exactly in each
       mx = w / float(x_max - x_min);
       my = h / float(y_max - y_min);
@@ -145,19 +144,13 @@ class zoom_pan_area:
       # The desired scale will be just under the minimum of the slopes to keep the image square and in the window
       scale = 0.96 * min(mx,my);
 
-      print ( "Scales (x,y,both) = " + str(mx) + ", " + str(my) + ", " + str(scale) )
-
-      # Compute the scroll count that would be needed to get this scale
-
-      print ( "Current scroll_count = " + str(self.scroll_count) )
-
+      # This will be the new baseline so set the scroll_count and zoom_scale accordingly
       self.scroll_count = 0
       self.zoom_scale = 1.0
 
-      mx = my = scale;
-
-      width_of_points = int ( (x_max * mx) - (x_min * mx) );
-      height_of_points = int ( (y_max * my) - (y_min * my) );
+      # Compute the new width and height of points to be drawn in this scaled window
+      width_of_points = int ( (x_max * scale) - (x_min * scale) );
+      height_of_points = int ( (y_max * scale) - (y_min * scale) );
 
       # For centering, start with offsets = 0 and work back
       self.x_offset = 0;
