@@ -4,6 +4,18 @@ import swiftir
 import numpy as np
 import matplotlib.pyplot as plt
 
+'''
+align_swiftir.py implements a simple generic interface for aligning two images in SWiFT-IR
+This version uses swiftir.py
+
+The interface is composed of two classes:  align_recipe and align_ingredient
+The general concept is that the alignment of two images is accomplished by applying a
+a series of steps, or "ingredients" to first estimate and then refine the affine transform
+which brings the "moving" image into alignment with the "stationary" image.
+Together these ingredients comprise a procedure, or "recipe". 
+'''
+
+
 
 #recipe_dict = {}
 
