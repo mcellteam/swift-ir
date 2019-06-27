@@ -167,7 +167,7 @@ class zoom_window ( app_window.zoom_pan_area ):
       print ( "Moving through the stack with alignment_index = " + str(alignment_index) )
       if len(alignment_list) <= 0:
         alignment_index = -1
-        print ( "Index = " + str(alignment_index) )
+        print ( " Index = " + str(alignment_index) )
       else:
         # Store the alignment values into the section being exited
         a = alignment_list[alignment_index]
@@ -196,7 +196,7 @@ class zoom_window ( app_window.zoom_pan_area ):
 
         # Display the alignment values from the new section being viewed
         a = alignment_list[alignment_index]
-        print ( "Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
+        print ( " Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
         print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
         gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
         gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
