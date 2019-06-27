@@ -907,11 +907,39 @@ def menu_callback ( widget, data=None ):
     elif command == "ImCenter":
       print ( "Centering images" )
 
-      # Draw the windows
-      zpa_original.queue_draw()
-      for win_and_area in extra_windows_list:
-        win_and_area['win'].queue_draw()
-      return True
+      if len(alignment_list) > 0:
+        # Start with the original image
+        win_size = zpa_original.drawing_area.window.get_size()
+
+        pix_buf = None
+        if zpa_original.extra_index < 0:
+          # Draw the base image
+          pix_buf = alignment_list[alignment_index].base_image
+        else:
+          # Draw one of the extra images
+          pix_buf = alignment_list[alignment_index].image_list[zpa_original.extra_index].image
+        img_w = pix_buf.get_width()
+        img_h = pix_buf.get_height()
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        zpa_original.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+        zpa_original.queue_draw()
+
+        # Do the remaining windows
+        for win_and_area in extra_windows_list:
+          zpa_next = win_and_area['win']
+          win_size = zpa_next.drawing_area.window.get_size()
+          pix_buf = None
+          if zpa_next.extra_index < 0:
+            # Draw the base image
+            pix_buf = alignment_list[alignment_index].base_image
+          else:
+            # Draw one of the extra images
+            pix_buf = alignment_list[alignment_index].image_list[zpa_next.extra_index].image
+          img_w = pix_buf.get_width()
+          img_h = pix_buf.get_height()
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+          zpa_next.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+          zpa_next.queue_draw()
 
       ''' Java version of centering:
 
