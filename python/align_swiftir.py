@@ -3,6 +3,7 @@
 import swiftir
 import numpy as np
 import matplotlib.pyplot as plt
+import os
 
 '''
 align_swiftir.py implements a simple generic interface for aligning two images in SWiFT-IR
@@ -108,13 +109,10 @@ def showdiff(ima, imb):
     plt.show()
 
 
+def align_images(im_sta_fn, im_mov_fn, align_dir):
 
-if __name__=='__main__':
-
-  image_dir = './'
-  im_sta = swiftir.loadImage(image_dir + 'Tile_r1-c1_LM9R5CA1series_247.jpg')
-  im_mov = swiftir.loadImage(image_dir + 'Tile_r1-c1_LM9R5CA1series_248.jpg')
-
+  im_sta = swiftir.loadImage(im_sta_fn)
+  im_mov = swiftir.loadImage(im_mov_fn)
 
   pa = np.zeros((2,1))
   wwx = int(im_sta.shape[0])
@@ -147,7 +145,6 @@ if __name__=='__main__':
   s_4x4 = s
   psta_4x4 = pa
 
-
   recipe = align_recipe(im_sta, im_mov)
 
   ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
@@ -160,28 +157,26 @@ if __name__=='__main__':
 
   recipe.execute()
 
-  exit()
+  global_afm = swiftir.identityAffine()
 
-  afm = affine_translation_recipe(im_sta, im_mov)
-
-
-  # 2x2 recipe to refine estimate full affine transform
-  print('2x2 recipe to refine estimate full affine transform')
-
-  afm = affine_2x2_recipe(im_sta, im_mov, afm)
+  global_afm = swiftir.composeAffine(global_afm,recipe.afm)
+  im_aligned = swiftir.affineImage(global_afm,im_mov)
+  ofn = align_dir + os.path.basename(im_mov_fn)
+  swiftir.saveImage(im_aligned,ofn)
 
 
-  # 3x3 recipe to finalize estimate full affine transform
-  #print('3x3 recipe to finalize estimate full affine transform')
 
-  #afm = affine_3x3_recipe(im_sta, im_mov, afm)
+if __name__=='__main__':
+
+  image_dir = './'
+  align_dir = './aligned/'
+  im_sta_fn = image_dir + 'Tile_r1-c1_LM9R5CA1series_247.jpg'
+  im_mov_fn = image_dir + 'Tile_r1-c1_LM9R5CA1series_248.jpg'
+
+  align_images(im_sta_fn, im_mov_fn, align_dir)
 
 
-  # 4x4 recipe to finalize estimate full affine transform
-  print('4x4 recipe to finalize estimate full affine transform')
-
-  afm = affine_4x4_recipe(im_sta, im_mov, afm)
-
+  '''
   psta = np.zeros((2,1))
   wwx = int(im_sta.shape[0])
   wwy = int(im_sta.shape[1])
@@ -200,4 +195,6 @@ if __name__=='__main__':
   #best = swiftir.alignmentImage(sta[0], mov[0])
   #plt.imshow(best,cmap='gray')
   #plt.show()
+
+  '''
 
