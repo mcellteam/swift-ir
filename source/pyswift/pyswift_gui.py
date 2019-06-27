@@ -58,21 +58,43 @@ project_path = None
 class graphic_primitive:
   ''' This base class defines something that can be drawn '''
   def __init__ ( self ):
-    self.color = [1.0, 0, 0]
+    self.coordsys = 'p' # 'p' = Pixel Coordinates, 'i' = Image Coordinates, 's' = Scaled Coordinates (0.0 to 1.0)
+    self.color = [1.0, 1.0, 1.0]
     pass
 
 class graphic_line (graphic_primitive):
-  def __init__ ( self, x, y, dx, dy ):
+  def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
     self.x = x
     self.y = y
     self.dx = dx
     self.dy = dy
+    self.coordsys = coordsys
+    self.color = color
+
+class graphic_rect (graphic_primitive):
+  def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x = x
+    self.y = y
+    self.dx = dx
+    self.dy = dy
+    self.coordsys = coordsys
+    self.color = color
 
 class graphic_dot (graphic_primitive):
-  def __init__ ( self, x, y, r ):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
     self.x = x
     self.y = y
     self.r = r
+    self.coordsys = coordsys
+    self.color = color
+
+class graphic_text (graphic_primitive):
+  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x = x
+    self.y = y
+    self.s = s
+    self.coordsys = coordsys
+    self.color = color
 
 
 class annotated_image:
