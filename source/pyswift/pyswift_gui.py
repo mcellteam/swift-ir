@@ -4,6 +4,7 @@
 import time
 import os
 import json
+import random
 
 import pygtk
 pygtk.require('2.0')
@@ -60,7 +61,8 @@ class graphic_primitive:
   def __init__ ( self ):
     self.coordsys = 'p' # 'p' = Pixel Coordinates, 'i' = Image Coordinates, 's' = Scaled Coordinates (0.0 to 1.0)
     self.color = [1.0, 1.0, 1.0]
-    pass
+  def alloc_color ( self, colormap ):
+    return colormap.alloc_color(int(65535*self.color[0]),int(65535*self.color[1]),int(65535*self.color[2]))
 
 
 class graphic_line (graphic_primitive):
@@ -71,7 +73,7 @@ class graphic_line (graphic_primitive):
     self.dy = dy
     self.coordsys = coordsys
     self.color = color
-  def draw ( self, drawing_area ):
+  def draw ( self, drawing_area, pgl ):
     pass
 
 class graphic_rect (graphic_primitive):
@@ -82,7 +84,7 @@ class graphic_rect (graphic_primitive):
     self.dy = dy
     self.coordsys = coordsys
     self.color = color
-  def draw ( self, drawing_area ):
+  def draw ( self, drawing_area, pgl ):
     pass
 
 class graphic_dot (graphic_primitive):
@@ -92,7 +94,7 @@ class graphic_dot (graphic_primitive):
     self.r = r
     self.coordsys = coordsys
     self.color = color
-  def draw ( self, drawing_area ):
+  def draw ( self, drawing_area, pgl ):
     pass
 
 class graphic_text (graphic_primitive):
@@ -102,18 +104,19 @@ class graphic_text (graphic_primitive):
     self.s = s
     self.coordsys = coordsys
     self.color = color
-  def draw ( self, drawing_area ):
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  def draw ( self, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
     gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
     width, height = drawable.get_size()  # This is the area of the entire window
     #x, y = drawing_area.get_origin()
     old_fg = gc.foreground
-    gc.foreground = colormap.alloc_color(65535,32767,32767)
+    gc.foreground = self.alloc_color ( colormap )
 
     # drawable.draw_rectangle(gc, True, 0, 0, width, height)
     drawable.draw_line ( gc, 0, 0, width-1, height-1 )
+    pgl.set_text ( self.s )
+    drawable.draw_layout ( gc, self.x, self.y, pgl )
 
     # Restore the previous color
     gc.foreground = old_fg
@@ -134,7 +137,8 @@ class annotated_image:
       print ( "Got an exception reading annotated image " + str(self.file_name) )
       self.image = None
     if self.file_name != None:
-      self.graphics_items.append ( graphic_text(20, 120, self.file_name, coordsys='p', color=[1, .5, .5]) )
+      self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[0.8, 0.8, 0.8]) )
+      self.graphics_items.append ( graphic_text(10, 40, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
 
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
@@ -182,6 +186,8 @@ class zoom_window ( app_window.zoom_pan_area ):
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
     #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+    self.pangolayout = window.create_pango_layout("")
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
     # print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
@@ -446,7 +452,7 @@ class zoom_window ( app_window.zoom_pan_area ):
         # Draw the annotations
         image_to_draw = alignment_list[alignment_index].image_list[self.extra_index]
         for graphics_item in image_to_draw.graphics_items:
-          graphics_item.draw ( drawing_area )
+          graphics_item.draw ( drawing_area, self.pangolayout )
 
 
     gc.foreground = colormap.alloc_color(32767,32767,32767)
