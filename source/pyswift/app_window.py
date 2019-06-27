@@ -245,29 +245,18 @@ class zoom_pan_area:
     item.show()
 
 
-
   def mouse_scroll_callback ( self, canvas, event, zpa ):
-    print ( "Mouse Scroll: " + str(canvas) + " event at (" + str() + "," + str(event.y) + ") : " + str(event) )
-    print ( "  Before changing: self.scroll_count = " + str(self.scroll_count) )
     if event.direction == gtk.gdk.SCROLL_UP:
       zpa.zoom_at_point (  1, event.x, event.y )
-      print ( "    Mouse scrolled up = zoom in (make everything larger)" )
     elif event.direction == gtk.gdk.SCROLL_DOWN:
       zpa.zoom_at_point ( -1, event.x, event.y )
-      print ( "    Mouse scrolled down = zoom out (make everything smaller)" )
     elif event.direction == gtk.gdk.SCROLL_LEFT:
       pass
-      print ( "    Mouse scrolled left" )
     elif event.direction == gtk.gdk.SCROLL_RIGHT:
       pass
-      print ( "    Mouse scrolled right" )
     else:
       pass
-      print ( "    Mouse scrolled other?" )
-
-    print ( "  After changing: self.scroll_count = " + str(self.scroll_count) )
     zpa.drawing_area.queue_draw()
-
     return True  # Event has been handled, do not propagate further
 
 
