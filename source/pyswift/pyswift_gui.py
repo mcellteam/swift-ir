@@ -62,6 +62,7 @@ class graphic_primitive:
     self.color = [1.0, 1.0, 1.0]
     pass
 
+
 class graphic_line (graphic_primitive):
   def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
     self.x = x
@@ -70,6 +71,8 @@ class graphic_line (graphic_primitive):
     self.dy = dy
     self.coordsys = coordsys
     self.color = color
+  def draw ( self, drawing_area ):
+    pass
 
 class graphic_rect (graphic_primitive):
   def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
@@ -79,6 +82,8 @@ class graphic_rect (graphic_primitive):
     self.dy = dy
     self.coordsys = coordsys
     self.color = color
+  def draw ( self, drawing_area ):
+    pass
 
 class graphic_dot (graphic_primitive):
   def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
@@ -87,6 +92,8 @@ class graphic_dot (graphic_primitive):
     self.r = r
     self.coordsys = coordsys
     self.color = color
+  def draw ( self, drawing_area ):
+    pass
 
 class graphic_text (graphic_primitive):
   def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
@@ -95,6 +102,22 @@ class graphic_text (graphic_primitive):
     self.s = s
     self.coordsys = coordsys
     self.color = color
+  def draw ( self, drawing_area ):
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = colormap.alloc_color(65535,32767,32767)
+
+    # drawable.draw_rectangle(gc, True, 0, 0, width, height)
+    drawable.draw_line ( gc, 0, 0, width-1, height-1 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
 
 
 class annotated_image:
@@ -110,6 +133,9 @@ class annotated_image:
     except:
       print ( "Got an exception reading annotated image " + str(self.file_name) )
       self.image = None
+    if self.file_name != None:
+      self.graphics_items.append ( graphic_text(20, 120, self.file_name, coordsys='p', color=[1, .5, .5]) )
+
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
 
@@ -411,9 +437,17 @@ class zoom_window ( app_window.zoom_pan_area ):
       scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
       drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
 
-      # print ( "Zoom Scale = " + str(zpa.zoom_scale) )
+    # Draw any annotations in the list
+    if len(alignment_list) > 0:
+      if self.extra_index < 0:
+        # no annotations for the base image yet
+        pass
+      else:
+        # Draw the annotations
+        image_to_draw = alignment_list[alignment_index].image_list[self.extra_index]
+        for graphics_item in image_to_draw.graphics_items:
+          graphics_item.draw ( drawing_area )
 
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     gc.foreground = colormap.alloc_color(32767,32767,32767)
     # Draw a separator between the panes
