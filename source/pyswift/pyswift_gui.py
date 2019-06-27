@@ -4,6 +4,7 @@
 import time
 import os
 import json
+import random
 
 import pygtk
 pygtk.require('2.0')
@@ -13,19 +14,26 @@ import gtk
 import app_window
 
 global zpa_original
-global zpa_aligned
 
 global alignment_list
 alignment_list = []
 global alignment_index
 alignment_index = -1
 
-global project_file_name
 project_file_name = ""
 global destination_path
 destination_path = ""
 
+global image_hbox
+image_hbox = None
+global extra_windows_list
+extra_windows_list = []
+global window
+window = None
+
+
 class gui_fields_class:
+  ''' This class holds GUI widgets and not the persistent data. '''
   def __init__(self):
     self.proj_label = None
     self.dest_label = None
@@ -42,28 +50,148 @@ class gui_fields_class:
     self.bias_dy_entry = None
     self.num_align_forward = None
 
+''' This variable gives global access to the GUI widgets '''
 gui_fields = gui_fields_class()
 
 global project_path
 project_path = None
 
 class graphic_primitive:
+  ''' This base class defines something that can be drawn '''
   def __init__ ( self ):
-    self.color = [1.0, 0, 0]
-    pass
+    self.coordsys = 'p' # 'p' = Pixel Coordinates, 'i' = Image Coordinates, 's' = Scaled Coordinates (0.0 to 1.0)
+    self.color = [1.0, 1.0, 1.0]
+  def alloc_color ( self, colormap ):
+    return colormap.alloc_color(int(65535*self.color[0]),int(65535*self.color[1]),int(65535*self.color[2]))
+
 
 class graphic_line (graphic_primitive):
-  def __init__ ( self, x, y, dx, dy ):
+  def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x1 = x1
+    self.y1 = y1
+    self.x2 = x2
+    self.y2 = y2
+    self.coordsys = coordsys
+    self.color = color
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x1 = self.x1
+    y1 = self.y1
+    x2 = self.x2
+    y2 = self.y2
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x1 = zpa.wxi(x1)
+      y1 = zpa.wyi(y1)
+      x2 = zpa.wxi(x2)
+      y2 = zpa.wyi(y2)
+    drawable.draw_line ( gc, x1,   y1,   x2,   y2   )
+    drawable.draw_line ( gc, x1+1, y1,   x2+1, y2   )
+    drawable.draw_line ( gc, x1,   y1+1, x2,   y2+1 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+class graphic_rect (graphic_primitive):
+  def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
     self.x = x
     self.y = y
     self.dx = dx
     self.dy = dy
+    self.coordsys = coordsys
+    self.color = color
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    dx = self.dx
+    dy = self.dy
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+      dx = zpa.wwi(dx)
+      dy = zpa.whi(dy)
+    drawable.draw_rectangle ( gc, False, x, y, dx, dy )
+    drawable.draw_rectangle ( gc, False, x-1, y-1, dx+2, dy+2 )
+    drawable.draw_rectangle ( gc, False, x-2, y-2, dx+4, dy+4 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
 
 class graphic_dot (graphic_primitive):
-  def __init__ ( self, x, y, r ):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
     self.x = x
     self.y = y
     self.r = r
+    self.coordsys = coordsys
+    self.color = color
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    r = self.r
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+    drawable.draw_arc ( gc, True, x-r, y-r, 2*r, 2*r, 0, 360*64 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+class graphic_text (graphic_primitive):
+  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x = x
+    self.y = y
+    self.s = s
+    self.coordsys = coordsys
+    self.color = color
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+    pgl.set_text ( self.s )
+    drawable.draw_layout ( gc, x, y, pgl )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
 
 
 class annotated_image:
@@ -72,6 +200,17 @@ class annotated_image:
   def __init__ ( self, file_name=None ):
     self.file_name = file_name
     self.graphics_items = []
+    self.image = None
+    try:
+      self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+      print ( "Loaded " + str(self.file_name) )
+    except:
+      print ( "Got an exception reading annotated image " + str(self.file_name) )
+      self.image = None
+    if self.file_name != None:
+      self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+      self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
+
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
 
@@ -79,12 +218,11 @@ class annotated_image:
 
 class alignment:
   ''' An alignment is everything needed to align 2 images in the stack '''
-  def __init__ ( self, base=None, adjust=None ):
+  def __init__ ( self, base=None ):
     print ( "Constructing new alignment with base " + str(base) )
     self.base_image_name = base
-    self.adjust_image_name = adjust
     self.base_image = None
-    self.adjust_image = None
+    self.image_list = []
 
     self.trans_ww = 256
     self.trans_addx = 256
@@ -100,15 +238,14 @@ class alignment:
     self.bias_enabled = True
     self.bias_dx = 0
     self.bias_dy = 0
+
     try:
       #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
       self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
     except:
-      print ( "Got an exception reading the base image " + str(self.base_image_name) )
-    #try:
-    #  self.adjust_image = gtk.gdk.pixbuf_new_from_file ( self.adjust_image_name )
-    #except:
-    #  print ( "Got an exception reading the adjust image " + str(self.adjust_image_name) )
+      #print ( "Got an exception reading the base image " + str(self.base_image_name) )
+      self.base_image = None
+
 
 
 class zoom_window ( app_window.zoom_pan_area ):
@@ -116,9 +253,12 @@ class zoom_window ( app_window.zoom_pan_area ):
   global gui_fields
 
   def __init__ ( self, window, win_width, win_height, name="" ):
+    self.extra_index = -1
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
     #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+    self.pangolayout = window.create_pango_layout("")
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
     # print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
@@ -141,6 +281,7 @@ class zoom_window ( app_window.zoom_pan_area ):
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
     ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
+    global extra_windows_list
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
       # Use shifted scroll wheel to zoom the image size
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
@@ -151,7 +292,7 @@ class zoom_window ( app_window.zoom_pan_area ):
       print ( "Moving through the stack with alignment_index = " + str(alignment_index) )
       if len(alignment_list) <= 0:
         alignment_index = -1
-        print ( "Index = " + str(alignment_index) )
+        print ( " Index = " + str(alignment_index) )
       else:
         # Store the alignment values into the section being exited
         a = alignment_list[alignment_index]
@@ -180,7 +321,7 @@ class zoom_window ( app_window.zoom_pan_area ):
 
         # Display the alignment values from the new section being viewed
         a = alignment_list[alignment_index]
-        print ( "Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
+        print ( " Index = " + str(alignment_index) + ", base_name = " + a.base_image_name )
         print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
         gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
         gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
@@ -199,7 +340,8 @@ class zoom_window ( app_window.zoom_pan_area ):
         
       # Draw the windows
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
+      for win_and_area in extra_windows_list:
+        win_and_area['win'].queue_draw()
       return True
 
   def mouse_motion_callback ( self, canvas, event, zpa ):
@@ -235,7 +377,12 @@ class zoom_window ( app_window.zoom_pan_area ):
 
     pix_buf = None
     if len(alignment_list) > 0:
-      pix_buf = alignment_list[alignment_index].base_image
+      if self.extra_index < 0:
+        # Draw the base image
+        pix_buf = alignment_list[alignment_index].base_image
+      else:
+        # Draw one of the extra images
+        pix_buf = alignment_list[alignment_index].image_list[self.extra_index].image
 
     #if zpa.user_data['image_frame']:
     #  pix_buf = zpa.user_data['image_frame']
@@ -367,9 +514,17 @@ class zoom_window ( app_window.zoom_pan_area ):
       scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
       drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
 
-      # print ( "Zoom Scale = " + str(zpa.zoom_scale) )
+    # Draw any annotations in the list
+    if len(alignment_list) > 0:
+      if self.extra_index < 0:
+        # no annotations for the base image yet
+        pass
+      else:
+        # Draw the annotations
+        image_to_draw = alignment_list[alignment_index].image_list[self.extra_index]
+        for graphics_item in image_to_draw.graphics_items:
+          graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     gc.foreground = colormap.alloc_color(32767,32767,32767)
     # Draw a separator between the panes
@@ -448,6 +603,73 @@ def background_callback ( zpa ):
       #zpa.queue_draw()
   return True
 
+
+def add_window_callback ( zpa ):
+  print ( "Add a Window" )
+  global image_hbox
+  global extra_windows_list
+  global window
+
+  new_win = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
+  new_win.extra_index = 0
+  new_win.extra_index = len(extra_windows_list)
+
+  new_win.user_data = {
+                    'image_frame'        : None,
+                    'image_frames'       : [],
+                    'frame_number'       : -1,
+                    'display_time_index' : -1,
+                    'running'            : False,
+                    'last_update'        : -1,
+                    'show_legend'        : True,
+                    'frame_delay'        : 0.1,
+                    'size'               : 1.0
+                  }
+
+  # Set the relationships between "user" coordinates and "screen" coordinates
+
+  new_win.set_x_scale ( 0.0, 300, 100.0, 400 )
+  new_win.set_y_scale ( 0.0, 250 ,100.0, 350 )
+
+  # The zoom/pan area has its own drawing area (that it zooms and pans)
+  new_win_drawing_area = new_win.get_drawing_area()
+
+  # Add the zoom/pan area to the vertical box (becomes the main area)
+  image_hbox.pack_start(new_win_drawing_area, True, True, 0)
+
+  new_win_drawing_area.show()
+
+  # The zoom/pan area doesn't draw anything, so add our custom expose callback
+  new_win_drawing_area.connect ( "expose_event", new_win.expose_callback, new_win )
+
+  # Set the events that the zoom/pan area must respond to
+  #  Note that zooming and panning requires button press and pointer motion
+  #  Other events can be set and handled by user code as well
+  new_win_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
+                                   | gtk.gdk.LEAVE_NOTIFY_MASK
+                                   | gtk.gdk.BUTTON_PRESS_MASK
+                                   | gtk.gdk.POINTER_MOTION_MASK
+                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
+
+  win_and_area = { "win":new_win, "drawing_area":new_win_drawing_area }
+  extra_windows_list.append ( win_and_area )
+
+  return True
+
+
+def rem_window_callback ( zpa ):
+  print ( "Remove a Window" )
+  global image_hbox
+  global extra_windows_list
+  global window
+
+  if len(extra_windows_list) > 0:
+    image_hbox.remove(extra_windows_list[-1]['drawing_area'])
+    extra_windows_list.pop(-1)
+
+  return True
+
+
 import pyswim
 import thread
 
@@ -498,13 +720,55 @@ def run_alignment_callback ( align_all ):
     print ( "  bias dx                  = " + str(alignment_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(alignment_list[i].bias_dy) )
 
-  # For now, just copy some files
+
   for i in index_list[0:]:
     print ( "===============================================================================" )
+    alignment_list[i].image_list = []
     if alignment_list[i].skip:
       print ( "Skipping " + str(alignment_list[i].base_image_name) )
     else:
-      print ( "Copying " + str(alignment_list[i].base_image_name) + " to " + destination_path )
+      # This is where the actual alignment should happen
+      # For now, just to lighten and darken the files and add annotations
+
+      # This creates a lighter file with some annotations
+      new_name = os.path.join ( destination_path, "light_" + alignment_list[i].base_image_name )
+      print ( "Lightening " + str(alignment_list[i].base_image_name) + " to " + new_name )
+      modified_image = alignment_list[i].base_image.copy();
+      modified_image.saturate_and_pixelate ( modified_image, 300.0, True )
+      modified_image.save(new_name, 'jpeg')
+      anim = annotated_image(new_name)
+      # This adds some annotations
+      anim.graphics_items.append ( graphic_text(10, 70, "Lighter", coordsys='p', color=[0, 1.0, 1.0]) )
+      anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
+      anim.graphics_items.append ( graphic_line(490,90,400,90,'p',[1, 1, 0]) )
+      anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0.5, 1, 1]) )
+      anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_dot(10,2,6,'i',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_rect(100,100,100,100,'i',[0, 0, 1]) )
+      anim.graphics_items.append ( graphic_line(100,100,200,200,'i',[1, 1, 0]) )
+      anim.graphics_items.append ( graphic_text(220, 130, "WW=100", coordsys='i', color=[0,0,0]) )
+      alignment_list[i].image_list.append ( anim )
+
+      # This creates a darker file with some annotations
+      new_name = os.path.join ( destination_path, "dark_" + alignment_list[i].base_image_name )
+      print ( "Darkening " + str(alignment_list[i].base_image_name) + " to " + new_name )
+      modified_image = alignment_list[i].base_image.copy();
+      modified_image.saturate_and_pixelate ( modified_image, 0.003, True )
+      modified_image.save(new_name, 'jpeg')
+      anim = annotated_image(new_name)
+      # This adds some annotations
+      anim.graphics_items.append ( graphic_text(10, 70, "Darker", coordsys='p', color=[0, 0.5, 0.5]) )
+      anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
+      anim.graphics_items.append ( graphic_line(490,90,400,110,'p',[1, 1, 0]) )
+      anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0, 0.1, 1]) )
+      anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_dot(10,7,6,'i',[1, 0, 0]) )
+      anim.graphics_items.append ( graphic_rect(120,160,60,100,'i',[0, 0, 1]) )
+      anim.graphics_items.append ( graphic_text(200, 200, "WW=100", coordsys='i', color=[0,0,0]) )
+      anim.graphics_items.append ( graphic_text(201, 200, "WW=100", coordsys='i', color=[0,0,0]) )
+      anim.graphics_items.append ( graphic_text(200, 201, "WW=100", coordsys='i', color=[0,0,0]) )
+      alignment_list[i].image_list.append ( anim )
+
 
 
 def run_callback ( zpa ):
@@ -533,16 +797,18 @@ def menu_callback ( widget, data=None ):
   # or a plain string:
   #  command_string
   # Checking the type() of data will determine which
+
   if type(data) == type((True,False)):
     # Any tuple passed is assumed to be: (command, zpa)
     command = data[0]
     zpa = data[1]
 
     global zpa_original
-    global zpa_aligned
     global alignment_list
     global alignment_index
     global destination_path
+    global project_file_name
+    global extra_windows_list
 
     if command == "Fast":
       zpa.user_data['frame_delay'] = 0.01
@@ -602,7 +868,7 @@ def menu_callback ( widget, data=None ):
         print ( "Selected Files: " + str(file_name_list) )
         # alignment_list = []
         for f in file_name_list:
-          a = alignment ( f, None )
+          a = alignment ( f )
           a.trans_ww = 256
           a.trans_addx = 256 + i
           a.trans_addy = 256 + i
@@ -627,11 +893,9 @@ def menu_callback ( widget, data=None ):
 
       file_chooser.destroy()
       print ( "Done with dialog" )
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      # zpa.queue_draw()
       # Draw the windows
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
+
 
     elif command == "OpenProj":
 
@@ -653,7 +917,6 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         open_name = file_chooser.get_filename()
         if open_name != None:
-          global project_file_name
           project_file_name = open_name
 
           gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
@@ -675,7 +938,7 @@ def menu_callback ( widget, data=None ):
                 alignment_index = 0
                 alignment_list = []
                 for json_alignment in imagestack:
-                  a = alignment ( json_alignment['filename'], None )
+                  a = alignment ( json_alignment['filename'] )
                   if 'skip' in json_alignment:
                     a.skip = json_alignment['skip']
                   if 'align_to_next_pars' in json_alignment:
@@ -694,7 +957,6 @@ def menu_callback ( widget, data=None ):
       file_chooser.destroy()
       print ( "Done with dialog" )
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
 
     elif (command == "SaveProj") or (command == "SaveProjAs"):
 
@@ -720,7 +982,6 @@ def menu_callback ( widget, data=None ):
         if response == gtk.RESPONSE_OK:
           save_name = file_chooser.get_filename()
           if save_name != None:
-            global project_file_name
             project_file_name = save_name
 
             gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
@@ -780,20 +1041,114 @@ def menu_callback ( widget, data=None ):
         alignment_index = 0
         alignment_list = []
       zpa_original.queue_draw()
-      zpa_aligned.queue_draw()
       clear_all.destroy()
 
     elif command == "LimScroll":
       zpa_original.max_zoom_count = 10
       zpa_original.min_zoom_count = -15
-      zpa_aligned.max_zoom_count = 10
-      zpa_aligned.min_zoom_count = -15
 
     elif command == "UnLimScroll":
-      zpa_original.max_zoom_count = 100
-      zpa_original.min_zoom_count = -150
-      zpa_aligned.max_zoom_count = 100
-      zpa_aligned.min_zoom_count = -150
+      zpa_original.max_zoom_count = 1000
+      zpa_original.min_zoom_count = -1500
+
+    elif command == "Refresh":
+      # Determine how many windows are needed and create them as needed
+      max_extra_images = 0
+      for a in alignment_list:
+        if len(a.image_list) > 0:
+          max_extra_images = max(max_extra_images, len(a.image_list))
+      print ( "Max extra = " + str(max_extra_images) )
+      cur_extra_images = len(extra_windows_list)
+      for i in range(cur_extra_images):
+        rem_window_callback ( zpa_original )
+      for i in range(max_extra_images):
+        add_window_callback ( zpa_original )
+
+    elif command == "ImCenter":
+      print ( "Centering images" )
+
+      if len(alignment_list) > 0:
+        # Start with the original image
+        win_size = zpa_original.drawing_area.window.get_size()
+
+        pix_buf = None
+        if zpa_original.extra_index < 0:
+          # Draw the base image
+          pix_buf = alignment_list[alignment_index].base_image
+        else:
+          # Draw one of the extra images
+          pix_buf = alignment_list[alignment_index].image_list[zpa_original.extra_index].image
+        img_w = pix_buf.get_width()
+        img_h = pix_buf.get_height()
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        zpa_original.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+        zpa_original.queue_draw()
+
+        # Do the remaining windows
+        for win_and_area in extra_windows_list:
+          zpa_next = win_and_area['win']
+          win_size = zpa_next.drawing_area.window.get_size()
+          pix_buf = None
+          if zpa_next.extra_index < 0:
+            # Draw the base image
+            pix_buf = alignment_list[alignment_index].base_image
+          else:
+            # Draw one of the extra images
+            pix_buf = alignment_list[alignment_index].image_list[zpa_next.extra_index].image
+          img_w = pix_buf.get_width()
+          img_h = pix_buf.get_height()
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+          zpa_next.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+          zpa_next.queue_draw()
+
+      ''' Java version of centering:
+
+      public void set_scale_to_fit ( double x_min, double x_max, double y_min, double y_max, int w, int h ) {
+        mx = w / (x_max - x_min);
+        // px_offset = (int)( -mx * x_min );
+        my = h / (y_max - y_min);
+        // py_offset = (int)( -my * y_min );
+        scale = Math.min(mx,my);
+	      scroll_wheel_position = - (int) Math.floor ( Math.log(scale) / Math.log(zoom_base) );
+	      // System.out.println ( "Scroll wheel = " + scroll_wheel_position );
+        zoom_exp = -scroll_wheel_position;
+        scale = Math.pow(zoom_base, zoom_exp);
+        mx = my = scale;
+
+        int width_of_points = (int) ( (x_max * mx) - (x_min * mx) );
+        int height_of_points = (int) ( (y_max * my) - (y_min * my) );
+
+        // For centering, start with offsets = 0 and work back
+        px_offset = 0;
+        py_offset = 0;
+
+        px_offset = - x_to_pxi(x_min);
+        py_offset = - y_to_pyi(y_min);
+
+        px_offset += (w - width_of_points) / 2;
+        py_offset += (h - height_of_points) / 2;
+      }
+
+      if (frames != null) {
+        if (frames.size() > 0) {
+          if (frame_index >= 0) {
+            if (frame_index < frames.size()) {
+              BufferedImage frame_image = frames.get(frame_index).image;
+              if (frame_image != null) {
+                ref_image_w = frame_image.getWidth();
+                ref_image_h = frame_image.getHeight();
+                recalculate = true;
+              }
+            }
+          }
+        }
+      }
+      if (results_panel != null) {
+        System.out.println ( " --- Centering results image" );
+        results_panel.center_current_image();
+        results_panel.recalculate = true;
+      }
+      '''
 
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -816,6 +1171,7 @@ def menu_callback ( widget, data=None ):
 def main():
 
   global gui_fields
+  global window
 
   # Create a top-level GTK window
   window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
@@ -824,9 +1180,7 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
-  global zpa_aligned
-  zpa_aligned = zoom_window(window,800,800,"Python GTK version of SWiFT-GUI")
+  zpa_original = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
@@ -840,22 +1194,7 @@ def main():
                     'size'               : 1.0
                   }
 
-  zpa_aligned.user_data = {
-                    'image_frame'        : None,
-                    'image_frames'       : [],
-                    'frame_number'       : -1,
-                    'display_time_index' : -1,
-                    'running'            : False,
-                    'last_update'        : -1,
-                    'show_legend'        : True,
-                    'frame_delay'        : 0.1,
-                    'size'               : 1.0
-                  }
-
   # Set the relationships between "user" coordinates and "screen" coordinates
-
-  zpa_aligned.set_x_scale ( 0.0, 300, 100.0, 400 )
-  zpa_aligned.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
   zpa_original.set_x_scale ( 0.0, 300, 100.0, 400 )
   zpa_original.set_y_scale ( 0.0, 250 ,100.0, 350 )
@@ -925,24 +1264,23 @@ def main():
   menu_bar.show()
 
   # Create the horizontal image box
+  global image_hbox
   image_hbox = gtk.HBox ( True, 0 )
+  global extra_windows_list
+  extra_windows_list = []
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   original_drawing_area = zpa_original.get_drawing_area()
-  aligned_drawing_area = zpa_aligned.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
   image_hbox.pack_start(original_drawing_area, True, True, 0)
-  image_hbox.pack_start(aligned_drawing_area, True, True, 0)
 
   image_hbox.show()
   main_win_vbox.pack_start(image_hbox, True, True, 0)
   original_drawing_area.show()
-  aligned_drawing_area.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
   original_drawing_area.connect ( "expose_event", zpa_original.expose_callback, zpa_original )
-  aligned_drawing_area.connect ( "expose_event", zpa_aligned.expose_callback, zpa_aligned )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
@@ -953,15 +1291,7 @@ def main():
                                    | gtk.gdk.POINTER_MOTION_MASK
                                    | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
-  aligned_drawing_area.set_events  ( gtk.gdk.EXPOSURE_MASK
-                                   | gtk.gdk.LEAVE_NOTIFY_MASK
-                                   | gtk.gdk.BUTTON_PRESS_MASK
-                                   | gtk.gdk.POINTER_MOTION_MASK
-                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
-
-
   alignment_defaults = alignment()
-
 
   # Create a Vertical box to hold rows of buttons
   controls_vbox = gtk.VBox ( True, 10 )
@@ -971,9 +1301,6 @@ def main():
   # Add some rows of application specific controls and their callbacks
 
   # Create a horizontal box to hold a row of controls
-
-  global project_file_name
-  global destination_path
 
   controls_hbox = gtk.HBox ( False, 10 )
   controls_hbox.show()
@@ -1185,17 +1512,20 @@ def main():
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
-
   button = gtk.Button("Abort")
   controls_hbox.pack_start ( button, True, True, 0 )
   button.connect_object ( "clicked", stop_callback, zpa_original )
   button.show()
 
+  button = gtk.Button("+")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", add_window_callback, zpa_original )
+  button.show()
 
-
-  zpa_original.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
-  zpa_aligned.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_2_mod.jpg" )
-
+  button = gtk.Button("-")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", rem_window_callback, zpa_original )
+  button.show()
 
   # Show the main window
   window.show()
@@ -1203,7 +1533,6 @@ def main():
   zpa_original.set_cursor ( gtk.gdk.HAND2 )
 
   gtk.idle_add ( background_callback, zpa_original )
-  gtk.idle_add ( background_callback, zpa_aligned )
 
   # Turn control over to GTK to run everything from here onward.
   gtk.main()
