@@ -673,6 +673,7 @@ def rem_window_callback ( zpa ):
 # import pyswim
 import thread
 
+import align_swiftir
 
 def run_alignment_callback ( align_all ):
   global image_layer_list
@@ -720,16 +721,27 @@ def run_alignment_callback ( align_all ):
     print ( "  bias dx                  = " + str(image_layer_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(image_layer_list[i].bias_dy) )
 
-
-  for i in index_list[0:]:
-    print ( "===============================================================================" )
+  global_afm = None
+  for i in index_list:
+    print ( "================================ " + str(i) + " ===============================================" )
     image_layer_list[i].image_list = []
     if image_layer_list[i].skip:
       print ( "Skipping " + str(image_layer_list[i].base_image_name) )
     else:
       # This is where the actual alignment should happen
       # For now, just to lighten and darken the files and add annotations
+      if i == 0:
+        new_name = image_layer_list[i].base_image_name
+        annim = annotated_image(new_name)
+        image_layer_list[i].image_list.append ( annim )
+        #global_afm = align_swiftir.align_images ( image_layer_list[i].base_image_name, image_layer_list[i+1].base_image_name, './aligned/', global_afm )
+      else:
+        global_afm = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, './aligned/', global_afm )
+        new_name = os.path.join ( './aligned/' + image_layer_list[i].base_image_name )
+        annim = annotated_image(new_name)
+        image_layer_list[i].image_list.append ( annim )
 
+      '''
       # This creates a lighter file with some annotations
       new_name = os.path.join ( destination_path, "light_" + image_layer_list[i].base_image_name )
       print ( "Lightening " + str(image_layer_list[i].base_image_name) + " to " + new_name )
@@ -768,6 +780,7 @@ def run_alignment_callback ( align_all ):
       anim.graphics_items.append ( graphic_text(201, 200, "WW=100", coordsys='i', color=[0,0,0]) )
       anim.graphics_items.append ( graphic_text(200, 201, "WW=100", coordsys='i', color=[0,0,0]) )
       image_layer_list[i].image_list.append ( anim )
+      '''
 
 
 
