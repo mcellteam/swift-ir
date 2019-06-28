@@ -891,14 +891,14 @@ def menu_callback ( widget, data=None ):
           a.trans_addx = 20 + i
           a.trans_addy = 30 + i
 
-          a.skip = ((i%2) == 0)
+          a.skip = False # ((i%2) == 0)
 
-          a.affine_enabled = ((i%2) == 1)
+          a.affine_enabled = True # ((i%2) == 1)
           a.affine_ww = 40 + i
           a.affine_addx = 50 + i
           a.affine_addy = 60 + i
 
-          a.bias_enabled = ((i%2) == 0)
+          a.bias_enabled = True # ((i%2) == 0)
           a.bias_dx = 70 + i
           a.bias_dy = 80 + i
 
