@@ -252,6 +252,38 @@ class image_layer:
       self.base_image = None
 
 
+def store_fields_into_current_layer():
+  a = image_layer_list[image_layer_index]
+  a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
+  a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
+  a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
+  a.skip = gui_fields.skip_check_box.get_active()
+  a.affine_enabled = gui_fields.affine_check_box.get_active()
+  a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
+
+  a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
+  a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
+  a.bias_enabled = gui_fields.bias_check_box.get_active()
+  a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
+  a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
+
+def store_current_layer_into_fields():
+  a = image_layer_list[image_layer_index]
+  print ( " Index = " + str(image_layer_index) + ", base_name = " + a.base_image_name )
+  print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
+  gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
+  gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
+  gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
+  gui_fields.skip_check_box.set_active ( a.skip )
+  gui_fields.affine_check_box.set_active ( a.affine_enabled )
+  gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
+
+  gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
+  gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
+  gui_fields.bias_check_box.set_active(a.bias_enabled)
+  gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
+  gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
+
 
 class zoom_window ( app_window.zoom_pan_area ):
   '''zoom_window - provide a drawing area that can be zoomed and panned.'''
@@ -300,20 +332,7 @@ class zoom_window ( app_window.zoom_pan_area ):
         print ( " Index = " + str(image_layer_index) )
       else:
         # Store the image_layer parameters into the image layer being exited
-        a = image_layer_list[image_layer_index]
-        a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
-        a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
-        a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
-        a.skip = gui_fields.skip_check_box.get_active()
-        a.affine_enabled = gui_fields.affine_check_box.get_active()
-        a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
-
-        a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
-        a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
-        a.bias_enabled = gui_fields.bias_check_box.get_active()
-        a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
-        a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
-
+        store_fields_into_current_layer()
         # Move to the next image layer (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
           image_layer_index += 1
@@ -325,21 +344,7 @@ class zoom_window ( app_window.zoom_pan_area ):
             image_layer_index = 0
 
         # Display the image_layer parameters from the new section being viewed
-        a = image_layer_list[image_layer_index]
-        print ( " Index = " + str(image_layer_index) + ", base_name = " + a.base_image_name )
-        print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
-        gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
-        gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
-        gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
-        gui_fields.skip_check_box.set_active ( a.skip )
-        gui_fields.affine_check_box.set_active ( a.affine_enabled )
-        gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
-
-        gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
-        gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
-        gui_fields.bias_check_box.set_active(a.bias_enabled)
-        gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
-        gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
+        store_current_layer_into_fields()
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         
@@ -690,6 +695,8 @@ def run_alignment_callback ( align_all ):
   global image_layer_index
   global destination_path
   global gui_fields
+
+  store_fields_into_current_layer()
 
   # if type(destination_path) == type(None):
   if len(destination_path) == 0:
