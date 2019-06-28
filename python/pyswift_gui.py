@@ -35,6 +35,9 @@ window = None
 global show_spots
 show_spots = False
 
+global point_mode
+point_mode = False
+
 class gui_fields_class:
   ''' This class holds GUI widgets and not the persistent data. '''
   def __init__(self):
@@ -137,6 +140,41 @@ class graphic_rect (graphic_primitive):
     # Restore the previous color
     gc.foreground = old_fg
     return False
+
+
+
+class marker_dot (graphic_primitive):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.x = x
+    self.y = y
+    self.r = r
+    self.coordsys = coordsys
+    self.color = color
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    r = self.r
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+    drawable.draw_arc ( gc, False, x-r, y-r, 2*r, 2*r, 0, 360*64 )
+    for d in range(5):
+      rd = r+d
+      drawable.draw_arc ( gc, False, x-rd, y-rd, 2*rd, 2*rd, 0, 360*64 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
 
 class graphic_dot (graphic_primitive):
   def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
@@ -298,6 +336,25 @@ class zoom_window ( app_window.zoom_pan_area ):
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
+    if point_mode:
+      global image_layer_list
+      global image_layer_index
+      print ( "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+      print ( "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+      if self == zpa_original:
+        # Add a point to the original
+        print ( "Adding a point to the original" )
+      elif len(extra_windows_list) > 0:
+        if self == extra_windows_list[0]['win']:
+          # Add a point to the second
+          print ( "Adding a point to the second" )
+          image_layer_list[image_layer_index].image_list[0].graphics_items.append ( marker_dot(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      '''
+      for w in extra_windows_list:
+        w['win'].set_cursor ( cursor )
+        w['drawing_area'].queue_draw()'''
+
     # print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
       # Do special processing
@@ -1208,6 +1265,22 @@ def menu_callback ( widget, data=None ):
       print ( "Showing Spots is now " + str(show_spots) + ". Re-align to see the effect." )
       zpa.queue_draw()
 
+    elif command == "PtMode":
+      global point_mode
+      global extra_windows_list
+      point_mode = not point_mode
+      print ( "Point mode is now " + str(point_mode) )
+      cursor = gtk.gdk.ARROW
+      if point_mode:
+        cursor = gtk.gdk.HAND2
+      zpa.set_cursor ( cursor )
+      zpa.queue_draw()
+      for w in extra_windows_list:
+        w['win'].set_cursor ( cursor )
+        w['drawing_area'].queue_draw()
+        # Only need to set the first one since the others won't use this.
+        break
+
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
@@ -1300,6 +1373,7 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa_original.add_menu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
+    zpa_original.add_menu_item ( set_menu, menu_callback, "Pick Points",   ("PtMode", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
 
   # Create a "Show" menu
@@ -1594,7 +1668,7 @@ def main():
   # Show the main window
   window.show()
 
-  zpa_original.set_cursor ( gtk.gdk.HAND2 )
+  # This is now for point picking mode:  zpa_original.set_cursor ( gtk.gdk.HAND2 )
 
   gtk.idle_add ( background_callback, zpa_original )
 
