@@ -68,6 +68,7 @@ class align_ingredient:
     self.pmov = pmov
     self.wht = wht
     self.iters = iters
+    self.snr = None
 
 
   def execute(self):
@@ -92,6 +93,7 @@ class align_ingredient:
       self.pmov = swiftir.stationaryToMoving(self.afm, self.psta)
       print('  Affine err:  %g' % (err))
       print('  SNR:  ', snr)
+    self.snr = snr
 
     return(self.afm)
 
@@ -153,10 +155,12 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
   ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
   ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
   ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
+  #ingredient_final_check = align_ingredient(ww=(wwx,wwy), psta=psta_1)
 
   recipe.add_ingredient(ingredient_1)
   recipe.add_ingredient(ingredient_2x2)
   recipe.add_ingredient(ingredient_4x4)
+  #recipe.add_ingredient(ingredient_final_check)
 
   recipe.execute()
 
@@ -165,7 +169,7 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
   ofn = align_dir + os.path.basename(im_mov_fn)
   swiftir.saveImage(im_aligned,ofn)
 
-  return global_afm
+  return (global_afm, recipe.recipe)
 
 
 if __name__=='__main__':

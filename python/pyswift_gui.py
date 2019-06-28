@@ -209,7 +209,7 @@ class annotated_image:
       self.image = None
     if self.file_name != None:
       self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
-      self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
+      # self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
 
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
@@ -732,14 +732,16 @@ def run_alignment_callback ( align_all ):
       # For now, just to lighten and darken the files and add annotations
       if i == 0:
         new_name = image_layer_list[i].base_image_name
-        annim = annotated_image(new_name)
-        image_layer_list[i].image_list.append ( annim )
+        annotated_img = annotated_image(new_name)
+        image_layer_list[i].image_list.append ( annotated_img )
+        annotated_img.graphics_items.append ( graphic_text(10, 42, "Copy", coordsys='p', color=[1, .5, .5]) )
         #global_afm = align_swiftir.align_images ( image_layer_list[i].base_image_name, image_layer_list[i+1].base_image_name, './aligned/', global_afm )
       else:
-        global_afm = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, './aligned/', global_afm )
+        global_afm,recipe = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, './aligned/', global_afm )
         new_name = os.path.join ( './aligned/' + image_layer_list[i].base_image_name )
-        annim = annotated_image(new_name)
-        image_layer_list[i].image_list.append ( annim )
+        annotated_img = annotated_image(new_name)
+        annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+        image_layer_list[i].image_list.append ( annotated_img )
 
       '''
       # This creates a lighter file with some annotations
