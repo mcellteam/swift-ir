@@ -384,7 +384,10 @@ class zoom_window ( app_window.zoom_pan_area ):
         pix_buf = image_layer_list[image_layer_index].base_image
       else:
         # Draw one of the extra images
-        pix_buf = image_layer_list[image_layer_index].image_list[self.extra_index].image
+        if image_layer_index < len(image_layer_list):
+          ilist = image_layer_list[image_layer_index].image_list
+          if self.extra_index < len(ilist):
+            pix_buf = ilist[self.extra_index].image
 
     #if zpa.user_data['image_frame']:
     #  pix_buf = zpa.user_data['image_frame']
@@ -523,10 +526,12 @@ class zoom_window ( app_window.zoom_pan_area ):
         pass
       else:
         # Draw the annotations
-        image_to_draw = image_layer_list[image_layer_index].image_list[self.extra_index]
-        for graphics_item in image_to_draw.graphics_items:
-          graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-
+        if image_layer_index < len(image_layer_list):
+          ilist = image_layer_list[image_layer_index].image_list
+          if self.extra_index < len(ilist):
+            image_to_draw = ilist[self.extra_index]
+            for graphics_item in image_to_draw.graphics_items:
+              graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
     gc.foreground = colormap.alloc_color(32767,32767,32767)
     # Draw a separator between the panes
@@ -723,21 +728,48 @@ def run_alignment_callback ( align_all ):
     print ( "  bias dx                  = " + str(image_layer_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(image_layer_list[i].bias_dy) )
 
-  global_afm = None
+
+  # Add the base images to the lists first
   for i in index_list:
-    print ( "================================ " + str(i) + " ===============================================" )
     image_layer_list[i].image_list = []
     if image_layer_list[i].skip:
       print ( "Skipping " + str(image_layer_list[i].base_image_name) )
     else:
-      # This is where the actual alignment should happen
-      # For now, just to lighten and darken the files and add annotations
+      # Add the i+1 base_image to the list
+      if i < len(image_layer_list)-1:
+        # mov_img = annotated_image(os.path.join('./aligned',image_layer_list[i].base_image_name))
+        mov_img = annotated_image(image_layer_list[i+1].base_image_name)
+        image_layer_list[i].image_list.append ( mov_img )
+      else:
+        # Add an empty annotated image to hold the slot
+        mov_img = annotated_image(None)
+        image_layer_list[i].image_list.append ( mov_img )
+
+
+  # Add the aligned images to the lists of the previous layer
+  global_afm = None
+  for i in index_list:
+    print ( "================================ " + str(i) + " ===============================================" )
+    # image_layer_list[i].image_list = []
+    if image_layer_list[i].skip:
+      print ( "Skipping " + str(image_layer_list[i].base_image_name) )
+    else:
+      # This is where the actual alignment happens
+      # The current base image is already in this layer (not part of the list)
+
+      annotated_img = None
       if i == 0:
+        pass
+        # Add an empty annotated image to hold the slot
+        #mov_img = annotated_image(None)
+        #image_layer_list[i].image_list.append ( mov_img )
+        '''
         new_name = image_layer_list[i].base_image_name
         annotated_img = annotated_image(new_name)
-        image_layer_list[i].image_list.append ( annotated_img )
+        image_layer_list[i-1].image_list.append ( annotated_img )
         annotated_img.graphics_items.append ( graphic_text(10, 42, "Copy", coordsys='p', color=[1, .5, .5]) )
         #global_afm = align_swiftir.align_images ( image_layer_list[i].base_image_name, image_layer_list[i+1].base_image_name, './aligned/', global_afm )
+        '''
       else:
         global_afm,recipe = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, './aligned/', global_afm )
         new_name = os.path.join ( './aligned/' + image_layer_list[i].base_image_name )
@@ -761,51 +793,53 @@ def run_alignment_callback ( align_all ):
               annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
           print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
+        image_layer_list[i-1].image_list.append ( annotated_img )
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-        image_layer_list[i].image_list.append ( annotated_img )
 
-      '''
-      # This creates a lighter file with some annotations
-      new_name = os.path.join ( destination_path, "light_" + image_layer_list[i].base_image_name )
-      print ( "Lightening " + str(image_layer_list[i].base_image_name) + " to " + new_name )
-      modified_image = image_layer_list[i].base_image.copy();
-      modified_image.saturate_and_pixelate ( modified_image, 300.0, True )
-      modified_image.save(new_name, 'jpeg')
-      anim = annotated_image(new_name)
-      # This adds some annotations
-      anim.graphics_items.append ( graphic_text(10, 70, "Lighter", coordsys='p', color=[0, 1.0, 1.0]) )
-      anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
-      anim.graphics_items.append ( graphic_line(490,90,400,90,'p',[1, 1, 0]) )
-      anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0.5, 1, 1]) )
-      anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
-      anim.graphics_items.append ( graphic_dot(10,2,6,'i',[1, 0, 0]) )
-      anim.graphics_items.append ( graphic_rect(100,100,100,100,'i',[0, 0, 1]) )
-      anim.graphics_items.append ( graphic_line(100,100,200,200,'i',[1, 1, 0]) )
-      anim.graphics_items.append ( graphic_text(220, 130, "WW=100", coordsys='i', color=[0,0,0]) )
-      image_layer_list[i].image_list.append ( anim )
 
-      # This creates a darker file with some annotations
-      new_name = os.path.join ( destination_path, "dark_" + image_layer_list[i].base_image_name )
-      print ( "Darkening " + str(image_layer_list[i].base_image_name) + " to " + new_name )
-      modified_image = image_layer_list[i].base_image.copy();
-      modified_image.saturate_and_pixelate ( modified_image, 0.003, True )
-      modified_image.save(new_name, 'jpeg')
-      anim = annotated_image(new_name)
-      # This adds some annotations
-      anim.graphics_items.append ( graphic_text(10, 70, "Darker", coordsys='p', color=[0, 0.5, 0.5]) )
-      anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
-      anim.graphics_items.append ( graphic_line(490,90,400,110,'p',[1, 1, 0]) )
-      anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0, 0.1, 1]) )
-      anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
-      anim.graphics_items.append ( graphic_dot(10,7,6,'i',[1, 0, 0]) )
-      anim.graphics_items.append ( graphic_rect(120,160,60,100,'i',[0, 0, 1]) )
-      anim.graphics_items.append ( graphic_text(200, 200, "WW=100", coordsys='i', color=[0,0,0]) )
-      anim.graphics_items.append ( graphic_text(201, 200, "WW=100", coordsys='i', color=[0,0,0]) )
-      anim.graphics_items.append ( graphic_text(200, 201, "WW=100", coordsys='i', color=[0,0,0]) )
-      image_layer_list[i].image_list.append ( anim )
-      '''
+
+'''
+# This creates a lighter file with some annotations
+new_name = os.path.join ( destination_path, "light_" + image_layer_list[i].base_image_name )
+print ( "Lightening " + str(image_layer_list[i].base_image_name) + " to " + new_name )
+modified_image = image_layer_list[i].base_image.copy();
+modified_image.saturate_and_pixelate ( modified_image, 300.0, True )
+modified_image.save(new_name, 'jpeg')
+anim = annotated_image(new_name)
+# This adds some annotations
+anim.graphics_items.append ( graphic_text(10, 70, "Lighter", coordsys='p', color=[0, 1.0, 1.0]) )
+anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
+anim.graphics_items.append ( graphic_line(490,90,400,90,'p',[1, 1, 0]) )
+anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0.5, 1, 1]) )
+anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
+anim.graphics_items.append ( graphic_dot(10,2,6,'i',[1, 0, 0]) )
+anim.graphics_items.append ( graphic_rect(100,100,100,100,'i',[0, 0, 1]) )
+anim.graphics_items.append ( graphic_line(100,100,200,200,'i',[1, 1, 0]) )
+anim.graphics_items.append ( graphic_text(220, 130, "WW=100", coordsys='i', color=[0,0,0]) )
+image_layer_list[i].image_list.append ( anim )
+
+# This creates a darker file with some annotations
+new_name = os.path.join ( destination_path, "dark_" + image_layer_list[i].base_image_name )
+print ( "Darkening " + str(image_layer_list[i].base_image_name) + " to " + new_name )
+modified_image = image_layer_list[i].base_image.copy();
+modified_image.saturate_and_pixelate ( modified_image, 0.003, True )
+modified_image.save(new_name, 'jpeg')
+anim = annotated_image(new_name)
+# This adds some annotations
+anim.graphics_items.append ( graphic_text(10, 70, "Darker", coordsys='p', color=[0, 0.5, 0.5]) )
+anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
+anim.graphics_items.append ( graphic_line(490,90,400,110,'p',[1, 1, 0]) )
+anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0, 0.1, 1]) )
+anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
+anim.graphics_items.append ( graphic_dot(10,7,6,'i',[1, 0, 0]) )
+anim.graphics_items.append ( graphic_rect(120,160,60,100,'i',[0, 0, 1]) )
+anim.graphics_items.append ( graphic_text(200, 200, "WW=100", coordsys='i', color=[0,0,0]) )
+anim.graphics_items.append ( graphic_text(201, 200, "WW=100", coordsys='i', color=[0,0,0]) )
+anim.graphics_items.append ( graphic_text(200, 201, "WW=100", coordsys='i', color=[0,0,0]) )
+image_layer_list[i].image_list.append ( anim )
+'''
 
 
 
