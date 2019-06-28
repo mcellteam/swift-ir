@@ -765,6 +765,9 @@ def run_alignment_callback ( align_all ):
     # image_layer_list[i].image_list = []
     if image_layer_list[i].skip:
       print ( "Skipping " + str(image_layer_list[i].base_image_name) )
+      # Insert a placeholder image
+      skip_img = annotated_image(None)
+      image_layer_list[i].image_list.append ( skip_img )
     else:
       # This is where the actual alignment happens
       # The current base image is already in this layer (not part of the list)
