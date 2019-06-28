@@ -688,6 +688,13 @@ def run_alignment_callback ( align_all ):
   global destination_path
   global gui_fields
 
+  # if type(destination_path) == type(None):
+  if len(destination_path) == 0:
+    dest_err_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Destination not set.")
+    response = dest_err_dialog.run()
+    dest_err_dialog.destroy()
+    return
+
   index_list = range(len(image_layer_list))
   if not align_all:
     first = image_layer_index
@@ -756,6 +763,7 @@ def run_alignment_callback ( align_all ):
     else:
       # This is where the actual alignment happens
       # The current base image is already in this layer (not part of the list)
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
       annotated_img = None
       if i == 0:
@@ -772,7 +780,7 @@ def run_alignment_callback ( align_all ):
         '''
       else:
         global_afm,recipe = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, './aligned/', global_afm )
-        new_name = os.path.join ( './aligned/' + image_layer_list[i].base_image_name )
+        new_name = os.path.join ( './aligned/' + os.path.basename(image_layer_list[i].base_image_name) )
         annotated_img = annotated_image(new_name)
         annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
@@ -1084,7 +1092,8 @@ def menu_callback ( widget, data=None ):
                   f.write ( '      {\n' )
                   f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
                   if a != image_layer_list[-1]:
-                    f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '",\n' )
+                    #f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '",\n' )
+                    f.write ( '        "filename": "' + str(a.base_image_name) + '",\n' )
                     f.write ( '        "align_to_next_pars": {\n' )
                     f.write ( '          "window_size": ' + str(a.trans_ww) + ',\n' )
                     f.write ( '          "addx": ' + str(a.trans_addx) + ',\n' )
@@ -1093,7 +1102,8 @@ def menu_callback ( widget, data=None ):
                     f.write ( '        }\n' )
                     f.write ( '      },\n' )
                   else:
-                    f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '"\n' )
+                    #f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '"\n' )
+                    f.write ( '        "filename": "' + str(a.base_image_name) + '"\n' )
                     f.write ( '      }\n' )
                 f.write ( '    ]\n' )
                 f.write ( '  }\n' )
