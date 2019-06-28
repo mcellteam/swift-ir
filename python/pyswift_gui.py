@@ -5,6 +5,7 @@ import time
 import os
 import json
 import random
+import shutil
 
 import pygtk
 pygtk.require('2.0')
@@ -203,15 +204,17 @@ class annotated_image:
     self.file_name = file_name
     self.graphics_items = []
     self.image = None
-    try:
-      self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
-      print ( "Loaded " + str(self.file_name) )
-    except:
-      print ( "Got an exception reading annotated image " + str(self.file_name) )
-      self.image = None
-    if self.file_name != None:
-      self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
-      # self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
+    if type(self.file_name) != type(None):
+      try:
+        self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+        print ( "Loaded " + str(self.file_name) )
+      except:
+        print ( "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
+        exit(1)
+        self.image = None
+      if type(self.file_name) != type(None):
+        self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+        # self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
 
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
@@ -745,10 +748,12 @@ def run_alignment_callback ( align_all ):
       # Add the i+1 base_image to the list
       if i < len(image_layer_list)-1:
         # mov_img = annotated_image(os.path.join('./aligned',image_layer_list[i].base_image_name))
+        print ( "Reading in a base image named " + str(image_layer_list[i+1].base_image_name) )
         mov_img = annotated_image(image_layer_list[i+1].base_image_name)
         image_layer_list[i].image_list.append ( mov_img )
       else:
         # Add an empty annotated image to hold the slot
+        print ( "Reading in an empty image" )
         mov_img = annotated_image(None)
         image_layer_list[i].image_list.append ( mov_img )
 
@@ -767,7 +772,8 @@ def run_alignment_callback ( align_all ):
 
       annotated_img = None
       if i == 0:
-        pass
+        print ( "Copying ( " + image_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(image_layer_list[i].base_image_name)) + " )" )
+        shutil.copyfile ( image_layer_list[i].base_image_name, os.path.join(destination_path,os.path.basename(image_layer_list[i].base_image_name)) )
         # Add an empty annotated image to hold the slot
         #mov_img = annotated_image(None)
         #image_layer_list[i].image_list.append ( mov_img )
@@ -779,8 +785,10 @@ def run_alignment_callback ( align_all ):
         #global_afm = align_swiftir.align_images ( image_layer_list[i].base_image_name, image_layer_list[i+1].base_image_name, './aligned/', global_afm )
         '''
       else:
-        global_afm,recipe = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, './aligned/', global_afm )
-        new_name = os.path.join ( './aligned/' + os.path.basename(image_layer_list[i].base_image_name) )
+        print ( "Calling align_swiftir.align_images( " + image_layer_list[i-1].base_image_name + ", " + image_layer_list[i].base_image_name + ", " + destination_path + " )" )
+        global_afm,recipe = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, destination_path, global_afm )
+        new_name = os.path.join ( destination_path, os.path.basename(image_layer_list[i].base_image_name) )
+        print ( "Reading in new_name from " + str(new_name) )
         annotated_img = annotated_image(new_name)
         annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 

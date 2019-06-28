@@ -166,7 +166,7 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
   global_afm = swiftir.composeAffine(global_afm,recipe.afm)
   im_aligned = swiftir.affineImage(global_afm,im_mov)
-  ofn = align_dir + os.path.basename(im_mov_fn)
+  ofn = os.path.join ( align_dir, os.path.basename(im_mov_fn) )
   swiftir.saveImage(im_aligned,ofn)
 
   return (global_afm, recipe.recipe)
