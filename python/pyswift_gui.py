@@ -31,6 +31,8 @@ extra_windows_list = []
 global window
 window = None
 
+global show_spots
+show_spots = False
 
 class gui_fields_class:
   ''' This class holds GUI widgets and not the persistent data. '''
@@ -741,6 +743,27 @@ def run_alignment_callback ( align_all ):
         new_name = os.path.join ( './aligned/' + image_layer_list[i].base_image_name )
         annotated_img = annotated_image(new_name)
         annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+
+        for ri in range(len(recipe)):
+          # Make a color for this recipe item
+          c = [(ri+1)%2,((ri+1)/2)%2,((ri+1)/4)%2]
+          r = recipe[ri]
+          s = len(r.psta[0])
+          ww = r.ww
+          if type(ww) == type(1):
+            # ww is an integer, so turn it into an nxn tuple
+            ww = (ww,ww)
+          global show_spots
+          if show_spots:
+            # Draw dots in the center of each psta (could be pmov) with SNR for each
+            for wi in range(s):
+              annotated_img.graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c) )
+              annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
+          print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
+
+
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
         image_layer_list[i].image_list.append ( annotated_img )
 
       '''
@@ -1117,54 +1140,11 @@ def menu_callback ( widget, data=None ):
           zpa_next.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
           zpa_next.queue_draw()
 
-      ''' Java version of centering:
-
-      public void set_scale_to_fit ( double x_min, double x_max, double y_min, double y_max, int w, int h ) {
-        mx = w / (x_max - x_min);
-        // px_offset = (int)( -mx * x_min );
-        my = h / (y_max - y_min);
-        // py_offset = (int)( -my * y_min );
-        scale = Math.min(mx,my);
-	      scroll_wheel_position = - (int) Math.floor ( Math.log(scale) / Math.log(zoom_base) );
-	      // System.out.println ( "Scroll wheel = " + scroll_wheel_position );
-        zoom_exp = -scroll_wheel_position;
-        scale = Math.pow(zoom_base, zoom_exp);
-        mx = my = scale;
-
-        int width_of_points = (int) ( (x_max * mx) - (x_min * mx) );
-        int height_of_points = (int) ( (y_max * my) - (y_min * my) );
-
-        // For centering, start with offsets = 0 and work back
-        px_offset = 0;
-        py_offset = 0;
-
-        px_offset = - x_to_pxi(x_min);
-        py_offset = - y_to_pyi(y_min);
-
-        px_offset += (w - width_of_points) / 2;
-        py_offset += (h - height_of_points) / 2;
-      }
-
-      if (frames != null) {
-        if (frames.size() > 0) {
-          if (frame_index >= 0) {
-            if (frame_index < frames.size()) {
-              BufferedImage frame_image = frames.get(frame_index).image;
-              if (frame_image != null) {
-                ref_image_w = frame_image.getWidth();
-                ref_image_h = frame_image.getHeight();
-                recalculate = true;
-              }
-            }
-          }
-        }
-      }
-      if (results_panel != null) {
-        System.out.println ( " --- Centering results image" );
-        results_panel.center_current_image();
-        results_panel.recalculate = true;
-      }
-      '''
+    elif command == "Spots":
+      global show_spots
+      show_spots = not show_spots
+      print ( "Showing Spots is now " + str(show_spots) + ". Re-align to see the effect." )
+      zpa.queue_draw()
 
     elif command == "Debug":
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -1260,6 +1240,11 @@ def main():
     zpa_original.add_menu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
 
+  # Create a "Show" menu
+  (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
+  if True: # An easy way to indent and still be legal Python
+    zpa_original.add_menu_item ( show_menu, menu_callback, "Spots",   ("Spots", zpa_original ) )
+
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
   if True: # An easy way to indent and still be legal Python
@@ -1274,6 +1259,7 @@ def main():
   menu_bar.append ( file_item )
   menu_bar.append ( image_item )
   menu_bar.append ( set_item )
+  menu_bar.append ( show_item )
   menu_bar.append ( help_item )
 
   # Show the menu bar itself (everything must be shown!!)
