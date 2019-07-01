@@ -15,13 +15,23 @@ import gtk
 import app_window
 
 global zpa_original
+zpa_original = None
+global global_win_width
+global global_win_height
+global_win_width = 300
+global_win_height = 300
 
 global image_layer_list
 image_layer_list = []
 global image_layer_index
 image_layer_index = -1
 
+global project_file_name
 project_file_name = ""
+
+global project_path
+project_path = None
+
 global destination_path
 destination_path = ""
 
@@ -59,20 +69,21 @@ class gui_fields_class:
 ''' This variable gives global access to the GUI widgets '''
 gui_fields = gui_fields_class()
 
-global project_path
-project_path = None
-
 class graphic_primitive:
   ''' This base class defines something that can be drawn '''
   def __init__ ( self ):
+    self.marker = False
     self.coordsys = 'p' # 'p' = Pixel Coordinates, 'i' = Image Coordinates, 's' = Scaled Coordinates (0.0 to 1.0)
     self.color = [1.0, 1.0, 1.0]
   def alloc_color ( self, colormap ):
     return colormap.alloc_color(int(65535*self.color[0]),int(65535*self.color[1]),int(65535*self.color[2]))
+  def set_color_from_index ( self, i, mx=1 ):
+    self.color = [mx*((i/(2**j))%2) for j in range(3)]
 
 
 class graphic_line (graphic_primitive):
   def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.marker = False
     self.x1 = x1
     self.y1 = y1
     self.x2 = x2
@@ -108,6 +119,7 @@ class graphic_line (graphic_primitive):
 
 class graphic_rect (graphic_primitive):
   def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.marker = False
     self.x = x
     self.y = y
     self.dx = dx
@@ -143,8 +155,9 @@ class graphic_rect (graphic_primitive):
 
 
 
-class marker_dot (graphic_primitive):
+class graphic_marker (graphic_primitive):
   def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.marker = True
     self.x = x
     self.y = y
     self.r = r
@@ -178,6 +191,7 @@ class marker_dot (graphic_primitive):
 
 class graphic_dot (graphic_primitive):
   def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.marker = False
     self.x = x
     self.y = y
     self.r = r
@@ -207,6 +221,7 @@ class graphic_dot (graphic_primitive):
 
 class graphic_text (graphic_primitive):
   def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
+    self.marker = False
     self.x = x
     self.y = y
     self.s = s
@@ -248,7 +263,7 @@ class annotated_image:
         print ( "Loaded " + str(self.file_name) )
       except:
         print ( "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
-        exit(1)
+        # exit(1)
         self.image = None
       if type(self.file_name) != type(None):
         self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
@@ -264,9 +279,14 @@ class image_layer:
   def __init__ ( self, base=None ):
     print ( "Constructing new image_layer with base " + str(base) )
     self.base_image_name = base
-    self.base_image = None
+
+    # This holds a single annotated image
+    self.base_image_ann = None
+
+    # This holds a list of additional annotated images
     self.image_list = []
 
+    # These are the parameters used for this layer
     self.trans_ww = 256
     self.trans_addx = 256
     self.trans_addy = 256
@@ -283,12 +303,12 @@ class image_layer:
     self.bias_dy = 0
 
     try:
-      #self.base_image = gtk.gdk.pixbuf_new_from_file ( ".." + os.sep + "vj_097_1_mod.jpg" )
-      self.base_image = gtk.gdk.pixbuf_new_from_file ( self.base_image_name )
+      self.base_image_ann = annotated_image ( self.base_image_name )
     except:
-      #print ( "Got an exception reading the base image " + str(self.base_image_name) )
-      self.base_image = None
+      self.base_image_ann = None
 
+
+# These two global functions are handy for callbacks
 
 def store_fields_into_current_layer():
   a = image_layer_list[image_layer_index]
@@ -307,7 +327,8 @@ def store_fields_into_current_layer():
 
 def store_current_layer_into_fields():
   a = image_layer_list[image_layer_index]
-  print ( " Index = " + str(image_layer_index) + ", base_name = " + a.base_image_name )
+  # print ( " Index = " + str(image_layer_index) + ", base_name = " + a.base_image_name )
+  print ( " Index = " + str(image_layer_index) + ", base_name_ann = " + a.base_image_ann.file_name )
   print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
   gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
   gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
@@ -323,15 +344,29 @@ def store_current_layer_into_fields():
   gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
 
 
+
 class zoom_window ( app_window.zoom_pan_area ):
   '''zoom_window - provide a drawing area that can be zoomed and panned.'''
   global gui_fields
 
   def __init__ ( self, window, win_width, win_height, name="" ):
+    # The "extra_index" is intended to assign one of the "extra" images to this window.
+    # When extra_index is >= 0, it will be the index into the "image_list" in each layer:
+    #   image_layer_list[image_layer_index].image_list[extra_index]
+    # When the extra_index is -1, that indicates the original image.
+    # This provides a simple and dynamic way to assign images to zoom windows.
+    # By default, new zoom windows will show the original image with -1.
+
     self.extra_index = -1
+
+    # Call the constructor for the parent app_window.zoom_pan_area:
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
+
+    # Connect the scroll event for the drawing area (from zoom_pan_area) to a local function:
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
     #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+
+    # Create a "pango_layout" which seems to be needed for drawing text
     self.pangolayout = window.create_pango_layout("")
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -343,12 +378,13 @@ class zoom_window ( app_window.zoom_pan_area ):
       print ( "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
       if self == zpa_original:
         # Add a point to the original
-        print ( "Adding a point to the original" )
+        print ( "Adding a marker point to the original image" )
+        image_layer_list[image_layer_index].base_image_ann.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       elif len(extra_windows_list) > 0:
         if self == extra_windows_list[0]['win']:
           # Add a point to the second
-          print ( "Adding a point to the second" )
-          image_layer_list[image_layer_index].image_list[0].graphics_items.append ( marker_dot(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+          print ( "Adding a marker point to the align image" )
+          image_layer_list[image_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       '''
       for w in extra_windows_list:
@@ -357,7 +393,7 @@ class zoom_window ( app_window.zoom_pan_area ):
 
     # print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
-      # Do special processing
+      # Do any special processing for shift click
       # Print the mouse location in screen coordinates:
       print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
       # Print the mouse location in image coordinates:
@@ -404,7 +440,7 @@ class zoom_window ( app_window.zoom_pan_area ):
         store_current_layer_into_fields()
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        
+
       # Draw the windows
       zpa_original.queue_draw()
       for win_and_area in extra_windows_list:
@@ -446,7 +482,8 @@ class zoom_window ( app_window.zoom_pan_area ):
     if len(image_layer_list) > 0:
       if self.extra_index < 0:
         # Draw the base image
-        pix_buf = image_layer_list[image_layer_index].base_image
+        #pix_buf = image_layer_list[image_layer_index].base_image
+        pix_buf = image_layer_list[image_layer_index].base_image_ann.image
       else:
         # Draw one of the extra images
         if image_layer_index < len(image_layer_list):
@@ -462,6 +499,29 @@ class zoom_window ( app_window.zoom_pan_area ):
       pbh = pix_buf.get_height()
       scale_w = zpa.ww(pbw) / pbw
       scale_h = zpa.wh(pbh) / pbh
+
+      # The following chunk of code was an attempt
+      #   to only draw the part of the image that
+      #   is showing in the window. In the Java
+      #   version, the code simply calculates the
+      #   two corners of the image in screen space,
+      #   and requests that it be drawn. The Java
+      #   drawing API knows to clip the image as
+      #   needed and does so very efficiently. But
+      #   GTK (at least in this version) is very
+      #   inefficient, and the drawing performance
+      #   declines very rapidly as the image is
+      #   zoomed in. At some point, the application
+      #   effectively locks up. This is fine for
+      #   early testing, but will need to be fixed
+      #   eventually. One possible solution is to
+      #   use a newer version of GTK. That may fix
+      #   it with no changes (as the Java version).
+      #   If not, the following code may be needed
+      #   as a starting point to clip out the part
+      #   of the image to be drawn and draw it to
+      #   the proper window coordinates.
+
       ##scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_BILINEAR )
       #scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
       #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
@@ -506,7 +566,7 @@ class zoom_window ( app_window.zoom_pan_area ):
       #
       #      (from https://developer.gnome.org/gdk2/stable/gdk2-Drawing-Primitives.html#gdk-draw-pixbuf)
       #      gdk_draw_pixbuf (GdkDrawable *drawable,   // a GdkDrawable - in Python, this is the drawable object itself
-      #                       GdkGC *gc,               // a GdkGC, used for clipping, or NULL. 
+      #                       GdkGC *gc,               // a GdkGC, used for clipping, or NULL.
       #                       const GdkPixbuf *pixbuf, // a GdkPixbuf
       #                       gint src_x,              // Source X coordinate within pixbuf.
       #                       gint src_y,              // Source Y coordinates within pixbuf.
@@ -580,26 +640,42 @@ class zoom_window ( app_window.zoom_pan_area ):
             scale_y      the scale factor in the Y direction
             interp_type  the interpolation type for the transformation.
       """
-
-      scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
-      drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+      try:
+        scale_to_w = int(pbw*scale_w)
+        scale_to_h = int(pbh*scale_h)
+        if scale_to_w * scale_to_h > 0:
+          print ( "Scaling with " + str(int(pbw*scale_w)) + " " + str(int(pbh*scale_h)) )
+          scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
+          drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+      except:
+        pass
 
     # Draw any annotations in the list
     if len(image_layer_list) > 0:
       if self.extra_index < 0:
-        # no annotations for the base image yet
-        pass
+        # This is the base image so draw annotations on the base image
+        image_to_draw = image_layer_list[image_layer_index].base_image_ann
+        color_index = 0
+        for graphics_item in image_to_draw.graphics_items:
+          if graphics_item.marker:
+            color_index += 1
+            graphics_item.set_color_from_index ( color_index )
+          graphics_item.draw ( zpa, drawing_area, self.pangolayout )
       else:
-        # Draw the annotations
+        # These are the other images, so draw their annotations
         if image_layer_index < len(image_layer_list):
           ilist = image_layer_list[image_layer_index].image_list
           if self.extra_index < len(ilist):
             image_to_draw = ilist[self.extra_index]
+            color_index = 0
             for graphics_item in image_to_draw.graphics_items:
+              if graphics_item.marker:
+                color_index += 1
+                graphics_item.set_color_from_index ( color_index )
               graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
-    gc.foreground = colormap.alloc_color(32767,32767,32767)
     # Draw a separator between the panes
+    gc.foreground = colormap.alloc_color(32767,32767,32767)
     drawable.draw_line ( gc, 0, 0, 0, height )
     drawable.draw_line ( gc, width-1, 0, width-1, height )
 
@@ -682,7 +758,7 @@ def add_window_callback ( zpa ):
   global extra_windows_list
   global window
 
-  new_win = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
+  new_win = zoom_window(window,global_win_width,global_win_height,"Python GTK version of SWiFT-GUI")
   new_win.extra_index = 0
   new_win.extra_index = len(extra_windows_list)
 
@@ -755,7 +831,6 @@ def run_alignment_callback ( align_all ):
 
   store_fields_into_current_layer()
 
-  # if type(destination_path) == type(None):
   if len(destination_path) == 0:
     dest_err_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Destination not set.")
     response = dest_err_dialog.run()
@@ -852,8 +927,17 @@ def run_alignment_callback ( align_all ):
         #global_afm = align_swiftir.align_images ( image_layer_list[i].base_image_name, image_layer_list[i+1].base_image_name, './aligned/', global_afm )
         '''
       else:
-        print ( "Calling align_swiftir.align_images( " + image_layer_list[i-1].base_image_name + ", " + image_layer_list[i].base_image_name + ", " + destination_path + " )" )
-        global_afm,recipe = align_swiftir.align_images ( image_layer_list[i-1].base_image_name, image_layer_list[i].base_image_name, destination_path, global_afm )
+        # Find last image not skipped
+        last_not_skipped = i-1
+        while image_layer_list[last_not_skipped].skip:
+          if last_not_skipped <= 0:
+            print ( "Warning: All prior images have been skipped!!!" )
+            break
+          last_not_skipped = last_not_skipped - 1
+        print ( "Calling align_swiftir.align_images( " + image_layer_list[last_not_skipped].base_image_name + ", " + image_layer_list[i].base_image_name + ", " + destination_path + " )" )
+        global_afm,recipe = align_swiftir.align_images ( image_layer_list[last_not_skipped].base_image_name, image_layer_list[i].base_image_name, destination_path, global_afm )
+        #if image_layer_list[i-1]
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         new_name = os.path.join ( destination_path, os.path.basename(image_layer_list[i].base_image_name) )
         print ( "Reading in new_name from " + str(new_name) )
         annotated_img = annotated_image(new_name)
@@ -876,11 +960,32 @@ def run_alignment_callback ( align_all ):
               annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
           print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
-        image_layer_list[i-1].image_list.append ( annotated_img )
+        image_layer_list[last_not_skipped].image_list.append ( annotated_img )
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-
+  # The following work manually, but gave error when done here
+  # The try/excepts didn't help
+  print ( "Try refreshing" )
+  try:
+    refresh_all_images()
+  except:
+    pass
+  print ( "Try centering" )
+  try:
+    center_all_images()
+  except:
+    pass
+  print ( "Try refreshing again" )
+  try:
+    refresh_all_images()
+  except:
+    pass
+  print ( "Try centering again" )
+  try:
+    center_all_images()
+  except:
+    pass
 
 
 '''
@@ -959,11 +1064,12 @@ def menu_callback ( widget, data=None ):
     command = data[0]
     zpa = data[1]
 
+    global project_path
+    global project_file_name
+    global destination_path
     global zpa_original
     global image_layer_list
     global image_layer_index
-    global destination_path
-    global project_file_name
     global extra_windows_list
 
     if command == "Fast":
@@ -976,8 +1082,25 @@ def menu_callback ( widget, data=None ):
       zpa.user_data['show_legend'] = not zpa.user_data['show_legend']
       zpa.queue_draw()
     elif command == "Debug":
+      print ( "Handy global items:" )
+      print ( "  project_path" )
+      print ( "  project_file_name" )
+      print ( "  destination_path" )
+      print ( "  zpa_original" )
+      print ( "  image_layer_list" )
+      print ( "  image_layer_index" )
+      print ( "  extra_windows_list" )
+      print ( "  show_spots" )
+      print ( "  point_mode" )
+      print ( "Handy local items:" )
+      print ( "  widget" )
+      print ( "  data" )
+      print ( "  command" )
+      print ( "  zpa" )
+
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
+
     elif command == "SetDest":
       file_chooser = gtk.FileChooserDialog(title="Select Destination Directory", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
 		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
@@ -986,6 +1109,10 @@ def menu_callback ( widget, data=None ):
       response = file_chooser.run()
       if response == gtk.RESPONSE_OK:
         destination_path = file_chooser.get_filename()
+        # Ensure that it's actually a directory and not a file:
+        if not os.path.isdir(destination_path):
+          destination_path = os.path.dirname(destination_path)
+        destination_path = os.path.realpath(destination_path)
         print ( "Selected Directory: " + str(destination_path) )
 
         gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
@@ -1033,14 +1160,14 @@ def menu_callback ( widget, data=None ):
           a.trans_addx = 20 + i
           a.trans_addy = 30 + i
 
-          a.skip = False # ((i%2) == 0)
+          a.skip = False
 
-          a.affine_enabled = True # ((i%2) == 1)
+          a.affine_enabled = True
           a.affine_ww = 40 + i
           a.affine_addx = 50 + i
           a.affine_addy = 60 + i
 
-          a.bias_enabled = True # ((i%2) == 0)
+          a.bias_enabled = True
           a.bias_dx = 70 + i
           a.bias_dy = 80 + i
 
@@ -1073,50 +1200,67 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         open_name = file_chooser.get_filename()
         if open_name != None:
-          project_file_name = open_name
+          open_name = os.path.realpath(open_name)
+          if not os.path.isdir(open_name):
+            # It's a real file
+            project_file_name = open_name
+            project_path = os.path.dirname(project_file_name)
 
-          gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+            gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
 
-          f = open ( open_name, 'r' )
-          text = f.read()
+            f = open ( project_file_name, 'r' )
+            text = f.read()
 
-          proj_dict = json.loads ( text )
-          print ( str(proj_dict) )
-          print ( "Project file version " + str(proj_dict['version']) )
-          print ( "Project file method " + str(proj_dict['method']) )
-          if 'data' in proj_dict:
-            if 'destination_path' in proj_dict['data']:
-              destination_path = proj_dict['data']['destination_path']
-              gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
-            if 'imagestack' in proj_dict['data']:
-              imagestack = proj_dict['data']['imagestack']
-              if len(imagestack) > 0:
-                image_layer_index = 0
-                image_layer_list = []
-                for json_image_layer in imagestack:
-                  a = image_layer ( json_image_layer['filename'] )
-                  if 'skip' in json_image_layer:
-                    a.skip = json_image_layer['skip']
-                  if 'align_to_next_pars' in json_image_layer:
-                    pars = json_image_layer['align_to_next_pars']
-                    a.trans_ww = pars['window_size']
-                    a.trans_addx = pars['addx']
-                    a.trans_addy = pars['addy']
-                    a.affine_enabled = True
-                    a.affine_ww = pars['window_size']
-                    a.affine_addx = pars['addx']
-                    a.affine_addy = pars['addy']
-                    a.bias_enabled = False
-                    a.bias_dx = 0
-                    a.bias_dy = 0
-                  image_layer_list.append ( a )
+            proj_dict = json.loads ( text )
+            print ( str(proj_dict) )
+            print ( "Project file version " + str(proj_dict['version']) )
+            print ( "Project file method " + str(proj_dict['method']) )
+            if 'data' in proj_dict:
+              if 'destination_path' in proj_dict['data']:
+                destination_path = proj_dict['data']['destination_path']
+                # Make the destination absolute
+                if not os.path.isabs(destination_path):
+                  destination_path = os.path.join ( project_path, destination_path )
+                destination_path = os.path.realpath ( destination_path )
+                gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+              if 'imagestack' in proj_dict['data']:
+                imagestack = proj_dict['data']['imagestack']
+                if len(imagestack) > 0:
+                  image_layer_index = 0
+                  image_layer_list = []
+                  for json_image_layer in imagestack:
+                    image_fname = json_image_layer['filename']
+                    # Convert to absolute as needed
+                    if not os.path.isabs(image_fname):
+                      image_fname = os.path.join ( project_path, image_fname )
+                    image_fname = os.path.realpath ( image_fname )
+                    a = image_layer ( image_fname )
+                    if 'skip' in json_image_layer:
+                      a.skip = json_image_layer['skip']
+                    if 'align_to_next_pars' in json_image_layer:
+                      pars = json_image_layer['align_to_next_pars']
+                      a.trans_ww = pars['window_size']
+                      a.trans_addx = pars['addx']
+                      a.trans_addy = pars['addy']
+                      a.affine_enabled = True
+                      a.affine_ww = pars['window_size']
+                      a.affine_addx = pars['addx']
+                      a.affine_addy = pars['addy']
+                      a.bias_enabled = False
+                      a.bias_dx = 0
+                      a.bias_dy = 0
+                    image_layer_list.append ( a )
       file_chooser.destroy()
       print ( "Done with dialog" )
+      refresh_all_images()
+      center_all_images()
       zpa_original.queue_draw()
 
     elif (command == "SaveProj") or (command == "SaveProjAs"):
 
-      if (project_path == None) or (command == "SaveProjAs"):
+      print ( "Save with: project_path = " + str(project_path) )
+      print ( "Save with: project_file_name = " + str(project_file_name) )
+      if (len(project_file_name) <= 0) or (command == "SaveProjAs"):
         # Prompt for a file name
 
         file_chooser = gtk.FileChooserDialog(title="Save Project", action=gtk.FILE_CHOOSER_ACTION_SAVE,
@@ -1138,56 +1282,66 @@ def menu_callback ( widget, data=None ):
         if response == gtk.RESPONSE_OK:
           save_name = file_chooser.get_filename()
           if save_name != None:
-            project_file_name = save_name
 
-            gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+            save_name = os.path.realpath(save_name)
+            if not os.path.isdir(save_name):
+              # It's a real file
+              project_file_name = save_name
+              project_path = os.path.dirname(project_file_name)
 
-            print ( "Saving destination path = " + str(destination_path) )
-            f = open ( save_name, 'w' )
-            f.write ( '{\n' )
-            f.write ( '  "version": 0.0,\n' )
-            f.write ( '  "method": "SWiFT-IR",\n' )
-            f.write ( '  "data": {\n' )
-            f.write ( '    "source_path": "",\n' )
-            f.write ( '    "destination_path": "' + str(destination_path) + '",\n' )
-            f.write ( '    "pairwise_alignment": true,\n' )
-            f.write ( '    "defaults": {\n' )
-            f.write ( '      "align_to_next_pars": {\n' )
-            f.write ( '        "window_size": 1024,\n' )
-            f.write ( '        "addx": 800,\n' )
-            f.write ( '        "addy": 800,\n' )
-            f.write ( '        "output_level": 0\n' )
-            f.write ( '      }\n' )
-            f.write ( '    },\n' )
-
-            if image_layer_list != None:
-              if len(image_layer_list) > 0:
-                f.write ( '    "imagestack": [\n' )
-                for a in image_layer_list:
-                  f.write ( '      {\n' )
-                  f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
-                  if a != image_layer_list[-1]:
-                    #f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '",\n' )
-                    f.write ( '        "filename": "' + str(a.base_image_name) + '",\n' )
-                    f.write ( '        "align_to_next_pars": {\n' )
-                    f.write ( '          "window_size": ' + str(a.trans_ww) + ',\n' )
-                    f.write ( '          "addx": ' + str(a.trans_addx) + ',\n' )
-                    f.write ( '          "addy": ' + str(a.trans_addy) + ',\n' )
-                    f.write ( '          "output_level": 0\n' )
-                    f.write ( '        }\n' )
-                    f.write ( '      },\n' )
-                  else:
-                    #f.write ( '        "filename": "' + str(os.path.basename(str(a.base_image_name))) + '"\n' )
-                    f.write ( '        "filename": "' + str(a.base_image_name) + '"\n' )
-                    f.write ( '      }\n' )
-                f.write ( '    ]\n' )
-                f.write ( '  }\n' )
-                f.write ( '}\n' )
-
-        #global project_path
-        #project_path = None
         file_chooser.destroy()
         print ( "Done with dialog" )
+
+      if len(project_file_name) > 0:
+        # Actually write the file
+        gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+        rel_dest_path = ""
+        if len(destination_path) > 0:
+          rel_dest_path = os.path.relpath(destination_path,start=project_path)
+
+        print ( "Saving destination path = " + str(destination_path) )
+        f = open ( project_file_name, 'w' )
+        f.write ( '{\n' )
+        f.write ( '  "version": 0.0,\n' )
+        f.write ( '  "method": "SWiFT-IR",\n' )
+        f.write ( '  "data": {\n' )
+        f.write ( '    "source_path": "",\n' )
+        f.write ( '    "destination_path": "' + str(rel_dest_path) + '",\n' )
+        f.write ( '    "pairwise_alignment": true,\n' )
+        f.write ( '    "defaults": {\n' )
+        f.write ( '      "align_to_next_pars": {\n' )
+        f.write ( '        "window_size": 1024,\n' )
+        f.write ( '        "addx": 800,\n' )
+        f.write ( '        "addy": 800,\n' )
+        f.write ( '        "output_level": 0\n' )
+        f.write ( '      }\n' )
+        f.write ( '    },\n' )
+
+        if image_layer_list != None:
+          if len(image_layer_list) > 0:
+            f.write ( '    "imagestack": [\n' )
+            for a in image_layer_list:
+              f.write ( '      {\n' )
+              f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
+              rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
+              if a != image_layer_list[-1]:
+                f.write ( '        "filename": "' + rel_file_name + '",\n' )
+                f.write ( '        "align_to_next_pars": {\n' )
+                f.write ( '          "window_size": ' + str(a.trans_ww) + ',\n' )
+                f.write ( '          "addx": ' + str(a.trans_addx) + ',\n' )
+                f.write ( '          "addy": ' + str(a.trans_addy) + ',\n' )
+                f.write ( '          "output_level": 0\n' )
+                f.write ( '        }\n' )
+                f.write ( '      },\n' )
+              else:
+                f.write ( '        "filename": "' + rel_file_name + '"\n' )
+                f.write ( '      }\n' )
+            f.write ( '    ]\n' )
+            f.write ( '  }\n' )
+            f.write ( '}\n' )
+
+      #global project_path
+      #project_path = None
 
 
     elif command == "ClearAll":
@@ -1199,6 +1353,8 @@ def menu_callback ( widget, data=None ):
         image_layer_index = 0
         image_layer_list = []
       zpa_original.queue_draw()
+      for w in extra_windows_list:
+        w['drawing_area'].queue_draw()
       clear_all.destroy()
 
     elif command == "LimScroll":
@@ -1210,54 +1366,11 @@ def menu_callback ( widget, data=None ):
       zpa_original.min_zoom_count = -1500
 
     elif command == "Refresh":
-      # Determine how many windows are needed and create them as needed
-      max_extra_images = 0
-      for a in image_layer_list:
-        if len(a.image_list) > 0:
-          max_extra_images = max(max_extra_images, len(a.image_list))
-      print ( "Max extra = " + str(max_extra_images) )
-      cur_extra_images = len(extra_windows_list)
-      for i in range(cur_extra_images):
-        rem_window_callback ( zpa_original )
-      for i in range(max_extra_images):
-        add_window_callback ( zpa_original )
+      refresh_all_images()
 
     elif command == "ImCenter":
       print ( "Centering images" )
-
-      if len(image_layer_list) > 0:
-        # Start with the original image
-        win_size = zpa_original.drawing_area.window.get_size()
-
-        pix_buf = None
-        if zpa_original.extra_index < 0:
-          # Draw the base image
-          pix_buf = image_layer_list[image_layer_index].base_image
-        else:
-          # Draw one of the extra images
-          pix_buf = image_layer_list[image_layer_index].image_list[zpa_original.extra_index].image
-        img_w = pix_buf.get_width()
-        img_h = pix_buf.get_height()
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        zpa_original.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
-        zpa_original.queue_draw()
-
-        # Do the remaining windows
-        for win_and_area in extra_windows_list:
-          zpa_next = win_and_area['win']
-          win_size = zpa_next.drawing_area.window.get_size()
-          pix_buf = None
-          if zpa_next.extra_index < 0:
-            # Draw the base image
-            pix_buf = image_layer_list[image_layer_index].base_image
-          else:
-            # Draw one of the extra images
-            pix_buf = image_layer_list[image_layer_index].image_list[zpa_next.extra_index].image
-          img_w = pix_buf.get_width()
-          img_h = pix_buf.get_height()
-          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-          zpa_next.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
-          zpa_next.queue_draw()
+      center_all_images()
 
     elif command == "Spots":
       global show_spots
@@ -1267,7 +1380,6 @@ def menu_callback ( widget, data=None ):
 
     elif command == "PtMode":
       global point_mode
-      global extra_windows_list
       point_mode = not point_mode
       print ( "Point mode is now " + str(point_mode) )
       cursor = gtk.gdk.ARROW
@@ -1281,10 +1393,6 @@ def menu_callback ( widget, data=None ):
         # Only need to set the first one since the others won't use this.
         break
 
-    elif command == "Debug":
-      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      zpa.queue_draw()
-
     elif command == "Exit":
       get_exit = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Exit?")
       response = get_exit.run()
@@ -1296,6 +1404,59 @@ def menu_callback ( widget, data=None ):
     else:
       print ( "Menu option \"" + command + "\" is not handled yet." )
   return True
+
+def center_all_images():
+
+  if len(image_layer_list) > 0:
+    # Start with the original image
+    win_size = zpa_original.drawing_area.window.get_size()
+
+    pix_buf = None
+    if zpa_original.extra_index < 0:
+      # Draw the base image
+      # pix_buf = image_layer_list[image_layer_index].base_image
+      pix_buf = image_layer_list[image_layer_index].base_image_ann.image
+    else:
+      # Draw one of the extra images
+      pix_buf = image_layer_list[image_layer_index].image_list[zpa_original.extra_index].image
+    if not (pix_buf is None):
+      img_w = pix_buf.get_width()
+      img_h = pix_buf.get_height()
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      zpa_original.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+      zpa_original.queue_draw()
+
+    # Do the remaining windows
+    for win_and_area in extra_windows_list:
+      zpa_next = win_and_area['win']
+      win_size = zpa_next.drawing_area.window.get_size()
+      pix_buf = None
+      if zpa_next.extra_index < 0:
+        # Draw the base image
+        # pix_buf = image_layer_list[image_layer_index].base_image
+        pix_buf = image_layer_list[image_layer_index].base_image_ann.image
+      else:
+        # Draw one of the extra images
+        pix_buf = image_layer_list[image_layer_index].image_list[zpa_next.extra_index].image
+      if not (pix_buf is None):
+        img_w = pix_buf.get_width()
+        img_h = pix_buf.get_height()
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        zpa_next.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+        zpa_next.queue_draw()
+
+def refresh_all_images():
+  # Determine how many windows are needed and create them as needed
+  max_extra_images = 0
+  for a in image_layer_list:
+    if len(a.image_list) > 0:
+      max_extra_images = max(max_extra_images, len(a.image_list))
+  print ( "Max extra = " + str(max_extra_images) )
+  cur_extra_images = len(extra_windows_list)
+  for i in range(cur_extra_images):
+    rem_window_callback ( zpa_original )
+  for i in range(max_extra_images):
+    add_window_callback ( zpa_original )
 
 
 # Create the window and connect the events
@@ -1311,7 +1472,7 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = zoom_window(window,640,640,"Python GTK version of SWiFT-GUI")
+  zpa_original = zoom_window(window,global_win_width,global_win_height,"Python GTK version of SWiFT-GUI")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
@@ -1465,7 +1626,7 @@ def main():
   a_label.show()
 
   # The variable "label_entry" is used for a transient hbox containing a label and an entry
-  # The variable 
+  # The variable
   label_entry = gtk.HBox ( False, 5 )
   a_label = gtk.Label("WW:")
   label_entry.pack_start ( a_label, True, True, 0 )
