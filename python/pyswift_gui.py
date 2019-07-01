@@ -18,8 +18,8 @@ global zpa_original
 zpa_original = None
 global global_win_width
 global global_win_height
-global_win_width = 300
-global_win_height = 300
+global_win_width = 800
+global_win_height = 800
 
 global image_layer_list
 image_layer_list = []
