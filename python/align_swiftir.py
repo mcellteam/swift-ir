@@ -50,15 +50,17 @@ class align_recipe:
 class align_ingredient:
  
   # Constructor for ingredient of a recipe
-  # Ingredients come in 2 main types where the type is determined whether ww is None
-  #   1) If ww==None then this is a Matching Point ingredient
+  # Ingredients come in 3 main types where the type is determined by value of align_mode
+  #   1) If align_mode is 'match_point_align' then this is a Matching Point ingredient
   #        We calculate the afm directly using psta and pmov as the matching points
-  #   2) If ww!=None then this is swim window matching ingredient
+  #   2) If align_mode is 'swim_align' then this is a swim window matching ingredient
   #        ww and psta specify the size and location of windows in im_sta
   #        and corresponding windows (pmov) are contructed from psta and projected onto im_mov
   #        from which image matching is performed to estimate or refine the afm.
   #        If psta contains only one point then the estimated afm will be a translation matrix
-  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.65, iters=2):
+  #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the 
+  #        supplied afm matrix but do not refine the afm matrix
+  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.65, iters=2, align_mode='swim_align'):
 
     self.afm = afm
     self.im_sta = im_sta
@@ -68,6 +70,7 @@ class align_ingredient:
     self.pmov = pmov
     self.wht = wht
     self.iters = iters
+    self.align_mode = align_mode
     self.snr = None
 
 
@@ -75,25 +78,30 @@ class align_ingredient:
 
     # If ww==None then this is a Matching Point ingredient of a recipe
     # Calculate afm directly using psta and pmov as the matching points
-    if type(self.ww) == type(None):
+    if self.align_mode == 'match_point_align':
       (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
       return(self.afm)
 
     #  Otherwise, this is a swim window match ingredient
-    if type(self.afm)==type(None):
-      self.afm = swiftir.identityAffine()
+    #  Refine the afm via swim and mir
+    afm = self.afm
+    if type(afm)==type(None):
+      afm = swiftir.identityAffine()
 
-    self.pmov = swiftir.stationaryToMoving(self.afm, self.psta)
+    self.pmov = swiftir.stationaryToMoving(afm, self.psta)
     sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
     for i in range(self.iters):
-      mov = swiftir.movingPatches(self.im_mov, self.pmov, self.afm, self.ww)
-      (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=self.afm, wht=self.wht)
+      mov = swiftir.movingPatches(self.im_mov, self.pmov, afm, self.ww)
+      (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
       self.pmov = self.pmov + dp
-      (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-      self.pmov = swiftir.stationaryToMoving(self.afm, self.psta)
+      (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+      self.pmov = swiftir.stationaryToMoving(afm, self.psta)
       print('  Affine err:  %g' % (err))
       print('  SNR:  ', snr)
     self.snr = snr
+
+    if self.align_mode == 'swim_align':
+      self.afm = afm
 
     return(self.afm)
 
@@ -155,12 +163,12 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
   ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
   ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
   ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
-  #ingredient_final_check = align_ingredient(ww=(wwx,wwy), psta=psta_1)
+  ingredient_check_align = align_ingredient(ww=(wwx,wwy), psta=psta_1, iters=1, align_mode='check_align')
 
   recipe.add_ingredient(ingredient_1)
   recipe.add_ingredient(ingredient_2x2)
   recipe.add_ingredient(ingredient_4x4)
-  #recipe.add_ingredient(ingredient_final_check)
+  recipe.add_ingredient(ingredient_check_align)
 
   recipe.execute()
 
