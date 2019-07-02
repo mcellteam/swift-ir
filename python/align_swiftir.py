@@ -23,6 +23,74 @@ Together these ingredients comprise a procedure, or "recipe".
 #recipe_dict['default'] = [affine_align_recipe(), affine_2x2_recipe, affine_4x4_recipe]
 #recipe_dict['match_point'] = [affine_translation_recipe, affine_2x2_recipe, affine_4x4_recipe]
 
+class alignment_process:
+
+  def __init__(self, im_sta_fn, im_mov_fn, align_dir, cumulative_afm=None):
+    self.recipe = None
+    self.im_sta_fn = im_sta_fn
+    self.im_mov_fn = im_mov_fn
+    self.align_dir = align_dir
+    if type(cumulative_afm) == type(None):
+      self.cumulative_afm = swiftir.identityAffine()
+    else:
+      self.cumulative_afm = cumulative_afm
+
+  def align(self):
+
+    im_sta = swiftir.loadImage(self.im_sta_fn)
+    im_mov = swiftir.loadImage(self.im_mov_fn)
+
+    pa = np.zeros((2,1))
+    wwx = int(im_sta.shape[0])
+    wwy = int(im_sta.shape[1])
+    cx = int(wwx/2)
+    cy = int(wwy/2)
+    pa[0,0] = cx
+    pa[1,0] = cy
+    psta_1 = pa
+
+    nx = 2
+    ny = 2
+    pa = np.zeros((2,nx*ny))
+    s = int(im_sta.shape[0]/2)
+    for x in range(nx):
+      for y in range(ny):
+        pa[0, x + nx*y] = int(0.5*s + s*x)
+        pa[1, x + nx*y] = int(0.5*s + s*y)
+    s_2x2 = s
+    psta_2x2 = pa
+
+    nx = 4
+    ny = 4
+    pa = np.zeros((2,nx*ny))
+    s = int(im_sta.shape[0]/4)
+    for x in range(nx):
+      for y in range(ny):
+        pa[0, x + nx*y] = int(0.5*s + s*x)
+        pa[1, x + nx*y] = int(0.5*s + s*y)
+    s_4x4 = s
+    psta_4x4 = pa
+
+    self.recipe = align_recipe(im_sta, im_mov)
+
+    ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
+    ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
+    ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
+    ingredient_check_align = align_ingredient(ww=(wwx,wwy), psta=psta_1, iters=1, align_mode='check_align')
+
+    self.recipe.add_ingredient(ingredient_1)
+    self.recipe.add_ingredient(ingredient_2x2)
+    self.recipe.add_ingredient(ingredient_4x4)
+    self.recipe.add_ingredient(ingredient_check_align)
+
+    self.recipe.execute()
+
+    self.cumulative_afm = swiftir.composeAffine(self.cumulative_afm,self.recipe.afm)
+    im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
+    ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
+    swiftir.saveImage(im_aligned,ofn)
+
+    return (self.cumulative_afm, self.recipe)
 
 
 # Universal class for alignment recipes
@@ -177,7 +245,7 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
   ofn = os.path.join ( align_dir, os.path.basename(im_mov_fn) )
   swiftir.saveImage(im_aligned,ofn)
 
-  return (global_afm, recipe.recipe)
+  return (global_afm, recipe)
 
 
 if __name__=='__main__':

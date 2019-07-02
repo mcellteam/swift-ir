@@ -159,13 +159,14 @@ class graphic_rect (graphic_primitive):
 
 
 class graphic_marker (graphic_primitive):
-  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], index=-1 ):
     self.marker = True
     self.x = x
     self.y = y
     self.r = r
     self.coordsys = coordsys
     self.color = color
+    self.index = index
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -282,6 +283,7 @@ class alignment_layer:
   def __init__ ( self, base=None ):
     print ( "Constructing new alignment_layer with base " + str(base) )
     self.base_image_name = base
+    self.afm = None
 
     # This holds a single annotated image
     self.base_annotated_image = None
@@ -384,15 +386,19 @@ class zoom_window ( app_window.zoom_pan_area ):
       global alignment_layer_index
       print ( "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
       print ( "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
-      if self == zpa_original:
-        # Add a point to the original
-        print ( "Adding a marker point to the original image" )
-        alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
-      elif len(extra_windows_list) > 1:
+      #if self == zpa_original:
+      #  # Add a point to the original
+      #  print ( "Adding a marker point to the original image" )
+      #  alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+      if len(extra_windows_list) > 1:
+        if self == extra_windows_list[0]['win']:
+          # Add a point to the first
+          print ( "Adding a marker point to the align image" )
+          alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
         if self == extra_windows_list[1]['win']:
           # Add a point to the second
           print ( "Adding a marker point to the align image" )
-          alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+          alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       '''
       for w in extra_windows_list:
@@ -671,9 +677,13 @@ class zoom_window ( app_window.zoom_pan_area ):
             color_index = 0
             for graphics_item in image_to_draw.graphics_items:
               if graphics_item.marker:
-                color_index += 1
-                graphics_item.set_color_from_index ( color_index )
-              graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+                print ( "Drawing a marker with index " + str(graphics_item.index) + ", in window " + str(self.window_index) )
+                if graphics_item.index == self.window_index:
+                  # Only draw when they match
+                  color_index += 1
+                  graphics_item.set_color_from_index ( color_index )
+              else:
+                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
     # Draw a separator between the panes
     gc.foreground = colormap.alloc_color(32767,32767,32767)
@@ -920,6 +930,8 @@ def run_alignment_callback ( align_all ):
     print ( "Clearing image list for layer " + str(j) )
     alignment_layer_list[j].image_list = []
 
+    # alignment_layer_list[j].afm = global_afm
+
     annotated_img = None
     if i == j:
       print ( "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
@@ -932,18 +944,23 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
 
       print (    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
-      global_afm,recipe = align_swiftir.align_images (    alignment_layer_list[i].base_image_name,         alignment_layer_list[j].base_image_name,         destination_path, global_afm )
+      align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, global_afm )
+      align_proc.align()
+      global_afm = align_proc.cumulative_afm
+      recipe = align_proc.recipe
+
+      # global_afm,recipe = align_swiftir.align_images (    alignment_layer_list[i].base_image_name,         alignment_layer_list[j].base_image_name,         destination_path, global_afm )
       #if alignment_layer_list[i-1]
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name)
-      annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
-      for ri in range(len(recipe)):
+      for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
         c = [(ri+1)%2,((ri+1)/2)%2,((ri+1)/4)%2]
-        r = recipe[ri]
+        r = recipe.recipe[ri]
         s = len(r.psta[0])
         ww = r.ww
         if type(ww) == type(1):
