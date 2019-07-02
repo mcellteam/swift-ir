@@ -14,8 +14,15 @@ import gtk
 
 import app_window
 
+global image_hbox
+image_hbox = None
+
 global zpa_original
 zpa_original = None
+
+global extra_windows_list
+extra_windows_list = []
+
 global global_win_width
 global global_win_height
 global_win_width = 800
@@ -35,10 +42,6 @@ project_path = None
 global destination_path
 destination_path = ""
 
-global image_hbox
-image_hbox = None
-global extra_windows_list
-extra_windows_list = []
 global window
 window = None
 
@@ -306,9 +309,11 @@ class alignment_layer:
     try:
       self.base_annotated_image = annotated_image ( self.base_image_name )
       # By default, the first (and only) image in the list will be the base image
-      self.image_list.append ( self.base_annotated_image )
     except:
       self.base_annotated_image = annotated_image ( None )
+
+    # Always initialize with the image (whether actual or None)
+    self.image_list.append ( self.base_annotated_image )
 
 
 # These two global functions are handy for callbacks
@@ -353,14 +358,14 @@ class zoom_window ( app_window.zoom_pan_area ):
   global gui_fields
 
   def __init__ ( self, window, win_width, win_height, name="" ):
-    # The "extra_index" is intended to assign one of the "extra" images to this window.
-    # When extra_index is >= 0, it will be the index into the "image_list" in each layer:
-    #   alignment_layer_list[alignment_layer_index].image_list[extra_index]
-    # When the extra_index is -1, that indicates the original image.
+    # The "window_index" is intended to assign one of the layer's images to this window.
+    # When window_index is >= 0, it will be an index into the "image_list" in each layer:
+    #   alignment_layer_list[alignment_layer_index].image_list[window_index]
+    # When the window_index is -1, that indicates that no image is to be drawn.
     # This provides a simple and dynamic way to assign images to zoom windows.
-    # By default, new zoom windows will show the original image with -1.
+    # By default, new zoom windows will show the original image with 0.
 
-    self.extra_index = -1
+    self.window_index = 0
 
     # Call the constructor for the parent app_window.zoom_pan_area:
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
@@ -383,11 +388,11 @@ class zoom_window ( app_window.zoom_pan_area ):
         # Add a point to the original
         print ( "Adding a marker point to the original image" )
         alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
-      elif len(extra_windows_list) > 0:
-        if self == extra_windows_list[0]['win']:
+      elif len(extra_windows_list) > 1:
+        if self == extra_windows_list[1]['win']:
           # Add a point to the second
           print ( "Adding a marker point to the align image" )
-          alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+          alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       '''
       for w in extra_windows_list:
@@ -483,15 +488,15 @@ class zoom_window ( app_window.zoom_pan_area ):
 
     pix_buf = None
     if len(alignment_layer_list) > 0:
-      if self.extra_index < 0:
-        # Draw the base image
-        pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
+      if self.window_index < 0:
+        # Draw nothing
+        pix_buf = None
       else:
-        # Draw one of the extra images
+        # Draw one of the images
         if alignment_layer_index < len(alignment_layer_list):
-          al_list = alignment_layer_list[alignment_layer_index].image_list
-          if self.extra_index < len(al_list):
-            pix_buf = al_list[self.extra_index].image
+          im_list = alignment_layer_list[alignment_layer_index].image_list
+          if self.window_index < len(im_list):
+            pix_buf = im_list[self.window_index].image
 
     #if zpa.user_data['image_frame']:
     #  pix_buf = zpa.user_data['image_frame']
@@ -654,21 +659,15 @@ class zoom_window ( app_window.zoom_pan_area ):
 
     # Draw any annotations in the list
     if len(alignment_layer_list) > 0:
-      if self.extra_index < 0:
-        # This is the base image so draw annotations on the base image
-        image_to_draw = alignment_layer_list[alignment_layer_index].base_annotated_image
-        color_index = 0
-        for graphics_item in image_to_draw.graphics_items:
-          if graphics_item.marker:
-            color_index += 1
-            graphics_item.set_color_from_index ( color_index )
-          graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+      if self.window_index < 0:
+        # Draw nothing
+        pass
       else:
-        # These are the other images, so draw their annotations
+        # Draw annotations
         if alignment_layer_index < len(alignment_layer_list):
-          al_list = alignment_layer_list[alignment_layer_index].image_list
-          if self.extra_index < len(al_list):
-            image_to_draw = al_list[self.extra_index]
+          im_list = alignment_layer_list[alignment_layer_index].image_list
+          if self.window_index < len(im_list):
+            image_to_draw = im_list[self.window_index]
             color_index = 0
             for graphics_item in image_to_draw.graphics_items:
               if graphics_item.marker:
@@ -761,8 +760,7 @@ def add_window_callback ( zpa ):
   global window
 
   new_win = zoom_window(window,global_win_width,global_win_height,"Python GTK version of SWiFT-GUI")
-  new_win.extra_index = 0
-  new_win.extra_index = len(extra_windows_list)
+  new_win.window_index = len(extra_windows_list)
 
   new_win.user_data = {
                     'image_frame'        : None,
@@ -813,11 +811,12 @@ def rem_window_callback ( zpa ):
   global extra_windows_list
   global window
 
-  if len(extra_windows_list) > 0:
+  if len(extra_windows_list) > 1:
     image_hbox.remove(extra_windows_list[-1]['drawing_area'])
     extra_windows_list.pop(-1)
+    return True
 
-  return True
+  return False
 
 
 # import pyswim
@@ -839,31 +838,65 @@ def run_alignment_callback ( align_all ):
     dest_err_dialog.destroy()
     return
 
-  index_list = range(len(alignment_layer_list))
-  if not align_all:
-    first = alignment_layer_index
-    last = len(alignment_layer_list)
-    num_forward_str = gui_fields.num_align_forward.get_text()
-    num_forward = -1
-    if len(num_forward_str.strip()) > 0:
-      num_forward = int(num_forward_str.strip())
-      if (alignment_layer_index + num_forward + 1) < len(alignment_layer_list):
-        last = alignment_layer_index + num_forward + 1
+  # Do it the new way
+  align_pairs = []  # List of images to align with each other, a repeated index means copy directly to the output (a "golden section")
+  last_ref = -1
+  for i in range(len(alignment_layer_list)):
+    if alignment_layer_list[i].skip == False:
+      if last_ref < 0:
+        # This image was not skipped, but their is no previous, so just copy to itself
+        align_pairs.append ( [i, i] )
       else:
-        last = len(alignment_layer_index)
-    index_list = range(first,last)
+        # There was a previously unskipped image and this image is unskipped
+        # Therefore, add this pair to the list
+        align_pairs.append ( [last_ref, i] )
+      # This unskipped image will always become the last unskipped
+      last_ref = i
+    else:
+      # Clear out the aligned images, but preserve the other images
+      old_list = alignment_layer_list[i].image_list
+      alignment_layer_list[i].image_list = []
+      if len(old_list) > 0:
+        alignment_layer_list[i].image_list.append ( old_list[0] )
+        if len(old_list) > 1:
+          alignment_layer_list[i].image_list.append ( old_list[1] )
 
-  print ( "" )
-  print ( "" )
-  print ( "Aligning sections " + str(index_list) )
-  print ( "Destination Path = " + destination_path )
+  print ( "Full list after removing skips:" )
+  for apair in align_pairs:
+    print ( "  Alignment pair: " + str(apair) )
 
-  for i in index_list[0:-1]:
+  if not align_all:
+    # Retain only those pairs that start after this index
+    if alignment_layer_index == 0:
+      # Include the current layer to make the original copy again
+      new_pairs = [ p for p in align_pairs if p[1] >= alignment_layer_index ]
+    else:
+      # Exclude the current layer
+      new_pairs = [ p for p in align_pairs if p[1] > alignment_layer_index ]
+    align_pairs = new_pairs
+    # Remove any pairs beyond the number forward
+    num_forward_str = gui_fields.num_align_forward.get_text()
+    if len(num_forward_str.strip()) > 0:
+      # A forward limit has been entered
+      try:
+        num_forward = int(num_forward_str.strip())
+        new_pairs = [ p for p in align_pairs if p[1] <= alignment_layer_index+num_forward ]
+        align_pairs = new_pairs
+      except:
+        print ( "The number forward should be an integer and not " + num_forward_str )
+
+  print ( "Full list after removing start and forward limits:" )
+  for apair in align_pairs:
+    print ( "  Alignment pair: " + str(apair) )
+
+  for apair in align_pairs:
+    i = apair[0]
+    j = apair[1]
     print ( "===============================================================================" )
-    print ( "Aligning " + str(i) + " to " + str(i+1) + " with:" )
+    print ( "Aligning " + str(i) + " to " + str(j) + " with:" )
     print ( "" )
     print ( "  base                     = " + str(alignment_layer_list[i].base_image_name) )
-    print ( "  adjust                   = " + str(alignment_layer_list[i+1].base_image_name) )
+    print ( "  adjust                   = " + str(alignment_layer_list[j].base_image_name) )
     print ( "  skip                     = " + str(alignment_layer_list[i].skip) )
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
@@ -879,94 +912,56 @@ def run_alignment_callback ( align_all ):
     print ( "  bias dx                  = " + str(alignment_layer_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(alignment_layer_list[i].bias_dy) )
 
-
-  # Add the base images to the lists first
-  for i in index_list:
-    alignment_layer_list[i].image_list = []
-    # Add the base image first (this may be changed in subsequent versions to put it in the middle)
-    alignment_layer_list[i].image_list.append ( alignment_layer_list[i].base_annotated_image )    
-    if alignment_layer_list[i].skip:
-      print ( "Skipping " + str(alignment_layer_list[i].base_image_name) )
-    else:
-      # Add the i+1 base_image to the list
-      if i < len(alignment_layer_list)-1:
-        # mov_img = annotated_image(os.path.join('./aligned',alignment_layer_list[i].base_image_name))
-        print ( "Reading in a base image named " + str(alignment_layer_list[i+1].base_image_name) )
-        mov_img = annotated_image(alignment_layer_list[i+1].base_image_name)
-        alignment_layer_list[i].image_list.append ( mov_img )
-      else:
-        # Add an empty annotated image to hold the slot
-        print ( "Reading in an empty image" )
-        mov_img = annotated_image(None)
-        alignment_layer_list[i].image_list.append ( mov_img )
-
-
-  # Add the aligned images to the lists of the previous layer
+  # Perform the actual alignment
   global_afm = None
-  for i in index_list:
-    print ( "================================ " + str(i) + " ===============================================" )
-    # alignment_layer_list[i].image_list = []
-    if alignment_layer_list[i].skip:
-      print ( "Skipping " + str(alignment_layer_list[i].base_image_name) )
-      # Insert a placeholder image
-      skip_img = annotated_image(None)
-      alignment_layer_list[i].image_list.append ( skip_img )
+  for apair in align_pairs:
+    i = apair[0] # Reference
+    j = apair[1] # Current moving
+    print ( "Clearing image list for layer " + str(j) )
+    alignment_layer_list[j].image_list = []
+
+    annotated_img = None
+    if i == j:
+      print ( "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
+      shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
+      alignment_layer_list[j].image_list.append ( annotated_image(None) )
+      alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
+      alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
     else:
-      # This is where the actual alignment happens
-      # The current base image is already in this layer (not part of the list)
+      alignment_layer_list[j].image_list.append ( alignment_layer_list[i].base_annotated_image )
+      alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
+
+      print (    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
+      global_afm,recipe = align_swiftir.align_images (    alignment_layer_list[i].base_image_name,         alignment_layer_list[j].base_image_name,         destination_path, global_afm )
+      #if alignment_layer_list[i-1]
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
+      print ( "Reading in new_name from " + str(new_name) )
+      annotated_img = annotated_image(new_name)
+      annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+
+      for ri in range(len(recipe)):
+        # Make a color for this recipe item
+        c = [(ri+1)%2,((ri+1)/2)%2,((ri+1)/4)%2]
+        r = recipe[ri]
+        s = len(r.psta[0])
+        ww = r.ww
+        if type(ww) == type(1):
+          # ww is an integer, so turn it into an nxn tuple
+          ww = (ww,ww)
+        global show_spots
+        if show_spots:
+          # Draw dots in the center of each psta (could be pmov) with SNR for each
+          for wi in range(s):
+            annotated_img.graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c) )
+            annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
+        print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
+
+      alignment_layer_list[j].image_list.append ( annotated_img )
+
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-      annotated_img = None
-      if i == 0:
-        print ( "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
-        shutil.copyfile ( alignment_layer_list[i].base_image_name, os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
-        # Add an empty annotated image to hold the slot
-        #mov_img = annotated_image(None)
-        #alignment_layer_list[i].image_list.append ( mov_img )
-        '''
-        new_name = alignment_layer_list[i].base_image_name
-        annotated_img = annotated_image(new_name)
-        alignment_layer_list[i-1].image_list.append ( annotated_img )
-        annotated_img.graphics_items.append ( graphic_text(10, 42, "Copy", coordsys='p', color=[1, .5, .5]) )
-        #global_afm = align_swiftir.align_images ( alignment_layer_list[i].base_image_name, alignment_layer_list[i+1].base_image_name, './aligned/', global_afm )
-        '''
-      else:
-        # Find last image not skipped
-        last_not_skipped = i-1
-        while alignment_layer_list[last_not_skipped].skip:
-          if last_not_skipped <= 0:
-            print ( "Warning: All prior images have been skipped!!!" )
-            break
-          last_not_skipped = last_not_skipped - 1
-        print ( "Calling align_swiftir.align_images( " + alignment_layer_list[last_not_skipped].base_image_name + ", " + alignment_layer_list[i].base_image_name + ", " + destination_path + " )" )
-        global_afm,recipe = align_swiftir.align_images ( alignment_layer_list[last_not_skipped].base_image_name, alignment_layer_list[i].base_image_name, destination_path, global_afm )
-        #if alignment_layer_list[i-1]
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[i].base_image_name) )
-        print ( "Reading in new_name from " + str(new_name) )
-        annotated_img = annotated_image(new_name)
-        annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
-        for ri in range(len(recipe)):
-          # Make a color for this recipe item
-          c = [(ri+1)%2,((ri+1)/2)%2,((ri+1)/4)%2]
-          r = recipe[ri]
-          s = len(r.psta[0])
-          ww = r.ww
-          if type(ww) == type(1):
-            # ww is an integer, so turn it into an nxn tuple
-            ww = (ww,ww)
-          global show_spots
-          if show_spots:
-            # Draw dots in the center of each psta (could be pmov) with SNR for each
-            for wi in range(s):
-              annotated_img.graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c) )
-              annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
-          print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
-
-        alignment_layer_list[last_not_skipped].image_list.append ( annotated_img )
-
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   # The following work manually, but gave error when done here
   # The try/excepts didn't help
@@ -1374,12 +1369,13 @@ def center_all_images():
     win_size = zpa_original.drawing_area.window.get_size()
 
     pix_buf = None
-    if zpa_original.extra_index < 0:
-      # Draw the base image
-      pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
+    if zpa_original.window_index < 0:
+      # Draw nothing
+      # pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
+      pass
     else:
       # Draw one of the extra images
-      pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_original.extra_index].image
+      pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_original.window_index].image
     if not (pix_buf is None):
       img_w = pix_buf.get_width()
       img_h = pix_buf.get_height()
@@ -1392,12 +1388,13 @@ def center_all_images():
       zpa_next = win_and_area['win']
       win_size = zpa_next.drawing_area.window.get_size()
       pix_buf = None
-      if zpa_next.extra_index < 0:
-        # Draw the base image
-        pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
+      if zpa_next.window_index < 0:
+        # Draw nothing
+        #pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
+        pass
       else:
         # Draw one of the extra images
-        pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_next.extra_index].image
+        pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_next.window_index].image
       if not (pix_buf is None):
         img_w = pix_buf.get_width()
         img_h = pix_buf.get_height()
@@ -1411,11 +1408,17 @@ def refresh_all_images():
   for a in alignment_layer_list:
     if len(a.image_list) > 0:
       max_extra_images = max(max_extra_images, len(a.image_list))
+  if max_extra_images < 1:
+    # Must always keep one window
+    max_extra_images = 1
   print ( "Max extra = " + str(max_extra_images) )
-  cur_extra_images = len(extra_windows_list)
-  for i in range(cur_extra_images):
-    rem_window_callback ( zpa_original )
-  for i in range(max_extra_images):
+  num_cur_extra_images = len(extra_windows_list)
+  if num_cur_extra_images > max_extra_images:
+    # Remove the difference:
+    for i in range(num_cur_extra_images - max_extra_images):
+      rem_window_callback ( zpa_original )
+  elif num_cur_extra_images < max_extra_images:
+    # Add the difference
     add_window_callback ( zpa_original )
 
 
@@ -1530,6 +1533,9 @@ def main():
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   original_drawing_area = zpa_original.get_drawing_area()
+
+  win_and_area = { "win":zpa_original, "drawing_area":original_drawing_area }
+  extra_windows_list.append ( win_and_area )
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
   image_hbox.pack_start(original_drawing_area, True, True, 0)
