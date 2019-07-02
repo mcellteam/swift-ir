@@ -275,15 +275,16 @@ class annotated_image:
 
 
 class alignment_layer:
-  ''' An alignment_layer is an image and the relationships to its neighbors '''
+  ''' An alignment_layer has a base image and a set of images and processes representing the relationships to its neighbors '''
   def __init__ ( self, base=None ):
     print ( "Constructing new alignment_layer with base " + str(base) )
     self.base_image_name = base
 
     # This holds a single annotated image
-    self.base_image_ann = None
+    self.base_annotated_image = None
 
-    # This holds a list of additional annotated images
+    # This holds a list of annotated images to be stored and/or displayed.
+    # The base image may be placed in this list as desired.
     self.image_list = []
 
     # These are the parameters used for this layer
@@ -303,9 +304,11 @@ class alignment_layer:
     self.bias_dy = 0
 
     try:
-      self.base_image_ann = annotated_image ( self.base_image_name )
+      self.base_annotated_image = annotated_image ( self.base_image_name )
+      # By default, the first (and only) image in the list will be the base image
+      self.image_list.append ( self.base_annotated_image )
     except:
-      self.base_image_ann = None
+      self.base_annotated_image = annotated_image ( None )
 
 
 # These two global functions are handy for callbacks
@@ -328,7 +331,7 @@ def store_fields_into_current_layer():
 def store_current_layer_into_fields():
   a = alignment_layer_list[alignment_layer_index]
   # print ( " Index = " + str(alignment_layer_index) + ", base_name = " + a.base_image_name )
-  print ( " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_image_ann.file_name )
+  print ( " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
   print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
   gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
   gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
@@ -379,7 +382,7 @@ class zoom_window ( app_window.zoom_pan_area ):
       if self == zpa_original:
         # Add a point to the original
         print ( "Adding a marker point to the original image" )
-        alignment_layer_list[alignment_layer_index].base_image_ann.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+        alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       elif len(extra_windows_list) > 0:
         if self == extra_windows_list[0]['win']:
           # Add a point to the second
@@ -482,8 +485,7 @@ class zoom_window ( app_window.zoom_pan_area ):
     if len(alignment_layer_list) > 0:
       if self.extra_index < 0:
         # Draw the base image
-        #pix_buf = alignment_layer_list[alignment_layer_index].base_image
-        pix_buf = alignment_layer_list[alignment_layer_index].base_image_ann.image
+        pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
       else:
         # Draw one of the extra images
         if alignment_layer_index < len(alignment_layer_list):
@@ -654,7 +656,7 @@ class zoom_window ( app_window.zoom_pan_area ):
     if len(alignment_layer_list) > 0:
       if self.extra_index < 0:
         # This is the base image so draw annotations on the base image
-        image_to_draw = alignment_layer_list[alignment_layer_index].base_image_ann
+        image_to_draw = alignment_layer_list[alignment_layer_index].base_annotated_image
         color_index = 0
         for graphics_item in image_to_draw.graphics_items:
           if graphics_item.marker:
@@ -881,6 +883,8 @@ def run_alignment_callback ( align_all ):
   # Add the base images to the lists first
   for i in index_list:
     alignment_layer_list[i].image_list = []
+    # Add the base image first (this may be changed in subsequent versions to put it in the middle)
+    alignment_layer_list[i].image_list.append ( alignment_layer_list[i].base_annotated_image )    
     if alignment_layer_list[i].skip:
       print ( "Skipping " + str(alignment_layer_list[i].base_image_name) )
     else:
@@ -986,48 +990,6 @@ def run_alignment_callback ( align_all ):
     center_all_images()
   except:
     pass
-
-
-'''
-# This creates a lighter file with some annotations
-new_name = os.path.join ( destination_path, "light_" + alignment_layer_list[i].base_image_name )
-print ( "Lightening " + str(alignment_layer_list[i].base_image_name) + " to " + new_name )
-modified_image = alignment_layer_list[i].base_image.copy();
-modified_image.saturate_and_pixelate ( modified_image, 300.0, True )
-modified_image.save(new_name, 'jpeg')
-anim = annotated_image(new_name)
-# This adds some annotations
-anim.graphics_items.append ( graphic_text(10, 70, "Lighter", coordsys='p', color=[0, 1.0, 1.0]) )
-anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
-anim.graphics_items.append ( graphic_line(490,90,400,90,'p',[1, 1, 0]) )
-anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0.5, 1, 1]) )
-anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
-anim.graphics_items.append ( graphic_dot(10,2,6,'i',[1, 0, 0]) )
-anim.graphics_items.append ( graphic_rect(100,100,100,100,'i',[0, 0, 1]) )
-anim.graphics_items.append ( graphic_line(100,100,200,200,'i',[1, 1, 0]) )
-anim.graphics_items.append ( graphic_text(220, 130, "WW=100", coordsys='i', color=[0,0,0]) )
-alignment_layer_list[i].image_list.append ( anim )
-
-# This creates a darker file with some annotations
-new_name = os.path.join ( destination_path, "dark_" + alignment_layer_list[i].base_image_name )
-print ( "Darkening " + str(alignment_layer_list[i].base_image_name) + " to " + new_name )
-modified_image = alignment_layer_list[i].base_image.copy();
-modified_image.saturate_and_pixelate ( modified_image, 0.003, True )
-modified_image.save(new_name, 'jpeg')
-anim = annotated_image(new_name)
-# This adds some annotations
-anim.graphics_items.append ( graphic_text(10, 70, "Darker", coordsys='p', color=[0, 0.5, 0.5]) )
-anim.graphics_items.append ( graphic_rect(2,1,500,100,'p',[1, 0, 1]) )
-anim.graphics_items.append ( graphic_line(490,90,400,110,'p',[1, 1, 0]) )
-anim.graphics_items.append ( graphic_dot(490,90,10,'p',[0, 0.1, 1]) )
-anim.graphics_items.append ( graphic_line(0,0,20,20,'p',[1, 0, 0]) )
-anim.graphics_items.append ( graphic_dot(10,7,6,'i',[1, 0, 0]) )
-anim.graphics_items.append ( graphic_rect(120,160,60,100,'i',[0, 0, 1]) )
-anim.graphics_items.append ( graphic_text(200, 200, "WW=100", coordsys='i', color=[0,0,0]) )
-anim.graphics_items.append ( graphic_text(201, 200, "WW=100", coordsys='i', color=[0,0,0]) )
-anim.graphics_items.append ( graphic_text(200, 201, "WW=100", coordsys='i', color=[0,0,0]) )
-alignment_layer_list[i].image_list.append ( anim )
-'''
 
 
 
@@ -1414,8 +1376,7 @@ def center_all_images():
     pix_buf = None
     if zpa_original.extra_index < 0:
       # Draw the base image
-      # pix_buf = alignment_layer_list[alignment_layer_index].base_image
-      pix_buf = alignment_layer_list[alignment_layer_index].base_image_ann.image
+      pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
     else:
       # Draw one of the extra images
       pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_original.extra_index].image
@@ -1433,8 +1394,7 @@ def center_all_images():
       pix_buf = None
       if zpa_next.extra_index < 0:
         # Draw the base image
-        # pix_buf = alignment_layer_list[alignment_layer_index].base_image
-        pix_buf = alignment_layer_list[alignment_layer_index].base_image_ann.image
+        pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
       else:
         # Draw one of the extra images
         pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_next.extra_index].image
