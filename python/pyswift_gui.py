@@ -21,10 +21,10 @@ global global_win_height
 global_win_width = 800
 global_win_height = 800
 
-global image_layer_list
-image_layer_list = []
-global image_layer_index
-image_layer_index = -1
+global alignment_layer_list
+alignment_layer_list = []
+global alignment_layer_index
+alignment_layer_index = -1
 
 global project_file_name
 project_file_name = ""
@@ -274,10 +274,10 @@ class annotated_image:
 
 
 
-class image_layer:
-  ''' An image_layer is an image and the relationships to its neighbors '''
+class alignment_layer:
+  ''' An alignment_layer is an image and the relationships to its neighbors '''
   def __init__ ( self, base=None ):
-    print ( "Constructing new image_layer with base " + str(base) )
+    print ( "Constructing new alignment_layer with base " + str(base) )
     self.base_image_name = base
 
     # This holds a single annotated image
@@ -311,7 +311,7 @@ class image_layer:
 # These two global functions are handy for callbacks
 
 def store_fields_into_current_layer():
-  a = image_layer_list[image_layer_index]
+  a = alignment_layer_list[alignment_layer_index]
   a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
   a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
   a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
@@ -326,9 +326,9 @@ def store_fields_into_current_layer():
   a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
 
 def store_current_layer_into_fields():
-  a = image_layer_list[image_layer_index]
-  # print ( " Index = " + str(image_layer_index) + ", base_name = " + a.base_image_name )
-  print ( " Index = " + str(image_layer_index) + ", base_name_ann = " + a.base_image_ann.file_name )
+  a = alignment_layer_list[alignment_layer_index]
+  # print ( " Index = " + str(alignment_layer_index) + ", base_name = " + a.base_image_name )
+  print ( " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_image_ann.file_name )
   print ( "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
   gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
   gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
@@ -352,7 +352,7 @@ class zoom_window ( app_window.zoom_pan_area ):
   def __init__ ( self, window, win_width, win_height, name="" ):
     # The "extra_index" is intended to assign one of the "extra" images to this window.
     # When extra_index is >= 0, it will be the index into the "image_list" in each layer:
-    #   image_layer_list[image_layer_index].image_list[extra_index]
+    #   alignment_layer_list[alignment_layer_index].image_list[extra_index]
     # When the extra_index is -1, that indicates the original image.
     # This provides a simple and dynamic way to assign images to zoom windows.
     # By default, new zoom windows will show the original image with -1.
@@ -372,19 +372,19 @@ class zoom_window ( app_window.zoom_pan_area ):
 
   def button_press_callback ( self, canvas, event, zpa ):
     if point_mode:
-      global image_layer_list
-      global image_layer_index
+      global alignment_layer_list
+      global alignment_layer_index
       print ( "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
       print ( "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
       if self == zpa_original:
         # Add a point to the original
         print ( "Adding a marker point to the original image" )
-        image_layer_list[image_layer_index].base_image_ann.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+        alignment_layer_list[alignment_layer_index].base_image_ann.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       elif len(extra_windows_list) > 0:
         if self == extra_windows_list[0]['win']:
           # Add a point to the second
           print ( "Adding a marker point to the align image" )
-          image_layer_list[image_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+          alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       '''
       for w in extra_windows_list:
@@ -417,26 +417,26 @@ class zoom_window ( app_window.zoom_pan_area ):
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
     else:
       # Use normal (unshifted) scroll wheel to move through the stack
-      global image_layer_list
-      global image_layer_index
-      print ( "Moving through the stack with image_layer_index = " + str(image_layer_index) )
-      if len(image_layer_list) <= 0:
-        image_layer_index = -1
-        print ( " Index = " + str(image_layer_index) )
+      global alignment_layer_list
+      global alignment_layer_index
+      print ( "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
+      if len(alignment_layer_list) <= 0:
+        alignment_layer_index = -1
+        print ( " Index = " + str(alignment_layer_index) )
       else:
-        # Store the image_layer parameters into the image layer being exited
+        # Store the alignment_layer parameters into the image layer being exited
         store_fields_into_current_layer()
         # Move to the next image layer (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
-          image_layer_index += 1
-          if image_layer_index >= len(image_layer_list):
-            image_layer_index =  len(image_layer_list)-1
+          alignment_layer_index += 1
+          if alignment_layer_index >= len(alignment_layer_list):
+            alignment_layer_index =  len(alignment_layer_list)-1
         elif event.direction == gtk.gdk.SCROLL_DOWN:
-          image_layer_index += -1
-          if image_layer_index < 0:
-            image_layer_index = 0
+          alignment_layer_index += -1
+          if alignment_layer_index < 0:
+            alignment_layer_index = 0
 
-        # Display the image_layer parameters from the new section being viewed
+        # Display the alignment_layer parameters from the new section being viewed
         store_current_layer_into_fields()
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -473,23 +473,23 @@ class zoom_window ( app_window.zoom_pan_area ):
     # Draw the current state referenced by display_time_index
     t = 0
 
-    global image_layer_list
-    global image_layer_index
+    global alignment_layer_list
+    global alignment_layer_index
 
-    # print ( "Painting with len(image_layer_list) = " + str(len(image_layer_list)) )
+    # print ( "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
     pix_buf = None
-    if len(image_layer_list) > 0:
+    if len(alignment_layer_list) > 0:
       if self.extra_index < 0:
         # Draw the base image
-        #pix_buf = image_layer_list[image_layer_index].base_image
-        pix_buf = image_layer_list[image_layer_index].base_image_ann.image
+        #pix_buf = alignment_layer_list[alignment_layer_index].base_image
+        pix_buf = alignment_layer_list[alignment_layer_index].base_image_ann.image
       else:
         # Draw one of the extra images
-        if image_layer_index < len(image_layer_list):
-          ilist = image_layer_list[image_layer_index].image_list
-          if self.extra_index < len(ilist):
-            pix_buf = ilist[self.extra_index].image
+        if alignment_layer_index < len(alignment_layer_list):
+          al_list = alignment_layer_list[alignment_layer_index].image_list
+          if self.extra_index < len(al_list):
+            pix_buf = al_list[self.extra_index].image
 
     #if zpa.user_data['image_frame']:
     #  pix_buf = zpa.user_data['image_frame']
@@ -651,10 +651,10 @@ class zoom_window ( app_window.zoom_pan_area ):
         pass
 
     # Draw any annotations in the list
-    if len(image_layer_list) > 0:
+    if len(alignment_layer_list) > 0:
       if self.extra_index < 0:
         # This is the base image so draw annotations on the base image
-        image_to_draw = image_layer_list[image_layer_index].base_image_ann
+        image_to_draw = alignment_layer_list[alignment_layer_index].base_image_ann
         color_index = 0
         for graphics_item in image_to_draw.graphics_items:
           if graphics_item.marker:
@@ -663,10 +663,10 @@ class zoom_window ( app_window.zoom_pan_area ):
           graphics_item.draw ( zpa, drawing_area, self.pangolayout )
       else:
         # These are the other images, so draw their annotations
-        if image_layer_index < len(image_layer_list):
-          ilist = image_layer_list[image_layer_index].image_list
-          if self.extra_index < len(ilist):
-            image_to_draw = ilist[self.extra_index]
+        if alignment_layer_index < len(alignment_layer_list):
+          al_list = alignment_layer_list[alignment_layer_index].image_list
+          if self.extra_index < len(al_list):
+            image_to_draw = al_list[self.extra_index]
             color_index = 0
             for graphics_item in image_to_draw.graphics_items:
               if graphics_item.marker:
@@ -689,11 +689,11 @@ def set_all_or_fwd_callback ( set_all ):
     print ( "Setting All ..." )
   else:
     print ( "Setting Forward ..." )
-  global image_layer_list
-  global image_layer_index
-  if image_layer_list != None:
-    if len(image_layer_list) > 0:
-      template = image_layer_list[image_layer_index]
+  global alignment_layer_list
+  global alignment_layer_index
+  if alignment_layer_list != None:
+    if len(alignment_layer_list) > 0:
+      template = alignment_layer_list[alignment_layer_index]
 
       # Store the current values from the gui into the template structure
       template.trans_ww = int(gui_fields.trans_ww_entry.get_text())
@@ -710,7 +710,7 @@ def set_all_or_fwd_callback ( set_all ):
 
       # Copy the template into all other sections as appropriate
       copy = False
-      for a in image_layer_list:
+      for a in alignment_layer_list:
         if set_all or (a == template):
           copy = True
         if copy and (a != template):
@@ -824,8 +824,8 @@ import thread
 import align_swiftir
 
 def run_alignment_callback ( align_all ):
-  global image_layer_list
-  global image_layer_index
+  global alignment_layer_list
+  global alignment_layer_index
   global destination_path
   global gui_fields
 
@@ -837,18 +837,18 @@ def run_alignment_callback ( align_all ):
     dest_err_dialog.destroy()
     return
 
-  index_list = range(len(image_layer_list))
+  index_list = range(len(alignment_layer_list))
   if not align_all:
-    first = image_layer_index
-    last = len(image_layer_list)
+    first = alignment_layer_index
+    last = len(alignment_layer_list)
     num_forward_str = gui_fields.num_align_forward.get_text()
     num_forward = -1
     if len(num_forward_str.strip()) > 0:
       num_forward = int(num_forward_str.strip())
-      if (image_layer_index + num_forward + 1) < len(image_layer_list):
-        last = image_layer_index + num_forward + 1
+      if (alignment_layer_index + num_forward + 1) < len(alignment_layer_list):
+        last = alignment_layer_index + num_forward + 1
       else:
-        last = len(image_layer_index)
+        last = len(alignment_layer_index)
     index_list = range(first,last)
 
   print ( "" )
@@ -860,53 +860,53 @@ def run_alignment_callback ( align_all ):
     print ( "===============================================================================" )
     print ( "Aligning " + str(i) + " to " + str(i+1) + " with:" )
     print ( "" )
-    print ( "  base                     = " + str(image_layer_list[i].base_image_name) )
-    print ( "  adjust                   = " + str(image_layer_list[i+1].base_image_name) )
-    print ( "  skip                     = " + str(image_layer_list[i].skip) )
+    print ( "  base                     = " + str(alignment_layer_list[i].base_image_name) )
+    print ( "  adjust                   = " + str(alignment_layer_list[i+1].base_image_name) )
+    print ( "  skip                     = " + str(alignment_layer_list[i].skip) )
     print ( "" )
-    print ( "  translation window width = " + str(image_layer_list[i].trans_ww) )
-    print ( "  translation addx         = " + str(image_layer_list[i].trans_addx) )
-    print ( "  translation addy         = " + str(image_layer_list[i].trans_addy) )
+    print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
+    print ( "  translation addx         = " + str(alignment_layer_list[i].trans_addx) )
+    print ( "  translation addy         = " + str(alignment_layer_list[i].trans_addy) )
     print ( "" )
-    print ( "  affine enabled           = " + str(image_layer_list[i].affine_enabled) )
-    print ( "  affine window width      = " + str(image_layer_list[i].affine_ww) )
-    print ( "  affine addx              = " + str(image_layer_list[i].affine_addx) )
-    print ( "  affine addy              = " + str(image_layer_list[i].affine_addy) )
+    print ( "  affine enabled           = " + str(alignment_layer_list[i].affine_enabled) )
+    print ( "  affine window width      = " + str(alignment_layer_list[i].affine_ww) )
+    print ( "  affine addx              = " + str(alignment_layer_list[i].affine_addx) )
+    print ( "  affine addy              = " + str(alignment_layer_list[i].affine_addy) )
     print ( "" )
-    print ( "  bias enabled             = " + str(image_layer_list[i].bias_enabled) )
-    print ( "  bias dx                  = " + str(image_layer_list[i].bias_dx) )
-    print ( "  bias dy                  = " + str(image_layer_list[i].bias_dy) )
+    print ( "  bias enabled             = " + str(alignment_layer_list[i].bias_enabled) )
+    print ( "  bias dx                  = " + str(alignment_layer_list[i].bias_dx) )
+    print ( "  bias dy                  = " + str(alignment_layer_list[i].bias_dy) )
 
 
   # Add the base images to the lists first
   for i in index_list:
-    image_layer_list[i].image_list = []
-    if image_layer_list[i].skip:
-      print ( "Skipping " + str(image_layer_list[i].base_image_name) )
+    alignment_layer_list[i].image_list = []
+    if alignment_layer_list[i].skip:
+      print ( "Skipping " + str(alignment_layer_list[i].base_image_name) )
     else:
       # Add the i+1 base_image to the list
-      if i < len(image_layer_list)-1:
-        # mov_img = annotated_image(os.path.join('./aligned',image_layer_list[i].base_image_name))
-        print ( "Reading in a base image named " + str(image_layer_list[i+1].base_image_name) )
-        mov_img = annotated_image(image_layer_list[i+1].base_image_name)
-        image_layer_list[i].image_list.append ( mov_img )
+      if i < len(alignment_layer_list)-1:
+        # mov_img = annotated_image(os.path.join('./aligned',alignment_layer_list[i].base_image_name))
+        print ( "Reading in a base image named " + str(alignment_layer_list[i+1].base_image_name) )
+        mov_img = annotated_image(alignment_layer_list[i+1].base_image_name)
+        alignment_layer_list[i].image_list.append ( mov_img )
       else:
         # Add an empty annotated image to hold the slot
         print ( "Reading in an empty image" )
         mov_img = annotated_image(None)
-        image_layer_list[i].image_list.append ( mov_img )
+        alignment_layer_list[i].image_list.append ( mov_img )
 
 
   # Add the aligned images to the lists of the previous layer
   global_afm = None
   for i in index_list:
     print ( "================================ " + str(i) + " ===============================================" )
-    # image_layer_list[i].image_list = []
-    if image_layer_list[i].skip:
-      print ( "Skipping " + str(image_layer_list[i].base_image_name) )
+    # alignment_layer_list[i].image_list = []
+    if alignment_layer_list[i].skip:
+      print ( "Skipping " + str(alignment_layer_list[i].base_image_name) )
       # Insert a placeholder image
       skip_img = annotated_image(None)
-      image_layer_list[i].image_list.append ( skip_img )
+      alignment_layer_list[i].image_list.append ( skip_img )
     else:
       # This is where the actual alignment happens
       # The current base image is already in this layer (not part of the list)
@@ -914,31 +914,31 @@ def run_alignment_callback ( align_all ):
 
       annotated_img = None
       if i == 0:
-        print ( "Copying ( " + image_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(image_layer_list[i].base_image_name)) + " )" )
-        shutil.copyfile ( image_layer_list[i].base_image_name, os.path.join(destination_path,os.path.basename(image_layer_list[i].base_image_name)) )
+        print ( "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
+        shutil.copyfile ( alignment_layer_list[i].base_image_name, os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
         # Add an empty annotated image to hold the slot
         #mov_img = annotated_image(None)
-        #image_layer_list[i].image_list.append ( mov_img )
+        #alignment_layer_list[i].image_list.append ( mov_img )
         '''
-        new_name = image_layer_list[i].base_image_name
+        new_name = alignment_layer_list[i].base_image_name
         annotated_img = annotated_image(new_name)
-        image_layer_list[i-1].image_list.append ( annotated_img )
+        alignment_layer_list[i-1].image_list.append ( annotated_img )
         annotated_img.graphics_items.append ( graphic_text(10, 42, "Copy", coordsys='p', color=[1, .5, .5]) )
-        #global_afm = align_swiftir.align_images ( image_layer_list[i].base_image_name, image_layer_list[i+1].base_image_name, './aligned/', global_afm )
+        #global_afm = align_swiftir.align_images ( alignment_layer_list[i].base_image_name, alignment_layer_list[i+1].base_image_name, './aligned/', global_afm )
         '''
       else:
         # Find last image not skipped
         last_not_skipped = i-1
-        while image_layer_list[last_not_skipped].skip:
+        while alignment_layer_list[last_not_skipped].skip:
           if last_not_skipped <= 0:
             print ( "Warning: All prior images have been skipped!!!" )
             break
           last_not_skipped = last_not_skipped - 1
-        print ( "Calling align_swiftir.align_images( " + image_layer_list[last_not_skipped].base_image_name + ", " + image_layer_list[i].base_image_name + ", " + destination_path + " )" )
-        global_afm,recipe = align_swiftir.align_images ( image_layer_list[last_not_skipped].base_image_name, image_layer_list[i].base_image_name, destination_path, global_afm )
-        #if image_layer_list[i-1]
+        print ( "Calling align_swiftir.align_images( " + alignment_layer_list[last_not_skipped].base_image_name + ", " + alignment_layer_list[i].base_image_name + ", " + destination_path + " )" )
+        global_afm,recipe = align_swiftir.align_images ( alignment_layer_list[last_not_skipped].base_image_name, alignment_layer_list[i].base_image_name, destination_path, global_afm )
+        #if alignment_layer_list[i-1]
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        new_name = os.path.join ( destination_path, os.path.basename(image_layer_list[i].base_image_name) )
+        new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[i].base_image_name) )
         print ( "Reading in new_name from " + str(new_name) )
         annotated_img = annotated_image(new_name)
         annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
@@ -960,7 +960,7 @@ def run_alignment_callback ( align_all ):
               annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
           print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
-        image_layer_list[last_not_skipped].image_list.append ( annotated_img )
+        alignment_layer_list[last_not_skipped].image_list.append ( annotated_img )
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -990,9 +990,9 @@ def run_alignment_callback ( align_all ):
 
 '''
 # This creates a lighter file with some annotations
-new_name = os.path.join ( destination_path, "light_" + image_layer_list[i].base_image_name )
-print ( "Lightening " + str(image_layer_list[i].base_image_name) + " to " + new_name )
-modified_image = image_layer_list[i].base_image.copy();
+new_name = os.path.join ( destination_path, "light_" + alignment_layer_list[i].base_image_name )
+print ( "Lightening " + str(alignment_layer_list[i].base_image_name) + " to " + new_name )
+modified_image = alignment_layer_list[i].base_image.copy();
 modified_image.saturate_and_pixelate ( modified_image, 300.0, True )
 modified_image.save(new_name, 'jpeg')
 anim = annotated_image(new_name)
@@ -1006,12 +1006,12 @@ anim.graphics_items.append ( graphic_dot(10,2,6,'i',[1, 0, 0]) )
 anim.graphics_items.append ( graphic_rect(100,100,100,100,'i',[0, 0, 1]) )
 anim.graphics_items.append ( graphic_line(100,100,200,200,'i',[1, 1, 0]) )
 anim.graphics_items.append ( graphic_text(220, 130, "WW=100", coordsys='i', color=[0,0,0]) )
-image_layer_list[i].image_list.append ( anim )
+alignment_layer_list[i].image_list.append ( anim )
 
 # This creates a darker file with some annotations
-new_name = os.path.join ( destination_path, "dark_" + image_layer_list[i].base_image_name )
-print ( "Darkening " + str(image_layer_list[i].base_image_name) + " to " + new_name )
-modified_image = image_layer_list[i].base_image.copy();
+new_name = os.path.join ( destination_path, "dark_" + alignment_layer_list[i].base_image_name )
+print ( "Darkening " + str(alignment_layer_list[i].base_image_name) + " to " + new_name )
+modified_image = alignment_layer_list[i].base_image.copy();
 modified_image.saturate_and_pixelate ( modified_image, 0.003, True )
 modified_image.save(new_name, 'jpeg')
 anim = annotated_image(new_name)
@@ -1026,7 +1026,7 @@ anim.graphics_items.append ( graphic_rect(120,160,60,100,'i',[0, 0, 1]) )
 anim.graphics_items.append ( graphic_text(200, 200, "WW=100", coordsys='i', color=[0,0,0]) )
 anim.graphics_items.append ( graphic_text(201, 200, "WW=100", coordsys='i', color=[0,0,0]) )
 anim.graphics_items.append ( graphic_text(200, 201, "WW=100", coordsys='i', color=[0,0,0]) )
-image_layer_list[i].image_list.append ( anim )
+alignment_layer_list[i].image_list.append ( anim )
 '''
 
 
@@ -1068,8 +1068,8 @@ def menu_callback ( widget, data=None ):
     global project_file_name
     global destination_path
     global zpa_original
-    global image_layer_list
-    global image_layer_index
+    global alignment_layer_list
+    global alignment_layer_index
     global extra_windows_list
 
     if command == "Fast":
@@ -1087,8 +1087,8 @@ def menu_callback ( widget, data=None ):
       print ( "  project_file_name" )
       print ( "  destination_path" )
       print ( "  zpa_original" )
-      print ( "  image_layer_list" )
-      print ( "  image_layer_index" )
+      print ( "  alignment_layer_list" )
+      print ( "  alignment_layer_index" )
       print ( "  extra_windows_list" )
       print ( "  show_spots" )
       print ( "  point_mode" )
@@ -1149,9 +1149,9 @@ def menu_callback ( widget, data=None ):
         i = 1
         file_name_list = file_chooser.get_filenames()
         print ( "Selected Files: " + str(file_name_list) )
-        # image_layer_list = []
+        # alignment_layer_list = []
         for f in file_name_list:
-          a = image_layer ( f )
+          a = alignment_layer ( f )
           a.trans_ww = 256
           a.trans_addx = 256 + i
           a.trans_addy = 256 + i
@@ -1172,7 +1172,7 @@ def menu_callback ( widget, data=None ):
           a.bias_dy = 80 + i
 
           i += 1
-          image_layer_list.append ( a )
+          alignment_layer_list.append ( a )
 
       file_chooser.destroy()
       print ( "Done with dialog" )
@@ -1226,19 +1226,19 @@ def menu_callback ( widget, data=None ):
               if 'imagestack' in proj_dict['data']:
                 imagestack = proj_dict['data']['imagestack']
                 if len(imagestack) > 0:
-                  image_layer_index = 0
-                  image_layer_list = []
-                  for json_image_layer in imagestack:
-                    image_fname = json_image_layer['filename']
+                  alignment_layer_index = 0
+                  alignment_layer_list = []
+                  for json_alignment_layer in imagestack:
+                    image_fname = json_alignment_layer['filename']
                     # Convert to absolute as needed
                     if not os.path.isabs(image_fname):
                       image_fname = os.path.join ( project_path, image_fname )
                     image_fname = os.path.realpath ( image_fname )
-                    a = image_layer ( image_fname )
-                    if 'skip' in json_image_layer:
-                      a.skip = json_image_layer['skip']
-                    if 'align_to_next_pars' in json_image_layer:
-                      pars = json_image_layer['align_to_next_pars']
+                    a = alignment_layer ( image_fname )
+                    if 'skip' in json_alignment_layer:
+                      a.skip = json_alignment_layer['skip']
+                    if 'align_to_next_pars' in json_alignment_layer:
+                      pars = json_alignment_layer['align_to_next_pars']
                       a.trans_ww = pars['window_size']
                       a.trans_addx = pars['addx']
                       a.trans_addy = pars['addy']
@@ -1249,7 +1249,7 @@ def menu_callback ( widget, data=None ):
                       a.bias_enabled = False
                       a.bias_dx = 0
                       a.bias_dy = 0
-                    image_layer_list.append ( a )
+                    alignment_layer_list.append ( a )
       file_chooser.destroy()
       print ( "Done with dialog" )
       refresh_all_images()
@@ -1317,14 +1317,14 @@ def menu_callback ( widget, data=None ):
         f.write ( '      }\n' )
         f.write ( '    },\n' )
 
-        if image_layer_list != None:
-          if len(image_layer_list) > 0:
+        if alignment_layer_list != None:
+          if len(alignment_layer_list) > 0:
             f.write ( '    "imagestack": [\n' )
-            for a in image_layer_list:
+            for a in alignment_layer_list:
               f.write ( '      {\n' )
               f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
               rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
-              if a != image_layer_list[-1]:
+              if a != alignment_layer_list[-1]:
                 f.write ( '        "filename": "' + rel_file_name + '",\n' )
                 f.write ( '        "align_to_next_pars": {\n' )
                 f.write ( '          "window_size": ' + str(a.trans_ww) + ',\n' )
@@ -1350,8 +1350,8 @@ def menu_callback ( widget, data=None ):
       response = clear_all.run()
       if response == gtk.RESPONSE_OK:
         print ( "Clearing all images..." )
-        image_layer_index = 0
-        image_layer_list = []
+        alignment_layer_index = 0
+        alignment_layer_list = []
       zpa_original.queue_draw()
       for w in extra_windows_list:
         w['drawing_area'].queue_draw()
@@ -1407,18 +1407,18 @@ def menu_callback ( widget, data=None ):
 
 def center_all_images():
 
-  if len(image_layer_list) > 0:
+  if len(alignment_layer_list) > 0:
     # Start with the original image
     win_size = zpa_original.drawing_area.window.get_size()
 
     pix_buf = None
     if zpa_original.extra_index < 0:
       # Draw the base image
-      # pix_buf = image_layer_list[image_layer_index].base_image
-      pix_buf = image_layer_list[image_layer_index].base_image_ann.image
+      # pix_buf = alignment_layer_list[alignment_layer_index].base_image
+      pix_buf = alignment_layer_list[alignment_layer_index].base_image_ann.image
     else:
       # Draw one of the extra images
-      pix_buf = image_layer_list[image_layer_index].image_list[zpa_original.extra_index].image
+      pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_original.extra_index].image
     if not (pix_buf is None):
       img_w = pix_buf.get_width()
       img_h = pix_buf.get_height()
@@ -1433,11 +1433,11 @@ def center_all_images():
       pix_buf = None
       if zpa_next.extra_index < 0:
         # Draw the base image
-        # pix_buf = image_layer_list[image_layer_index].base_image
-        pix_buf = image_layer_list[image_layer_index].base_image_ann.image
+        # pix_buf = alignment_layer_list[alignment_layer_index].base_image
+        pix_buf = alignment_layer_list[alignment_layer_index].base_image_ann.image
       else:
         # Draw one of the extra images
-        pix_buf = image_layer_list[image_layer_index].image_list[zpa_next.extra_index].image
+        pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_next.extra_index].image
       if not (pix_buf is None):
         img_w = pix_buf.get_width()
         img_h = pix_buf.get_height()
@@ -1448,7 +1448,7 @@ def center_all_images():
 def refresh_all_images():
   # Determine how many windows are needed and create them as needed
   max_extra_images = 0
-  for a in image_layer_list:
+  for a in alignment_layer_list:
     if len(a.image_list) > 0:
       max_extra_images = max(max_extra_images, len(a.image_list))
   print ( "Max extra = " + str(max_extra_images) )
@@ -1590,7 +1590,7 @@ def main():
                                    | gtk.gdk.POINTER_MOTION_MASK
                                    | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
-  image_layer_defaults = image_layer()
+  alignment_layer_defaults = alignment_layer()
 
   # Create a Vertical box to hold rows of buttons
   controls_vbox = gtk.VBox ( True, 10 )
@@ -1632,7 +1632,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.trans_ww_entry = gtk.Entry(5)
-  gui_fields.trans_ww_entry.set_text ( str(image_layer_defaults.trans_ww) )
+  gui_fields.trans_ww_entry.set_text ( str(alignment_layer_defaults.trans_ww) )
   label_entry.pack_start ( gui_fields.trans_ww_entry, True, True, 0 )
   gui_fields.trans_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -1644,7 +1644,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.trans_addx_entry = gtk.Entry(6)
-  gui_fields.trans_addx_entry.set_text ( str(image_layer_defaults.trans_addx) )
+  gui_fields.trans_addx_entry.set_text ( str(alignment_layer_defaults.trans_addx) )
   label_entry.pack_start ( gui_fields.trans_addx_entry, True, True, 0 )
   gui_fields.trans_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -1656,7 +1656,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.trans_addy_entry = gtk.Entry(6)
-  gui_fields.trans_addy_entry.set_text ( str(image_layer_defaults.trans_addy) )
+  gui_fields.trans_addy_entry.set_text ( str(alignment_layer_defaults.trans_addy) )
   label_entry.pack_start ( gui_fields.trans_addy_entry, True, True, 0 )
   gui_fields.trans_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -1694,7 +1694,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.affine_ww_entry = gtk.Entry(5)
-  gui_fields.affine_ww_entry.set_text ( str(image_layer_defaults.affine_ww) )
+  gui_fields.affine_ww_entry.set_text ( str(alignment_layer_defaults.affine_ww) )
   label_entry.pack_start ( gui_fields.affine_ww_entry, True, True, 0 )
   gui_fields.affine_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -1706,7 +1706,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.affine_addx_entry = gtk.Entry(6)
-  gui_fields.affine_addx_entry.set_text ( str(image_layer_defaults.affine_addx) )
+  gui_fields.affine_addx_entry.set_text ( str(alignment_layer_defaults.affine_addx) )
   label_entry.pack_start ( gui_fields.affine_addx_entry, True, True, 0 )
   gui_fields.affine_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -1718,7 +1718,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.affine_addy_entry = gtk.Entry(6)
-  gui_fields.affine_addy_entry.set_text ( str(image_layer_defaults.affine_addy) )
+  gui_fields.affine_addy_entry.set_text ( str(alignment_layer_defaults.affine_addy) )
   label_entry.pack_start ( gui_fields.affine_addy_entry, True, True, 0 )
   gui_fields.affine_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -1749,7 +1749,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_dx_entry = gtk.Entry(5)
-  gui_fields.bias_dx_entry.set_text ( str(image_layer_defaults.bias_dx) )
+  gui_fields.bias_dx_entry.set_text ( str(alignment_layer_defaults.bias_dx) )
   label_entry.pack_start ( gui_fields.bias_dx_entry, True, True, 0 )
   gui_fields.bias_dx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -1761,7 +1761,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_dy_entry = gtk.Entry(5)
-  gui_fields.bias_dy_entry.set_text ( str(image_layer_defaults.bias_dy) )
+  gui_fields.bias_dy_entry.set_text ( str(alignment_layer_defaults.bias_dy) )
   label_entry.pack_start ( gui_fields.bias_dy_entry, True, True, 0 )
   gui_fields.bias_dy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
