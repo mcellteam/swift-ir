@@ -1368,9 +1368,13 @@ def menu_callback ( widget, data=None ):
             except:
               # This will happen if the image had been deleted or hadn't been created (such as skipped).
               pass
-        zpa_original.queue_draw()
-        for w in extra_windows_list:
-          w['drawing_area'].queue_draw()
+          print ( "Restoring original images..." )
+          for al in alignment_layer_list:
+            al.image_list = []
+            al.image_list.append ( al.base_annotated_image )
+          zpa_original.queue_draw()
+          for w in extra_windows_list:
+            w['drawing_area'].queue_draw()
         clear_out.destroy()
 
     elif command == "LimScroll":
