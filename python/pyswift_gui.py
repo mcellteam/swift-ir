@@ -1336,16 +1336,40 @@ def menu_callback ( widget, data=None ):
 
     elif command == "ClearAll":
 
-      clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All?")
+      clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
       response = clear_all.run()
       if response == gtk.RESPONSE_OK:
-        print ( "Clearing all images..." )
+        print ( "Clearing all layers..." )
         alignment_layer_index = 0
         alignment_layer_list = []
       zpa_original.queue_draw()
       for w in extra_windows_list:
         w['drawing_area'].queue_draw()
       clear_all.destroy()
+
+    elif command == "ClearOut":
+
+      if len(destination_path) <= 0:
+        clear_out = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
+        response = clear_out.run()
+        clear_out.destroy()
+      else:
+        clear_out = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Output?")
+        response = clear_out.run()
+        if response == gtk.RESPONSE_OK:
+          print ( "Clearing all output images..." )
+          for al in alignment_layer_list:
+            try:
+              file_to_delete = os.path.join(destination_path,os.path.basename(al.base_image_name))
+              print ( "Deleting " + file_to_delete )
+              os.remove ( file_to_delete )
+            except:
+              # This will happen if the image had been deleted or hadn't been created (such as skipped).
+              pass
+        zpa_original.queue_draw()
+        for w in extra_windows_list:
+          w['drawing_area'].queue_draw()
+        clear_out.destroy()
 
     elif command == "LimScroll":
       zpa_original.max_zoom_count = 10
