@@ -231,8 +231,17 @@ class zoom_pan_area:
     item.show()
     return (menu, item)
 
-  def add_menu_item ( self, parent, callback, label, data, key=None, mask=gtk.gdk.CONTROL_MASK, ):
+  def add_menu_item ( self, parent, callback, label, data, key=None, mask=gtk.gdk.CONTROL_MASK ):
     item = gtk.MenuItem(label=label)
+    item.connect ( "activate", callback, data )
+    if key != None:
+      item.add_accelerator("activate", self.accel_group, ord(key), mask, gtk.ACCEL_VISIBLE)
+    parent.append ( item )
+    item.show()
+
+  def add_checkmenu_item ( self, parent, callback, label, data, key=None, mask=gtk.gdk.CONTROL_MASK, default=False ):
+    item = gtk.CheckMenuItem(label=label)
+    item.set_active ( default )
     item.connect ( "activate", callback, data )
     if key != None:
       item.add_accelerator("activate", self.accel_group, ord(key), mask, gtk.ACCEL_VISIBLE)
