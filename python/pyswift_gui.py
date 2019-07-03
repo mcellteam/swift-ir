@@ -1396,8 +1396,13 @@ def menu_callback ( widget, data=None ):
 
     elif command == "UnLimScroll":
 
-      zpa_original.max_zoom_count = 1000
-      zpa_original.min_zoom_count = -1500
+      # This is now a toggle
+      if zpa_original.max_zoom_count > 100:
+        zpa_original.max_zoom_count = 10
+        zpa_original.min_zoom_count = -15
+      else:
+        zpa_original.max_zoom_count = 1000
+        zpa_original.min_zoom_count = -1500
 
     elif command == "Refresh":
 
@@ -1590,7 +1595,7 @@ def main():
     zpa_original.add_menu_sep  ( file_menu )
     zpa_original.add_menu_item ( file_menu, menu_callback, "Set Destination",  ("SetDest", zpa_original ) )
     zpa_original.add_menu_sep  ( file_menu )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "List >",  ("List", zpa_original ) )
+    # zpa_original.add_menu_item ( file_menu, menu_callback, "List >",  ("List", zpa_original ) )
     zpa_original.add_menu_item ( file_menu, menu_callback, "Exit",       ("Exit", zpa_original ) )
 
   # Create an "Images" menu
@@ -1609,21 +1614,21 @@ def main():
   # Create a "Points" menu
   (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( points_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
+    zpa_original.add_checkmenu_item ( points_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
     zpa_original.add_menu_item ( points_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
 
   # Create a "Set" menu
   (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
-    zpa_original.add_menu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
+    # zpa_original.add_checkmenu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
+    zpa_original.add_checkmenu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
 
   # Create a "Show" menu
   (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( show_menu, menu_callback, "Spots",   ("Spots", zpa_original ) )
-    zpa_original.add_menu_item ( show_menu, menu_callback, "Affine",   ("Affine", zpa_original ) )
+    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Spots",   ("Spots", zpa_original ) )
+    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Affine",   ("Affine", zpa_original ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
