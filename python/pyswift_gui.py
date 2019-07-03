@@ -866,6 +866,8 @@ def run_alignment_callback ( align_all ):
       # Clear out the aligned images, but preserve the other images
       old_list = alignment_layer_list[i].image_list
       alignment_layer_list[i].image_list = []
+      # Insert a dummy empty image to align the subsequent images
+      alignment_layer_list[i].image_list.append ( annotated_image(None) )
       if len(old_list) > 0:
         alignment_layer_list[i].image_list.append ( old_list[0] )
         if len(old_list) > 1:
