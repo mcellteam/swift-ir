@@ -273,6 +273,14 @@ class annotated_image:
         self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
         # self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
 
+  def get_marker_points ( self, match=-1 ):
+    point_list = []
+    for item in self.graphics_items:
+      if item.marker:
+        if (match < 0) or (match==item.index):
+          point_list.append ( [item.x, item.y] )
+    return point_list
+
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
 
@@ -911,6 +919,22 @@ def run_alignment_callback ( align_all ):
     print ( "  base                     = " + str(alignment_layer_list[i].base_image_name) )
     print ( "  adjust                   = " + str(alignment_layer_list[j].base_image_name) )
     print ( "  skip                     = " + str(alignment_layer_list[i].skip) )
+    print ( "" )
+    print ( "  Image List for Layer " + str(i) + ":" )
+    im_num = 1
+    for ann_im in alignment_layer_list[i].image_list:
+      print ( "     Image " + str(im_num) + " is " + str(ann_im.file_name) + " and has " + str(len(ann_im.get_marker_points())) + " total marker points" )
+      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(0))) + " marker points for index 0 (to next) : " + str(ann_im.get_marker_points(0)) )
+      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(1))) + " marker points for index 1 (from previous) : " + str(ann_im.get_marker_points(1)) )
+      im_num += 1
+    print ( "  Image List for Layer " + str(j) + ":" )
+    im_num = 1
+    for ann_im in alignment_layer_list[j].image_list:
+      print ( "     Image " + str(im_num) + " is " + str(ann_im.file_name) + " and has " + str(len(ann_im.get_marker_points())) + " total marker points" )
+      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(0))) + " marker points for index 0 (to next) : " + str(ann_im.get_marker_points(0)) )
+      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(1))) + " marker points for index 1 (from previous) : " + str(ann_im.get_marker_points(1)) )
+
+      im_num += 1
     '''
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
