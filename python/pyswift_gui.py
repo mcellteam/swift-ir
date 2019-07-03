@@ -848,7 +848,8 @@ def run_alignment_callback ( align_all ):
     dest_err_dialog.destroy()
     return
 
-  # Do it the new way
+  # Create a list of alignment pairs accounting for skips, start point, and number to align
+
   align_pairs = []  # List of images to align with each other, a repeated index means copy directly to the output (a "golden section")
   last_ref = -1
   for i in range(len(alignment_layer_list)):
@@ -860,7 +861,7 @@ def run_alignment_callback ( align_all ):
         # There was a previously unskipped image and this image is unskipped
         # Therefore, add this pair to the list
         align_pairs.append ( [last_ref, i] )
-      # This unskipped image will always become the last unskipped
+      # This unskipped image will always become the last unskipped (reference) for next unskipped
       last_ref = i
     else:
       # Clear out the aligned images, but preserve the other images
@@ -910,6 +911,7 @@ def run_alignment_callback ( align_all ):
     print ( "  base                     = " + str(alignment_layer_list[i].base_image_name) )
     print ( "  adjust                   = " + str(alignment_layer_list[j].base_image_name) )
     print ( "  skip                     = " + str(alignment_layer_list[i].skip) )
+    '''
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
     print ( "  translation addx         = " + str(alignment_layer_list[i].trans_addx) )
@@ -923,6 +925,7 @@ def run_alignment_callback ( align_all ):
     print ( "  bias enabled             = " + str(alignment_layer_list[i].bias_enabled) )
     print ( "  bias dx                  = " + str(alignment_layer_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(alignment_layer_list[i].bias_dy) )
+    '''
 
   # Perform the actual alignment
   for apair in align_pairs:
@@ -1601,13 +1604,17 @@ def main():
     zpa_original.add_menu_sep  ( image_menu )
     zpa_original.add_menu_item ( image_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
 
+  # Create a "Points" menu
+  (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
+  if True: # An easy way to indent and still be legal Python
+    zpa_original.add_menu_item ( points_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
+    zpa_original.add_menu_item ( points_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
+
   # Create a "Set" menu
   (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
   if True: # An easy way to indent and still be legal Python
     zpa_original.add_menu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
-    zpa_original.add_menu_item ( set_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
-    zpa_original.add_menu_item ( set_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
 
   # Create a "Show" menu
@@ -1629,6 +1636,7 @@ def main():
   # Append the menus to the menu bar itself
   menu_bar.append ( file_item )
   menu_bar.append ( image_item )
+  menu_bar.append ( points_item )
   menu_bar.append ( set_item )
   menu_bar.append ( show_item )
   menu_bar.append ( help_item )
