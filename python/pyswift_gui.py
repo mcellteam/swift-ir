@@ -283,7 +283,7 @@ class alignment_layer:
   def __init__ ( self, base=None ):
     print ( "Constructing new alignment_layer with base " + str(base) )
     self.base_image_name = base
-    self.afm = None
+    self.align_proc = None
 
     # This holds a single annotated image
     self.base_annotated_image = None
@@ -923,36 +923,39 @@ def run_alignment_callback ( align_all ):
     print ( "  bias dy                  = " + str(alignment_layer_list[i].bias_dy) )
 
   # Perform the actual alignment
-  global_afm = None
   for apair in align_pairs:
     i = apair[0] # Reference
     j = apair[1] # Current moving
     print ( "Clearing image list for layer " + str(j) )
     alignment_layer_list[j].image_list = []
 
-    # alignment_layer_list[j].afm = global_afm
-
     annotated_img = None
     if i == j:
+      # This case (i==j) means make a copy of the original in the destination location
       print ( "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
       shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
+
+      # Create a new identity transform for this layer even though it's not otherwise needed
+      alignment_layer_list[i].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
+
+      # Put the proper images into the proper window slots
       alignment_layer_list[j].image_list.append ( annotated_image(None) )
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
+
     else:
+      # Align the image at index j with the reference at index i
+      print (    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
+      prev_afm = alignment_layer_list[i].align_proc.cumulative_afm
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, prev_afm )
+      alignment_layer_list[j].align_proc.align()
+      recipe = alignment_layer_list[j].align_proc.recipe
+      new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
+
+      # Put the proper images into the proper window slots
       alignment_layer_list[j].image_list.append ( alignment_layer_list[i].base_annotated_image )
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
 
-      print (    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
-      align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, global_afm )
-      align_proc.align()
-      global_afm = align_proc.cumulative_afm
-      recipe = align_proc.recipe
-
-      # global_afm,recipe = align_swiftir.align_images (    alignment_layer_list[i].base_image_name,         alignment_layer_list[j].base_image_name,         destination_path, global_afm )
-      #if alignment_layer_list[i-1]
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name)
       annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
@@ -1055,6 +1058,19 @@ def menu_callback ( widget, data=None ):
     elif command == "ToggleLegend":
       zpa.user_data['show_legend'] = not zpa.user_data['show_legend']
       zpa.queue_draw()
+    elif command == "Affine":
+
+      for i in range(len(alignment_layer_list)):
+
+        if type(alignment_layer_list[i]) == type(None):
+          print ( "  Layer " + str(i) + ": Alignment is None" )
+        else:
+          if type(alignment_layer_list[i].align_proc) == type(None):
+            print ( "  Layer " + str(i) + ": Alignment Process is None" )
+          else:
+            affine = alignment_layer_list[i].align_proc.cumulative_afm
+            print ( "  Layer " + str(i) + ": Affine is " + str(affine) )
+
     elif command == "Debug":
       print ( "Handy global items:" )
       print ( "  project_path" )
@@ -1521,6 +1537,7 @@ def main():
   (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
   if True: # An easy way to indent and still be legal Python
     zpa_original.add_menu_item ( show_menu, menu_callback, "Spots",   ("Spots", zpa_original ) )
+    zpa_original.add_menu_item ( show_menu, menu_callback, "Affine",   ("Affine", zpa_original ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
