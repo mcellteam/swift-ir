@@ -1425,7 +1425,9 @@ def menu_callback ( widget, data=None ):
         cursor = gtk.gdk.HAND2
       zpa.set_cursor ( cursor )
       zpa.queue_draw()
-      for w in extra_windows_list:
+      # Only change the first 2 windows:
+      for win_num in range(2):
+        w = extra_windows_list[win_num]
         w['win'].set_cursor ( cursor )
         w['drawing_area'].queue_draw()
 
