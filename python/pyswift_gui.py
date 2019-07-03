@@ -677,11 +677,11 @@ class zoom_window ( app_window.zoom_pan_area ):
             color_index = 0
             for graphics_item in image_to_draw.graphics_items:
               if graphics_item.marker:
-                print ( "Drawing a marker with index " + str(graphics_item.index) + ", in window " + str(self.window_index) )
                 if graphics_item.index == self.window_index:
                   # Only draw when they match
                   color_index += 1
                   graphics_item.set_color_from_index ( color_index )
+                  graphics_item.draw ( zpa, drawing_area, self.pangolayout )
               else:
                 graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
@@ -1410,8 +1410,19 @@ def menu_callback ( widget, data=None ):
       for w in extra_windows_list:
         w['win'].set_cursor ( cursor )
         w['drawing_area'].queue_draw()
-        # Only need to set the first one since the others won't use this.
-        break
+
+    elif command == "PtClear":
+      print ( "Clearing all alignment points" )
+      global alignment_layer_list
+      global alignment_layer_index
+      al = alignment_layer_list[alignment_layer_index]
+      for im in al.image_list:
+        graphics_items = im.graphics_items
+        non_marker_items = [ gi for gi in graphics_items if gi.marker == False ]
+        im.graphics_items = non_marker_items
+      zpa.queue_draw()
+      for w in extra_windows_list:
+        w['drawing_area'].queue_draw()
 
     elif command == "Exit":
       get_exit = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Exit?")
@@ -1560,7 +1571,8 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa_original.add_menu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
-    zpa_original.add_menu_item ( set_menu, menu_callback, "Pick Points",   ("PtMode", zpa_original ) )
+    zpa_original.add_menu_item ( set_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
+    zpa_original.add_menu_item ( set_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
 
   # Create a "Show" menu
