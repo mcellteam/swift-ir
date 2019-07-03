@@ -1052,14 +1052,22 @@ def menu_callback ( widget, data=None ):
     global extra_windows_list
 
     if command == "Fast":
+
       zpa.user_data['frame_delay'] = 0.01
+
     elif command == "Med":
+
       zpa.user_data['frame_delay'] = 0.1
+
     elif command == "Slow":
+
       zpa.user_data['frame_delay'] = 1.0
+
     elif command == "ToggleLegend":
+
       zpa.user_data['show_legend'] = not zpa.user_data['show_legend']
       zpa.queue_draw()
+
     elif command == "Affine":
 
       for i in range(len(alignment_layer_list)):
@@ -1074,6 +1082,7 @@ def menu_callback ( widget, data=None ):
             print ( "  Layer " + str(i) + ": Affine is " + str(affine) )
 
     elif command == "Debug":
+
       print ( "Handy global items:" )
       print ( "  project_path" )
       print ( "  project_file_name" )
@@ -1094,6 +1103,7 @@ def menu_callback ( widget, data=None ):
       zpa.queue_draw()
 
     elif command == "SetDest":
+
       file_chooser = gtk.FileChooserDialog(title="Select Destination Directory", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
 		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
       file_chooser.set_select_multiple(False)
@@ -1335,7 +1345,6 @@ def menu_callback ( widget, data=None ):
       #global project_path
       #project_path = None
 
-
     elif command == "ClearAll":
 
       clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
@@ -1378,27 +1387,33 @@ def menu_callback ( widget, data=None ):
         clear_out.destroy()
 
     elif command == "LimScroll":
+
       zpa_original.max_zoom_count = 10
       zpa_original.min_zoom_count = -15
 
     elif command == "UnLimScroll":
+
       zpa_original.max_zoom_count = 1000
       zpa_original.min_zoom_count = -1500
 
     elif command == "Refresh":
+
       refresh_all_images()
 
     elif command == "ImCenter":
+
       print ( "Centering images" )
       center_all_images()
 
     elif command == "Spots":
+
       global show_spots
       show_spots = not show_spots
       print ( "Showing Spots is now " + str(show_spots) + ". Re-align to see the effect." )
       zpa.queue_draw()
 
     elif command == "PtMode":
+
       global point_mode
       point_mode = not point_mode
       print ( "Point mode is now " + str(point_mode) )
@@ -1412,19 +1427,36 @@ def menu_callback ( widget, data=None ):
         w['drawing_area'].queue_draw()
 
     elif command == "PtClear":
-      print ( "Clearing all alignment points" )
+
+      print ( "Clearing all alignment points in this layer" )
       global alignment_layer_list
       global alignment_layer_index
       al = alignment_layer_list[alignment_layer_index]
-      for im in al.image_list:
+      for im_index in range(len(al.image_list)):
+        im = al.image_list[im_index]
         graphics_items = im.graphics_items
-        non_marker_items = [ gi for gi in graphics_items if gi.marker == False ]
+        # non_marker_items = [ gi for gi in graphics_items if (gi.marker == False) ]
+        non_marker_items = []
+        for gi in graphics_items:
+          if gi.marker == False:
+            # This is not a marker ... so keep it
+            non_marker_items.append ( gi )
+          else:
+            # This is a marker, but see if it's for this window
+            if gi.index == im_index:
+              # This marker matched this window, so don't keep it
+              pass
+            else:
+              # This marker didn't match the window, so keep it
+              non_marker_items.append ( gi )
+        # Replace the list of graphics items with the reduced list:
         im.graphics_items = non_marker_items
       zpa.queue_draw()
       for w in extra_windows_list:
         w['drawing_area'].queue_draw()
 
     elif command == "Exit":
+
       get_exit = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Exit?")
       response = get_exit.run()
       if response == gtk.RESPONSE_OK:
@@ -1432,8 +1464,11 @@ def menu_callback ( widget, data=None ):
         get_exit.destroy()
         exit()
       get_exit.destroy()
+
     else:
+
       print ( "Menu option \"" + command + "\" is not handled yet." )
+
   return True
 
 def center_all_images():
