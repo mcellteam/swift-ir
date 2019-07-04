@@ -375,7 +375,15 @@ class annotated_image:
         self.image = None
       if type(self.file_name) != type(None):
         self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
-        # self.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(100*random.random()), coordsys='p', color=[1, .5, .5]) )
+
+  def use_image_from ( self, other_annotated_image ):
+    self.file_name = other_annotated_image.file_name
+    self.image = other_annotated_image.image
+    if type(self.file_name) != type(None):
+      self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+
+  def set_role ( self, role ):
+    self.role = role
 
   def get_marker_points ( self, match=-1 ):
     point_list = []
@@ -611,6 +619,8 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
     # print ( "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
+    img_role = ""
+
     pix_buf = None
     if len(alignment_layer_list) > 0:
       if self.window_index < 0:
@@ -624,6 +634,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
           print ( "Redrawing window " + str(self.window_index) + " with role: " + str(self.role) )
           if self.window_index < len(im_list):
             print ( "  Containing image with role: " + im_list[self.window_index].role )
+            img_role = im_list[self.window_index].role
             pix_buf = im_list[self.window_index].image
 
     #if zpa.user_data['image_frame']:
@@ -813,6 +824,12 @@ class zoom_panel ( app_window.zoom_pan_area ):
     drawable.draw_line ( gc, 0, 0, 0, height )
     drawable.draw_line ( gc, width-1, 0, width-1, height )
 
+    # Draw this window's role
+    gc.foreground = colormap.alloc_color(32767,32767,32767)
+
+    self.pangolayout.set_text ( str(self.role) + " / " + img_role )
+    drawable.draw_layout ( gc, 10, 0, self.pangolayout )
+
     # Restore the previous color
     gc.foreground = old_fg
     return False
@@ -953,6 +970,7 @@ def run_alignment_callback ( align_all ):
   global alignment_layer_index
   global destination_path
   global gui_fields
+  global panel_list
 
   store_fields_into_current_layer()
 
@@ -961,6 +979,53 @@ def run_alignment_callback ( align_all ):
     response = dest_err_dialog.run()
     dest_err_dialog.destroy()
     return
+
+  # Set up the preferred panels as needed
+  ref_panel = None
+  base_panel = None
+  aligned_panel = None
+
+  # Remove all windows to force desired arrangement
+  #print ("Note: deleting all windows to force preferred")
+  #while len(panel_list) > 0:
+  #  rem_panel_callback ( zpa_original )
+
+
+  # Start by assigning any panels with roles already set
+  for panel in panel_list:
+    if panel.role == 'ref':
+      ref_panel = panel
+    if panel.role == 'base':
+      base_panel = panel
+    if panel.role == 'aligned':
+      aligned_panel = panel
+
+  # Assign any empty panels if needed
+  for panel in panel_list:
+    if panel.role == '':
+      if ref_panel == None:
+        panel.role = 'ref'
+        ref_panel = panel
+      elif base_panel == None:
+        panel.role = 'base'
+        base_panel = panel
+      elif aligned_panel == None:
+        panel.role = 'aligned'
+        aligned_panel = panel
+
+  # Finally add panels as needed
+  if ref_panel == None:
+    add_panel_callback ( zpa_original, 'ref' )
+  if base_panel == None:
+    add_panel_callback ( zpa_original, 'base' )
+  if aligned_panel == None:
+    add_panel_callback ( zpa_original, 'aligned' )
+
+  # The previous logic hasn't worked, so force all panels to be as desired
+  forced_panel_roles = ['ref', 'base', 'aligned']
+  for i in range(len(panel_list)):
+    panel_list[i].role = forced_panel_roles[i]
+
 
   # Create a list of alignment pairs accounting for skips, start point, and number to align
 
@@ -1073,14 +1138,32 @@ def run_alignment_callback ( align_all ):
       # Create a new identity transform for this layer even though it's not otherwise needed
       alignment_layer_list[i].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
 
-      # Put the proper images into the proper window slots
-      alignment_layer_list[j].image_list.append ( annotated_image(None, role="") )
-      alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
-      alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
 
-      alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="")
-      alignment_layer_list[j].image_dict['base'] = alignment_layer_list[j].base_annotated_image
-      alignment_layer_list[j].image_dict['aligned'] = alignment_layer_list[j].base_annotated_image
+      '''
+      class annotated_image:
+        def __init__ ( self, file_name=None, role="" ):
+        def use_image_from ( self, other_annotated_image ):
+        def set_role ( self, role ):
+      '''
+
+      # Put the proper images into the proper window slots
+      alignment_layer_list[j].image_list.append ( annotated_image(None, role="ref") )
+      base_role_image = annotated_image(None, role="base")
+      base_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
+      alignment_layer_list[j].image_list.append ( base_role_image )
+      aligned_role_image = annotated_image(None, role="aligned")
+      aligned_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
+      alignment_layer_list[j].image_list.append ( aligned_role_image )
+
+      alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
+
+      base_role_image = annotated_image(None, role="base")
+      base_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
+      alignment_layer_list[j].image_dict['base'] = base_role_image
+
+      aligned_role_image = annotated_image(None, role="aligned")
+      aligned_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
+      alignment_layer_list[j].image_dict['aligned'] = aligned_role_image
 
     else:
       # Align the image at index j with the reference at index i
@@ -1092,6 +1175,7 @@ def run_alignment_callback ( align_all ):
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
 
       # Put the proper images into the proper window slots
+      alignment_layer_list[i].base_annotated_image.set_role ( "ref" )
       alignment_layer_list[j].image_list.append ( alignment_layer_list[i].base_annotated_image )
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
 
