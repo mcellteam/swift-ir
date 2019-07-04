@@ -51,6 +51,109 @@ show_spots = False
 global point_mode
 point_mode = False
 
+global point_cursor
+point_cursor = gtk.gdk.CROSSHAIR
+
+
+''' Available Cursors - some with descriptions
+
+  DOTBOX - box with midpoint ticks indicating center
+  TARGET - box with midpoint ticks indicating center (same as DOTBOX?)
+  CROSS - thin +
+  CROSSHAIR - thin +
+  CROSS_REVERSE - thin +
+  DIAMOND_CROSS - thin +
+  PLUS - thick +
+  X_CURSOR - thick X
+  IRON_CROSS - might show center point somewhat
+  DOT - white circle with black fill
+  HAND2 - pointing
+  HAND1 - pointing
+  CIRCLE - Normal arrow with a small circle near shaft
+  CENTER_PTR - Arrow pointing up
+  STAR - 5 point star
+
+  ARROW
+  BASED_ARROW_DOWN
+  BASED_ARROW_UP
+  BOAT
+  BOGOSITY
+  BOTTOM_LEFT_CORNER
+  BOTTOM_RIGHT_CORNER
+  BOTTOM_SIDE
+  BOTTOM_TEE
+  BOX_SPIRAL
+  CLOCK
+  COFFEE_MUG
+  DOUBLE_ARROW
+  DRAFT_LARGE
+  DRAFT_SMALL
+  DRAPED_BOX
+  EXCHANGE
+  FLEUR
+  GOBBLER
+  GUMBY
+  HEART
+  ICON
+  LEFT_PTR
+  LEFT_SIDE
+  LEFT_TEE
+  LEFTBUTTON
+  LL_ANGLE
+  LR_ANGLE
+  MAN
+  MIDDLEBUTTON
+  MOUSE
+  PENCIL
+  PIRATE
+  QUESTION_ARROW
+  RIGHT_PTR
+  RIGHT_SIDE
+  RIGHT_TEE
+  RIGHTBUTTON
+  RTL_LOGO
+  SAILBOAT
+  SB_DOWN_ARROW
+  SB_H_DOUBLE_ARROW
+  SB_LEFT_ARROW
+  SB_RIGHT_ARROW
+  SB_UP_ARROW
+  SB_V_DOUBLE_ARROW
+  SHUTTLE
+  SIZING
+  SPIDER
+  SPRAYCAN
+  TCROSS
+  TOP_LEFT_ARROW
+  TOP_LEFT_CORNER
+  TOP_RIGHT_CORNER
+  TOP_SIDE
+  TOP_TEE
+  TREK
+  UL_ANGLE
+  UMBRELLA
+  UR_ANGLE
+  WATCH
+  XTERM
+  CURSOR_IS_PIXMAP
+'''
+
+global cursor_options
+cursor_options = [
+    ["Cursor_CROSSHAIR", gtk.gdk.CROSSHAIR],
+    ["Cursor_TARGET",    gtk.gdk.TARGET],
+    ["Cursor_X_CURSOR",  gtk.gdk.X_CURSOR],
+    ["Cursor_PLUS",      gtk.gdk.PLUS],
+    ["Cursor_DOTBOX",    gtk.gdk.DOTBOX],
+    ["Cursor_CROSS",     gtk.gdk.CROSS],
+    ["Cursor_HAND1",     gtk.gdk.HAND1],
+    ["Cursor_HAND2",     gtk.gdk.HAND2],
+    ["Cursor_ARROW",     gtk.gdk.ARROW]
+  ]
+global cursor_option_seps
+cursor_option_seps = [2, 5, 7]
+
+
 class gui_fields_class:
   ''' This class holds GUI widgets and not the persistent data. '''
   def __init__(self):
@@ -1078,6 +1181,9 @@ def menu_callback ( widget, data=None ):
     global alignment_layer_index
     global extra_windows_list
 
+    global point_cursor
+    global cursor_options
+
     if command == "Fast":
 
       zpa.user_data['frame_delay'] = 0.01
@@ -1444,14 +1550,24 @@ def menu_callback ( widget, data=None ):
       print ( "Showing Spots is now " + str(show_spots) + ". Re-align to see the effect." )
       zpa.queue_draw()
 
+    elif command in [ x[0] for x in cursor_options ]:
+      print ( "Got a cursor cursor change command: " + command )
+      cmd_index = [ x[0] for x in cursor_options ].index(command)
+      point_cursor = cursor_options[cmd_index][1]
+      if point_mode:
+        cursor = point_cursor
+        zpa.set_cursor ( cursor )
+        zpa.queue_draw()
+
     elif command == "PtMode":
 
       global point_mode
+
       point_mode = not point_mode
       print ( "Point mode is now " + str(point_mode) )
       cursor = gtk.gdk.ARROW
       if point_mode:
-        cursor = gtk.gdk.HAND2
+        cursor = point_cursor
       zpa.set_cursor ( cursor )
       zpa.queue_draw()
       # Only change the first 2 windows:
@@ -1609,6 +1725,9 @@ def main():
   menu_bar = gtk.MenuBar()
   main_win_vbox.pack_start(menu_bar, expand=False, fill=False, padding=0)
 
+  global cursor_options
+  global cursor_option_seps
+
   # Create a "File" menu
   (file_menu, file_item) = zpa_original.add_menu ( "_File" )
   if True: # An easy way to indent and still be legal Python
@@ -1647,6 +1766,22 @@ def main():
     # zpa_original.add_checkmenu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
     zpa_original.add_checkmenu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
     zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
+
+    zpa_original.add_menu_sep  ( set_menu )
+    # Create a "Set/Cursor" submenu
+    # This didn't work ...
+    #  (cursor_menu, set_item) = set_menu.add_menu_item ( "_Cursor" )
+    #  if True: # An easy way to indent and still be legal Python
+    # So put in the main menu for now:
+    # Add cursors from the "cursor_options" array
+    cursor_index = 0
+    for cursor_pair in cursor_options:
+      cursor_option_string = cursor_pair[0]
+      print ( "Got a cursor key: " + cursor_option_string )
+      zpa_original.add_menu_item ( set_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ) )
+      if cursor_index in cursor_option_seps:
+        zpa_original.add_menu_sep  ( set_menu )
+      cursor_index += 1
 
   # Create a "Show" menu
   (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
@@ -1945,7 +2080,7 @@ def main():
   # Show the main window
   window.show()
 
-  # This is now for point picking mode:  zpa_original.set_cursor ( gtk.gdk.HAND2 )
+  # This is now only for point picking mode:  zpa_original.set_cursor ( gtk.gdk.HAND2 )
 
   gtk.idle_add ( background_callback, zpa_original )
 
