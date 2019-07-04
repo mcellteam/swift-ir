@@ -474,7 +474,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
   '''zoom_panel - provide a drawing area that can be zoomed and panned.'''
   global gui_fields
 
-  def __init__ ( self, window, win_width, win_height, name="" ):
+  def __init__ ( self, window, win_width, win_height, role="" ):
     # The "window_index" is intended to assign one of the layer's images to this window.
     # When window_index is >= 0, it will be an index into the "image_list" in each layer:
     #   alignment_layer_list[alignment_layer_index].image_list[window_index]
@@ -485,10 +485,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
     self.window_index = 0
 
     self.panel_dict = {}
-    self.role = ""
+    self.role = role
 
     # Call the constructor for the parent app_window.zoom_pan_area:
-    app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
+    app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, role )
 
     # Connect the scroll event for the drawing area (from zoom_pan_area) to a local function:
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
