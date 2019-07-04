@@ -20,9 +20,6 @@ image_hbox = None
 global zpa_original
 zpa_original = None
 
-global extra_windows_list
-extra_windows_list = []
-
 global panel_list
 panel_list = []
 
@@ -476,6 +473,7 @@ def store_current_layer_into_fields():
 class zoom_panel ( app_window.zoom_pan_area ):
   '''zoom_panel - provide a drawing area that can be zoomed and panned.'''
   global gui_fields
+  global panel_list
 
   def __init__ ( self, window, win_width, win_height, role="" ):
     # The "window_index" is intended to assign one of the layer's images to this window.
@@ -511,20 +509,21 @@ class zoom_panel ( app_window.zoom_pan_area ):
       #  # Add a point to the original
       #  print ( "Adding a marker point to the original image" )
       #  alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
-      if len(extra_windows_list) > 1:
-        if self == extra_windows_list[0]['panel']:
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      if len(panel_list) > 1:
+        if self == panel_list[0]:
           # Add a point to the first
           print ( "Adding a marker point to the align image" )
           alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
-        if self == extra_windows_list[1]['panel']:
+        if self == panel_list[1]:
           # Add a point to the second
           print ( "Adding a marker point to the align image" )
           alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       '''
-      for w in extra_windows_list:
-        w['panel'].set_cursor ( cursor )
-        w['drawing_area'].queue_draw()'''
+      for p in panel_list:
+        p.set_cursor ( cursor )
+        p.drawing_area.queue_draw()
+      '''
 
     # print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
@@ -546,7 +545,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
     ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
-    global extra_windows_list
+
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
       # Use shifted scroll wheel to zoom the image size
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
@@ -578,8 +577,8 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
       # Draw the windows
       zpa_original.queue_draw()
-      for win_and_area in extra_windows_list:
-        win_and_area['panel'].queue_draw()
+      for p in panel_list:
+        p.queue_draw()
       return True
 
   def mouse_motion_callback ( self, canvas, event, zpa ):
@@ -877,16 +876,15 @@ def background_callback ( zpa ):
   return True
 
 
-def add_window_callback ( zpa, role="" ):
+def add_panel_callback ( zpa, role="" ):
   print ( "Add a Window" )
   global image_hbox
-  global extra_windows_list
   global panel_list
   global window
 
 
   new_panel = zoom_panel(window,global_win_width,global_win_height,role=role)
-  new_panel.window_index = len(extra_windows_list)
+  new_panel.window_index = len(panel_list)
 
   new_panel.user_data = {
                     'image_frame'        : None,
@@ -924,28 +922,24 @@ def add_window_callback ( zpa, role="" ):
                                    | gtk.gdk.POINTER_MOTION_MASK
                                    | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
-  win_and_area = { 'panel':new_panel, 'drawing_area':new_panel_drawing_area }
-  extra_windows_list.append ( win_and_area )
   panel_list.append ( new_panel )
-
   return True
 
 
-def rem_window_callback ( zpa ):
+def rem_panel_callback ( zpa ):
   print ( "Remove a Window" )
   global image_hbox
-  global extra_windows_list
   global window
+  global panel_list
 
-  if len(extra_windows_list) > 1:
-    image_hbox.remove(extra_windows_list[-1]['drawing_area'])
-    extra_windows_list.pop(-1)
+  if len(panel_list) > 1:
+    image_hbox.remove(panel_list[-1].drawing_area)
+    panel_list.pop ( -1 )
     return True
 
   return False
 
 
-# import pyswim
 import thread
 
 import align_swiftir
@@ -1194,7 +1188,7 @@ def menu_callback ( widget, data=None ):
     global zpa_original
     global alignment_layer_list
     global alignment_layer_index
-    global extra_windows_list
+    global panel_list
 
     global point_cursor
     global cursor_options
@@ -1238,7 +1232,6 @@ def menu_callback ( widget, data=None ):
       print ( "  zpa_original" )
       print ( "  alignment_layer_list" )
       print ( "  alignment_layer_index" )
-      print ( "  extra_windows_list" )
       print ( "  show_spots" )
       print ( "  point_mode" )
       print ( "Handy local items:" )
@@ -1502,8 +1495,8 @@ def menu_callback ( widget, data=None ):
         alignment_layer_index = 0
         alignment_layer_list = []
       zpa_original.queue_draw()
-      for w in extra_windows_list:
-        w['drawing_area'].queue_draw()
+      for p in panel_list:
+        p.queue_draw()
       clear_all.destroy()
 
     elif command == "ClearOut":
@@ -1530,8 +1523,8 @@ def menu_callback ( widget, data=None ):
             al.image_list = []
             al.image_list.append ( al.base_annotated_image )
           zpa_original.queue_draw()
-          for w in extra_windows_list:
-            w['drawing_area'].queue_draw()
+          for p in panel_list:
+            p.queue_draw()
         clear_out.destroy()
 
     elif command == "LimScroll":
@@ -1586,10 +1579,11 @@ def menu_callback ( widget, data=None ):
       zpa.set_cursor ( cursor )
       zpa.queue_draw()
       # Only change the first 2 windows:
-      for win_num in range(2):
-        w = extra_windows_list[win_num]
-        w['panel'].set_cursor ( cursor )
-        w['drawing_area'].queue_draw()
+      for panel_num in range(2):
+        p = panel_list[panel_num]
+        p.set_cursor ( cursor )
+        p.drawing_area.queue_draw()
+
 
     elif command == "PtClear":
 
@@ -1617,8 +1611,8 @@ def menu_callback ( widget, data=None ):
         # Replace the list of graphics items with the reduced list:
         im.graphics_items = non_marker_items
       zpa.queue_draw()
-      for w in extra_windows_list:
-        w['drawing_area'].queue_draw()
+      for p in panel_list:
+        p.drawing_area.queue_draw()
 
     elif command == "Exit":
 
@@ -1637,6 +1631,8 @@ def menu_callback ( widget, data=None ):
   return True
 
 def center_all_images():
+
+  global panel_list
 
   if len(alignment_layer_list) > 0:
     # Start with the original image
@@ -1658,43 +1654,43 @@ def center_all_images():
       zpa_original.queue_draw()
 
     # Do the remaining windows
-    for win_and_area in extra_windows_list:
-      zpa_next = win_and_area['panel']
-      win_size = zpa_next.drawing_area.window.get_size()
+    for panel in panel_list:
+      win_size = panel.drawing_area.window.get_size()
       pix_buf = None
-      if zpa_next.window_index < 0:
+      if panel.window_index < 0:
         # Draw nothing
         #pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
         pass
       else:
         # Draw one of the extra images
-        pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_next.window_index].image
+        pix_buf = alignment_layer_list[alignment_layer_index].image_list[panel.window_index].image
       if not (pix_buf is None):
         img_w = pix_buf.get_width()
         img_h = pix_buf.get_height()
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        zpa_next.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
-        zpa_next.queue_draw()
+        panel.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+        panel.queue_draw()
 
 def refresh_all_images():
-  # Determine how many windows are needed and create them as needed
-  max_extra_images = 0
+  # Determine how many panels are needed and create them as needed
+  global panel_list
+  max_extra_panels = 0
   for a in alignment_layer_list:
     if len(a.image_list) > 0:
-      max_extra_images = max(max_extra_images, len(a.image_list))
-  if max_extra_images < 1:
+      max_extra_panels = max(max_extra_panels, len(a.image_list))
+  if max_extra_panels < 1:
     # Must always keep one window
-    max_extra_images = 1
-  print ( "Max extra = " + str(max_extra_images) )
-  num_cur_extra_images = len(extra_windows_list)
-  if num_cur_extra_images > max_extra_images:
+    max_extra_panels = 1
+  print ( "Max extra = " + str(max_extra_panels) )
+  num_cur_extra_panels = len(panel_list)
+  if num_cur_extra_panels > max_extra_panels:
     # Remove the difference:
-    for i in range(num_cur_extra_images - max_extra_images):
-      rem_window_callback ( zpa_original )
-  elif num_cur_extra_images < max_extra_images:
+    for i in range(num_cur_extra_panels - max_extra_panels):
+      rem_panel_callback ( zpa_original )
+  elif num_cur_extra_panels < max_extra_panels:
     # Add the difference
-    for i in range(max_extra_images - num_cur_extra_images):
-      add_window_callback ( zpa_original )
+    for i in range(max_extra_panels - num_cur_extra_panels):
+      add_panel_callback ( zpa_original )
 
 
 # Create the window and connect the events
@@ -1830,14 +1826,13 @@ def main():
   # Create the horizontal image box
   global image_hbox
   image_hbox = gtk.HBox ( True, 0 )
-  global extra_windows_list
-  extra_windows_list = []
+  global panel_list
+  panel_list = []
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   original_drawing_area = zpa_original.get_drawing_area()
 
-  win_and_area = { 'panel':zpa_original, 'drawing_area':original_drawing_area }
-  extra_windows_list.append ( win_and_area )
+  panel_list.append ( zpa_original )
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
   image_hbox.pack_start(original_drawing_area, True, True, 0)
@@ -2086,12 +2081,12 @@ def main():
 
   button = gtk.Button("+")
   controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", add_window_callback, zpa_original )
+  button.connect_object ( "clicked", add_panel_callback, zpa_original )
   button.show()
 
   button = gtk.Button("-")
   controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", rem_window_callback, zpa_original )
+  button.connect_object ( "clicked", rem_panel_callback, zpa_original )
   button.show()
 
   # Show the main window
