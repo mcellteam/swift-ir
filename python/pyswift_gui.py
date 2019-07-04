@@ -470,8 +470,8 @@ def store_current_layer_into_fields():
 
 
 
-class zoom_window ( app_window.zoom_pan_area ):
-  '''zoom_window - provide a drawing area that can be zoomed and panned.'''
+class zoom_panel ( app_window.zoom_pan_area ):
+  '''zoom_panel - provide a drawing area that can be zoomed and panned.'''
   global gui_fields
 
   def __init__ ( self, window, win_width, win_height, name="" ):
@@ -887,7 +887,7 @@ def add_window_callback ( zpa ):
   global extra_windows_list
   global window
 
-  new_win = zoom_window(window,global_win_width,global_win_height,"Python GTK version of SWiFT-GUI")
+  new_win = zoom_panel(window,global_win_width,global_win_height,"Added Panel")
   new_win.window_index = len(extra_windows_list)
 
   new_win.user_data = {
@@ -1701,7 +1701,7 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = zoom_window(window,global_win_width,global_win_height,"Python GTK version of SWiFT-GUI")
+  zpa_original = zoom_panel(window,global_win_width,global_win_height,"Original Panel")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
