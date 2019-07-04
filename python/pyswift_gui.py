@@ -23,6 +23,9 @@ zpa_original = None
 global extra_windows_list
 extra_windows_list = []
 
+global panel_list
+panel_list = []
+
 global global_win_width
 global global_win_height
 global_win_width = 500
@@ -509,18 +512,18 @@ class zoom_panel ( app_window.zoom_pan_area ):
       #  print ( "Adding a marker point to the original image" )
       #  alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       if len(extra_windows_list) > 1:
-        if self == extra_windows_list[0]['win']:
+        if self == extra_windows_list[0]['panel']:
           # Add a point to the first
           print ( "Adding a marker point to the align image" )
           alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
-        if self == extra_windows_list[1]['win']:
+        if self == extra_windows_list[1]['panel']:
           # Add a point to the second
           print ( "Adding a marker point to the align image" )
           alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       '''
       for w in extra_windows_list:
-        w['win'].set_cursor ( cursor )
+        w['panel'].set_cursor ( cursor )
         w['drawing_area'].queue_draw()'''
 
     # print ( "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
@@ -576,7 +579,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
       # Draw the windows
       zpa_original.queue_draw()
       for win_and_area in extra_windows_list:
-        win_and_area['win'].queue_draw()
+        win_and_area['panel'].queue_draw()
       return True
 
   def mouse_motion_callback ( self, canvas, event, zpa ):
@@ -878,12 +881,14 @@ def add_window_callback ( zpa, role="" ):
   print ( "Add a Window" )
   global image_hbox
   global extra_windows_list
+  global panel_list
   global window
 
-  new_win = zoom_panel(window,global_win_width,global_win_height,role=role)
-  new_win.window_index = len(extra_windows_list)
 
-  new_win.user_data = {
+  new_panel = zoom_panel(window,global_win_width,global_win_height,role=role)
+  new_panel.window_index = len(extra_windows_list)
+
+  new_panel.user_data = {
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
@@ -896,31 +901,32 @@ def add_window_callback ( zpa, role="" ):
 
   # Set the relationships between "user" coordinates and "screen" coordinates
 
-  new_win.set_x_scale ( 0.0, 300, 100.0, 400 )
-  new_win.set_y_scale ( 0.0, 250 ,100.0, 350 )
+  new_panel.set_x_scale ( 0.0, 300, 100.0, 400 )
+  new_panel.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
-  new_win_drawing_area = new_win.get_drawing_area()
+  new_panel_drawing_area = new_panel.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
-  image_hbox.pack_start(new_win_drawing_area, True, True, 0)
+  image_hbox.pack_start(new_panel_drawing_area, True, True, 0)
 
-  new_win_drawing_area.show()
+  new_panel_drawing_area.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
-  new_win_drawing_area.connect ( "expose_event", new_win.expose_callback, new_win )
+  new_panel_drawing_area.connect ( "expose_event", new_panel.expose_callback, new_panel )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
   #  Other events can be set and handled by user code as well
-  new_win_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
+  new_panel_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
                                    | gtk.gdk.LEAVE_NOTIFY_MASK
                                    | gtk.gdk.BUTTON_PRESS_MASK
                                    | gtk.gdk.POINTER_MOTION_MASK
                                    | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
-  win_and_area = { "win":new_win, "drawing_area":new_win_drawing_area }
+  win_and_area = { 'panel':new_panel, 'drawing_area':new_panel_drawing_area }
   extra_windows_list.append ( win_and_area )
+  panel_list.append ( new_panel )
 
   return True
 
@@ -1582,7 +1588,7 @@ def menu_callback ( widget, data=None ):
       # Only change the first 2 windows:
       for win_num in range(2):
         w = extra_windows_list[win_num]
-        w['win'].set_cursor ( cursor )
+        w['panel'].set_cursor ( cursor )
         w['drawing_area'].queue_draw()
 
     elif command == "PtClear":
@@ -1653,7 +1659,7 @@ def center_all_images():
 
     # Do the remaining windows
     for win_and_area in extra_windows_list:
-      zpa_next = win_and_area['win']
+      zpa_next = win_and_area['panel']
       win_size = zpa_next.drawing_area.window.get_size()
       pix_buf = None
       if zpa_next.window_index < 0:
@@ -1705,6 +1711,9 @@ def main():
 
   global zpa_original
   zpa_original = zoom_panel(window,global_win_width,global_win_height,"base")
+
+  global panel_list
+  panel_list.append ( zpa_original )
 
   zpa_original.user_data = {
                     'image_frame'        : None,
@@ -1827,7 +1836,7 @@ def main():
   # The zoom/pan area has its own drawing area (that it zooms and pans)
   original_drawing_area = zpa_original.get_drawing_area()
 
-  win_and_area = { "win":zpa_original, "drawing_area":original_drawing_area }
+  win_and_area = { 'panel':zpa_original, 'drawing_area':original_drawing_area }
   extra_windows_list.append ( win_and_area )
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
