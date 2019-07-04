@@ -2106,4 +2106,13 @@ def main():
 
 
 if __name__ == '__main__':
+  import sys
+  if len(sys.argv) > 1:
+    for arg in sys.argv[1:]:
+      try:
+        s = int(arg)
+        global_win_width = global_win_height = s
+      except:
+        pass
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
   main()
