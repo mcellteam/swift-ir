@@ -25,8 +25,8 @@ extra_windows_list = []
 
 global global_win_width
 global global_win_height
-global_win_width = 800
-global_win_height = 800
+global_win_width = 500
+global_win_height = 500
 
 global alignment_layer_list
 alignment_layer_list = []
@@ -364,6 +364,7 @@ class annotated_image:
     self.file_name = file_name
     self.graphics_items = []
     self.image = None
+    self.role = ""
     if type(self.file_name) != type(None):
       try:
         self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
@@ -402,6 +403,8 @@ class alignment_layer:
     # This holds a list of annotated images to be stored and/or displayed.
     # The base image may be placed in this list as desired.
     self.image_list = []
+    # This holds the annotated images to be stored and/or displayed.
+    self.image_dict = {}
 
     # These are the parameters used for this layer
     self.trans_ww = 256
@@ -427,6 +430,7 @@ class alignment_layer:
 
     # Always initialize with the image (whether actual or None)
     self.image_list.append ( self.base_annotated_image )
+    self.image_dict['orig'] = self.base_annotated_image
 
 
 # These two global functions are handy for callbacks
@@ -479,6 +483,9 @@ class zoom_window ( app_window.zoom_pan_area ):
     # By default, new zoom windows will show the original image with 0.
 
     self.window_index = 0
+
+    self.panel_dict = {}
+    self.role = ""
 
     # Call the constructor for the parent app_window.zoom_pan_area:
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, name )
@@ -1777,7 +1784,6 @@ def main():
     cursor_index = 0
     for cursor_pair in cursor_options:
       cursor_option_string = cursor_pair[0]
-      print ( "Got a cursor key: " + cursor_option_string )
       zpa_original.add_menu_item ( set_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ) )
       if cursor_index in cursor_option_seps:
         zpa_original.add_menu_sep  ( set_menu )
