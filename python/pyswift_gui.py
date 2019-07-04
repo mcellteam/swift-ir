@@ -2098,7 +2098,7 @@ def main():
 
   # This is now only for point picking mode:  zpa_original.set_cursor ( gtk.gdk.HAND2 )
 
-  gtk.idle_add ( background_callback, zpa_original )
+  # gtk.idle_add ( background_callback, zpa_original )
 
   # Turn control over to GTK to run everything from here onward.
   gtk.main()
