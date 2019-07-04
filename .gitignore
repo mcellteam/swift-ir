@@ -24,4 +24,9 @@ png
 tiff
 gbm
 libraries
+*.jpg
+*.jpeg
+*.png
+*.pyc
+*.json
 
