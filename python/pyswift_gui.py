@@ -360,11 +360,11 @@ class graphic_text (graphic_primitive):
 class annotated_image:
   ''' An image with a series of drawing primitives defined in
       the pixel coordinates of the image. '''
-  def __init__ ( self, file_name=None ):
+  def __init__ ( self, file_name=None, role="" ):
     self.file_name = file_name
     self.graphics_items = []
     self.image = None
-    self.role = ""
+    self.role = role
     if type(self.file_name) != type(None):
       try:
         self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
@@ -423,14 +423,14 @@ class alignment_layer:
     self.bias_dy = 0
 
     try:
-      self.base_annotated_image = annotated_image ( self.base_image_name )
+      self.base_annotated_image = annotated_image ( self.base_image_name, role="base" )
       # By default, the first (and only) image in the list will be the base image
     except:
-      self.base_annotated_image = annotated_image ( None )
+      self.base_annotated_image = annotated_image ( None, role="base" )
 
     # Always initialize with the image (whether actual or None)
     self.image_list.append ( self.base_annotated_image )
-    self.image_dict['orig'] = self.base_annotated_image
+    self.image_dict['base'] = self.base_annotated_image
 
 
 # These two global functions are handy for callbacks
@@ -590,7 +590,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
   def expose_callback ( self, drawing_area, event, zpa ):
     ''' Draw all the elements in this window '''
-    display_time_index = zpa.user_data['display_time_index']
     x, y, width, height = event.area  # This is the area of the portion newly exposed
     width, height = drawing_area.window.get_size()  # This is the area of the entire window
     x, y = drawing_area.window.get_origin()
@@ -602,8 +601,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
     # Clear the screen with black
     gc.foreground = colormap.alloc_color(0,0,0)
     drawable.draw_rectangle(gc, True, 0, 0, width, height)
-    # Draw the current state referenced by display_time_index
-    t = 0
 
     global alignment_layer_list
     global alignment_layer_index
@@ -619,7 +616,9 @@ class zoom_panel ( app_window.zoom_pan_area ):
         # Draw one of the images
         if alignment_layer_index < len(alignment_layer_list):
           im_list = alignment_layer_list[alignment_layer_index].image_list
+          print ( "Redrawing window " + str(self.window_index) + " with role: " + str(self.role) )
           if self.window_index < len(im_list):
+            print ( "  Containing image with role: " + im_list[self.window_index].role )
             pix_buf = im_list[self.window_index].image
 
     #if zpa.user_data['image_frame']:
@@ -860,7 +859,6 @@ def set_all_or_fwd_callback ( set_all ):
 
 
 def step_callback(zpa):
-  display_time_index = zpa.user_data['display_time_index']
   zpa.get_drawing_area().queue_draw()
   return True
 
@@ -873,28 +871,22 @@ def step_in_callback(zpa):
 def background_callback ( zpa ):
   if zpa.user_data['running']:
     t = time.time()
-    if t - zpa.user_data['last_update'] > zpa.user_data['frame_delay']:
-      #zpa.user_data['last_update'] = t
-      #step_callback(zpa)
-      print ( "  Running at time = " + str(t) )
-      #zpa.queue_draw()
   return True
 
 
-def add_window_callback ( zpa ):
+def add_window_callback ( zpa, role="" ):
   print ( "Add a Window" )
   global image_hbox
   global extra_windows_list
   global window
 
-  new_win = zoom_panel(window,global_win_width,global_win_height,"Added Panel")
+  new_win = zoom_panel(window,global_win_width,global_win_height,role=role)
   new_win.window_index = len(extra_windows_list)
 
   new_win.user_data = {
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
-                    'display_time_index' : -1,
                     'running'            : False,
                     'last_update'        : -1,
                     'show_legend'        : True,
@@ -986,7 +978,7 @@ def run_alignment_callback ( align_all ):
       old_list = alignment_layer_list[i].image_list
       alignment_layer_list[i].image_list = []
       # Insert a dummy empty image to align the subsequent images
-      alignment_layer_list[i].image_list.append ( annotated_image(None) )
+      alignment_layer_list[i].image_list.append ( annotated_image(None, role="") )
       if len(old_list) > 0:
         alignment_layer_list[i].image_list.append ( old_list[0] )
         if len(old_list) > 1:
@@ -1078,9 +1070,13 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[i].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
 
       # Put the proper images into the proper window slots
-      alignment_layer_list[j].image_list.append ( annotated_image(None) )
+      alignment_layer_list[j].image_list.append ( annotated_image(None, role="") )
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
+
+      alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="")
+      alignment_layer_list[j].image_dict['base'] = alignment_layer_list[j].base_annotated_image
+      alignment_layer_list[j].image_dict['aligned'] = alignment_layer_list[j].base_annotated_image
 
     else:
       # Align the image at index j with the reference at index i
@@ -1096,8 +1092,12 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
 
       print ( "Reading in new_name from " + str(new_name) )
-      annotated_img = annotated_image(new_name)
+      annotated_img = annotated_image(new_name, role="aligned")
       annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+
+      alignment_layer_list[j].image_dict['ref'] = alignment_layer_list[i].base_annotated_image
+      alignment_layer_list[j].image_dict['base'] = alignment_layer_list[j].base_annotated_image
+
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
@@ -1117,6 +1117,8 @@ def run_alignment_callback ( align_all ):
         print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
       alignment_layer_list[j].image_list.append ( annotated_img )
+
+      alignment_layer_list[j].image_dict['aligned'] = annotated_img
 
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -1685,7 +1687,8 @@ def refresh_all_images():
       rem_window_callback ( zpa_original )
   elif num_cur_extra_images < max_extra_images:
     # Add the difference
-    add_window_callback ( zpa_original )
+    for i in range(max_extra_images - num_cur_extra_images):
+      add_window_callback ( zpa_original )
 
 
 # Create the window and connect the events
@@ -1701,13 +1704,12 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = zoom_panel(window,global_win_width,global_win_height,"Original Panel")
+  zpa_original = zoom_panel(window,global_win_width,global_win_height,"base")
 
   zpa_original.user_data = {
                     'image_frame'        : None,
                     'image_frames'       : [],
                     'frame_number'       : -1,
-                    'display_time_index' : -1,
                     'running'            : False,
                     'last_update'        : -1,
                     'show_legend'        : True,
