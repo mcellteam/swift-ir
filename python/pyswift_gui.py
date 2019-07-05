@@ -423,7 +423,7 @@ class alignment_layer:
 
     # This holds a list of annotated images to be stored and/or displayed.
     # The base image may be placed in this list as desired.
-    self.image_list = []
+    #self.image_list = []
     # This holds the annotated images to be stored and/or displayed.
     self.image_dict = {}
 
@@ -450,7 +450,7 @@ class alignment_layer:
       self.base_annotated_image = annotated_image ( None, role="base" )
 
     # Always initialize with the image (whether actual or None)
-    self.image_list.append ( self.base_annotated_image )
+    # self.image_list.append ( self.base_annotated_image )
     self.image_dict['base'] = self.base_annotated_image
 
 
@@ -535,12 +535,12 @@ class zoom_panel ( app_window.zoom_pan_area ):
         if self == panel_list[0]:
           # Add a point to the first
           print ( "Adding a marker point to the align image" )
-          alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
+          #alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
           alignment_layer_list[alignment_layer_index].image_dict['ref'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
         if self == panel_list[1]:
           # Add a point to the second
           print ( "Adding a marker point to the align image" )
-          alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
+          #alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
           alignment_layer_list[alignment_layer_index].image_dict['base'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
       '''
       for p in panel_list:
@@ -642,7 +642,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
       else:
         # Draw one of the images
         if alignment_layer_index < len(alignment_layer_list):
-          im_list = alignment_layer_list[alignment_layer_index].image_list
+          #im_list = alignment_layer_list[alignment_layer_index].image_list
           im_dict = alignment_layer_list[alignment_layer_index].image_dict
           print ( "Redrawing window " + str(self.window_index) + " with role: " + str(self.role) )
           if self.role in im_dict:
@@ -1081,6 +1081,7 @@ def run_alignment_callback ( align_all ):
       # This unskipped image will always become the last unskipped (reference) for next unskipped
       last_ref = i
     else:
+      '''
       # Clear out the aligned images, but preserve the other images
       old_list = alignment_layer_list[i].image_list
       alignment_layer_list[i].image_list = []
@@ -1090,8 +1091,9 @@ def run_alignment_callback ( align_all ):
         alignment_layer_list[i].image_list.append ( old_list[0] )
         if len(old_list) > 1:
           alignment_layer_list[i].image_list.append ( old_list[1] )
+      '''
       ##### This should just remove those image_dict items that shouldn't show when skipped
-      alignment_layer_list[i].image_['aligned'] = annotated_image(None, role="aligned")
+      alignment_layer_list[i].image_dict['aligned'] = annotated_image(None, role="aligned")
 
   print ( "Full list after removing skips:" )
   for apair in align_pairs:
@@ -1133,6 +1135,7 @@ def run_alignment_callback ( align_all ):
     print ( "" )
     print ( "  Image List for Layer " + str(i) + ":" )
     im_num = 1
+    '''
     for ann_im in alignment_layer_list[i].image_list:
       print ( "     Image " + str(im_num) + " is " + str(ann_im.file_name) + " and has " + str(len(ann_im.get_marker_points())) + " total marker points" )
       print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(0))) + " marker points for index 0 (to next) : " + str(ann_im.get_marker_points(0)) )
@@ -1144,8 +1147,8 @@ def run_alignment_callback ( align_all ):
       print ( "     Image " + str(im_num) + " is " + str(ann_im.file_name) + " and has " + str(len(ann_im.get_marker_points())) + " total marker points" )
       print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(0))) + " marker points for index 0 (to next) : " + str(ann_im.get_marker_points(0)) )
       print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(1))) + " marker points for index 1 (from previous) : " + str(ann_im.get_marker_points(1)) )
-
       im_num += 1
+    '''
     '''
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
@@ -1166,8 +1169,8 @@ def run_alignment_callback ( align_all ):
   for apair in align_pairs:
     i = apair[0] # Reference
     j = apair[1] # Current moving
-    print ( "Clearing image list for layer " + str(j) )
-    alignment_layer_list[j].image_list = []
+    #print ( "Clearing image list for layer " + str(j) )
+    #alignment_layer_list[j].image_list = []
 
 
     if alignment_layer_list[j].image_dict == None:
@@ -1192,9 +1195,9 @@ def run_alignment_callback ( align_all ):
       #def __init__ ( self, file_name=None, clone_from=None, role=None ):
 
       # Put the proper images into the proper window slots
-      alignment_layer_list[j].image_list.append ( annotated_image(None, role="ref") )
-      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base") )
-      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="aligned") )
+      #alignment_layer_list[j].image_list.append ( annotated_image(None, role="ref") )
+      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base") )
+      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="aligned") )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -1210,9 +1213,9 @@ def run_alignment_callback ( align_all ):
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
 
       # Put the proper images into the proper window slots
-      alignment_layer_list[j].image_list = []
-      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref") )
-      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base") )
+      #alignment_layer_list[j].image_list = []
+      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref") )
+      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base") )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref")
       alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base")
@@ -1238,7 +1241,7 @@ def run_alignment_callback ( align_all ):
             annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
         print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
-      alignment_layer_list[j].image_list.append ( annotated_img )
+      #alignment_layer_list[j].image_list.append ( annotated_img )
 
       alignment_layer_list[j].image_dict['aligned'] = annotated_img
 
@@ -1643,8 +1646,8 @@ def menu_callback ( widget, data=None ):
               pass
           print ( "Restoring original images..." )
           for al in alignment_layer_list:
-            al.image_list = []
-            al.image_list.append ( al.base_annotated_image )
+            #al.image_list = []
+            #al.image_list.append ( al.base_annotated_image )
             al.image_dict = {}
             al.image_dict['base'] = al.base_annotated_image
           zpa_original.queue_draw()
@@ -1716,6 +1719,7 @@ def menu_callback ( widget, data=None ):
       global alignment_layer_list
       global alignment_layer_index
 
+      '''
       # Clear from list
       al = alignment_layer_list[alignment_layer_index]
       for im_index in range(len(al.image_list)):
@@ -1737,6 +1741,7 @@ def menu_callback ( widget, data=None ):
               non_marker_items.append ( gi )
         # Replace the list of graphics items with the reduced list:
         im.graphics_items = non_marker_items
+      '''
 
       # Clear from dictionary
       al = alignment_layer_list[alignment_layer_index]
@@ -1781,6 +1786,7 @@ def menu_callback ( widget, data=None ):
 
   return True
 
+'''
 def center_all_images_by_list():
 
   global panel_list
@@ -1821,7 +1827,7 @@ def center_all_images_by_list():
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         panel.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
         panel.queue_draw()
-
+'''
 
 def center_all_images_by_dict():
 
