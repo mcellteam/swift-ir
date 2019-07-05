@@ -360,12 +360,25 @@ class graphic_text (graphic_primitive):
 class annotated_image:
   ''' An image with a series of drawing primitives defined in
       the pixel coordinates of the image. '''
-  def __init__ ( self, file_name=None, role="" ):
+  def __init__ ( self, file_name=None, clone_from=None, role=None ):
+    # Initialize everything to defaults
     self.file_name = file_name
-    self.graphics_items = []
     self.image = None
+    self.graphics_items = []
     self.role = role
-    if type(self.file_name) != type(None):
+
+    # Copy in the clone if provided
+    if type(clone_from) != type(None):
+      self.file_name = clone_from.file_name
+      self.image = clone_from.image
+      self.graphics_items = [ gi for gi in clone_from.graphics_items ]
+
+    # Over-ride other items as provided
+    if type(file_name) != type(None):
+      self.file_name = file_name
+    if role != None:
+      self.role = role
+    if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
       try:
         self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
         print ( "Loaded " + str(self.file_name) )
@@ -1021,7 +1034,7 @@ def run_alignment_callback ( align_all ):
   if aligned_panel == None:
     add_panel_callback ( zpa_original, 'aligned' )
 
-  # The previous logic hasn't worked, so force all panels to be as desired
+  # The previous logic hasn't worked, so force all panels to be as desired for now
   forced_panel_roles = ['ref', 'base', 'aligned']
   for i in range(len(panel_list)):
     panel_list[i].role = forced_panel_roles[i]
@@ -1145,25 +1158,18 @@ def run_alignment_callback ( align_all ):
         def use_image_from ( self, other_annotated_image ):
         def set_role ( self, role ):
       '''
+      #def __init__ ( self, file_name=None, clone_from=None, role=None ):
 
       # Put the proper images into the proper window slots
       alignment_layer_list[j].image_list.append ( annotated_image(None, role="ref") )
-      base_role_image = annotated_image(None, role="base")
-      base_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
-      alignment_layer_list[j].image_list.append ( base_role_image )
-      aligned_role_image = annotated_image(None, role="aligned")
-      aligned_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
-      alignment_layer_list[j].image_list.append ( aligned_role_image )
+      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base") )
+      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="aligned") )
 
-      alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
-
-      base_role_image = annotated_image(None, role="base")
-      base_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
-      alignment_layer_list[j].image_dict['base'] = base_role_image
-
+      '''
       aligned_role_image = annotated_image(None, role="aligned")
       aligned_role_image.use_image_from ( alignment_layer_list[j].base_annotated_image )
       alignment_layer_list[j].image_dict['aligned'] = aligned_role_image
+      '''
 
     else:
       # Align the image at index j with the reference at index i
@@ -1175,9 +1181,9 @@ def run_alignment_callback ( align_all ):
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
 
       # Put the proper images into the proper window slots
-      alignment_layer_list[i].base_annotated_image.set_role ( "ref" )
-      alignment_layer_list[j].image_list.append ( alignment_layer_list[i].base_annotated_image )
-      alignment_layer_list[j].image_list.append ( alignment_layer_list[j].base_annotated_image )
+      alignment_layer_list[j].image_list = []
+      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref") )
+      alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base") )
 
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
