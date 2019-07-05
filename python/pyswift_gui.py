@@ -186,7 +186,8 @@ class graphic_primitive:
     return colormap.alloc_color(int(65535*self.color[0]),int(65535*self.color[1]),int(65535*self.color[2]))
   def set_color_from_index ( self, i, mx=1 ):
     self.color = [mx*((i/(2**j))%2) for j in range(3)]
-
+  def r10(self,x):
+    return round(x*10)/10
 
 class graphic_line (graphic_primitive):
   def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0] ):
@@ -197,6 +198,8 @@ class graphic_line (graphic_primitive):
     self.y2 = y2
     self.coordsys = coordsys
     self.color = color
+  def to_string ( self ):
+    return ( "line (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -234,6 +237,8 @@ class graphic_rect (graphic_primitive):
     self.dy = dy
     self.coordsys = coordsys
     self.color = color
+  def to_string ( self ):
+    return ( "rect (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -270,7 +275,9 @@ class graphic_marker (graphic_primitive):
     self.r = r
     self.coordsys = coordsys
     self.color = color
-    self.index = index
+    self.win_index = index
+  def to_string ( self ):
+    return ( "marker at (" + str(self.r10(self.x)) + "," + str(self.r10(self.y)) + ")" )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -305,6 +312,8 @@ class graphic_dot (graphic_primitive):
     self.r = r
     self.coordsys = coordsys
     self.color = color
+  def to_string ( self ):
+    return ( "dot at (" + str(self.x) + "," + str(self.y) + "),r=" + str(self.r) )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -336,6 +345,8 @@ class graphic_text (graphic_primitive):
     self.s = s
     self.coordsys = coordsys
     self.color = color
+  def to_string ( self ):
+    return ( "text \"" + str(self.s) + "\" at (" + str(self.x) + "," + str(self.y) + ")" )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -389,13 +400,16 @@ class annotated_image:
         # exit(1)
         self.image = None
       if type(self.file_name) != type(None):
-        self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+        self.graphics_items.append ( graphic_text(60, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+
+  def to_string ( self ):
+    return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
 
   def use_image_from ( self, other_annotated_image ):
     self.file_name = other_annotated_image.file_name
     self.image = other_annotated_image.image
     if type(self.file_name) != type(None):
-      self.graphics_items.append ( graphic_text(10, 12, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+      self.graphics_items.append ( graphic_text(60, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
 
   def set_role ( self, role ):
     self.role = role
@@ -404,7 +418,7 @@ class annotated_image:
     point_list = []
     for item in self.graphics_items:
       if item.marker:
-        if (match < 0) or (match==item.index):
+        if (match < 0) or (match==item.win_index):
           point_list.append ( [item.x, item.y] )
     return point_list
 
@@ -449,6 +463,13 @@ class alignment_layer:
 
     # Always initialize with the image
     self.image_dict['base'] = self.base_annotated_image
+
+  def to_string ( self ):
+    s = "AlignLayer \"" + str(self.base_image_name) + "\" with images:"
+    for k,v in self.image_dict.items():
+      s = s + "\n  " + str(k) + ": " + v.to_string()
+    return ( s )
+
 
 
 # These two global functions are handy for callbacks
@@ -626,8 +647,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
     # print ( "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
-    img_role = ""
-
     pix_buf = None
     if len(alignment_layer_list) > 0:
       # Draw one of the images
@@ -802,7 +821,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
           color_index = 0
           for graphics_item in image_to_draw.graphics_items:
             if graphics_item.marker:
-              if graphics_item.index == self.window_index:
+              if graphics_item.win_index == self.window_index:
                 # Only draw when they match
                 color_index += 1
                 graphics_item.set_color_from_index ( color_index )
@@ -818,8 +837,8 @@ class zoom_panel ( app_window.zoom_pan_area ):
     # Draw this window's role
     gc.foreground = colormap.alloc_color(32767,32767,32767)
 
-    self.pangolayout.set_text ( str(self.role) + " / " + img_role )
-    drawable.draw_layout ( gc, 10, 0, self.pangolayout )
+    self.pangolayout.set_text ( str(self.role)+":" )
+    drawable.draw_layout ( gc, 3, 2, self.pangolayout )
 
     # Restore the previous color
     gc.foreground = old_fg
@@ -1144,7 +1163,7 @@ def run_alignment_callback ( align_all ):
 
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
-      annotated_img.graphics_items.append ( graphic_text(10, 42, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      annotated_img.graphics_items.append ( graphic_text(2, 18, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
@@ -1659,21 +1678,22 @@ def menu_callback ( widget, data=None ):
     elif command == "Structs":
 
       print ( "Data Structures" )
-      print ( "  panel_list has " + str(len(panel_list)) + " panels" )
+      print ( "=========== " + str(len(panel_list)) + " Panels ===========" )
       pn = 0
       for panel in panel_list:
-        print ( "    panel_list[" + str(pn) + "].role = " + str(panel.role) )
+        print ( " Panel List [" + str(pn) + "].role = " + str(panel.role) )
         pn += 1
-      ln = 0
-      print ( "  alignment_layer_list has " + str(len(alignment_layer_list)) + " layers" )
-      for layer in alignment_layer_list:
-        print ( "    layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
-        kn = 0
-        for k in layer.image_dict.keys():
-          im = layer.image_dict[k]
-          print ( "      image_dict[" + k + "] = " + str(im).split()[-1] )
-          print ( "        markers: " + str(im.get_marker_points()) )
 
+      ln = 0
+      print ( "=========== " + str(len(alignment_layer_list)) + " Alignment Layers ===========" )
+      for layer in alignment_layer_list:
+        print ( " Layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
+        kn = 0
+        for k in sorted(layer.image_dict.keys(),reverse=True):
+          im = layer.image_dict[k]
+          print ( "   " + k + " image: " + str(im).split()[-1][0:-1] ) # key image: hex address
+          print ( "     file: " + str(im.file_name).split('/')[-1] )
+          print ( "     markers: " + str([[round(v*10)/10 for v in p] for p in im.get_marker_points()]) )
         ln += 1
       # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -1698,7 +1718,7 @@ def menu_callback ( widget, data=None ):
 def center_all_images():
   global panel_list
   if len(alignment_layer_list) > 0:
-    # Do the remaining windows
+    # Center each of the panel images
     for panel in panel_list:
       win_size = panel.drawing_area.window.get_size()
       pix_buf = None
