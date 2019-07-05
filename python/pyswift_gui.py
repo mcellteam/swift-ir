@@ -511,10 +511,11 @@ class zoom_panel ( app_window.zoom_pan_area ):
   global gui_fields
   global panel_list
 
-  def __init__ ( self, window, win_width, win_height, role="" ):
+  def __init__ ( self, window, win_width, win_height, role="", point_add_enabled=False ):
 
     self.panel_dict = {}
     self.role = role
+    self.point_add_enabled = point_add_enabled
 
     # Call the constructor for the parent app_window.zoom_pan_area:
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, role )
@@ -528,7 +529,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
-    if point_mode:
+    if point_mode and self.point_add_enabled:
       global alignment_layer_list
       global alignment_layer_index
       print ( "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
@@ -537,7 +538,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
       #  print ( "Adding a marker point to the original image" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-      alignment_layer_list[alignment_layer_index].image_dict[self.role].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+      this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+      # if this_image.point_add_enabled:
+      if self.point_add_enabled:
+        this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       '''
       for p in panel_list:
         p.set_cursor ( cursor )
@@ -886,14 +890,14 @@ def background_callback ( zpa ):
   return True
 
 
-def add_panel_callback ( zpa, role="" ):
+def add_panel_callback ( zpa, role="", point_add_enabled=False ):
   print ( "Add a Window" )
   global image_hbox
   global panel_list
   global window
 
 
-  new_panel = zoom_panel(window,global_win_width,global_win_height,role=role)
+  new_panel = zoom_panel(window,global_win_width,global_win_height,role=role,point_add_enabled=point_add_enabled)
 
   new_panel.user_data = {
                     'image_frame'        : None,
@@ -1002,11 +1006,11 @@ def run_alignment_callback ( align_all ):
 
   # Finally add panels as needed
   if ref_panel == None:
-    add_panel_callback ( zpa_original, 'ref' )
+    add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
   if base_panel == None:
-    add_panel_callback ( zpa_original, 'base' )
+    add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
   if aligned_panel == None:
-    add_panel_callback ( zpa_original, 'aligned' )
+    add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
 
   # The previous logic hasn't worked, so force all panels to be as desired for now
   forced_panel_roles = ['ref', 'base', 'aligned']
@@ -1600,14 +1604,12 @@ def menu_callback ( widget, data=None ):
       cursor = gtk.gdk.ARROW
       if point_mode:
         cursor = point_cursor
-      zpa.set_cursor ( cursor )
-      zpa.queue_draw()
-      # Only change the first 2 windows:
-      for panel_num in range(2):
-        p = panel_list[panel_num]
-        p.set_cursor ( cursor )
-        p.drawing_area.queue_draw()
-
+      #zpa.set_cursor ( cursor )
+      #zpa.queue_draw()
+      for p in panel_list:
+        if p.point_add_enabled:
+          p.set_cursor ( cursor )
+          p.drawing_area.queue_draw()
 
     elif command == "PtClear":
 
@@ -1731,7 +1733,7 @@ def main():
   # Create a zoom/pan area to hold all of the drawing
 
   global zpa_original
-  zpa_original = zoom_panel(window,global_win_width,global_win_height,"base")
+  zpa_original = zoom_panel(window,global_win_width,global_win_height,"base",point_add_enabled=True)
 
   global panel_list
   panel_list.append ( zpa_original )
@@ -2118,8 +2120,6 @@ def main():
 
   # Show the main window
   window.show()
-
-  # This is now only for point picking mode:  zpa_original.set_cursor ( gtk.gdk.HAND2 )
 
   # gtk.idle_add ( background_callback, zpa_original )
 
