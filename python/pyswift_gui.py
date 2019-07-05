@@ -531,12 +531,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
         if self == panel_list[0]:
           # Add a point to the first
           print ( "Adding a marker point to the align image" )
-          #alignment_layer_list[alignment_layer_index].image_list[0].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
           alignment_layer_list[alignment_layer_index].image_dict['ref'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
         if self == panel_list[1]:
           # Add a point to the second
           print ( "Adding a marker point to the align image" )
-          #alignment_layer_list[alignment_layer_index].image_list[1].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
           alignment_layer_list[alignment_layer_index].image_dict['base'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
       '''
       for p in panel_list:
@@ -632,18 +630,11 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
     pix_buf = None
     if len(alignment_layer_list) > 0:
-      if self.window_index < 0:
-        # Draw nothing
-        pix_buf = None
-      else:
-        # Draw one of the images
-        if alignment_layer_index < len(alignment_layer_list):
-          #im_list = alignment_layer_list[alignment_layer_index].image_list
-          im_dict = alignment_layer_list[alignment_layer_index].image_dict
-          # print ( "Redrawing window " + str(self.window_index) + " with role: " + str(self.role) )
-          if self.role in im_dict:
-            # print ( "Have image to draw" )
-            pix_buf = im_dict[self.role].image
+      # Draw one of the images
+      if alignment_layer_index < len(alignment_layer_list):
+        im_dict = alignment_layer_list[alignment_layer_index].image_dict
+        if self.role in im_dict:
+          pix_buf = im_dict[self.role].image
 
     if pix_buf != None:
       pbw = pix_buf.get_width()
@@ -803,26 +794,21 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
     # Draw any annotations in the list
     if len(alignment_layer_list) > 0:
-      if self.window_index < 0:
-        # Draw nothing
-        pass
-      else:
-        # Draw annotations
-        if alignment_layer_index < len(alignment_layer_list):
-          im_dict = alignment_layer_list[alignment_layer_index].image_dict
-          if self.role in im_dict:
-            # print ( "Found a role in annotations" )
-            image_to_draw = im_dict[self.role]
-            color_index = 0
-            for graphics_item in image_to_draw.graphics_items:
-              if graphics_item.marker:
-                if graphics_item.index == self.window_index:
-                  # Only draw when they match
-                  color_index += 1
-                  graphics_item.set_color_from_index ( color_index )
-                  graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-              else:
+      # Draw annotations
+      if alignment_layer_index < len(alignment_layer_list):
+        im_dict = alignment_layer_list[alignment_layer_index].image_dict
+        if self.role in im_dict:
+          image_to_draw = im_dict[self.role]
+          color_index = 0
+          for graphics_item in image_to_draw.graphics_items:
+            if graphics_item.marker:
+              if graphics_item.index == self.window_index:
+                # Only draw when they match
+                color_index += 1
+                graphics_item.set_color_from_index ( color_index )
                 graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+            else:
+              graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
     # Draw a separator between the panes
     gc.foreground = colormap.alloc_color(32767,32767,32767)
