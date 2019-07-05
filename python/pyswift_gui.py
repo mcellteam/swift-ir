@@ -175,6 +175,7 @@ class gui_fields_class:
 ''' This variable gives global access to the GUI widgets '''
 gui_fields = gui_fields_class()
 
+
 class graphic_primitive:
   ''' This base class defines something that can be drawn '''
   def __init__ ( self ):
@@ -223,6 +224,7 @@ class graphic_line (graphic_primitive):
     gc.foreground = old_fg
     return False
 
+
 class graphic_rect (graphic_primitive):
   def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
     self.marker = False
@@ -258,7 +260,6 @@ class graphic_rect (graphic_primitive):
     # Restore the previous color
     gc.foreground = old_fg
     return False
-
 
 
 class graphic_marker (graphic_primitive):
@@ -325,6 +326,7 @@ class graphic_dot (graphic_primitive):
     # Restore the previous color
     gc.foreground = old_fg
     return False
+
 
 class graphic_text (graphic_primitive):
   def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
@@ -410,7 +412,6 @@ class annotated_image:
     self.graphics_items.append ( item )
 
 
-
 class alignment_layer:
   ''' An alignment_layer has a base image and a set of images and processes representing the relationships to its neighbors '''
   def __init__ ( self, base=None ):
@@ -421,9 +422,6 @@ class alignment_layer:
     # This holds a single annotated image
     self.base_annotated_image = None
 
-    # This holds a list of annotated images to be stored and/or displayed.
-    # The base image may be placed in this list as desired.
-    #self.image_list = []
     # This holds the annotated images to be stored and/or displayed.
     self.image_dict = {}
 
@@ -449,8 +447,7 @@ class alignment_layer:
     except:
       self.base_annotated_image = annotated_image ( None, role="base" )
 
-    # Always initialize with the image (whether actual or None)
-    # self.image_list.append ( self.base_annotated_image )
+    # Always initialize with the image
     self.image_dict['base'] = self.base_annotated_image
 
 
@@ -488,7 +485,6 @@ def store_current_layer_into_fields():
   gui_fields.bias_check_box.set_active(a.bias_enabled)
   gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
   gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
-
 
 
 class zoom_panel ( app_window.zoom_pan_area ):
@@ -648,19 +644,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
           if self.role in im_dict:
             # print ( "Have image to draw" )
             pix_buf = im_dict[self.role].image
-          '''
-          else:
-            print ( "%%%%%%%%%%%%%%%%% NO IMAGE TO DRAW" )
-          if self.window_index < len(im_list):
-            print ( "  Containing image with role: " + im_list[self.window_index].role )
-            img_role = im_list[self.window_index].role
-            pix_buf_list = im_list[self.window_index].image
-            if pix_buf_list != pix_buf:
-              print ( "%%%%%%%%%%%%%% pix_bufs didn't match %%%%%%%%%%%" )
-          '''
-
-    #if zpa.user_data['image_frame']:
-    #  pix_buf = zpa.user_data['image_frame']
 
     if pix_buf != None:
       pbw = pix_buf.get_width()
@@ -841,22 +824,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
               else:
                 graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
-          '''
-          im_list = alignment_layer_list[alignment_layer_index].image_list
-          if self.window_index < len(im_list):
-            image_to_draw = im_list[self.window_index]
-            color_index = 0
-            for graphics_item in image_to_draw.graphics_items:
-              if graphics_item.marker:
-                if graphics_item.index == self.window_index:
-                  # Only draw when they match
-                  color_index += 1
-                  graphics_item.set_color_from_index ( color_index )
-                  graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-              else:
-                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-          '''
-
     # Draw a separator between the panes
     gc.foreground = colormap.alloc_color(32767,32767,32767)
     drawable.draw_line ( gc, 0, 0, 0, height )
@@ -1028,7 +995,6 @@ def run_alignment_callback ( align_all ):
   #while len(panel_list) > 0:
   #  rem_panel_callback ( zpa_original )
 
-
   # Start by assigning any panels with roles already set
   for panel in panel_list:
     if panel.role == 'ref':
@@ -1081,18 +1047,7 @@ def run_alignment_callback ( align_all ):
       # This unskipped image will always become the last unskipped (reference) for next unskipped
       last_ref = i
     else:
-      '''
-      # Clear out the aligned images, but preserve the other images
-      old_list = alignment_layer_list[i].image_list
-      alignment_layer_list[i].image_list = []
-      # Insert a dummy empty image to align the subsequent images
-      alignment_layer_list[i].image_list.append ( annotated_image(None, role="") )
-      if len(old_list) > 0:
-        alignment_layer_list[i].image_list.append ( old_list[0] )
-        if len(old_list) > 1:
-          alignment_layer_list[i].image_list.append ( old_list[1] )
-      '''
-      ##### This should just remove those image_dict items that shouldn't show when skipped
+      # This should just remove those image_dict items that shouldn't show when skipped
       alignment_layer_list[i].image_dict['aligned'] = annotated_image(None, role="aligned")
 
   print ( "Full list after removing skips:" )
@@ -1169,9 +1124,6 @@ def run_alignment_callback ( align_all ):
   for apair in align_pairs:
     i = apair[0] # Reference
     j = apair[1] # Current moving
-    #print ( "Clearing image list for layer " + str(j) )
-    #alignment_layer_list[j].image_list = []
-
 
     if alignment_layer_list[j].image_dict == None:
       print ( "Creating image dictionary for layer " + str(j) )
@@ -1185,19 +1137,6 @@ def run_alignment_callback ( align_all ):
 
       # Create a new identity transform for this layer even though it's not otherwise needed
       alignment_layer_list[i].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
-
-      '''
-      class annotated_image:
-        def __init__ ( self, file_name=None, role="" ):
-        def use_image_from ( self, other_annotated_image ):
-        def set_role ( self, role ):
-      '''
-      #def __init__ ( self, file_name=None, clone_from=None, role=None ):
-
-      # Put the proper images into the proper window slots
-      #alignment_layer_list[j].image_list.append ( annotated_image(None, role="ref") )
-      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base") )
-      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="aligned") )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -1213,9 +1152,6 @@ def run_alignment_callback ( align_all ):
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
 
       # Put the proper images into the proper window slots
-      #alignment_layer_list[j].image_list = []
-      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref") )
-      #alignment_layer_list[j].image_list.append ( annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base") )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref")
       alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base")
@@ -1241,14 +1177,7 @@ def run_alignment_callback ( align_all ):
             annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
         print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
-      #alignment_layer_list[j].image_list.append ( annotated_img )
-
       alignment_layer_list[j].image_dict['aligned'] = annotated_img
-
-
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-
 
   # The following work manually, but gave error when done here
   # The try/excepts didn't help
@@ -1646,8 +1575,6 @@ def menu_callback ( widget, data=None ):
               pass
           print ( "Restoring original images..." )
           for al in alignment_layer_list:
-            #al.image_list = []
-            #al.image_list.append ( al.base_annotated_image )
             al.image_dict = {}
             al.image_dict['base'] = al.base_annotated_image
           zpa_original.queue_draw()
@@ -1736,12 +1663,6 @@ def menu_callback ( widget, data=None ):
           else:
             # This is a marker, so don't add it
             pass
-            #if gi.index == im_index:
-            #  # This marker matched this window, so don't keep it
-            #  pass
-            #else:
-            #  # This marker didn't match the window, so keep it
-            #  non_marker_items.append ( gi )
         # Replace the list of graphics items with the reduced list:
         im.graphics_items = non_marker_items
 
@@ -1768,8 +1689,6 @@ def menu_callback ( widget, data=None ):
           print ( "        markers: " + str(im.get_marker_points()) )
 
         ln += 1
-
-
       # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     elif command == "Exit":
@@ -1788,53 +1707,10 @@ def menu_callback ( widget, data=None ):
 
   return True
 
-'''
-def center_all_images_by_list():
 
+
+def center_all_images():
   global panel_list
-
-  if len(alignment_layer_list) > 0:
-    # Start with the original image
-    win_size = zpa_original.drawing_area.window.get_size()
-
-    pix_buf = None
-    if zpa_original.window_index < 0:
-      # Draw nothing
-      # pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
-      pass
-    else:
-      # Draw one of the extra images
-      pix_buf = alignment_layer_list[alignment_layer_index].image_list[zpa_original.window_index].image
-    if not (pix_buf is None):
-      img_w = pix_buf.get_width()
-      img_h = pix_buf.get_height()
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      zpa_original.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
-      zpa_original.queue_draw()
-
-    # Do the remaining windows
-    for panel in panel_list:
-      win_size = panel.drawing_area.window.get_size()
-      pix_buf = None
-      if panel.window_index < 0:
-        # Draw nothing
-        #pix_buf = alignment_layer_list[alignment_layer_index].base_annotated_image.image
-        pass
-      else:
-        # Draw one of the extra images
-        pix_buf = alignment_layer_list[alignment_layer_index].image_list[panel.window_index].image
-      if not (pix_buf is None):
-        img_w = pix_buf.get_width()
-        img_h = pix_buf.get_height()
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        panel.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
-        panel.queue_draw()
-'''
-
-def center_all_images_by_dict():
-
-  global panel_list
-
   if len(alignment_layer_list) > 0:
     # Do the remaining windows
     for panel in panel_list:
@@ -1849,16 +1725,12 @@ def center_all_images_by_dict():
         panel.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
         panel.queue_draw()
 
-def center_all_images():
-  center_all_images_by_dict()
 
 def refresh_all_images():
   # Determine how many panels are needed and create them as needed
   global panel_list
   max_extra_panels = 0
   for a in alignment_layer_list:
-    #if len(a.image_list) > 0:
-    #  max_extra_panels = max(max_extra_panels, len(a.image_list))
     if len(a.image_dict.keys()) > 0:
       max_extra_panels = max(max_extra_panels, len(a.image_dict.keys()))
   if max_extra_panels < 1:
