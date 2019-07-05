@@ -268,14 +268,13 @@ class graphic_rect (graphic_primitive):
 
 
 class graphic_marker (graphic_primitive):
-  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], index=-1 ):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
     self.marker = True
     self.x = x
     self.y = y
     self.r = r
     self.coordsys = coordsys
     self.color = color
-    self.win_index = index
   def to_string ( self ):
     return ( "marker at (" + str(self.r10(self.x)) + "," + str(self.r10(self.y)) + ")" )
   def draw ( self, zpa, drawing_area, pgl ):
@@ -414,12 +413,11 @@ class annotated_image:
   def set_role ( self, role ):
     self.role = role
 
-  def get_marker_points ( self, match=-1 ):
+  def get_marker_points ( self ):
     point_list = []
     for item in self.graphics_items:
       if item.marker:
-        if (match < 0) or (match==item.win_index):
-          point_list.append ( [item.x, item.y] )
+        point_list.append ( [item.x, item.y] )
     return point_list
 
   def add_graphic ( self, item ):
@@ -514,14 +512,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
   global panel_list
 
   def __init__ ( self, window, win_width, win_height, role="" ):
-    # The "window_index" is intended to assign one of the layer's images to this window.
-    # When window_index is >= 0, it will be an index into the "image_list" in each layer:
-    #   alignment_layer_list[alignment_layer_index].image_list[window_index]
-    # When the window_index is -1, that indicates that no image is to be drawn.
-    # This provides a simple and dynamic way to assign images to zoom windows.
-    # By default, new zoom windows will show the original image with 0.
-
-    self.window_index = 0
 
     self.panel_dict = {}
     self.role = role
@@ -543,25 +533,11 @@ class zoom_panel ( app_window.zoom_pan_area ):
       global alignment_layer_index
       print ( "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
       print ( "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
-      #if self == zpa_original:
-      #  # Add a point to the original
+
       #  print ( "Adding a marker point to the original image" )
-      #  alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-      alignment_layer_list[alignment_layer_index].image_dict[self.role].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=-1) )
-
-      """
-      if len(panel_list) > 1:
-        if self == panel_list[0]:
-          # Add a point to the first
-          print ( "Adding a marker point to the ref (0) image, role: " + str(self.role) )
-          alignment_layer_list[alignment_layer_index].image_dict['ref'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
-        if self == panel_list[1]:
-          # Add a point to the second
-          print ( "Adding a marker point to the base (1) image, role: " + str(self.role) )
-          alignment_layer_list[alignment_layer_index].image_dict['base'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
-      """
+      alignment_layer_list[alignment_layer_index].image_dict[self.role].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       '''
       for p in panel_list:
         p.set_cursor ( cursor )
@@ -918,7 +894,6 @@ def add_panel_callback ( zpa, role="" ):
 
 
   new_panel = zoom_panel(window,global_win_width,global_win_height,role=role)
-  new_panel.window_index = len(panel_list)
 
   new_panel.user_data = {
                     'image_frame'        : None,
@@ -1098,20 +1073,6 @@ def run_alignment_callback ( align_all ):
     print ( "" )
     print ( "  Image List for Layer " + str(i) + ":" )
     im_num = 1
-    '''
-    for ann_im in alignment_layer_list[i].image_list:
-      print ( "     Image " + str(im_num) + " is " + str(ann_im.file_name) + " and has " + str(len(ann_im.get_marker_points())) + " total marker points" )
-      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(0))) + " marker points for index 0 (to next) : " + str(ann_im.get_marker_points(0)) )
-      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(1))) + " marker points for index 1 (from previous) : " + str(ann_im.get_marker_points(1)) )
-      im_num += 1
-    print ( "  Image List for Layer " + str(j) + ":" )
-    im_num = 1
-    for ann_im in alignment_layer_list[j].image_list:
-      print ( "     Image " + str(im_num) + " is " + str(ann_im.file_name) + " and has " + str(len(ann_im.get_marker_points())) + " total marker points" )
-      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(0))) + " marker points for index 0 (to next) : " + str(ann_im.get_marker_points(0)) )
-      print ( "       Image " + str(im_num) + " has " + str(len(ann_im.get_marker_points(1))) + " marker points for index 1 (from previous) : " + str(ann_im.get_marker_points(1)) )
-      im_num += 1
-    '''
     '''
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
