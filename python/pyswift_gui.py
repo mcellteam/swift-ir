@@ -644,9 +644,9 @@ class zoom_panel ( app_window.zoom_pan_area ):
         if alignment_layer_index < len(alignment_layer_list):
           #im_list = alignment_layer_list[alignment_layer_index].image_list
           im_dict = alignment_layer_list[alignment_layer_index].image_dict
-          print ( "Redrawing window " + str(self.window_index) + " with role: " + str(self.role) )
+          # print ( "Redrawing window " + str(self.window_index) + " with role: " + str(self.role) )
           if self.role in im_dict:
-            print ( "Have image to draw" )
+            # print ( "Have image to draw" )
             pix_buf = im_dict[self.role].image
           '''
           else:
@@ -812,7 +812,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
         scale_to_w = int(pbw*scale_w)
         scale_to_h = int(pbh*scale_h)
         if scale_to_w * scale_to_h > 0:
-          print ( "Scaling with " + str(int(pbw*scale_w)) + " " + str(int(pbh*scale_h)) )
+          # print ( "Scaling with " + str(int(pbw*scale_w)) + " " + str(int(pbh*scale_h)) )
           scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
           drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
       except:
@@ -828,7 +828,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
         if alignment_layer_index < len(alignment_layer_list):
           im_dict = alignment_layer_list[alignment_layer_index].image_dict
           if self.role in im_dict:
-            print ( "Found a role in annotations" )
+            # print ( "Found a role in annotations" )
             image_to_draw = im_dict[self.role]
             color_index = 0
             for graphics_item in image_to_draw.graphics_items:
@@ -1719,56 +1719,58 @@ def menu_callback ( widget, data=None ):
       global alignment_layer_list
       global alignment_layer_index
 
-      '''
-      # Clear from list
-      al = alignment_layer_list[alignment_layer_index]
-      for im_index in range(len(al.image_list)):
-        im = al.image_list[im_index]
-        graphics_items = im.graphics_items
-        # non_marker_items = [ gi for gi in graphics_items if (gi.marker == False) ]
-        non_marker_items = []
-        for gi in graphics_items:
-          if gi.marker == False:
-            # This is not a marker ... so keep it
-            non_marker_items.append ( gi )
-          else:
-            # This is a marker, but see if it's for this window
-            if gi.index == im_index:
-              # This marker matched this window, so don't keep it
-              pass
-            else:
-              # This marker didn't match the window, so keep it
-              non_marker_items.append ( gi )
-        # Replace the list of graphics items with the reduced list:
-        im.graphics_items = non_marker_items
-      '''
-
       # Clear from dictionary
       al = alignment_layer_list[alignment_layer_index]
       al_keys = al.image_dict.keys()
       for im_index in range(len(al_keys)):
+        print ( "Clearing out image index " + str(im_index) )
         im = al.image_dict[al_keys[im_index]]
         graphics_items = im.graphics_items
         # non_marker_items = [ gi for gi in graphics_items if (gi.marker == False) ]
         non_marker_items = []
         for gi in graphics_items:
+          print ( "  Checking item " + str(gi) )
           if gi.marker == False:
             # This is not a marker ... so keep it
             non_marker_items.append ( gi )
           else:
-            # This is a marker, but see if it's for this window
-            if gi.index == im_index:
-              # This marker matched this window, so don't keep it
-              pass
-            else:
-              # This marker didn't match the window, so keep it
-              non_marker_items.append ( gi )
+            # This is a marker, so don't add it
+            pass
+            #if gi.index == im_index:
+            #  # This marker matched this window, so don't keep it
+            #  pass
+            #else:
+            #  # This marker didn't match the window, so keep it
+            #  non_marker_items.append ( gi )
         # Replace the list of graphics items with the reduced list:
         im.graphics_items = non_marker_items
 
       zpa.queue_draw()
       for p in panel_list:
         p.drawing_area.queue_draw()
+
+    elif command == "Structs":
+
+      print ( "Data Structures" )
+      print ( "  panel_list has " + str(len(panel_list)) + " panels" )
+      pn = 0
+      for panel in panel_list:
+        print ( "    panel_list[" + str(pn) + "].role = " + str(panel.role) )
+        pn += 1
+      ln = 0
+      print ( "  alignment_layer_list has " + str(len(alignment_layer_list)) + " layers" )
+      for layer in alignment_layer_list:
+        print ( "    layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
+        kn = 0
+        for k in layer.image_dict.keys():
+          im = layer.image_dict[k]
+          print ( "      image_dict[" + k + "] = " + str(im).split()[-1] )
+          print ( "        markers: " + str(im.get_marker_points()) )
+
+        ln += 1
+
+
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     elif command == "Exit":
 
@@ -1982,6 +1984,8 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Spots",   ("Spots", zpa_original ) )
     zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Affine",   ("Affine", zpa_original ) )
+    zpa_original.add_menu_sep  ( show_menu )
+    zpa_original.add_menu_item ( show_menu, menu_callback, "Structures",   ("Structs", zpa_original ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
