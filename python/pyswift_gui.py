@@ -548,15 +548,20 @@ class zoom_panel ( app_window.zoom_pan_area ):
       #  print ( "Adding a marker point to the original image" )
       #  alignment_layer_list[alignment_layer_index].base_annotated_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+      alignment_layer_list[alignment_layer_index].image_dict[self.role].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=-1) )
+
+      """
       if len(panel_list) > 1:
         if self == panel_list[0]:
           # Add a point to the first
-          print ( "Adding a marker point to the align image" )
+          print ( "Adding a marker point to the ref (0) image, role: " + str(self.role) )
           alignment_layer_list[alignment_layer_index].image_dict['ref'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=0) )
         if self == panel_list[1]:
           # Add a point to the second
-          print ( "Adding a marker point to the align image" )
+          print ( "Adding a marker point to the base (1) image, role: " + str(self.role) )
           alignment_layer_list[alignment_layer_index].image_dict['base'].graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0],index=1) )
+      """
       '''
       for p in panel_list:
         p.set_cursor ( cursor )
@@ -821,11 +826,9 @@ class zoom_panel ( app_window.zoom_pan_area ):
           color_index = 0
           for graphics_item in image_to_draw.graphics_items:
             if graphics_item.marker:
-              if graphics_item.win_index == self.window_index:
-                # Only draw when they match
-                color_index += 1
-                graphics_item.set_color_from_index ( color_index )
-                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+              color_index += 1
+              graphics_item.set_color_from_index ( color_index )
+              graphics_item.draw ( zpa, drawing_area, self.pangolayout )
             else:
               graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
