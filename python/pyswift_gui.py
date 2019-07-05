@@ -1756,7 +1756,7 @@ def menu_callback ( widget, data=None ):
 
   return True
 
-def center_all_images():
+def center_all_images_by_list():
 
   global panel_list
 
@@ -1796,6 +1796,28 @@ def center_all_images():
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         panel.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
         panel.queue_draw()
+
+
+def center_all_images_by_dict():
+
+  global panel_list
+
+  if len(alignment_layer_list) > 0:
+    # Do the remaining windows
+    for panel in panel_list:
+      win_size = panel.drawing_area.window.get_size()
+      pix_buf = None
+      if panel.role in alignment_layer_list[alignment_layer_index].image_dict:
+        pix_buf = alignment_layer_list[alignment_layer_index].image_dict[panel.role].image
+      if not (pix_buf is None):
+        img_w = pix_buf.get_width()
+        img_h = pix_buf.get_height()
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        panel.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+        panel.queue_draw()
+
+def center_all_images():
+  center_all_images_by_dict()
 
 def refresh_all_images():
   # Determine how many panels are needed and create them as needed
