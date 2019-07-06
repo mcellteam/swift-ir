@@ -163,6 +163,7 @@ class gui_fields_class:
     self.trans_addx_entry = None
     self.trans_addy_entry = None
     self.skip_check_box = None
+    self.align_method_select = None
     self.affine_check_box = None
     self.affine_ww_entry = None
     self.affine_addx_entry = None
@@ -478,6 +479,8 @@ def store_fields_into_current_layer():
   a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
   a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
   a.skip = gui_fields.skip_check_box.get_active()
+  a.align_method      = gui_fields.align_method_select.get_active()
+  a.align_method_text = gui_fields.align_method_select.get_active_text()
   a.affine_enabled = gui_fields.affine_check_box.get_active()
   a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
 
@@ -496,6 +499,7 @@ def store_current_layer_into_fields():
   gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
   gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
   gui_fields.skip_check_box.set_active ( a.skip )
+  gui_fields.align_method_select.set_active ( a.align_method )
   gui_fields.affine_check_box.set_active ( a.affine_enabled )
   gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
 
@@ -848,6 +852,8 @@ def set_all_or_fwd_callback ( set_all ):
       template.trans_addx = int(gui_fields.trans_addx_entry.get_text())
       template.trans_addy = int(gui_fields.trans_addy_entry.get_text())
       template.skip = gui_fields.skip_check_box.get_active()
+      template.align_method      = gui_fields.align_method_select.get_active()
+      template.align_method_text = gui_fields.align_method_select.get_active_text()
       template.affine_enabled = gui_fields.affine_check_box.get_active()
       template.affine_ww = int(gui_fields.affine_ww_entry.get_text())
       template.affine_addx = int(gui_fields.affine_addx_entry.get_text())
@@ -867,6 +873,7 @@ def set_all_or_fwd_callback ( set_all ):
           a.trans_addx = template.trans_addx
           a.trans_addy = template.trans_addy
           # a.skip = template.skip
+          # a.align_method = template.align_method
           a.affine_enabled = template.affine_enabled
           a.affine_ww = template.affine_ww
           a.affine_addx = template.affine_addx
@@ -1030,14 +1037,15 @@ def run_alignment_callback ( align_all ):
   align_pairs = []  # List of images to align with each other, a repeated index means copy directly to the output (a "golden section")
   last_ref = -1
   for i in range(len(alignment_layer_list)):
+    print ( "Aligning with method " + str(alignment_layer_list[i].align_method) + " = " + alignment_layer_list[i].align_method_text )
     if alignment_layer_list[i].skip == False:
       if last_ref < 0:
         # This image was not skipped, but their is no previous, so just copy to itself
-        align_pairs.append ( [i, i] )
+        align_pairs.append ( [i, i, alignment_layer_list[i].align_method] )
       else:
         # There was a previously unskipped image and this image is unskipped
         # Therefore, add this pair to the list
-        align_pairs.append ( [last_ref, i] )
+        align_pairs.append ( [last_ref, i, alignment_layer_list[i].align_method] )
       # This unskipped image will always become the last unskipped (reference) for next unskipped
       last_ref = i
     else:
@@ -1075,8 +1083,12 @@ def run_alignment_callback ( align_all ):
   for apair in align_pairs:
     i = apair[0]
     j = apair[1]
+    m = apair[2]
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     print ( "===============================================================================" )
-    print ( "Aligning " + str(i) + " to " + str(j) + " with:" )
+    print ( "Aligning " + str(i) + " to " + str(j) + " with method " + str(m) + " using:" )
+    print ( "" )
+    print ( "  method                   = " + str(['Swim Window', 'Match Point'][m]) )
     print ( "" )
     print ( "  base                     = " + str(alignment_layer_list[i].base_image_name) )
     print ( "  adjust                   = " + str(alignment_layer_list[j].base_image_name) )
@@ -1084,7 +1096,6 @@ def run_alignment_callback ( align_all ):
     print ( "" )
     print ( "  Image List for Layer " + str(i) + ":" )
     im_num = 1
-    '''
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
     print ( "  translation addx         = " + str(alignment_layer_list[i].trans_addx) )
@@ -1098,12 +1109,12 @@ def run_alignment_callback ( align_all ):
     print ( "  bias enabled             = " + str(alignment_layer_list[i].bias_enabled) )
     print ( "  bias dx                  = " + str(alignment_layer_list[i].bias_dx) )
     print ( "  bias dy                  = " + str(alignment_layer_list[i].bias_dy) )
-    '''
 
   # Perform the actual alignment
   for apair in align_pairs:
     i = apair[0] # Reference
     j = apair[1] # Current moving
+    m = apair[2] # Alignment Method (0=SwimWindow, 1=MatchPoint)
 
     if alignment_layer_list[j].image_dict == None:
       print ( "Creating image dictionary for layer " + str(j) )
@@ -1999,6 +2010,26 @@ def main():
   gui_fields.skip_check_box = gtk.CheckButton("Skip")
   label_entry.pack_start ( gui_fields.skip_check_box, True, True, 0 )
   gui_fields.skip_check_box.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label(" ")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  #junk_skip_check_box = gtk.ComboBox("Alignment")
+  gui_fields.align_method_select = gtk.ComboBox()
+  store = gtk.ListStore(str)
+  cell = gtk.CellRendererText()
+  gui_fields.align_method_select.pack_start(cell)
+  gui_fields.align_method_select.add_attribute(cell, 'text', 0)
+  store.append ( ["Swim Window"] )
+  store.append ( ["Match Point"] )
+  gui_fields.align_method_select.set_model(store)
+  gui_fields.align_method_select.set_active(0)
+  label_entry.pack_start ( gui_fields.align_method_select, True, True, 0 )
+  gui_fields.align_method_select.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
