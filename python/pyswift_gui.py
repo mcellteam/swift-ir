@@ -1081,21 +1081,22 @@ def run_alignment_callback ( align_all ):
     print ( "  Alignment pair: " + str(apair) )
 
   for apair in align_pairs:
-    i = apair[0]
-    j = apair[1]
-    m = apair[2]
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    i = apair[0] # Reference
+    j = apair[1] # Current moving
+    m = apair[2] # Alignment Method (0=SwimWindow, 1=MatchPoint)
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     print ( "===============================================================================" )
     print ( "Aligning " + str(i) + " to " + str(j) + " with method " + str(m) + " using:" )
     print ( "" )
     print ( "  method                   = " + str(['Swim Window', 'Match Point'][m]) )
-    print ( "" )
     print ( "  base                     = " + str(alignment_layer_list[i].base_image_name) )
     print ( "  adjust                   = " + str(alignment_layer_list[j].base_image_name) )
     print ( "  skip                     = " + str(alignment_layer_list[i].skip) )
     print ( "" )
-    print ( "  Image List for Layer " + str(i) + ":" )
-    im_num = 1
+    print ( "  Image List for Layer " + str(i) + " contains:" + str(sorted(alignment_layer_list[i].image_dict.keys(), reverse=True)) )
+    for k in sorted(alignment_layer_list[i].image_dict.keys(), reverse=True):
+      im = alignment_layer_list[i].image_dict[k]
+      print ( "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
     print ( "  translation addx         = " + str(alignment_layer_list[i].trans_addx) )
