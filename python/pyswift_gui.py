@@ -516,6 +516,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
     self.panel_dict = {}
     self.role = role
     self.point_add_enabled = point_add_enabled
+    self.force_center = False
 
     # Call the constructor for the parent app_window.zoom_pan_area:
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, role )
@@ -615,6 +616,9 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
   def expose_callback ( self, drawing_area, event, zpa ):
     ''' Draw all the elements in this window '''
+    if self.force_center:
+      center_all_images()
+      self.force_center = False
     x, y, width, height = event.area  # This is the area of the portion newly exposed
     width, height = drawing_area.window.get_size()  # This is the area of the entire window
     x, y = drawing_area.window.get_origin()
@@ -891,13 +895,14 @@ def background_callback ( zpa ):
 
 
 def add_panel_callback ( zpa, role="", point_add_enabled=False ):
-  print ( "Add a Window" )
+  print ( "Add a Panel" )
   global image_hbox
   global panel_list
   global window
 
 
   new_panel = zoom_panel(window,global_win_width,global_win_height,role=role,point_add_enabled=point_add_enabled)
+  new_panel.force_center = True
 
   new_panel.user_data = {
                     'image_frame'        : None,
@@ -940,7 +945,7 @@ def add_panel_callback ( zpa, role="", point_add_enabled=False ):
 
 
 def rem_panel_callback ( zpa ):
-  print ( "Remove a Window" )
+  print ( "Remove a Panel" )
   global image_hbox
   global window
   global panel_list
@@ -951,6 +956,8 @@ def rem_panel_callback ( zpa ):
     return True
 
   return False
+
+
 
 
 import thread
@@ -1014,7 +1021,7 @@ def run_alignment_callback ( align_all ):
 
   # The previous logic hasn't worked, so force all panels to be as desired for now
   forced_panel_roles = ['ref', 'base', 'aligned']
-  for i in range(len(panel_list)):
+  for i in range ( min ( len(panel_list), len(forced_panel_roles) ) ):
     panel_list[i].role = forced_panel_roles[i]
 
 
@@ -1160,16 +1167,6 @@ def run_alignment_callback ( align_all ):
   except:
     pass
   print ( "Try centering" )
-  try:
-    center_all_images()
-  except:
-    pass
-  print ( "Try refreshing again" )
-  try:
-    refresh_all_images()
-  except:
-    pass
-  print ( "Try centering again" )
   try:
     center_all_images()
   except:
@@ -1425,6 +1422,11 @@ def menu_callback ( widget, data=None ):
       print ( "Done with dialog" )
       refresh_all_images()
       center_all_images()
+      for panel in panel_list:
+        panel.role = 'base'
+        panel.force_center = True
+        panel.queue_draw()
+      zpa_original.force_center = True
       zpa_original.queue_draw()
 
     elif (command == "SaveProj") or (command == "SaveProjAs"):
@@ -1683,19 +1685,48 @@ def menu_callback ( widget, data=None ):
 
 def center_all_images():
   global panel_list
+  global alignment_layer_list
+  print ( "center_all_images called with len(alignment_layer_index) = " + str(len(alignment_layer_list)) )
   if len(alignment_layer_list) > 0:
     # Center each of the panel images
+    print ( "Begin looping through all " + str(len(panel_list)) + " panels" )
+    max_win = [1,1]
     for panel in panel_list:
+      panel.queue_draw()
       win_size = panel.drawing_area.window.get_size()
+      if max_win[0] < win_size[0]:
+         max_win[0] = win_size[0]
+      if max_win[1] < win_size[1]:
+         max_win[1] = win_size[1]
+    win_size = max_win
+    for panel in panel_list:
+      print ( "  window size = " + str(win_size) )
       pix_buf = None
-      if panel.role in alignment_layer_list[alignment_layer_index].image_dict:
-        pix_buf = alignment_layer_list[alignment_layer_index].image_dict[panel.role].image
-      if not (pix_buf is None):
-        img_w = pix_buf.get_width()
-        img_h = pix_buf.get_height()
+      wxh = None
+      # Loop through all layers looking for images matching this role
+      print ( "  Begin looping through all " + str(len(alignment_layer_list)) + " layers" )
+      for layer in alignment_layer_list:
+        print ( "    Checking for role " + str(panel.role) )
+        if panel.role in layer.image_dict:
+          print ( "      Role " + str(panel.role) + " was found" )
+          # This panel's role is implemented by an image in this layer
+          pix_buf = layer.image_dict[panel.role].image
+          print ( "      Loaded pix_buf = " + str(pix_buf) )
+          if type(pix_buf) != type(None):
+            if type(wxh) == type(None):
+               wxh = [0,0]
+            if wxh[0] < pix_buf.get_width():
+               wxh[0] = pix_buf.get_width()
+            if wxh[1] < pix_buf.get_height():
+               wxh[1] = pix_buf.get_height()
+      if type(wxh) != type(None):
+        print ( "  For panel " + str(panel_list.index(panel)) + " image size is: [" + str(wxh[0]) + " x " + str(wxh[1]) + "]" )
+        # pix_buf = alignment_layer_list[alignment_layer_index].image_dict[panel.role].image
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        panel.set_scale_to_fit ( 0, img_w, 0, img_h, win_size[0], win_size[1])
+        panel.set_scale_to_fit ( 0, wxh[0], 0, wxh[1], win_size[0], win_size[1] )
         panel.queue_draw()
+        print ( "  Panel " + str(panel_list.index(panel)) + " is set to: [" + str(wxh[0]) + " x " + str(wxh[1]) + "] in [" + str(win_size[0]) + "," + str(win_size[1]) + "]" )
+        print ("")
 
 
 def refresh_all_images():
@@ -1734,6 +1765,7 @@ def main():
 
   global zpa_original
   zpa_original = zoom_panel(window,global_win_width,global_win_height,"base",point_add_enabled=True)
+  zpa_original.force_center = True
 
   global panel_list
   panel_list.append ( zpa_original )
