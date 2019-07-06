@@ -399,7 +399,7 @@ class annotated_image:
         # exit(1)
         self.image = None
       if type(self.file_name) != type(None):
-        self.graphics_items.append ( graphic_text(60, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+        self.graphics_items.append ( graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
 
   def to_string ( self ):
     return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
@@ -408,7 +408,7 @@ class annotated_image:
     self.file_name = other_annotated_image.file_name
     self.image = other_annotated_image.image
     if type(self.file_name) != type(None):
-      self.graphics_items.append ( graphic_text(60, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+      self.graphics_items.append ( graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
 
   def set_role ( self, role ):
     self.role = role
@@ -1138,7 +1138,7 @@ def run_alignment_callback ( align_all ):
 
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
-      annotated_img.graphics_items.append ( graphic_text(2, 18, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
@@ -1345,6 +1345,11 @@ def menu_callback ( widget, data=None ):
       file_chooser.destroy()
       print ( "Done with dialog" )
       # Draw the windows
+      for panel in panel_list:
+        panel.role = 'base'
+        panel.force_center = True
+        panel.queue_draw()
+      zpa_original.force_center = True
       zpa_original.queue_draw()
 
 
