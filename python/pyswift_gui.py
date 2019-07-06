@@ -25,8 +25,8 @@ panel_list = []
 
 global global_win_width
 global global_win_height
-global_win_width = 500
-global_win_height = 500
+global_win_width = 800
+global_win_height = 800
 
 global alignment_layer_list
 alignment_layer_list = []
