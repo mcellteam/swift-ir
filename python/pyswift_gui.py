@@ -1104,8 +1104,8 @@ def run_alignment_callback ( align_all ):
     print ( "  skip                     = " + str(alignment_layer_list[i].skip) )
     print ( "" )
     print ( "  Image List for Layer " + str(i) + " contains:" + str(sorted(alignment_layer_list[i].image_dict.keys(), reverse=True)) )
-    for k in sorted(alignment_layer_list[i].image_dict.keys(), reverse=True):
-      im = alignment_layer_list[i].image_dict[k]
+    for k in sorted(alignment_layer_list[j].image_dict.keys(), reverse=True):
+      im = alignment_layer_list[j].image_dict[k]
       print ( "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
     print ( "" )
     print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
