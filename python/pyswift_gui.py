@@ -1213,7 +1213,25 @@ def stop_callback ( zpa ):
   zpa.user_data['running'] = False
   return True
 
+def print_data_structures(panel_list, alignment_layer_list):
+  print ( "Data Structures" )
+  print ( "=========== " + str(len(panel_list)) + " Panels ===========" )
+  pn = 0
+  for panel in panel_list:
+    print ( " Panel List [" + str(pn) + "].role = " + str(panel.role) )
+    pn += 1
 
+  ln = 0
+  print ( "=========== " + str(len(alignment_layer_list)) + " Alignment Layers ===========" )
+  for layer in alignment_layer_list:
+    print ( " Layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
+    for k in sorted(layer.image_dict.keys(),reverse=True):
+      im = layer.image_dict[k]
+      print ( "   " + k + " image: " + str(im).split()[-1][0:-1] ) # key image: hex address
+      print ( "     file: " + str(im.file_name).split('/')[-1] )
+      print ( "     markers: " + str([[round(v*10)/10 for v in p] for p in im.get_marker_points()]) )
+    ln += 1
+  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 def menu_callback ( widget, data=None ):
@@ -1686,25 +1704,7 @@ def menu_callback ( widget, data=None ):
 
     elif command == "Structs":
 
-      print ( "Data Structures" )
-      print ( "=========== " + str(len(panel_list)) + " Panels ===========" )
-      pn = 0
-      for panel in panel_list:
-        print ( " Panel List [" + str(pn) + "].role = " + str(panel.role) )
-        pn += 1
-
-      ln = 0
-      print ( "=========== " + str(len(alignment_layer_list)) + " Alignment Layers ===========" )
-      for layer in alignment_layer_list:
-        print ( " Layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
-        kn = 0
-        for k in sorted(layer.image_dict.keys(),reverse=True):
-          im = layer.image_dict[k]
-          print ( "   " + k + " image: " + str(im).split()[-1][0:-1] ) # key image: hex address
-          print ( "     file: " + str(im.file_name).split('/')[-1] )
-          print ( "     markers: " + str([[round(v*10)/10 for v in p] for p in im.get_marker_points()]) )
-        ln += 1
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      print_data_structures(panel_list, alignment_layer_list)
 
     elif command == "Exit":
 
