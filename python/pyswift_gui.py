@@ -437,6 +437,8 @@ class alignment_layer:
     print ( "Constructing new alignment_layer with base " + str(base) )
     self.base_image_name = base
     self.align_proc = None
+    self.align_method = 0
+    self.align_method_text = 'Swim Window'
 
     # This holds a single annotated image
     self.base_annotated_image = None
@@ -1096,30 +1098,31 @@ def run_alignment_callback ( align_all ):
     m = apair[2] # Alignment Method (0=SwimWindow, 1=MatchPoint)
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     print ( "===============================================================================" )
-    print ( "Aligning " + str(i) + " to " + str(j) + " with method " + str(m) + " using:" )
+    print ( "Aligning base:" + str(j) + " to ref:" + str(i) + " with method " + str(m) + " using:" )
     print ( "" )
     print ( "  method                   = " + str(['Swim Window', 'Match Point'][m]) )
-    print ( "  base                     = " + str(alignment_layer_list[i].base_image_name) )
-    print ( "  adjust                   = " + str(alignment_layer_list[j].base_image_name) )
-    print ( "  skip                     = " + str(alignment_layer_list[i].skip) )
+    print ( "  ref                     = " + str(alignment_layer_list[i].base_image_name) )
+    print ( "  base                   = " + str(alignment_layer_list[j].base_image_name) )
+    print ( "  skip                     = " + str(alignment_layer_list[j].skip) )
     print ( "" )
     print ( "  Image List for Layer " + str(i) + " contains:" + str(sorted(alignment_layer_list[i].image_dict.keys(), reverse=True)) )
+    # Tom: print ( "  Image List for Layer " + str(j) + " contains:" + str(sorted(alignment_layer_list[j].image_dict.keys(), reverse=True)) )
     for k in sorted(alignment_layer_list[j].image_dict.keys(), reverse=True):
       im = alignment_layer_list[j].image_dict[k]
       print ( "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
     print ( "" )
-    print ( "  translation window width = " + str(alignment_layer_list[i].trans_ww) )
-    print ( "  translation addx         = " + str(alignment_layer_list[i].trans_addx) )
-    print ( "  translation addy         = " + str(alignment_layer_list[i].trans_addy) )
+    print ( "  translation window width = " + str(alignment_layer_list[j].trans_ww) )
+    print ( "  translation addx         = " + str(alignment_layer_list[j].trans_addx) )
+    print ( "  translation addy         = " + str(alignment_layer_list[j].trans_addy) )
     print ( "" )
-    print ( "  affine enabled           = " + str(alignment_layer_list[i].affine_enabled) )
-    print ( "  affine window width      = " + str(alignment_layer_list[i].affine_ww) )
-    print ( "  affine addx              = " + str(alignment_layer_list[i].affine_addx) )
-    print ( "  affine addy              = " + str(alignment_layer_list[i].affine_addy) )
+    print ( "  affine enabled           = " + str(alignment_layer_list[j].affine_enabled) )
+    print ( "  affine window width      = " + str(alignment_layer_list[j].affine_ww) )
+    print ( "  affine addx              = " + str(alignment_layer_list[j].affine_addx) )
+    print ( "  affine addy              = " + str(alignment_layer_list[j].affine_addy) )
     print ( "" )
-    print ( "  bias enabled             = " + str(alignment_layer_list[i].bias_enabled) )
-    print ( "  bias dx                  = " + str(alignment_layer_list[i].bias_dx) )
-    print ( "  bias dy                  = " + str(alignment_layer_list[i].bias_dy) )
+    print ( "  bias enabled             = " + str(alignment_layer_list[j].bias_enabled) )
+    print ( "  bias dx                  = " + str(alignment_layer_list[j].bias_dx) )
+    print ( "  bias dy                  = " + str(alignment_layer_list[j].bias_dy) )
 
   # Perform the actual alignment
   for apair in align_pairs:
@@ -1138,7 +1141,7 @@ def run_alignment_callback ( align_all ):
       shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
       # Create a new identity transform for this layer even though it's not otherwise needed
-      alignment_layer_list[i].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -1161,6 +1164,7 @@ def run_alignment_callback ( align_all ):
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
       annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR :"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      # Tom annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
