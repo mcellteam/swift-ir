@@ -553,6 +553,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
       this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+      print ( "    Storing point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
       # if this_image.point_add_enabled:
       if self.point_add_enabled:
         this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
@@ -1428,7 +1429,7 @@ def menu_callback ( widget, data=None ):
                     if not os.path.isabs(image_fname):
                       image_fname = os.path.join ( project_path, image_fname )
                     image_fname = os.path.realpath ( image_fname )
-                    a = alignment_layer ( image_fname )
+                    a = alignment_layer ( image_fname )  # This will put the image into the "base" role
                     if 'skip' in json_alignment_layer:
                       a.skip = json_alignment_layer['skip']
                     if 'align_to_next_pars' in json_alignment_layer:
@@ -1446,12 +1447,26 @@ def menu_callback ( widget, data=None ):
                     alignment_layer_list.append ( a )
       file_chooser.destroy()
       print ( "Done with dialog" )
+      # Copy the "base" images into the "ref" images for the next layer
+      # This is SWiFT specific, but makes it simpler to use for now
+      layer_index = 0
+      for a in alignment_layer_list:
+        if layer_index > 0:
+          a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
+        layer_index += 1
       refresh_all_images()
       center_all_images()
+      panel_index = 0
       for panel in panel_list:
-        panel.role = 'base'
+        if panel_index == 0:
+          panel.role = 'ref'
+          panel.point_add_enabled = True
+        else:
+          panel.role = 'base'
+          panel.point_add_enabled = True
         panel.force_center = True
         panel.queue_draw()
+        panel_index += 1
       zpa_original.force_center = True
       zpa_original.queue_draw()
 
