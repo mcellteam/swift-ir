@@ -1141,7 +1141,7 @@ def run_alignment_callback ( align_all ):
       shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
       # Create a new identity transform for this layer even though it's not otherwise needed
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None ) # , align_layer_dict )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -1151,7 +1151,7 @@ def run_alignment_callback ( align_all ):
       # Align the image at index j with the reference at index i
       print (    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
       prev_afm = alignment_layer_list[i].align_proc.cumulative_afm
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, prev_afm )
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, prev_afm ) # , align_layer_dict )
       alignment_layer_list[j].align_proc.align()
       recipe = alignment_layer_list[j].align_proc.recipe
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
@@ -1163,8 +1163,7 @@ def run_alignment_callback ( align_all ):
 
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
-      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR :"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
-      # Tom annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
@@ -1431,6 +1430,9 @@ def menu_callback ( widget, data=None ):
             proj_dict = json.loads ( text )
             print ( str(proj_dict) )
             print ( "Project file version " + str(proj_dict['version']) )
+            if proj_dict['version'] > 0.0:
+              print ( "Unable to read from versions above 0.0" )
+              exit (99)
             print ( "Project file method " + str(proj_dict['method']) )
             if 'data' in proj_dict:
               if 'destination_path' in proj_dict['data']:
@@ -1544,7 +1546,7 @@ def menu_callback ( widget, data=None ):
         print ( "Saving destination path = " + str(destination_path) )
         f = open ( project_file_name, 'w' )
         f.write ( '{\n' )
-        f.write ( '  "version": 0.0,\n' )
+        f.write ( '  "version": 0.1,\n' )
         f.write ( '  "method": "SWiFT-IR",\n' )
         f.write ( '  "data": {\n' )
         f.write ( '    "source_path": "",\n' )
@@ -1561,22 +1563,43 @@ def menu_callback ( widget, data=None ):
 
         if alignment_layer_list != None:
           if len(alignment_layer_list) > 0:
-            f.write ( '    "imagestack": [\n' )
+            f.write ( '    "alignment_stack": [\n' )
             for a in alignment_layer_list:
               f.write ( '      {\n' )
               f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
-              rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
               if a != alignment_layer_list[-1]:
-                f.write ( '        "filename": "' + rel_file_name + '",\n' )
-                f.write ( '        "align_to_next_pars": {\n' )
-                f.write ( '          "window_size": ' + str(a.trans_ww) + ',\n' )
-                f.write ( '          "addx": ' + str(a.trans_addx) + ',\n' )
-                f.write ( '          "addy": ' + str(a.trans_addy) + ',\n' )
-                f.write ( '          "output_level": 0\n' )
-                f.write ( '        }\n' )
+                # Not sure what to leave out for last image ... keep all for now
+                pass
+              f.write ( '        "images": {\n' )
+              f.write ( '          "base": {\n' )
+              rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
+              f.write ( '            "filename": "' + rel_file_name + '",\n' )
+              f.write ( '            "metadata": {\n' )
+              f.write ( '              "match_points": [],\n' )
+              f.write ( '              "annotations": []\n' )
+              f.write ( '            }\n' )
+              f.write ( '          }\n' )
+              f.write ( '        },\n' )
+              f.write ( '        "align_to_ref_method": {\n' )
+              f.write ( '          "selected_method": "Swim Align",\n' )
+              f.write ( '          "method_options": ["Swim Align", "Match Point"],\n' )
+              f.write ( '          "method_data": {\n' )
+              f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
+              f.write ( '            "addx": ' + str(a.trans_addx) + ',\n' )
+              f.write ( '            "addy": ' + str(a.trans_addy) + ',\n' )
+              f.write ( '            "output_level": 0\n' )
+              f.write ( '          },\n' )
+              f.write ( '          "method_results": {\n' )
+              f.write ( '            "affine_matrix":[[1,2,3],[4,5,6]],\n' )
+              f.write ( '            "snr": {\n' )
+              f.write ( '              "final": 1.234,\n' )
+              f.write ( '              "process": []\n' )
+              f.write ( '            }\n' )
+              f.write ( '          }\n' )
+              f.write ( '        }\n' )
+              if a != alignment_layer_list[-1]:
                 f.write ( '      },\n' )
               else:
-                f.write ( '        "filename": "' + rel_file_name + '"\n' )
                 f.write ( '      }\n' )
             f.write ( '    ]\n' )
             f.write ( '  }\n' )
