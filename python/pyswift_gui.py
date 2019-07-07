@@ -1,8 +1,7 @@
 # Things to fix:
 #
-#   Currently need to scroll all the way through the stack or get an error when aligning
-#   Align forward 1 should align what's in the screen not the next
 #   Match points need to match the images they come from
+#   Aligning should not clear the match points
 
 
 #!/usr/bin/env python
@@ -460,6 +459,9 @@ class alignment_layer:
     self.bias_enabled = True
     self.bias_dx = 0
     self.bias_dy = 0
+
+    self.align_method = 0
+    self.align_method_text = "Swim Window"
 
     try:
       self.base_annotated_image = annotated_image ( self.base_image_name, role="base" )
