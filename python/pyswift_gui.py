@@ -1063,7 +1063,7 @@ def run_alignment_callback ( align_all ):
       new_pairs = [ p for p in align_pairs if p[1] >= alignment_layer_index ]
     else:
       # Exclude the current layer
-      new_pairs = [ p for p in align_pairs if p[1] > alignment_layer_index ]
+      new_pairs = [ p for p in align_pairs if p[1] >= alignment_layer_index ]
     align_pairs = new_pairs
     # Remove any pairs beyond the number forward
     num_forward_str = gui_fields.num_align_forward.get_text()
@@ -1071,7 +1071,7 @@ def run_alignment_callback ( align_all ):
       # A forward limit has been entered
       try:
         num_forward = int(num_forward_str.strip())
-        new_pairs = [ p for p in align_pairs if p[1] <= alignment_layer_index+num_forward ]
+        new_pairs = [ p for p in align_pairs if p[1] < alignment_layer_index+num_forward ]
         align_pairs = new_pairs
       except:
         print ( "The number forward should be an integer and not " + num_forward_str )
@@ -1150,7 +1150,7 @@ def run_alignment_callback ( align_all ):
 
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
-      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR:"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: "+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
