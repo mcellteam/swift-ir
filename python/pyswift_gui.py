@@ -1470,7 +1470,10 @@ def menu_callback ( widget, data=None ):
       layer_index = 0
       for a in alignment_layer_list:
         if layer_index > 0:
+          # Create a reference image from the previous layer
           a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
+        # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
+        #a.image_dict["aligned"] = annotated_image(None,role="aligned")
         layer_index += 1
       refresh_all_images()
       center_all_images()
@@ -1479,9 +1482,12 @@ def menu_callback ( widget, data=None ):
         if panel_index == 0:
           panel.role = 'ref'
           panel.point_add_enabled = True
-        else:
+        elif panel_index == 1:
           panel.role = 'base'
           panel.point_add_enabled = True
+        elif panel_index == 2:
+          panel.role = 'aligned'
+          panel.point_add_enabled = False
         panel.force_center = True
         panel.queue_draw()
         panel_index += 1
@@ -1609,8 +1615,9 @@ def menu_callback ( widget, data=None ):
               pass
           print ( "Restoring original images..." )
           for al in alignment_layer_list:
-            al.image_dict = {}
-            al.image_dict['base'] = al.base_annotated_image
+            #al.image_dict = {}
+            #al.image_dict['base'] = al.base_annotated_image
+            al.image_dict['aligned'] = annotated_image(None, role="aligned")
           zpa_original.queue_draw()
           for p in panel_list:
             p.queue_draw()
