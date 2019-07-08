@@ -1478,6 +1478,16 @@ def menu_callback ( widget, data=None ):
                               a.bias_enabled = False
                               a.bias_dx = 0
                               a.bias_dy = 0
+
+                          # Load match points into the base image (if found)
+                          if 'metadata' in base:
+                            if 'match_points' in base['metadata']:
+                              mp = base['metadata']['match_points']
+                              for p in mp:
+                                print ( "%%%% GOT BASE MATCH POINT: " + str(p) )
+                                m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
+                                a.image_dict['base'].graphics_items.append ( m )
+
                           # Only look for a ref or aligned if there has been a base
                           if 'ref' in im_list:
                             ref = im_list['ref']
@@ -1488,6 +1498,16 @@ def menu_callback ( widget, data=None ):
                                 image_fname = os.path.join ( project_path, image_fname )
                               image_fname = os.path.realpath ( image_fname )
                               a.image_dict["ref"] = annotated_image(image_fname,role="ref")
+
+                              # Load match points into the ref image (if found)
+                              if 'metadata' in ref:
+                                if 'match_points' in ref['metadata']:
+                                  mp = ref['metadata']['match_points']
+                                  for p in mp:
+                                    print ( "%%%% GOT REF MATCH POINT: " + str(p) )
+                                    m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
+                                    a.image_dict['ref'].graphics_items.append ( m )
+
                           if 'aligned' in im_list:
                             aligned = im_list['aligned']
                             if 'filename' in aligned:
