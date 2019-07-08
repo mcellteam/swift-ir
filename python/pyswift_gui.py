@@ -1464,19 +1464,43 @@ def menu_callback ( widget, data=None ):
                           a = alignment_layer ( image_fname )  # This will put the image into the "base" role
                           if 'skip' in json_alignment_layer:
                             a.skip = json_alignment_layer['skip']
-                          if 'align_to_next_pars' in json_alignment_layer:
-                            pars = json_alignment_layer['align_to_next_pars']
-                            a.trans_ww = pars['window_size']
-                            a.trans_addx = pars['addx']
-                            a.trans_addy = pars['addy']
-                            a.affine_enabled = True
-                            a.affine_ww = pars['window_size']
-                            a.affine_addx = pars['addx']
-                            a.affine_addy = pars['addy']
-                            a.bias_enabled = False
-                            a.bias_dx = 0
-                            a.bias_dy = 0
+                          if 'align_to_ref_method' in json_alignment_layer:
+                            align_to_ref_method = json_alignment_layer['align_to_ref_method']
+                            if 'method_data' in align_to_ref_method:
+                              pars = align_to_ref_method['method_data']
+                              a.trans_ww = pars['window_size']
+                              a.trans_addx = pars['addx']
+                              a.trans_addy = pars['addy']
+                              a.affine_enabled = True
+                              a.affine_ww = pars['window_size']
+                              a.affine_addx = pars['addx']
+                              a.affine_addy = pars['addy']
+                              a.bias_enabled = False
+                              a.bias_dx = 0
+                              a.bias_dy = 0
+                          # Only look for a ref or aligned if there has been a base
+                          if 'ref' in im_list:
+                            ref = im_list['ref']
+                            if 'filename' in ref:
+                              image_fname = ref['filename']
+                              # Convert to absolute as needed
+                              if not os.path.isabs(image_fname):
+                                image_fname = os.path.join ( project_path, image_fname )
+                              image_fname = os.path.realpath ( image_fname )
+                              a.image_dict["ref"] = annotated_image(image_fname,role="ref")
+                          if 'aligned' in im_list:
+                            aligned = im_list['aligned']
+                            if 'filename' in aligned:
+                              image_fname = aligned['filename']
+                              # Convert to absolute as needed
+                              if not os.path.isabs(image_fname):
+                                image_fname = os.path.join ( project_path, image_fname )
+                              image_fname = os.path.realpath ( image_fname )
+                              a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
+
                           alignment_layer_list.append ( a )
+
+
       file_chooser.destroy()
       print ( "Done with dialog" )
       # Copy the "base" images into the "ref" images for the next layer
@@ -1484,8 +1508,9 @@ def menu_callback ( widget, data=None ):
       layer_index = 0
       for a in alignment_layer_list:
         if layer_index > 0:
-          # Create a reference image from the previous layer
-          a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
+          # Create a reference image from the previous layer if it wasn't read in via the JSON above
+          if not 'ref' in a.image_dict:
+            a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
         # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
         #a.image_dict["aligned"] = annotated_image(None,role="aligned")
         layer_index += 1
