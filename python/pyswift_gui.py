@@ -443,7 +443,7 @@ class alignment_layer:
     self.base_image_name = base
     self.align_proc = None
     self.align_method = 0
-    self.align_method_text = 'Swim Window'
+    self.align_method_text = 'Auto Swim Align'
 
     # This holds a single annotated image
     self.base_annotated_image = None
@@ -466,9 +466,6 @@ class alignment_layer:
     self.bias_enabled = True
     self.bias_dx = 0
     self.bias_dy = 0
-
-    self.align_method = 0
-    self.align_method_text = "Swim Window"
 
     try:
       self.base_annotated_image = annotated_image ( self.base_image_name, role="base" )
@@ -516,6 +513,7 @@ def store_current_layer_into_fields():
   gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
   gui_fields.skip_check_box.set_active ( a.skip )
   gui_fields.align_method_select.set_active ( a.align_method )
+  # gui_fields.align_method_select.set_active_text ( a.align_method_text )
   gui_fields.affine_check_box.set_active ( a.affine_enabled )
   gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
 
@@ -1121,7 +1119,7 @@ def run_alignment_callback ( align_all ):
     print ( "===============================================================================" )
     print ( "Aligning base:" + str(j) + " to ref:" + str(i) + " with method " + str(m) + " using:" )
     print ( "" )
-    print ( "  method                   = " + str(['Swim Window', 'Match Point'][m]) )
+    print ( "  method                   = " + str(['Auto Swim Align', 'Match Point Align'][m]) )
     print ( "  ref                     = " + str(alignment_layer_list[i].base_image_name) )
     print ( "  base                   = " + str(alignment_layer_list[j].base_image_name) )
     print ( "  skip                     = " + str(alignment_layer_list[j].skip) )
@@ -1560,9 +1558,12 @@ def menu_callback ( widget, data=None ):
                           if 'skip' in json_alignment_layer:
                             a.skip = json_alignment_layer['skip']
                           if 'align_to_ref_method' in json_alignment_layer:
-                            align_to_ref_method = json_alignment_layer['align_to_ref_method']
-                            if 'method_data' in align_to_ref_method:
-                              pars = align_to_ref_method['method_data']
+                            json_align_to_ref_method = json_alignment_layer['align_to_ref_method']
+                            a.align_method_text = str(json_align_to_ref_method['selected_method'])
+                            opts = [ str(x) for x in json_align_to_ref_method['method_options'] ]
+                            a.align_method = opts.index(a.align_method_text)
+                            if 'method_data' in json_align_to_ref_method:
+                              pars = json_align_to_ref_method['method_data']
                               a.trans_ww = pars['window_size']
                               a.trans_addx = pars['addx']
                               a.trans_addy = pars['addy']
@@ -1573,6 +1574,7 @@ def menu_callback ( widget, data=None ):
                               a.bias_enabled = False
                               a.bias_dx = 0
                               a.bias_dy = 0
+                          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
                           # Load match points into the base image (if found)
                           if 'metadata' in base:
@@ -1751,7 +1753,7 @@ def menu_callback ( widget, data=None ):
               f.write ( '        },\n' )
               f.write ( '        "align_to_ref_method": {\n' )
               f.write ( '          "selected_method": "' + str(a.align_method_text) + '",\n' )
-              f.write ( '          "method_options": ["Swim Align", "Match Point"],\n' )
+              f.write ( '          "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
               f.write ( '          "method_data": {\n' )
               f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
               f.write ( '            "addx": ' + str(a.trans_addx) + ',\n' )
@@ -2255,8 +2257,8 @@ def main():
   cell = gtk.CellRendererText()
   gui_fields.align_method_select.pack_start(cell)
   gui_fields.align_method_select.add_attribute(cell, 'text', 0)
-  store.append ( ["Swim Window"] )
-  store.append ( ["Match Point"] )
+  store.append ( ["Auto Swim Align"] )
+  store.append ( ["Match Point Align"] )
   gui_fields.align_method_select.set_model(store)
   gui_fields.align_method_select.set_active(0)
   label_entry.pack_start ( gui_fields.align_method_select, True, True, 0 )
