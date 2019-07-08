@@ -671,14 +671,14 @@ def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
             ofn = ofnbase % k
         else:
             ofn = ofnbase(k)
-        saveImage(img, ofn)
+        saveImage(img.astype('uint8'), ofn)
         
     for k in range(N):
         if nbelow >= keepin:
             belowsum -= stack[idx(k - keepin)]
             nbelow -= 1
 
-        nwimg = loadImage(ifns[k])
+        nwimg = loadImage(ifns[k]).astype('float32')
 
         if belowsum is None:
             belowsum = nwimg
