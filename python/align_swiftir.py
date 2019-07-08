@@ -25,17 +25,41 @@ Together these ingredients comprise a procedure, or "recipe".
 
 class alignment_process:
 
-  def __init__(self, im_sta_fn, im_mov_fn, align_dir, cumulative_afm=None):
+  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, cumulative_afm=None):
     self.recipe = None
     self.im_sta_fn = im_sta_fn
     self.im_mov_fn = im_mov_fn
     self.align_dir = align_dir
+
+    if layer_dict != None:
+      self.layer_dict = layer_dict
+    else:
+      self.layer_dict = {
+                          "align_to_ref_method": {
+                                                   "selected_method": "Auto Swim Align",
+                                                   "method_options": [
+                                                                       "Auto Swim Align",
+                                                                       "Match Point Align"
+                                                                     ],
+						   "method_data": {},
+						   "method_results": {}
+						 }
+      }
     if type(cumulative_afm) == type(None):
       self.cumulative_afm = swiftir.identityAffine()
     else:
       self.cumulative_afm = cumulative_afm
 
+
   def align(self):
+
+    if self.layer_dict['align_to_ref_method']['selected_method']=='Auto Swim Align':
+      self.auto_swim_align()
+    elif self.layer_dict['align_to_ref_method']['selected_method']=='Match Point Align':
+      self.auto_swim_align()
+
+  
+  def auto_swim_align(self):
 
     im_sta = swiftir.loadImage(self.im_sta_fn)
     im_mov = swiftir.loadImage(self.im_mov_fn)
@@ -73,14 +97,24 @@ class alignment_process:
 
     self.recipe = align_recipe(im_sta, im_mov)
 
-    ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
-    ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
-    ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
+    if self.layer_dict['align_to_ref_method']['selected_method']=='Auto Swim Align':
+      ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
+      ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
+      ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
+      self.recipe.add_ingredient(ingredient_1)
+      self.recipe.add_ingredient(ingredient_2x2)
+      self.recipe.add_ingredient(ingredient_4x4)
+    elif self.layer_dict['align_to_ref_method']['selected_method']=='Match Point Align':
+      # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
+      mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
+      mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
+      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align')
+      ingredient_2_mp = align_ingredient(ww=s_4x4, psta=mp_ref, pmov=mp_base)
+      self.recipe.add_ingredient(ingredient_1_mp)
+      self.recipe.add_ingredient(ingredient_2_mp)
+
     ingredient_check_align = align_ingredient(ww=(wwx,wwy), psta=psta_1, iters=1, align_mode='check_align')
 
-    self.recipe.add_ingredient(ingredient_1)
-    self.recipe.add_ingredient(ingredient_2x2)
-    self.recipe.add_ingredient(ingredient_4x4)
     self.recipe.add_ingredient(ingredient_check_align)
 
     self.recipe.execute()
@@ -91,6 +125,7 @@ class alignment_process:
     swiftir.saveImage(im_aligned,ofn)
 
     return (self.cumulative_afm, self.recipe)
+
 
 
 # Universal class for alignment recipes
