@@ -1750,7 +1750,7 @@ def menu_callback ( widget, data=None ):
 
               f.write ( '        },\n' )
               f.write ( '        "align_to_ref_method": {\n' )
-              f.write ( '          "selected_method": "Swim Align",\n' )
+              f.write ( '          "selected_method": "' + str(a.align_method_text) + '",\n' )
               f.write ( '          "method_options": ["Swim Align", "Match Point"],\n' )
               f.write ( '          "method_data": {\n' )
               f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
