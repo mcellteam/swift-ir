@@ -905,6 +905,18 @@ def set_all_or_fwd_callback ( set_all ):
 
   return True
 
+def change_skip_callback(zpa):
+  global gui_fields
+  print ( "Skip Changed!!" )
+  print ( "State is now " + str(gui_fields.skip_check_box.get_active()) )
+  alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
+
+  # zpa.queue_draw()
+  for p in panel_list:
+    p.drawing_area.queue_draw()
+
+  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  return True
 
 def step_callback(zpa):
   zpa.get_drawing_area().queue_draw()
@@ -1441,6 +1453,40 @@ def menu_callback ( widget, data=None ):
         panel.queue_draw()
       zpa_original.force_center = True
       zpa_original.queue_draw()
+
+      ##### Begin Pasted from OpenProj
+      print ( "Done with dialog" )
+      # Copy the "base" images into the "ref" images for the next layer
+      # This is SWiFT specific, but makes it simpler to use for now
+      layer_index = 0
+      for a in alignment_layer_list:
+        if layer_index > 0:
+          # Create a reference image from the previous layer if it wasn't read in via the JSON above
+          if not 'ref' in a.image_dict:
+            a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
+        # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
+        #a.image_dict["aligned"] = annotated_image(None,role="aligned")
+        layer_index += 1
+      refresh_all_images()
+      center_all_images()
+      panel_index = 0
+      for panel in panel_list:
+        if panel_index == 0:
+          panel.role = 'ref'
+          panel.point_add_enabled = True
+        elif panel_index == 1:
+          panel.role = 'base'
+          panel.point_add_enabled = True
+        elif panel_index == 2:
+          panel.role = 'aligned'
+          panel.point_add_enabled = False
+        panel.force_center = True
+        panel.queue_draw()
+        panel_index += 1
+      zpa_original.force_center = True
+      zpa_original.queue_draw()
+      ##### End Pasted from OpenProj
+
 
 
     elif command == "OpenProj":
@@ -2190,6 +2236,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.skip_check_box = gtk.CheckButton("Skip")
+  gui_fields.skip_check_box.connect_object ( "clicked", change_skip_callback, False )
   label_entry.pack_start ( gui_fields.skip_check_box, True, True, 0 )
   gui_fields.skip_check_box.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
