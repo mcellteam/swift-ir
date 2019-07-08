@@ -1195,7 +1195,6 @@ def run_alignment_callback ( align_all ):
 
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
-      # Bob annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR :"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
       annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
       for ri in range(len(recipe.recipe)):
@@ -1465,6 +1464,12 @@ def menu_callback ( widget, data=None ):
             proj_dict = json.loads ( text )
             print ( str(proj_dict) )
             print ( "Project file version " + str(proj_dict['version']) )
+            if proj_dict['version'] < 0.05:
+              print ( "Unable to read from versions before 0.1" )
+              exit (99)
+            if proj_dict['version'] > 0.15:
+              print ( "Unable to read from versions above 0.1" )
+              exit (99)
             print ( "Project file method " + str(proj_dict['method']) )
             if 'data' in proj_dict:
               if 'destination_path' in proj_dict['data']:
@@ -1474,33 +1479,90 @@ def menu_callback ( widget, data=None ):
                   destination_path = os.path.join ( project_path, destination_path )
                 destination_path = os.path.realpath ( destination_path )
                 gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
-              if 'imagestack' in proj_dict['data']:
-                imagestack = proj_dict['data']['imagestack']
+              if 'alignment_stack' in proj_dict['data']:
+                imagestack = proj_dict['data']['alignment_stack']
                 if len(imagestack) > 0:
                   alignment_layer_index = 0
                   alignment_layer_list = []
                   for json_alignment_layer in imagestack:
-                    image_fname = json_alignment_layer['filename']
-                    # Convert to absolute as needed
-                    if not os.path.isabs(image_fname):
-                      image_fname = os.path.join ( project_path, image_fname )
-                    image_fname = os.path.realpath ( image_fname )
-                    a = alignment_layer ( image_fname )  # This will put the image into the "base" role
-                    if 'skip' in json_alignment_layer:
-                      a.skip = json_alignment_layer['skip']
-                    if 'align_to_next_pars' in json_alignment_layer:
-                      pars = json_alignment_layer['align_to_next_pars']
-                      a.trans_ww = pars['window_size']
-                      a.trans_addx = pars['addx']
-                      a.trans_addy = pars['addy']
-                      a.affine_enabled = True
-                      a.affine_ww = pars['window_size']
-                      a.affine_addx = pars['addx']
-                      a.affine_addy = pars['addy']
-                      a.bias_enabled = False
-                      a.bias_dx = 0
-                      a.bias_dy = 0
-                    alignment_layer_list.append ( a )
+                    if 'images' in json_alignment_layer:
+                      im_list = json_alignment_layer['images']
+                      if 'base' in im_list:
+                        base = im_list['base']
+                        if 'filename' in base:
+                          image_fname = base['filename']
+                          # Convert to absolute as needed
+                          if not os.path.isabs(image_fname):
+                            image_fname = os.path.join ( project_path, image_fname )
+                          image_fname = os.path.realpath ( image_fname )
+                          a = alignment_layer ( image_fname )  # This will put the image into the "base" role
+                          if 'skip' in json_alignment_layer:
+                            a.skip = json_alignment_layer['skip']
+                          if 'align_to_ref_method' in json_alignment_layer:
+                            align_to_ref_method = json_alignment_layer['align_to_ref_method']
+                            if 'method_data' in align_to_ref_method:
+                              pars = align_to_ref_method['method_data']
+                              a.trans_ww = pars['window_size']
+                              a.trans_addx = pars['addx']
+                              a.trans_addy = pars['addy']
+                              a.affine_enabled = True
+                              a.affine_ww = pars['window_size']
+                              a.affine_addx = pars['addx']
+                              a.affine_addy = pars['addy']
+                              a.bias_enabled = False
+                              a.bias_dx = 0
+                              a.bias_dy = 0
+
+                          # Load match points into the base image (if found)
+                          if 'metadata' in base:
+                            if 'match_points' in base['metadata']:
+                              mp = base['metadata']['match_points']
+                              for p in mp:
+                                print ( "%%%% GOT BASE MATCH POINT: " + str(p) )
+                                m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
+                                a.image_dict['base'].graphics_items.append ( m )
+
+                          # Only look for a ref or aligned if there has been a base
+                          if 'ref' in im_list:
+                            ref = im_list['ref']
+                            if 'filename' in ref:
+                              image_fname = ref['filename']
+                              if len(image_fname) <= 0:
+                                # Don't try to load empty images
+                                a.image_dict['ref'] = annotated_image(None, role="ref")
+                              else:
+                                # Convert to absolute as needed
+                                if not os.path.isabs(image_fname):
+                                  image_fname = os.path.join ( project_path, image_fname )
+                                image_fname = os.path.realpath ( image_fname )
+                                a.image_dict["ref"] = annotated_image(image_fname,role="ref")
+
+                                # Load match points into the ref image (if found)
+                                if 'metadata' in ref:
+                                  if 'match_points' in ref['metadata']:
+                                    mp = ref['metadata']['match_points']
+                                    for p in mp:
+                                      print ( "%%%% GOT REF MATCH POINT: " + str(p) )
+                                      m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
+                                      a.image_dict['ref'].graphics_items.append ( m )
+
+                          if 'aligned' in im_list:
+                            aligned = im_list['aligned']
+                            if 'filename' in aligned:
+                              image_fname = aligned['filename']
+                              if len(image_fname) <= 0:
+                                # Don't try to load empty images
+                                a.image_dict['ref'] = annotated_image(None, role="ref")
+                              else:
+                                # Convert to absolute as needed
+                                if not os.path.isabs(image_fname):
+                                  image_fname = os.path.join ( project_path, image_fname )
+                                image_fname = os.path.realpath ( image_fname )
+                                a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
+
+                          alignment_layer_list.append ( a )
+
+
       file_chooser.destroy()
       print ( "Done with dialog" )
       # Copy the "base" images into the "ref" images for the next layer
@@ -1508,8 +1570,9 @@ def menu_callback ( widget, data=None ):
       layer_index = 0
       for a in alignment_layer_list:
         if layer_index > 0:
-          # Create a reference image from the previous layer
-          a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
+          # Create a reference image from the previous layer if it wasn't read in via the JSON above
+          if not 'ref' in a.image_dict:
+            a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
         # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
         #a.image_dict["aligned"] = annotated_image(None,role="aligned")
         layer_index += 1
@@ -1578,7 +1641,7 @@ def menu_callback ( widget, data=None ):
         print ( "Saving destination path = " + str(destination_path) )
         f = open ( project_file_name, 'w' )
         f.write ( '{\n' )
-        f.write ( '  "version": 0.0,\n' )
+        f.write ( '  "version": 0.1,\n' )
         f.write ( '  "method": "SWiFT-IR",\n' )
         f.write ( '  "data": {\n' )
         f.write ( '    "source_path": "",\n' )
@@ -1595,22 +1658,56 @@ def menu_callback ( widget, data=None ):
 
         if alignment_layer_list != None:
           if len(alignment_layer_list) > 0:
-            f.write ( '    "imagestack": [\n' )
+            f.write ( '    "alignment_stack": [\n' )
             for a in alignment_layer_list:
               f.write ( '      {\n' )
               f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
-              rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
               if a != alignment_layer_list[-1]:
-                f.write ( '        "filename": "' + rel_file_name + '",\n' )
-                f.write ( '        "align_to_next_pars": {\n' )
-                f.write ( '          "window_size": ' + str(a.trans_ww) + ',\n' )
-                f.write ( '          "addx": ' + str(a.trans_addx) + ',\n' )
-                f.write ( '          "addy": ' + str(a.trans_addy) + ',\n' )
-                f.write ( '          "output_level": 0\n' )
-                f.write ( '        }\n' )
+                # Not sure what to leave out for last image ... keep all for now
+                pass
+              f.write ( '        "images": {\n' )
+
+              img_keys = sorted(a.image_dict.keys(), reverse=True)
+              for k in img_keys:
+                im = a.image_dict[k]
+                #print ( "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
+                f.write ( '          "' + k + '": {\n' )  # "base": {
+                # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
+                print ( "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
+                rel_file_name = ""
+                if type(im.file_name) != type(None):
+                  rel_file_name = os.path.relpath(im.file_name,start=project_path)
+                f.write ( '            "filename": "' + rel_file_name + '",\n' )
+                f.write ( '            "metadata": {\n' )
+                f.write ( '              "match_points": ' + str(im.get_marker_points()) + ',\n' )
+                f.write ( '              "annotations": []\n' )
+                f.write ( '            }\n' )
+                if k != img_keys[-1]:
+                  f.write ( '          },\n' )
+                else:
+                  f.write ( '          }\n' )
+
+              f.write ( '        },\n' )
+              f.write ( '        "align_to_ref_method": {\n' )
+              f.write ( '          "selected_method": "Swim Align",\n' )
+              f.write ( '          "method_options": ["Swim Align", "Match Point"],\n' )
+              f.write ( '          "method_data": {\n' )
+              f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
+              f.write ( '            "addx": ' + str(a.trans_addx) + ',\n' )
+              f.write ( '            "addy": ' + str(a.trans_addy) + ',\n' )
+              f.write ( '            "output_level": 0\n' )
+              f.write ( '          },\n' )
+              f.write ( '          "method_results": {\n' )
+              f.write ( '            "affine_matrix":[[1,2,3],[4,5,6]],\n' )
+              f.write ( '            "snr": {\n' )
+              f.write ( '              "final": 1.234,\n' )
+              f.write ( '              "process": []\n' )
+              f.write ( '            }\n' )
+              f.write ( '          }\n' )
+              f.write ( '        }\n' )
+              if a != alignment_layer_list[-1]:
                 f.write ( '      },\n' )
               else:
-                f.write ( '        "filename": "' + rel_file_name + '"\n' )
                 f.write ( '      }\n' )
             f.write ( '    ]\n' )
             f.write ( '  }\n' )
