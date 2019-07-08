@@ -1430,8 +1430,11 @@ def menu_callback ( widget, data=None ):
             proj_dict = json.loads ( text )
             print ( str(proj_dict) )
             print ( "Project file version " + str(proj_dict['version']) )
-            if proj_dict['version'] > 0.0:
-              print ( "Unable to read from versions above 0.0" )
+            if proj_dict['version'] < 0.05:
+              print ( "Unable to read from versions before 0.1" )
+              exit (99)
+            if proj_dict['version'] > 0.15:
+              print ( "Unable to read from versions above 0.1" )
               exit (99)
             print ( "Project file method " + str(proj_dict['method']) )
             if 'data' in proj_dict:
@@ -1442,33 +1445,38 @@ def menu_callback ( widget, data=None ):
                   destination_path = os.path.join ( project_path, destination_path )
                 destination_path = os.path.realpath ( destination_path )
                 gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
-              if 'imagestack' in proj_dict['data']:
-                imagestack = proj_dict['data']['imagestack']
+              if 'alignment_stack' in proj_dict['data']:
+                imagestack = proj_dict['data']['alignment_stack']
                 if len(imagestack) > 0:
                   alignment_layer_index = 0
                   alignment_layer_list = []
                   for json_alignment_layer in imagestack:
-                    image_fname = json_alignment_layer['filename']
-                    # Convert to absolute as needed
-                    if not os.path.isabs(image_fname):
-                      image_fname = os.path.join ( project_path, image_fname )
-                    image_fname = os.path.realpath ( image_fname )
-                    a = alignment_layer ( image_fname )  # This will put the image into the "base" role
-                    if 'skip' in json_alignment_layer:
-                      a.skip = json_alignment_layer['skip']
-                    if 'align_to_next_pars' in json_alignment_layer:
-                      pars = json_alignment_layer['align_to_next_pars']
-                      a.trans_ww = pars['window_size']
-                      a.trans_addx = pars['addx']
-                      a.trans_addy = pars['addy']
-                      a.affine_enabled = True
-                      a.affine_ww = pars['window_size']
-                      a.affine_addx = pars['addx']
-                      a.affine_addy = pars['addy']
-                      a.bias_enabled = False
-                      a.bias_dx = 0
-                      a.bias_dy = 0
-                    alignment_layer_list.append ( a )
+                    if 'images' in json_alignment_layer:
+                      im_list = json_alignment_layer['images']
+                      if 'base' in im_list:
+                        base = im_list['base']
+                        if 'filename' in base:
+                          image_fname = base['filename']
+                          # Convert to absolute as needed
+                          if not os.path.isabs(image_fname):
+                            image_fname = os.path.join ( project_path, image_fname )
+                          image_fname = os.path.realpath ( image_fname )
+                          a = alignment_layer ( image_fname )  # This will put the image into the "base" role
+                          if 'skip' in json_alignment_layer:
+                            a.skip = json_alignment_layer['skip']
+                          if 'align_to_next_pars' in json_alignment_layer:
+                            pars = json_alignment_layer['align_to_next_pars']
+                            a.trans_ww = pars['window_size']
+                            a.trans_addx = pars['addx']
+                            a.trans_addy = pars['addy']
+                            a.affine_enabled = True
+                            a.affine_ww = pars['window_size']
+                            a.affine_addx = pars['addx']
+                            a.affine_addy = pars['addy']
+                            a.bias_enabled = False
+                            a.bias_dx = 0
+                            a.bias_dy = 0
+                          alignment_layer_list.append ( a )
       file_chooser.destroy()
       print ( "Done with dialog" )
       # Copy the "base" images into the "ref" images for the next layer
