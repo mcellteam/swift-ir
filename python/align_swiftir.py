@@ -183,6 +183,8 @@ class align_ingredient:
     # Calculate afm directly using psta and pmov as the matching points
     if self.align_mode == 'match_point_align':
       (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+      self.ww = (0.0, 0.0)
+      self.snr = np.zeros(len(self.psta[0]))
       return(self.afm)
 
     #  Otherwise, this is a swim window match ingredient

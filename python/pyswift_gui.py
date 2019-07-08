@@ -1225,8 +1225,6 @@ def run_alignment_callback ( align_all ):
         if type(ww) == type(1):
           # ww is an integer, so turn it into an nxn tuple
           ww = (ww,ww)
-        elif ww == None:
-          ww = (0, 0)
         global show_window_centers
         if True or show_window_centers:
           # Draw dots in the center of each psta (could be pmov) with SNR for each
