@@ -905,6 +905,18 @@ def set_all_or_fwd_callback ( set_all ):
 
   return True
 
+def change_skip_callback(zpa):
+  global gui_fields
+  print ( "Skip Changed!!" )
+  print ( "State is now " + str(gui_fields.skip_check_box.get_active()) )
+  alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
+
+  # zpa.queue_draw()
+  for p in panel_list:
+    p.drawing_area.queue_draw()
+
+  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+  return True
 
 def step_callback(zpa):
   zpa.get_drawing_area().queue_draw()
@@ -2226,6 +2238,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.skip_check_box = gtk.CheckButton("Skip")
+  gui_fields.skip_check_box.connect_object ( "clicked", change_skip_callback, False )
   label_entry.pack_start ( gui_fields.skip_check_box, True, True, 0 )
   gui_fields.skip_check_box.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
