@@ -1493,30 +1493,38 @@ def menu_callback ( widget, data=None ):
                             ref = im_list['ref']
                             if 'filename' in ref:
                               image_fname = ref['filename']
-                              # Convert to absolute as needed
-                              if not os.path.isabs(image_fname):
-                                image_fname = os.path.join ( project_path, image_fname )
-                              image_fname = os.path.realpath ( image_fname )
-                              a.image_dict["ref"] = annotated_image(image_fname,role="ref")
+                              if len(image_fname) <= 0:
+                                # Don't try to load empty images
+                                a.image_dict['ref'] = annotated_image(None, role="ref")
+                              else:
+                                # Convert to absolute as needed
+                                if not os.path.isabs(image_fname):
+                                  image_fname = os.path.join ( project_path, image_fname )
+                                image_fname = os.path.realpath ( image_fname )
+                                a.image_dict["ref"] = annotated_image(image_fname,role="ref")
 
-                              # Load match points into the ref image (if found)
-                              if 'metadata' in ref:
-                                if 'match_points' in ref['metadata']:
-                                  mp = ref['metadata']['match_points']
-                                  for p in mp:
-                                    print ( "%%%% GOT REF MATCH POINT: " + str(p) )
-                                    m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
-                                    a.image_dict['ref'].graphics_items.append ( m )
+                                # Load match points into the ref image (if found)
+                                if 'metadata' in ref:
+                                  if 'match_points' in ref['metadata']:
+                                    mp = ref['metadata']['match_points']
+                                    for p in mp:
+                                      print ( "%%%% GOT REF MATCH POINT: " + str(p) )
+                                      m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
+                                      a.image_dict['ref'].graphics_items.append ( m )
 
                           if 'aligned' in im_list:
                             aligned = im_list['aligned']
                             if 'filename' in aligned:
                               image_fname = aligned['filename']
-                              # Convert to absolute as needed
-                              if not os.path.isabs(image_fname):
-                                image_fname = os.path.join ( project_path, image_fname )
-                              image_fname = os.path.realpath ( image_fname )
-                              a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
+                              if len(image_fname) <= 0:
+                                # Don't try to load empty images
+                                a.image_dict['ref'] = annotated_image(None, role="ref")
+                              else:
+                                # Convert to absolute as needed
+                                if not os.path.isabs(image_fname):
+                                  image_fname = os.path.join ( project_path, image_fname )
+                                image_fname = os.path.realpath ( image_fname )
+                                a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
 
                           alignment_layer_list.append ( a )
 
