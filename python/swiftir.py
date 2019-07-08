@@ -653,17 +653,22 @@ def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
         return k % Z
 
     if TEST:
-        def loadImage(ifn):
+        def loadTestImage(ifn):
             return 10*ifn
 
-        def saveImage(img, ofn):
+        def saveTestImage(img, ofn):
             print('save image. ofn=', ofn)
             print('abovesum = ', abovesum, 'nabove=', nabove)
             print('belowsum = ', belowsum, 'nbelow=', nbelow)
             print('image = ', img)
+        loader = loadTestImage
+        saver = saveTestImage
+    else:
+        loader = loadImage
+        saver = saveImage
 
     def writeImage(k):
-        img = belowsum
+        img = belowsum.copy()
         if not abovesum is None:
             img += abovesum
         img /= nabove+nbelow
@@ -671,17 +676,17 @@ def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
             ofn = ofnbase % k
         else:
             ofn = ofnbase(k)
-        saveImage(img.astype('uint8'), ofn)
+        saver(img.astype('uint8'), ofn)
         
     for k in range(N):
         if nbelow >= keepin:
             belowsum -= stack[idx(k - keepin)]
             nbelow -= 1
 
-        nwimg = loadImage(ifns[k]).astype('float32')
+        nwimg = loader(ifns[k]).astype('float32')
 
         if belowsum is None:
-            belowsum = nwimg
+            belowsum = nwimg.copy()
         else:
             belowsum += nwimg
         nbelow += 1
@@ -695,7 +700,7 @@ def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
             nabove -= 1
         if k>=halfwidth+halfexclwidth:
             if abovesum is None:
-                abovesum = stack[idx(k - halfwidth - halfexclwidth)]
+                abovesum = stack[idx(k - halfwidth - halfexclwidth)].copy()
             else:
                 abovesum += stack[idx(k - halfwidth - halfexclwidth)]
             nabove += 1
