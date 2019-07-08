@@ -1571,14 +1571,27 @@ def menu_callback ( widget, data=None ):
                 # Not sure what to leave out for last image ... keep all for now
                 pass
               f.write ( '        "images": {\n' )
-              f.write ( '          "base": {\n' )
-              rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
-              f.write ( '            "filename": "' + rel_file_name + '",\n' )
-              f.write ( '            "metadata": {\n' )
-              f.write ( '              "match_points": [],\n' )
-              f.write ( '              "annotations": []\n' )
-              f.write ( '            }\n' )
-              f.write ( '          }\n' )
+
+              img_keys = sorted(a.image_dict.keys(), reverse=True)
+              for k in img_keys:
+                im = a.image_dict[k]
+                #print ( "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
+                f.write ( '          "' + k + '": {\n' )  # "base": {
+                # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
+                print ( "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
+                rel_file_name = ""
+                if type(im.file_name) != type(None):
+                  rel_file_name = os.path.relpath(im.file_name,start=project_path)
+                f.write ( '            "filename": "' + rel_file_name + '",\n' )
+                f.write ( '            "metadata": {\n' )
+                f.write ( '              "match_points": ' + str(im.get_marker_points()) + ',\n' )
+                f.write ( '              "annotations": []\n' )
+                f.write ( '            }\n' )
+                if k != img_keys[-1]:
+                  f.write ( '          },\n' )
+                else:
+                  f.write ( '          }\n' )
+
               f.write ( '        },\n' )
               f.write ( '        "align_to_ref_method": {\n' )
               f.write ( '          "selected_method": "Swim Align",\n' )
