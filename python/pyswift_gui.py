@@ -51,8 +51,8 @@ destination_path = ""
 global window
 window = None
 
-global show_spots
-show_spots = False
+global show_window_centers
+show_window_centers = False
 
 global point_mode
 point_mode = False
@@ -197,8 +197,9 @@ class graphic_primitive:
     return round(x*10)/10
 
 class graphic_line (graphic_primitive):
-  def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0] ):
+  def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
     self.marker = False
+    self.graphic_group = graphic_group
     self.x1 = x1
     self.y1 = y1
     self.x2 = x2
@@ -236,8 +237,9 @@ class graphic_line (graphic_primitive):
 
 
 class graphic_rect (graphic_primitive):
-  def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0] ):
+  def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
     self.marker = False
+    self.graphic_group = graphic_group
     self.x = x
     self.y = y
     self.dx = dx
@@ -275,8 +277,9 @@ class graphic_rect (graphic_primitive):
 
 
 class graphic_marker (graphic_primitive):
-  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
     self.marker = True
+    self.graphic_group = graphic_group
     self.x = x
     self.y = y
     self.r = r
@@ -311,8 +314,9 @@ class graphic_marker (graphic_primitive):
 
 
 class graphic_dot (graphic_primitive):
-  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0] ):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
     self.marker = False
+    self.graphic_group = graphic_group
     self.x = x
     self.y = y
     self.r = r
@@ -344,8 +348,9 @@ class graphic_dot (graphic_primitive):
 
 
 class graphic_text (graphic_primitive):
-  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0] ):
+  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
     self.marker = False
+    self.graphic_group = graphic_group
     self.x = x
     self.y = y
     self.s = s
@@ -649,6 +654,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
     global alignment_layer_list
     global alignment_layer_index
+    global show_window_centers
 
     # print ( "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
@@ -830,7 +836,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
               graphics_item.set_color_from_index ( color_index )
               graphics_item.draw ( zpa, drawing_area, self.pangolayout )
             else:
-              graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+              if graphics_item.graphic_group == 'default':
+                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+              elif (graphics_item.graphic_group == 'Centers') and show_window_centers:
+                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
 
     # Draw a separator between the panes
     gc.foreground = colormap.alloc_color(32767,32767,32767)
@@ -1174,12 +1183,18 @@ def run_alignment_callback ( align_all ):
         if type(ww) == type(1):
           # ww is an integer, so turn it into an nxn tuple
           ww = (ww,ww)
-        global show_spots
-        if show_spots:
+        global show_window_centers
+        if True or show_window_centers:
           # Draw dots in the center of each psta (could be pmov) with SNR for each
           for wi in range(s):
-            annotated_img.graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c) )
-            annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c) )
+            annotated_img.graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c,graphic_group="Centers") )
+            annotated_img.graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c,graphic_group="Centers") )
+
+            alignment_layer_list[j].image_dict['ref'].graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c,graphic_group="Centers") )
+            alignment_layer_list[j].image_dict['ref'].graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c,graphic_group="Centers") )
+
+            alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c,graphic_group="Centers") )
+            alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c,graphic_group="Centers") )
         print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
       alignment_layer_list[j].image_dict['aligned'] = annotated_img
@@ -1300,7 +1315,7 @@ def menu_callback ( widget, data=None ):
       print ( "  zpa_original" )
       print ( "  alignment_layer_list" )
       print ( "  alignment_layer_index" )
-      print ( "  show_spots" )
+      print ( "  show_window_centers" )
       print ( "  point_mode" )
       print ( "Handy local items:" )
       print ( "  widget" )
@@ -1748,12 +1763,14 @@ def menu_callback ( widget, data=None ):
       print ( "Centering images" )
       center_all_images()
 
-    elif command == "Spots":
+    elif command == "WinCtrs":
 
-      global show_spots
-      show_spots = not show_spots
-      print ( "Showing Spots is now " + str(show_spots) + ". Re-align to see the effect." )
+      global show_window_centers
+      show_window_centers = not show_window_centers
+      print ( "Showing Window Centers is now " + str(show_window_centers) + ". Re-align to see the effect." )
       zpa.queue_draw()
+      for p in panel_list:
+        p.drawing_area.queue_draw()
 
     elif command in [ x[0] for x in cursor_options ]:
       print ( "Got a cursor cursor change command: " + command )
@@ -2007,7 +2024,7 @@ def main():
   # Create a "Show" menu
   (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Spots",   ("Spots", zpa_original ) )
+    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
     zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Affine",   ("Affine", zpa_original ) )
     zpa_original.add_menu_sep  ( show_menu )
     zpa_original.add_menu_item ( show_menu, menu_callback, "Structures",   ("Structs", zpa_original ) )
