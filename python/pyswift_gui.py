@@ -1123,6 +1123,7 @@ def run_alignment_callback ( align_all ):
     print ( "  bias enabled             = " + str(alignment_layer_list[j].bias_enabled) )
     print ( "  bias dx                  = " + str(alignment_layer_list[j].bias_dx) )
     print ( "  bias dy                  = " + str(alignment_layer_list[j].bias_dy) )
+    
 
   # Perform the actual alignment
   for apair in align_pairs:
@@ -1130,9 +1131,40 @@ def run_alignment_callback ( align_all ):
     j = apair[1] # Current moving
     m = apair[2] # Alignment Method (0=SwimWindow, 1=MatchPoint)
 
+
     if alignment_layer_list[j].image_dict == None:
       print ( "Creating image dictionary for layer " + str(j) )
       alignment_layer_list[j].image_dict = {}
+
+    # TEMP dict to try out match point alignment
+    if m==1:
+      mp_base = alignment_layer_list[j].image_dict['base'].get_marker_points()
+      mp_ref = alignment_layer_list[j].image_dict['ref'].get_marker_points()
+      layer_dict = {
+		     "images": {
+				 "base": {
+					   "metadata": {
+							 "match_points": mp_base
+					   }
+				 },
+				 "ref": {
+					   "metadata": {
+							 "match_points": mp_ref
+					   }
+				 }
+		     },
+		     "align_to_ref_method": {
+					      "selected_method": "Match Point Align",
+					      "method_options": [
+								  "Auto Swim Align",
+								  "Match Point Align"
+								 ],
+					      "method_data": {},
+					      "method_results": {}
+					    }
+      }
+    else:
+      layer_dict = None
 
     annotated_img = None
     if i == j:
@@ -1141,7 +1173,7 @@ def run_alignment_callback ( align_all ):
       shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
       # Create a new identity transform for this layer even though it's not otherwise needed
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, None )
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, layer_dict=layer_dict, cumulative_afm=None )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -1151,7 +1183,7 @@ def run_alignment_callback ( align_all ):
       # Align the image at index j with the reference at index i
       print (    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
       prev_afm = alignment_layer_list[i].align_proc.cumulative_afm
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, prev_afm )
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, layer_dict=layer_dict, cumulative_afm=prev_afm )
       alignment_layer_list[j].align_proc.align()
       recipe = alignment_layer_list[j].align_proc.recipe
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
@@ -1163,8 +1195,8 @@ def run_alignment_callback ( align_all ):
 
       print ( "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
-      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR :"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
-      # Tom annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      # Bob annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR :"+str(recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
@@ -1175,6 +1207,8 @@ def run_alignment_callback ( align_all ):
         if type(ww) == type(1):
           # ww is an integer, so turn it into an nxn tuple
           ww = (ww,ww)
+        elif ww == None:
+          ww = (0, 0)
         global show_spots
         if show_spots:
           # Draw dots in the center of each psta (could be pmov) with SNR for each
