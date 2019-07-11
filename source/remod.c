@@ -102,7 +102,6 @@ fprintf(stderr, "main %d %s\n", argc, argv[0]);
 		argc--;
 		argv++;
 	}
-fprintf(stderr, "argc %d\n", argc);
 fprintf(stderr, "argc %d %s %s\n", argc, argv[0], argv[1]);
 	if(span > argc)
 		span = argc; // adjust down to actual # file names
