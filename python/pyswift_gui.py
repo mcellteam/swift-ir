@@ -876,9 +876,11 @@ class zoom_panel ( app_window.zoom_pan_area ):
     drawable.draw_line ( gc, width-1, 0, width-1, height )
 
     # Draw this window's role
-    gc.foreground = colormap.alloc_color(32767,32767,32767)
-
-    self.pangolayout.set_text ( str(self.role)+":" )
+    gc.foreground = colormap.alloc_color(65535,65535,32767)
+    if str(self.role) == str('base'):
+      self.pangolayout.set_text ( str('src')+":" )
+    else:
+      self.pangolayout.set_text ( str(self.role)+":" )
     drawable.draw_layout ( gc, 3, 2, self.pangolayout )
 
     # Restore the previous color
