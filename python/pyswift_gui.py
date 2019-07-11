@@ -541,6 +541,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
     # Connect the scroll event for the drawing area (from zoom_pan_area) to a local function:
     self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
+    self.drawing_area.connect ( "key_press_event", self.key_press_callback, self )
     #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
 
     # Create a "pango_layout" which seems to be needed for drawing text
@@ -586,6 +587,26 @@ class zoom_panel ( app_window.zoom_pan_area ):
     #print ( "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     return ( app_window.zoom_pan_area.button_release_callback ( self, canvas, event, zpa ) )
 
+  def move_through_stack ( self, direction ):
+    global alignment_layer_list
+    global alignment_layer_index
+
+    # Store the alignment_layer parameters into the image layer being exited
+    store_fields_into_current_layer()
+
+    # Move to the next image layer (potentially)
+    alignment_layer_index += direction
+    if direction > 0:
+      if alignment_layer_index >= len(alignment_layer_list):
+        alignment_layer_index =  len(alignment_layer_list)-1
+    elif direction < 0:
+      if alignment_layer_index < 0:
+        alignment_layer_index = 0
+
+    # Display the alignment_layer parameters from the new section being viewed
+    store_current_layer_into_fields()
+
+
   def mouse_scroll_callback ( self, canvas, event, zpa ):
     ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
 
@@ -594,6 +615,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
     else:
       # Use normal (unshifted) scroll wheel to move through the stack
+
       global alignment_layer_list
       global alignment_layer_index
       print ( "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
@@ -601,20 +623,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
         alignment_layer_index = -1
         print ( " Index = " + str(alignment_layer_index) )
       else:
-        # Store the alignment_layer parameters into the image layer being exited
-        store_fields_into_current_layer()
-        # Move to the next image layer (potentially)
         if event.direction == gtk.gdk.SCROLL_UP:
-          alignment_layer_index += 1
-          if alignment_layer_index >= len(alignment_layer_list):
-            alignment_layer_index =  len(alignment_layer_list)-1
+          self.move_through_stack ( 1 )
         elif event.direction == gtk.gdk.SCROLL_DOWN:
-          alignment_layer_index += -1
-          if alignment_layer_index < 0:
-            alignment_layer_index = 0
-
-        # Display the alignment_layer parameters from the new section being viewed
-        store_current_layer_into_fields()
+          self.move_through_stack ( -1 )
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -632,6 +644,25 @@ class zoom_panel ( app_window.zoom_pan_area ):
     else:
       # Call the parent's function to handle the motion
       return ( app_window.zoom_pan_area.mouse_motion_callback ( self, canvas, event, zpa ) )
+
+  def key_press_callback ( self, widget, event, zpa ):
+    print ( "Key press event: " + str(event.keyval) + " = " + str(event) )
+    handled = False
+    if (event.type == gtk.gdk.KEY_PRESS) and (event.keyval in [65362,65364]):  # Up arrow: increase the y offset
+      print ( "Arrow key" )
+      if event.keyval == 65362:  # Up arrow: Move
+        self.move_through_stack ( 1 )
+      if event.keyval == 65364:  # Down arrow: Move
+        self.move_through_stack ( -1 )
+      widget.queue_draw()
+      # Draw the windows
+      zpa_original.queue_draw()
+      for p in panel_list:
+        p.queue_draw()
+      handled = True  # Event has been handled, do not propagate further
+    else:
+      handled = app_window.zoom_pan_area.key_press_callback ( self, widget, event, zpa )
+    return handled
 
   def expose_callback ( self, drawing_area, event, zpa ):
     ''' Draw all the elements in this window '''
