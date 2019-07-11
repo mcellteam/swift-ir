@@ -179,6 +179,8 @@ class gui_fields_class:
     self.bias_dy_entry = None
     self.num_align_forward = None
 
+    self.jump_to_index = None
+
 ''' This variable gives global access to the GUI widgets '''
 gui_fields = gui_fields_class()
 
@@ -502,6 +504,7 @@ def store_fields_into_current_layer():
   a.bias_enabled = gui_fields.bias_check_box.get_active()
   a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
   a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
+
 
 def store_current_layer_into_fields():
   a = alignment_layer_list[alignment_layer_index]
@@ -878,6 +881,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
     # Draw this window's role
     gc.foreground = colormap.alloc_color(65535,65535,32767)
     if str(self.role) == str('base'):
+      # Special case to change "base" to "src"
       self.pangolayout.set_text ( str('src')+":" )
     else:
       self.pangolayout.set_text ( str(self.role)+":" )
@@ -1029,6 +1033,37 @@ def rem_panel_callback ( zpa ):
   return False
 
 
+def jump_to_callback ( zpa ):
+  global alignment_layer_list
+  global alignment_layer_index
+  global gui_fields
+  global panel_list
+  global zpa_original
+
+  # Store the alignment_layer parameters into the image layer being exited
+  store_fields_into_current_layer()
+
+  if len(alignment_layer_list) <= 0:
+    alignment_layer_index = -1
+  else:
+    index_str = gui_fields.jump_to_index.get_text()
+    if len(index_str.strip()) > 0:
+      # A jump location has been entered
+      try:
+        jump_index = int(index_str.strip())
+        if jump_index < 0:
+          jump_index = 0
+        if (jump_index >= len(alignment_layer_list)):
+          jump_index = len(alignment_layer_list)-1
+        alignment_layer_index = jump_index
+      except:
+        print ( "The jump index should be an integer and not " + index_str )
+
+  # Display the alignment_layer parameters from the new section being viewed
+  store_current_layer_into_fields()
+  zpa_original.queue_draw()
+  for p in panel_list:
+    p.queue_draw()
 
 
 import thread
@@ -2412,6 +2447,38 @@ def main():
   controls_hbox.pack_start ( button, True, True, 0 )
   button.connect_object ( "clicked", set_all_or_fwd_callback, False )
   button.show()
+
+
+
+  label_entry = gtk.HBox ( False, 5 )
+  button = gtk.Button("Jump To:")
+  label_entry.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", jump_to_callback, zpa_original )
+  button.show()
+  gui_fields.jump_to_index = gtk.Entry(6)
+  gui_fields.jump_to_index.set_text ( '1' )
+  label_entry.pack_start ( gui_fields.jump_to_index, True, True, 0 )
+  gui_fields.jump_to_index.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label("SNR Halt:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  gui_fields.num_align_forward = gtk.Entry(6)
+  gui_fields.num_align_forward.set_text ( '' )
+  label_entry.pack_start ( gui_fields.num_align_forward, True, True, 0 )
+  gui_fields.num_align_forward.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+
+  # Create a horizontal box to hold a row of controls
+  controls_hbox = gtk.HBox ( False, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
 
   button = gtk.Button("Align All")
   controls_hbox.pack_start ( button, True, True, 0 )
