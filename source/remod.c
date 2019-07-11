@@ -1,4 +1,4 @@
-// gcc -O3 -o remod_old remod_old.c -ltiff -ljpeg -lpng -lm
+// gcc -O3 -o remod remod.c -ltiff -ljpeg -lpng -lm
 // icc -O3 -m64 -mtune=core2 -msse3 -march=core2 -funroll-all-loops -Wl,-z-ffast-math -o remod_old remod_old.c -lfftw3f -ltiff -lm
 #include <stdio.h>
 #include <stdlib.h>
