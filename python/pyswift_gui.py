@@ -9,6 +9,7 @@
 #__import__('code').interact(local = locals())
 import time
 import os
+import sys
 import json
 import random
 import shutil
@@ -180,6 +181,7 @@ class gui_fields_class:
     self.num_align_forward = None
 
     self.jump_to_index = None
+    self.snr_halt = None
 
 ''' This variable gives global access to the GUI widgets '''
 gui_fields = gui_fields_class()
@@ -1213,10 +1215,12 @@ def run_alignment_callback ( align_all ):
     
 
   # Perform the actual alignment
+  snr_value = sys.float_info.max
   for apair in align_pairs:
     i = apair[0] # Reference
     j = apair[1] # Current moving
     m = apair[2] # Alignment Method (0=SwimWindow, 1=MatchPoint)
+    snr_value = 0
 
 
     if alignment_layer_list[j].image_dict == None:
@@ -1265,6 +1269,7 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
       alignment_layer_list[j].image_dict['aligned'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="aligned")
+      snr_value = sys.float_info.max
 
     else:
       # Align the image at index j with the reference at index i
@@ -1308,6 +1313,23 @@ def run_alignment_callback ( align_all ):
         print ( "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
       alignment_layer_list[j].image_dict['aligned'] = annotated_img
+      snr_value = recipe.recipe[-1].snr[0]
+
+    # Check to see if the alignment should proceed
+    snr_halt_str = gui_fields.snr_halt.get_text()
+    if len(snr_halt_str.strip()) > 0:
+      # An snr_halt limit has been entered
+      try:
+        snr_halt = float(snr_halt_str.strip())
+        if snr_value <= snr_halt:
+          print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+          print ( "SNR of " + str(snr_value) + " is less than SNR Halt of " + str(snr_halt) )
+          print ( "  Alignment stopped on layer " + str(j) )
+          print ( "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+          break
+      except:
+        print ( "The SNR Halt value should be a number and not " + index_str )
+
 
   # The following work manually, but gave error when done here
   # The try/excepts didn't help
@@ -2467,10 +2489,10 @@ def main():
   a_label = gtk.Label("SNR Halt:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  gui_fields.num_align_forward = gtk.Entry(6)
-  gui_fields.num_align_forward.set_text ( '' )
-  label_entry.pack_start ( gui_fields.num_align_forward, True, True, 0 )
-  gui_fields.num_align_forward.show()
+  gui_fields.snr_halt = gtk.Entry(6)
+  gui_fields.snr_halt.set_text ( '' )
+  label_entry.pack_start ( gui_fields.snr_halt, True, True, 0 )
+  gui_fields.snr_halt.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
