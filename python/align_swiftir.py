@@ -95,6 +95,8 @@ class alignment_process:
     s_4x4 = s
     psta_4x4 = pa
 
+    s_mp = int(im_sta.shape[0]/32)
+
     self.recipe = align_recipe(im_sta, im_mov)
 
     if self.layer_dict['align_to_ref_method']['selected_method']=='Auto Swim Align':
@@ -109,7 +111,7 @@ class alignment_process:
       mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
       mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
       ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align')
-      ingredient_2_mp = align_ingredient(ww=s_4x4, psta=mp_ref, pmov=mp_base)
+      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base)
       self.recipe.add_ingredient(ingredient_1_mp)
       self.recipe.add_ingredient(ingredient_2_mp)
 
