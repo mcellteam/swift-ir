@@ -1,4 +1,5 @@
 // MIR: Multiple Image Rendering
+// playing with mir
 
 // gcc -O3 -o mir mir.c -ljpeg -ltiff -lpng -lm
 // add transparency value
