@@ -1402,22 +1402,22 @@ def stop_callback ( zpa ):
   return True
 
 def print_data_structures(panel_list, alignment_layer_list):
-  print_debug ( 50, "Data Structures" )
-  print_debug ( 50, "=========== " + str(len(panel_list)) + " Panels ===========" )
+  print_debug ( 1, "Data Structures" )
+  print_debug ( 1, "=========== " + str(len(panel_list)) + " Panels ===========" )
   pn = 0
   for panel in panel_list:
-    print_debug ( 50, " Panel List [" + str(pn) + "].role = " + str(panel.role) )
+    print_debug ( 1, " Panel List [" + str(pn) + "].role = " + str(panel.role) )
     pn += 1
 
   ln = 0
-  print_debug ( 50, "=========== " + str(len(alignment_layer_list)) + " Alignment Layers ===========" )
+  print_debug ( 1, "=========== " + str(len(alignment_layer_list)) + " Alignment Layers ===========" )
   for layer in alignment_layer_list:
-    print_debug ( 50, " Layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
+    print_debug ( 1, " Layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
     for k in sorted(layer.image_dict.keys(),reverse=True):
       im = layer.image_dict[k]
-      print_debug ( 50, "   " + k + " image: " + str(im).split()[-1][0:-1] ) # key image: hex address
-      print_debug ( 50, "     file: " + str(im.file_name).split('/')[-1] )
-      print_debug ( 50, "     markers: " + str([[round(v*10)/10 for v in p] for p in im.get_marker_points()]) )
+      print_debug ( 1, "   " + k + " image: " + str(im).split()[-1][0:-1] ) # key image: hex address
+      print_debug ( 1, "     file: " + str(im.file_name).split('/')[-1] )
+      print_debug ( 1, "     markers: " + str([[round(v*10)/10 for v in p] for p in im.get_marker_points()]) )
     ln += 1
   # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -1468,30 +1468,30 @@ def menu_callback ( widget, data=None ):
       for i in range(len(alignment_layer_list)):
 
         if type(alignment_layer_list[i]) == type(None):
-          print_debug ( 50, "  Layer " + str(i) + ": Alignment is None" )
+          print_debug ( 5, "  Layer " + str(i) + ": Alignment is None" )
         else:
           if type(alignment_layer_list[i].align_proc) == type(None):
-            print_debug ( 50, "  Layer " + str(i) + ": Alignment Process is None" )
+            print_debug ( 5, "  Layer " + str(i) + ": Alignment Process is None" )
           else:
             affine = alignment_layer_list[i].align_proc.cumulative_afm
             print_debug ( 50, "  Layer " + str(i) + ": Affine is " + str(affine) )
 
     elif command == "Debug":
 
-      print_debug ( 50, "Handy global items:" )
-      print_debug ( 50, "  project_path" )
-      print_debug ( 50, "  project_file_name" )
-      print_debug ( 50, "  destination_path" )
-      print_debug ( 50, "  zpa_original" )
-      print_debug ( 50, "  alignment_layer_list" )
-      print_debug ( 50, "  alignment_layer_index" )
-      print_debug ( 50, "  show_window_centers" )
-      print_debug ( 50, "  point_mode" )
-      print_debug ( 50, "Handy local items:" )
-      print_debug ( 50, "  widget" )
-      print_debug ( 50, "  data" )
-      print_debug ( 50, "  command" )
-      print_debug ( 50, "  zpa" )
+      print_debug ( -1, "Handy global items:" )
+      print_debug ( -1, "  project_path" )
+      print_debug ( -1, "  project_file_name" )
+      print_debug ( -1, "  destination_path" )
+      print_debug ( -1, "  zpa_original" )
+      print_debug ( -1, "  alignment_layer_list" )
+      print_debug ( -1, "  alignment_layer_index" )
+      print_debug ( -1, "  show_window_centers" )
+      print_debug ( -1, "  point_mode" )
+      print_debug ( -1, "Handy local items:" )
+      print_debug ( -1, "  widget" )
+      print_debug ( -1, "  data" )
+      print_debug ( -1, "  command" )
+      print_debug ( -1, "  zpa" )
 
       # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
@@ -1514,7 +1514,7 @@ def menu_callback ( widget, data=None ):
         gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
 
       file_chooser.destroy()
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
 
@@ -1544,7 +1544,7 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         i = 1
         file_name_list = file_chooser.get_filenames()
-        print_debug ( 50, "Selected Files: " + str(file_name_list) )
+        print_debug ( 20, "Selected Files: " + str(file_name_list) )
         # alignment_layer_list = []
         for f in file_name_list:
           a = alignment_layer ( f )
@@ -1571,7 +1571,7 @@ def menu_callback ( widget, data=None ):
           alignment_layer_list.append ( a )
 
       file_chooser.destroy()
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       # Draw the windows
       for panel in panel_list:
         panel.role = 'base'
@@ -1581,7 +1581,7 @@ def menu_callback ( widget, data=None ):
       zpa_original.queue_draw()
 
       ##### Begin Pasted from OpenProj
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       # Copy the "base" images into the "ref" images for the next layer
       # This is SWiFT specific, but makes it simpler to use for now
       layer_index = 0
@@ -1647,8 +1647,8 @@ def menu_callback ( widget, data=None ):
             text = f.read()
 
             proj_dict = json.loads ( text )
-            print_debug ( 50, str(proj_dict) )
-            print_debug ( 50, "Project file version " + str(proj_dict['version']) )
+            print_debug ( 70, str(proj_dict) )
+            print_debug ( 5, "Project file version " + str(proj_dict['version']) )
             if proj_dict['version'] < 0.05:
               print_debug ( -1, "Unable to read from versions before 0.1" )
               exit (99)
@@ -1707,7 +1707,7 @@ def menu_callback ( widget, data=None ):
                             if 'match_points' in base['metadata']:
                               mp = base['metadata']['match_points']
                               for p in mp:
-                                print_debug ( 50, "%%%% GOT BASE MATCH POINT: " + str(p) )
+                                print_debug ( 80, "%%%% GOT BASE MATCH POINT: " + str(p) )
                                 m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
                                 a.image_dict['base'].graphics_items.append ( m )
 
@@ -1731,7 +1731,7 @@ def menu_callback ( widget, data=None ):
                                   if 'match_points' in ref['metadata']:
                                     mp = ref['metadata']['match_points']
                                     for p in mp:
-                                      print_debug ( 50, "%%%% GOT REF MATCH POINT: " + str(p) )
+                                      print_debug ( 80, "%%%% GOT REF MATCH POINT: " + str(p) )
                                       m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
                                       a.image_dict['ref'].graphics_items.append ( m )
 
@@ -1753,7 +1753,7 @@ def menu_callback ( widget, data=None ):
 
 
       file_chooser.destroy()
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       # Copy the "base" images into the "ref" images for the next layer
       # This is SWiFT specific, but makes it simpler to use for now
       layer_index = 0
@@ -1818,7 +1818,7 @@ def menu_callback ( widget, data=None ):
               project_path = os.path.dirname(project_file_name)
 
         file_chooser.destroy()
-        print_debug ( 50, "Done with dialog" )
+        print_debug ( 90, "Done with dialog" )
 
       if len(project_file_name) > 0:
         # Actually write the file
@@ -1859,10 +1859,10 @@ def menu_callback ( widget, data=None ):
               img_keys = sorted(a.image_dict.keys(), reverse=True)
               for k in img_keys:
                 im = a.image_dict[k]
-                #print_debug ( 50, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
+                #print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
                 f.write ( '          "' + k + '": {\n' )  # "base": {
                 # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
-                print_debug ( 50, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
+                print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
                 rel_file_name = ""
                 if type(im.file_name) != type(None):
                   rel_file_name = os.path.relpath(im.file_name,start=project_path)
@@ -1918,7 +1918,7 @@ def menu_callback ( widget, data=None ):
       clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
       response = clear_all.run()
       if response == gtk.RESPONSE_OK:
-        print_debug ( 50, "Clearing all layers..." )
+        print_debug ( 20, "Clearing all layers..." )
         alignment_layer_index = 0
         alignment_layer_list = []
       zpa_original.queue_draw()
@@ -1936,16 +1936,16 @@ def menu_callback ( widget, data=None ):
         clear_out = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Output?")
         response = clear_out.run()
         if response == gtk.RESPONSE_OK:
-          print_debug ( 50, "Clearing all output images..." )
+          print_debug ( 20, "Clearing all output images..." )
           for al in alignment_layer_list:
             try:
               file_to_delete = os.path.join(destination_path,os.path.basename(al.base_image_name))
-              print_debug ( 50, "Deleting " + file_to_delete )
+              print_debug ( 30, "Deleting " + file_to_delete )
               os.remove ( file_to_delete )
             except:
               # This will happen if the image had been deleted or hadn't been created (such as skipped).
               pass
-          print_debug ( 50, "Restoring original images..." )
+          print_debug ( 20, "Restoring original images..." )
           for al in alignment_layer_list:
             #al.image_dict = {}
             #al.image_dict['base'] = al.base_annotated_image
@@ -1955,12 +1955,12 @@ def menu_callback ( widget, data=None ):
             p.queue_draw()
         clear_out.destroy()
 
-    elif command == "LimScroll":
+    elif command == "LimZoom":
 
       zpa_original.max_zoom_count = 10
       zpa_original.min_zoom_count = -15
 
-    elif command == "UnLimScroll":
+    elif command == "UnLimZoom":
 
       # This is now a toggle
       if zpa_original.max_zoom_count > 100:
@@ -2032,13 +2032,13 @@ def menu_callback ( widget, data=None ):
       al = alignment_layer_list[alignment_layer_index]
       al_keys = al.image_dict.keys()
       for im_index in range(len(al_keys)):
-        print_debug ( 50, "Clearing out image index " + str(im_index) )
+        print_debug ( 70, "Clearing out image index " + str(im_index) )
         im = al.image_dict[al_keys[im_index]]
         graphics_items = im.graphics_items
         # non_marker_items = [ gi for gi in graphics_items if (gi.marker == False) ]
         non_marker_items = []
         for gi in graphics_items:
-          print_debug ( 50, "  Checking item " + str(gi) )
+          print_debug ( 90, "  Checking item " + str(gi) )
           if gi.marker == False:
             # This is not a marker ... so keep it
             non_marker_items.append ( gi )
@@ -2070,11 +2070,11 @@ def menu_callback ( widget, data=None ):
 
       global debug_level
       debug_level = int(command[6:])
-      print_debug ( 50, "New debug level is " + str(debug_level) )
+      print_debug ( 10, "New debug level is " + str(debug_level) )
 
     else:
 
-      print_debug ( 50, "Menu option \"" + command + "\" is not handled yet." )
+      print_debug ( 20, "Menu option \"" + command + "\" is not handled yet." )
 
   return True
 
@@ -2097,18 +2097,18 @@ def center_all_images():
          max_win[1] = win_size[1]
     win_size = max_win
     for panel in panel_list:
-      print_debug ( 50, "  window size = " + str(win_size) )
+      print_debug ( 70, "  window size = " + str(win_size) )
       pix_buf = None
       wxh = None
       # Loop through all layers looking for images matching this role
-      print_debug ( 50, "  Begin looping through all " + str(len(alignment_layer_list)) + " layers" )
+      print_debug ( 70, "  Begin looping through all " + str(len(alignment_layer_list)) + " layers" )
       for layer in alignment_layer_list:
-        print_debug ( 50, "    Checking for role " + str(panel.role) )
+        print_debug ( 80, "    Checking for role " + str(panel.role) )
         if panel.role in layer.image_dict:
-          print_debug ( 50, "      Role " + str(panel.role) + " was found" )
+          print_debug ( 80, "      Role " + str(panel.role) + " was found" )
           # This panel's role is implemented by an image in this layer
           pix_buf = layer.image_dict[panel.role].image
-          print_debug ( 50, "      Loaded pix_buf = " + str(pix_buf) )
+          print_debug ( 80, "      Loaded pix_buf = " + str(pix_buf) )
           if type(pix_buf) != type(None):
             if type(wxh) == type(None):
                wxh = [0,0]
@@ -2117,12 +2117,12 @@ def center_all_images():
             if wxh[1] < pix_buf.get_height():
                wxh[1] = pix_buf.get_height()
       if type(wxh) != type(None):
-        print_debug ( 50, "  For panel " + str(panel_list.index(panel)) + " image size is: [" + str(wxh[0]) + " x " + str(wxh[1]) + "]" )
+        print_debug ( 70, "  For panel " + str(panel_list.index(panel)) + " image size is: [" + str(wxh[0]) + " x " + str(wxh[1]) + "]" )
         # pix_buf = alignment_layer_list[alignment_layer_index].image_dict[panel.role].image
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         panel.set_scale_to_fit ( 0, wxh[0], 0, wxh[1], win_size[0], win_size[1] )
         panel.queue_draw()
-        print_debug ( 50, "  Panel " + str(panel_list.index(panel)) + " is set to: [" + str(wxh[0]) + " x " + str(wxh[1]) + "] in [" + str(win_size[0]) + "," + str(win_size[1]) + "]" )
+        print_debug ( 70, "  Panel " + str(panel_list.index(panel)) + " is set to: [" + str(wxh[0]) + " x " + str(wxh[1]) + "] in [" + str(win_size[0]) + "," + str(win_size[1]) + "]" )
         print ("")
 
 
@@ -2233,8 +2233,8 @@ def main():
   # Create a "Set" menu
   (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
   if True: # An easy way to indent and still be legal Python
-    # zpa_original.add_checkmenu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
-    zpa_original.add_checkmenu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
+    # zpa_original.add_checkmenu_item ( set_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
+    zpa_original.add_checkmenu_item ( set_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
 
     zpa_original.add_menu_sep  ( set_menu )
     # Create a "Set/Cursor" submenu
