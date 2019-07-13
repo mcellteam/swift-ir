@@ -11,6 +11,7 @@ import time
 import os
 import sys
 import json
+import math
 import random
 import shutil
 
@@ -60,6 +61,9 @@ show_window_centers = False
 
 global point_mode
 point_mode = False
+
+global point_delete_mode
+point_delete_mode = False
 
 global point_cursor
 point_cursor = gtk.gdk.CROSSHAIR
@@ -165,7 +169,72 @@ cursor_options = [
     ["Cursor_CROSS",     gtk.gdk.CROSS],
     ["Cursor_HAND1",     gtk.gdk.HAND1],
     ["Cursor_HAND2",     gtk.gdk.HAND2],
-    ["Cursor_ARROW",     gtk.gdk.ARROW]
+    ["Cursor_ARROW",     gtk.gdk.ARROW],
+
+
+    ["Cursor_ARROW", gtk.gdk.ARROW],
+    ["Cursor_BASED_ARROW_DOWN", gtk.gdk.BASED_ARROW_DOWN],
+    ["Cursor_BASED_ARROW_UP", gtk.gdk.BASED_ARROW_UP],
+    ["Cursor_BOAT", gtk.gdk.BOAT],
+    ["Cursor_BOGOSITY", gtk.gdk.BOGOSITY],
+    ["Cursor_BOTTOM_LEFT_CORNER", gtk.gdk.BOTTOM_LEFT_CORNER],
+    ["Cursor_BOTTOM_RIGHT_CORNER", gtk.gdk.BOTTOM_RIGHT_CORNER],
+    ["Cursor_BOTTOM_SIDE", gtk.gdk.BOTTOM_SIDE],
+    ["Cursor_BOTTOM_TEE", gtk.gdk.BOTTOM_TEE],
+    ["Cursor_BOX_SPIRAL", gtk.gdk.BOX_SPIRAL],
+    ["Cursor_CLOCK", gtk.gdk.CLOCK],
+    ["Cursor_COFFEE_MUG", gtk.gdk.COFFEE_MUG],
+    ["Cursor_DOUBLE_ARROW", gtk.gdk.DOUBLE_ARROW],
+    ["Cursor_DRAFT_LARGE", gtk.gdk.DRAFT_LARGE],
+    ["Cursor_DRAFT_SMALL", gtk.gdk.DRAFT_SMALL],
+    ["Cursor_DRAPED_BOX", gtk.gdk.DRAPED_BOX],
+    ["Cursor_EXCHANGE", gtk.gdk.EXCHANGE],
+    ["Cursor_FLEUR", gtk.gdk.FLEUR],
+    ["Cursor_GOBBLER", gtk.gdk.GOBBLER],
+    ["Cursor_GUMBY", gtk.gdk.GUMBY],
+    ["Cursor_HEART", gtk.gdk.HEART],
+    ["Cursor_ICON", gtk.gdk.ICON],
+    ["Cursor_LEFT_PTR", gtk.gdk.LEFT_PTR],
+    ["Cursor_LEFT_SIDE", gtk.gdk.LEFT_SIDE],
+    ["Cursor_LEFT_TEE", gtk.gdk.LEFT_TEE],
+    ["Cursor_LEFTBUTTON", gtk.gdk.LEFTBUTTON],
+    ["Cursor_LL_ANGLE", gtk.gdk.LL_ANGLE],
+    ["Cursor_LR_ANGLE", gtk.gdk.LR_ANGLE],
+    ["Cursor_MAN", gtk.gdk.MAN],
+    ["Cursor_MIDDLEBUTTON", gtk.gdk.MIDDLEBUTTON],
+    ["Cursor_MOUSE", gtk.gdk.MOUSE],
+    ["Cursor_PENCIL", gtk.gdk.PENCIL],
+    ["Cursor_PIRATE", gtk.gdk.PIRATE],
+    ["Cursor_QUESTION_ARROW", gtk.gdk.QUESTION_ARROW],
+    ["Cursor_RIGHT_PTR", gtk.gdk.RIGHT_PTR],
+    ["Cursor_RIGHT_SIDE", gtk.gdk.RIGHT_SIDE],
+    ["Cursor_RIGHT_TEE", gtk.gdk.RIGHT_TEE],
+    ["Cursor_RIGHTBUTTON", gtk.gdk.RIGHTBUTTON],
+    ["Cursor_RTL_LOGO", gtk.gdk.RTL_LOGO],
+    ["Cursor_SAILBOAT", gtk.gdk.SAILBOAT],
+    ["Cursor_SB_DOWN_ARROW", gtk.gdk.SB_DOWN_ARROW],
+    ["Cursor_SB_H_DOUBLE_ARROW", gtk.gdk.SB_H_DOUBLE_ARROW],
+    ["Cursor_SB_LEFT_ARROW", gtk.gdk.SB_LEFT_ARROW],
+    ["Cursor_SB_RIGHT_ARROW", gtk.gdk.SB_RIGHT_ARROW],
+    ["Cursor_SB_UP_ARROW", gtk.gdk.SB_UP_ARROW],
+    ["Cursor_SB_V_DOUBLE_ARROW", gtk.gdk.SB_V_DOUBLE_ARROW],
+    ["Cursor_SHUTTLE", gtk.gdk.SHUTTLE],
+    ["Cursor_SIZING", gtk.gdk.SIZING],
+    ["Cursor_SPIDER", gtk.gdk.SPIDER],
+    ["Cursor_SPRAYCAN", gtk.gdk.SPRAYCAN],
+    ["Cursor_TCROSS", gtk.gdk.TCROSS],
+    ["Cursor_TOP_LEFT_ARROW", gtk.gdk.TOP_LEFT_ARROW],
+    ["Cursor_TOP_LEFT_CORNER", gtk.gdk.TOP_LEFT_CORNER],
+    ["Cursor_TOP_RIGHT_CORNER", gtk.gdk.TOP_RIGHT_CORNER],
+    ["Cursor_TOP_SIDE", gtk.gdk.TOP_SIDE],
+    ["Cursor_TOP_TEE", gtk.gdk.TOP_TEE],
+    ["Cursor_TREK", gtk.gdk.TREK],
+    ["Cursor_UL_ANGLE", gtk.gdk.UL_ANGLE],
+    ["Cursor_UMBRELLA", gtk.gdk.UMBRELLA],
+    ["Cursor_UR_ANGLE", gtk.gdk.UR_ANGLE],
+    ["Cursor_WATCH", gtk.gdk.WATCH],   # Animated "waiting" cursor!!
+    ["Cursor_XTERM", gtk.gdk.XTERM]
+    # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
   ]
 global cursor_option_seps
 cursor_option_seps = [2, 5, 7]
@@ -598,25 +667,65 @@ class zoom_panel ( app_window.zoom_pan_area ):
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
-    if point_mode and self.point_add_enabled:
-      global alignment_layer_list
-      global alignment_layer_index
-      print_debug ( 50, "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-      print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+    if self.point_add_enabled:
+      if point_mode and not point_delete_mode:
+        global alignment_layer_list
+        global alignment_layer_index
+        print_debug ( 50, "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+        print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
 
-      #  print_debug ( 50, "Adding a marker point to the original image" )
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        #  print_debug ( 50, "Adding a marker point to the original image" )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-      this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
-      print_debug ( 50, "    Storing point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
-      # if this_image.point_add_enabled:
-      if self.point_add_enabled:
-        this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
-      '''
+        this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+        print_debug ( 50, "    Storing point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
+        # if this_image.point_add_enabled:
+        if self.point_add_enabled:
+          this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+
+      if point_delete_mode:
+        global alignment_layer_list
+        global alignment_layer_index
+        print_debug ( 50, "Got a button press in point delete mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+
+        this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+
+        image_click_x = self.x(event.x)
+        image_click_y = self.y(event.y)
+
+        closest_x = 0
+        closest_y = 0
+        closest_dist = sys.float_info.max
+        marker_list = [ item for item in this_image.graphics_items if item.marker ]
+        closest_marker = None
+        for gi in marker_list:
+          print_debug ( 50, "Clicked at " + str(image_click_x) + "," + str(image_click_y) + ", marker at : " + str(gi.x) + "," + str(gi.y) )
+          this_dist = math.pow(image_click_x-gi.x, 2) + math.pow(image_click_y-gi.y, 2)
+          if this_dist < closest_dist:
+            closest_x = gi.x
+            closest_y = gi.y
+            closest_dist = this_dist
+            closest_marker = gi
+        print_debug ( 50, "Closest pt = " + str(closest_x) + "," + str(closest_y) )
+        if math.sqrt(closest_dist) < 20:
+          print_debug ( 50, "Removing the point" )
+          this_image.graphics_items.remove ( closest_marker )
+
+        print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+
+        print_debug ( 50, "    Deleting point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
+        # print ( "image has " + str(len(this_image.graphics_items)) + " items" )
+        for gi in [ x for x in this_image.graphics_items if x.marker ]:
+          print_debug ( 50, "Item " + str(gi.to_string()) )
+        # if this_image.point_add_enabled:
+        #if self.point_add_enabled:
+        #  this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+
+      # Draw the windows
+      zpa_original.queue_draw()
       for p in panel_list:
-        p.set_cursor ( cursor )
-        p.drawing_area.queue_draw()
-      '''
+        p.queue_draw()
+
 
     # print_debug ( 50, "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
@@ -1489,6 +1598,7 @@ def menu_callback ( widget, data=None ):
     global point_cursor
     global cursor_options
     global point_mode
+    global point_delete_mode
 
 
     if command == "Fast":
@@ -2104,6 +2214,18 @@ def menu_callback ( widget, data=None ):
           p.set_cursor ( cursor )
           p.drawing_area.queue_draw()
 
+    elif command == "PtDel":
+
+      point_delete_mode = not point_delete_mode
+      print_debug ( 50, "Point delete mode is now " + str(point_delete_mode) )
+      cursor = gtk.gdk.ARROW
+      if point_delete_mode:
+        cursor = gtk.gdk.X_CURSOR
+      for p in panel_list:
+        if p.point_add_enabled:
+          p.set_cursor ( cursor )
+          p.drawing_area.queue_draw()
+
     elif command == "PtClear":
 
       print_debug ( 50, "Clearing all alignment points in this layer" )
@@ -2311,8 +2433,9 @@ def main():
   (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
   if True: # An easy way to indent and still be legal Python
     this_menu = points_menu
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Alignment Point Mode",   ("PtMode", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Delete Points",   ("PtDel", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Alignment Points",   ("PtClear", zpa_original ) )
 
   # Create a "Set" menu
   (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
