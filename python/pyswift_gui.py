@@ -1304,30 +1304,16 @@ def run_alignment_callback ( align_all ):
 
     else:
       # Align the image at index j with the reference at index i
-      print_debug ( 50,    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
-      # prev_afm = alignment_layer_list[i].align_proc.cumulative_afm   # Gets the cumulative from the align_proc
 
       if not 'cumulative_afm' in alignment_layer_list[i].results_dict:
-        print_debug ( 1, "Cannot align from here without a previous cumulative affine matrix" )
+        print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative affine matrix." )
         return
 
       prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
 
-      print ( "Aligning: i=" + str(i) + ", j=" + str(j) + ":" )
-      '''
-      print ( "  prev_afm = " + str(prev_afm) )
-      print ( "  [i].results['cumulative_afm'] = " + str(alignment_layer_list[i].results_dict['cumulative_afm']) )
-      #print ( "  [j].results['cumulative_afm'] = " + str(alignment_layer_list[j].results_dict['cumulative_afm']) )
-      for test_row_index in range(len(prev_afm)):
-        test_row = prev_afm[test_row_index]
-        for test_col_index in range(len(test_row)):
-          test_col = test_row[test_col_index]
-          if test_col != alignment_layer_list[i].results_dict['cumulative_afm'][test_row_index][test_col_index]:
-            print ( "\n\n%%%%%%%%%%%%%%\nPrev_afm != results_dict\n%%%%%%%%%%%%%" )
-            exit ( 999 )
-          else:
-            print ( "prev_afm matched" )
-      '''
+      print_debug ( 40, "Aligning: i=" + str(i) + " to j=" + str(j) )
+      print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
+
       alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, layer_dict=layer_dict, cumulative_afm=prev_afm )
       alignment_layer_list[j].align_proc.align()
       recipe = alignment_layer_list[j].align_proc.recipe
@@ -1335,10 +1321,7 @@ def run_alignment_callback ( align_all ):
 
       # Put the proper images into the proper window slots
 
-      #alignment_layer_list[j].image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref")
-      #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base")
-
-      print_debug ( 50, "Reading in new_name from " + str(new_name) )
+      print_debug ( 60, "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
       annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
       annotated_img.graphics_items.append ( graphic_text(2, 46, "Affine: " + str(recipe.afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
