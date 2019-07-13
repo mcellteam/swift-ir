@@ -407,7 +407,7 @@ class annotated_image:
     self.image = None
     self.graphics_items = []
     self.role = role
-    self.results_dict = None
+    # self.results_dict = None
 
     # Copy in the clone if provided
     if type(clone_from) != type(None):
@@ -484,6 +484,9 @@ class alignment_layer:
     self.bias_enabled = True
     self.bias_dx = 0
     self.bias_dy = 0
+
+    # This holds whatever is produced by this alignment
+    self.results_dict = {}
 
     try:
       self.base_annotated_image = annotated_image ( self.base_image_name, role="base" )
@@ -1490,7 +1493,7 @@ def menu_callback ( widget, data=None ):
       print_debug ( 50, "  command" )
       print_debug ( 50, "  zpa" )
 
-      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
 
     elif command == "SetDest":
@@ -1884,6 +1887,8 @@ def menu_callback ( widget, data=None ):
               f.write ( '            "output_level": 0\n' )
               f.write ( '          },\n' )
               f.write ( '          "method_results": {\n' )
+              #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
               if type(a.results_dict) != type(None):
                 if 'affine' in a.results_dict:
                   f.write ( '            "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
