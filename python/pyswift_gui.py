@@ -1445,6 +1445,8 @@ def menu_callback ( widget, data=None ):
 
     global point_cursor
     global cursor_options
+    global point_mode
+
 
     if command == "Fast":
 
@@ -2008,8 +2010,6 @@ def menu_callback ( widget, data=None ):
 
     elif command == "PtMode":
 
-      global point_mode
-
       point_mode = not point_mode
       print_debug ( 50, "Point mode is now " + str(point_mode) )
       cursor = gtk.gdk.ARROW
@@ -2025,8 +2025,6 @@ def menu_callback ( widget, data=None ):
     elif command == "PtClear":
 
       print_debug ( 50, "Clearing all alignment points in this layer" )
-      global alignment_layer_list
-      global alignment_layer_index
 
       # Clear from dictionary
       al = alignment_layer_list[alignment_layer_index]
@@ -2153,6 +2151,7 @@ def main():
 
   global gui_fields
   global window
+  global panel_list
 
   # Create a top-level GTK window
   window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
@@ -2201,82 +2200,89 @@ def main():
   # Create a "File" menu
   (file_menu, file_item) = zpa_original.add_menu ( "_File" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( file_menu, menu_callback, "New Project",  ("NewProj", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Open Project",  ("OpenProj", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Save Project",  ("SaveProj", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa_original ) )
-    zpa_original.add_menu_sep  ( file_menu )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Set Destination",  ("SetDest", zpa_original ) )
-    zpa_original.add_menu_sep  ( file_menu )
-    # zpa_original.add_menu_item ( file_menu, menu_callback, "List >",  ("List", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Exit",       ("Exit", zpa_original ) )
+    this_menu = file_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "New Project",  ("NewProj", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Open Project",  ("OpenProj", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Save Project",  ("SaveProj", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Set Destination",  ("SetDest", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    # zpa_original.add_menu_item ( this_menu, menu_callback, "List >",  ("List", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Exit",       ("Exit", zpa_original ) )
 
   # Create an "Images" menu
   (image_menu, image_item) = zpa_original.add_menu ( "_Images" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Import...",  ("ImImport", zpa_original ) )
-    zpa_original.add_menu_sep  ( image_menu )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Center",  ("ImCenter", zpa_original ) )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
-    zpa_original.add_menu_sep  ( image_menu )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
-    zpa_original.add_menu_sep  ( image_menu )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
+    this_menu = image_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Import...",  ("ImImport", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Center",  ("ImCenter", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
 
   # Create a "Points" menu
   (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_checkmenu_item ( points_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
-    zpa_original.add_menu_item ( points_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
+    this_menu = points_menu
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
 
   # Create a "Set" menu
   (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
   if True: # An easy way to indent and still be legal Python
-    # zpa_original.add_checkmenu_item ( set_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
-    zpa_original.add_checkmenu_item ( set_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
+    this_menu = set_menu
+    # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
 
-    zpa_original.add_menu_sep  ( set_menu )
+    zpa_original.add_menu_sep  ( this_menu )
     # Create a "Set/Cursor" submenu
     # This didn't work ...
-    #  (cursor_menu, set_item) = set_menu.add_menu_item ( "_Cursor" )
+    #  (cursor_menu, set_item) = this_menu.add_menu_item ( "_Cursor" )
     #  if True: # An easy way to indent and still be legal Python
     # So put in the main menu for now:
     # Add cursors from the "cursor_options" array
     cursor_index = 0
     for cursor_pair in cursor_options:
       cursor_option_string = cursor_pair[0]
-      zpa_original.add_menu_item ( set_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ) )
+      zpa_original.add_menu_item ( this_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ) )
       if cursor_index in cursor_option_seps:
-        zpa_original.add_menu_sep  ( set_menu )
+        zpa_original.add_menu_sep  ( this_menu )
       cursor_index += 1
 
   # Create a "Debug" menu
   (debug_menu, debug_item) = zpa_original.add_menu ( "_Debug" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( debug_menu, menu_callback, "Python Console",   ("Debug", zpa_original ) )
-    zpa_original.add_menu_sep  ( debug_menu )
+    this_menu = debug_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Python Console",   ("Debug", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Print Affine",   ("Affine", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Print Structures",   ("Structs", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     for level in [ 10*x for x in range(0,11) ]:
-      zpa_original.add_menu_item ( debug_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
+      zpa_original.add_menu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
 
   # Create a "Show" menu
   (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
-    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Affines",   ("Affines", zpa_original ) )
-    zpa_original.add_menu_sep  ( show_menu )
-    zpa_original.add_menu_item ( show_menu, menu_callback, "Affine",   ("Affine", zpa_original ) )
-    zpa_original.add_menu_item ( show_menu, menu_callback, "Structures",   ("Structs", zpa_original ) )
+    this_menu = show_menu
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Affines",   ("Affines", zpa_original ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Manual...",   ("Manual", zpa_original ) )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Key commands...",   ("Key Commands", zpa_original ) )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Mouse clicks...",   ("Mouse Clicks", zpa_original ) )
-    zpa_original.add_menu_sep  ( help_menu )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "License...",   ("License", zpa_original ) )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Version...",   ("Version", zpa_original ) )
+    this_menu = help_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Manual...",   ("Manual", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Key commands...",   ("Key Commands", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Mouse clicks...",   ("Mouse Clicks", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "License...",   ("License", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Version...",   ("Version", zpa_original ) )
 
   # Append the menus to the menu bar itself
   menu_bar.append ( file_item )
@@ -2293,7 +2299,6 @@ def main():
   # Create the horizontal image box
   global image_hbox
   image_hbox = gtk.HBox ( True, 0 )
-  global panel_list
   panel_list = []
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
