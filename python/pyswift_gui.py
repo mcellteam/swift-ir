@@ -226,9 +226,9 @@ class graphic_primitive:
       elif json_dict['type'] == 'text':
         return graphic_text ( json_dict['x'], json_dict['y'], json_dict['s'], json_dict['coordsys'], json_dict['color'], json_dict['group'] )
       else:
-        return graphic_text ( 10, 10, json_dict['type'] )
+        return graphic_text ( 10, 100, "Drawing not supported for type:" + json_dict['type'] )
     else:
-      return graphic_text ( 200, 200, 'no type' )
+      return graphic_text ( 10, 130, 'No type field in graphics item.' )
 
 class graphic_line (graphic_primitive):
   def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
@@ -243,7 +243,7 @@ class graphic_line (graphic_primitive):
   def to_string ( self ):
     return ( "line (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
   def to_json_string ( self ):
-    return ( '{ "type":"line", "marker":' + self.jb(self.marker) + ', "group":"' + str(self.graphic_group) + '", "x1":' + str(self.x1) + ', "y1":' + str(self.y1) + ', "x2":' + str(self.x2) + ', "y2":' + str(self.y2) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+    return ( '{ "type":"line", "group":"' + str(self.graphic_group) + '", "x1":' + str(self.x1) + ', "y1":' + str(self.y1) + ', "x2":' + str(self.x2) + ', "y2":' + str(self.y2) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -285,7 +285,7 @@ class graphic_rect (graphic_primitive):
   def to_string ( self ):
     return ( "rect (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
   def to_json_string ( self ):
-    return ( '{ "type":"rect", "marker":' + self.jb(self.marker) + ', "group":"' + str(self.graphic_group) + '", "x":' + str(self.x1) + ', "y":' + str(self.y1) + ', "dx":' + str(self.dx) + ', "dy":' + str(self.dy) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+    return ( '{ "type":"rect", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x1) + ', "y":' + str(self.y1) + ', "dx":' + str(self.dx) + ', "dy":' + str(self.dy) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -326,7 +326,7 @@ class graphic_marker (graphic_primitive):
   def to_string ( self ):
     return ( "marker at (" + str(self.r10(self.x)) + "," + str(self.r10(self.y)) + ")" )
   def to_json_string ( self ):
-    return ( '{ "type":"marker", "marker":' + self.jb(self.marker) + ', "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+    return ( '{ "type":"marker", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -365,7 +365,7 @@ class graphic_dot (graphic_primitive):
   def to_string ( self ):
     return ( "dot at (" + str(self.x) + "," + str(self.y) + "),r=" + str(self.r) )
   def to_json_string ( self ):
-    return ( '{ "type":"dot", "marker":' + self.jb(self.marker) + ', "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+    return ( '{ "type":"dot", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -401,7 +401,7 @@ class graphic_text (graphic_primitive):
   def to_string ( self ):
     return ( "text \"" + str(self.s) + "\" at (" + str(self.x) + "," + str(self.y) + ")" )
   def to_json_string ( self ):
-    return ( '{ "type":"text", "marker":' + self.jb(self.marker) + ', "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "s":"' + str(self.s) + '", "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+    return ( '{ "type":"text", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "s":"' + str(self.s) + '", "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -1125,7 +1125,7 @@ def str2D ( m ):
   for r in m:
     s = s + ' ['
     for c in r:
-      s = s + ' ' + str(c)
+      s = s + ' ' + str("%.3f"%c)
     s = s + ' ]'
   s = s + ' ]'
   return ( s )
@@ -1337,7 +1337,7 @@ def run_alignment_callback ( align_all ):
 
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 26, "SNR: inf", coordsys='p', color=[1, .5, .5]) )
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['affine']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
-      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 96, "CumAff: " + str2D(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
 
     else:
@@ -1363,7 +1363,7 @@ def run_alignment_callback ( align_all ):
       annotated_img = annotated_image(new_name, role="aligned")
       annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
       annotated_img.graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(recipe.afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
-      annotated_img.graphics_items.append ( graphic_text(2, 96, "CumAff: " + str2D(alignment_layer_list[j].align_proc.cumulative_afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+      annotated_img.graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].align_proc.cumulative_afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
@@ -1765,6 +1765,11 @@ def menu_callback ( widget, data=None ):
                                 print_debug ( 80, "%%%% GOT BASE MATCH POINT: " + str(p) )
                                 m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
                                 a.image_dict['base'].graphics_items.append ( m )
+                            if 'annotations' in base['metadata']:
+                              ann_list = base['metadata']['annotations']
+                              for ann_item in ann_list:
+                                print_debug ( 60, "Base has " + str(ann_item) )
+                                a.image_dict["base"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                           # Only look for a ref or aligned if there has been a base
                           if 'ref' in im_list:
@@ -1789,6 +1794,11 @@ def menu_callback ( widget, data=None ):
                                       print_debug ( 80, "%%%% GOT REF MATCH POINT: " + str(p) )
                                       m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
                                       a.image_dict['ref'].graphics_items.append ( m )
+                                  if 'annotations' in ref['metadata']:
+                                    ann_list = ref['metadata']['annotations']
+                                    for ann_item in ann_list:
+                                      print_debug ( 60, "Ref has " + str(ann_item) )
+                                      a.image_dict["ref"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                           if 'aligned' in im_list:
                             aligned = im_list['aligned']
@@ -1807,8 +1817,7 @@ def menu_callback ( widget, data=None ):
                               if 'annotations' in aligned['metadata']:
                                 ann_list = aligned['metadata']['annotations']
                                 for ann_item in ann_list:
-                                  print ( "Aligned has " + str(ann_item) )
-                                  #a.image_dict["aligned"].graphics_items.append ( graphic_dot ( 100, 100, 20, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ) )
+                                  print_debug ( 60, "Aligned has " + str(ann_item) )
                                   a.image_dict["aligned"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                           alignment_layer_list.append ( a )
