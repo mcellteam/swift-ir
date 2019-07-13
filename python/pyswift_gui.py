@@ -2230,7 +2230,6 @@ def main():
   if True: # An easy way to indent and still be legal Python
     # zpa_original.add_checkmenu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
     zpa_original.add_checkmenu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
-    zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
 
     zpa_original.add_menu_sep  ( set_menu )
     # Create a "Set/Cursor" submenu
@@ -2250,6 +2249,8 @@ def main():
   # Create a "Debug" menu
   (debug_menu, debug_item) = zpa_original.add_menu ( "_Debug" )
   if True: # An easy way to indent and still be legal Python
+    zpa_original.add_menu_item ( debug_menu, menu_callback, "Python Console",   ("Debug", zpa_original ) )
+    zpa_original.add_menu_sep  ( debug_menu )
     for level in [ 10*x for x in range(0,11) ]:
       zpa_original.add_menu_item ( debug_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
 
