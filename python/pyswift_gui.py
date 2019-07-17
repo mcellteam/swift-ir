@@ -59,6 +59,9 @@ show_window_affines = False
 global show_window_centers
 show_window_centers = False
 
+global show_skipped_layers
+show_skipped_layers = True
+
 global point_mode
 point_mode = False
 
@@ -747,21 +750,48 @@ class zoom_panel ( app_window.zoom_pan_area ):
   def move_through_stack ( self, direction ):
     global alignment_layer_list
     global alignment_layer_index
+    global show_skipped_layers
 
     # Store the alignment_layer parameters into the image layer being exited
     store_fields_into_current_layer()
 
-    # Move to the next image layer (potentially)
-    alignment_layer_index += direction
-    if direction > 0:
-      if alignment_layer_index >= len(alignment_layer_list):
-        alignment_layer_index =  len(alignment_layer_list)-1
-    elif direction < 0:
-      if alignment_layer_index < 0:
-        alignment_layer_index = 0
+    if show_skipped_layers:
+      # Move to the next image layer (potentially)
+      alignment_layer_index += direction
+      if direction > 0:
+        if alignment_layer_index >= len(alignment_layer_list):
+          alignment_layer_index =  len(alignment_layer_list)-1
+      elif direction < 0:
+        if alignment_layer_index < 0:
+          alignment_layer_index = 0
+    else:
+      # Move to the next non-skipped image layer (potentially)
+      unskipped = [ i for i in range(len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
+      print_debug ( 70, "Unskipped indexes: " + str(unskipped) )
+      if len(unskipped) > 0:
+        if direction > 0:
+          next_index = -1
+          for u in unskipped:
+            if u > alignment_layer_index:
+              next_index = u
+              break
+          if next_index >= 0:
+            # There was a next index, so use it
+            alignment_layer_index = next_index
+        else:
+          next_index = -1
+          unskipped.reverse()
+          for u in unskipped:
+            if u < alignment_layer_index:
+              next_index = u
+              break
+          if next_index >= 0:
+            # There was a next index, so use it
+            alignment_layer_index = next_index
 
     # Display the alignment_layer parameters from the new section being viewed
-    store_current_layer_into_fields()
+    if alignment_layer_index >= 0:
+      store_current_layer_into_fields()
 
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
@@ -842,6 +872,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
     global alignment_layer_index
     global show_window_centers
     global show_window_affines
+    global show_skipped_layers
 
     # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
@@ -2236,6 +2267,11 @@ def menu_callback ( widget, data=None ):
       for p in panel_list:
         p.drawing_area.queue_draw()
 
+    elif command == "ShowSkipped":
+
+      global show_skipped_layers
+      show_skipped_layers = not show_skipped_layers
+
     elif command in [ x[0] for x in cursor_options ]:
       print_debug ( 50, "Got a cursor cursor change command: " + command )
       cmd_index = [ x[0] for x in cursor_options ].index(command)
@@ -2522,6 +2558,7 @@ def main():
     this_menu = show_menu
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Affines",   ("Affines", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Skipped Images",   ("ShowSkipped", zpa_original ), default=True )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
