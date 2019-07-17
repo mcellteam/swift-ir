@@ -239,9 +239,6 @@ cursor_options = [
 global cursor_option_seps
 cursor_option_seps = [2, 5, 7]
 
-global alignment_layer_index_at_last_change
-alignment_layer_index_at_last_change = -1
-
 class gui_fields_class:
   ''' This class holds GUI widgets and not the persistent data. '''
   def __init__(self):
@@ -1115,12 +1112,12 @@ def change_skip_callback(zpa):
   global gui_fields
   print_debug ( 50, "Skip Changed!!" )
   print_debug ( 50, "State is now " + str(gui_fields.skip_check_box.get_active()) )
-  alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
 
-  global alignment_layer_index_at_last_change
+  if alignment_layer_list[alignment_layer_index].skip != gui_fields.skip_check_box.get_active():
 
-  if alignment_layer_index_at_last_change == alignment_layer_index:
+    print ( "This is an actual change in the value for a layer rather than simply a change of layer" )
     # This is an actual change in the value for a layer rather than simply a change of layer (which also triggers the change_skip_callback)
+    alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
 
     # Calculate the unskipped regions before and after this layer:
     unskipped_before = [ i for i in range(0,alignment_layer_index) if alignment_layer_list[i].skip == False ]
@@ -1151,7 +1148,6 @@ def change_skip_callback(zpa):
         # Connect the this image to the next unskipped
         alignment_layer_list[next_unskipped_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[alignment_layer_index].image_dict['base'], role='ref' )
 
-  alignment_layer_index_at_last_change = alignment_layer_index
 
   # zpa.queue_draw()
   for p in panel_list:
