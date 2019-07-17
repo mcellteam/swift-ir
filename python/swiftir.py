@@ -593,7 +593,7 @@ def meanImage(ifns, stretch=False):
     the individual images; see LOADIMAGE.'''
     if len(ifns)==0:
         return np.array([], dtype='float32')
-    sumimg = loadImage(ifns[0], stretch).asType('float32')
+    sumimg = loadImage(ifns[0], stretch).astype('float32')
     N = len(ifns)
     for k in range(1, N):
         sumimg += loadImage(ifns[k], stretch)
@@ -608,8 +608,8 @@ def meanImageNoBlack(ifns, stretch=False, minvalid=1):
     MEANIMAGENOBLACK also accepts the STRETCH argument as in MEANIMAGE.'''
     if len(ifns)==0:
         return np.array([], dtype='float32')
-    sumimg = loadImage(ifns[0], stretch).asType('float32')
-    nimg = (sumimg>0).asType('int16')
+    sumimg = loadImage(ifns[0], stretch).astype('float32')
+    nimg = (sumimg>0).astype('int16')
     N = len(ifns)
     for k in range(1, N):
         img = loadImage(ifns[k], stretch)
@@ -619,7 +619,8 @@ def meanImageNoBlack(ifns, stretch=False, minvalid=1):
         sumimg[nimg<minvalid] = 0
     return sumimg / nimg
     
-def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
+#def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
+def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
           TEST=False):
     '''REMOD - Create reference images from a stack
     REMOD(ifns, ofnbase) loads all the images in IFNS (not all at once)
@@ -672,11 +673,16 @@ def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
         if not abovesum is None:
             img += abovesum
         img /= nabove+nbelow
+        '''
         if type(ofnbase)==str:
             ofn = ofnbase % k
         else:
             ofn = ofnbase(k)
+        '''
+        ofn = ofns[k]
+        print('remod writing image: %s' % (ofn))
         saver(img.astype('uint8'), ofn)
+
         
     for k in range(N):
         if nbelow >= keepin:
