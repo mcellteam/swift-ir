@@ -574,6 +574,7 @@ class alignment_layer:
     self.trans_addy = 256
 
     self.skip = False
+    self.snr_skip = False
 
     self.affine_enabled = True
     self.affine_ww = 256
@@ -1082,6 +1083,16 @@ class zoom_panel ( app_window.zoom_pan_area ):
               else:
                 drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
                 drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
+          elif alignment_layer_list[alignment_layer_index].snr_skip:
+            # Draw the skipped X
+            gc.foreground = colormap.alloc_color(65535,65535,0)
+            for delta in range(-6,7):
+              if delta >= 0:
+                drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
+                drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
+              else:
+                drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
+                drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
 
 
     # Draw a separator between the panes
@@ -1310,6 +1321,20 @@ def jump_to_callback ( zpa ):
   zpa_original.queue_draw()
   for p in panel_list:
     p.queue_draw()
+
+def snr_skip_to_skip_callback ( flag ):
+  # Copy all of the snr_skip values into skip values
+
+  global alignment_layer_list
+  if alignment_layer_list != None:
+    if len(alignment_layer_list) > 0:
+      for a in alignment_layer_list:
+        a.skip = a.snr_skip
+    store_current_layer_into_fields()
+  zpa_original.queue_draw()
+  for p in panel_list:
+    p.queue_draw()
+  return True
 
 
 import thread
@@ -1593,6 +1618,21 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[j].results_dict['affine'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
       alignment_layer_list[j].results_dict['cumulative_afm'] = [ [ c for c in r ] for r in alignment_layer_list[j].align_proc.cumulative_afm ]  # Make a copy
 
+    # Check to see if this image should be marked for SNR skipping:
+    snr_skip_str = gui_fields.snr_skip.get_text()
+    if len(snr_skip_str.strip()) > 0:
+      # An snr_skip limit has been entered
+      try:
+        snr_skip = float(snr_skip_str.strip())
+        if snr_value <= snr_skip:
+          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+          print_debug ( 20, "SNR of " + str(snr_value) + " is less than SNR Skip of " + str(snr_skip) )
+          print_debug ( 20, "  This layer will be marked for skipping in the next pass: " + str(j) )
+          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+          alignment_layer_list[j].snr_skip = True
+      except:
+        print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
+
     # Check to see if the alignment should proceed at all
     snr_halt_str = gui_fields.snr_halt.get_text()
     if len(snr_halt_str.strip()) > 0:
@@ -1607,20 +1647,6 @@ def run_alignment_callback ( align_all ):
           break
       except:
         print_debug ( 1, "The SNR Halt value should be a number and not " + snr_halt_str )
-
-    # Check to see if this image should be marked for SNR skipping:
-    snr_skip_str = gui_fields.snr_skip.get_text()
-    if len(snr_skip_str.strip()) > 0:
-      # An snr_skip limit has been entered
-      try:
-        snr_skip = float(snr_skip_str.strip())
-        if snr_value <= snr_skip:
-          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-          print_debug ( 20, "SNR of " + str(snr_value) + " is less than SNR Skip of " + str(snr_skip) )
-          print_debug ( 20, "  This layer will be marked for skipping in the next pass: " + str(j) )
-          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-      except:
-        print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
 
 
 
@@ -2859,6 +2885,13 @@ def main():
   gui_fields.snr_skip.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
+
+
+  button = gtk.Button("All SNR Skip -> Skip")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", snr_skip_to_skip_callback, False )
+  button.show()
+
 
   label_entry = gtk.HBox ( False, 5 )
   a_label = gtk.Label("SNR Halt:")
