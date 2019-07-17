@@ -1337,6 +1337,21 @@ def snr_skip_to_skip_callback ( flag ):
   return True
 
 
+def clear_snr_skip_to_skip_callback ( flag ):
+  # Clear all of the snr_skip flags
+
+  global alignment_layer_list
+  if alignment_layer_list != None:
+    if len(alignment_layer_list) > 0:
+      for a in alignment_layer_list:
+        a.snr_skip = False
+    store_current_layer_into_fields()
+  zpa_original.queue_draw()
+  for p in panel_list:
+    p.queue_draw()
+  return True
+
+
 import thread
 
 import align_swiftir
@@ -2892,6 +2907,10 @@ def main():
   button.connect_object ( "clicked", snr_skip_to_skip_callback, False )
   button.show()
 
+  button = gtk.Button("Clear SNR Skips")
+  controls_hbox.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", clear_snr_skip_to_skip_callback, False )
+  button.show()
 
   label_entry = gtk.HBox ( False, 5 )
   a_label = gtk.Label("SNR Halt:")
