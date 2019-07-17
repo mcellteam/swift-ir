@@ -767,7 +767,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
     else:
       # Move to the next non-skipped image layer (potentially)
       unskipped = [ i for i in range(len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
-      print_debug ( 70, "Unskipped indexes: " + str(unskipped) )
+      print_debug ( 50, "Unskipped indexes: " + str(unskipped) )
       if len(unskipped) > 0:
         if direction > 0:
           next_index = -1
@@ -778,7 +778,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
           if next_index >= 0:
             # There was a next index, so use it
             alignment_layer_index = next_index
-        else:
+        elif direction < 0:
           next_index = -1
           unskipped.reverse()
           for u in unskipped:
@@ -788,6 +788,17 @@ class zoom_panel ( app_window.zoom_pan_area ):
           if next_index >= 0:
             # There was a next index, so use it
             alignment_layer_index = next_index
+        else: # direction == 0
+          # Move to the closest layer
+          print_debug ( 50, "Finding closest unskipped layer ..." )
+          closest_index = -1
+          closest_dist = 100 * len(alignment_layer_list)
+          for u in unskipped:
+            dist = abs(alignment_layer_index - u)
+            if dist < closest_dist:
+              closest_index = u
+              closest_dist = dist
+          alignment_layer_index = closest_index
 
     # Display the alignment_layer parameters from the new section being viewed
     if alignment_layer_index >= 0:
@@ -1146,7 +1157,7 @@ def change_skip_callback(zpa):
 
   if alignment_layer_list[alignment_layer_index].skip != gui_fields.skip_check_box.get_active():
 
-    print ( "This is an actual change in the value for a layer rather than simply a change of layer" )
+    print_debug ( 50, "This is an actual change in the value for a layer rather than simply a change of layer" )
     # This is an actual change in the value for a layer rather than simply a change of layer (which also triggers the change_skip_callback)
     alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
 
@@ -1155,12 +1166,12 @@ def change_skip_callback(zpa):
     prev_unskipped_index = None
     if len(unskipped_before) > 0:
       prev_unskipped_index = unskipped_before[-1]
-    print ( "Unskipped before this layer = " + str(unskipped_before) )
+    print_debug ( 50, "Unskipped before this layer = " + str(unskipped_before) )
     unskipped_after = [ i for i in range(alignment_layer_index+1,len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
     next_unskipped_index = None
     if len(unskipped_after) > 0:
       next_unskipped_index = unskipped_after[0]
-    print ( "Unskipped after this layer = " + str(unskipped_after) )
+    print_debug ( 50, "Unskipped after this layer = " + str(unskipped_after) )
 
     # Fix the connections between layers given the state of this skip after changing
 
@@ -1179,9 +1190,9 @@ def change_skip_callback(zpa):
         # Connect the this image to the next unskipped
         alignment_layer_list[next_unskipped_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[alignment_layer_index].image_dict['base'], role='ref' )
 
-
   # zpa.queue_draw()
   for p in panel_list:
+    p.move_through_stack ( 0 )
     p.drawing_area.queue_draw()
 
   # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -2271,6 +2282,10 @@ def menu_callback ( widget, data=None ):
 
       global show_skipped_layers
       show_skipped_layers = not show_skipped_layers
+
+      for p in panel_list:
+        p.move_through_stack ( 0 )
+        p.drawing_area.queue_draw()
 
     elif command in [ x[0] for x in cursor_options ]:
       print_debug ( 50, "Got a cursor cursor change command: " + command )
