@@ -250,6 +250,7 @@ class gui_fields_class:
     self.dest_label = None
     self.num_align_forward = None
     self.jump_to_index = None
+    self.snr_skip = None
     self.snr_halt = None
 
     # These values are swapped while scrolling through the stack
@@ -1592,20 +1593,35 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[j].results_dict['affine'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
       alignment_layer_list[j].results_dict['cumulative_afm'] = [ [ c for c in r ] for r in alignment_layer_list[j].align_proc.cumulative_afm ]  # Make a copy
 
-    # Check to see if the alignment should proceed
+    # Check to see if the alignment should proceed at all
     snr_halt_str = gui_fields.snr_halt.get_text()
     if len(snr_halt_str.strip()) > 0:
       # An snr_halt limit has been entered
       try:
         snr_halt = float(snr_halt_str.strip())
         if snr_value <= snr_halt:
-          print_debug ( 50, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-          print_debug ( 50, "SNR of " + str(snr_value) + " is less than SNR Halt of " + str(snr_halt) )
-          print_debug ( 50, "  Alignment stopped on layer " + str(j) )
-          print_debug ( 50, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+          print_debug ( 10, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+          print_debug ( 10, "SNR of " + str(snr_value) + " is less than SNR Halt of " + str(snr_halt) )
+          print_debug ( 10, "  Alignment stopped on layer " + str(j) )
+          print_debug ( 10, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
           break
       except:
-        print_debug ( 50, "The SNR Halt value should be a number and not " + index_str )
+        print_debug ( 1, "The SNR Halt value should be a number and not " + snr_halt_str )
+
+    # Check to see if this image should be marked for SNR skipping:
+    snr_skip_str = gui_fields.snr_skip.get_text()
+    if len(snr_skip_str.strip()) > 0:
+      # An snr_skip limit has been entered
+      try:
+        snr_skip = float(snr_skip_str.strip())
+        if snr_value <= snr_skip:
+          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+          print_debug ( 20, "SNR of " + str(snr_value) + " is less than SNR Skip of " + str(snr_skip) )
+          print_debug ( 20, "  This layer will be marked for skipping in the next pass: " + str(j) )
+          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+      except:
+        print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
+
 
 
   # The following work manually, but gave error when done here
@@ -2837,10 +2853,10 @@ def main():
   a_label = gtk.Label("SNR Skip:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
-  gui_fields.snr_halt = gtk.Entry(6)
-  gui_fields.snr_halt.set_text ( '' )
-  label_entry.pack_start ( gui_fields.snr_halt, True, True, 0 )
-  gui_fields.snr_halt.show()
+  gui_fields.snr_skip = gtk.Entry(6)
+  gui_fields.snr_skip.set_text ( '' )
+  label_entry.pack_start ( gui_fields.snr_skip, True, True, 0 )
+  gui_fields.snr_skip.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
