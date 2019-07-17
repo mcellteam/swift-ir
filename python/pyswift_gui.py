@@ -3027,6 +3027,7 @@ def main():
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
+  '''
   button = gtk.Button("Abort")
   controls_hbox.pack_start ( button, True, True, 0 )
   button.connect_object ( "clicked", stop_callback, zpa_original )
@@ -3041,6 +3042,7 @@ def main():
   controls_hbox.pack_start ( button, True, True, 0 )
   button.connect_object ( "clicked", rem_panel_callback, zpa_original )
   button.show()
+  '''
 
   # Show the main window
   window.show()
