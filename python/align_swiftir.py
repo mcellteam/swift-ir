@@ -54,9 +54,11 @@ class alignment_process:
   def align(self):
 
     if self.layer_dict['align_to_ref_method']['selected_method']=='Auto Swim Align':
-      self.auto_swim_align()
+      result = self.auto_swim_align()
     elif self.layer_dict['align_to_ref_method']['selected_method']=='Match Point Align':
-      self.auto_swim_align()
+      result = self.auto_swim_align()
+
+    return result
 
   
   def auto_swim_align(self):
@@ -64,11 +66,14 @@ class alignment_process:
     im_sta = swiftir.loadImage(self.im_sta_fn)
     im_mov = swiftir.loadImage(self.im_mov_fn)
 
+    # window size scale factor
+    wsf = 0.75
+
     pa = np.zeros((2,1))
-    wwx = int(im_sta.shape[0])
-    wwy = int(im_sta.shape[1])
-    cx = int(wwx/2)
-    cy = int(wwy/2)
+    wwx = int(wsf*im_sta.shape[0])
+    wwy = int(wsf*im_sta.shape[1])
+    cx = int(im_sta.shape[0]/2)
+    cy = int(im_sta.shape[1]/2)
     pa[0,0] = cx
     pa[1,0] = cy
     psta_1 = pa
@@ -81,7 +86,7 @@ class alignment_process:
       for y in range(ny):
         pa[0, x + nx*y] = int(0.5*s + s*x)
         pa[1, x + nx*y] = int(0.5*s + s*y)
-    s_2x2 = s
+    s_2x2 = int(wsf*s)
     psta_2x2 = pa
 
     nx = 4
@@ -92,10 +97,11 @@ class alignment_process:
       for y in range(ny):
         pa[0, x + nx*y] = int(0.5*s + s*x)
         pa[1, x + nx*y] = int(0.5*s + s*y)
-    s_4x4 = s
+    s_4x4 = int(wsf*s)
     psta_4x4 = pa
 
     s_mp = int(im_sta.shape[0]/32)
+
 
     self.recipe = align_recipe(im_sta, im_mov)
 
