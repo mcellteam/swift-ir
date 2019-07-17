@@ -2658,6 +2658,21 @@ def main():
   controls_hbox.show()
   controls_vbox.pack_start ( controls_hbox, False, False, 0 )
 
+
+  label_entry = gtk.HBox ( False, 5 )
+  button = gtk.Button("Jump To:")
+  label_entry.pack_start ( button, True, True, 0 )
+  button.connect_object ( "clicked", jump_to_callback, zpa_original )
+  button.show()
+  gui_fields.jump_to_index = gtk.Entry(6)
+  gui_fields.jump_to_index.set_text ( '1' )
+  label_entry.pack_start ( gui_fields.jump_to_index, True, True, 0 )
+  gui_fields.jump_to_index.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+
+  '''
   a_label = gtk.Label("Translation Pass:")
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
@@ -2668,7 +2683,10 @@ def main():
   a_label = gtk.Label("WW:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
+  '''
   gui_fields.trans_ww_entry = gtk.Entry(5)
+  gui_fields.trans_ww_entry.set_text ( '0' )
+  '''
   gui_fields.trans_ww_entry.set_text ( str(alignment_layer_defaults.trans_ww) )
   label_entry.pack_start ( gui_fields.trans_ww_entry, True, True, 0 )
   gui_fields.trans_ww_entry.show()
@@ -2680,7 +2698,10 @@ def main():
   a_label = gtk.Label("Addx:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
+  '''
   gui_fields.trans_addx_entry = gtk.Entry(6)
+  gui_fields.trans_addx_entry.set_text ( '0' )
+  '''
   gui_fields.trans_addx_entry.set_text ( str(alignment_layer_defaults.trans_addx) )
   label_entry.pack_start ( gui_fields.trans_addx_entry, True, True, 0 )
   gui_fields.trans_addx_entry.show()
@@ -2692,12 +2713,16 @@ def main():
   a_label = gtk.Label("Addy:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
+  '''
   gui_fields.trans_addy_entry = gtk.Entry(6)
+  gui_fields.trans_addy_entry.set_text ( '0' )
+  '''
   gui_fields.trans_addy_entry.set_text ( str(alignment_layer_defaults.trans_addy) )
   label_entry.pack_start ( gui_fields.trans_addy_entry, True, True, 0 )
   gui_fields.trans_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
+  '''
 
 
   label_entry = gtk.HBox ( False, 5 )
@@ -2732,6 +2757,7 @@ def main():
   label_entry.show()
 
 
+  '''
   # Create a horizontal box to hold a row of controls
   controls_hbox = gtk.HBox ( False, 10 )
   controls_hbox.show()
@@ -2741,7 +2767,10 @@ def main():
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
 
+  '''
   gui_fields.affine_check_box = gtk.CheckButton("  Affine Pass:")
+  gui_fields.affine_check_box.set_active(True)
+  '''
   gui_fields.affine_check_box.set_active(True)
   controls_hbox.pack_start ( gui_fields.affine_check_box, True, True, 0 )
   gui_fields.affine_check_box.show()
@@ -2751,7 +2780,10 @@ def main():
   a_label = gtk.Label("WW:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
+  '''
   gui_fields.affine_ww_entry = gtk.Entry(5)
+  gui_fields.affine_ww_entry.set_text ( '0' )
+  '''
   gui_fields.affine_ww_entry.set_text ( str(alignment_layer_defaults.affine_ww) )
   label_entry.pack_start ( gui_fields.affine_ww_entry, True, True, 0 )
   gui_fields.affine_ww_entry.show()
@@ -2763,7 +2795,10 @@ def main():
   a_label = gtk.Label("Addx:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
+  '''
   gui_fields.affine_addx_entry = gtk.Entry(6)
+  gui_fields.affine_addx_entry.set_text ( '0' )
+  '''
   gui_fields.affine_addx_entry.set_text ( str(alignment_layer_defaults.affine_addx) )
   label_entry.pack_start ( gui_fields.affine_addx_entry, True, True, 0 )
   gui_fields.affine_addx_entry.show()
@@ -2775,7 +2810,10 @@ def main():
   a_label = gtk.Label("Addy:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
+  '''
   gui_fields.affine_addy_entry = gtk.Entry(6)
+  gui_fields.affine_addy_entry.set_text ( '0' )
+  '''
   gui_fields.affine_addy_entry.set_text ( str(alignment_layer_defaults.affine_addy) )
   label_entry.pack_start ( gui_fields.affine_addy_entry, True, True, 0 )
   gui_fields.affine_addy_entry.show()
@@ -2786,6 +2824,37 @@ def main():
   a_label = gtk.Label(" ")
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
+  '''
+
+
+
+  # Create a horizontal box to hold a row of controls
+  controls_hbox = gtk.HBox ( False, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label("SNR Skip:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  gui_fields.snr_halt = gtk.Entry(6)
+  gui_fields.snr_halt.set_text ( '' )
+  label_entry.pack_start ( gui_fields.snr_halt, True, True, 0 )
+  gui_fields.snr_halt.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label("SNR Halt:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  gui_fields.snr_halt = gtk.Entry(6)
+  gui_fields.snr_halt.set_text ( '' )
+  label_entry.pack_start ( gui_fields.snr_halt, True, True, 0 )
+  gui_fields.snr_halt.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
 
 
   # Create a horizontal box to hold a row of controls
@@ -2831,7 +2900,7 @@ def main():
   a_label.show()
 
 
-
+  '''
   # Create a horizontal box to hold a row of controls
   controls_hbox = gtk.HBox ( False, 10 )
   controls_hbox.show()
@@ -2848,7 +2917,6 @@ def main():
   button.show()
 
 
-
   label_entry = gtk.HBox ( False, 5 )
   button = gtk.Button("Jump To:")
   label_entry.pack_start ( button, True, True, 0 )
@@ -2860,18 +2928,8 @@ def main():
   gui_fields.jump_to_index.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
+  '''
 
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("SNR Halt:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.snr_halt = gtk.Entry(6)
-  gui_fields.snr_halt.set_text ( '' )
-  label_entry.pack_start ( gui_fields.snr_halt, True, True, 0 )
-  gui_fields.snr_halt.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
 
 
   # Create a horizontal box to hold a row of controls
