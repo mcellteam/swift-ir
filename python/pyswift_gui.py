@@ -1084,14 +1084,14 @@ class zoom_panel ( app_window.zoom_pan_area ):
                 drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
                 drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
           elif alignment_layer_list[alignment_layer_index].snr_skip:
-            # Draw the skipped X
+            # Draw the SNR skipped /
             gc.foreground = colormap.alloc_color(65535,65535,0)
             for delta in range(-6,7):
               if delta >= 0:
-                drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
+                # drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
                 drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
               else:
-                drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
+                # drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
                 drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
 
 
