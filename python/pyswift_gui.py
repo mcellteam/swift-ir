@@ -239,6 +239,8 @@ cursor_options = [
 global cursor_option_seps
 cursor_option_seps = [2, 5, 7]
 
+global alignment_layer_index_at_last_change
+alignment_layer_index_at_last_change = -1
 
 class gui_fields_class:
   ''' This class holds GUI widgets and not the persistent data. '''
@@ -1030,6 +1032,17 @@ class zoom_panel ( app_window.zoom_pan_area ):
                 graphics_item.draw ( zpa, drawing_area, self.pangolayout )
               elif (graphics_item.graphic_group == 'Affines') and show_window_affines:
                 graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+          if alignment_layer_list[alignment_layer_index].skip:
+            # Draw the skipped X
+            gc.foreground = colormap.alloc_color(65535,0,0)
+            for delta in range(-10,11):
+              if delta >= 0:
+                drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
+                drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
+              else:
+                drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
+                drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
+
 
     # Draw a separator between the panes
     gc.foreground = colormap.alloc_color(32767,32767,32767)
@@ -1103,6 +1116,42 @@ def change_skip_callback(zpa):
   print_debug ( 50, "Skip Changed!!" )
   print_debug ( 50, "State is now " + str(gui_fields.skip_check_box.get_active()) )
   alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
+
+  global alignment_layer_index_at_last_change
+
+  if alignment_layer_index_at_last_change == alignment_layer_index:
+    # This is an actual change in the value for a layer rather than simply a change of layer (which also triggers the change_skip_callback)
+
+    # Calculate the unskipped regions before and after this layer:
+    unskipped_before = [ i for i in range(0,alignment_layer_index) if alignment_layer_list[i].skip == False ]
+    prev_unskipped_index = None
+    if len(unskipped_before) > 0:
+      prev_unskipped_index = unskipped_before[-1]
+    print ( "Unskipped before this layer = " + str(unskipped_before) )
+    unskipped_after = [ i for i in range(alignment_layer_index+1,len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
+    next_unskipped_index = None
+    if len(unskipped_after) > 0:
+      next_unskipped_index = unskipped_after[0]
+    print ( "Unskipped after this layer = " + str(unskipped_after) )
+
+    # Fix the connections between layers given the state of this skip after changing
+
+    if alignment_layer_list[alignment_layer_index].skip:
+      # This image wasn't skipped before but is being skipped now
+      if (type(prev_unskipped_index) != type(None)) and (type(next_unskipped_index) != type(None)):
+        # Connect the previous unskipped to the next unskipped
+        alignment_layer_list[next_unskipped_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[prev_unskipped_index].image_dict['base'], role='ref' )
+        alignment_layer_list[alignment_layer_index].image_dict['ref'] = annotated_image()
+    else:
+      # This image was skipped before but is being unskipped now
+      if type(prev_unskipped_index) != type(None):
+        # Connect the previous unskipped image to this image
+        alignment_layer_list[alignment_layer_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[prev_unskipped_index].image_dict['base'], role='ref' )
+      if type(next_unskipped_index) != type(None):
+        # Connect the this image to the next unskipped
+        alignment_layer_list[next_unskipped_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[alignment_layer_index].image_dict['base'], role='ref' )
+
+  alignment_layer_index_at_last_change = alignment_layer_index
 
   # zpa.queue_draw()
   for p in panel_list:
