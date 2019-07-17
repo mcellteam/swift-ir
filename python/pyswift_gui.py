@@ -11,6 +11,7 @@ import time
 import os
 import sys
 import json
+import math
 import random
 import shutil
 
@@ -58,8 +59,14 @@ show_window_affines = False
 global show_window_centers
 show_window_centers = False
 
+global show_skipped_layers
+show_skipped_layers = True
+
 global point_mode
 point_mode = False
+
+global point_delete_mode
+point_delete_mode = False
 
 global point_cursor
 point_cursor = gtk.gdk.CROSSHAIR
@@ -165,11 +172,75 @@ cursor_options = [
     ["Cursor_CROSS",     gtk.gdk.CROSS],
     ["Cursor_HAND1",     gtk.gdk.HAND1],
     ["Cursor_HAND2",     gtk.gdk.HAND2],
-    ["Cursor_ARROW",     gtk.gdk.ARROW]
+    ["Cursor_ARROW",     gtk.gdk.ARROW],
+
+
+    ["Cursor_ARROW", gtk.gdk.ARROW],
+    ["Cursor_BASED_ARROW_DOWN", gtk.gdk.BASED_ARROW_DOWN],
+    ["Cursor_BASED_ARROW_UP", gtk.gdk.BASED_ARROW_UP],
+    ["Cursor_BOAT", gtk.gdk.BOAT],
+    ["Cursor_BOGOSITY", gtk.gdk.BOGOSITY],
+    ["Cursor_BOTTOM_LEFT_CORNER", gtk.gdk.BOTTOM_LEFT_CORNER],
+    ["Cursor_BOTTOM_RIGHT_CORNER", gtk.gdk.BOTTOM_RIGHT_CORNER],
+    ["Cursor_BOTTOM_SIDE", gtk.gdk.BOTTOM_SIDE],
+    ["Cursor_BOTTOM_TEE", gtk.gdk.BOTTOM_TEE],
+    ["Cursor_BOX_SPIRAL", gtk.gdk.BOX_SPIRAL],
+    ["Cursor_CLOCK", gtk.gdk.CLOCK],
+    ["Cursor_COFFEE_MUG", gtk.gdk.COFFEE_MUG],
+    ["Cursor_DOUBLE_ARROW", gtk.gdk.DOUBLE_ARROW],
+    ["Cursor_DRAFT_LARGE", gtk.gdk.DRAFT_LARGE],
+    ["Cursor_DRAFT_SMALL", gtk.gdk.DRAFT_SMALL],
+    ["Cursor_DRAPED_BOX", gtk.gdk.DRAPED_BOX],
+    ["Cursor_EXCHANGE", gtk.gdk.EXCHANGE],
+    ["Cursor_FLEUR", gtk.gdk.FLEUR],
+    ["Cursor_GOBBLER", gtk.gdk.GOBBLER],
+    ["Cursor_GUMBY", gtk.gdk.GUMBY],
+    ["Cursor_HEART", gtk.gdk.HEART],
+    ["Cursor_ICON", gtk.gdk.ICON],
+    ["Cursor_LEFT_PTR", gtk.gdk.LEFT_PTR],
+    ["Cursor_LEFT_SIDE", gtk.gdk.LEFT_SIDE],
+    ["Cursor_LEFT_TEE", gtk.gdk.LEFT_TEE],
+    ["Cursor_LEFTBUTTON", gtk.gdk.LEFTBUTTON],
+    ["Cursor_LL_ANGLE", gtk.gdk.LL_ANGLE],
+    ["Cursor_LR_ANGLE", gtk.gdk.LR_ANGLE],
+    ["Cursor_MAN", gtk.gdk.MAN],
+    ["Cursor_MIDDLEBUTTON", gtk.gdk.MIDDLEBUTTON],
+    ["Cursor_MOUSE", gtk.gdk.MOUSE],
+    ["Cursor_PENCIL", gtk.gdk.PENCIL],
+    ["Cursor_PIRATE", gtk.gdk.PIRATE],
+    ["Cursor_QUESTION_ARROW", gtk.gdk.QUESTION_ARROW],
+    ["Cursor_RIGHT_PTR", gtk.gdk.RIGHT_PTR],
+    ["Cursor_RIGHT_SIDE", gtk.gdk.RIGHT_SIDE],
+    ["Cursor_RIGHT_TEE", gtk.gdk.RIGHT_TEE],
+    ["Cursor_RIGHTBUTTON", gtk.gdk.RIGHTBUTTON],
+    ["Cursor_RTL_LOGO", gtk.gdk.RTL_LOGO],
+    ["Cursor_SAILBOAT", gtk.gdk.SAILBOAT],
+    ["Cursor_SB_DOWN_ARROW", gtk.gdk.SB_DOWN_ARROW],
+    ["Cursor_SB_H_DOUBLE_ARROW", gtk.gdk.SB_H_DOUBLE_ARROW],
+    ["Cursor_SB_LEFT_ARROW", gtk.gdk.SB_LEFT_ARROW],
+    ["Cursor_SB_RIGHT_ARROW", gtk.gdk.SB_RIGHT_ARROW],
+    ["Cursor_SB_UP_ARROW", gtk.gdk.SB_UP_ARROW],
+    ["Cursor_SB_V_DOUBLE_ARROW", gtk.gdk.SB_V_DOUBLE_ARROW],
+    ["Cursor_SHUTTLE", gtk.gdk.SHUTTLE],
+    ["Cursor_SIZING", gtk.gdk.SIZING],
+    ["Cursor_SPIDER", gtk.gdk.SPIDER],
+    ["Cursor_SPRAYCAN", gtk.gdk.SPRAYCAN],
+    ["Cursor_TCROSS", gtk.gdk.TCROSS],
+    ["Cursor_TOP_LEFT_ARROW", gtk.gdk.TOP_LEFT_ARROW],
+    ["Cursor_TOP_LEFT_CORNER", gtk.gdk.TOP_LEFT_CORNER],
+    ["Cursor_TOP_RIGHT_CORNER", gtk.gdk.TOP_RIGHT_CORNER],
+    ["Cursor_TOP_SIDE", gtk.gdk.TOP_SIDE],
+    ["Cursor_TOP_TEE", gtk.gdk.TOP_TEE],
+    ["Cursor_TREK", gtk.gdk.TREK],
+    ["Cursor_UL_ANGLE", gtk.gdk.UL_ANGLE],
+    ["Cursor_UMBRELLA", gtk.gdk.UMBRELLA],
+    ["Cursor_UR_ANGLE", gtk.gdk.UR_ANGLE],
+    ["Cursor_WATCH", gtk.gdk.WATCH],   # Animated "waiting" cursor!!
+    ["Cursor_XTERM", gtk.gdk.XTERM]
+    # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
   ]
 global cursor_option_seps
 cursor_option_seps = [2, 5, 7]
-
 
 class gui_fields_class:
   ''' This class holds GUI widgets and not the persistent data. '''
@@ -212,6 +283,23 @@ class graphic_primitive:
     self.color = [mx*((i/(2**j))%2) for j in range(3)]
   def r10(self,x):
     return round(x*10)/10
+  def jb ( self, bool_val ):
+    if bool_val:
+      return ( "true" )
+    else:
+      return ( "false" )
+    return
+  def from_json ( self, json_dict ):
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    if 'type' in json_dict:
+      if json_dict['type'] == 'dot':
+        return graphic_dot ( json_dict['x'], json_dict['y'], json_dict['r'], json_dict['coordsys'], json_dict['color'], json_dict['group'] )
+      elif json_dict['type'] == 'text':
+        return graphic_text ( json_dict['x'], json_dict['y'], json_dict['s'], json_dict['coordsys'], json_dict['color'], json_dict['group'] )
+      else:
+        return graphic_text ( 10, 100, "Drawing not supported for type:" + json_dict['type'] )
+    else:
+      return graphic_text ( 10, 130, 'No type field in graphics item.' )
 
 class graphic_line (graphic_primitive):
   def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
@@ -225,6 +313,8 @@ class graphic_line (graphic_primitive):
     self.color = color
   def to_string ( self ):
     return ( "line (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"line", "group":"' + str(self.graphic_group) + '", "x1":' + str(self.x1) + ', "y1":' + str(self.y1) + ', "x2":' + str(self.x2) + ', "y2":' + str(self.y2) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -265,6 +355,8 @@ class graphic_rect (graphic_primitive):
     self.color = color
   def to_string ( self ):
     return ( "rect (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"rect", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x1) + ', "y":' + str(self.y1) + ', "dx":' + str(self.dx) + ', "dy":' + str(self.dy) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -304,6 +396,8 @@ class graphic_marker (graphic_primitive):
     self.color = color
   def to_string ( self ):
     return ( "marker at (" + str(self.r10(self.x)) + "," + str(self.r10(self.y)) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"marker", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -341,6 +435,8 @@ class graphic_dot (graphic_primitive):
     self.color = color
   def to_string ( self ):
     return ( "dot at (" + str(self.x) + "," + str(self.y) + "),r=" + str(self.r) )
+  def to_json_string ( self ):
+    return ( '{ "type":"dot", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -375,6 +471,8 @@ class graphic_text (graphic_primitive):
     self.color = color
   def to_string ( self ):
     return ( "text \"" + str(self.s) + "\" at (" + str(self.x) + "," + str(self.y) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"text", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "s":"' + str(self.s) + '", "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
@@ -407,7 +505,7 @@ class annotated_image:
     self.image = None
     self.graphics_items = []
     self.role = role
-    self.results_dict = None
+    # self.results_dict = None
 
     # Copy in the clone if provided
     if type(clone_from) != type(None):
@@ -484,6 +582,9 @@ class alignment_layer:
     self.bias_enabled = True
     self.bias_dx = 0
     self.bias_dy = 0
+
+    # This holds whatever is produced by this alignment
+    self.results_dict = {}
 
     try:
       self.base_annotated_image = annotated_image ( self.base_image_name, role="base" )
@@ -568,25 +669,65 @@ class zoom_panel ( app_window.zoom_pan_area ):
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
-    if point_mode and self.point_add_enabled:
-      global alignment_layer_list
-      global alignment_layer_index
-      print_debug ( 50, "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-      print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+    if self.point_add_enabled:
+      if point_mode and not point_delete_mode:
+        global alignment_layer_list
+        global alignment_layer_index
+        print_debug ( 50, "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+        print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
 
-      #  print_debug ( 50, "Adding a marker point to the original image" )
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        #  print_debug ( 50, "Adding a marker point to the original image" )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-      this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
-      print_debug ( 50, "    Storing point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
-      # if this_image.point_add_enabled:
-      if self.point_add_enabled:
-        this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
-      '''
+        this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+        print_debug ( 50, "    Storing point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
+        # if this_image.point_add_enabled:
+        if self.point_add_enabled:
+          this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+
+      if point_delete_mode:
+        global alignment_layer_list
+        global alignment_layer_index
+        print_debug ( 50, "Got a button press in point delete mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+
+        this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+
+        image_click_x = self.x(event.x)
+        image_click_y = self.y(event.y)
+
+        closest_x = 0
+        closest_y = 0
+        closest_dist = sys.float_info.max
+        marker_list = [ item for item in this_image.graphics_items if item.marker ]
+        closest_marker = None
+        for gi in marker_list:
+          print_debug ( 50, "Clicked at " + str(image_click_x) + "," + str(image_click_y) + ", marker at : " + str(gi.x) + "," + str(gi.y) )
+          this_dist = math.pow(image_click_x-gi.x, 2) + math.pow(image_click_y-gi.y, 2)
+          if this_dist < closest_dist:
+            closest_x = gi.x
+            closest_y = gi.y
+            closest_dist = this_dist
+            closest_marker = gi
+        print_debug ( 50, "Closest pt = " + str(closest_x) + "," + str(closest_y) )
+        if math.sqrt(closest_dist) < 20:
+          print_debug ( 50, "Removing the point" )
+          this_image.graphics_items.remove ( closest_marker )
+
+        print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+
+        print_debug ( 50, "    Deleting point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
+        # print ( "image has " + str(len(this_image.graphics_items)) + " items" )
+        for gi in [ x for x in this_image.graphics_items if x.marker ]:
+          print_debug ( 50, "Item " + str(gi.to_string()) )
+        # if this_image.point_add_enabled:
+        #if self.point_add_enabled:
+        #  this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+
+      # Draw the windows
+      zpa_original.queue_draw()
       for p in panel_list:
-        p.set_cursor ( cursor )
-        p.drawing_area.queue_draw()
-      '''
+        p.queue_draw()
+
 
     # print_debug ( 50, "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
     if 'GDK_SHIFT_MASK' in event.get_state().value_names:
@@ -609,21 +750,59 @@ class zoom_panel ( app_window.zoom_pan_area ):
   def move_through_stack ( self, direction ):
     global alignment_layer_list
     global alignment_layer_index
+    global show_skipped_layers
 
     # Store the alignment_layer parameters into the image layer being exited
     store_fields_into_current_layer()
 
-    # Move to the next image layer (potentially)
-    alignment_layer_index += direction
-    if direction > 0:
-      if alignment_layer_index >= len(alignment_layer_list):
-        alignment_layer_index =  len(alignment_layer_list)-1
-    elif direction < 0:
-      if alignment_layer_index < 0:
-        alignment_layer_index = 0
+    if show_skipped_layers:
+      # Move to the next image layer (potentially)
+      alignment_layer_index += direction
+      if direction > 0:
+        if alignment_layer_index >= len(alignment_layer_list):
+          alignment_layer_index =  len(alignment_layer_list)-1
+      elif direction < 0:
+        if alignment_layer_index < 0:
+          alignment_layer_index = 0
+    else:
+      # Move to the next non-skipped image layer (potentially)
+      unskipped = [ i for i in range(len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
+      print_debug ( 50, "Unskipped indexes: " + str(unskipped) )
+      if len(unskipped) > 0:
+        if direction > 0:
+          next_index = -1
+          for u in unskipped:
+            if u > alignment_layer_index:
+              next_index = u
+              break
+          if next_index >= 0:
+            # There was a next index, so use it
+            alignment_layer_index = next_index
+        elif direction < 0:
+          next_index = -1
+          unskipped.reverse()
+          for u in unskipped:
+            if u < alignment_layer_index:
+              next_index = u
+              break
+          if next_index >= 0:
+            # There was a next index, so use it
+            alignment_layer_index = next_index
+        else: # direction == 0
+          # Move to the closest layer
+          print_debug ( 50, "Finding closest unskipped layer ..." )
+          closest_index = -1
+          closest_dist = 100 * len(alignment_layer_list)
+          for u in unskipped:
+            dist = abs(alignment_layer_index - u)
+            if dist < closest_dist:
+              closest_index = u
+              closest_dist = dist
+          alignment_layer_index = closest_index
 
     # Display the alignment_layer parameters from the new section being viewed
-    store_current_layer_into_fields()
+    if alignment_layer_index >= 0:
+      store_current_layer_into_fields()
 
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
@@ -704,6 +883,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
     global alignment_layer_index
     global show_window_centers
     global show_window_affines
+    global show_skipped_layers
 
     # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
@@ -891,6 +1071,17 @@ class zoom_panel ( app_window.zoom_pan_area ):
                 graphics_item.draw ( zpa, drawing_area, self.pangolayout )
               elif (graphics_item.graphic_group == 'Affines') and show_window_affines:
                 graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+          if alignment_layer_list[alignment_layer_index].skip:
+            # Draw the skipped X
+            gc.foreground = colormap.alloc_color(65535,0,0)
+            for delta in range(-10,11):
+              if delta >= 0:
+                drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
+                drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
+              else:
+                drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
+                drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
+
 
     # Draw a separator between the panes
     gc.foreground = colormap.alloc_color(32767,32767,32767)
@@ -963,10 +1154,45 @@ def change_skip_callback(zpa):
   global gui_fields
   print_debug ( 50, "Skip Changed!!" )
   print_debug ( 50, "State is now " + str(gui_fields.skip_check_box.get_active()) )
-  alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
+
+  if alignment_layer_list[alignment_layer_index].skip != gui_fields.skip_check_box.get_active():
+
+    print_debug ( 50, "This is an actual change in the value for a layer rather than simply a change of layer" )
+    # This is an actual change in the value for a layer rather than simply a change of layer (which also triggers the change_skip_callback)
+    alignment_layer_list[alignment_layer_index].skip = gui_fields.skip_check_box.get_active()
+
+    # Calculate the unskipped regions before and after this layer:
+    unskipped_before = [ i for i in range(0,alignment_layer_index) if alignment_layer_list[i].skip == False ]
+    prev_unskipped_index = None
+    if len(unskipped_before) > 0:
+      prev_unskipped_index = unskipped_before[-1]
+    print_debug ( 50, "Unskipped before this layer = " + str(unskipped_before) )
+    unskipped_after = [ i for i in range(alignment_layer_index+1,len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
+    next_unskipped_index = None
+    if len(unskipped_after) > 0:
+      next_unskipped_index = unskipped_after[0]
+    print_debug ( 50, "Unskipped after this layer = " + str(unskipped_after) )
+
+    # Fix the connections between layers given the state of this skip after changing
+
+    if alignment_layer_list[alignment_layer_index].skip:
+      # This image wasn't skipped before but is being skipped now
+      if (type(prev_unskipped_index) != type(None)) and (type(next_unskipped_index) != type(None)):
+        # Connect the previous unskipped to the next unskipped
+        alignment_layer_list[next_unskipped_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[prev_unskipped_index].image_dict['base'], role='ref' )
+        alignment_layer_list[alignment_layer_index].image_dict['ref'] = annotated_image()
+    else:
+      # This image was skipped before but is being unskipped now
+      if type(prev_unskipped_index) != type(None):
+        # Connect the previous unskipped image to this image
+        alignment_layer_list[alignment_layer_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[prev_unskipped_index].image_dict['base'], role='ref' )
+      if type(next_unskipped_index) != type(None):
+        # Connect the this image to the next unskipped
+        alignment_layer_list[next_unskipped_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[alignment_layer_index].image_dict['base'], role='ref' )
 
   # zpa.queue_draw()
   for p in panel_list:
+    p.move_through_stack ( 0 )
     p.drawing_area.queue_draw()
 
   # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -1088,6 +1314,17 @@ def jump_to_callback ( zpa ):
 import thread
 
 import align_swiftir
+
+def str2D ( m ):
+  # Ensure that a 2D matrix is "flat"
+  s = '['
+  for r in m:
+    s = s + ' ['
+    for c in r:
+      s = s + ' ' + str("%.3f"%c)
+    s = s + ' ]'
+  s = s + ' ]'
+  return ( s )
 
 def run_alignment_callback ( align_all ):
   global alignment_layer_list
@@ -1295,14 +1532,22 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[j].results_dict['cumulative_afm'] = [ [1, 0, 0], [0, 1, 0] ]
 
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 26, "SNR: inf", coordsys='p', color=[1, .5, .5]) )
-      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str(alignment_layer_list[j].results_dict['affine']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
-      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 96, "CumAff: " + str(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['affine']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
 
     else:
       # Align the image at index j with the reference at index i
-      print_debug ( 50,    "Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
-      prev_afm = alignment_layer_list[i].align_proc.cumulative_afm
+
+      if not 'cumulative_afm' in alignment_layer_list[i].results_dict:
+        print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative affine matrix." )
+        return
+
+      prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
+
+      print_debug ( 40, "Aligning: i=" + str(i) + " to j=" + str(j) )
+      print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
+
       alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, layer_dict=layer_dict, cumulative_afm=prev_afm )
       alignment_layer_list[j].align_proc.align()
       recipe = alignment_layer_list[j].align_proc.recipe
@@ -1310,14 +1555,11 @@ def run_alignment_callback ( align_all ):
 
       # Put the proper images into the proper window slots
 
-      #alignment_layer_list[j].image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[i].base_annotated_image,role="ref")
-      #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image,role="base")
-
-      print_debug ( 50, "Reading in new_name from " + str(new_name) )
+      print_debug ( 60, "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
       annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.recipe[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
-      annotated_img.graphics_items.append ( graphic_text(2, 46, "Affine: " + str(recipe.afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
-      annotated_img.graphics_items.append ( graphic_text(2, 96, "CumAff: " + str(alignment_layer_list[j].align_proc.cumulative_afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+      annotated_img.graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(recipe.afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+      annotated_img.graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].align_proc.cumulative_afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
       for ri in range(len(recipe.recipe)):
         # Make a color for this recipe item
@@ -1399,22 +1641,22 @@ def stop_callback ( zpa ):
   return True
 
 def print_data_structures(panel_list, alignment_layer_list):
-  print_debug ( 50, "Data Structures" )
-  print_debug ( 50, "=========== " + str(len(panel_list)) + " Panels ===========" )
+  print_debug ( 1, "Data Structures" )
+  print_debug ( 1, "=========== " + str(len(panel_list)) + " Panels ===========" )
   pn = 0
   for panel in panel_list:
-    print_debug ( 50, " Panel List [" + str(pn) + "].role = " + str(panel.role) )
+    print_debug ( 1, " Panel List [" + str(pn) + "].role = " + str(panel.role) )
     pn += 1
 
   ln = 0
-  print_debug ( 50, "=========== " + str(len(alignment_layer_list)) + " Alignment Layers ===========" )
+  print_debug ( 1, "=========== " + str(len(alignment_layer_list)) + " Alignment Layers ===========" )
   for layer in alignment_layer_list:
-    print_debug ( 50, " Layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
+    print_debug ( 1, " Layer " + str(ln) + " has " + str(len(layer.image_dict.keys()) ) + str(" images") )
     for k in sorted(layer.image_dict.keys(),reverse=True):
       im = layer.image_dict[k]
-      print_debug ( 50, "   " + k + " image: " + str(im).split()[-1][0:-1] ) # key image: hex address
-      print_debug ( 50, "     file: " + str(im.file_name).split('/')[-1] )
-      print_debug ( 50, "     markers: " + str([[round(v*10)/10 for v in p] for p in im.get_marker_points()]) )
+      print_debug ( 1, "   " + k + " image: " + str(im).split()[-1][0:-1] ) # key image: hex address
+      print_debug ( 1, "     file: " + str(im.file_name).split('/')[-1] )
+      print_debug ( 1, "     markers: " + str([[round(v*10)/10 for v in p] for p in im.get_marker_points()]) )
     ln += 1
   # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -1442,6 +1684,9 @@ def menu_callback ( widget, data=None ):
 
     global point_cursor
     global cursor_options
+    global point_mode
+    global point_delete_mode
+
 
     if command == "Fast":
 
@@ -1465,32 +1710,32 @@ def menu_callback ( widget, data=None ):
       for i in range(len(alignment_layer_list)):
 
         if type(alignment_layer_list[i]) == type(None):
-          print_debug ( 50, "  Layer " + str(i) + ": Alignment is None" )
+          print_debug ( 5, "  Layer " + str(i) + ": Alignment is None" )
         else:
           if type(alignment_layer_list[i].align_proc) == type(None):
-            print_debug ( 50, "  Layer " + str(i) + ": Alignment Process is None" )
+            print_debug ( 5, "  Layer " + str(i) + ": Alignment Process is None" )
           else:
             affine = alignment_layer_list[i].align_proc.cumulative_afm
             print_debug ( 50, "  Layer " + str(i) + ": Affine is " + str(affine) )
 
     elif command == "Debug":
 
-      print_debug ( 50, "Handy global items:" )
-      print_debug ( 50, "  project_path" )
-      print_debug ( 50, "  project_file_name" )
-      print_debug ( 50, "  destination_path" )
-      print_debug ( 50, "  zpa_original" )
-      print_debug ( 50, "  alignment_layer_list" )
-      print_debug ( 50, "  alignment_layer_index" )
-      print_debug ( 50, "  show_window_centers" )
-      print_debug ( 50, "  point_mode" )
-      print_debug ( 50, "Handy local items:" )
-      print_debug ( 50, "  widget" )
-      print_debug ( 50, "  data" )
-      print_debug ( 50, "  command" )
-      print_debug ( 50, "  zpa" )
+      print_debug ( -1, "Handy global items:" )
+      print_debug ( -1, "  project_path" )
+      print_debug ( -1, "  project_file_name" )
+      print_debug ( -1, "  destination_path" )
+      print_debug ( -1, "  zpa_original" )
+      print_debug ( -1, "  alignment_layer_list" )
+      print_debug ( -1, "  alignment_layer_index" )
+      print_debug ( -1, "  show_window_centers" )
+      print_debug ( -1, "  point_mode" )
+      print_debug ( -1, "Handy local items:" )
+      print_debug ( -1, "  widget" )
+      print_debug ( -1, "  data" )
+      print_debug ( -1, "  command" )
+      print_debug ( -1, "  zpa" )
 
-      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
 
     elif command == "SetDest":
@@ -1511,7 +1756,7 @@ def menu_callback ( widget, data=None ):
         gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
 
       file_chooser.destroy()
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
 
@@ -1541,7 +1786,7 @@ def menu_callback ( widget, data=None ):
       if response == gtk.RESPONSE_OK:
         i = 1
         file_name_list = file_chooser.get_filenames()
-        print_debug ( 50, "Selected Files: " + str(file_name_list) )
+        print_debug ( 20, "Selected Files: " + str(file_name_list) )
         # alignment_layer_list = []
         for f in file_name_list:
           a = alignment_layer ( f )
@@ -1568,7 +1813,7 @@ def menu_callback ( widget, data=None ):
           alignment_layer_list.append ( a )
 
       file_chooser.destroy()
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       # Draw the windows
       for panel in panel_list:
         panel.role = 'base'
@@ -1578,7 +1823,7 @@ def menu_callback ( widget, data=None ):
       zpa_original.queue_draw()
 
       ##### Begin Pasted from OpenProj
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       # Copy the "base" images into the "ref" images for the next layer
       # This is SWiFT specific, but makes it simpler to use for now
       layer_index = 0
@@ -1644,8 +1889,8 @@ def menu_callback ( widget, data=None ):
             text = f.read()
 
             proj_dict = json.loads ( text )
-            print_debug ( 50, str(proj_dict) )
-            print_debug ( 50, "Project file version " + str(proj_dict['version']) )
+            print_debug ( 70, str(proj_dict) )
+            print_debug ( 5, "Project file version " + str(proj_dict['version']) )
             if proj_dict['version'] < 0.05:
               print_debug ( -1, "Unable to read from versions before 0.1" )
               exit (99)
@@ -1680,11 +1925,13 @@ def menu_callback ( widget, data=None ):
                           a = alignment_layer ( image_fname )  # This will put the image into the "base" role
                           if 'skip' in json_alignment_layer:
                             a.skip = json_alignment_layer['skip']
+
                           if 'align_to_ref_method' in json_alignment_layer:
                             json_align_to_ref_method = json_alignment_layer['align_to_ref_method']
                             a.align_method_text = str(json_align_to_ref_method['selected_method'])
                             opts = [ str(x) for x in json_align_to_ref_method['method_options'] ]
                             a.align_method = opts.index(a.align_method_text)
+
                             if 'method_data' in json_align_to_ref_method:
                               pars = json_align_to_ref_method['method_data']
                               a.trans_ww = pars['window_size']
@@ -1697,16 +1944,29 @@ def menu_callback ( widget, data=None ):
                               a.bias_enabled = False
                               a.bias_dx = 0
                               a.bias_dy = 0
-                          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+                            if 'method_results' in json_align_to_ref_method:
+                              json_method_results = json_align_to_ref_method['method_results']
+                              if 'cumulative_afm' in json_method_results:
+                                print_debug ( 60, "Loading a cumulative_afm from JSON" )
+
+                                a.results_dict['snr'] = json_method_results['snr'] # Copy
+                                a.results_dict['affine'] = [ [ c for c in r ] for r in json_method_results['affine_matrix'] ] # Copy
+                                a.results_dict['cumulative_afm'] = [ [ c for c in r ] for r in json_method_results['cumulative_afm'] ] # Copy
 
                           # Load match points into the base image (if found)
                           if 'metadata' in base:
                             if 'match_points' in base['metadata']:
                               mp = base['metadata']['match_points']
                               for p in mp:
-                                print_debug ( 50, "%%%% GOT BASE MATCH POINT: " + str(p) )
+                                print_debug ( 80, "%%%% GOT BASE MATCH POINT: " + str(p) )
                                 m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
                                 a.image_dict['base'].graphics_items.append ( m )
+                            if 'annotations' in base['metadata']:
+                              ann_list = base['metadata']['annotations']
+                              for ann_item in ann_list:
+                                print_debug ( 60, "Base has " + str(ann_item) )
+                                a.image_dict["base"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                           # Only look for a ref or aligned if there has been a base
                           if 'ref' in im_list:
@@ -1728,9 +1988,14 @@ def menu_callback ( widget, data=None ):
                                   if 'match_points' in ref['metadata']:
                                     mp = ref['metadata']['match_points']
                                     for p in mp:
-                                      print_debug ( 50, "%%%% GOT REF MATCH POINT: " + str(p) )
+                                      print_debug ( 80, "%%%% GOT REF MATCH POINT: " + str(p) )
                                       m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
                                       a.image_dict['ref'].graphics_items.append ( m )
+                                  if 'annotations' in ref['metadata']:
+                                    ann_list = ref['metadata']['annotations']
+                                    for ann_item in ann_list:
+                                      print_debug ( 60, "Ref has " + str(ann_item) )
+                                      a.image_dict["ref"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                           if 'aligned' in im_list:
                             aligned = im_list['aligned']
@@ -1745,12 +2010,18 @@ def menu_callback ( widget, data=None ):
                                   image_fname = os.path.join ( project_path, image_fname )
                                 image_fname = os.path.realpath ( image_fname )
                                 a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
+                            if 'metadata' in aligned:
+                              if 'annotations' in aligned['metadata']:
+                                ann_list = aligned['metadata']['annotations']
+                                for ann_item in ann_list:
+                                  print_debug ( 60, "Aligned has " + str(ann_item) )
+                                  a.image_dict["aligned"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                           alignment_layer_list.append ( a )
 
 
       file_chooser.destroy()
-      print_debug ( 50, "Done with dialog" )
+      print_debug ( 90, "Done with dialog" )
       # Copy the "base" images into the "ref" images for the next layer
       # This is SWiFT specific, but makes it simpler to use for now
       layer_index = 0
@@ -1815,7 +2086,7 @@ def menu_callback ( widget, data=None ):
               project_path = os.path.dirname(project_file_name)
 
         file_chooser.destroy()
-        print_debug ( 50, "Done with dialog" )
+        print_debug ( 90, "Done with dialog" )
 
       if len(project_file_name) > 0:
         # Actually write the file
@@ -1856,23 +2127,36 @@ def menu_callback ( widget, data=None ):
               img_keys = sorted(a.image_dict.keys(), reverse=True)
               for k in img_keys:
                 im = a.image_dict[k]
-                #print_debug ( 50, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
+                #print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
                 f.write ( '          "' + k + '": {\n' )  # "base": {
                 # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
-                print_debug ( 50, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
+                print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
                 rel_file_name = ""
                 if type(im.file_name) != type(None):
                   rel_file_name = os.path.relpath(im.file_name,start=project_path)
                 f.write ( '            "filename": "' + rel_file_name + '",\n' )
                 f.write ( '            "metadata": {\n' )
                 f.write ( '              "match_points": ' + str(im.get_marker_points()) + ',\n' )
-                f.write ( '              "annotations": []\n' )
+                if len(im.graphics_items) <= 0:
+                  f.write ( '              "annotations": []\n' )
+                else:
+                  f.write ( '              "annotations": [\n' )
+                  # Filter out the markers which are handled in other code
+                  non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
+                  # Only output the non-markers being careful not to add a trailing comma
+                  for gi_index in range(len(non_marker_list)):
+                    gi = non_marker_list[gi_index]
+                    f.write ( "                " + gi.to_json_string() )
+                    if gi_index < (len(non_marker_list)-1):
+                      f.write ( ',\n' )
+                    else:
+                      f.write ( '\n' )
+                  f.write ( '              ]\n' )
                 f.write ( '            }\n' )
                 if k != img_keys[-1]:
                   f.write ( '          },\n' )
                 else:
                   f.write ( '          }\n' )
-
               f.write ( '        },\n' )
               f.write ( '        "align_to_ref_method": {\n' )
               f.write ( '          "selected_method": "' + str(a.align_method_text) + '",\n' )
@@ -1884,6 +2168,8 @@ def menu_callback ( widget, data=None ):
               f.write ( '            "output_level": 0\n' )
               f.write ( '          },\n' )
               f.write ( '          "method_results": {\n' )
+              #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
               if type(a.results_dict) != type(None):
                 if 'affine' in a.results_dict:
                   f.write ( '            "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
@@ -1913,7 +2199,7 @@ def menu_callback ( widget, data=None ):
       clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
       response = clear_all.run()
       if response == gtk.RESPONSE_OK:
-        print_debug ( 50, "Clearing all layers..." )
+        print_debug ( 20, "Clearing all layers..." )
         alignment_layer_index = 0
         alignment_layer_list = []
       zpa_original.queue_draw()
@@ -1931,16 +2217,16 @@ def menu_callback ( widget, data=None ):
         clear_out = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Output?")
         response = clear_out.run()
         if response == gtk.RESPONSE_OK:
-          print_debug ( 50, "Clearing all output images..." )
+          print_debug ( 20, "Clearing all output images..." )
           for al in alignment_layer_list:
             try:
               file_to_delete = os.path.join(destination_path,os.path.basename(al.base_image_name))
-              print_debug ( 50, "Deleting " + file_to_delete )
+              print_debug ( 30, "Deleting " + file_to_delete )
               os.remove ( file_to_delete )
             except:
               # This will happen if the image had been deleted or hadn't been created (such as skipped).
               pass
-          print_debug ( 50, "Restoring original images..." )
+          print_debug ( 20, "Restoring original images..." )
           for al in alignment_layer_list:
             #al.image_dict = {}
             #al.image_dict['base'] = al.base_annotated_image
@@ -1950,12 +2236,12 @@ def menu_callback ( widget, data=None ):
             p.queue_draw()
         clear_out.destroy()
 
-    elif command == "LimScroll":
+    elif command == "LimZoom":
 
       zpa_original.max_zoom_count = 10
       zpa_original.min_zoom_count = -15
 
-    elif command == "UnLimScroll":
+    elif command == "UnLimZoom":
 
       # This is now a toggle
       if zpa_original.max_zoom_count > 100:
@@ -1992,6 +2278,15 @@ def menu_callback ( widget, data=None ):
       for p in panel_list:
         p.drawing_area.queue_draw()
 
+    elif command == "ShowSkipped":
+
+      global show_skipped_layers
+      show_skipped_layers = not show_skipped_layers
+
+      for p in panel_list:
+        p.move_through_stack ( 0 )
+        p.drawing_area.queue_draw()
+
     elif command in [ x[0] for x in cursor_options ]:
       print_debug ( 50, "Got a cursor cursor change command: " + command )
       cmd_index = [ x[0] for x in cursor_options ].index(command)
@@ -2002,8 +2297,6 @@ def menu_callback ( widget, data=None ):
         zpa.queue_draw()
 
     elif command == "PtMode":
-
-      global point_mode
 
       point_mode = not point_mode
       print_debug ( 50, "Point mode is now " + str(point_mode) )
@@ -2017,23 +2310,33 @@ def menu_callback ( widget, data=None ):
           p.set_cursor ( cursor )
           p.drawing_area.queue_draw()
 
+    elif command == "PtDel":
+
+      point_delete_mode = not point_delete_mode
+      print_debug ( 50, "Point delete mode is now " + str(point_delete_mode) )
+      cursor = gtk.gdk.ARROW
+      if point_delete_mode:
+        cursor = gtk.gdk.X_CURSOR
+      for p in panel_list:
+        if p.point_add_enabled:
+          p.set_cursor ( cursor )
+          p.drawing_area.queue_draw()
+
     elif command == "PtClear":
 
       print_debug ( 50, "Clearing all alignment points in this layer" )
-      global alignment_layer_list
-      global alignment_layer_index
 
       # Clear from dictionary
       al = alignment_layer_list[alignment_layer_index]
       al_keys = al.image_dict.keys()
       for im_index in range(len(al_keys)):
-        print_debug ( 50, "Clearing out image index " + str(im_index) )
+        print_debug ( 70, "Clearing out image index " + str(im_index) )
         im = al.image_dict[al_keys[im_index]]
         graphics_items = im.graphics_items
         # non_marker_items = [ gi for gi in graphics_items if (gi.marker == False) ]
         non_marker_items = []
         for gi in graphics_items:
-          print_debug ( 50, "  Checking item " + str(gi) )
+          print_debug ( 90, "  Checking item " + str(gi) )
           if gi.marker == False:
             # This is not a marker ... so keep it
             non_marker_items.append ( gi )
@@ -2065,11 +2368,11 @@ def menu_callback ( widget, data=None ):
 
       global debug_level
       debug_level = int(command[6:])
-      print_debug ( 50, "New debug level is " + str(debug_level) )
+      print_debug ( 10, "New debug level is " + str(debug_level) )
 
     else:
 
-      print_debug ( 50, "Menu option \"" + command + "\" is not handled yet." )
+      print_debug ( 20, "Menu option \"" + command + "\" is not handled yet." )
 
   return True
 
@@ -2092,18 +2395,18 @@ def center_all_images():
          max_win[1] = win_size[1]
     win_size = max_win
     for panel in panel_list:
-      print_debug ( 50, "  window size = " + str(win_size) )
+      print_debug ( 70, "  window size = " + str(win_size) )
       pix_buf = None
       wxh = None
       # Loop through all layers looking for images matching this role
-      print_debug ( 50, "  Begin looping through all " + str(len(alignment_layer_list)) + " layers" )
+      print_debug ( 70, "  Begin looping through all " + str(len(alignment_layer_list)) + " layers" )
       for layer in alignment_layer_list:
-        print_debug ( 50, "    Checking for role " + str(panel.role) )
+        print_debug ( 80, "    Checking for role " + str(panel.role) )
         if panel.role in layer.image_dict:
-          print_debug ( 50, "      Role " + str(panel.role) + " was found" )
+          print_debug ( 80, "      Role " + str(panel.role) + " was found" )
           # This panel's role is implemented by an image in this layer
           pix_buf = layer.image_dict[panel.role].image
-          print_debug ( 50, "      Loaded pix_buf = " + str(pix_buf) )
+          print_debug ( 80, "      Loaded pix_buf = " + str(pix_buf) )
           if type(pix_buf) != type(None):
             if type(wxh) == type(None):
                wxh = [0,0]
@@ -2112,12 +2415,12 @@ def center_all_images():
             if wxh[1] < pix_buf.get_height():
                wxh[1] = pix_buf.get_height()
       if type(wxh) != type(None):
-        print_debug ( 50, "  For panel " + str(panel_list.index(panel)) + " image size is: [" + str(wxh[0]) + " x " + str(wxh[1]) + "]" )
+        print_debug ( 70, "  For panel " + str(panel_list.index(panel)) + " image size is: [" + str(wxh[0]) + " x " + str(wxh[1]) + "]" )
         # pix_buf = alignment_layer_list[alignment_layer_index].image_dict[panel.role].image
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         panel.set_scale_to_fit ( 0, wxh[0], 0, wxh[1], win_size[0], win_size[1] )
         panel.queue_draw()
-        print_debug ( 50, "  Panel " + str(panel_list.index(panel)) + " is set to: [" + str(wxh[0]) + " x " + str(wxh[1]) + "] in [" + str(win_size[0]) + "," + str(win_size[1]) + "]" )
+        print_debug ( 70, "  Panel " + str(panel_list.index(panel)) + " is set to: [" + str(wxh[0]) + " x " + str(wxh[1]) + "] in [" + str(win_size[0]) + "," + str(win_size[1]) + "]" )
         print ("")
 
 
@@ -2148,6 +2451,7 @@ def main():
 
   global gui_fields
   global window
+  global panel_list
 
   # Create a top-level GTK window
   window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
@@ -2196,81 +2500,91 @@ def main():
   # Create a "File" menu
   (file_menu, file_item) = zpa_original.add_menu ( "_File" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( file_menu, menu_callback, "New Project",  ("NewProj", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Open Project",  ("OpenProj", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Save Project",  ("SaveProj", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa_original ) )
-    zpa_original.add_menu_sep  ( file_menu )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Set Destination",  ("SetDest", zpa_original ) )
-    zpa_original.add_menu_sep  ( file_menu )
-    # zpa_original.add_menu_item ( file_menu, menu_callback, "List >",  ("List", zpa_original ) )
-    zpa_original.add_menu_item ( file_menu, menu_callback, "Exit",       ("Exit", zpa_original ) )
+    this_menu = file_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "New Project",  ("NewProj", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Open Project",  ("OpenProj", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Save Project",  ("SaveProj", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Set Destination",  ("SetDest", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    # zpa_original.add_menu_item ( this_menu, menu_callback, "List >",  ("List", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Exit",       ("Exit", zpa_original ) )
 
   # Create an "Images" menu
   (image_menu, image_item) = zpa_original.add_menu ( "_Images" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Import...",  ("ImImport", zpa_original ) )
-    zpa_original.add_menu_sep  ( image_menu )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Center",  ("ImCenter", zpa_original ) )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
-    zpa_original.add_menu_sep  ( image_menu )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
-    zpa_original.add_menu_sep  ( image_menu )
-    zpa_original.add_menu_item ( image_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
+    this_menu = image_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Import...",  ("ImImport", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Center",  ("ImCenter", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
 
   # Create a "Points" menu
   (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_checkmenu_item ( points_menu, menu_callback, "Pick Alignment Points",   ("PtMode", zpa_original ) )
-    zpa_original.add_menu_item ( points_menu, menu_callback, "Clear Alignment Points",   ("PtClear", zpa_original ) )
+    this_menu = points_menu
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Alignment Point Mode",   ("PtMode", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Delete Points",   ("PtDel", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Alignment Points",   ("PtClear", zpa_original ) )
 
   # Create a "Set" menu
   (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
   if True: # An easy way to indent and still be legal Python
-    # zpa_original.add_checkmenu_item ( set_menu, menu_callback, "Limited Scroll",   ("LimScroll", zpa_original ) )
-    zpa_original.add_checkmenu_item ( set_menu, menu_callback, "UnLimited Scroll",   ("UnLimScroll", zpa_original ) )
-    zpa_original.add_menu_item ( set_menu, menu_callback, "Debug",   ("Debug", zpa_original ) )
+    this_menu = set_menu
+    # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
 
-    zpa_original.add_menu_sep  ( set_menu )
+    zpa_original.add_menu_sep  ( this_menu )
     # Create a "Set/Cursor" submenu
     # This didn't work ...
-    #  (cursor_menu, set_item) = set_menu.add_menu_item ( "_Cursor" )
+    #  (cursor_menu, set_item) = this_menu.add_menu_item ( "_Cursor" )
     #  if True: # An easy way to indent and still be legal Python
     # So put in the main menu for now:
     # Add cursors from the "cursor_options" array
     cursor_index = 0
     for cursor_pair in cursor_options:
       cursor_option_string = cursor_pair[0]
-      zpa_original.add_menu_item ( set_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ) )
+      zpa_original.add_menu_item ( this_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ) )
       if cursor_index in cursor_option_seps:
-        zpa_original.add_menu_sep  ( set_menu )
+        zpa_original.add_menu_sep  ( this_menu )
       cursor_index += 1
 
   # Create a "Debug" menu
   (debug_menu, debug_item) = zpa_original.add_menu ( "_Debug" )
   if True: # An easy way to indent and still be legal Python
+    this_menu = debug_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Python Console",   ("Debug", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Print Affine",   ("Affine", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Print Structures",   ("Structs", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     for level in [ 10*x for x in range(0,11) ]:
-      zpa_original.add_menu_item ( debug_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
+      zpa_original.add_menu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
 
   # Create a "Show" menu
   (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
-    zpa_original.add_checkmenu_item ( show_menu, menu_callback, "Affines",   ("Affines", zpa_original ) )
-    zpa_original.add_menu_sep  ( show_menu )
-    zpa_original.add_menu_item ( show_menu, menu_callback, "Affine",   ("Affine", zpa_original ) )
-    zpa_original.add_menu_item ( show_menu, menu_callback, "Structures",   ("Structs", zpa_original ) )
+    this_menu = show_menu
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Affines",   ("Affines", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Skipped Images",   ("ShowSkipped", zpa_original ), default=True )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
   if True: # An easy way to indent and still be legal Python
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Manual...",   ("Manual", zpa_original ) )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Key commands...",   ("Key Commands", zpa_original ) )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Mouse clicks...",   ("Mouse Clicks", zpa_original ) )
-    zpa_original.add_menu_sep  ( help_menu )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "License...",   ("License", zpa_original ) )
-    zpa_original.add_menu_item ( help_menu, menu_callback, "Version...",   ("Version", zpa_original ) )
+    this_menu = help_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Manual...",   ("Manual", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Key commands...",   ("Key Commands", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Mouse clicks...",   ("Mouse Clicks", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "License...",   ("License", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Version...",   ("Version", zpa_original ) )
 
   # Append the menus to the menu bar itself
   menu_bar.append ( file_item )
@@ -2287,7 +2601,6 @@ def main():
   # Create the horizontal image box
   global image_hbox
   image_hbox = gtk.HBox ( True, 0 )
-  global panel_list
   panel_list = []
 
   # The zoom/pan area has its own drawing area (that it zooms and pans)
