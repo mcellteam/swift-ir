@@ -1587,7 +1587,10 @@ def run_alignment_callback ( align_all ):
       shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
       # Create a new identity transform for this layer even though it's not otherwise needed
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, layer_dict=layer_dict, cumulative_afm=None )
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                             destination_path, layer_dict=layer_dict,
+                                                                             x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                             cumulative_afm=None )
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -1617,7 +1620,10 @@ def run_alignment_callback ( align_all ):
       print_debug ( 40, "Aligning: i=" + str(i) + " to j=" + str(j) )
       print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
 
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name, destination_path, layer_dict=layer_dict, cumulative_afm=prev_afm )
+      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                             destination_path, layer_dict=layer_dict,
+                                                                             x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                             cumulative_afm=prev_afm )
       alignment_layer_list[j].align_proc.align()
       recipe = alignment_layer_list[j].align_proc.recipe
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
