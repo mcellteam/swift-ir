@@ -130,8 +130,8 @@ class alignment_process:
     self.recipe.execute()
 
     self.cumulative_afm = swiftir.composeAffine(self.cumulative_afm,self.recipe.afm)
-    self.cumlative_afm[0,2] -= self.x_bias
-    self.cumlative_afm[1,2] -= self.y_bias
+    self.cumulative_afm[0,2] -= self.x_bias
+    self.cumulative_afm[1,2] -= self.y_bias
     im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
     ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
     swiftir.saveImage(im_aligned,ofn)
