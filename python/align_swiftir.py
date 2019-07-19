@@ -25,11 +25,13 @@ Together these ingredients comprise a procedure, or "recipe".
 
 class alignment_process:
 
-  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, cumulative_afm=None):
+  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, cumulative_afm=None, x_bias=0.0, y_bias=0.0):
     self.recipe = None
     self.im_sta_fn = im_sta_fn
     self.im_mov_fn = im_mov_fn
     self.align_dir = align_dir
+    self.x_bias = x_bias
+    self.y_bias = y_bias
 
     if layer_dict != None:
       self.layer_dict = layer_dict
@@ -128,6 +130,8 @@ class alignment_process:
     self.recipe.execute()
 
     self.cumulative_afm = swiftir.composeAffine(self.cumulative_afm,self.recipe.afm)
+    self.cumlative_afm[0,2] -= self.x_bias
+    self.cumlative_afm[1,2] -= self.y_bias
     im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
     ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
     swiftir.saveImage(im_aligned,ofn)
@@ -140,7 +144,7 @@ class alignment_process:
 class align_recipe:
 
   def __init__(self, im_sta, im_mov):
-    self.ingredients_list = []
+    self.ingredients = []
     self.im_sta = im_sta
     self.im_mov = im_mov
     self.afm = swiftir.identityAffine()
@@ -148,10 +152,10 @@ class align_recipe:
   def add_ingredient(self, ingredient):
     ingredient.im_sta = self.im_sta
     ingredient.im_mov = self.im_mov
-    self.ingredients_list.append(ingredient)
+    self.ingredients.append(ingredient)
 
   def execute(self):
-    for ingredient in self.ingredients_list:
+    for ingredient in self.ingredients:
       ingredient.afm = self.afm
       self.afm = ingredient.execute()
 
