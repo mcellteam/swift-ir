@@ -582,8 +582,8 @@ class alignment_layer:
     self.affine_addy = 256
 
     self.bias_enabled = True
-    self.bias_dx = 0
-    self.bias_dy = 0
+    self.bias_dx = 0.0
+    self.bias_dy = 0.0
 
     # This holds whatever is produced by this alignment
     self.results_dict = {}
@@ -621,8 +621,20 @@ def store_fields_into_current_layer():
   a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
   a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
   a.bias_enabled = gui_fields.bias_check_box.get_active()
+  print ( "Storing 1, a.bias_dx = " + str(a.bias_dx) )
   a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
   a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
+  print ( "Storing 2, a.bias_dx = " + str(a.bias_dx) )
+
+  # Store the bias values in all layers to give them a "global" feel
+  # If the final version needs individual biases, just comment this code:
+  global alignment_layer_list
+  if alignment_layer_list != None:
+    if len(alignment_layer_list) > 0:
+      for t in alignment_layer_list:
+        t.bias_dx = a.bias_dx
+        t.bias_dy = a.bias_dy
+  print ( "Storing 3, a.bias_dx = " + str(a.bias_dx) )
 
 
 def store_current_layer_into_fields():
@@ -642,6 +654,7 @@ def store_current_layer_into_fields():
   gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
   gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
   gui_fields.bias_check_box.set_active(a.bias_enabled)
+  print ( "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
   gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
   gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
 
@@ -1807,7 +1820,7 @@ def menu_callback ( widget, data=None ):
       print_debug ( -1, "  command" )
       print_debug ( -1, "  zpa" )
 
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
 
     elif command == "SetDest":
@@ -2016,6 +2029,13 @@ def menu_callback ( widget, data=None ):
                               a.bias_enabled = False
                               a.bias_dx = 0
                               a.bias_dy = 0
+                              print ( "Got method_data" + str(pars) )
+                              if 'bias_x_per_image' in pars:
+                                a.bias_dx = pars['bias_x_per_image']
+                                print ( "  Set bias_dx = " + str(a.bias_dx) )
+                              if 'bias_y_per_image' in pars:
+                                a.bias_dy = pars['bias_y_per_image']
+                              print ( "Internal bias_x: " + str(a.bias_dx) )
 
                             if 'method_results' in json_align_to_ref_method:
                               json_method_results = json_align_to_ref_method['method_results']
@@ -2090,10 +2110,12 @@ def menu_callback ( widget, data=None ):
                                   a.image_dict["aligned"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                           alignment_layer_list.append ( a )
-
+                          print ( "Internal bias_x after appending: " + str(a.bias_dx) )
 
       file_chooser.destroy()
       print_debug ( 90, "Done with dialog" )
+      # Fill the GUI fields from the current state
+      store_current_layer_into_fields()
       # Copy the "base" images into the "ref" images for the next layer
       # This is SWiFT specific, but makes it simpler to use for now
       layer_index = 0
@@ -2181,6 +2203,8 @@ def menu_callback ( widget, data=None ):
         f.write ( '        "window_size": 1024,\n' )
         f.write ( '        "addx": 800,\n' )
         f.write ( '        "addy": 800,\n' )
+        f.write ( '        "bias_x_per_image": 0.0,\n' )
+        f.write ( '        "bias_y_per_image": 0.0,\n' )
         f.write ( '        "output_level": 0\n' )
         f.write ( '      }\n' )
         f.write ( '    },\n' )
@@ -2237,6 +2261,8 @@ def menu_callback ( widget, data=None ):
               f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
               f.write ( '            "addx": ' + str(a.trans_addx) + ',\n' )
               f.write ( '            "addy": ' + str(a.trans_addy) + ',\n' )
+              f.write ( '            "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
+              f.write ( '            "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
               f.write ( '            "output_level": 0\n' )
               f.write ( '          },\n' )
               f.write ( '          "method_results": {\n' )
