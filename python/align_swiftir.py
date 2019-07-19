@@ -144,7 +144,7 @@ class alignment_process:
 class align_recipe:
 
   def __init__(self, im_sta, im_mov):
-    self.ingredients_list = []
+    self.ingredients = []
     self.im_sta = im_sta
     self.im_mov = im_mov
     self.afm = swiftir.identityAffine()
@@ -152,10 +152,10 @@ class align_recipe:
   def add_ingredient(self, ingredient):
     ingredient.im_sta = self.im_sta
     ingredient.im_mov = self.im_mov
-    self.ingredients_list.append(ingredient)
+    self.ingredients.append(ingredient)
 
   def execute(self):
-    for ingredient in self.ingredients_list:
+    for ingredient in self.ingredients:
       ingredient.afm = self.afm
       self.afm = ingredient.execute()
 
