@@ -1626,14 +1626,14 @@ def run_alignment_callback ( align_all ):
 
       print_debug ( 60, "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
-      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.ingredients_list[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
+      annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.ingredients[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
       annotated_img.graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(recipe.afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
       annotated_img.graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].align_proc.cumulative_afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
-      for ri in range(len(recipe.ingredients_list)):
+      for ri in range(len(recipe.ingredients)):
         # Make a color for this recipe item
         c = [(ri+1)%2,((ri+1)/2)%2,((ri+1)/4)%2]
-        r = recipe.ingredients_list[ri]
+        r = recipe.ingredients[ri]
         s = len(r.psta[0])
         ww = r.ww
         if type(ww) == type(1):
@@ -1654,7 +1654,7 @@ def run_alignment_callback ( align_all ):
         print_debug ( 50, "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
       alignment_layer_list[j].image_dict['aligned'] = annotated_img
-      snr_value = recipe.ingredients_list[-1].snr[0]
+      snr_value = recipe.ingredients[-1].snr[0]
 
       alignment_layer_list[j].results_dict = {}
       alignment_layer_list[j].results_dict['snr'] = snr_value
