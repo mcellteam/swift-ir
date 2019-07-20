@@ -2981,13 +2981,13 @@ def main():
   controls_hbox.show()
   controls_vbox.pack_start ( controls_hbox, False, False, 0 )
 
-  a_label = gtk.Label(" ")
+  a_label = gtk.Label(" Bias Pass:  ")
   controls_hbox.pack_start ( a_label, True, True, 0 )
   a_label.show()
 
   gui_fields.bias_check_box = gtk.CheckButton("  Bias Pass:")
-  controls_hbox.pack_start ( gui_fields.bias_check_box, True, True, 0 )
-  gui_fields.bias_check_box.show()
+  #controls_hbox.pack_start ( gui_fields.bias_check_box, True, True, 0 )
+  #gui_fields.bias_check_box.show()
 
 
   label_entry = gtk.HBox ( False, 5 )
