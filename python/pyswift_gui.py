@@ -33,8 +33,8 @@ panel_list = []
 
 global global_win_width
 global global_win_height
-global_win_width = 800
-global_win_height = 800
+global_win_width = 600
+global_win_height = 600
 
 global alignment_layer_list
 alignment_layer_list = []
@@ -2202,7 +2202,7 @@ def menu_callback ( widget, data=None ):
         f.write ( '  "method": "SWiFT-IR",\n' )
         f.write ( '  "data": {\n' )
         f.write ( '    "source_path": "",\n' )
-        f.write ( '    "destination_path": "' + str(rel_dest_path) + '",\n' )
+        f.write ( '    "destination_path": "' + str(rel_dest_path).replace('\\','/') + '",\n' )
         f.write ( '    "pairwise_alignment": true,\n' )
         f.write ( '    "defaults": {\n' )
         f.write ( '      "align_to_next_pars": {\n' )
@@ -2236,7 +2236,7 @@ def menu_callback ( widget, data=None ):
                 rel_file_name = ""
                 if type(im.file_name) != type(None):
                   rel_file_name = os.path.relpath(im.file_name,start=project_path)
-                f.write ( '            "filename": "' + rel_file_name + '",\n' )
+                f.write ( '            "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
                 f.write ( '            "metadata": {\n' )
                 f.write ( '              "match_points": ' + str(im.get_marker_points()) + ',\n' )
                 if len(im.graphics_items) <= 0:
@@ -2248,7 +2248,7 @@ def menu_callback ( widget, data=None ):
                   # Only output the non-markers being careful not to add a trailing comma
                   for gi_index in range(len(non_marker_list)):
                     gi = non_marker_list[gi_index]
-                    f.write ( "                " + gi.to_json_string() )
+                    f.write ( "                " + gi.to_json_string().replace('\\','/') )
                     if gi_index < (len(non_marker_list)-1):
                       f.write ( ',\n' )
                     else:
