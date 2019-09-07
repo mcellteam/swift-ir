@@ -2245,6 +2245,18 @@ def menu_callback ( widget, data=None ):
                   f.write ( '              "annotations": [\n' )
                   # Filter out the markers which are handled in other code
                   non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
+                  # Remove duplicates before writing
+                  unique_non_marker_list = []
+                  for gi in non_marker_list:
+                    gi_in_list = False
+                    for ugi in unique_non_marker_list:
+                      if gi.to_json_string() == ugi.to_json_string():
+                        # It's already in the list using the "==" test, so don't add another copy
+                        gi_in_list = True
+                        break
+                    if not gi_in_list:
+                      unique_non_marker_list.append ( gi )
+                  non_marker_list = unique_non_marker_list
                   # Only output the non-markers being careful not to add a trailing comma
                   for gi_index in range(len(non_marker_list)):
                     gi = non_marker_list[gi_index]
