@@ -527,7 +527,7 @@ class annotated_image:
         print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
         # exit(1)
         self.image = None
-    self.add_file_name_graphic()
+    #self.add_file_name_graphic()
 
   def to_string ( self ):
     return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
@@ -537,9 +537,9 @@ class annotated_image:
     self.image = other_annotated_image.image
     self.add_file_name_graphic()
 
-  def add_file_name_graphic():
+  def add_file_name_graphic ( self ):
     if type(self.file_name) != type(None):
-      self.graphics_items.append ( graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+      self.graphics_items.insert ( 0, graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
 
   def set_role ( self, role ):
     self.role = role
@@ -551,8 +551,13 @@ class annotated_image:
         point_list.append ( [item.x, item.y] )
     return point_list
 
+  def clear_non_marker_graphics ( self ):
+    marker_list = [ gi for gi in self.graphics_items if gi.marker ]
+    self.graphics_items = marker_list
+
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
+
 
 
 class alignment_layer:
@@ -1605,6 +1610,9 @@ def run_alignment_callback ( align_all ):
       alignment_layer_list[j].results_dict['affine'] = [ [1, 0, 0], [0, 1, 0] ]
       alignment_layer_list[j].results_dict['cumulative_afm'] = [ [1, 0, 0], [0, 1, 0] ]
 
+      alignment_layer_list[j].image_dict['aligned'].clear_non_marker_graphics()
+      alignment_layer_list[j].image_dict['aligned'].add_file_name_graphic()
+
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 26, "SNR: inf", coordsys='p', color=[1, .5, .5]) )
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['affine']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
@@ -1634,9 +1642,19 @@ def run_alignment_callback ( align_all ):
 
       print_debug ( 60, "Reading in new_name from " + str(new_name) )
       annotated_img = annotated_image(new_name, role="aligned")
+
+      annotated_img.clear_non_marker_graphics()
+      annotated_img.add_file_name_graphic()
+
       annotated_img.graphics_items.append ( graphic_text(2, 26, "SNR: %.4g" % (recipe.ingredients[-1].snr[0]), coordsys='p', color=[1, .5, .5]) )
       annotated_img.graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(recipe.afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
       annotated_img.graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].align_proc.cumulative_afm), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+
+      alignment_layer_list[j].image_dict['ref'].clear_non_marker_graphics()
+      alignment_layer_list[j].image_dict['ref'].add_file_name_graphic()
+
+      alignment_layer_list[j].image_dict['base'].clear_non_marker_graphics()
+      alignment_layer_list[j].image_dict['base'].add_file_name_graphic()
 
       for ri in range(len(recipe.ingredients)):
         # Make a color for this recipe item
@@ -1659,6 +1677,11 @@ def run_alignment_callback ( align_all ):
 
             alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c,graphic_group="Centers") )
             alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c,graphic_group="Centers") )
+
+        print ( "Length of psta = " + str(s) )
+        print ( "Length of gitems = " + str(len(annotated_img.graphics_items)) )
+        print ( "Length of gi ref = " + str(len(alignment_layer_list[j].image_dict['ref'].graphics_items)) )
+        print ( "Length of gi base = " + str(len(alignment_layer_list[j].image_dict['base'].graphics_items)) )
 
         print_debug ( 50, "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
@@ -2248,18 +2271,6 @@ def menu_callback ( widget, data=None ):
                   f.write ( '              "annotations": [\n' )
                   # Filter out the markers which are handled in other code
                   non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
-                  # Remove duplicates before writing
-                  unique_non_marker_list = []
-                  for gi in non_marker_list:
-                    gi_in_list = False
-                    for ugi in unique_non_marker_list:
-                      if gi.to_json_string() == ugi.to_json_string():
-                        # It's already in the list using the "==" test, so don't add another copy
-                        gi_in_list = True
-                        break
-                    if not gi_in_list:
-                      unique_non_marker_list.append ( gi )
-                  non_marker_list = unique_non_marker_list
                   # Only output the non-markers being careful not to add a trailing comma
                   for gi_index in range(len(non_marker_list)):
                     gi = non_marker_list[gi_index]
