@@ -527,8 +527,7 @@ class annotated_image:
         print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
         # exit(1)
         self.image = None
-      if type(self.file_name) != type(None):
-        self.graphics_items.append ( graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+    self.add_file_name_graphic()
 
   def to_string ( self ):
     return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
@@ -536,6 +535,9 @@ class annotated_image:
   def use_image_from ( self, other_annotated_image ):
     self.file_name = other_annotated_image.file_name
     self.image = other_annotated_image.image
+    self.add_file_name_graphic()
+
+  def add_file_name_graphic():
     if type(self.file_name) != type(None):
       self.graphics_items.append ( graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
 
@@ -1657,6 +1659,7 @@ def run_alignment_callback ( align_all ):
 
             alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c,graphic_group="Centers") )
             alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c,graphic_group="Centers") )
+
         print_debug ( 50, "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
       alignment_layer_list[j].image_dict['aligned'] = annotated_img
