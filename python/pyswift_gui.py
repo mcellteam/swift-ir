@@ -1,12 +1,11 @@
-# Things to fix:
-#
-#   Match points need to match the images they come from
-#   Aligning should not clear the match points
-
-
 #!/usr/bin/env python
 
 #__import__('code').interact(local = locals())
+
+#import numpy as np
+#import cv2
+
+
 import time
 import os
 import sys
@@ -21,6 +20,8 @@ import gobject
 import gtk
 
 import app_window
+
+
 
 global image_hbox
 image_hbox = None
