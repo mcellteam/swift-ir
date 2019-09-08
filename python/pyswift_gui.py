@@ -253,6 +253,8 @@ class gui_fields_class:
     self.jump_to_index = None
     self.snr_skip = None
     self.snr_halt = None
+    self.code_base_select = None
+
 
     # These values are swapped while scrolling through the stack
     self.trans_ww_entry = None
@@ -1392,6 +1394,131 @@ import thread
 
 import align_swiftir
 
+
+def write_json_project ( project_file_name ):
+
+  global project_path
+  # global project_file_name
+  global destination_path
+  global zpa_original
+  global alignment_layer_list
+  global alignment_layer_index
+  global panel_list
+
+  global point_cursor
+  global cursor_options
+  global point_mode
+  global point_delete_mode
+
+  if len(project_file_name) > 0:
+    # Actually write the file
+    gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+    rel_dest_path = ""
+    if len(destination_path) > 0:
+      rel_dest_path = os.path.relpath(destination_path,start=project_path)
+
+    print_debug ( 50, "Saving destination path = " + str(destination_path) )
+    f = open ( project_file_name, 'w' )
+    f.write ( '{\n' )
+    f.write ( '  "version": 0.1,\n' )
+    f.write ( '  "method": "SWiFT-IR",\n' )
+    f.write ( '  "data": {\n' )
+    f.write ( '    "source_path": "",\n' )
+    f.write ( '    "destination_path": "' + str(rel_dest_path).replace('\\','/') + '",\n' )
+    f.write ( '    "pairwise_alignment": true,\n' )
+    f.write ( '    "defaults": {\n' )
+    f.write ( '      "align_to_next_pars": {\n' )
+    f.write ( '        "window_size": 1024,\n' )
+    f.write ( '        "addx": 800,\n' )
+    f.write ( '        "addy": 800,\n' )
+    f.write ( '        "bias_x_per_image": 0.0,\n' )
+    f.write ( '        "bias_y_per_image": 0.0,\n' )
+    f.write ( '        "output_level": 0\n' )
+    f.write ( '      }\n' )
+    f.write ( '    },\n' )
+
+    if alignment_layer_list != None:
+      if len(alignment_layer_list) > 0:
+        f.write ( '    "alignment_stack": [\n' )
+        for a in alignment_layer_list:
+          f.write ( '      {\n' )
+          f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
+          if a != alignment_layer_list[-1]:
+            # Not sure what to leave out for last image ... keep all for now
+            pass
+          f.write ( '        "images": {\n' )
+
+          img_keys = sorted(a.image_dict.keys(), reverse=True)
+          for k in img_keys:
+            im = a.image_dict[k]
+            #print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
+            f.write ( '          "' + k + '": {\n' )  # "base": {
+            # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
+            print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
+            rel_file_name = ""
+            if type(im.file_name) != type(None):
+              rel_file_name = os.path.relpath(im.file_name,start=project_path)
+            f.write ( '            "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
+            f.write ( '            "metadata": {\n' )
+            f.write ( '              "match_points": ' + str(im.get_marker_points()) + ',\n' )
+            if len(im.graphics_items) <= 0:
+              f.write ( '              "annotations": []\n' )
+            else:
+              f.write ( '              "annotations": [\n' )
+              # Filter out the markers which are handled in other code
+              non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
+              # Only output the non-markers being careful not to add a trailing comma
+              for gi_index in range(len(non_marker_list)):
+                gi = non_marker_list[gi_index]
+                f.write ( "                " + gi.to_json_string().replace('\\','/') )
+                if gi_index < (len(non_marker_list)-1):
+                  f.write ( ',\n' )
+                else:
+                  f.write ( '\n' )
+              f.write ( '              ]\n' )
+            f.write ( '            }\n' )
+            if k != img_keys[-1]:
+              f.write ( '          },\n' )
+            else:
+              f.write ( '          }\n' )
+          f.write ( '        },\n' )
+          f.write ( '        "align_to_ref_method": {\n' )
+          f.write ( '          "selected_method": "' + str(a.align_method_text) + '",\n' )
+          f.write ( '          "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
+          f.write ( '          "method_data": {\n' )
+          f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
+          f.write ( '            "addx": ' + str(a.trans_addx) + ',\n' )
+          f.write ( '            "addy": ' + str(a.trans_addy) + ',\n' )
+          f.write ( '            "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
+          f.write ( '            "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
+          f.write ( '            "output_level": 0\n' )
+          f.write ( '          },\n' )
+          f.write ( '          "method_results": {\n' )
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+          if type(a.results_dict) != type(None):
+            if 'affine' in a.results_dict:
+              f.write ( '            "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
+            if 'cumulative_afm' in a.results_dict:
+              f.write ( '            "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
+            if 'snr' in a.results_dict:
+              f.write ( '            "snr": ' + str(a.results_dict['snr']) + '\n' )
+          #f.write ( '            "snr": {\n' )
+          #f.write ( '              "final": 1.234,\n' )
+          #f.write ( '              "process": []\n' )
+          #f.write ( '            }\n' )
+          f.write ( '          }\n' )
+          f.write ( '        }\n' )
+          if a != alignment_layer_list[-1]:
+            f.write ( '      },\n' )
+          else:
+            f.write ( '      }\n' )
+        f.write ( '    ]\n' )
+        f.write ( '  }\n' )
+        f.write ( '}\n' )
+
+
+
 def str2D ( m ):
   # Ensure that a 2D matrix is "flat"
   s = '['
@@ -1409,6 +1536,7 @@ def run_alignment_callback ( align_all ):
   global destination_path
   global gui_fields
   global panel_list
+  global project_file_name
 
   store_fields_into_current_layer()
 
@@ -1417,6 +1545,23 @@ def run_alignment_callback ( align_all ):
     response = dest_err_dialog.run()
     dest_err_dialog.destroy()
     return
+
+  print ( "Running with " + str(gui_fields.code_base_select.get_active_text()) )
+  if str(gui_fields.code_base_select.get_active_text()) == "External Swim Align":
+    # Write out the JSON file and run the currently hard-coded script to align it
+    write_json_project ( "run_project.json" )
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    f = open ( "run_json_project.py", 'r' )
+    text = f.read()
+    f.close()
+    exec ( text )
+    return
+
+  if str(gui_fields.code_base_select.get_active_text()) == "Internal Swim Align":
+    # Continue with existing processing
+    # All of the subsequent code might evenutally be put directly into this block
+    # For now, just drop through to continue
+    pass
 
   # Set up the preferred panels as needed
   ref_panel = None
@@ -2216,114 +2361,10 @@ def menu_callback ( widget, data=None ):
         print_debug ( 90, "Done with dialog" )
 
       if len(project_file_name) > 0:
-        # Actually write the file
-        gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
-        rel_dest_path = ""
-        if len(destination_path) > 0:
-          rel_dest_path = os.path.relpath(destination_path,start=project_path)
 
-        print_debug ( 50, "Saving destination path = " + str(destination_path) )
-        f = open ( project_file_name, 'w' )
-        f.write ( '{\n' )
-        f.write ( '  "version": 0.1,\n' )
-        f.write ( '  "method": "SWiFT-IR",\n' )
-        f.write ( '  "data": {\n' )
-        f.write ( '    "source_path": "",\n' )
-        f.write ( '    "destination_path": "' + str(rel_dest_path).replace('\\','/') + '",\n' )
-        f.write ( '    "pairwise_alignment": true,\n' )
-        f.write ( '    "defaults": {\n' )
-        f.write ( '      "align_to_next_pars": {\n' )
-        f.write ( '        "window_size": 1024,\n' )
-        f.write ( '        "addx": 800,\n' )
-        f.write ( '        "addy": 800,\n' )
-        f.write ( '        "bias_x_per_image": 0.0,\n' )
-        f.write ( '        "bias_y_per_image": 0.0,\n' )
-        f.write ( '        "output_level": 0\n' )
-        f.write ( '      }\n' )
-        f.write ( '    },\n' )
+        # Call the project writing function
 
-        if alignment_layer_list != None:
-          if len(alignment_layer_list) > 0:
-            f.write ( '    "alignment_stack": [\n' )
-            for a in alignment_layer_list:
-              f.write ( '      {\n' )
-              f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
-              if a != alignment_layer_list[-1]:
-                # Not sure what to leave out for last image ... keep all for now
-                pass
-              f.write ( '        "images": {\n' )
-
-              img_keys = sorted(a.image_dict.keys(), reverse=True)
-              for k in img_keys:
-                im = a.image_dict[k]
-                #print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
-                f.write ( '          "' + k + '": {\n' )  # "base": {
-                # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
-                print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
-                rel_file_name = ""
-                if type(im.file_name) != type(None):
-                  rel_file_name = os.path.relpath(im.file_name,start=project_path)
-                f.write ( '            "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
-                f.write ( '            "metadata": {\n' )
-                f.write ( '              "match_points": ' + str(im.get_marker_points()) + ',\n' )
-                if len(im.graphics_items) <= 0:
-                  f.write ( '              "annotations": []\n' )
-                else:
-                  f.write ( '              "annotations": [\n' )
-                  # Filter out the markers which are handled in other code
-                  non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
-                  # Only output the non-markers being careful not to add a trailing comma
-                  for gi_index in range(len(non_marker_list)):
-                    gi = non_marker_list[gi_index]
-                    f.write ( "                " + gi.to_json_string().replace('\\','/') )
-                    if gi_index < (len(non_marker_list)-1):
-                      f.write ( ',\n' )
-                    else:
-                      f.write ( '\n' )
-                  f.write ( '              ]\n' )
-                f.write ( '            }\n' )
-                if k != img_keys[-1]:
-                  f.write ( '          },\n' )
-                else:
-                  f.write ( '          }\n' )
-              f.write ( '        },\n' )
-              f.write ( '        "align_to_ref_method": {\n' )
-              f.write ( '          "selected_method": "' + str(a.align_method_text) + '",\n' )
-              f.write ( '          "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
-              f.write ( '          "method_data": {\n' )
-              f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
-              f.write ( '            "addx": ' + str(a.trans_addx) + ',\n' )
-              f.write ( '            "addy": ' + str(a.trans_addy) + ',\n' )
-              f.write ( '            "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
-              f.write ( '            "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
-              f.write ( '            "output_level": 0\n' )
-              f.write ( '          },\n' )
-              f.write ( '          "method_results": {\n' )
-              #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-              if type(a.results_dict) != type(None):
-                if 'affine' in a.results_dict:
-                  f.write ( '            "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
-                if 'cumulative_afm' in a.results_dict:
-                  f.write ( '            "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
-                if 'snr' in a.results_dict:
-                  f.write ( '            "snr": ' + str(a.results_dict['snr']) + '\n' )
-              #f.write ( '            "snr": {\n' )
-              #f.write ( '              "final": 1.234,\n' )
-              #f.write ( '              "process": []\n' )
-              #f.write ( '            }\n' )
-              f.write ( '          }\n' )
-              f.write ( '        }\n' )
-              if a != alignment_layer_list[-1]:
-                f.write ( '      },\n' )
-              else:
-                f.write ( '      }\n' )
-            f.write ( '    ]\n' )
-            f.write ( '  }\n' )
-            f.write ( '}\n' )
-
-      #global project_path
-      #project_path = None
+        write_json_project ( project_file_name )
 
     elif command == "ClearAll":
 
@@ -3007,6 +3048,27 @@ def main():
   controls_hbox = gtk.HBox ( False, 10 )
   controls_hbox.show()
   controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+
+  # Create the code_base_select control (selects how to run)
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label(" ")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  #junk_skip_check_box = gtk.ComboBox("Alignment")
+  gui_fields.code_base_select = gtk.ComboBox()
+  store = gtk.ListStore(str)
+  cell = gtk.CellRendererText()
+  gui_fields.code_base_select.pack_start(cell)
+  gui_fields.code_base_select.add_attribute(cell, 'text', 0)
+  store.append ( ["Internal Swim Align"] )
+  store.append ( ["External Swim Align"] )
+  gui_fields.code_base_select.set_model(store)
+  gui_fields.code_base_select.set_active(0)
+  label_entry.pack_start ( gui_fields.code_base_select, True, True, 0 )
+  gui_fields.code_base_select.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
 
   a_label = gtk.Label(" Bias Pass:  ")
   controls_hbox.pack_start ( a_label, True, True, 0 )
