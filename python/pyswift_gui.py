@@ -1551,10 +1551,8 @@ def run_alignment_callback ( align_all ):
     # Write out the JSON file and run the currently hard-coded script to align it
     write_json_project ( "run_project.json" )
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    f = open ( "run_json_project.py", 'r' )
-    text = f.read()
-    f.close()
-    exec ( text )
+    module = __import__ ( "run_json_project" )
+    module.main()
     return
 
   if str(gui_fields.code_base_select.get_active_text()) == "Internal Swim Align":

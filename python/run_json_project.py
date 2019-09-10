@@ -14,8 +14,9 @@ import math
 import random
 import shutil
 
+from pyswift_gui import graphic_primitive
 
-if __name__ == '__main__':
+def main():
   import sys
   if len(sys.argv) > 1:
     for arg in sys.argv[1:]:
@@ -182,4 +183,7 @@ if __name__ == '__main__':
 
 
   print ( "Done with run_json_project.py" )
+
+if __name__ == '__main__':
+  main()
 
