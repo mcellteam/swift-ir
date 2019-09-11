@@ -79,8 +79,9 @@ def run_alignment ( align_all,
                     alignment_layer_list,
                     alignment_layer_index,
                     num_forward,
+                    snr_skip,
+                    snr_halt,
                     destination_path,
-                    gui_fields,
                     panel_list,
                     project_file_name ):
 
@@ -362,42 +363,29 @@ def run_alignment ( align_all,
       alignment_layer_list[j].results_dict['cumulative_afm'] = [ [ c for c in r ] for r in alignment_layer_list[j].align_proc.cumulative_afm ]  # Make a copy
 
     # Check to see if this image should be marked for SNR skipping:
-    snr_skip_str = gui_fields.snr_skip.get_text()
-    if len(snr_skip_str.strip()) > 0:
+    if not (snr_skip is None):
       # An snr_skip limit has been entered
-      try:
-        snr_skip = float(snr_skip_str.strip())
-        if snr_value <= snr_skip:
-          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-          print_debug ( 20, "SNR of " + str(snr_value) + " is less than SNR Skip of " + str(snr_skip) )
-          print_debug ( 20, "  This layer will be marked for skipping in the next pass: " + str(j) )
-          print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-          alignment_layer_list[j].snr_skip = True
-      except:
-        print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
+      if snr_value <= snr_skip:
+        print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+        print_debug ( 20, "SNR of " + str(snr_value) + " is less than SNR Skip of " + str(snr_skip) )
+        print_debug ( 20, "  This layer will be marked for skipping in the next pass: " + str(j) )
+        print_debug ( 20, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+        alignment_layer_list[j].snr_skip = True
 
     # Check to see if the alignment should proceed at all
-    snr_halt_str = gui_fields.snr_halt.get_text()
-    if len(snr_halt_str.strip()) > 0:
+    if not (snr_halt is None):
       # An snr_halt limit has been entered
-      try:
-        snr_halt = float(snr_halt_str.strip())
-        if snr_value <= snr_halt:
-          print_debug ( 10, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-          print_debug ( 10, "SNR of " + str(snr_value) + " is less than SNR Halt of " + str(snr_halt) )
-          print_debug ( 10, "  Alignment stopped on layer " + str(j) )
-          print_debug ( 10, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
-          break
-      except:
-        print_debug ( 1, "The SNR Halt value should be a number and not " + snr_halt_str )
-
-
-
+      if snr_value <= snr_halt:
+        print_debug ( 10, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+        print_debug ( 10, "SNR of " + str(snr_value) + " is less than SNR Halt of " + str(snr_halt) )
+        print_debug ( 10, "  Alignment stopped on layer " + str(j) )
+        print_debug ( 10, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!" )
+        break
 
 
 
 def main():
-  """ Used for opening and reading from a project file. """
+  ''' Used for opening and reading from a project file. '''
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
   print ( "Inside run_json_project.py" )
