@@ -1600,14 +1600,16 @@ def run_alignment_callback ( align_all ):
 
 
 
-  #########################################################
-  #########################################################
-  ## Call the dynamic runner
-  #########################################################
-  #########################################################
-
   print ( "Running with " + str(gui_fields.code_base_select.get_active_text()) )
+
   if str(gui_fields.code_base_select.get_active_text()) == "External Swim Align":
+
+    #########################################################
+    #########################################################
+    ## Call the known external runner
+    #########################################################
+    #########################################################
+
     # Write out the JSON file and run the currently hard-coded script to align it
     write_json_project ( "run_project.json" )
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -1651,18 +1653,13 @@ def run_alignment_callback ( align_all ):
                            project_file_name )
 
 
-  #########################################################
-  #########################################################
-  ## Call the internal runner
-  #########################################################
-  #########################################################
+  elif str(gui_fields.code_base_select.get_active_text()) == "Internal Swim Align":
 
-  if str(gui_fields.code_base_select.get_active_text()) == "Internal Swim Align":
-    # Continue with existing processing
-    # All of the subsequent code might evenutally be put directly into this block
-    # For now, just drop through to continue
-    #pass
-
+    #########################################################
+    #########################################################
+    ## Call the internal runner
+    #########################################################
+    #########################################################
 
     # Create a list of alignment pairs accounting for skips, start point, and number to align
 
@@ -1924,6 +1921,15 @@ def run_alignment_callback ( align_all ):
         except:
           print_debug ( 1, "The SNR Halt value should be a number and not " + snr_halt_str )
 
+  else:
+
+    #########################################################
+    #########################################################
+    ## Call a dynamic external runner
+    #########################################################
+    #########################################################
+
+    print ( "Dynamic runner: " + str(gui_fields.code_base_select.get_active_text()) )
 
 
   # The following work manually, but gave error when done here
@@ -3115,8 +3121,16 @@ def main():
   cell = gtk.CellRendererText()
   gui_fields.code_base_select.pack_start(cell)
   gui_fields.code_base_select.add_attribute(cell, 'text', 0)
+  # Hard-coded alignment runners
   store.append ( ["Internal Swim Align"] )
   store.append ( ["External Swim Align"] )
+  # Dynamic alignment runners
+  runner_files = [ f for f in os.listdir(".") if f.startswith('pyswift_run_') and f.endswith('.py') ]
+  runner_files = [ f for f in runner_files if f != "pyswift_run_external.py" ]
+  runner_files = sorted(runner_files)
+  print ( "Runner files = " + str(runner_files) )
+  for f in runner_files:
+    store.append ( [ f ] )
   gui_fields.code_base_select.set_model(store)
   gui_fields.code_base_select.set_active(0)
   label_entry.pack_start ( gui_fields.code_base_select, True, True, 0 )
