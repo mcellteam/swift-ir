@@ -66,6 +66,7 @@ class DataModelObject(dict):
 
 def run_alignment ():
 
+  ''' Runs alignment from a project file. '''
 
   print_debug ( 1, "===============================================================================" )
   print_debug ( 1, "===============================================================================" )
@@ -73,9 +74,6 @@ def run_alignment ():
   print_debug ( 1, "===============================================================================" )
   print_debug ( 1, "===============================================================================" )
 
-
-def main():
-  ''' Used for opening and reading from a project file. '''
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
   print ( "Inside run_json_project.py" )
