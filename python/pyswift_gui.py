@@ -1611,7 +1611,7 @@ def run_alignment_callback ( align_all ):
     # Write out the JSON file and run the currently hard-coded script to align it
     write_json_project ( "run_project.json" )
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    module = __import__ ( "run_json_project" )
+    module = __import__ ( "pyswift_run_external" )
     # module.main()
     num_forward = None
     num_forward_str = gui_fields.num_align_forward.get_text()
