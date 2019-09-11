@@ -1621,14 +1621,32 @@ def run_alignment_callback ( align_all ):
         num_forward = int(num_forward_str.strip())
       except:
         num_forward = None
-        pass
+
+    snr_skip = None
+    snr_skip_str = gui_fields.snr_skip.get_text()
+    if len(snr_skip_str.strip()) > 0:
+      # An snr_skip limit has been entered
+      try:
+        snr_skip = float(snr_skip_str.strip())
+      except:
+        print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
+
+    snr_halt = None
+    snr_halt_str = gui_fields.snr_halt.get_text()
+    if len(snr_halt_str.strip()) > 0:
+      # An snr_halt limit has been entered
+      try:
+        snr_halt = float(snr_halt_str.strip())
+      except:
+        print_debug ( 1, "The SNR Halt value should be a number and not " + snr_halt_str )
 
     module.run_alignment ( align_all,
                            alignment_layer_list,
                            alignment_layer_index,
                            num_forward,
+                           snr_skip,
+                           snr_halt,
                            destination_path,
-                           gui_fields,
                            panel_list,
                            project_file_name )
 
