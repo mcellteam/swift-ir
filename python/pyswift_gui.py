@@ -1929,7 +1929,47 @@ def run_alignment_callback ( align_all ):
     #########################################################
     #########################################################
 
-    print ( "Dynamic runner: " + str(gui_fields.code_base_select.get_active_text()) )
+    runner_name = str(gui_fields.code_base_select.get_active_text())
+    print ( "Dynamic runner: " + runner_name )
+
+    write_json_project ( "run_project.json" )
+    module = __import__ ( runner_name[0:-3] )
+
+    num_forward = None
+    num_forward_str = gui_fields.num_align_forward.get_text()
+    if len(num_forward_str.strip()) > 0:
+      # A forward limit has been entered
+      try:
+        num_forward = int(num_forward_str.strip())
+      except:
+        num_forward = None
+
+    snr_skip = None
+    snr_skip_str = gui_fields.snr_skip.get_text()
+    if len(snr_skip_str.strip()) > 0:
+      # An snr_skip limit has been entered
+      try:
+        snr_skip = float(snr_skip_str.strip())
+      except:
+        print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
+
+    snr_halt = None
+    snr_halt_str = gui_fields.snr_halt.get_text()
+    if len(snr_halt_str.strip()) > 0:
+      # An snr_halt limit has been entered
+      try:
+        snr_halt = float(snr_halt_str.strip())
+      except:
+        print_debug ( 1, "The SNR Halt value should be a number and not " + snr_halt_str )
+
+    module.run_alignment ( "run_project.json", # project_file_name,
+                           align_all,
+                           alignment_layer_index,
+                           num_forward,
+                           snr_skip,
+                           snr_halt )
+
+
 
 
   # The following work manually, but gave error when done here
