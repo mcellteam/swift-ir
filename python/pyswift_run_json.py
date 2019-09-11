@@ -15,8 +15,20 @@ import shutil
 
 import align_swiftir
 
+global debug_level
+debug_level = 50
 
-def run_alignment ():
+def print_debug ( level, str ):
+  global debug_level
+  if level < debug_level:
+    print ( str )
+
+def run_alignment ( project_file_name,
+                    align_all,
+                    alignment_layer_index,
+                    num_forward,
+                    snr_skip,
+                    snr_halt ):
 
   ''' Runs alignment from a project file. '''
 
@@ -120,7 +132,7 @@ def run_alignment ():
                     ann_list = base['metadata']['annotations']
                     for ann_item in ann_list:
                       print ( "Base has " + str(ann_item) )
-                      print ( "image_dict[\"base\"].graphics_items " + str( graphic_primitive().from_json ( ann_item ) ) )
+                      # print ( "image_dict[\"base\"].graphics_items " + str( graphic_primitive().from_json ( ann_item ) ) )
 
                 # Only look for a ref or aligned if there has been a base
                 if 'ref' in im_list:
