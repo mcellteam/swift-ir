@@ -1614,9 +1614,20 @@ def run_alignment_callback ( align_all ):
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     module = __import__ ( "run_json_project" )
     # module.main()
+    num_forward = None
+    num_forward_str = gui_fields.num_align_forward.get_text()
+    if len(num_forward_str.strip()) > 0:
+      # A forward limit has been entered
+      try:
+        num_forward = int(num_forward_str.strip())
+      except:
+        num_forward = None
+        pass
+
     module.run_alignment ( align_all,
                            alignment_layer_list,
                            alignment_layer_index,
+                           num_forward,
                            destination_path,
                            gui_fields,
                            panel_list,

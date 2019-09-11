@@ -78,6 +78,7 @@ class DataModelObject(dict):
 def run_alignment ( align_all,
                     alignment_layer_list,
                     alignment_layer_index,
+                    num_forward,
                     destination_path,
                     gui_fields,
                     panel_list,
@@ -170,15 +171,9 @@ def run_alignment ( align_all,
       new_pairs = [ p for p in align_pairs if p[1] >= alignment_layer_index ]
     align_pairs = new_pairs
     # Remove any pairs beyond the number forward
-    num_forward_str = gui_fields.num_align_forward.get_text()
-    if len(num_forward_str.strip()) > 0:
-      # A forward limit has been entered
-      try:
-        num_forward = int(num_forward_str.strip())
-        new_pairs = [ p for p in align_pairs if p[1] < alignment_layer_index+num_forward ]
-        align_pairs = new_pairs
-      except:
-        print_debug ( 50, "The number forward should be an integer and not " + num_forward_str )
+    if not (num_forward is None):
+      new_pairs = [ p for p in align_pairs if p[1] < alignment_layer_index+num_forward ]
+      align_pairs = new_pairs
 
   print_debug ( 50, "Full list after removing start and forward limits:" )
   for apair in align_pairs:
