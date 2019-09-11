@@ -1606,7 +1606,6 @@ def run_alignment_callback ( align_all ):
   #########################################################
   #########################################################
 
-
   print ( "Running with " + str(gui_fields.code_base_select.get_active_text()) )
   if str(gui_fields.code_base_select.get_active_text()) == "External Swim Align":
     # Write out the JSON file and run the currently hard-coded script to align it
@@ -1632,7 +1631,6 @@ def run_alignment_callback ( align_all ):
                            gui_fields,
                            panel_list,
                            project_file_name )
-    return
 
 
   #########################################################
@@ -1640,7 +1638,6 @@ def run_alignment_callback ( align_all ):
   ## Call the internal runner
   #########################################################
   #########################################################
-
 
   if str(gui_fields.code_base_select.get_active_text()) == "Internal Swim Align":
     # Continue with existing processing
