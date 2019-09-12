@@ -69,6 +69,10 @@ def run_alignment ( project_file_name,
       # gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
     if 'alignment_stack' in proj_dict['data']:
       imagestack = proj_dict['data']['alignment_stack']
+      if debug_level > 65:
+        for i in range(len(imagestack)):
+          layer = imagestack[i]
+          print ( "  layer " + str(i) + " = " + str(layer) )
 
 
       # Create a list of alignment pairs accounting for skips, start point, and number to align
@@ -113,7 +117,14 @@ def run_alignment ( project_file_name,
 
       print_debug ( 50, "Full list after removing start and forward limits:" )
       for apair in align_pairs:
-        print_debug ( 50, "  Alignment pair: " + str(apair) )
+        print_debug ( 70, "  Alignment pair: " + str(apair) )
+
+      for apair in align_pairs:
+        print_debug ( 10, "  Align: " + str(imagestack[apair[1]]['images']['base']['filename']) +
+                          " to " + str(imagestack[apair[0]]['images']['base']['filename']) +
+                          " with bias x = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['bias_x_per_image']) +
+                          ", bias y = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['bias_y_per_image'])
+                    )
 
 
 
