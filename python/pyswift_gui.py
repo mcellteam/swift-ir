@@ -1935,6 +1935,10 @@ def run_alignment_callback ( align_all ):
     write_json_project ( "run_project.json" )
     module = __import__ ( runner_name[0:-3] )
 
+    # Transfer any global variables into the module
+    if 'debug_level' in dir(module):
+      module.debug_level = debug_level
+
     num_forward = None
     num_forward_str = gui_fields.num_align_forward.get_text()
     if len(num_forward_str.strip()) > 0:

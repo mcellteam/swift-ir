@@ -90,10 +90,6 @@ def run_alignment ( project_file_name,
   print_debug ( 1, "===============================================================================" )
 
 
-  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-  print ( "Inside run_json_project.py" )
-
-  project_file_name = "run_project.json"
   project_path = project_file_name ## os.path.dirname(project_file_name)
   destination_path = ""
 
