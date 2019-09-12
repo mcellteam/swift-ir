@@ -32,15 +32,14 @@ def run_alignment ( project_file_name,
 
   ''' Runs alignment from a project file. '''
 
-  print_debug ( 1, "===============================================================================" )
-  print_debug ( 1, "===============================================================================" )
-  print_debug ( 1, "================= Running from inside of pyswift_run_json.py ==================" )
-  print_debug ( 1, "===============================================================================" )
-  print_debug ( 1, "===============================================================================" )
+  if debug_level > 0:
+    print_debug ( 1, "===============================================================================" )
+    print_debug ( 1, "===============================================================================" )
+    print_debug ( 1, "================= Running from inside of pyswift_run_json.py ==================" )
+    print_debug ( 1, "===============================================================================" )
+    print_debug ( 1, "===============================================================================" )
 
 
-
-  project_file_name = "run_project.json"
   project_path = project_file_name ## os.path.dirname(project_file_name)
   destination_path = ""
 
@@ -48,7 +47,7 @@ def run_alignment ( project_file_name,
   text = f.read()
   proj_dict = json.loads ( text )
 
-  print ( str(proj_dict) )
+  if debug_level > 75: print ( str(proj_dict) )
 
   print ( "Project file version " + str(proj_dict['version']) )
   if proj_dict['version'] < 0.05:
@@ -70,6 +69,57 @@ def run_alignment ( project_file_name,
       # gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
     if 'alignment_stack' in proj_dict['data']:
       imagestack = proj_dict['data']['alignment_stack']
+
+
+      # Create a list of alignment pairs accounting for skips, start point, and number to align
+
+      align_pairs = []  # List of images to align with each other, a repeated index means copy directly to the output (a "golden section")
+      last_ref = -1
+      for i in range(len(imagestack)):
+        print_debug ( 50, "Aligning with method = " + imagestack[i]['align_to_ref_method']['selected_method'] )
+        if imagestack[i]['skip'] == False:
+          if last_ref < 0:
+            # This image was not skipped, but their is no previous, so just copy to itself
+            align_pairs.append ( [i, i, imagestack[i]['align_to_ref_method']] )
+          else:
+            # There was a previously unskipped image and this image is unskipped
+            # Therefore, add this pair to the list
+            align_pairs.append ( [last_ref, i, imagestack[i]['align_to_ref_method']] )
+          # This unskipped image will always become the last unskipped (reference) for next unskipped
+          last_ref = i
+        else:
+          # This should just remove those image_dict items that shouldn't show when skipped
+          # This creates a blank image for the GUI. Maybe it should copy?
+          # imagestack[i].image_dict['aligned'] = annotated_image(None, role="aligned")
+          pass
+
+      print_debug ( 50, "Full list after removing skips:" )
+      for apair in align_pairs:
+        print_debug ( 50, "  Alignment pair: " + str(apair) )
+
+      if not align_all:
+        # Retain only those pairs that start after this index
+        if alignment_layer_index == 0:
+          # Include the current layer to make the original copy again
+          new_pairs = [ p for p in align_pairs if p[1] >= alignment_layer_index ]
+        else:
+          # Exclude the current layer
+          new_pairs = [ p for p in align_pairs if p[1] >= alignment_layer_index ]
+        align_pairs = new_pairs
+        # Remove any pairs beyond the number forward
+        if not (num_forward is None):
+          new_pairs = [ p for p in align_pairs if p[1] < alignment_layer_index+num_forward ]
+          align_pairs = new_pairs
+
+      print_debug ( 50, "Full list after removing start and forward limits:" )
+      for apair in align_pairs:
+        print_debug ( 50, "  Alignment pair: " + str(apair) )
+
+
+
+
+
+      """
       if len(imagestack) > 0:
         alignment_layer_index = 0
         alignment_layer_list = []
@@ -193,6 +243,7 @@ def run_alignment ( project_file_name,
 
                 #alignment_layer_list.append ( a )
                 #print ( "Internal bias_x after appending: " + str(a.bias_dx) )
+      """
 
 
   print ( "Done with run_json_project.py" )
