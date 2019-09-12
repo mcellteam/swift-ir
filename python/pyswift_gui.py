@@ -1215,7 +1215,7 @@ def change_skip_callback(zpa):
       if (type(prev_unskipped_index) != type(None)) and (type(next_unskipped_index) != type(None)):
         # Connect the previous unskipped to the next unskipped
         alignment_layer_list[next_unskipped_index].image_dict['ref'] = annotated_image ( clone_from=alignment_layer_list[prev_unskipped_index].image_dict['base'], role='ref' )
-        alignment_layer_list[alignment_layer_index].image_dict['ref'] = annotated_image()
+        # alignment_layer_list[alignment_layer_index].image_dict['ref'] = annotated_image()
     else:
       # This image was skipped before but is being unskipped now
       if type(prev_unskipped_index) != type(None):
