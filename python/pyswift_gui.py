@@ -1760,27 +1760,27 @@ def run_alignment_callback ( align_all ):
         mp_base = alignment_layer_list[j].image_dict['base'].get_marker_points()
         mp_ref = alignment_layer_list[j].image_dict['ref'].get_marker_points()
         layer_dict = {
-		       "images": {
-				   "base": {
-					     "metadata": {
-							   "match_points": mp_base
-					     }
-				   },
-				   "ref": {
-					     "metadata": {
-							   "match_points": mp_ref
-					     }
-				   }
-		       },
-		       "align_to_ref_method": {
-					        "selected_method": "Match Point Align",
-					        "method_options": [
-								    "Auto Swim Align",
-								    "Match Point Align"
-								   ],
-					        "method_data": {},
-					        "method_results": {}
-					      }
+          "images": {
+            "base": {
+              "metadata": {
+                "match_points": mp_base
+              }
+            },
+            "ref": {
+              "metadata": {
+                "match_points": mp_ref
+              }
+            }
+          },
+          "align_to_ref_method": {
+            "selected_method": "Match Point Align",
+            "method_options": [
+              "Auto Swim Align",
+              "Match Point Align"
+            ],
+            "method_data": {},
+            "method_results": {}
+          }
         }
       else:
         layer_dict = None

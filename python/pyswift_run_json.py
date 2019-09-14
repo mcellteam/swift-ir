@@ -122,7 +122,10 @@ def run_alignment ( project_file_name,
       for apair in align_pairs:
         print_debug ( 10, "  Align: " + str(imagestack[apair[1]]['images']['base']['filename']) +
                           " to " + str(imagestack[apair[0]]['images']['base']['filename']) +
-                          " with bias x = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['bias_x_per_image']) +
+                          " with ww = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['window_size']) +
+                          ", addx = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['addx']) +
+                          ", addy = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['addy']) +
+                          ", bias x = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['bias_x_per_image']) +
                           ", bias y = " + str(imagestack[apair[0]]['align_to_ref_method']['method_data']['bias_y_per_image'])
                     )
 
