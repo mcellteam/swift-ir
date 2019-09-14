@@ -296,17 +296,125 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
   return (global_afm, recipe)
 
+#import argparse
+import sys
 
 if __name__=='__main__':
 
+  print ( "Running " + __file__ + ".__main__()" )
+
+  # "Tile_r1-c1_LM9R5CA1series_247.jpg",
+  # "Tile_r1-c1_LM9R5CA1series_248.jpg",
+
+  # These are the defaults
+  f1 = "vj_097_shift_rot_skew_crop_1.jpg"
+  f2 = "vj_097_shift_rot_skew_crop_2.jpg"
+  out = "./aligned"
+
+  # Process and remove the fixed positional arguments
+  args = sys.argv
+  args = args[1:]  # Shift out this file name (argv[0])
+  if len(args) > 0:
+    f1 = args[0]
+    f2 = args[0]
+    args = args[1:]  # Shift out the first file name argument
+    if len(args) > 0:
+      f2 = args[0]
+      args = args[1:]  # Shift out the second file name argument
+      if len(args) > 0:
+        out = args[0]
+        args = args[1:]  # Shift out the destination argument
+
+  # Now all of the remaining arguments should be optional
+  xbias = 0
+  ybias = 0
+  match_points = None
+  layer_dict = None
+  cumulative_afm = None
+
+  while len(args) > 0:
+    if args[0] == '-xb':
+      args = args[1:]
+      xbias = float(args[0])
+      args = args[1:]
+    elif args[0] == '-yb':
+      args = args[1:]
+      ybias = float(args[0])
+      args = args[1:]
+    elif args[0] == '-cafm':
+      # This will be -cafm 0.1,0.2,0.3,0.4,0.5,0.6
+      #   representing [ [0.1,0.2,0.3], [0.4,0.5,0.6] ]
+      args = args[1:]
+      cafm = [ float(v) for v in args[0].split(' ')[1].split(',') ]
+      if len(cafm) == 6:
+        cumulative_afm = [ cafm[0:3], cafm[3:6] ]
+      args = args[1:]
+    elif args[0] == '-match':
+      # This will be -match 0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0,1.1,1.2
+      #   representing [ [ [0.1,0.2], [0.3,0.4], [0.5,0.6] ], [ [0.7,0.8], [0.9,1.0], [1.1,1.2] ] ]
+      # Note that the first sub-array are all the match points from the first image,
+      #   and the second sub-array are corresponding match points from second image
+      # Example for tests/vj_097_shift_rot_skew_crop_1.jpg and tests/vj_097_shift_rot_skew_crop_2.jpg:
+      #   327.8,332.0,539.4,208.8,703.3,364.3,266.2,659.9,402.1,249.4,605.2,120.5,776.2,269.0,353.0,580.0
+
+      args = args[1:]
+      match = [ float(v) for v in args[0].split(',') ]
+      args = args[1:]
+      # Force the number of points to be a multiple of 4 (2 per point by 2 per pair)
+      npts = (len(match) / 2) / 2
+      if npts > 0:
+        match_points = [ [], [] ]
+        # Split the original one dimensional array into 2 parts (one for each image)
+        m = [match[0:npts*2], match[npts*2:]]
+        # Group the floats for each image into pairs representing points
+        match_points[0] = [ [m[0][2*i],m[0][(2*i)+1]] for i in range(len(m[0])/2) ]
+        match_points[1] = [ [m[1][2*i],m[1][(2*i)+1]] for i in range(len(m[1])/2) ]
+
+        # Build the layer dictionary with the match points
+        layer_dict = {
+          "images": {
+            "base": {
+              "metadata": {
+                "match_points": match_points[0]
+              }
+            },
+            "ref": {
+              "metadata": {
+                "match_points": match_points[1]
+              }
+            }
+          },
+          "align_to_ref_method": {
+            "selected_method": "Match Point Align",
+            "method_options": [
+              "Auto Swim Align",
+              "Match Point Align"
+            ],
+            "method_data": {},
+            "method_results": {}
+          }
+        }
+
+  align_proc = alignment_process ( f1,
+                                   f2,
+                                   out,
+                                   layer_dict=layer_dict,
+                                   x_bias=xbias,
+                                   y_bias=ybias,
+                                   cumulative_afm=cumulative_afm )
+  align_proc.align()
+
+  """
   image_dir = './'
   align_dir = './aligned/'
   im_sta_fn = image_dir + 'Tile_r1-c1_LM9R5CA1series_247.jpg'
   im_mov_fn = image_dir + 'Tile_r1-c1_LM9R5CA1series_248.jpg'
 
+
   global_afm = swiftir.identityAffine()
 
   align_images(im_sta_fn, im_mov_fn, align_dir, global_afm)
+  """
 
 
   '''
