@@ -254,6 +254,7 @@ class gui_fields_class:
     self.snr_skip = None
     self.snr_halt = None
     self.code_base_select = None
+    self.scales_list = [1]
 
 
     # These values are swapped while scrolling through the stack
@@ -2471,6 +2472,46 @@ def menu_callback ( widget, data=None ):
 
         write_json_project ( project_file_name )
 
+    elif command == "SelScales":
+
+      label = gtk.Label("Enter list of scales:")
+      dialog = gtk.Dialog("Select Scales",
+                         None,
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+      dialog.vbox.pack_start(label)
+      label.show()
+      scales_entry = gtk.Entry(20)
+      scales_entry.set_text ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
+
+      #checkbox = gtk.CheckButton("Useless checkbox")
+      #dialog.vbox.pack_end(checkbox)
+      dialog.vbox.pack_end(scales_entry)
+      #dialog.action_area.pack_end(checkbox)
+      #checkbox.show()
+      scales_entry.show()
+      response = dialog.run()
+      if response == gtk.RESPONSE_ACCEPT:
+        print ( str(scales_entry.get_text()) )
+        #print ( str ( [ int(t) for t in str(scales_entry.get_text()).split(' ') ] ) )
+        gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
+        gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
+        print ( str(gui_fields.scales_list) )
+      dialog.destroy()
+
+    elif command == "GenAllScales":
+      print ( "Create images at all scales: " + str ( gui_fields.scales_list ) )
+
+    elif command == "GenMissingScales":
+      print ( "Create images at missing scales in: " + str ( gui_fields.scales_list ) )
+
+    elif command == "DelAllScales":
+      print ( "Delete images at all scales in: " + str ( gui_fields.scales_list ) )
+
+    elif command == "DelMissingScales":
+      print ( "Prune missing scales from: " + str ( gui_fields.scales_list ) )
+
     elif command == "ClearAll":
 
       clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
@@ -2797,6 +2838,12 @@ def main():
     zpa_original.add_menu_item ( this_menu, menu_callback, "Center",  ("ImCenter", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Select Scales",  ("SelScales", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Generate Missing",  ("GenMissingScales", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Delete All Scales",  ("DelAllScales", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Delete Missing Scales",  ("DelMissingScales", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
