@@ -73,7 +73,7 @@ global point_cursor
 point_cursor = gtk.gdk.CROSSHAIR
 
 global max_image_file_size
-max_image_file_size = 16000000
+max_image_file_size = 700000000
 
 global debug_level
 debug_level = 50
