@@ -282,6 +282,7 @@ gui_fields = gui_fields_class()
 class graphic_primitive:
   ''' This base class defines something that can be drawn '''
   def __init__ ( self ):
+    self.temp = False
     self.marker = False
     self.coordsys = 'p' # 'p' = Pixel Coordinates, 'i' = Image Coordinates, 's' = Scaled Coordinates (0.0 to 1.0)
     self.color = [1.0, 1.0, 1.0]
@@ -311,6 +312,7 @@ class graphic_primitive:
 
 class graphic_line (graphic_primitive):
   def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
     self.marker = False
     self.graphic_group = graphic_group
     self.x1 = x1
@@ -353,6 +355,7 @@ class graphic_line (graphic_primitive):
 
 class graphic_rect (graphic_primitive):
   def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
     self.marker = False
     self.graphic_group = graphic_group
     self.x = x
@@ -395,6 +398,7 @@ class graphic_rect (graphic_primitive):
 
 class graphic_marker (graphic_primitive):
   def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
     self.marker = True
     self.graphic_group = graphic_group
     self.x = x
@@ -434,6 +438,7 @@ class graphic_marker (graphic_primitive):
 
 class graphic_dot (graphic_primitive):
   def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
     self.marker = False
     self.graphic_group = graphic_group
     self.x = x
@@ -469,7 +474,8 @@ class graphic_dot (graphic_primitive):
 
 
 class graphic_text (graphic_primitive):
-  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default", temp=False ):
+    self.temp = temp
     self.marker = False
     self.graphic_group = graphic_group
     self.x = x
@@ -544,7 +550,7 @@ class annotated_image:
         else:
           self.image = None
           print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
-          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5]) )
+          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
       except:
         print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
         # exit(1)
@@ -1486,6 +1492,8 @@ def write_json_project ( project_file_name ):
               f.write ( '              "annotations": [\n' )
               # Filter out the markers which are handled in other code
               non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
+              # Filter out any temporary annotations
+              non_marker_list = [ gi for gi in non_marker_list if not gi.temp ]
               # Only output the non-markers being careful not to add a trailing comma
               for gi_index in range(len(non_marker_list)):
                 gi = non_marker_list[gi_index]
