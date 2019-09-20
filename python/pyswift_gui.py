@@ -72,6 +72,9 @@ point_delete_mode = False
 global point_cursor
 point_cursor = gtk.gdk.CROSSHAIR
 
+global max_image_file_size
+max_image_file_size = 16000000
+
 global debug_level
 debug_level = 50
 
@@ -493,6 +496,10 @@ class graphic_text (graphic_primitive):
       # Convert to image coordinates before drawing
       x = zpa.wxi(x)
       y = zpa.wyi(y)
+    if self.coordsys == 's':
+      # Convert to image coordinates before drawing
+      x = int ( width * self.x )
+      y = int ( height * self.y )
     pgl.set_text ( self.s )
     drawable.draw_layout ( gc, x, y, pgl )
 
@@ -507,6 +514,7 @@ class annotated_image:
   def __init__ ( self, file_name=None, clone_from=None, role=None ):
     # Initialize everything to defaults
     self.file_name = file_name
+    self.file_size = -1
     self.image = None
     self.graphics_items = []
     self.role = role
@@ -525,8 +533,18 @@ class annotated_image:
       self.role = role
     if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
       try:
-        self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
-        print_debug ( 50, "Loaded " + str(self.file_name) )
+        f = file ( self.file_name )
+        f.seek (0, 2)
+        self.file_size = f.tell()
+        f.close()
+        global max_image_file_size
+        if self.file_size < max_image_file_size:
+          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+          print_debug ( 50, "Loaded " + str(self.file_name) )
+        else:
+          self.image = None
+          print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
+          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5]) )
       except:
         print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
         # exit(1)
@@ -2472,6 +2490,37 @@ def menu_callback ( widget, data=None ):
 
         write_json_project ( project_file_name )
 
+    elif command == "MaxFileSize":
+
+      global max_image_file_size
+      label = gtk.Label("Enter max image file size:")
+      dialog = gtk.Dialog("Set Max Image File Size",
+                         None,
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+      dialog.vbox.pack_start(label)
+      label.show()
+      max_entry = gtk.Entry(20)
+      max_entry.set_text ( str ( max_image_file_size ) )
+
+      #checkbox = gtk.CheckButton("Useless checkbox")
+      #dialog.vbox.pack_end(checkbox)
+      dialog.vbox.pack_end(max_entry)
+      #dialog.action_area.pack_end(checkbox)
+      #checkbox.show()
+      max_entry.show()
+      response = dialog.run()
+      if response == gtk.RESPONSE_ACCEPT:
+        print ( str(max_entry.get_text()) )
+        #print ( str ( [ int(t) for t in str(scales_entry.get_text()).split(' ') ] ) )
+        try:
+          max_image_file_size = int(str(max_entry.get_text()))
+          print ( "Max file size set to " + str(max_image_file_size) )
+        except:
+          print ( "Unable to parse " + str(max_entry.get_text()) + " into an integer" )
+      dialog.destroy()
+
     elif command == "SelScales":
 
       label = gtk.Label("Enter list of scales:")
@@ -2862,8 +2911,9 @@ def main():
   if True: # An easy way to indent and still be legal Python
     this_menu = set_menu
     # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
-
     zpa_original.add_menu_sep  ( this_menu )
     # Create a "Set/Cursor" submenu
     # This didn't work ...
