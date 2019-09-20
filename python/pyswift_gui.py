@@ -1448,7 +1448,7 @@ def write_json_project ( project_file_name ):
     print_debug ( 50, "Saving destination path = " + str(destination_path) )
     f = open ( project_file_name, 'w' )
     f.write ( '{\n' )
-    f.write ( '  "version": 0.1,\n' )
+    f.write ( '  "version": 0.2,\n' )
     f.write ( '  "method": "SWiFT-IR",\n' )
     f.write ( '  "data": {\n' )
     f.write ( '    "source_path": "",\n' )
@@ -1465,34 +1465,36 @@ def write_json_project ( project_file_name ):
     f.write ( '      }\n' )
     f.write ( '    },\n' )
 
+    f.write ( '    "scales": {\n' )
+    f.write ( '      "1": {\n' )
     if alignment_layer_list != None:
       if len(alignment_layer_list) > 0:
-        f.write ( '    "alignment_stack": [\n' )
+        f.write ( '        "alignment_stack": [\n' )
         for a in alignment_layer_list:
-          f.write ( '      {\n' )
-          f.write ( '        "skip": ' + str(a.skip).lower() + ',\n' )
+          f.write ( '          {\n' )
+          f.write ( '            "skip": ' + str(a.skip).lower() + ',\n' )
           if a != alignment_layer_list[-1]:
             # Not sure what to leave out for last image ... keep all for now
             pass
-          f.write ( '        "images": {\n' )
+          f.write ( '            "images": {\n' )
 
           img_keys = sorted(a.image_dict.keys(), reverse=True)
           for k in img_keys:
             im = a.image_dict[k]
             #print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
-            f.write ( '          "' + k + '": {\n' )  # "base": {
+            f.write ( '              "' + k + '": {\n' )  # "base": {
             # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
             print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
             rel_file_name = ""
             if type(im.file_name) != type(None):
               rel_file_name = os.path.relpath(im.file_name,start=project_path)
-            f.write ( '            "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
-            f.write ( '            "metadata": {\n' )
-            f.write ( '              "match_points": ' + str(im.get_marker_points()) + ',\n' )
+            f.write ( '                "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
+            f.write ( '                "metadata": {\n' )
+            f.write ( '                  "match_points": ' + str(im.get_marker_points()) + ',\n' )
             if len(im.graphics_items) <= 0:
-              f.write ( '              "annotations": []\n' )
+              f.write ( '                  "annotations": []\n' )
             else:
-              f.write ( '              "annotations": [\n' )
+              f.write ( '                  "annotations": [\n' )
               # Filter out the markers which are handled in other code
               non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
               # Filter out any temporary annotations
@@ -1500,53 +1502,55 @@ def write_json_project ( project_file_name ):
               # Only output the non-markers being careful not to add a trailing comma
               for gi_index in range(len(non_marker_list)):
                 gi = non_marker_list[gi_index]
-                f.write ( "                " + gi.to_json_string().replace('\\','/') )
+                f.write ( "                    " + gi.to_json_string().replace('\\','/') )
                 if gi_index < (len(non_marker_list)-1):
                   f.write ( ',\n' )
                 else:
                   f.write ( '\n' )
-              f.write ( '              ]\n' )
-            f.write ( '            }\n' )
+              f.write ( '                  ]\n' )
+            f.write ( '                }\n' )
             if k != img_keys[-1]:
-              f.write ( '          },\n' )
+              f.write ( '              },\n' )
             else:
-              f.write ( '          }\n' )
-          f.write ( '        },\n' )
-          f.write ( '        "align_to_ref_method": {\n' )
-          f.write ( '          "selected_method": "' + str(a.align_method_text) + '",\n' )
-          f.write ( '          "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
-          f.write ( '          "method_data": {\n' )
-          f.write ( '            "window_size": ' + str(a.trans_ww) + ',\n' )
-          f.write ( '            "addx": ' + str(a.trans_addx) + ',\n' )
-          f.write ( '            "addy": ' + str(a.trans_addy) + ',\n' )
-          f.write ( '            "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
-          f.write ( '            "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
-          f.write ( '            "output_level": 0\n' )
-          f.write ( '          },\n' )
-          f.write ( '          "method_results": {\n' )
+              f.write ( '              }\n' )
+          f.write ( '            },\n' )
+          f.write ( '            "align_to_ref_method": {\n' )
+          f.write ( '              "selected_method": "' + str(a.align_method_text) + '",\n' )
+          f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
+          f.write ( '              "method_data": {\n' )
+          f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
+          f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
+          f.write ( '                "addy": ' + str(a.trans_addy) + ',\n' )
+          f.write ( '                "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
+          f.write ( '                "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
+          f.write ( '                "output_level": 0\n' )
+          f.write ( '              },\n' )
+          f.write ( '              "method_results": {\n' )
           #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
           if type(a.results_dict) != type(None):
             if 'affine' in a.results_dict:
-              f.write ( '            "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
+              f.write ( '                "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
             if 'cumulative_afm' in a.results_dict:
-              f.write ( '            "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
+              f.write ( '                "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
             if 'snr' in a.results_dict:
-              f.write ( '            "snr": ' + str(a.results_dict['snr']) + '\n' )
+              f.write ( '                "snr": ' + str(a.results_dict['snr']) + '\n' )
           #f.write ( '            "snr": {\n' )
           #f.write ( '              "final": 1.234,\n' )
           #f.write ( '              "process": []\n' )
           #f.write ( '            }\n' )
-          f.write ( '          }\n' )
-          f.write ( '        }\n' )
+          f.write ( '              }\n' )
+          f.write ( '            }\n' )
           if a != alignment_layer_list[-1]:
-            f.write ( '      },\n' )
+            f.write ( '          },\n' )
           else:
-            f.write ( '      }\n' )
-        f.write ( '    ]\n' )
-        f.write ( '  }\n' )
-        f.write ( '}\n' )
+            f.write ( '          }\n' )
+        f.write ( '        ]\n' )
+        f.write ( '      }\n' )
+        f.write ( '    }\n' )
 
+    f.write ( '  }\n' )
+    f.write ( '}\n' )
 
 
 def str2D ( m ):
@@ -2058,6 +2062,32 @@ def print_data_structures(panel_list, alignment_layer_list):
     ln += 1
   # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+def upgrade_proj_dict ( proj_dict ):
+  if not ('version' in proj_dict):
+    print ( "Unable to read from files with no version number ... update code to handle this format." )
+    exit (99)
+  if proj_dict['version'] < 0.099:
+    print ( "Unable to read from versions before 0.1 ... update code to handle this format." )
+    exit (99)
+  if proj_dict['version'] < 0.199:
+    # This is pre 0.2, so add the "scales" key with a single scale of 1
+    # The previous alignment stack will now reside below key "1"
+    warn_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Upgrading model from " + str(proj_dict['version']) + " to 0.2\nSaving will use the new format." )
+    response = warn_dialog.run()
+    warn_dialog.destroy()
+
+    # Create the new structure
+    proj_dict['data']['scales'] = {}
+    proj_dict['data']['scales']['1'] = {}
+    # Transfer the "alignment_stack" list from the "data" dictionary to the "data/scales/1" dictionary
+    proj_dict['data']['scales']['1']['alignment_stack'] = proj_dict['data'].pop('alignment_stack')
+    # Upgrade the version number
+    proj_dict['version'] = 0.2
+  if proj_dict['version'] > 0.201:
+    # This program is not written for newer versions
+    print ( "Unable to read from versions above 0.2 ... update code to handle this format." )
+    exit (99)
+  return proj_dict
 
 def load_from_proj_dict ( proj_dict ):
 
@@ -2074,13 +2104,8 @@ def load_from_proj_dict ( proj_dict ):
   global point_mode
   global point_delete_mode
 
-  if proj_dict['version'] < 0.05:
-    print_debug ( -1, "Unable to read from versions before 0.1" )
-    exit (99)
-  if proj_dict['version'] > 0.15:
-    print_debug ( -1, "Unable to read from versions above 0.1" )
-    exit (99)
-  print_debug ( 50, "Project file method " + str(proj_dict['method']) )
+  proj_dict = upgrade_proj_dict ( proj_dict )
+
   if 'data' in proj_dict:
     if 'destination_path' in proj_dict['data']:
       destination_path = proj_dict['data']['destination_path']
@@ -2089,126 +2114,129 @@ def load_from_proj_dict ( proj_dict ):
         destination_path = os.path.join ( project_path, destination_path )
       destination_path = os.path.realpath ( destination_path )
       gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
-    if 'alignment_stack' in proj_dict['data']:
-      imagestack = proj_dict['data']['alignment_stack']
-      if len(imagestack) > 0:
-        alignment_layer_index = 0
-        alignment_layer_list = []
-        for json_alignment_layer in imagestack:
-          if 'images' in json_alignment_layer:
-            im_list = json_alignment_layer['images']
-            if 'base' in im_list:
-              base = im_list['base']
-              if 'filename' in base:
-                image_fname = base['filename']
-                # Convert to absolute as needed
-                if not os.path.isabs(image_fname):
-                  image_fname = os.path.join ( project_path, image_fname )
-                image_fname = os.path.realpath ( image_fname )
-                a = alignment_layer ( image_fname )  # This will put the image into the "base" role
-                if 'skip' in json_alignment_layer:
-                  a.skip = json_alignment_layer['skip']
+    if 'scales' in proj_dict['data']:
+      scales_dict = proj_dict['data']['scales']
+      if '1' in scales_dict:
+        if 'alignment_stack' in scales_dict['1']:
+          imagestack = scales_dict['1']['alignment_stack']
+          if len(imagestack) > 0:
+            alignment_layer_index = 0
+            alignment_layer_list = []
+            for json_alignment_layer in imagestack:
+              if 'images' in json_alignment_layer:
+                im_list = json_alignment_layer['images']
+                if 'base' in im_list:
+                  base = im_list['base']
+                  if 'filename' in base:
+                    image_fname = base['filename']
+                    # Convert to absolute as needed
+                    if not os.path.isabs(image_fname):
+                      image_fname = os.path.join ( project_path, image_fname )
+                    image_fname = os.path.realpath ( image_fname )
+                    a = alignment_layer ( image_fname )  # This will put the image into the "base" role
+                    if 'skip' in json_alignment_layer:
+                      a.skip = json_alignment_layer['skip']
 
-                if 'align_to_ref_method' in json_alignment_layer:
-                  json_align_to_ref_method = json_alignment_layer['align_to_ref_method']
-                  a.align_method_text = str(json_align_to_ref_method['selected_method'])
-                  opts = [ str(x) for x in json_align_to_ref_method['method_options'] ]
-                  a.align_method = opts.index(a.align_method_text)
+                    if 'align_to_ref_method' in json_alignment_layer:
+                      json_align_to_ref_method = json_alignment_layer['align_to_ref_method']
+                      a.align_method_text = str(json_align_to_ref_method['selected_method'])
+                      opts = [ str(x) for x in json_align_to_ref_method['method_options'] ]
+                      a.align_method = opts.index(a.align_method_text)
 
-                  if 'method_data' in json_align_to_ref_method:
-                    pars = json_align_to_ref_method['method_data']
-                    a.trans_ww = pars['window_size']
-                    a.trans_addx = pars['addx']
-                    a.trans_addy = pars['addy']
-                    a.affine_enabled = True
-                    a.affine_ww = pars['window_size']
-                    a.affine_addx = pars['addx']
-                    a.affine_addy = pars['addy']
-                    a.bias_enabled = False
-                    a.bias_dx = 0
-                    a.bias_dy = 0
-                    print ( "Got method_data" + str(pars) )
-                    if 'bias_x_per_image' in pars:
-                      a.bias_dx = pars['bias_x_per_image']
-                      print ( "  Set bias_dx = " + str(a.bias_dx) )
-                    if 'bias_y_per_image' in pars:
-                      a.bias_dy = pars['bias_y_per_image']
-                    print ( "Internal bias_x: " + str(a.bias_dx) )
+                      if 'method_data' in json_align_to_ref_method:
+                        pars = json_align_to_ref_method['method_data']
+                        a.trans_ww = pars['window_size']
+                        a.trans_addx = pars['addx']
+                        a.trans_addy = pars['addy']
+                        a.affine_enabled = True
+                        a.affine_ww = pars['window_size']
+                        a.affine_addx = pars['addx']
+                        a.affine_addy = pars['addy']
+                        a.bias_enabled = False
+                        a.bias_dx = 0
+                        a.bias_dy = 0
+                        print ( "Got method_data" + str(pars) )
+                        if 'bias_x_per_image' in pars:
+                          a.bias_dx = pars['bias_x_per_image']
+                          print ( "  Set bias_dx = " + str(a.bias_dx) )
+                        if 'bias_y_per_image' in pars:
+                          a.bias_dy = pars['bias_y_per_image']
+                        print ( "Internal bias_x: " + str(a.bias_dx) )
 
-                  if 'method_results' in json_align_to_ref_method:
-                    json_method_results = json_align_to_ref_method['method_results']
-                    if 'cumulative_afm' in json_method_results:
-                      print_debug ( 60, "Loading a cumulative_afm from JSON" )
+                      if 'method_results' in json_align_to_ref_method:
+                        json_method_results = json_align_to_ref_method['method_results']
+                        if 'cumulative_afm' in json_method_results:
+                          print_debug ( 60, "Loading a cumulative_afm from JSON" )
 
-                      a.results_dict['snr'] = json_method_results['snr'] # Copy
-                      a.results_dict['affine'] = [ [ c for c in r ] for r in json_method_results['affine_matrix'] ] # Copy
-                      a.results_dict['cumulative_afm'] = [ [ c for c in r ] for r in json_method_results['cumulative_afm'] ] # Copy
+                          a.results_dict['snr'] = json_method_results['snr'] # Copy
+                          a.results_dict['affine'] = [ [ c for c in r ] for r in json_method_results['affine_matrix'] ] # Copy
+                          a.results_dict['cumulative_afm'] = [ [ c for c in r ] for r in json_method_results['cumulative_afm'] ] # Copy
 
-                # Load match points into the base image (if found)
-                if 'metadata' in base:
-                  if 'match_points' in base['metadata']:
-                    mp = base['metadata']['match_points']
-                    for p in mp:
-                      print_debug ( 80, "%%%% GOT BASE MATCH POINT: " + str(p) )
-                      m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
-                      a.image_dict['base'].graphics_items.append ( m )
-                  if 'annotations' in base['metadata']:
-                    ann_list = base['metadata']['annotations']
-                    for ann_item in ann_list:
-                      print_debug ( 60, "Base has " + str(ann_item) )
-                      a.image_dict["base"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
+                    # Load match points into the base image (if found)
+                    if 'metadata' in base:
+                      if 'match_points' in base['metadata']:
+                        mp = base['metadata']['match_points']
+                        for p in mp:
+                          print_debug ( 80, "%%%% GOT BASE MATCH POINT: " + str(p) )
+                          m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
+                          a.image_dict['base'].graphics_items.append ( m )
+                      if 'annotations' in base['metadata']:
+                        ann_list = base['metadata']['annotations']
+                        for ann_item in ann_list:
+                          print_debug ( 60, "Base has " + str(ann_item) )
+                          a.image_dict["base"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
-                # Only look for a ref or aligned if there has been a base
-                if 'ref' in im_list:
-                  ref = im_list['ref']
-                  if 'filename' in ref:
-                    image_fname = ref['filename']
-                    if len(image_fname) <= 0:
-                      # Don't try to load empty images
-                      a.image_dict['ref'] = annotated_image(None, role="ref")
-                    else:
-                      # Convert to absolute as needed
-                      if not os.path.isabs(image_fname):
-                        image_fname = os.path.join ( project_path, image_fname )
-                      image_fname = os.path.realpath ( image_fname )
-                      a.image_dict["ref"] = annotated_image(image_fname,role="ref")
+                    # Only look for a ref or aligned if there has been a base
+                    if 'ref' in im_list:
+                      ref = im_list['ref']
+                      if 'filename' in ref:
+                        image_fname = ref['filename']
+                        if len(image_fname) <= 0:
+                          # Don't try to load empty images
+                          a.image_dict['ref'] = annotated_image(None, role="ref")
+                        else:
+                          # Convert to absolute as needed
+                          if not os.path.isabs(image_fname):
+                            image_fname = os.path.join ( project_path, image_fname )
+                          image_fname = os.path.realpath ( image_fname )
+                          a.image_dict["ref"] = annotated_image(image_fname,role="ref")
 
-                      # Load match points into the ref image (if found)
-                      if 'metadata' in ref:
-                        if 'match_points' in ref['metadata']:
-                          mp = ref['metadata']['match_points']
-                          for p in mp:
-                            print_debug ( 80, "%%%% GOT REF MATCH POINT: " + str(p) )
-                            m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
-                            a.image_dict['ref'].graphics_items.append ( m )
-                        if 'annotations' in ref['metadata']:
-                          ann_list = ref['metadata']['annotations']
+                          # Load match points into the ref image (if found)
+                          if 'metadata' in ref:
+                            if 'match_points' in ref['metadata']:
+                              mp = ref['metadata']['match_points']
+                              for p in mp:
+                                print_debug ( 80, "%%%% GOT REF MATCH POINT: " + str(p) )
+                                m = graphic_marker ( p[0], p[1], 6, 'i', [1, 1, 0.5] )
+                                a.image_dict['ref'].graphics_items.append ( m )
+                            if 'annotations' in ref['metadata']:
+                              ann_list = ref['metadata']['annotations']
+                              for ann_item in ann_list:
+                                print_debug ( 60, "Ref has " + str(ann_item) )
+                                a.image_dict["ref"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
+
+                    if 'aligned' in im_list:
+                      aligned = im_list['aligned']
+                      if 'filename' in aligned:
+                        image_fname = aligned['filename']
+                        if len(image_fname) <= 0:
+                          # Don't try to load empty images
+                          a.image_dict['ref'] = annotated_image(None, role="ref")
+                        else:
+                          # Convert to absolute as needed
+                          if not os.path.isabs(image_fname):
+                            image_fname = os.path.join ( project_path, image_fname )
+                          image_fname = os.path.realpath ( image_fname )
+                          a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
+                      if 'metadata' in aligned:
+                        if 'annotations' in aligned['metadata']:
+                          ann_list = aligned['metadata']['annotations']
                           for ann_item in ann_list:
-                            print_debug ( 60, "Ref has " + str(ann_item) )
-                            a.image_dict["ref"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
+                            print_debug ( 60, "Aligned has " + str(ann_item) )
+                            a.image_dict["aligned"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
-                if 'aligned' in im_list:
-                  aligned = im_list['aligned']
-                  if 'filename' in aligned:
-                    image_fname = aligned['filename']
-                    if len(image_fname) <= 0:
-                      # Don't try to load empty images
-                      a.image_dict['ref'] = annotated_image(None, role="ref")
-                    else:
-                      # Convert to absolute as needed
-                      if not os.path.isabs(image_fname):
-                        image_fname = os.path.join ( project_path, image_fname )
-                      image_fname = os.path.realpath ( image_fname )
-                      a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
-                  if 'metadata' in aligned:
-                    if 'annotations' in aligned['metadata']:
-                      ann_list = aligned['metadata']['annotations']
-                      for ann_item in ann_list:
-                        print_debug ( 60, "Aligned has " + str(ann_item) )
-                        a.image_dict["aligned"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
-
-                alignment_layer_list.append ( a )
-                print ( "Internal bias_x after appending: " + str(a.bias_dx) )
+                    alignment_layer_list.append ( a )
+                    print ( "Internal bias_x after appending: " + str(a.bias_dx) )
 
 def update_newly_loaded_proj():
 
