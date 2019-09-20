@@ -54,6 +54,9 @@ destination_path = ""
 global window
 window = None
 
+global menu_bar
+menu_bar = None
+
 global show_window_affines
 show_window_affines = False
 
@@ -2541,24 +2544,73 @@ def menu_callback ( widget, data=None ):
       label.show()
       scales_entry = gtk.Entry(20)
       scales_entry.set_text ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
-
-      #checkbox = gtk.CheckButton("Useless checkbox")
-      #dialog.vbox.pack_end(checkbox)
       dialog.vbox.pack_end(scales_entry)
-      #dialog.action_area.pack_end(checkbox)
-      #checkbox.show()
       scales_entry.show()
+
       response = dialog.run()
       if response == gtk.RESPONSE_ACCEPT:
-        print ( str(scales_entry.get_text()) )
-        #print ( str ( [ int(t) for t in str(scales_entry.get_text()).split(' ') ] ) )
+        # print ( str(scales_entry.get_text()) )
         gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
         gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
-        print ( str(gui_fields.scales_list) )
+        # print ( str(gui_fields.scales_list) )
+        # Update the menu items in the "Scales" menu
+        # Note that this gets behind the scenes of the "app_window" API
+        # Some of this could be added to the "app_window" API at some point
+        global menu_bar
+        scales_menu = None
+        for m in menu_bar.get_children():
+          label = m.get_children()[0].get_label()
+          # print ( label )
+          if label == '_Scales':
+            scales_menu = m.get_submenu()
+        if scales_menu != None:
+          # Remove all the old items and recreate them from the current list
+          while len(scales_menu) > 0:
+            scales_menu.remove ( scales_menu.get_children()[0] )
+          for s in gui_fields.scales_list:
+            item = gtk.MenuItem(label="Scale "+str(s))
+            item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
+            scales_menu.append ( item )
+            item.show()
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       dialog.destroy()
+
+    elif command.startswith ('SelectScale_'):
+      print ( "Changing to scale " + command[len('SelectScale_'):] )
+
 
     elif command == "GenAllScales":
       print ( "Create images at all scales: " + str ( gui_fields.scales_list ) )
+
+      if len(destination_path) <= 0:
+        check_dest = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
+        response = check_dest.run()
+        check_dest.destroy()
+      else:
+        for scale in gui_fields.scales_list:
+          print ( "Creating images for scale " + str(scale) )
+          if True or (scale != 1):
+            subdir = 'scale_' + str(scale)
+            subdir_path = os.path.join(destination_path,subdir)
+            print ( "Creating a subdirectory named " + subdir_path )
+            try:
+              os.mkdir ( subdir_path )
+            except:
+              # This catches directories that already exist
+              pass
+
+            for al in alignment_layer_list:
+              try:
+                #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
+                original_name = al.base_image_name
+                new_name = os.path.join(subdir_path,os.path.basename(original_name))
+                print ( "Resizing " + original_name + " to " + new_name )
+                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                align_swiftir.swiftir.saveImage ( img, new_name )
+              except:
+                print ( "Error: Failed to copy?" )
+                pass
+
 
     elif command == "GenMissingScales":
       print ( "Create images at missing scales in: " + str ( gui_fields.scales_list ) )
@@ -2826,6 +2878,7 @@ def main():
 
   global gui_fields
   global window
+  global menu_bar
   global panel_list
 
   # Create a top-level GTK window
@@ -2906,6 +2959,12 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
 
+  # Create a "Scales" menu
+  (scales_menu, scales_item) = zpa_original.add_menu ( "_Scales" )
+  if True: # An easy way to indent and still be legal Python
+    this_menu = scales_menu
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Scale 1",   ("SelectScale_1", zpa_original ) )
+
   # Create a "Points" menu
   (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
   if True: # An easy way to indent and still be legal Python
@@ -2972,6 +3031,7 @@ def main():
   menu_bar.append ( file_item )
   menu_bar.append ( image_item )
   menu_bar.append ( points_item )
+  menu_bar.append ( scales_item )
   menu_bar.append ( set_item )
   menu_bar.append ( show_item )
   menu_bar.append ( debug_item )
