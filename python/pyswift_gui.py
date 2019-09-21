@@ -42,6 +42,12 @@ alignment_layer_list = []
 global alignment_layer_index
 alignment_layer_index = -1
 
+global current_scale
+current_scale = 1
+global scales_dict
+scales_dict = {}
+scales_dict[current_scale] = alignment_layer_list
+
 global project_file_name
 project_file_name = ""
 
@@ -1464,7 +1470,7 @@ def write_json_project ( project_file_name ):
     f.write ( '        "output_level": 0\n' )
     f.write ( '      }\n' )
     f.write ( '    },\n' )
-
+    f.write ( '    "current_scale": 1,\n' )
     f.write ( '    "scales": {\n' )
     f.write ( '      "1": {\n' )
     if alignment_layer_list != None:
@@ -2115,13 +2121,14 @@ def load_from_proj_dict ( proj_dict ):
       destination_path = os.path.realpath ( destination_path )
       gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
     if 'scales' in proj_dict['data']:
-      scales_dict = proj_dict['data']['scales']
-      if '1' in scales_dict:
-        if 'alignment_stack' in scales_dict['1']:
-          imagestack = scales_dict['1']['alignment_stack']
+      sd = proj_dict['data']['scales']
+      if '1' in sd:
+        if 'alignment_stack' in sd['1']:
+          imagestack = sd['1']['alignment_stack']
           if len(imagestack) > 0:
             alignment_layer_index = 0
             alignment_layer_list = []
+            sd[current_scale] = alignment_layer_list
             for json_alignment_layer in imagestack:
               if 'images' in json_alignment_layer:
                 im_list = json_alignment_layer['images']
@@ -2302,6 +2309,8 @@ def menu_callback ( widget, data=None ):
     global project_file_name
     global destination_path
     global zpa_original
+    global scales_dict
+    global current_scale
     global alignment_layer_list
     global alignment_layer_index
     global panel_list
@@ -2412,6 +2421,7 @@ def menu_callback ( widget, data=None ):
         file_name_list = file_chooser.get_filenames()
         print_debug ( 20, "Selected Files: " + str(file_name_list) )
         # alignment_layer_list = []
+        # scales_dict[current_scale] = alignment_layer_list
         for f in file_name_list:
           a = alignment_layer ( f )
           a.trans_ww = 256
@@ -2639,11 +2649,36 @@ def menu_callback ( widget, data=None ):
             item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
             scales_menu.append ( item )
             item.show()
+
+        # Add the scales
+        for s in gui_fields.scales_list:
+          if not s in scales_dict:
+            scales_dict[s] = []
+
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       dialog.destroy()
 
     elif command.startswith ('SelectScale_'):
-      print ( "Changing to scale " + command[len('SelectScale_'):] )
+      cur_scale = -1
+      try:
+        cur_scale = int(command[len('SelectScale_'):])
+      except:
+        cur_scale = -1
+
+      if cur_scale in scales_dict:
+        print ( "Changing to scale " + str(cur_scale) )
+        # Save the current alignment_layer_list into the current_scale
+        scales_dict[current_scale] = alignment_layer_list
+        # Change the current scale
+        current_scale = cur_scale
+        # Make the new scale active
+        alignment_layer_list = scales_dict[current_scale]
+        zpa_original.queue_draw()
+        for p in panel_list:
+          p.queue_draw()
+
+      else:
+        print ( "Scale " + str(cur_scale) + " is not in " + str(scales_dict.keys()) )
 
 
     elif command == "GenAllScales":
@@ -2696,6 +2731,7 @@ def menu_callback ( widget, data=None ):
         print_debug ( 20, "Clearing all layers..." )
         alignment_layer_index = 0
         alignment_layer_list = []
+        scales_dict[current_scale] = alignment_layer_list
       zpa_original.queue_draw()
       for p in panel_list:
         p.queue_draw()
