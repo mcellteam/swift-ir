@@ -2521,12 +2521,60 @@ def menu_callback ( widget, data=None ):
 
             f = open ( project_file_name, 'r' )
             text = f.read()
+            f.close()
 
             proj_dict = json.loads ( text )
             print_debug ( 70, str(proj_dict) )
             print_debug ( 5, "Project file version " + str(proj_dict['version']) )
 
             load_from_proj_dict ( proj_dict )
+
+            '''
+            # Test to explore how the JSONEncoder works for indenting JSON output
+            # This works reasonably well, but short arrays and dictionaries are not in-line
+            # Also note that this must be done BEFORE calling load_from_proj_dict
+            # This is because load_from_proj_dict appears to add non-JSON compatible objects
+            '''
+
+            ''' In later tests this gives an error ... so comment out
+
+              Saving JSON to "test_json_output.json"
+              Traceback (most recent call last):
+                File "pyswift_gui.py", line 2547, in menu_callback
+                  proj_encoded_dict = jdencode.encode ( proj_dict )
+                File "/usr/lib/python2.7/json/encoder.py", line 209, in encode
+                  chunks = list(chunks)
+                File "/usr/lib/python2.7/json/encoder.py", line 434, in _iterencode
+                  for chunk in _iterencode_dict(o, _current_indent_level):
+                File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
+                  for chunk in chunks:
+                File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
+                  for chunk in chunks:
+                File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
+                  for chunk in chunks:
+                File "/usr/lib/python2.7/json/encoder.py", line 332, in _iterencode_list
+                  for chunk in chunks:
+                File "/usr/lib/python2.7/json/encoder.py", line 442, in _iterencode
+                  o = _default(o)
+                File "/usr/lib/python2.7/json/encoder.py", line 184, in default
+                  raise TypeError(repr(o) + " is not JSON serializable")
+              TypeError: <__main__.alignment_layer instance at 0x7f9fe9a89a28> is not JSON serializable
+
+            print_debug ( 0, "Saving JSON to \"test_json_output.json\"" )
+            jdencode = json.JSONEncoder ( indent=2, separators=(",", ": ") )
+            if False:
+              proj_encoded_dict = jdencode.iterencode ( proj_dict )
+              f = open ( "test_json_output.json", 'w' )
+              for chunk in proj_encoded_dict:
+                f.write ( chunk )
+              f.close()
+            else:
+              proj_encoded_dict = jdencode.encode ( proj_dict )
+              f = open ( "test_json_output.json", 'w' )
+              f.write ( proj_encoded_dict )
+              f.close()
+            '''
+
 
 
       file_chooser.destroy()
@@ -2716,6 +2764,9 @@ def menu_callback ( widget, data=None ):
 
     elif command == "GenMissingScales":
       print ( "Create images at missing scales in: " + str ( gui_fields.scales_list ) )
+
+    elif command == "ImportAllScales":
+      print ( "Import images at all scales in: " + str ( gui_fields.scales_list ) )
 
     elif command == "DelAllScales":
       print ( "Delete images at all scales in: " + str ( gui_fields.scales_list ) )
@@ -3054,6 +3105,7 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Select Scales",  ("SelScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate Missing",  ("GenMissingScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Delete All Scales",  ("DelAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Delete Missing Scales",  ("DelMissingScales", zpa_original ) )
