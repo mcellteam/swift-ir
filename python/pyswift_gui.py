@@ -2768,6 +2768,34 @@ def menu_callback ( widget, data=None ):
     elif command == "ImportAllScales":
       print ( "Import images at all scales in: " + str ( gui_fields.scales_list ) )
 
+      if len(destination_path) <= 0:
+        check_dest = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
+        response = check_dest.run()
+        check_dest.destroy()
+      else:
+
+        print_debug ( 20, "Clearing all layers..." )
+        alignment_layer_index = 0
+        alignment_layer_list = []
+        scales_dict[current_scale] = alignment_layer_list
+        zpa_original.queue_draw()
+        for p in panel_list:
+          p.queue_draw()
+
+        for scale in gui_fields.scales_list:
+          print ( "Importing images for scale " + str(scale) )
+          if True or (scale != 1):
+            subdir = 'scale_' + str(scale)
+            subdir_path = os.path.join(destination_path,subdir)
+            print ( "Importing from a subdirectory named " + subdir_path )
+            file_list = os.listdir ( subdir_path )
+            file_list = [ f for f in file_list if '.' in f ]  # Select only those that have a "." in the file name
+            file_list = [ f for f in file_list if f[f.rfind('.'):].lower() in ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.gif' ] ] # Be sure that they have a "." in the file name
+
+            for f in file_list:
+              print ( " Found image file " + f )
+
+
     elif command == "DelAllScales":
       print ( "Delete images at all scales in: " + str ( gui_fields.scales_list ) )
 
