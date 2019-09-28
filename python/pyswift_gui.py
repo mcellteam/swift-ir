@@ -1445,6 +1445,10 @@ def write_json_project ( project_file_name ):
   global point_mode
   global point_delete_mode
 
+  global gui_fields
+
+  global scales_dict
+
   if len(project_file_name) > 0:
     # Actually write the file
     gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
@@ -1473,91 +1477,99 @@ def write_json_project ( project_file_name ):
     f.write ( '    },\n' )
     f.write ( '    "current_scale": 1,\n' )
     f.write ( '    "scales": {\n' )
-    f.write ( '      "1": {\n' )
-    if alignment_layer_list != None:
-      if len(alignment_layer_list) > 0:
-        f.write ( '        "alignment_stack": [\n' )
-        for a in alignment_layer_list:
-          f.write ( '          {\n' )
-          f.write ( '            "skip": ' + str(a.skip).lower() + ',\n' )
-          if a != alignment_layer_list[-1]:
-            # Not sure what to leave out for last image ... keep all for now
-            pass
-          f.write ( '            "images": {\n' )
 
-          img_keys = sorted(a.image_dict.keys(), reverse=True)
-          for k in img_keys:
-            im = a.image_dict[k]
-            #print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
-            f.write ( '              "' + k + '": {\n' )  # "base": {
-            # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
-            print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
-            rel_file_name = ""
-            if type(im.file_name) != type(None):
-              rel_file_name = os.path.relpath(im.file_name,start=project_path)
-            f.write ( '                "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
-            f.write ( '                "metadata": {\n' )
-            f.write ( '                  "match_points": ' + str(im.get_marker_points()) + ',\n' )
-            if len(im.graphics_items) <= 0:
-              f.write ( '                  "annotations": []\n' )
-            else:
-              f.write ( '                  "annotations": [\n' )
-              # Filter out the markers which are handled in other code
-              non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
-              # Filter out any temporary annotations
-              non_marker_list = [ gi for gi in non_marker_list if not gi.temp ]
-              # Only output the non-markers being careful not to add a trailing comma
-              for gi_index in range(len(non_marker_list)):
-                gi = non_marker_list[gi_index]
-                f.write ( "                    " + gi.to_json_string().replace('\\','/') )
-                if gi_index < (len(non_marker_list)-1):
-                  f.write ( ',\n' )
-                else:
-                  f.write ( '\n' )
-              f.write ( '                  ]\n' )
-            f.write ( '                }\n' )
-            if k != img_keys[-1]:
-              f.write ( '              },\n' )
-            else:
-              f.write ( '              }\n' )
-          f.write ( '            },\n' )
-          f.write ( '            "align_to_ref_method": {\n' )
-          f.write ( '              "selected_method": "' + str(a.align_method_text) + '",\n' )
-          f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
-          f.write ( '              "method_data": {\n' )
-          f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
-          f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
-          f.write ( '                "addy": ' + str(a.trans_addy) + ',\n' )
-          f.write ( '                "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
-          f.write ( '                "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
-          f.write ( '                "output_level": 0\n' )
-          f.write ( '              },\n' )
-          f.write ( '              "method_results": {\n' )
-          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    last_scale_key = 1
+    if len(scales_dict.keys()) > 0:
+      last_scale_key = sorted(scales_dict.keys())[-1]
 
-          if type(a.results_dict) != type(None):
-            if 'affine' in a.results_dict:
-              f.write ( '                "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
-            if 'cumulative_afm' in a.results_dict:
-              f.write ( '                "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
-            if 'snr' in a.results_dict:
-              f.write ( '                "snr": ' + str(a.results_dict['snr']) + '\n' )
-          #f.write ( '            "snr": {\n' )
-          #f.write ( '              "final": 1.234,\n' )
-          #f.write ( '              "process": []\n' )
-          #f.write ( '            }\n' )
-          f.write ( '              }\n' )
-          f.write ( '            }\n' )
-          if a != alignment_layer_list[-1]:
-            f.write ( '          },\n' )
+    for scale_key in sorted(scales_dict.keys()):
+
+      f.write ( '      "' + str(scale_key) + '": {\n' )
+      if alignment_layer_list != None:
+        if len(alignment_layer_list) > 0:
+          f.write ( '        "alignment_stack": [\n' )
+          for a in alignment_layer_list:
+            f.write ( '          {\n' )
+            f.write ( '            "skip": ' + str(a.skip).lower() + ',\n' )
+            if a != alignment_layer_list[-1]:
+              # Not sure what to leave out for last image ... keep all for now
+              pass
+            f.write ( '            "images": {\n' )
+
+            img_keys = sorted(a.image_dict.keys(), reverse=True)
+            for k in img_keys:
+              im = a.image_dict[k]
+              #print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
+              f.write ( '              "' + k + '": {\n' )  # "base": {
+              # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
+              print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
+              rel_file_name = ""
+              if type(im.file_name) != type(None):
+                rel_file_name = os.path.relpath(im.file_name,start=project_path)
+              f.write ( '                "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
+              f.write ( '                "metadata": {\n' )
+              f.write ( '                  "match_points": ' + str(im.get_marker_points()) + ',\n' )
+              if len(im.graphics_items) <= 0:
+                f.write ( '                  "annotations": []\n' )
+              else:
+                f.write ( '                  "annotations": [\n' )
+                # Filter out the markers which are handled in other code
+                non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
+                # Filter out any temporary annotations
+                non_marker_list = [ gi for gi in non_marker_list if not gi.temp ]
+                # Only output the non-markers being careful not to add a trailing comma
+                for gi_index in range(len(non_marker_list)):
+                  gi = non_marker_list[gi_index]
+                  f.write ( "                    " + gi.to_json_string().replace('\\','/') )
+                  if gi_index < (len(non_marker_list)-1):
+                    f.write ( ',\n' )
+                  else:
+                    f.write ( '\n' )
+                f.write ( '                  ]\n' )
+              f.write ( '                }\n' )
+              if k != img_keys[-1]:
+                f.write ( '              },\n' )
+              else:
+                f.write ( '              }\n' )
+            f.write ( '            },\n' )
+            f.write ( '            "align_to_ref_method": {\n' )
+            f.write ( '              "selected_method": "' + str(a.align_method_text) + '",\n' )
+            f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
+            f.write ( '              "method_data": {\n' )
+            f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
+            f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
+            f.write ( '                "addy": ' + str(a.trans_addy) + ',\n' )
+            f.write ( '                "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
+            f.write ( '                "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
+            f.write ( '                "output_level": 0\n' )
+            f.write ( '              },\n' )
+            f.write ( '              "method_results": {\n' )
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+            if type(a.results_dict) != type(None):
+              if 'affine' in a.results_dict:
+                f.write ( '                "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
+              if 'cumulative_afm' in a.results_dict:
+                f.write ( '                "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
+              if 'snr' in a.results_dict:
+                f.write ( '                "snr": ' + str(a.results_dict['snr']) + '\n' )
+            f.write ( '              }\n' )
+            f.write ( '            }\n' )
+            if a != alignment_layer_list[-1]:
+              f.write ( '          },\n' )
+            else:
+              f.write ( '          }\n' )
+          f.write ( '        ]\n' )
+          if scale_key != last_scale_key:
+            f.write ( '      },\n' )
           else:
-            f.write ( '          }\n' )
-        f.write ( '        ]\n' )
-        f.write ( '      }\n' )
-        f.write ( '    }\n' )
+            f.write ( '      }\n' )
 
-    f.write ( '  }\n' )
-    f.write ( '}\n' )
+    f.write ( '    }\n' ) # "scales": {
+
+    f.write ( '  }\n' ) # "data": {
+
+    f.write ( '}\n' ) # End of entire dictionary
 
 
 def str2D ( m ):
@@ -2658,10 +2670,10 @@ def menu_callback ( widget, data=None ):
           print ( "Unable to parse " + str(max_entry.get_text()) + " into an integer" )
       dialog.destroy()
 
-    elif command == "SelScales":
+    elif command == "DefScales":
 
       label = gtk.Label("Enter list of scales:")
-      dialog = gtk.Dialog("Select Scales",
+      dialog = gtk.Dialog("Define Scales",
                          None,
                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                          (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
@@ -2678,6 +2690,11 @@ def menu_callback ( widget, data=None ):
         # print ( str(scales_entry.get_text()) )
         gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
         gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
+        if len(gui_fields.scales_list) <= 0:
+          current_scale = 1
+        else:
+          if not (current_scale in gui_fields.scales_list):
+            current_scale = gui_fields.scales_list[0]
         # print ( str(gui_fields.scales_list) )
         # Update the menu items in the "Scales" menu
         # Note that this gets behind the scenes of the "app_window" API
@@ -2694,7 +2711,8 @@ def menu_callback ( widget, data=None ):
           while len(scales_menu) > 0:
             scales_menu.remove ( scales_menu.get_children()[0] )
           for s in gui_fields.scales_list:
-            item = gtk.MenuItem(label="Scale "+str(s))
+            item = gtk.CheckMenuItem(label="Scale "+str(s))
+            item.set_active ( s == current_scale )
             item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
             scales_menu.append ( item )
             item.show()
@@ -2725,6 +2743,26 @@ def menu_callback ( widget, data=None ):
         zpa_original.queue_draw()
         for p in panel_list:
           p.queue_draw()
+
+
+        global menu_bar
+        scales_menu = None
+        for m in menu_bar.get_children():
+          label = m.get_children()[0].get_label()
+          # print ( label )
+          if label == '_Scales':
+            scales_menu = m.get_submenu()
+        if scales_menu != None:
+          # Remove all the old items and recreate them from the current list
+          while len(scales_menu) > 0:
+            scales_menu.remove ( scales_menu.get_children()[0] )
+          for s in gui_fields.scales_list:
+            item = gtk.CheckMenuItem(label="Scale "+str(s))
+            item.set_active ( s == current_scale )
+            item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
+            scales_menu.append ( item )
+            item.show()
+
 
       else:
         print ( "Scale " + str(cur_scale) + " is not in " + str(scales_dict.keys()) )
@@ -3147,7 +3185,7 @@ def main():
   (scaling_menu, scaling_item) = zpa_original.add_menu ( "Scalin_g" )
   if True: # An easy way to indent and still be legal Python
     this_menu = scaling_menu
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Select Scales",  ("SelScales", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
@@ -3161,7 +3199,7 @@ def main():
   (scales_menu, scales_item) = zpa_original.add_menu ( "_Scales" )
   if True: # An easy way to indent and still be legal Python
     this_menu = scales_menu
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Scale 1",   ("SelectScale_1", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Scale 1",   ("SelectScale_1", zpa_original ), default=True )
 
   # Create a "Points" menu
   (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
