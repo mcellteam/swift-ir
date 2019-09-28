@@ -1484,14 +1484,16 @@ def write_json_project ( project_file_name ):
 
     for scale_key in sorted(scales_dict.keys()):
 
+      align_layer_list_for_scale = scales_dict[scale_key]
+
       f.write ( '      "' + str(scale_key) + '": {\n' )
-      if alignment_layer_list != None:
-        if len(alignment_layer_list) > 0:
+      if align_layer_list_for_scale != None:
+        if len(align_layer_list_for_scale) > 0:
           f.write ( '        "alignment_stack": [\n' )
-          for a in alignment_layer_list:
+          for a in align_layer_list_for_scale:
             f.write ( '          {\n' )
             f.write ( '            "skip": ' + str(a.skip).lower() + ',\n' )
-            if a != alignment_layer_list[-1]:
+            if a != align_layer_list_for_scale[-1]:
               # Not sure what to leave out for last image ... keep all for now
               pass
             f.write ( '            "images": {\n' )
@@ -1555,7 +1557,7 @@ def write_json_project ( project_file_name ):
                 f.write ( '                "snr": ' + str(a.results_dict['snr']) + '\n' )
             f.write ( '              }\n' )
             f.write ( '            }\n' )
-            if a != alignment_layer_list[-1]:
+            if a != align_layer_list_for_scale[-1]:
               f.write ( '          },\n' )
             else:
               f.write ( '          }\n' )
@@ -2123,6 +2125,9 @@ def load_from_proj_dict ( proj_dict ):
   global point_mode
   global point_delete_mode
 
+  global gui_fields
+  global scales_dict
+
   proj_dict = upgrade_proj_dict ( proj_dict )
 
   if 'data' in proj_dict:
@@ -2134,13 +2139,19 @@ def load_from_proj_dict ( proj_dict ):
       destination_path = os.path.realpath ( destination_path )
       gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
     if 'scales' in proj_dict['data']:
+
+      gui_fields.scales_list = sorted ( [ int(k) for k in proj_dict['data']['scales'].keys() ] )
       sd = proj_dict['data']['scales']
-      if '1' in sd:
-        if 'alignment_stack' in sd['1']:
-          imagestack = sd['1']['alignment_stack']
+
+      scales_dict = {}
+
+      for scale_key in gui_fields.scales_list:
+        if 'alignment_stack' in sd[str(scale_key)]:
+          imagestack = sd[str(scale_key)]['alignment_stack']
           if len(imagestack) > 0:
             alignment_layer_index = 0
             alignment_layer_list = []
+
             sd[current_scale] = alignment_layer_list
             for json_alignment_layer in imagestack:
               if 'images' in json_alignment_layer:
@@ -2258,6 +2269,15 @@ def load_from_proj_dict ( proj_dict ):
                     alignment_layer_list.append ( a )
                     print ( "Internal bias_x after appending: " + str(a.bias_dx) )
 
+            scales_dict[scale_key] = alignment_layer_list
+
+      update_menu_scales_from_gui_fields()
+
+      alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
+
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
 def update_newly_loaded_proj():
 
   global project_path
@@ -2304,6 +2324,47 @@ def update_newly_loaded_proj():
     panel_index += 1
   zpa_original.force_center = True
   zpa_original.queue_draw()
+
+def update_menu_scales_from_gui_fields():
+
+  global zpa_original
+  global scales_dict
+  global current_scale
+  global gui_fields
+
+  if len(gui_fields.scales_list) <= 0:
+    current_scale = 1
+  else:
+    if not (current_scale in gui_fields.scales_list):
+      current_scale = gui_fields.scales_list[0]
+  # print ( str(gui_fields.scales_list) )
+  # Update the menu items in the "Scales" menu
+  # Note that this gets behind the scenes of the "app_window" API
+  # Some of this could be added to the "app_window" API at some point
+  global menu_bar
+  scales_menu = None
+  for m in menu_bar.get_children():
+    label = m.get_children()[0].get_label()
+    # print ( label )
+    if label == '_Scales':
+      scales_menu = m.get_submenu()
+  if scales_menu != None:
+    # Remove all the old items and recreate them from the current list
+    while len(scales_menu) > 0:
+      scales_menu.remove ( scales_menu.get_children()[0] )
+    for s in gui_fields.scales_list:
+      item = gtk.CheckMenuItem(label="Scale "+str(s))
+      item.set_active ( s == current_scale )
+      item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
+      scales_menu.append ( item )
+      item.show()
+
+  # Add the scales to the menu
+  for s in gui_fields.scales_list:
+    if not s in scales_dict:
+      scales_dict[s] = []
+
+
 
 def menu_callback ( widget, data=None ):
   # Menu items will trigger this call
@@ -2690,37 +2751,8 @@ def menu_callback ( widget, data=None ):
         # print ( str(scales_entry.get_text()) )
         gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
         gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
-        if len(gui_fields.scales_list) <= 0:
-          current_scale = 1
-        else:
-          if not (current_scale in gui_fields.scales_list):
-            current_scale = gui_fields.scales_list[0]
-        # print ( str(gui_fields.scales_list) )
-        # Update the menu items in the "Scales" menu
-        # Note that this gets behind the scenes of the "app_window" API
-        # Some of this could be added to the "app_window" API at some point
-        global menu_bar
-        scales_menu = None
-        for m in menu_bar.get_children():
-          label = m.get_children()[0].get_label()
-          # print ( label )
-          if label == '_Scales':
-            scales_menu = m.get_submenu()
-        if scales_menu != None:
-          # Remove all the old items and recreate them from the current list
-          while len(scales_menu) > 0:
-            scales_menu.remove ( scales_menu.get_children()[0] )
-          for s in gui_fields.scales_list:
-            item = gtk.CheckMenuItem(label="Scale "+str(s))
-            item.set_active ( s == current_scale )
-            item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
-            scales_menu.append ( item )
-            item.show()
 
-        # Add the scales to the menu
-        for s in gui_fields.scales_list:
-          if not s in scales_dict:
-            scales_dict[s] = []
+        update_menu_scales_from_gui_fields()
 
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       dialog.destroy()
