@@ -2863,6 +2863,7 @@ def menu_callback ( widget, data=None ):
 
         for scale in gui_fields.scales_list:
           print ( "Importing images for scale " + str(scale) )
+          scales_dict[scale] = []
           if True or (scale != 1):
             subdir = 'scale_' + str(scale)
             subdir_path = os.path.join(destination_path,subdir)
@@ -2873,6 +2874,55 @@ def menu_callback ( widget, data=None ):
 
             for f in file_list:
               print ( " Found image file " + f )
+              a = alignment_layer ( os.path.join ( subdir_path, f ) )
+              scales_dict[scale].append ( a )
+
+            ##### Begin Pasted from OpenProj
+            # Copy the "base" images into the "ref" images for the next layer
+            # This is SWiFT specific, but makes it simpler to use for now
+            layer_index = 0
+            for a in scales_dict[scale]:
+              if layer_index > 0:
+                # Create a reference image from the previous layer if it wasn't read in via the JSON above
+                if not 'ref' in a.image_dict:
+                  a.image_dict['ref'] = annotated_image(clone_from=scales_dict[scale][layer_index-1].image_dict['base'],role="ref")
+              # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
+              #a.image_dict['aligned'] = annotated_image(None,role="aligned")
+              layer_index += 1
+
+        alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
+
+        # Draw the windows
+        for panel in panel_list:
+          panel.role = 'base'
+          panel.force_center = True
+          panel.queue_draw()
+        zpa_original.force_center = True
+        zpa_original.queue_draw()
+
+        refresh_all_images()
+        center_all_images()
+        panel_index = 0
+        for panel in panel_list:
+          if panel_index == 0:
+            panel.role = 'ref'
+            panel.point_add_enabled = True
+          elif panel_index == 1:
+            panel.role = 'base'
+            panel.point_add_enabled = True
+          elif panel_index == 2:
+            panel.role = 'aligned'
+            panel.point_add_enabled = False
+          panel.force_center = True
+          panel.queue_draw()
+          panel_index += 1
+        zpa_original.force_center = True
+        zpa_original.queue_draw()
+        ##### End Pasted from OpenProj
+        ##### End Pasted from ImImport
+
+
+
 
 
     elif command == "DelAllScales":
@@ -3284,11 +3334,14 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
+    '''
+    # These aren't useful yet, so hide them for now ...
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate Missing",  ("GenMissingScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Delete All Scales",  ("DelAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Delete Missing Scales",  ("DelMissingScales", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
+    '''
 
   # Create a "Scales" menu
   (scales_menu, scales_item) = zpa_original.add_menu ( "_Scales" )
