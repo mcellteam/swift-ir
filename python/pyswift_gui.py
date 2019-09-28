@@ -3139,16 +3139,23 @@ def main():
     zpa_original.add_menu_item ( this_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
+
+  # Create a "Scaling" menu
+  (scaling_menu, scaling_item) = zpa_original.add_menu ( "Scalin_g" )
+  if True: # An easy way to indent and still be legal Python
+    this_menu = scaling_menu
     zpa_original.add_menu_item ( this_menu, menu_callback, "Select Scales",  ("SelScales", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate Missing",  ("GenMissingScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Delete All Scales",  ("DelAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Delete Missing Scales",  ("DelMissingScales", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
 
   # Create a "Scales" menu
   (scales_menu, scales_item) = zpa_original.add_menu ( "_Scales" )
@@ -3221,8 +3228,9 @@ def main():
   # Append the menus to the menu bar itself
   menu_bar.append ( file_item )
   menu_bar.append ( image_item )
-  menu_bar.append ( points_item )
+  menu_bar.append ( scaling_item )
   menu_bar.append ( scales_item )
+  menu_bar.append ( points_item )
   menu_bar.append ( set_item )
   menu_bar.append ( show_item )
   menu_bar.append ( debug_item )
