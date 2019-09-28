@@ -2365,6 +2365,55 @@ def update_menu_scales_from_gui_fields():
       scales_dict[s] = []
 
 
+def set_selected_scale_to ( requested_scale ):
+
+  global scales_dict
+  global current_scale
+  global alignment_layer_list
+  global zpa_original
+  global panel_list
+
+  if requested_scale in scales_dict:
+
+    # Store the alignment_layer parameters into the image layer being exited
+    store_fields_into_current_layer()
+
+    print ( "Changing to scale " + str(requested_scale) )
+    # Save the current alignment_layer_list into the current_scale
+    scales_dict[current_scale] = alignment_layer_list
+    # Change the current scale
+    current_scale = requested_scale
+    # Make the new scale active
+    alignment_layer_list = scales_dict[current_scale]
+    zpa_original.queue_draw()
+    for p in panel_list:
+      p.queue_draw()
+
+    global menu_bar
+    scales_menu = None
+    for m in menu_bar.get_children():
+      label = m.get_children()[0].get_label()
+      # print ( label )
+      if label == '_Scales':
+        scales_menu = m.get_submenu()
+    if scales_menu != None:
+      # Remove all the old items and recreate them from the current list
+      while len(scales_menu) > 0:
+        scales_menu.remove ( scales_menu.get_children()[0] )
+      for s in gui_fields.scales_list:
+        item = gtk.CheckMenuItem(label="Scale "+str(s))
+        item.set_active ( s == current_scale )
+        item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
+        scales_menu.append ( item )
+        item.show()
+
+    # Display the alignment_layer parameters from the new section being viewed
+    store_current_layer_into_fields()
+
+  else:
+    print ( "Scale " + str(cur_scale) + " is not in " + str(scales_dict.keys()) )
+
+
 
 def menu_callback ( widget, data=None ):
   # Menu items will trigger this call
@@ -2763,41 +2812,7 @@ def menu_callback ( widget, data=None ):
         cur_scale = int(command[len('SelectScale_'):])
       except:
         cur_scale = -1
-
-      if cur_scale in scales_dict:
-        print ( "Changing to scale " + str(cur_scale) )
-        # Save the current alignment_layer_list into the current_scale
-        scales_dict[current_scale] = alignment_layer_list
-        # Change the current scale
-        current_scale = cur_scale
-        # Make the new scale active
-        alignment_layer_list = scales_dict[current_scale]
-        zpa_original.queue_draw()
-        for p in panel_list:
-          p.queue_draw()
-
-
-        global menu_bar
-        scales_menu = None
-        for m in menu_bar.get_children():
-          label = m.get_children()[0].get_label()
-          # print ( label )
-          if label == '_Scales':
-            scales_menu = m.get_submenu()
-        if scales_menu != None:
-          # Remove all the old items and recreate them from the current list
-          while len(scales_menu) > 0:
-            scales_menu.remove ( scales_menu.get_children()[0] )
-          for s in gui_fields.scales_list:
-            item = gtk.CheckMenuItem(label="Scale "+str(s))
-            item.set_active ( s == current_scale )
-            item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
-            scales_menu.append ( item )
-            item.show()
-
-
-      else:
-        print ( "Scale " + str(cur_scale) + " is not in " + str(scales_dict.keys()) )
+      set_selected_scale_to ( cur_scale )
 
 
     elif command == "GenAllScales":
@@ -2868,7 +2883,35 @@ def menu_callback ( widget, data=None ):
 
 
     elif command == "DelAllScales":
-      print ( "Delete images at all scales in: " + str ( gui_fields.scales_list ) )
+
+      label = gtk.Label("Delete images for all scales:")
+      dialog = gtk.Dialog("Delete Scaled Images",
+                         None,
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+      dialog.vbox.pack_start(label)
+      label.show()
+      scales_to_delete = [ "scale_" + str(n) for n in gui_fields.scales_list if n != 1 ]
+      delete_string = gtk.Label ( "Delete: " + str(' '.join ( scales_to_delete ) ) )
+      dialog.vbox.pack_end(delete_string)
+      delete_string.show()
+
+      response = dialog.run()
+      if response == gtk.RESPONSE_ACCEPT:
+        # print ( str(scales_entry.get_text()) )
+        for f in scales_to_delete:
+          print ( "Deleting all files in " + f )
+
+        gui_fields.scales_list = [ 1 ]
+
+        update_menu_scales_from_gui_fields()
+
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      dialog.destroy()
+
+
+
 
     elif command == "DelMissingScales":
       print ( "Prune missing scales from: " + str ( gui_fields.scales_list ) )
