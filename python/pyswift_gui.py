@@ -673,14 +673,14 @@ def store_fields_into_current_layer():
       a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
       print ( "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
-  # Store the bias values in all layers to give them a "global" feel
-  # If the final version needs individual biases, just comment this code:
-  if alignment_layer_list != None:
-    if len(alignment_layer_list) > 0:
-      for t in alignment_layer_list:
-        t.bias_dx = a.bias_dx
-        t.bias_dy = a.bias_dy
-  print ( "Storing 3, a.bias_dx = " + str(a.bias_dx) )
+      # Store the bias values in all layers to give them a "global" feel
+      # If the final version needs individual biases, just comment this code:
+      if alignment_layer_list != None:
+        if len(alignment_layer_list) > 0:
+          for t in alignment_layer_list:
+            t.bias_dx = a.bias_dx
+            t.bias_dy = a.bias_dy
+      print ( "Storing 3, a.bias_dx = " + str(a.bias_dx) )
 
 
 def store_current_layer_into_fields():
@@ -2547,33 +2547,12 @@ def menu_callback ( widget, data=None ):
       response = file_chooser.run()
 
       if response == gtk.RESPONSE_OK:
-        i = 1
         file_name_list = file_chooser.get_filenames()
         print_debug ( 20, "Selected Files: " + str(file_name_list) )
         # alignment_layer_list = []
         # scales_dict[current_scale] = alignment_layer_list
         for f in file_name_list:
           a = alignment_layer ( f )
-          a.trans_ww = 256
-          a.trans_addx = 256 + i
-          a.trans_addy = 256 + i
-
-          a.trans_ww = 10 + i
-          a.trans_addx = 20 + i
-          a.trans_addy = 30 + i
-
-          a.skip = False
-
-          a.affine_enabled = True
-          a.affine_ww = 40 + i
-          a.affine_addx = 50 + i
-          a.affine_addy = 60 + i
-
-          a.bias_enabled = True
-          a.bias_dx = 70 + i
-          a.bias_dy = 80 + i
-
-          i += 1
           alignment_layer_list.append ( a )
 
       file_chooser.destroy()
