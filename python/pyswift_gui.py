@@ -2191,7 +2191,7 @@ def load_from_proj_dict ( proj_dict ):
                         ann_list = base['metadata']['annotations']
                         for ann_item in ann_list:
                           print_debug ( 60, "Base has " + str(ann_item) )
-                          a.image_dict["base"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
+                          a.image_dict['base'].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                     # Only look for a ref or aligned if there has been a base
                     if 'ref' in im_list:
@@ -2206,7 +2206,7 @@ def load_from_proj_dict ( proj_dict ):
                           if not os.path.isabs(image_fname):
                             image_fname = os.path.join ( project_path, image_fname )
                           image_fname = os.path.realpath ( image_fname )
-                          a.image_dict["ref"] = annotated_image(image_fname,role="ref")
+                          a.image_dict['ref'] = annotated_image(image_fname,role="ref")
 
                           # Load match points into the ref image (if found)
                           if 'metadata' in ref:
@@ -2220,7 +2220,7 @@ def load_from_proj_dict ( proj_dict ):
                               ann_list = ref['metadata']['annotations']
                               for ann_item in ann_list:
                                 print_debug ( 60, "Ref has " + str(ann_item) )
-                                a.image_dict["ref"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
+                                a.image_dict['ref'].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                     if 'aligned' in im_list:
                       aligned = im_list['aligned']
@@ -2234,13 +2234,13 @@ def load_from_proj_dict ( proj_dict ):
                           if not os.path.isabs(image_fname):
                             image_fname = os.path.join ( project_path, image_fname )
                           image_fname = os.path.realpath ( image_fname )
-                          a.image_dict["aligned"] = annotated_image(image_fname,role="aligned")
+                          a.image_dict['aligned'] = annotated_image(image_fname,role="aligned")
                       if 'metadata' in aligned:
                         if 'annotations' in aligned['metadata']:
                           ann_list = aligned['metadata']['annotations']
                           for ann_item in ann_list:
                             print_debug ( 60, "Aligned has " + str(ann_item) )
-                            a.image_dict["aligned"].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
+                            a.image_dict['aligned'].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                     alignment_layer_list.append ( a )
                     print ( "Internal bias_x after appending: " + str(a.bias_dx) )
@@ -2269,9 +2269,9 @@ def update_newly_loaded_proj():
     if layer_index > 0:
       # Create a reference image from the previous layer if it wasn't read in via the JSON above
       if not 'ref' in a.image_dict:
-        a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
+        a.image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict['base'],role="ref")
     # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
-    #a.image_dict["aligned"] = annotated_image(None,role="aligned")
+    #a.image_dict['aligned'] = annotated_image(None,role="aligned")
     layer_index += 1
   refresh_all_images()
   center_all_images()
@@ -2465,9 +2465,9 @@ def menu_callback ( widget, data=None ):
         if layer_index > 0:
           # Create a reference image from the previous layer if it wasn't read in via the JSON above
           if not 'ref' in a.image_dict:
-            a.image_dict["ref"] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict["base"],role="ref")
+            a.image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict['base'],role="ref")
         # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
-        #a.image_dict["aligned"] = annotated_image(None,role="aligned")
+        #a.image_dict['aligned'] = annotated_image(None,role="aligned")
         layer_index += 1
       refresh_all_images()
       center_all_images()
@@ -3383,8 +3383,8 @@ def main():
   cell = gtk.CellRendererText()
   gui_fields.align_method_select.pack_start(cell)
   gui_fields.align_method_select.add_attribute(cell, 'text', 0)
-  store.append ( ["Auto Swim Align"] )
-  store.append ( ["Match Point Align"] )
+  store.append ( ['Auto Swim Align'] )
+  store.append ( ['Match Point Align'] )
   gui_fields.align_method_select.set_model(store)
   gui_fields.align_method_select.set_active(0)
   label_entry.pack_start ( gui_fields.align_method_select, True, True, 0 )
@@ -3521,8 +3521,8 @@ def main():
   gui_fields.code_base_select.pack_start(cell)
   gui_fields.code_base_select.add_attribute(cell, 'text', 0)
   # Hard-coded alignment runners
-  store.append ( ["Internal Swim Align"] )
-  store.append ( ["External Swim Align"] )
+  store.append ( ['Internal Swim Align'] )
+  store.append ( ['External Swim Align'] )
   # Dynamic alignment runners
   runner_files = [ f for f in os.listdir(".") if f.startswith('pyswift_run_') and f.endswith('.py') ]
   runner_files = [ f for f in runner_files if f != "pyswift_run_external.py" ]
