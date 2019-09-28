@@ -653,27 +653,28 @@ class alignment_layer:
 # These two global functions are handy for callbacks
 
 def store_fields_into_current_layer():
-  a = alignment_layer_list[alignment_layer_index]
-  a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
-  a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
-  a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
-  a.skip = gui_fields.skip_check_box.get_active()
-  a.align_method      = gui_fields.align_method_select.get_active()
-  a.align_method_text = gui_fields.align_method_select.get_active_text()
-  a.affine_enabled = gui_fields.affine_check_box.get_active()
-  a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
+  if (alignment_layer_list != None) and (alignment_layer_index >= 0):
+    if alignment_layer_index < len(alignment_layer_list):
+      a = alignment_layer_list[alignment_layer_index]
+      a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
+      a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
+      a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
+      a.skip = gui_fields.skip_check_box.get_active()
+      a.align_method      = gui_fields.align_method_select.get_active()
+      a.align_method_text = gui_fields.align_method_select.get_active_text()
+      a.affine_enabled = gui_fields.affine_check_box.get_active()
+      a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
 
-  a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
-  a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
-  a.bias_enabled = gui_fields.bias_check_box.get_active()
-  print ( "Storing 1, a.bias_dx = " + str(a.bias_dx) )
-  a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
-  a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
-  print ( "Storing 2, a.bias_dx = " + str(a.bias_dx) )
+      a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
+      a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
+      a.bias_enabled = gui_fields.bias_check_box.get_active()
+      print ( "Storing 1, a.bias_dx = " + str(a.bias_dx) )
+      a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
+      a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
+      print ( "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
   # Store the bias values in all layers to give them a "global" feel
   # If the final version needs individual biases, just comment this code:
-  global alignment_layer_list
   if alignment_layer_list != None:
     if len(alignment_layer_list) > 0:
       for t in alignment_layer_list:
@@ -683,25 +684,27 @@ def store_fields_into_current_layer():
 
 
 def store_current_layer_into_fields():
-  a = alignment_layer_list[alignment_layer_index]
-  # print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name = " + a.base_image_name )
-  print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
-  print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
-  gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
-  gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
-  gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
-  gui_fields.skip_check_box.set_active ( a.skip )
-  gui_fields.align_method_select.set_active ( a.align_method )
-  # gui_fields.align_method_select.set_active_text ( a.align_method_text )
-  gui_fields.affine_check_box.set_active ( a.affine_enabled )
-  gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
+  if (alignment_layer_list != None) and (alignment_layer_index >= 0):
+    if alignment_layer_index < len(alignment_layer_list):
+      a = alignment_layer_list[alignment_layer_index]
+      # print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name = " + a.base_image_name )
+      print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
+      print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
+      gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
+      gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
+      gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
+      gui_fields.skip_check_box.set_active ( a.skip )
+      gui_fields.align_method_select.set_active ( a.align_method )
+      # gui_fields.align_method_select.set_active_text ( a.align_method_text )
+      gui_fields.affine_check_box.set_active ( a.affine_enabled )
+      gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
 
-  gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
-  gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
-  gui_fields.bias_check_box.set_active(a.bias_enabled)
-  print ( "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
-  gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
-  gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
+      gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
+      gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
+      gui_fields.bias_check_box.set_active(a.bias_enabled)
+      print ( "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
+      gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
+      gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
 
 
 class zoom_panel ( app_window.zoom_pan_area ):
