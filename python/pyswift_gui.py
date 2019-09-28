@@ -1601,6 +1601,10 @@ def run_alignment_callback ( align_all ):
     dest_err_dialog.destroy()
     return
 
+
+  scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "aligned")
+  print ( "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
+
   #########################################################
   #########################################################
   ## This panel setup might be better in the runner?
@@ -1703,7 +1707,7 @@ def run_alignment_callback ( align_all ):
                            num_forward,
                            snr_skip,
                            snr_halt,
-                           destination_path,
+                           scale_dest_path,
                            panel_list,
                            project_file_name )
 
@@ -1843,12 +1847,12 @@ def run_alignment_callback ( align_all ):
       annotated_img = None
       if i == j:
         # This case (i==j) means make a copy of the original in the destination location
-        print_debug ( 50, "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
-        shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
+        print_debug ( 50, "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
+        shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
         # Create a new identity transform for this layer even though it's not otherwise needed
         alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                               destination_path, layer_dict=layer_dict,
+                                                                               scale_dest_path, layer_dict=layer_dict,
                                                                                x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
                                                                                cumulative_afm=None )
 
@@ -1881,15 +1885,15 @@ def run_alignment_callback ( align_all ):
         prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
 
         print_debug ( 40, "Aligning: i=" + str(i) + " to j=" + str(j) )
-        print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
+        print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + scale_dest_path + " )" )
 
         alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                               destination_path, layer_dict=layer_dict,
+                                                                               scale_dest_path, layer_dict=layer_dict,
                                                                                x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
                                                                                cumulative_afm=prev_afm )
         alignment_layer_list[j].align_proc.align()
         recipe = alignment_layer_list[j].align_proc.recipe
-        new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
+        new_name = os.path.join ( scale_dest_path, os.path.basename(alignment_layer_list[j].base_image_name) )
 
         # Put the proper images into the proper window slots
 
@@ -2411,7 +2415,7 @@ def set_selected_scale_to ( requested_scale ):
     store_current_layer_into_fields()
 
   else:
-    print ( "Scale " + str(cur_scale) + " is not in " + str(scales_dict.keys()) )
+    print ( "Scale " + str(requested_scale) + " is not in " + str(scales_dict.keys()) )
 
 
 
@@ -2834,6 +2838,13 @@ def menu_callback ( widget, data=None ):
             except:
               # This catches directories that already exist
               pass
+            aligndir_path = os.path.join(subdir_path,'aligned')
+            print ( "Creating a subsubdirectory named " + aligndir_path )
+            try:
+              os.mkdir ( aligndir_path )
+            except:
+              # This catches directories that already exist
+              pass
 
             for al in alignment_layer_list:
               try:
@@ -2922,8 +2933,10 @@ def menu_callback ( widget, data=None ):
       response = clear_all.run()
       if response == gtk.RESPONSE_OK:
         print_debug ( 20, "Clearing all layers..." )
+        scales_dict = {}
         alignment_layer_index = 0
         alignment_layer_list = []
+        current_scale = 1
         scales_dict[current_scale] = alignment_layer_list
       zpa_original.queue_draw()
       for p in panel_list:
@@ -2941,6 +2954,33 @@ def menu_callback ( widget, data=None ):
         response = clear_out.run()
         if response == gtk.RESPONSE_OK:
           print_debug ( 20, "Clearing all output images..." )
+
+          for scale in scales_dict.keys():
+            print ( "Deleting images for scale " + str(scale) )
+            if True or (scale != 1):
+              subdir = 'scale_' + str(scale)
+              subdir_path = os.path.join(destination_path,subdir)
+              print ( "Deleting from a subdirectory named " + subdir_path )
+
+              for al in scales_dict[scale]:
+                try:
+                  file_to_delete = os.path.join(subdir_path,os.path.basename(al.base_image_name))
+                  print_debug ( 30, "Deleting " + file_to_delete )
+                  os.remove ( file_to_delete )
+                except:
+                  # This will happen if the image had been deleted or hadn't been created (such as skipped).
+                  pass
+
+              try:
+                print_debug ( 30, "Deleting " + subdir_path )
+                os.remove ( subdir_path )
+              except:
+                # This will happen if the image had been deleted or hadn't been created (such as skipped).
+                pass
+
+              for al in scales_dict[scale]:
+                al.image_dict['aligned'] = annotated_image(None, role="aligned")
+
           for al in alignment_layer_list:
             try:
               file_to_delete = os.path.join(destination_path,os.path.basename(al.base_image_name))
@@ -2951,8 +2991,6 @@ def menu_callback ( widget, data=None ):
               pass
           print_debug ( 20, "Restoring original images..." )
           for al in alignment_layer_list:
-            #al.image_dict = {}
-            #al.image_dict['base'] = al.base_annotated_image
             al.image_dict['aligned'] = annotated_image(None, role="aligned")
           zpa_original.queue_draw()
           for p in panel_list:
