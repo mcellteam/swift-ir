@@ -564,7 +564,8 @@ class annotated_image:
         print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
         # exit(1)
         self.image = None
-    #self.add_file_name_graphic()
+    if type(clone_from) == type(None):
+      self.add_file_name_graphic()
 
   def to_string ( self ):
     return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
