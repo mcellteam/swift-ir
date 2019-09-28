@@ -2698,7 +2698,7 @@ def menu_callback ( widget, data=None ):
             scales_menu.append ( item )
             item.show()
 
-        # Add the scales
+        # Add the scales to the menu
         for s in gui_fields.scales_list:
           if not s in scales_dict:
             scales_dict[s] = []
@@ -2849,6 +2849,9 @@ def menu_callback ( widget, data=None ):
 
       zpa_original.max_zoom_count = 10
       zpa_original.min_zoom_count = -15
+      for p in panel_list:
+        p.max_zoom_count = zpa_original.max_zoom_count
+        p.min_zoom_count = zpa_original.min_zoom_count
 
     elif command == "UnLimZoom":
 
@@ -2859,6 +2862,10 @@ def menu_callback ( widget, data=None ):
       else:
         zpa_original.max_zoom_count = 1000
         zpa_original.min_zoom_count = -1500
+
+      for p in panel_list:
+        p.max_zoom_count = zpa_original.max_zoom_count
+        p.min_zoom_count = zpa_original.min_zoom_count
 
     elif command == "Refresh":
 
