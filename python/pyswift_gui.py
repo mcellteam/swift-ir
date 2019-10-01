@@ -2871,7 +2871,9 @@ def menu_callback ( widget, data=None ):
             file_list = os.listdir ( subdir_path )
             file_list = [ f for f in file_list if '.' in f ]  # Select only those that have a "." in the file name
             file_list = [ f for f in file_list if f[f.rfind('.'):].lower() in ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.gif' ] ] # Be sure that they have a "." in the file name
-
+            print ( "Presorted File List:\n" + str(file_list) )
+            file_list = sorted(file_list)
+            print ( "Sorted File List:\n" + str(file_list) )
             for f in file_list:
               print ( " Found image file " + f )
               a = alignment_layer ( os.path.join ( subdir_path, f ) )
