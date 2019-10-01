@@ -1605,7 +1605,7 @@ def run_alignment_callback ( align_all ):
     return
 
 
-  scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "aligned")
+  scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "img_aligned")
   print ( "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
 
   #########################################################
@@ -1741,7 +1741,7 @@ def run_alignment_callback ( align_all ):
         last_ref = i
       else:
         # This should just remove those image_dict items that shouldn't show when skipped
-        alignment_layer_list[i].image_dict['aligned'] = annotated_image(None, role="aligned")
+        alignment_layer_list[i].image_dict['aligned'] = annotated_image(None, role='aligned')
 
     print_debug ( 50, "Full list after removing skips:" )
     for apair in align_pairs:
@@ -1861,7 +1861,7 @@ def run_alignment_callback ( align_all ):
 
         alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
         #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
-        alignment_layer_list[j].image_dict['aligned'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="aligned")
+        alignment_layer_list[j].image_dict['aligned'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role='aligned')
 
         snr_value = sys.float_info.max
 
@@ -1901,7 +1901,7 @@ def run_alignment_callback ( align_all ):
         # Put the proper images into the proper window slots
 
         print_debug ( 60, "Reading in new_name from " + str(new_name) )
-        annotated_img = annotated_image(new_name, role="aligned")
+        annotated_img = annotated_image(new_name, role='aligned')
 
         annotated_img.clear_non_marker_graphics()
         annotated_img.add_file_name_graphic()
@@ -2265,7 +2265,7 @@ def load_from_proj_dict ( proj_dict ):
                           if not os.path.isabs(image_fname):
                             image_fname = os.path.join ( project_path, image_fname )
                           image_fname = os.path.realpath ( image_fname )
-                          a.image_dict['aligned'] = annotated_image(image_fname,role="aligned")
+                          a.image_dict['aligned'] = annotated_image(image_fname,role='aligned')
                       if 'metadata' in aligned:
                         if 'annotations' in aligned['metadata']:
                           ann_list = aligned['metadata']['annotations']
@@ -2311,7 +2311,7 @@ def update_newly_loaded_proj():
       if not 'ref' in a.image_dict:
         a.image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict['base'],role="ref")
     # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
-    #a.image_dict['aligned'] = annotated_image(None,role="aligned")
+    #a.image_dict['aligned'] = annotated_image(None,role='aligned')
     layer_index += 1
   refresh_all_images()
   center_all_images()
@@ -2576,7 +2576,7 @@ def menu_callback ( widget, data=None ):
           if not 'ref' in a.image_dict:
             a.image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict['base'],role="ref")
         # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
-        #a.image_dict['aligned'] = annotated_image(None,role="aligned")
+        #a.image_dict['aligned'] = annotated_image(None,role='aligned')
         layer_index += 1
       refresh_all_images()
       center_all_images()
@@ -2820,10 +2820,18 @@ def menu_callback ( widget, data=None ):
             except:
               # This catches directories that already exist
               pass
-            aligndir_path = os.path.join(subdir_path,'aligned')
-            print ( "Creating a subsubdirectory named " + aligndir_path )
+            src_path = os.path.join(subdir_path,'img_src')
+            print ( "Creating source subsubdirectory named " + src_path )
             try:
-              os.mkdir ( aligndir_path )
+              os.mkdir ( src_path )
+            except:
+              # This catches directories that already exist
+              pass
+
+            aligned_path = os.path.join(subdir_path,'img_aligned')
+            print ( "Creating aligned subsubdirectory named " + aligned_path )
+            try:
+              os.mkdir ( aligned_path )
             except:
               # This catches directories that already exist
               pass
@@ -2832,7 +2840,7 @@ def menu_callback ( widget, data=None ):
               try:
                 #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
                 original_name = al.base_image_name
-                new_name = os.path.join(subdir_path,os.path.basename(original_name))
+                new_name = os.path.join(src_path,os.path.basename(original_name))
                 print ( "Resizing " + original_name + " to " + new_name )
                 img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
                 align_swiftir.swiftir.saveImage ( img, new_name )
@@ -2866,7 +2874,7 @@ def menu_callback ( widget, data=None ):
           scales_dict[scale] = []
           if True or (scale != 1):
             subdir = 'scale_' + str(scale)
-            subdir_path = os.path.join(destination_path,subdir)
+            subdir_path = os.path.join(destination_path,subdir,'img_src')
             print ( "Importing from a subdirectory named " + subdir_path )
             file_list = os.listdir ( subdir_path )
             file_list = [ f for f in file_list if '.' in f ]  # Select only those that have a "." in the file name
@@ -2889,7 +2897,7 @@ def menu_callback ( widget, data=None ):
                 if not 'ref' in a.image_dict:
                   a.image_dict['ref'] = annotated_image(clone_from=scales_dict[scale][layer_index-1].image_dict['base'],role="ref")
               # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
-              #a.image_dict['aligned'] = annotated_image(None,role="aligned")
+              #a.image_dict['aligned'] = annotated_image(None,role='aligned')
               layer_index += 1
 
         alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
@@ -2993,7 +3001,7 @@ def menu_callback ( widget, data=None ):
             print ( "Deleting images for scale " + str(scale) )
             if True or (scale != 1):
               subdir = 'scale_' + str(scale)
-              subdir_path = os.path.join(destination_path,subdir)
+              subdir_path = os.path.join(destination_path,subdir,'img_aligned')
               print ( "Deleting from a subdirectory named " + subdir_path )
 
               for al in scales_dict[scale]:
@@ -3013,7 +3021,7 @@ def menu_callback ( widget, data=None ):
                 pass
 
               for al in scales_dict[scale]:
-                al.image_dict['aligned'] = annotated_image(None, role="aligned")
+                al.image_dict['aligned'] = annotated_image(None, role='aligned')
 
           for al in alignment_layer_list:
             try:
@@ -3025,7 +3033,7 @@ def menu_callback ( widget, data=None ):
               pass
           print_debug ( 20, "Restoring original images..." )
           for al in alignment_layer_list:
-            al.image_dict['aligned'] = annotated_image(None, role="aligned")
+            al.image_dict['aligned'] = annotated_image(None, role='aligned')
           zpa_original.queue_draw()
           for p in panel_list:
             p.queue_draw()
