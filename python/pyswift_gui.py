@@ -1851,7 +1851,7 @@ def run_alignment_callback ( align_all ):
       if i == j:
         # This case (i==j) means make a copy of the original in the destination location
         print_debug ( 50, "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
-        shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
+        shutil.copyfile ( alignment_layer_list[i].base_image_name, os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
         # Create a new identity transform for this layer even though it's not otherwise needed
         alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
@@ -2811,42 +2811,49 @@ def menu_callback ( widget, data=None ):
       else:
         for scale in gui_fields.scales_list:
           print ( "Creating images for scale " + str(scale) )
-          if True or (scale != 1):
-            subdir = 'scale_' + str(scale)
-            subdir_path = os.path.join(destination_path,subdir)
-            print ( "Creating a subdirectory named " + subdir_path )
-            try:
-              os.mkdir ( subdir_path )
-            except:
-              # This catches directories that already exist
-              pass
-            src_path = os.path.join(subdir_path,'img_src')
-            print ( "Creating source subsubdirectory named " + src_path )
-            try:
-              os.mkdir ( src_path )
-            except:
-              # This catches directories that already exist
-              pass
 
-            aligned_path = os.path.join(subdir_path,'img_aligned')
-            print ( "Creating aligned subsubdirectory named " + aligned_path )
-            try:
-              os.mkdir ( aligned_path )
-            except:
-              # This catches directories that already exist
-              pass
+          subdir = 'scale_' + str(scale)
+          subdir_path = os.path.join(destination_path,subdir)
+          print ( "Creating a subdirectory named " + subdir_path )
+          try:
+            os.mkdir ( subdir_path )
+          except:
+            # This catches directories that already exist
+            pass
+          src_path = os.path.join(subdir_path,'img_src')
+          print ( "Creating source subsubdirectory named " + src_path )
+          try:
+            os.mkdir ( src_path )
+          except:
+            # This catches directories that already exist
+            pass
+          aligned_path = os.path.join(subdir_path,'img_aligned')
+          print ( "Creating aligned subsubdirectory named " + aligned_path )
+          try:
+            os.mkdir ( aligned_path )
+          except:
+            # This catches directories that already exist
+            pass
 
-            for al in alignment_layer_list:
-              try:
-                #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
-                original_name = al.base_image_name
-                new_name = os.path.join(src_path,os.path.basename(original_name))
+          for al in alignment_layer_list:
+            try:
+              #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
+              original_name = al.base_image_name
+              new_name = os.path.join(src_path,os.path.basename(original_name))
+              if scale == 1:
+                if os.name == 'posix':
+                  print ( "Posix: Linking " + original_name + " to " + new_name )
+                  os.symlink ( original_name, new_name )
+                else:
+                  print ( "Non-Posix: Copying " + original_name + " to " + new_name )
+                  shutil.copyfile ( original_name, new_name )
+              else:
                 print ( "Resizing " + original_name + " to " + new_name )
                 img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
                 align_swiftir.swiftir.saveImage ( img, new_name )
-              except:
-                print ( "Error: Failed to copy?" )
-                pass
+            except:
+              print ( "Error: Failed to copy?" )
+              pass
 
 
     elif command == "GenMissingScales":
