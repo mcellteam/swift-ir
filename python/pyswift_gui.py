@@ -1366,6 +1366,7 @@ def background_callback ( zpa ):
 
 
 def add_panel_callback ( zpa, role="", point_add_enabled=False ):
+  print ( "Adding a panel with role " + str(role) )
   print_debug ( 50, "Add a Panel" )
   global image_hbox
   global panel_list
@@ -2265,6 +2266,7 @@ def load_from_proj_dict ( proj_dict ):
       sd = proj_dict['data']['scales']
 
       scales_dict = {}
+      panel_names_list = []
 
       for scale_key in gui_fields.scales_list:
         if 'alignment_stack' in sd[str(scale_key)]:
@@ -2277,6 +2279,11 @@ def load_from_proj_dict ( proj_dict ):
             for json_alignment_layer in imagestack:
               if 'images' in json_alignment_layer:
                 im_list = json_alignment_layer['images']
+                # Add any needed panels for this scale and layer
+                for k in im_list.keys():
+                  if not (k in panel_names_list):
+                    panel_names_list.append ( k )
+
                 if 'base' in im_list:
                   base = im_list['base']
                   if 'filename' in base:
@@ -2391,6 +2398,59 @@ def load_from_proj_dict ( proj_dict ):
                     print ( "Internal bias_x after appending: " + str(a.bias_dx) )
 
             scales_dict[scale_key] = alignment_layer_list
+
+      print ( "Final panel_names_list: " + str(panel_names_list) )
+
+
+      # Set up the preferred panels as needed
+      ref_panel = None
+      base_panel = None
+      aligned_panel = None
+
+      # Start by assigning any panels with roles already set
+      for panel in panel_list:
+        if panel.role == 'ref':
+          ref_panel = panel
+        if panel.role == 'base':
+          base_panel = panel
+        if panel.role == 'aligned':
+          aligned_panel = panel
+
+      # Assign any empty panels if needed
+      for panel in panel_list:
+        if panel.role == '':
+          if ref_panel == None:
+            panel.role = 'ref'
+            ref_panel = panel
+          elif base_panel == None:
+            panel.role = 'base'
+            base_panel = panel
+          elif aligned_panel == None:
+            panel.role = 'aligned'
+            aligned_panel = panel
+
+      # Finally add panels as needed
+      if ref_panel == None:
+        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
+      if base_panel == None:
+        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
+      if aligned_panel == None:
+        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
+
+      # The previous logic hasn't worked, so force all panels to be as desired for now
+      forced_panel_roles = ['ref', 'base', 'aligned']
+      for i in range ( min ( len(panel_list), len(forced_panel_roles) ) ):
+        panel_list[i].role = forced_panel_roles[i]
+
+      if ref_panel == None:
+        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
+      if base_panel == None:
+        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
+      if aligned_panel == None:
+        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
+
+      # TODO Add other panels as needed
+
 
       update_menu_scales_from_gui_fields()
 
@@ -2678,7 +2738,7 @@ def menu_callback ( widget, data=None ):
 
       file_chooser.destroy()
       print_debug ( 90, "Done with dialog" )
-      # Draw the windows
+      # Draw the panels ("windows")
       for panel in panel_list:
         panel.role = 'base'
         panel.force_center = True
@@ -3030,7 +3090,7 @@ def menu_callback ( widget, data=None ):
 
         alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
 
-        # Draw the windows
+        # Draw the panels ("windows")
         for panel in panel_list:
           panel.role = 'base'
           panel.force_center = True
@@ -3449,23 +3509,53 @@ def center_all_images():
 def refresh_all_images():
   # Determine how many panels are needed and create them as needed
   global panel_list
+  global scales_dict
   max_extra_panels = 0
-  for a in alignment_layer_list:
-    if len(a.image_dict.keys()) > 0:
-      max_extra_panels = max(max_extra_panels, len(a.image_dict.keys()))
-  if max_extra_panels < 1:
-    # Must always keep one window
-    max_extra_panels = 1
-  print_debug ( 50, "Max extra = " + str(max_extra_panels) )
-  num_cur_extra_panels = len(panel_list)
-  if num_cur_extra_panels > max_extra_panels:
-    # Remove the difference:
-    for i in range(num_cur_extra_panels - max_extra_panels):
-      rem_panel_callback ( zpa_original )
-  elif num_cur_extra_panels < max_extra_panels:
-    # Add the difference
-    for i in range(max_extra_panels - num_cur_extra_panels):
-      add_panel_callback ( zpa_original )
+
+  panel_names_list = ['ref', 'base']
+
+  # Scan through all scales and all images to get the required set of roles (panel_names)
+  for scale_key in sorted(scales_dict.keys()):
+    align_layer_list_for_scale = scales_dict[scale_key]
+    if align_layer_list_for_scale != None:
+      for a in align_layer_list_for_scale:
+        for k in a.image_dict.keys():
+          if not (k in panel_names_list):
+            panel_names_list.append ( k )
+
+  print ( "Panel names list = " + str(panel_names_list) )
+
+  # Create a new panel list to eventually replace the old panel_list
+  new_panel_list = []
+
+  # Pull out the first panel of each type if it exists
+  for name in panel_names_list:
+    print ( "Looking for name " + name )
+    for current_panel in panel_list:
+      print ( "  Checking current_panel with role of " + current_panel.role )
+      if current_panel.role == name:
+        print ( "    This panel matched" )
+        new_panel_list.append ( current_panel )
+        panel_list.remove ( current_panel )
+        break
+  print ( "old_panel_list roles: " + str([p.role for p in panel_list]) )
+  print ( "new_panel_list roles: " + str([p.role for p in new_panel_list]) )
+
+  # Figure out which panels need to be deleted
+  panels_to_delete = []
+  for old_panel in panel_list:
+    if not (old_panel in new_panel_list):
+      panels_to_delete.append ( old_panel )
+
+  # Delete the GTK drawing areas for panels to be removed
+  for p in panels_to_delete:
+    global image_hbox
+    image_hbox.remove(p.drawing_area)
+
+  # Assign the new_panel_list to be the global panel_list
+  panel_list = new_panel_list
+
+  print ( "final_panel_list roles: " + str([p.role for p in panel_list]) )
 
 
 # Create the window and connect the events
