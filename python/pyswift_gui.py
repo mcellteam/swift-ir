@@ -5,9 +5,8 @@
 #import numpy as np
 #import cv2
 
-global current_plot_code
-
-current_plot_code = """print ( "Plotting Biases" )
+global default_plot_code
+default_plot_code = """print ( "Default Plotting" )
 
 print ( 'Data is in "d"' )
 print ( 'd.keys() = ' + str(d.keys()) )
@@ -51,6 +50,10 @@ p = plt.scatter(np.arange(len(cx)),xl)
 p = plt.scatter(np.arange(len(cy)),yl)
 plt.show()
 """
+
+global current_plot_code
+current_plot_code = ""
+
 
 import pickle
 import base64
@@ -1555,7 +1558,8 @@ def write_json_project ( project_file_name, fb=None ):
     f.write ( '  "method": "SWiFT-IR",\n' )
 
     global current_plot_code
-    if len(current_plot_code) > 0:
+    if len(current_plot_code.strip()) > 0:
+      print ( "Saving custom plot code" )
       code_p = pickle.dumps ( current_plot_code, protocol=0 )
       code_e = base64.b64encode ( code_p )
       sl = 40
@@ -3056,9 +3060,6 @@ def menu_callback ( widget, data=None ):
         ##### End Pasted from ImImport
 
 
-
-
-
     elif command == "DelAllScales":
 
       label = gtk.Label("Delete images for all scales:")
@@ -3086,8 +3087,6 @@ def menu_callback ( widget, data=None ):
 
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       dialog.destroy()
-
-
 
 
     elif command == "DelMissingScales":
@@ -3288,11 +3287,24 @@ def menu_callback ( widget, data=None ):
 
       print_data_structures(panel_list, alignment_layer_list)
 
+    elif command == "DefPlotCode":
+
+      print ( "Set to Default Plotting Code" )
+      current_plot_code = default_plot_code.strip()
+
+      if code_dialog != None:
+        print ( "Creating the plot code dialog" )
+        code_store.set_text ( current_plot_code )
+
     elif command == "PlotCode":
 
       print ( "Modify Plotting Code" )
 
+      if len(current_plot_code) <= 0:
+        current_plot_code = default_plot_code.strip()
+
       if code_dialog == None:
+        print ( "Creating the plot code dialog" )
         #label = gtk.Label("Enter plotting code:")
         code_dialog = gtk.Dialog("Plot Code", None,
                            gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -3316,18 +3328,11 @@ def menu_callback ( widget, data=None ):
       print ( "after run" )
       # response = None
       if response == gtk.RESPONSE_ACCEPT:
+        print ( "Updating current plot code from dialog" )
         bi = code_store.get_iter_at_offset(0)
         ei = code_store.get_iter_at_offset(-1)
         txt = code_store.get_text(bi,ei)
-        current_plot_code = txt
-        # print ( "Text:\n" + txt )
-        '''
-        # print ( str(scales_entry.get_text()) )
-        gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
-        gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
-
-        update_menu_scales_from_gui_fields()
-        '''
+        current_plot_code = txt.strip()
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       #code_dialog.destroy()
@@ -3341,40 +3346,21 @@ def menu_callback ( widget, data=None ):
         bi = code_store.get_iter_at_offset(0)
         ei = code_store.get_iter_at_offset(-1)
         txt = code_store.get_text(bi,ei)
-        current_plot_code = txt
+        current_plot_code = txt.strip()
+
+      exec_code = current_plot_code
+      if len(exec_code) <= 0:
+        exec_code = default_plot_code
 
       fb = StringBufferFile()
       write_json_project ( project_file_name, fb=fb )
-      d = json.loads ( fb.fs )
+      if len(fb.fs.strip()) > 0:
+        d = json.loads ( fb.fs )
 
-      if (current_plot_code != None) and (len(current_plot_code) > 0):
-        # Run the custom code
-        exec ( current_plot_code, locals() )
+        if (exec_code != None) and (len(exec_code) > 0):
+          # Run the current plot code
+          exec ( exec_code, locals() )
 
-      else:
-        # Run the default code
-
-        sn = str(d['data']['current_scale'])
-        s = d['data']['scales'][sn]['alignment_stack']
-        afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s ])
-        cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s ])
-
-        cx = cafm[:,:,2][:,0]
-        cy = cafm[:,:,2][:,1]
-
-        (mx,bx,r,p,stderr) = lin_fit(np.arange(len(cx)),cx)
-        (my,by,r,p,stderr) = lin_fit(np.arange(len(cy)),cy)
-        xl = mx*np.arange(len(cx))+bx
-        yl = my*np.arange(len(cy))+by
-
-        print("(mx,bx): ",mx,bx)
-        print("(my,by): ",my,by)
-
-        p = plt.scatter(np.arange(len(cx)),cx)
-        p = plt.scatter(np.arange(len(cy)),cy)
-        p = plt.scatter(np.arange(len(cx)),xl)
-        p = plt.scatter(np.arange(len(cy)),yl)
-        plt.show()
 
     elif command == "Exit":
 
@@ -3602,6 +3588,9 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Default Plot Code",   ("DefPlotCode", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Custom Plot Code",   ("PlotCode", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     # Create a "Set/Cursor" submenu
     # This didn't work ...
     #  (cursor_menu, set_item) = this_menu.add_menu_item ( "_Cursor" )
@@ -3638,8 +3627,6 @@ def main():
     global plotting_available
     if plotting_available:
       # Only show this menu option if all of the plotting libraries have been found
-      zpa_original.add_menu_sep  ( this_menu )
-      zpa_original.add_menu_item ( this_menu, menu_callback, "Plot Code",   ("PlotCode", zpa_original ) )
       zpa_original.add_menu_sep  ( this_menu )
       zpa_original.add_menu_item ( this_menu, menu_callback, "Plot",   ("PlotExec", zpa_original ) )
 
