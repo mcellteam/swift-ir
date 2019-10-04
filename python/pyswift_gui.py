@@ -5,6 +5,43 @@
 #import numpy as np
 #import cv2
 
+global current_plot_code
+
+current_plot_code = """
+print ( "Plotting Biases" )
+fb = StringBufferFile()
+write_json_project ( project_file_name, fb=fb )
+# print ( "Project as a string:\n\n" + str(fb.fs) )
+d = json.loads ( fb.fs )
+# print ( "Project as dict:\n\n" + str(d) )
+
+#s24 = d['data']['scales']['24']['alignment_stack']
+
+sn = str(d['data']['current_scale'])
+s = d['data']['scales'][sn]['alignment_stack']
+afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s ])
+cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s ])
+
+cx = cafm[:,:,2][:,0]
+cy = cafm[:,:,2][:,1]
+
+(mx,bx,r,p,stderr) = lin_fit(np.arange(len(cx)),cx)
+(my,by,r,p,stderr) = lin_fit(np.arange(len(cy)),cy)
+xl = mx*np.arange(len(cx))+bx
+yl = my*np.arange(len(cy))+by
+
+print("(mx,bx): ",mx,bx)
+print("(my,by): ",my,by)
+
+p = plt.scatter(np.arange(len(cx)),cx)
+p = plt.scatter(np.arange(len(cy)),cy)
+p = plt.scatter(np.arange(len(cx)),xl)
+p = plt.scatter(np.arange(len(cy)),yl)
+plt.show()
+"""
+
+import pickle
+import base64
 
 import time
 import os
@@ -20,6 +57,34 @@ import gobject
 import gtk
 
 import app_window
+
+# Import optional packages (mostly for plotting)
+
+np = None
+try:
+  import numpy as np
+except:
+  print ( "Unable to plot without numpy" )
+  np = None
+
+sps = None
+try:
+  import scipy.stats as sps
+except:
+  print ( "Unable to plot without scipy.stats" )
+  sps = None
+
+plt = None
+try:
+  import matplotlib.pyplot as plt
+except:
+  print ( "Unable to plot without matplotlib" )
+  plt = None
+
+
+# Create one variable to check for plotting being available
+global plotting_available
+plotting_available = not ( None in (np, sps, plt) )
 
 
 
@@ -732,10 +797,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
+    global alignment_layer_list
+    global alignment_layer_index
     if self.point_add_enabled:
       if point_mode and not point_delete_mode:
-        global alignment_layer_list
-        global alignment_layer_index
         print_debug ( 50, "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
         print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
 
@@ -749,8 +814,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
           this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
 
       if point_delete_mode:
-        global alignment_layer_list
-        global alignment_layer_index
         print_debug ( 50, "Got a button press in point delete mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
 
         this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
@@ -1432,8 +1495,14 @@ import thread
 
 import align_swiftir
 
+class StringBufferFile:
+  def __init__ ( self ):
+    self.fs = ""
+  def write ( self, s ):
+    self.fs = self.fs + s
 
-def write_json_project ( project_file_name ):
+
+def write_json_project ( project_file_name, fb=None ):
 
   global project_path
   # global project_file_name
@@ -1459,11 +1528,32 @@ def write_json_project ( project_file_name ):
     if len(destination_path) > 0:
       rel_dest_path = os.path.relpath(destination_path,start=project_path)
 
-    print_debug ( 50, "Saving destination path = " + str(destination_path) )
-    f = open ( project_file_name, 'w' )
+    f = None
+    if fb is None:
+      # This is the default to write to a file
+      print_debug ( 50, "Saving destination path = " + str(destination_path) )
+      f = open ( project_file_name, 'w' )
+    else:
+      # Since a file buffer (fb) was provided, write to it rather than a file
+      print_debug ( 50, "Writing to string" )
+      f = fb
+
     f.write ( '{\n' )
     f.write ( '  "version": 0.2,\n' )
     f.write ( '  "method": "SWiFT-IR",\n' )
+
+    global current_plot_code
+    if len(current_plot_code) > 0:
+      code_p = pickle.dumps ( current_plot_code, protocol=0 )
+      code_e = base64.b64encode ( code_p )
+      sl = 40
+      code_l = [ code_e[sl*s:(sl*s)+sl] for s in range(1+(len(code_e)/sl)) ]
+      f.write ( '  "plot_code": [\n' )
+      for s in code_l:
+        f.write ( '    "' + s + '",\n' )
+      f.write ( '    ""\n' )
+      f.write ( '  ],\n' )
+
     f.write ( '  "data": {\n' )
     f.write ( '    "source_path": "",\n' )
     f.write ( '    "destination_path": "' + str(rel_dest_path).replace('\\','/') + '",\n' )
@@ -1478,7 +1568,7 @@ def write_json_project ( project_file_name ):
     f.write ( '        "output_level": 0\n' )
     f.write ( '      }\n' )
     f.write ( '    },\n' )
-    f.write ( '    "current_scale": 1,\n' )
+    f.write ( '    "current_scale": ' + str(current_scale) + ',\n' )
     f.write ( '    "scales": {\n' )
 
     last_scale_key = 1
@@ -2136,6 +2226,14 @@ def load_from_proj_dict ( proj_dict ):
   global scales_dict
 
   proj_dict = upgrade_proj_dict ( proj_dict )
+
+  if 'plot_code' in proj_dict:
+    code_l = proj_dict['plot_code']
+    code_e = ''.join(code_l)
+    code_p = base64.b64decode ( code_e )
+    code_c = pickle.loads ( code_p )
+    global current_plot_code
+    current_plot_code = code_c
 
   if 'data' in proj_dict:
     if 'destination_path' in proj_dict['data']:
@@ -3171,6 +3269,82 @@ def menu_callback ( widget, data=None ):
 
       print_data_structures(panel_list, alignment_layer_list)
 
+    elif command == "PlotCode":
+
+      print ( "Modify Plotting Code" )
+
+
+      #label = gtk.Label("Enter plotting code:")
+      dialog = gtk.Dialog("Plot Code",
+                         None,
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+      #dialog.vbox.pack_start(label)
+      #label.show()
+      code_store = gtk.TextBuffer()
+      global current_plot_code
+      code_store.set_text ( current_plot_code )
+
+      code_entry = gtk.TextView(buffer=code_store)
+
+      #scales_entry = gtk.Entry(20)
+      #scales_entry.set_text ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
+      dialog.vbox.pack_end(code_entry)
+      code_entry.show()
+
+      response = dialog.run()
+      if response == gtk.RESPONSE_ACCEPT:
+        bi = code_store.get_iter_at_offset(0)
+        ei = code_store.get_iter_at_offset(-1)
+        txt = code_store.get_text(bi,ei)
+        current_plot_code = txt
+        print ( "Text:\n" + txt )
+        '''
+        # print ( str(scales_entry.get_text()) )
+        gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
+        gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
+
+        update_menu_scales_from_gui_fields()
+        '''
+
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      dialog.destroy()
+
+
+    elif command == "PlotExec":
+
+      print ( "Plotting Biases" )
+      fb = StringBufferFile()
+      write_json_project ( project_file_name, fb=fb )
+      # print ( "Project as a string:\n\n" + str(fb.fs) )
+      d = json.loads ( fb.fs )
+      # print ( "Project as dict:\n\n" + str(d) )
+
+      #s24 = d['data']['scales']['24']['alignment_stack']
+
+      sn = str(d['data']['current_scale'])
+      s = d['data']['scales'][sn]['alignment_stack']
+      afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s ])
+      cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s ])
+
+      cx = cafm[:,:,2][:,0]
+      cy = cafm[:,:,2][:,1]
+
+      (mx,bx,r,p,stderr) = lin_fit(np.arange(len(cx)),cx)
+      (my,by,r,p,stderr) = lin_fit(np.arange(len(cy)),cy)
+      xl = mx*np.arange(len(cx))+bx
+      yl = my*np.arange(len(cy))+by
+
+      print("(mx,bx): ",mx,bx)
+      print("(my,by): ",my,by)
+
+      p = plt.scatter(np.arange(len(cx)),cx)
+      p = plt.scatter(np.arange(len(cy)),cy)
+      p = plt.scatter(np.arange(len(cx)),xl)
+      p = plt.scatter(np.arange(len(cy)),yl)
+      plt.show()
+
     elif command == "Exit":
 
       get_exit = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Exit?")
@@ -3193,6 +3367,20 @@ def menu_callback ( widget, data=None ):
 
   return True
 
+
+# Do Linear Regression of X,Y data
+def lin_fit(x,y):
+
+  (m,b,r,p,stderr) = sps.linregress(x,y)
+#  print('linear regression:')
+#  print('  slope:',m)
+#  print('  intercept:',b)
+#  print('  r:',r)
+#  print('  p:',p)
+#  print('  stderr:',stderr)
+#  print('')
+
+  return(m,b,r,p,stderr)
 
 
 def center_all_images():
@@ -3416,6 +3604,13 @@ def main():
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Affines",   ("Affines", zpa_original ) )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Skipped Images",   ("ShowSkipped", zpa_original ), default=True )
+    global plotting_available
+    if plotting_available:
+      # Only show this menu option if all of the plotting libraries have been found
+      zpa_original.add_menu_sep  ( this_menu )
+      zpa_original.add_menu_item ( this_menu, menu_callback, "Plot Code",   ("PlotCode", zpa_original ) )
+      zpa_original.add_menu_sep  ( this_menu )
+      zpa_original.add_menu_item ( this_menu, menu_callback, "Plot",   ("PlotExec", zpa_original ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
