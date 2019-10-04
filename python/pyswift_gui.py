@@ -7,15 +7,27 @@
 
 global current_plot_code
 
-current_plot_code = """
-print ( "Plotting Biases" )
-fb = StringBufferFile()
-write_json_project ( project_file_name, fb=fb )
-# print ( "Project as a string:\n\n" + str(fb.fs) )
-d = json.loads ( fb.fs )
-# print ( "Project as dict:\n\n" + str(d) )
+current_plot_code = """print ( "Plotting Biases" )
 
-#s24 = d['data']['scales']['24']['alignment_stack']
+print ( 'Data is in "d"' )
+print ( 'd.keys() = ' + str(d.keys()) )
+print ( 'd["data"].keys() = ' + str(d['data'].keys()) )
+print ( 'd["data"]["scales"].keys() = ' + str(d['data']['scales'].keys()) )
+for k in d['data']['scales'].keys():
+  stack = d['data']['scales'][k]['alignment_stack']
+  print ( '  d["data"]["scales"][' + k + '].keys() = ' + str(d['data']['scales'][k].keys()) + ' of ' + str(len(stack)) )
+  #for s in stack:
+  #  print ( "    \"" + s['images']['aligned']['filename'] + "\"" )
+
+import numpy as np
+import scipy.stats as sps
+import matplotlib.pyplot as plt
+
+# Do Linear Regression of X,Y data
+def lin_fit(x,y):
+  (m,b,r,p,stderr) = sps.linregress(x,y)
+  print('linear regression:')
+  return(m,b,r,p,stderr)
 
 sn = str(d['data']['current_scale'])
 s = d['data']['scales'][sn]['alignment_stack']
@@ -2519,6 +2531,9 @@ def set_selected_scale_to ( requested_scale ):
     print ( "Scale " + str(requested_scale) + " is not in " + str(scales_dict.keys()) )
 
 
+code_dialog = None
+code_store = None
+code_entry = None
 
 def menu_callback ( widget, data=None ):
   # Menu items will trigger this call
@@ -2548,6 +2563,10 @@ def menu_callback ( widget, data=None ):
     global point_mode
     global point_delete_mode
 
+    global code_dialog
+    global code_store
+    global code_entry
+    global current_plot_code
 
     if command == "Fast":
 
@@ -3273,33 +3292,35 @@ def menu_callback ( widget, data=None ):
 
       print ( "Modify Plotting Code" )
 
+      if code_dialog == None:
+        #label = gtk.Label("Enter plotting code:")
+        code_dialog = gtk.Dialog("Plot Code", None,
+                           gtk.DIALOG_DESTROY_WITH_PARENT,
+                           #(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                            (gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+        #code_dialog.vbox.pack_start(label)
+        #label.show()
+        code_store = gtk.TextBuffer()
 
-      #label = gtk.Label("Enter plotting code:")
-      dialog = gtk.Dialog("Plot Code",
-                         None,
-                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-      #dialog.vbox.pack_start(label)
-      #label.show()
-      code_store = gtk.TextBuffer()
-      global current_plot_code
-      code_store.set_text ( current_plot_code )
+        code_store.set_text ( current_plot_code )
 
-      code_entry = gtk.TextView(buffer=code_store)
+        code_entry = gtk.TextView(buffer=code_store)
 
-      #scales_entry = gtk.Entry(20)
-      #scales_entry.set_text ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
-      dialog.vbox.pack_end(code_entry)
-      code_entry.show()
+        #scales_entry = gtk.Entry(20)
+        #scales_entry.set_text ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
+        code_dialog.vbox.pack_end(code_entry)
+        code_entry.show()
 
-      response = dialog.run()
+      print ( "before run" )
+      response = code_dialog.run()
+      print ( "after run" )
+      # response = None
       if response == gtk.RESPONSE_ACCEPT:
         bi = code_store.get_iter_at_offset(0)
         ei = code_store.get_iter_at_offset(-1)
         txt = code_store.get_text(bi,ei)
         current_plot_code = txt
-        print ( "Text:\n" + txt )
+        # print ( "Text:\n" + txt )
         '''
         # print ( str(scales_entry.get_text()) )
         gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
@@ -3309,41 +3330,51 @@ def menu_callback ( widget, data=None ):
         '''
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      dialog.destroy()
+      #code_dialog.destroy()
 
 
     elif command == "PlotExec":
 
-      print ( "Plotting Biases" )
+      print ( "Plotting ..." )
+
+      if code_store != None:
+        bi = code_store.get_iter_at_offset(0)
+        ei = code_store.get_iter_at_offset(-1)
+        txt = code_store.get_text(bi,ei)
+        current_plot_code = txt
+
       fb = StringBufferFile()
       write_json_project ( project_file_name, fb=fb )
-      # print ( "Project as a string:\n\n" + str(fb.fs) )
       d = json.loads ( fb.fs )
-      # print ( "Project as dict:\n\n" + str(d) )
 
-      #s24 = d['data']['scales']['24']['alignment_stack']
+      if (current_plot_code != None) and (len(current_plot_code) > 0):
+        # Run the custom code
+        exec ( current_plot_code, locals() )
 
-      sn = str(d['data']['current_scale'])
-      s = d['data']['scales'][sn]['alignment_stack']
-      afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s ])
-      cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s ])
+      else:
+        # Run the default code
 
-      cx = cafm[:,:,2][:,0]
-      cy = cafm[:,:,2][:,1]
+        sn = str(d['data']['current_scale'])
+        s = d['data']['scales'][sn]['alignment_stack']
+        afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s ])
+        cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s ])
 
-      (mx,bx,r,p,stderr) = lin_fit(np.arange(len(cx)),cx)
-      (my,by,r,p,stderr) = lin_fit(np.arange(len(cy)),cy)
-      xl = mx*np.arange(len(cx))+bx
-      yl = my*np.arange(len(cy))+by
+        cx = cafm[:,:,2][:,0]
+        cy = cafm[:,:,2][:,1]
 
-      print("(mx,bx): ",mx,bx)
-      print("(my,by): ",my,by)
+        (mx,bx,r,p,stderr) = lin_fit(np.arange(len(cx)),cx)
+        (my,by,r,p,stderr) = lin_fit(np.arange(len(cy)),cy)
+        xl = mx*np.arange(len(cx))+bx
+        yl = my*np.arange(len(cy))+by
 
-      p = plt.scatter(np.arange(len(cx)),cx)
-      p = plt.scatter(np.arange(len(cy)),cy)
-      p = plt.scatter(np.arange(len(cx)),xl)
-      p = plt.scatter(np.arange(len(cy)),yl)
-      plt.show()
+        print("(mx,bx): ",mx,bx)
+        print("(my,by): ",my,by)
+
+        p = plt.scatter(np.arange(len(cx)),cx)
+        p = plt.scatter(np.arange(len(cy)),cy)
+        p = plt.scatter(np.arange(len(cx)),xl)
+        p = plt.scatter(np.arange(len(cy)),yl)
+        plt.show()
 
     elif command == "Exit":
 
