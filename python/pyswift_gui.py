@@ -1247,6 +1247,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
     else:
       self.pangolayout.set_text ( str(self.role)+":" )
     drawable.draw_layout ( gc, 3, 2, self.pangolayout )
+    # Draw the current scale
+    global current_scale
+    self.pangolayout.set_text ( str(current_scale) )
+    drawable.draw_layout ( gc, 10, 22, self.pangolayout )
 
     # Restore the previous color
     gc.foreground = old_fg
@@ -2260,6 +2264,10 @@ def load_from_proj_dict ( proj_dict ):
         destination_path = os.path.join ( project_path, destination_path )
       destination_path = os.path.realpath ( destination_path )
       gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+
+    if 'current_scale' in proj_dict['data']:
+      current_scale = proj_dict['data']['current_scale']
+
     if 'scales' in proj_dict['data']:
 
       gui_fields.scales_list = sorted ( [ int(k) for k in proj_dict['data']['scales'].keys() ] )
@@ -2399,8 +2407,8 @@ def load_from_proj_dict ( proj_dict ):
 
             scales_dict[scale_key] = alignment_layer_list
 
-      print ( "Final panel_names_list: " + str(panel_names_list) )
 
+      print ( "Final panel_names_list: " + str(panel_names_list) )
 
       # Set up the preferred panels as needed
       ref_panel = None
@@ -2455,6 +2463,9 @@ def load_from_proj_dict ( proj_dict ):
       update_menu_scales_from_gui_fields()
 
       alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
+
+      set_selected_scale_to ( current_scale )
+
 
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
