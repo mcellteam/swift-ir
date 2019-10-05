@@ -1590,6 +1590,8 @@ def write_json_project ( project_file_name, fb=None ):
     f.write ( '      }\n' )
     f.write ( '    },\n' )
     f.write ( '    "current_scale": ' + str(current_scale) + ',\n' )
+    f.write ( '    "current_layer": ' + str(alignment_layer_index) + ',\n' )
+
     f.write ( '    "scales": {\n' )
 
     last_scale_key = 1
@@ -2466,6 +2468,8 @@ def load_from_proj_dict ( proj_dict ):
 
       set_selected_scale_to ( current_scale )
 
+    if 'current_layer' in proj_dict['data']:
+      alignment_layer_index = proj_dict['data']['current_layer']
 
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
