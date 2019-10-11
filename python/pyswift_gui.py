@@ -698,15 +698,31 @@ class tag_record:
 class tiled_tiff:
   ''' This is an abstraction of a tiled tiff file to use for testing faster image display '''
 
+  def __repr__ ( self ):
+    tile_data_str = None
+    f = open ( self.file_name, 'rb' )
+    if len(self.tile_offsets) > 0:
+      # Seek to the last one
+      f.seek ( self.tile_offsets[-1] )
+      image_data = f.read ( self.tile_counts[-1] )
+      print ( "Read " + str(self.tile_counts[-1]) + " bytes at " + str(self.tile_offsets[-1]) + " from " + str(self.file_name) )
+      tile_data_str = str([ord(d) for d in image_data[0:20]])
+      print ( "  " + tile_data_str )
+    return ( tile_data_str )
+
   def __init__ ( self, file_name ):
 
     self.file_name = file_name
     self.endian = '<' # Intel format
     self.dir_record_list = []
-    tag_record_list = []
+    self.tile_width = -1
+    self.tile_height = -1
+    self.tile_offsets = []
+    self.tile_counts = []
 
     print ( "Reading from TIFF: " + str(file_name) )
 
+    tag_record_list = []
     with open ( self.file_name, 'rb' ) as f:
 
       d = f.read(50)
@@ -794,9 +810,11 @@ class tiled_tiff:
           print ( "  New tag: " + str(tag_rec) )
           if tag_rec.tag == 256:
             w = tag_rec.tagvalue
+            self.tile_width = w
             print ( "    Width: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 257:
             h = tag_rec.tagvalue
+            self.tile_height = h
             print ( "    Height: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 258:
             bps = tag_rec.tagvalue
@@ -815,12 +833,14 @@ class tiled_tiff:
             print ( "    TileOffsets: " + str(tag_rec.tagvalue) )
             f.seek ( tag_rec.tagvalue )
             offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_offsets = offsets
             print ( "       " + str(offsets) )
           if tag_rec.tag == 325:
             tc = tag_rec.tagvalue
             print ( "    TileByteCounts: " + str(tag_rec.tagvalue) )
             f.seek ( tag_rec.tagvalue )
             counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_counts = counts
             print ( "       " + str(counts) )
 
         if not (None in (bps, w, h, tw, tl, to, tc)):
@@ -1273,6 +1293,13 @@ class zoom_panel ( app_window.zoom_pan_area ):
               closest_index = u
               closest_dist = dist
           alignment_layer_index = closest_index
+
+    global show_tiled
+    if show_tiled:
+      if alignment_layer_index >= 0:
+        print ( "Read a tile just to check on the speed ..." )
+        al = alignment_layer_list[alignment_layer_index]
+        print ( "Tile data: " + str(al.tile_data) )
 
     # Display the alignment_layer parameters from the new section being viewed
     if alignment_layer_index >= 0:
