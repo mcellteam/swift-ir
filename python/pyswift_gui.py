@@ -167,6 +167,9 @@ max_image_file_size = 700000000
 global generate_as_tiled
 generate_as_tiled = False
 
+global show_tiled
+show_tiled = False
+
 global debug_level
 debug_level = 50
 
@@ -679,6 +682,37 @@ class annotated_image:
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
 
+import struct
+
+class tiled_tiff:
+  ''' This is an abstraction of a tiled tiff file to use for testing faster image display '''
+
+  def __init__ ( self, file_name ):
+
+    self.file_name = file_name
+    self.send = '<' # Intel format
+    print ( "Reading from TIFF: " + str(file_name) )
+
+    with open ( self.file_name, 'rb' ) as f:
+      d = f.read(50)
+      print ( "Tiff Data: " + str([ord(c) for c in d]) )
+      f.seek(0)
+      d = [ord(c) for c in f.read(4)] # Read 4 bytes of the header
+      if   d == [0x49, 0x49, 0x2a, 0x00]:
+        print ( "This is a TIFF file with Intel (little endian) byte ordering" )
+        self.send = '<' # Intel format
+      elif d == [0x4d, 0x4d, 0x00, 0x2a]:
+        print ( "This is a TIFF file with Motorola (big endian) byte ordering" )
+        self.send = '>' # Motorola format
+      else:
+        print ( "This is not a TIFF file" )
+        self.send = None
+        return
+
+      # Read the offset of the first image directory from the header
+      offset = struct.unpack_from ( self.send+"L", f.read(8), offset=0 )
+      print ( "Offset = " + str(offset) )
+
 
 
 class alignment_layer:
@@ -724,6 +758,13 @@ class alignment_layer:
 
     # Always initialize with the image
     self.image_dict['base'] = self.base_annotated_image
+
+    global show_tiled
+    self.tile_data = None
+    if show_tiled:
+      print ( "Creating an alignment_layer with tiling enabled" )
+      self.tile_data = tiled_tiff ( self.base_image_name )
+
 
   def to_string ( self ):
     s = "AlignLayer \"" + str(self.base_image_name) + "\" with images:"
@@ -1028,6 +1069,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
     global show_window_centers
     global show_window_affines
     global show_skipped_layers
+    global show_tiled
+
+    if show_tiled:
+      print ( "Showing tiled images where available ..." )
 
     # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
@@ -3005,6 +3050,12 @@ def menu_callback ( widget, data=None ):
       generate_as_tiled = not generate_as_tiled
       print ( "Generate as tiled = " + str(generate_as_tiled) )
 
+    elif command == "ShowTiled":
+      global show_tiled
+      show_tiled = not show_tiled
+      print ( "Show tiled = " + str(show_tiled) )
+
+
     elif command == "GenAllScales":
       print ( "Create images at all scales: " + str ( gui_fields.scales_list ) )
 
@@ -3686,6 +3737,7 @@ def main():
     this_menu = scaling_menu
     zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
