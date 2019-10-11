@@ -164,6 +164,9 @@ point_cursor = gtk.gdk.CROSSHAIR
 global max_image_file_size
 max_image_file_size = 700000000
 
+global generate_as_tiled
+generate_as_tiled = False
+
 global debug_level
 debug_level = 50
 
@@ -2997,6 +3000,11 @@ def menu_callback ( widget, data=None ):
       set_selected_scale_to ( cur_scale )
 
 
+    elif command == "GenAsTiled":
+      global generate_as_tiled
+      generate_as_tiled = not generate_as_tiled
+      print ( "Generate as tiled = " + str(generate_as_tiled) )
+
     elif command == "GenAllScales":
       print ( "Create images at all scales: " + str ( gui_fields.scales_list ) )
 
@@ -3036,17 +3044,36 @@ def menu_callback ( widget, data=None ):
               #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
               original_name = al.base_image_name
               new_name = os.path.join(src_path,os.path.basename(original_name))
-              if scale == 1:
-                if os.name == 'posix':
-                  print ( "Posix: Linking " + original_name + " to " + new_name )
-                  os.symlink ( original_name, new_name )
-                else:
-                  print ( "Non-Posix: Copying " + original_name + " to " + new_name )
-                  shutil.copyfile ( original_name, new_name )
-              else:
+              global generate_as_tiled
+              if generate_as_tiled:
+                # Generate as tiled images (means duplicating the originals also)
                 print ( "Resizing " + original_name + " to " + new_name )
-                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                align_swiftir.swiftir.saveImage ( img, new_name )
+                if False:
+                  # Generate internally
+                  # Don't know how to do this and make tiles yet
+                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  align_swiftir.swiftir.saveImage ( img, new_name )
+                else:
+                  # Scale as before:
+                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  align_swiftir.swiftir.saveImage ( img, new_name )
+                  # Use "convert" from ImageMagick to hopefully tile in place
+                  import subprocess
+                  p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
+                  p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+new_name] )
+              else:
+                # Generate non-tiled images
+                if scale == 1:
+                  if os.name == 'posix':
+                    print ( "Posix: Linking " + original_name + " to " + new_name )
+                    os.symlink ( original_name, new_name )
+                  else:
+                    print ( "Non-Posix: Copying " + original_name + " to " + new_name )
+                    shutil.copyfile ( original_name, new_name )
+                else:
+                  print ( "Resizing " + original_name + " to " + new_name )
+                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  align_swiftir.swiftir.saveImage ( img, new_name )
             except:
               print ( "Error: Failed to copy?" )
               pass
@@ -3658,6 +3685,7 @@ def main():
   if True: # An easy way to indent and still be legal Python
     this_menu = scaling_menu
     zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
