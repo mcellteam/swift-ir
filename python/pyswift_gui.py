@@ -682,7 +682,18 @@ class annotated_image:
   def add_graphic ( self, item ):
     self.graphics_items.append ( item )
 
+
 import struct
+
+class tag_record:
+  def __init__ ( self, tag, tagtype, tagcount, tagvalue ):
+    self.tag = tag
+    self.tagtype = tagtype
+    self.tagcount = tagcount
+    self.tagvalue = tagvalue
+  def __repr__ ( self ):
+    return ( "TR: " + str(self.tag) + ", " + str(self.tagtype) + ", " + str(self.tagcount) + ", " + str(self.tagvalue) )
+
 
 class tiled_tiff:
   ''' This is an abstraction of a tiled tiff file to use for testing faster image display '''
@@ -690,28 +701,306 @@ class tiled_tiff:
   def __init__ ( self, file_name ):
 
     self.file_name = file_name
-    self.send = '<' # Intel format
+    self.endian = '<' # Intel format
+    self.dir_record_list = []
+    tag_record_list = []
+
     print ( "Reading from TIFF: " + str(file_name) )
 
     with open ( self.file_name, 'rb' ) as f:
+
       d = f.read(50)
       print ( "Tiff Data: " + str([ord(c) for c in d]) )
       f.seek(0)
+
       d = [ord(c) for c in f.read(4)] # Read 4 bytes of the header
       if   d == [0x49, 0x49, 0x2a, 0x00]:
         print ( "This is a TIFF file with Intel (little endian) byte ordering" )
-        self.send = '<' # Intel format
+        self.endian = '<' # Intel format
       elif d == [0x4d, 0x4d, 0x00, 0x2a]:
         print ( "This is a TIFF file with Motorola (big endian) byte ordering" )
-        self.send = '>' # Motorola format
+        self.endian = '>' # Motorola format
       else:
         print ( "This is not a TIFF file" )
-        self.send = None
+        self.endian = None
         return
 
       # Read the offset of the first image directory from the header
-      offset = struct.unpack_from ( self.send+"L", f.read(8), offset=0 )
+      offset = struct.unpack_from ( self.endian+"L", f.read(4), offset=0 )[0]
       print ( "Offset = " + str(offset) )
+
+      dir_num = 1
+
+      while offset > 0:
+        f.seek ( offset )
+        numDirEntries = struct.unpack_from ( self.endian+'H', f.read(2), offset=0 )[0]
+        offset += 2
+        print ( "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
+        dir_num += 1
+        # Read the tags
+        f.seek ( offset )
+        for tagnum in range(numDirEntries):
+          tagtuple = struct.unpack_from ( self.endian+'HHLL', f.read(12), offset=0 )
+          tag = tagtuple[0]
+          tagtype = tagtuple[1]
+          tagcount = tagtuple[2]
+          tagvalue = tagtuple[3]
+          tag_record_list.append ( tag_record ( tag, tagtype, tagcount, tagvalue ) )
+          offset += 12
+          tagstr = self.str_from_tag ( tagtuple )
+          '''
+          if tagstr.endswith ( 'ASCII' ):
+            ascii_str = ":  \""
+            for i in range(tagcount):
+              try:
+                ascii_str += str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0].decode('utf-8'))
+              except:
+                ascii_str += '?'
+                f.seek ( tagvalue+i )
+                print ( "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
+            if len(ascii_str) > 60:
+              ascii_str = ascii_str[0:60]
+            ascii_str = ascii_str.replace ( "\n", " " )
+            ascii_str = ascii_str.replace ( "\r", " " )
+            tagstr += ascii_str + "\""
+          '''
+          print ( "  Tag = " + str(tagtuple) + " = " + tagstr )
+        self.dir_record_list.append ( tag_record_list )
+        tag_record_list = []
+        f.seek ( offset )
+        nextIFDOffset = struct.unpack_from ( self.endian+'L', f.read(4), offset=0 )[0]
+        offset = nextIFDOffset
+        print ( "\n" )
+
+      print ( "\n\n" )
+      print ( 120*"=" )
+      print ( "\n\n" )
+
+
+      dir_num = 1
+      for dir_record in self.dir_record_list:
+        print ( "Directory " + str(dir_num) + ":\n" )
+        dir_num += 1
+        bps = None
+        w = None
+        h = None
+        tw = None
+        tl = None
+        to = None
+        tc = None
+        offsets = None
+        counts = None
+        for tag_rec in dir_record:
+          print ( "  New tag: " + str(tag_rec) )
+          if tag_rec.tag == 256:
+            w = tag_rec.tagvalue
+            print ( "    Width: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 257:
+            h = tag_rec.tagvalue
+            print ( "    Height: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 258:
+            bps = tag_rec.tagvalue
+            print ( "    Bits/Samp: " + str(tag_rec.tagvalue) )
+            if bps != 8:
+              print ( "Can't handle files with " + str(bps) + " bits per sample" )
+              exit ( 0 )
+          if tag_rec.tag == 322:
+            tw = tag_rec.tagvalue
+            print ( "    TileWidth: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 323:
+            tl = tag_rec.tagvalue
+            print ( "    TileLength: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 324:
+            to = tag_rec.tagvalue
+            print ( "    TileOffsets: " + str(tag_rec.tagvalue) )
+            f.seek ( tag_rec.tagvalue )
+            offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            print ( "       " + str(offsets) )
+          if tag_rec.tag == 325:
+            tc = tag_rec.tagvalue
+            print ( "    TileByteCounts: " + str(tag_rec.tagvalue) )
+            f.seek ( tag_rec.tagvalue )
+            counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            print ( "       " + str(counts) )
+
+        if not (None in (bps, w, h, tw, tl, to, tc)):
+          print ( "\nRead from a block of tiles ...\n" )
+          for i in range(len(offsets)):
+            offset = offsets[i]
+            count = counts[i]
+            f.seek ( offset )
+            data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
+            #print ( "Read data " + str(data) + " from " + str(offset) )
+            #print ( "" )
+        '''
+        if not (None in (bps, w, h, tw, tl, to, tc)):
+          print ( "\nFound a block of tiles:\n" )
+          for i in range(len(offsets)):
+            offset = offsets[i]
+            count = counts[i]
+            f.seek ( offset )
+            data = struct.unpack_from ( self.endian+(count*"B"), f.read(count), offset=0 )
+            for r in range(tl):
+              print ( str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
+            print ( "" )
+        '''
+
+        # offset = 0 ############ Force a stop
+
+
+      print ( "\n\n" )
+
+  def is_immediate ( self, tagtuple ):
+    tag = tagtuple[0]
+    tagtype = tagtuple[1]
+    tagcount = tagtuple[2]
+    tagvalue = tagtuple[3]
+    if tagtype == 1:
+      # Byte
+      return (tagcount <= 4)
+    elif tagtype == 2:
+      # ASCII null-terminated string
+      # Assume that this is never in the tag?
+      return False
+    elif tagtype == 3:
+      # Short (2-byte)
+      return (tagcount <= 2)
+    elif tagtype == 4:
+      # Long (4-byte)
+      return (tagcount <= 1)
+    elif tagtype == 5:
+      # Rational (2 long values)
+      return False
+    elif tagtype == 6:
+      # Signed Byte
+      return (tagcount <= 4)
+    elif tagtype == 7:
+      # Undefined Byte
+      return (tagcount <= 4)
+    elif tagtype == 8:
+      # Signed Short
+      return (tagcount <= 2)
+    elif tagtype == 9:
+      # Signed Long
+      return (tagcount <= 1)
+    elif tagtype == 10:
+      # Signed Rational (2 long signed)
+      return False
+    elif tagtype == 11:
+      # Float (4 bytes)
+      return (tagcount <= 1)
+    elif tagtype == 12:
+      # Double (8 bytes)
+      return false
+
+
+  def str_from_tag ( self, t ):
+    global bigend
+
+    dtype = "Unknown"
+    if t[1] == 1:
+      dtype = "Byte"
+    elif t[1] == 2:
+      dtype = "ASCII"
+    elif t[1] == 3:
+      dtype = "Short"
+    elif t[1] == 4:
+      dtype = "Long"
+    elif t[1] == 5:
+      dtype = "Rational"
+
+    elif t[1] == 6:
+      dtype = "SByte"
+    elif t[1] == 7:
+      dtype = "UNDEF Byte"
+    elif t[1] == 8:
+      dtype = "SShort"
+    elif t[1] == 9:
+      dtype = "SLong"
+    elif t[1] == 10:
+      dtype = "SRational"
+    elif t[1] == 11:
+      dtype = "Float"
+    elif t[1] == 12:
+      dtype = "Double"
+
+    dlen = str(t[2])
+
+    tagid = None
+
+    if t[0] == 256:
+      tagid = "Width"
+    elif t[0] == 257:
+      tagid = "Height"
+    elif t[0] == 258:
+      tagid = "BitsPerSample"
+    elif t[0] == 259:
+      tagid = "Compression"
+    elif t[0] == 262:
+      tagid = "PhotoMetInterp"
+    elif t[0] == 266:
+      tagid = "FillOrder"
+    elif t[0] == 275:
+      tagid = "Orientation"
+    elif t[0] == 277:
+      tagid = "SampPerPix"
+    elif t[0] == 278:
+      tagid = "RowsPerStrip"
+    elif t[0] == 282:
+      tagid = "XResolution"
+    elif t[0] == 283:
+      tagid = "YResolution"
+    elif t[0] == 322:
+      tagid = "TileWidth"
+    elif t[0] == 323:
+      tagid = "TileLength"
+    elif t[0] == 274:
+      tagid = "Orientation"
+    elif t[0] == 254:
+      tagid = "NewSubFileType"
+    elif t[0] == 284:
+      tagid = "T4Options"
+    elif t[0] == 292:
+      tagid = "PlanarConfig"
+    elif t[0] == 296:
+      tagid = "ResolutionUnit"
+    elif t[0] == 297:
+      tagid = "PageNumber"
+    elif t[0] == 317:
+      tagid = "Predictor"
+    elif t[0] == 318:
+      tagid = "WhitePoint"
+    elif t[0] == 319:
+      tagid = "PrimChroma"
+    elif t[0] == 324:
+      tagid = "TileOffsets"
+    elif t[0] == 325:
+      tagid = "TileByteCounts"
+    elif t[0] == 323:
+      tagid = "TileLength"
+    elif t[0] == 322:
+      tagid = "TileWidth"
+    elif t[0] == 338:
+      tagid = "ExtraSamples"
+    elif t[0] == 530:
+      tagid = "YCbCrSubSampling"
+    elif t[0] == 273:
+      tagid = "StripOffsets"
+    elif t[0] == 279:
+      tagid = "StripByteCounts"
+    elif t[0] == 305:
+      tagid = "Software"
+    elif t[0] == 306:
+      tagid = "DateTime"
+    elif t[0] == 320:
+      tagid = "ColorMap"
+    elif t[0] == 339:
+      tagid = "SampleFormat"
+
+    if tagid is None:
+      tagid = "?????????"
+
+    return ( tagid + " ... " + dlen + " of " + dtype )
 
 
 
