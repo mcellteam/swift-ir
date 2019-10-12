@@ -26,7 +26,7 @@ class image_layer:
     self.tiff_struct = None
 
   def load_tiff_structure ( self ):
-    self.tiff_struct = tiled_tiff ( self.ptiled_image_name )
+    self.tiff_struct = pyramid_tiff ( self.ptiled_image_name )
 
 
 class tag_record:
@@ -38,8 +38,21 @@ class tag_record:
   def __repr__ ( self ):
     return ( "TR: " + str(self.tag) + ", " + str(self.tagtype) + ", " + str(self.tagcount) + ", " + str(self.tagvalue) )
 
+class image_record:
+  def __init__ ( self ):
+    self.bps = None
+    self.width = None
+    self.height = None
+    self.tile_width = None
+    self.tile_length = None
+    self.tile_offsets = []
+    self.tile_counts = []
+    self.tag_record_list = []
+  #def __repr__ ( self ):
+  #  return ( "IR: " + str(self.width) + ", " + str(self.height) )
 
-class tiled_tiff:
+
+class pyramid_tiff:
   ''' This is an abstraction of a tiled tiff file to use for testing faster image display '''
 
   def __repr__ ( self ):
@@ -58,15 +71,14 @@ class tiled_tiff:
 
     self.file_name = file_name
     self.endian = '<' # Intel format
-    self.dir_record_list = []
+    self.image_list = []
     self.tile_width = -1
-    self.tile_height = -1
+    self.tile_length = -1
     self.tile_offsets = []
     self.tile_counts = []
 
     print ( "Reading from TIFF: " + str(file_name) )
 
-    tag_record_list = []
     with open ( self.file_name, 'rb' ) as f:
 
       d = f.read(50)
@@ -92,6 +104,7 @@ class tiled_tiff:
       dir_num = 1
 
       while offset > 0:
+        this_image = image_record()
         f.seek ( offset )
         numDirEntries = struct.unpack_from ( self.endian+'H', f.read(2), offset=0 )[0]
         offset += 2
@@ -105,7 +118,7 @@ class tiled_tiff:
           tagtype = tagtuple[1]
           tagcount = tagtuple[2]
           tagvalue = tagtuple[3]
-          tag_record_list.append ( tag_record ( tag, tagtype, tagcount, tagvalue ) )
+          this_image.tag_record_list.append ( tag_record ( tag, tagtype, tagcount, tagvalue ) )
           offset += 12
           tagstr = self.str_from_tag ( tagtuple )
           '''
@@ -125,8 +138,7 @@ class tiled_tiff:
             tagstr += ascii_str + "\""
           '''
           print ( "  Tag = " + str(tagtuple) + " = " + tagstr )
-        self.dir_record_list.append ( tag_record_list )
-        tag_record_list = []
+        self.image_list.append ( this_image )
         f.seek ( offset )
         nextIFDOffset = struct.unpack_from ( self.endian+'L', f.read(4), offset=0 )[0]
         offset = nextIFDOffset
@@ -136,71 +148,68 @@ class tiled_tiff:
       print ( 120*"=" )
       print ( "\n\n" )
 
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-      dir_num = 1
-      for dir_record in self.dir_record_list:
-        print ( "Directory " + str(dir_num) + ":\n" )
-        dir_num += 1
-        bps = None
-        w = None
-        h = None
-        tw = None
-        tl = None
-        to = None
-        tc = None
-        offsets = None
-        counts = None
-        for tag_rec in dir_record:
-          print ( "  New tag: " + str(tag_rec) )
+      image_num = 1
+      for this_image in self.image_list:
+        print ( "Image " + str(image_num) + ":\n" )
+        image_num += 1
+
+        for tag_rec in this_image.tag_record_list:
+          print ( "  Tag: " + str(tag_rec) )
           if tag_rec.tag == 256:
-            w = tag_rec.tagvalue
-            self.tile_width = w
-            print ( "    Width: " + str(tag_rec.tagvalue) )
+            this_image.width = tag_rec.tagvalue
+            print ( "    Width: " + str(this_image.width) )
           if tag_rec.tag == 257:
-            h = tag_rec.tagvalue
-            self.tile_height = h
-            print ( "    Height: " + str(tag_rec.tagvalue) )
+            this_image.height = tag_rec.tagvalue
+            print ( "    Height: " + str(this_image.height) )
           if tag_rec.tag == 258:
-            bps = tag_rec.tagvalue
-            print ( "    Bits/Samp: " + str(tag_rec.tagvalue) )
-            if bps != 8:
-              print ( "Can't handle files with " + str(bps) + " bits per sample" )
+            this_image.bps = tag_rec.tagvalue
+            print ( "    Bits/Samp: " + str(this_image.bps) )
+            if this_image.bps != 8:
+              print ( "Can't handle files with " + str(this_image.bps) + " bits per sample" )
               exit ( 0 )
           if tag_rec.tag == 322:
-            tw = tag_rec.tagvalue
-            print ( "    TileWidth: " + str(tag_rec.tagvalue) )
+            this_image.tile_width = tag_rec.tagvalue
+            print ( "    TileWidth: " + str(this_image.tile_width) )
           if tag_rec.tag == 323:
-            tl = tag_rec.tagvalue
-            print ( "    TileLength: " + str(tag_rec.tagvalue) )
+            this_image.tile_length = tag_rec.tagvalue
+            print ( "    TileLength: " + str(this_image.tile_length) )
           if tag_rec.tag == 324:
-            to = tag_rec.tagvalue
             print ( "    TileOffsets: " + str(tag_rec.tagvalue) )
             if tag_rec.tagcount == 1:
               # Special case where the offset is the tagvalue?
-              offsets = ( tag_rec.tagvalue, )
+              this_image.tile_offsets = ( tag_rec.tagvalue, )
             else:
               f.seek ( tag_rec.tagvalue )
-              offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
-            self.tile_offsets = offsets
-            print ( "       " + str(offsets) )
+              this_image.tile_offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_offsets = this_image.tile_offsets
+            print ( "       " + str(this_image.tile_offsets) )
           if tag_rec.tag == 325:
-            tc = tag_rec.tagvalue
             print ( "    TileByteCounts: " + str(tag_rec.tagvalue) )
             if tag_rec.tagcount == 1:
               # Special case where the count is the tagvalue?
-              counts = ( tag_rec.tagvalue, )
+              this_image.tile_counts = ( tag_rec.tagvalue, )
             else:
               f.seek ( tag_rec.tagvalue )
-              counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
-            self.tile_counts = counts
-            print ( "       " + str(counts) )
+              this_image.tile_counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_counts = this_image.tile_counts
+            print ( "       " + str(this_image.tile_counts) )
+
+        print ( "  bps:" + str(this_image.bps) +
+                ", width:" + str(this_image.width) +
+                ", height:" + str(this_image.height) +
+                ", tile_width:" + str(this_image.tile_width) +
+                ", tile_length:" + str(this_image.tile_length) +
+                ", tile_offsets:" + str(this_image.tile_offsets) +
+                ", tile_counts:" + str(this_image.tile_counts) )
 
 
-        if not (None in (bps, w, h, tw, tl, to, tc)):
+        if not (None in (this_image.bps, this_image.width, this_image.height, this_image.tile_width, this_image.tile_length, this_image.tile_offsets, this_image.tile_counts)):
           print ( "\nRead from a block of tiles ...\n" )
-          for i in range(len(offsets)):
-            offset = offsets[i]
-            count = counts[i]
+          for i in range(len(this_image.tile_offsets)):
+            offset = this_image.tile_offsets[i]
+            count = this_image.tile_counts[i]
             f.seek ( offset )
             data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
             print ( "Read data " + str(data) + " from " + str(offset) )
@@ -530,6 +539,39 @@ def expose_callback ( drawing_area, event, zpa ):
   gc.foreground = old_fg
   return False
 
+class zoom_panel ( app_window.zoom_pan_area ):
+
+  def mouse_scroll_callback ( self, canvas, event, zpa ):
+    ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
+
+    if 'GDK_SHIFT_MASK' in event.get_state().value_names:
+      # Use shifted scroll wheel to zoom the image size
+      return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
+    else:
+      # Use normal (unshifted) scroll wheel to move through the stack
+      print ( "Moving through the stack" )
+      '''
+      global alignment_layer_list
+      global alignment_layer_index
+      print_debug ( 50, "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
+      if len(alignment_layer_list) <= 0:
+        alignment_layer_index = -1
+        print_debug ( 60, " Index = " + str(alignment_layer_index) )
+      else:
+        if event.direction == gtk.gdk.SCROLL_UP:
+          self.move_through_stack ( 1 )
+        elif event.direction == gtk.gdk.SCROLL_DOWN:
+          self.move_through_stack ( -1 )
+
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+      # Draw the windows
+      zpa_original.queue_draw()
+      for p in panel_list:
+        p.queue_draw()
+      '''
+      return True
+
 
 def step_callback(zpa):
   diff_2d_sim = zpa.user_data['diff_2d_sim']
@@ -627,8 +669,8 @@ def menu_callback ( widget, data=None ):
               base_name = base_name[0:base_name.rfind('.')]
             new_name = "pyramid_stack" + os.sep + base_name + '.tif'
             print ( "Tiling file " + str(f) + " to " + new_name )
-            #p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=128x128", "tif:"+new_name] )
-            p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=128x128", "ptif:"+new_name] )
+            #p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "tif:"+new_name] )
+            p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "ptif:"+new_name] )
             p.wait()
             new_layer = image_layer ( f, new_name )
             new_layer.load_tiff_structure()
@@ -696,7 +738,7 @@ def main():
   window.set_title ( "Stack View with Python GTK" )
 
   # Create a zoom/pan area to hold all of the drawing
-  zpa = app_window.zoom_pan_area(window,720,540,"Stack View")
+  zpa = zoom_panel(window,720,540,"Stack View")
   zpa.user_data = { 
                     'image_frame'        : None,
                     'image_layers'       : [],
