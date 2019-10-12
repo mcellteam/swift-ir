@@ -175,15 +175,23 @@ class tiled_tiff:
           if tag_rec.tag == 324:
             to = tag_rec.tagvalue
             print ( "    TileOffsets: " + str(tag_rec.tagvalue) )
-            f.seek ( tag_rec.tagvalue )
-            offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            if tag_rec.tagcount == 1:
+              # Special case where the offset is the tagvalue?
+              offsets = ( tag_rec.tagvalue, )
+            else:
+              f.seek ( tag_rec.tagvalue )
+              offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
             self.tile_offsets = offsets
             print ( "       " + str(offsets) )
           if tag_rec.tag == 325:
             tc = tag_rec.tagvalue
             print ( "    TileByteCounts: " + str(tag_rec.tagvalue) )
-            f.seek ( tag_rec.tagvalue )
-            counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            if tag_rec.tagcount == 1:
+              # Special case where the count is the tagvalue?
+              counts = ( tag_rec.tagvalue, )
+            else:
+              f.seek ( tag_rec.tagvalue )
+              counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
             self.tile_counts = counts
             print ( "       " + str(counts) )
 
@@ -195,8 +203,8 @@ class tiled_tiff:
             count = counts[i]
             f.seek ( offset )
             data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
-            #print ( "Read data " + str(data) + " from " + str(offset) )
-            #print ( "" )
+            print ( "Read data " + str(data) + " from " + str(offset) )
+            print ( "" )
 
         '''
         if not (None in (bps, w, h, tw, tl, to, tc)):
@@ -619,8 +627,8 @@ def menu_callback ( widget, data=None ):
               base_name = base_name[0:base_name.rfind('.')]
             new_name = "pyramid_stack" + os.sep + base_name + '.tif'
             print ( "Tiling file " + str(f) + " to " + new_name )
-            #p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=128x128", "ptif:"+new_name] )
-            p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=128x128", "tif:"+new_name] )
+            #p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=128x128", "tif:"+new_name] )
+            p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=128x128", "ptif:"+new_name] )
             p.wait()
             new_layer = image_layer ( f, new_name )
             new_layer.load_tiff_structure()
