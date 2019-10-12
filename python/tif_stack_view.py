@@ -550,8 +550,21 @@ def get_image_data(zpa):
   print ( "New layer index = " + str(zpa.user_data['layer_index']) )
   layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
   print ( "Image file = " + str(layer.ptiled_image_name) )
-  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
 
+  #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
+
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+  f = open ( layer.ptiled_image_name, 'rb' )
+  img_tile = layer.tiff_struct.image_list[-1]
+  f.seek ( img_tile.tile_offsets[0] )
+  d = f.read ( img_tile.tile_counts[0] )
+  #d = ''.join ( [ s+s+s+chr(255) for s in d ] )
+  d = ''.join ( [ s+s+s for s in d ] )
+  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_data ( d, 0, False, 8, img_tile.tile_width, img_tile.tile_length, img_tile.tile_width )
+  zpa.queue_draw()
+
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 class zoom_panel ( app_window.zoom_pan_area ):
 
@@ -672,24 +685,40 @@ def menu_callback ( widget, data=None ):
           print ( "Selected Files: " + str(file_name_list) )
           for f in file_name_list:
             base_name = f.split(os.sep)[-1]
-            if '.' in base_name:
-              base_name = base_name[0:base_name.rfind('.')]
-            new_name = "pyramid_stack" + os.sep + base_name + '.tif'
-            print ( "Tiling file " + str(f) + " to " + new_name )
-            #p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "tif:"+new_name] )
-            p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "ptif:"+new_name] )
-            p.wait()
-            new_layer = image_layer ( f, new_name )
-            new_layer.load_tiff_structure()
-            zpa.user_data['image_layers'].append ( new_layer )
+            parent_dir = f.split(os.sep)[-2]
+            if (parent_dir == "pyramid_stack") and (base_name.split('.')[-1] == "tif"):
+              print ( "File " + base_name + " is assumed to be tiled." )
+              new_layer = image_layer ( f, f )
+              new_layer.load_tiff_structure()
+              zpa.user_data['image_layers'].append ( new_layer )
+            else:
+              if '.' in base_name:
+                base_name = base_name[0:base_name.rfind('.')]
+              new_name = "pyramid_stack" + os.sep + base_name + '.tif'
+              print ( "Tiling file " + str(f) + " to " + new_name )
+              #p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "tif:"+new_name] )
+              p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "ptif:"+new_name] )
+              p.wait()
+              new_layer = image_layer ( f, new_name )
+              new_layer.load_tiff_structure()
+              zpa.user_data['image_layers'].append ( new_layer )
 
       file_chooser.destroy()
       print ( "Done with dialog" )
       #zpa.force_center = True
+      get_image_data(zpa)
       zpa.queue_draw()
 
     elif command == "Center":
       print ( "Centering" )
+      zpa.queue_draw()
+
+    elif command == "ClearAll":
+      print ( "Clearing all images" )
+      zpa.user_data['image_frame'] = None
+      zpa.user_data['layer_index'] = 0
+      zpa.user_data['image_layers'] = []
+      zpa.queue_draw()
 
     elif command == "Console":
       global debug_level
@@ -745,7 +774,7 @@ def main():
   window.set_title ( "Stack View with Python GTK" )
 
   # Create a zoom/pan area to hold all of the drawing
-  zpa = zoom_panel(window,720,540,"Stack View")
+  zpa = zoom_panel(window,1200,900,"Stack View")
   zpa.user_data = { 
                     'image_frame'        : None,
                     'image_layers'       : [],
@@ -786,6 +815,8 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa.add_menu_item ( images_menu, menu_callback, "_Import...",   ("ImImport", zpa ) )
     zpa.add_menu_item ( images_menu, menu_callback, "_Center",     ("Center", zpa ) )
+    zpa.add_menu_sep  ( images_menu )
+    zpa.add_menu_item ( images_menu, menu_callback, "Clear All",  ("ClearAll", zpa ) )
 
   # Create a "Scales" menu
   (scales_menu, scales_item) = zpa.add_menu ( "_Scales" )
