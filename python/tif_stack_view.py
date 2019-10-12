@@ -540,32 +540,170 @@ def expose_callback ( drawing_area, event, zpa ):
   gc.foreground = old_fg
   return False
 
-
 def get_image_data(zpa):
-  #>>> [ s for s in dir(gtk.gdk) if 'pixbuf' in s ]
-  # ['pixbuf_get_file_info', 'pixbuf_get_formats', 'pixbuf_get_from_drawable', 'pixbuf_loader_new',
-  #  'pixbuf_loader_new_with_mime_type', 'pixbuf_new_from_array', 'pixbuf_new_from_data', 'pixbuf_new_from_file',
-  #  'pixbuf_new_from_file_at_scale', 'pixbuf_new_from_file_at_size', 'pixbuf_new_from_inline', 'pixbuf_new_from_stream',
-  #  'pixbuf_new_from_stream_at_scale', 'pixbuf_new_from_xpm_data']
-  print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
-  layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
-  print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
 
-  #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
+  if zpa.user_data['tile_number'] == -2:
+    print ( "Test XPM -2" )
+    xpm = [
+    "16 16 3 1",
+    "       c None",
+    ".      c #000000",
+    "X      c #FFFFFF",
+    "                ",
+    "   ......       ",
+    "   .XXX.X.      ",
+    "   .XXX.XX.     ",
+    "   .XXX.XXX.    ",
+    "   .XXX.....    ",
+    "   .XXXXXXX.    ",
+    "   .XXXXXXX.    ",
+    "   .XXXXXXX.    ",
+    "   .XXXXXXX.    ",
+    "   .XXXXXXX.    ",
+    "   .XXXXXXX.    ",
+    "   .XXXXXXX.    ",
+    "   .........    ",
+    "                ",
+    "                "
+    ]
 
-  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
 
-  f = open ( layer.ptiled_image_name, 'rb' )
-  img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
-  f.seek ( img_tile.tile_offsets[0] )
-  d = f.read ( img_tile.tile_counts[0] )
-  #d = ''.join ( [ s+s+s+chr(255) for s in d ] )
-  #d = ''.join ( [ s+s+s for s in d ] )
-  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_data ( d, gtk.gdk.COLORSPACE_RGB, 
-                                                                False, 8, 
-                                                                img_tile.tile_width,
-                                                                img_tile.tile_length,
-                                                                img_tile.tile_width )
+  elif zpa.user_data['tile_number'] == -3:
+
+    print ( "Test XPM -3" )
+
+    print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
+    layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
+    print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
+
+    #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
+
+
+    f = open ( layer.ptiled_image_name, 'rb' )
+    img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
+    f.seek ( img_tile.tile_offsets[0] )
+    d = f.read ( img_tile.tile_counts[0] )
+
+    '''
+    xpm = [ "20 20 8 1" ]
+    for c in range ( 8 ):
+      xpm.append ( str(c) + " c #" + str(c) )
+    for row in range(20):
+      for col in range(20
+
+    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    '''
+
+    xpm = [
+    "16 16 8 1",
+    "0 c #000",
+    "1 c #111",
+    "2 c #222",
+    "3 c #333",
+    "4 c #444",
+    "5 c #555",
+    "6 c #666",
+    "7 c #777",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677",
+    "0011223344556677"
+    ]
+
+    xpm = [
+    "20 20 16 1",
+    "a c #000",
+    "b c #111",
+    "c c #222",
+    "d c #333",
+    "e c #444",
+    "f c #555",
+    "g c #666",
+    "h c #777",
+    "i c #888",
+    "j c #999",
+    "k c #aaa",
+    "l c #bbb",
+    "m c #ccc",
+    "n c #ddd",
+    "o c #eee",
+    "p c #fff",
+    "aaaaaaaaaaaaaaaaaaaa",
+    "aaaaaaaaaaaaaaaabbbb",
+    "aaaaaaaabbbbbbbbcccc",
+    "aaaaaabbbbbcccccdddd",
+    "aaaabbbbccccddddeeee",
+    "aaaabbbcccdddeeeffff",
+    "aaabbbccdddeeeffgggh",
+    "aaabbccdddeeffgghhhi",
+    "aabbccddeeffgghhiijj",
+    "aabbccddeffgghhijjkk",
+    "aabbcddeffgghiijkkll",
+    "aabccdeefgghiijkllmn",
+    "aabcddefgghijjklmmno",
+    "aabcdeefghiijklmnnop",
+    "aabcdefghhijklmnoopa",
+    "aabcdefghijklmnoppab",
+    "abcdefghijklmnopabcd",
+    "abcdefghijklmnopbcde",
+    "abcdefghjklmnopacdef",
+    "abcdefhijklnopabdefg"
+    ]
+
+    xpm = [ "20 20 16 1" ]
+    for i in range ( 16 ):
+      h = hex(i)[2]
+      k = chr(ord('a') + i)
+      xpm.append ( str(k) + " c #" + h + h + h  )
+
+    data = ""
+    for i in range (20):
+      for j in range (20):
+        data += ( chr ( ord('a') + ((i*j) % 256)/16 ) )
+      xpm.append ( data )
+      data = ""
+
+
+    zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
+  else:
+    #>>> [ s for s in dir(gtk.gdk) if 'pixbuf' in s ]
+    # ['pixbuf_get_file_info', 'pixbuf_get_formats', 'pixbuf_get_from_drawable', 'pixbuf_loader_new',
+    #  'pixbuf_loader_new_with_mime_type', 'pixbuf_new_from_array', 'pixbuf_new_from_data', 'pixbuf_new_from_file',
+    #  'pixbuf_new_from_file_at_scale', 'pixbuf_new_from_file_at_size', 'pixbuf_new_from_inline', 'pixbuf_new_from_stream',
+    #  'pixbuf_new_from_stream_at_scale', 'pixbuf_new_from_xpm_data']
+    print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
+    layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
+    print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
+
+    #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    f = open ( layer.ptiled_image_name, 'rb' )
+    img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
+    f.seek ( img_tile.tile_offsets[0] )
+    d = f.read ( img_tile.tile_counts[0] )
+    #d = ''.join ( [ s+s+s+chr(255) for s in d ] )
+    #d = ''.join ( [ s+s+s for s in d ] )
+    zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_data ( d, gtk.gdk.COLORSPACE_RGB,
+                                                                  False, 8,
+                                                                  img_tile.tile_width,
+                                                                  img_tile.tile_length,
+                                                                  img_tile.tile_width )
   zpa.queue_draw()
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -852,6 +990,8 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa.add_menu_item ( tile_menu, menu_callback, "Tile 0",    ("Tile_0", zpa ) )
     zpa.add_menu_item ( tile_menu, menu_callback, "Tile -1",   ("Tile_-1", zpa ) )
+    zpa.add_menu_item ( tile_menu, menu_callback, "XPM Test",  ("Tile_-2", zpa ) )
+    zpa.add_menu_item ( tile_menu, menu_callback, "XPM",       ("Tile_-3", zpa ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa.add_menu ( "_Help" )
