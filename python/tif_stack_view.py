@@ -543,7 +543,7 @@ def expose_callback ( drawing_area, event, zpa ):
 def get_image_data(zpa):
 
   if zpa.user_data['tile_number'] == -2:
-    print ( "Test XPM -2" )
+    #print ( "Test XPM -2" )
     xpm = [
     "16 16 3 1",
     "       c None",
@@ -567,11 +567,26 @@ def get_image_data(zpa):
     "                "
     ]
 
+    nr = 100
+    nc = 100
+    xpm = [ str(nr) + " " + str(nc) + " 16 1" ]
+    for i in range ( 16 ):
+      h = hex(i)[2]
+      k = chr(ord('a') + i)
+      xpm.append ( str(k) + " c #" + h + h + h  )
+
+    data = ""
+    for i in range (nr):
+      for j in range (nr):
+        data += ( chr ( ord('a') + ((i*j) % 256)/16 ) )
+      xpm.append ( data )
+      data = ""
+
     zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
 
   elif zpa.user_data['tile_number'] == -3:
 
-    print ( "Test XPM -3" )
+    #print ( "Test XPM -3" )
 
     print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
     layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
@@ -579,104 +594,28 @@ def get_image_data(zpa):
 
     #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
 
-
     f = open ( layer.ptiled_image_name, 'rb' )
     img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
     f.seek ( img_tile.tile_offsets[0] )
     d = f.read ( img_tile.tile_counts[0] )
 
-    '''
-    xpm = [ "20 20 8 1" ]
-    for c in range ( 8 ):
-      xpm.append ( str(c) + " c #" + str(c) )
-    for row in range(20):
-      for col in range(20
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    '''
-
-    xpm = [
-    "16 16 8 1",
-    "0 c #000",
-    "1 c #111",
-    "2 c #222",
-    "3 c #333",
-    "4 c #444",
-    "5 c #555",
-    "6 c #666",
-    "7 c #777",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677",
-    "0011223344556677"
-    ]
-
-    xpm = [
-    "20 20 16 1",
-    "a c #000",
-    "b c #111",
-    "c c #222",
-    "d c #333",
-    "e c #444",
-    "f c #555",
-    "g c #666",
-    "h c #777",
-    "i c #888",
-    "j c #999",
-    "k c #aaa",
-    "l c #bbb",
-    "m c #ccc",
-    "n c #ddd",
-    "o c #eee",
-    "p c #fff",
-    "aaaaaaaaaaaaaaaaaaaa",
-    "aaaaaaaaaaaaaaaabbbb",
-    "aaaaaaaabbbbbbbbcccc",
-    "aaaaaabbbbbcccccdddd",
-    "aaaabbbbccccddddeeee",
-    "aaaabbbcccdddeeeffff",
-    "aaabbbccdddeeeffgggh",
-    "aaabbccdddeeffgghhhi",
-    "aabbccddeeffgghhiijj",
-    "aabbccddeffgghhijjkk",
-    "aabbcddeffgghiijkkll",
-    "aabccdeefgghiijkllmn",
-    "aabcddefgghijjklmmno",
-    "aabcdeefghiijklmnnop",
-    "aabcdefghhijklmnoopa",
-    "aabcdefghijklmnoppab",
-    "abcdefghijklmnopabcd",
-    "abcdefghijklmnopbcde",
-    "abcdefghjklmnopacdef",
-    "abcdefhijklnopabdefg"
-    ]
-
-    xpm = [ "20 20 16 1" ]
+    nr = img_tile.tile_length
+    nc = img_tile.tile_width
+    xpm = [ str(nr) + " " + str(nc) + " 16 1" ]
     for i in range ( 16 ):
       h = hex(i)[2]
       k = chr(ord('a') + i)
       xpm.append ( str(k) + " c #" + h + h + h  )
 
     data = ""
-    for i in range (20):
-      for j in range (20):
-        data += ( chr ( ord('a') + ((i*j) % 256)/16 ) )
+    for r in range (nr):
+      for c in range (nc):
+        i = (r*256) + c
+        data += ( chr ( ord('a') + (ord(d[i]) % 256)/16 ) )
       xpm.append ( data )
       data = ""
-
 
     zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
   else:
@@ -932,7 +871,7 @@ def main():
                     'image_frame'        : None,
                     'image_layers'       : [],
                     'layer_index'        : 0,
-                    'tile_number'        : 0,
+                    'tile_number'        : -3,
                     'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
                     'running'            : False,
@@ -990,8 +929,9 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa.add_menu_item ( tile_menu, menu_callback, "Tile 0",    ("Tile_0", zpa ) )
     zpa.add_menu_item ( tile_menu, menu_callback, "Tile -1",   ("Tile_-1", zpa ) )
-    zpa.add_menu_item ( tile_menu, menu_callback, "XPM Test",  ("Tile_-2", zpa ) )
     zpa.add_menu_item ( tile_menu, menu_callback, "XPM",       ("Tile_-3", zpa ) )
+    zpa.add_menu_sep  ( tile_menu )
+    zpa.add_menu_item ( tile_menu, menu_callback, "XPM Test",  ("Tile_-2", zpa ) )
 
   # Create a "Help" menu
   (help_menu, help_item) = zpa.add_menu ( "_Help" )
