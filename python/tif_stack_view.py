@@ -389,6 +389,7 @@ class pyramid_tiff:
 
 
 def expose_callback ( drawing_area, event, zpa ):
+  print ( "Redrawing" )
   diff_2d_sim = zpa.user_data['diff_2d_sim']
   display_time_index = zpa.user_data['display_time_index']
   x, y, width, height = event.area  # This is the area of the portion newly exposed
@@ -539,6 +540,19 @@ def expose_callback ( drawing_area, event, zpa ):
   gc.foreground = old_fg
   return False
 
+
+def get_image_data(zpa):
+  #>>> [ s for s in dir(gtk.gdk) if 'pixbuf' in s ]
+  # ['pixbuf_get_file_info', 'pixbuf_get_formats', 'pixbuf_get_from_drawable', 'pixbuf_loader_new',
+  #  'pixbuf_loader_new_with_mime_type', 'pixbuf_new_from_array', 'pixbuf_new_from_data', 'pixbuf_new_from_file',
+  #  'pixbuf_new_from_file_at_scale', 'pixbuf_new_from_file_at_size', 'pixbuf_new_from_inline', 'pixbuf_new_from_stream',
+  #  'pixbuf_new_from_stream_at_scale', 'pixbuf_new_from_xpm_data']
+  print ( "New layer index = " + str(zpa.user_data['layer_index']) )
+  layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
+  print ( "Image file = " + str(layer.ptiled_image_name) )
+  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
+
+
 class zoom_panel ( app_window.zoom_pan_area ):
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
@@ -550,26 +564,19 @@ class zoom_panel ( app_window.zoom_pan_area ):
     else:
       # Use normal (unshifted) scroll wheel to move through the stack
       print ( "Moving through the stack" )
-      '''
-      global alignment_layer_list
-      global alignment_layer_index
-      print_debug ( 50, "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
-      if len(alignment_layer_list) <= 0:
-        alignment_layer_index = -1
-        print_debug ( 60, " Index = " + str(alignment_layer_index) )
+      if len(zpa.user_data['image_layers']) <= 0:
+        print ( "No images" )
       else:
         if event.direction == gtk.gdk.SCROLL_UP:
-          self.move_through_stack ( 1 )
+          if (zpa.user_data['layer_index']+1) < len(zpa.user_data['image_layers']):
+            zpa.user_data['layer_index'] += 1
+            get_image_data(zpa)
         elif event.direction == gtk.gdk.SCROLL_DOWN:
-          self.move_through_stack ( -1 )
+          if zpa.user_data['layer_index'] > 0:
+            zpa.user_data['layer_index'] += -1
+            get_image_data(zpa)
 
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-      # Draw the windows
-      zpa_original.queue_draw()
-      for p in panel_list:
-        p.queue_draw()
-      '''
+      zpa.queue_draw()
       return True
 
 
@@ -742,6 +749,7 @@ def main():
   zpa.user_data = { 
                     'image_frame'        : None,
                     'image_layers'       : [],
+                    'layer_index'        : 0,
                     'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
                     'running'            : False,
@@ -852,9 +860,8 @@ def main():
   reset_button.show()
 
 
-
-  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_shift_rot_skew_crop_4k4k_1.jpg" )
-
+  #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_shift_rot_skew_crop_4k4k_1.jpg" )
+  zpa.user_data['image_frame'] = None
 
   # Show the main window
   window.show()
