@@ -13,7 +13,7 @@ import gtk
 
 import app_window
 
-debug_level = 50
+debug_level = 0
 def print_debug ( level, str ):
   global debug_level
   if level < debug_level:
@@ -62,9 +62,9 @@ class pyramid_tiff:
       # Seek to the last one
       f.seek ( self.tile_offsets[-1] )
       image_data = f.read ( self.tile_counts[-1] )
-      print ( "Read " + str(self.tile_counts[-1]) + " bytes at " + str(self.tile_offsets[-1]) + " from " + str(self.file_name) )
+      print_debug ( 50, "Read " + str(self.tile_counts[-1]) + " bytes at " + str(self.tile_offsets[-1]) + " from " + str(self.file_name) )
       tile_data_str = str([ord(d) for d in image_data[0:20]])
-      print ( "  " + tile_data_str )
+      print_debug ( 50, "  " + tile_data_str )
     return ( tile_data_str )
 
   def __init__ ( self, file_name ):
@@ -77,29 +77,29 @@ class pyramid_tiff:
     self.tile_offsets = []
     self.tile_counts = []
 
-    print ( "Reading from TIFF: " + str(file_name) )
+    print_debug ( 50, "Reading from TIFF: " + str(file_name) )
 
     with open ( self.file_name, 'rb' ) as f:
 
       d = f.read(50)
-      print ( "Tiff Data: " + str([ord(c) for c in d]) )
+      print_debug ( 50, "Tiff Data: " + str([ord(c) for c in d]) )
       f.seek(0)
 
       d = [ord(c) for c in f.read(4)] # Read 4 bytes of the header
       if   d == [0x49, 0x49, 0x2a, 0x00]:
-        print ( "This is a TIFF file with Intel (little endian) byte ordering" )
+        print_debug ( 50, "This is a TIFF file with Intel (little endian) byte ordering" )
         self.endian = '<' # Intel format
       elif d == [0x4d, 0x4d, 0x00, 0x2a]:
-        print ( "This is a TIFF file with Motorola (big endian) byte ordering" )
+        print_debug ( 50, "This is a TIFF file with Motorola (big endian) byte ordering" )
         self.endian = '>' # Motorola format
       else:
-        print ( "This is not a TIFF file" )
+        print_debug ( 50, "This is not a TIFF file" )
         self.endian = None
         return
 
       # Read the offset of the first image directory from the header
       offset = struct.unpack_from ( self.endian+"L", f.read(4), offset=0 )[0]
-      print ( "Offset = " + str(offset) )
+      print_debug ( 50, "Offset = " + str(offset) )
 
       dir_num = 1
 
@@ -108,7 +108,7 @@ class pyramid_tiff:
         f.seek ( offset )
         numDirEntries = struct.unpack_from ( self.endian+'H', f.read(2), offset=0 )[0]
         offset += 2
-        print ( "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
+        print_debug ( 50, "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
         dir_num += 1
         # Read the tags
         f.seek ( offset )
@@ -130,53 +130,53 @@ class pyramid_tiff:
               except:
                 ascii_str += '?'
                 f.seek ( tagvalue+i )
-                print ( "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
+                print_debug ( 50, "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
             if len(ascii_str) > 60:
               ascii_str = ascii_str[0:60]
             ascii_str = ascii_str.replace ( "\n", " " )
             ascii_str = ascii_str.replace ( "\r", " " )
             tagstr += ascii_str + "\""
           '''
-          print ( "  Tag = " + str(tagtuple) + " = " + tagstr )
+          print_debug ( 50, "  Tag = " + str(tagtuple) + " = " + tagstr )
         self.image_list.append ( this_image )
         f.seek ( offset )
         nextIFDOffset = struct.unpack_from ( self.endian+'L', f.read(4), offset=0 )[0]
         offset = nextIFDOffset
-        print ( "\n" )
+        print_debug ( 50, "\n" )
 
-      print ( "\n\n" )
-      print ( 120*"=" )
-      print ( "\n\n" )
+      print_debug ( 50, "\n\n" )
+      print_debug ( 50, 120*"=" )
+      print_debug ( 50, "\n\n" )
 
       # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
       image_num = 1
       for this_image in self.image_list:
-        print ( "Image " + str(image_num) + ":\n" )
+        print_debug ( 50, "Image " + str(image_num) + ":\n" )
         image_num += 1
 
         for tag_rec in this_image.tag_record_list:
-          print ( "  Tag: " + str(tag_rec) )
+          print_debug ( 50, "  Tag: " + str(tag_rec) )
           if tag_rec.tag == 256:
             this_image.width = tag_rec.tagvalue
-            print ( "    Width: " + str(this_image.width) )
+            print_debug ( 50, "    Width: " + str(this_image.width) )
           if tag_rec.tag == 257:
             this_image.height = tag_rec.tagvalue
-            print ( "    Height: " + str(this_image.height) )
+            print_debug ( 50, "    Height: " + str(this_image.height) )
           if tag_rec.tag == 258:
             this_image.bps = tag_rec.tagvalue
-            print ( "    Bits/Samp: " + str(this_image.bps) )
+            print_debug ( 50, "    Bits/Samp: " + str(this_image.bps) )
             if this_image.bps != 8:
-              print ( "Can't handle files with " + str(this_image.bps) + " bits per sample" )
+              print_debug ( 50, "Can't handle files with " + str(this_image.bps) + " bits per sample" )
               exit ( 0 )
           if tag_rec.tag == 322:
             this_image.tile_width = tag_rec.tagvalue
-            print ( "    TileWidth: " + str(this_image.tile_width) )
+            print_debug ( 50, "    TileWidth: " + str(this_image.tile_width) )
           if tag_rec.tag == 323:
             this_image.tile_length = tag_rec.tagvalue
-            print ( "    TileLength: " + str(this_image.tile_length) )
+            print_debug ( 50, "    TileLength: " + str(this_image.tile_length) )
           if tag_rec.tag == 324:
-            print ( "    TileOffsets: " + str(tag_rec.tagvalue) )
+            print_debug ( 50, "    TileOffsets: " + str(tag_rec.tagvalue) )
             if tag_rec.tagcount == 1:
               # Special case where the offset is the tagvalue?
               this_image.tile_offsets = ( tag_rec.tagvalue, )
@@ -184,9 +184,9 @@ class pyramid_tiff:
               f.seek ( tag_rec.tagvalue )
               this_image.tile_offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
             self.tile_offsets = this_image.tile_offsets
-            print ( "       " + str(this_image.tile_offsets) )
+            print_debug ( 50, "       " + str(this_image.tile_offsets) )
           if tag_rec.tag == 325:
-            print ( "    TileByteCounts: " + str(tag_rec.tagvalue) )
+            print_debug ( 50, "    TileByteCounts: " + str(tag_rec.tagvalue) )
             if tag_rec.tagcount == 1:
               # Special case where the count is the tagvalue?
               this_image.tile_counts = ( tag_rec.tagvalue, )
@@ -194,9 +194,9 @@ class pyramid_tiff:
               f.seek ( tag_rec.tagvalue )
               this_image.tile_counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
             self.tile_counts = this_image.tile_counts
-            print ( "       " + str(this_image.tile_counts) )
+            print_debug ( 50, "       " + str(this_image.tile_counts) )
 
-        print ( "  bps:" + str(this_image.bps) +
+        print_debug ( 50, "  bps:" + str(this_image.bps) +
                 ", width:" + str(this_image.width) +
                 ", height:" + str(this_image.height) +
                 ", tile_width:" + str(this_image.tile_width) +
@@ -206,32 +206,32 @@ class pyramid_tiff:
 
 
         if not (None in (this_image.bps, this_image.width, this_image.height, this_image.tile_width, this_image.tile_length, this_image.tile_offsets, this_image.tile_counts)):
-          print ( "\nRead from a block of tiles ...\n" )
+          print_debug ( 50, "\nRead from a block of tiles ...\n" )
           for i in range(len(this_image.tile_offsets)):
             offset = this_image.tile_offsets[i]
             count = this_image.tile_counts[i]
             f.seek ( offset )
             data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
-            print ( "Read data " + str(data) + " from " + str(offset) )
-            print ( "" )
+            #print_debug ( 50, "Read data " + str(data) + " from " + str(offset) )
+            print_debug ( 50, "" )
 
         '''
         if not (None in (bps, w, h, tw, tl, to, tc)):
-          print ( "\nFound a block of tiles:\n" )
+          print_debug ( 50, "\nFound a block of tiles:\n" )
           for i in range(len(offsets)):
             offset = offsets[i]
             count = counts[i]
             f.seek ( offset )
             data = struct.unpack_from ( self.endian+(count*"B"), f.read(count), offset=0 )
             for r in range(tl):
-              print ( str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
-            print ( "" )
+              print_debug ( 50, str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
+            print_debug ( 50, "" )
         '''
 
         # offset = 0 ############ Force a stop
 
 
-      print ( "\n\n" )
+      print_debug ( 50, "\n\n" )
 
   def is_immediate ( self, tagtuple ):
     tag = tagtuple[0]
@@ -389,7 +389,7 @@ class pyramid_tiff:
 
 
 def expose_callback ( drawing_area, event, zpa ):
-  print ( "Redrawing" )
+  print_debug ( 50, "Redrawing" )
   diff_2d_sim = zpa.user_data['diff_2d_sim']
   display_time_index = zpa.user_data['display_time_index']
   x, y, width, height = event.area  # This is the area of the portion newly exposed
@@ -532,7 +532,7 @@ def expose_callback ( drawing_area, event, zpa ):
     scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
     drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
 
-    # print ( "Zoom Scale = " + str(zpa.zoom_scale) )
+    # print_debug ( 50, "Zoom Scale = " + str(zpa.zoom_scale) )
 
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -547,21 +547,25 @@ def get_image_data(zpa):
   #  'pixbuf_loader_new_with_mime_type', 'pixbuf_new_from_array', 'pixbuf_new_from_data', 'pixbuf_new_from_file',
   #  'pixbuf_new_from_file_at_scale', 'pixbuf_new_from_file_at_size', 'pixbuf_new_from_inline', 'pixbuf_new_from_stream',
   #  'pixbuf_new_from_stream_at_scale', 'pixbuf_new_from_xpm_data']
-  print ( "New layer index = " + str(zpa.user_data['layer_index']) )
+  print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
   layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
-  print ( "Image file = " + str(layer.ptiled_image_name) )
+  print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
 
   #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   f = open ( layer.ptiled_image_name, 'rb' )
-  img_tile = layer.tiff_struct.image_list[-1]
+  img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
   f.seek ( img_tile.tile_offsets[0] )
   d = f.read ( img_tile.tile_counts[0] )
   #d = ''.join ( [ s+s+s+chr(255) for s in d ] )
-  d = ''.join ( [ s+s+s for s in d ] )
-  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_data ( d, 0, False, 8, img_tile.tile_width, img_tile.tile_length, img_tile.tile_width )
+  #d = ''.join ( [ s+s+s for s in d ] )
+  zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_data ( d, gtk.gdk.COLORSPACE_RGB, 
+                                                                False, 8, 
+                                                                img_tile.tile_width,
+                                                                img_tile.tile_length,
+                                                                img_tile.tile_width )
   zpa.queue_draw()
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -576,9 +580,9 @@ class zoom_panel ( app_window.zoom_pan_area ):
       return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
     else:
       # Use normal (unshifted) scroll wheel to move through the stack
-      print ( "Moving through the stack" )
+      print_debug ( 50, "Moving through the stack" )
       if len(zpa.user_data['image_layers']) <= 0:
-        print ( "No images" )
+        print_debug ( 50, "No images" )
       else:
         if event.direction == gtk.gdk.SCROLL_UP:
           if (zpa.user_data['layer_index']+1) < len(zpa.user_data['image_layers']):
@@ -619,24 +623,19 @@ def background_callback ( zpa ):
     if t - zpa.user_data['last_update'] > zpa.user_data['frame_delay']:
       zpa.user_data['last_update'] = t
       step_callback(zpa)
-      print ( "  Running at time = " + str(t) )
+      print_debug ( 50, "  Running at time = " + str(t) )
       zpa.queue_draw()
   return True
 
 def run_callback ( zpa ):
-  # print ( "Run " )
+  # print_debug ( 50, "Run " )
   zpa.user_data['running'] = True
   return True
 
 def stop_callback ( zpa ):
-  # print ( "Stop " )
+  # print_debug ( 50, "Stop " )
   zpa.user_data['running'] = False
   return True
-
-def print_debug ( level, str ):
-  global debug_level
-  if level < debug_level:
-    print ( str )
 
 
 def menu_callback ( widget, data=None ):
@@ -682,12 +681,12 @@ def menu_callback ( widget, data=None ):
           except:
             # This catches directories that already exist
             pass
-          print ( "Selected Files: " + str(file_name_list) )
+          print_debug ( 50, "Selected Files: " + str(file_name_list) )
           for f in file_name_list:
             base_name = f.split(os.sep)[-1]
             parent_dir = f.split(os.sep)[-2]
             if (parent_dir == "pyramid_stack") and (base_name.split('.')[-1] == "tif"):
-              print ( "File " + base_name + " is assumed to be tiled." )
+              print_debug ( 50, "File " + base_name + " is assumed to be tiled." )
               new_layer = image_layer ( f, f )
               new_layer.load_tiff_structure()
               zpa.user_data['image_layers'].append ( new_layer )
@@ -695,7 +694,7 @@ def menu_callback ( widget, data=None ):
               if '.' in base_name:
                 base_name = base_name[0:base_name.rfind('.')]
               new_name = "pyramid_stack" + os.sep + base_name + '.tif'
-              print ( "Tiling file " + str(f) + " to " + new_name )
+              print_debug ( 50, "Tiling file " + str(f) + " to " + new_name )
               #p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "tif:"+new_name] )
               p = subprocess.Popen ( ['/usr/bin/convert', f, "-compress", "None", "-depth", "8", "-define", "tiff:tile-geometry=256x256", "ptif:"+new_name] )
               p.wait()
@@ -704,17 +703,17 @@ def menu_callback ( widget, data=None ):
               zpa.user_data['image_layers'].append ( new_layer )
 
       file_chooser.destroy()
-      print ( "Done with dialog" )
+      print_debug ( 50, "Done with dialog" )
       #zpa.force_center = True
       get_image_data(zpa)
       zpa.queue_draw()
 
     elif command == "Center":
-      print ( "Centering" )
+      print_debug ( 50, "Centering" )
       zpa.queue_draw()
 
     elif command == "ClearAll":
-      print ( "Clearing all images" )
+      print_debug ( 50, "Clearing all images" )
       zpa.user_data['image_frame'] = None
       zpa.user_data['layer_index'] = 0
       zpa.user_data['image_layers'] = []
@@ -733,36 +732,52 @@ def menu_callback ( widget, data=None ):
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
 
+    elif "Tile_" in command:
+      try:
+        tn = int(command[len("Tile_"):])
+        zpa.user_data['tile_number'] = tn
+        get_image_data(zpa)
+        zpa.queue_draw()
+      except:
+        pass
+
+    elif "Debug_" in command:
+      global debug_level
+      try:
+        debug_level = int(command[len("Debug_"):])
+      except:
+        pass
+
     else:
-      print ( "Menu option \"" + command + "\" is not handled yet." )
+      print_debug ( 50, "Menu option \"" + command + "\" is not handled yet." )
 
   return True
 
 # Minimized stub of the previous 2D Simulation
 class diff_2d_sim:
   def __init__ ( self ):
-    print ( " Constructing a new minimal simulation" )
+    print_debug ( 50, " Constructing a new minimal simulation" )
     self.objects = []
     # Set some simulation values
     self.t = 0
     self.dt = 2
 
   def diffuse ( self ):
-    print ( "Start diffuse" )
-    print ( "End diffuse" )
+    print_debug ( 50, "Start diffuse" )
+    print_debug ( 50, "End diffuse" )
 
   def step ( self ):
-    print ( "Before run(1): t=" + str(self.t) )
+    print_debug ( 50, "Before run(1): t=" + str(self.t) )
     self.t += self.dt
-    print ( "After run(1): t=" + str(self.t) )
+    print_debug ( 50, "After run(1): t=" + str(self.t) )
 
   def step_in ( self ):
-    print ( "Before step_in(): t=" + str(self.t) )
+    print_debug ( 50, "Before step_in(): t=" + str(self.t) )
     self.t += self.dt
-    print ( "After step_in(): t=" + str(self.t) )
+    print_debug ( 50, "After step_in(): t=" + str(self.t) )
 
   def print_self ( self ):
-    print ( "t = " + str(self.t) )
+    print_debug ( 50, "t = " + str(self.t) )
 
 
 
@@ -779,6 +794,7 @@ def main():
                     'image_frame'        : None,
                     'image_layers'       : [],
                     'layer_index'        : 0,
+                    'tile_number'        : 0,
                     'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
                     'running'            : False,
@@ -823,6 +839,20 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa.add_menu_item ( scales_menu, menu_callback, "Scale _1",   ("Scale1", zpa ) )
 
+  # Create a "Set" menu
+  (set_menu, set_item) = zpa.add_menu ( "Set" )
+  if True: # An easy way to indent and still be legal Python
+    zpa.add_menu_item ( set_menu, menu_callback, "Debug 0",    ("Debug_0", zpa ) )
+    zpa.add_menu_item ( set_menu, menu_callback, "Debug 40",   ("Debug_40", zpa ) )
+    zpa.add_menu_item ( set_menu, menu_callback, "Debug 60",   ("Debug_60", zpa ) )
+    zpa.add_menu_item ( set_menu, menu_callback, "Debug 100",  ("Debug_100", zpa ) )
+
+  # Create a "Tile" menu
+  (tile_menu, tile_item) = zpa.add_menu ( "Tile" )
+  if True: # An easy way to indent and still be legal Python
+    zpa.add_menu_item ( tile_menu, menu_callback, "Tile 0",    ("Tile_0", zpa ) )
+    zpa.add_menu_item ( tile_menu, menu_callback, "Tile -1",   ("Tile_-1", zpa ) )
+
   # Create a "Help" menu
   (help_menu, help_item) = zpa.add_menu ( "_Help" )
   if True: # An easy way to indent and still be legal Python
@@ -834,6 +864,8 @@ def main():
   menu_bar.append ( file_item )
   menu_bar.append ( images_item )
   menu_bar.append ( scales_item )
+  menu_bar.append ( set_item )
+  menu_bar.append ( tile_item )
   menu_bar.append ( help_item )
 
   # Show the menu bar itself (everything must be shown!!)
