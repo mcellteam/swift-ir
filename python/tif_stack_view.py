@@ -540,7 +540,15 @@ def expose_callback ( drawing_area, event, zpa ):
   gc.foreground = old_fg
   return False
 
+
+b64    =     [ chr(ord('A')+i) for i in range(26) ]
+b64.extend ( [ chr(ord('a')+i) for i in range(26) ] )
+b64.extend ( [ chr(ord('0')+i) for i in range(10) ] )
+b64.extend ( [ '+', '/' ] )
+
+
 def get_image_data(zpa):
+  global b64
 
   if zpa.user_data['tile_number'] == -2:
     #print ( "Test XPM -2" )
@@ -623,12 +631,6 @@ def get_image_data(zpa):
 
     #print ( "Test 6 bit XPM -4" )
 
-    b64    =     [ chr(ord('A')+i) for i in range(26) ]
-    b64.extend ( [ chr(ord('a')+i) for i in range(26) ] )
-    b64.extend ( [ chr(ord('0')+i) for i in range(10) ] )
-    b64.extend ( [ '+', '/' ] )
-    print ( str(b64) )
-
     print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
     layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
     print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
@@ -652,19 +654,14 @@ def get_image_data(zpa):
       k = b64[i]
       xpm.append ( str(k) + " c #" + h + h + h  )
 
-    h64 = [ 0 for i in range(len(b64)) ]
     data = ""
     for r in range (nr):
       for c in range (nc):
         i = (r*256) + c
         bindex = (ord(d[i])%256)/4
         data += b64[bindex]
-        h64[bindex] += 1
       xpm.append ( data )
       data = ""
-
-    print ( "Histogram:" )
-    print ( str(h64) )
 
     zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
 
@@ -839,6 +836,41 @@ def menu_callback ( widget, data=None ):
       print_debug ( 50, "Centering" )
       zpa.queue_draw()
 
+    elif command == "ScaleSel":
+      print_debug ( 50, "Tile Size" )
+
+      layers = zpa.user_data['image_layers']
+      layer = layers[zpa.user_data['layer_index']]
+      ts = layer.tiff_struct
+      width_dict = {}
+      for im in ts.image_list:
+        width_dict[im.width] = im
+
+      label = gtk.Label("Tile Sizes: " + ' '.join([ str(s) for s in sorted(width_dict.keys())]) )
+      dialog = gtk.Dialog("Enter a Tile Size",
+                         None,
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+      dialog.vbox.pack_start(label)
+      label.show()
+      scales_entry = gtk.Entry(20)
+      scales_entry.set_text ( '' )
+      dialog.vbox.pack_end(scales_entry)
+      scales_entry.show()
+
+
+      response = dialog.run()
+      if response == gtk.RESPONSE_ACCEPT:
+        zpa.user_data['selected_width'] = int(scales_entry.get_text())
+        print ( "Selected width = " + str(zpa.user_data['selected_width']) )
+
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+      dialog.destroy()
+
+      zpa.queue_draw()
+
     elif command == "ClearAll":
       print_debug ( 50, "Clearing all images" )
       zpa.user_data['image_frame'] = None
@@ -921,6 +953,7 @@ def main():
                     'image_frame'        : None,
                     'image_layers'       : [],
                     'layer_index'        : 0,
+                    'selected_width'     : None,
                     'tile_number'        : -4,
                     'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
@@ -965,6 +998,8 @@ def main():
   (scales_menu, scales_item) = zpa.add_menu ( "_Scales" )
   if True: # An easy way to indent and still be legal Python
     zpa.add_menu_item ( scales_menu, menu_callback, "Scale _1",   ("Scale1", zpa ) )
+    zpa.add_menu_sep  ( images_menu )
+    zpa.add_menu_item ( scales_menu, menu_callback, "Select",   ("ScaleSel", zpa ) )
 
   # Create a "Set" menu
   (set_menu, set_item) = zpa.add_menu ( "Set" )
