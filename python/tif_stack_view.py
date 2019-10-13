@@ -586,7 +586,7 @@ def get_image_data(zpa):
 
   elif zpa.user_data['tile_number'] == -3:
 
-    #print ( "Test XPM -3" )
+    #print ( "Test 4 bit XPM -3" )
 
     print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
     layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
@@ -618,6 +618,56 @@ def get_image_data(zpa):
       data = ""
 
     zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
+
+  elif zpa.user_data['tile_number'] == -4:
+
+    #print ( "Test 6 bit XPM -4" )
+
+    b64    =     [ chr(ord('A')+i) for i in range(26) ]
+    b64.extend ( [ chr(ord('a')+i) for i in range(26) ] )
+    b64.extend ( [ chr(ord('0')+i) for i in range(10) ] )
+    b64.extend ( [ '+', '/' ] )
+    print ( str(b64) )
+
+    print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
+    layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
+    print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
+
+    #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
+
+    f = open ( layer.ptiled_image_name, 'rb' )
+    img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
+    f.seek ( img_tile.tile_offsets[0] )
+    d = f.read ( img_tile.tile_counts[0] )
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    nr = img_tile.tile_length
+    nc = img_tile.tile_width
+
+    xpm = [ str(nr) + " " + str(nc) + " 64 1" ]
+    for i in range ( 64 ):
+      h = hex(4*i)[2:]
+      if len(h) <= 1: h = '0' + h
+      k = b64[i]
+      xpm.append ( str(k) + " c #" + h + h + h  )
+
+    h64 = [ 0 for i in range(len(b64)) ]
+    data = ""
+    for r in range (nr):
+      for c in range (nc):
+        i = (r*256) + c
+        bindex = (ord(d[i])%256)/4
+        data += b64[bindex]
+        h64[bindex] += 1
+      xpm.append ( data )
+      data = ""
+
+    print ( "Histogram:" )
+    print ( str(h64) )
+
+    zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
+
   else:
     #>>> [ s for s in dir(gtk.gdk) if 'pixbuf' in s ]
     # ['pixbuf_get_file_info', 'pixbuf_get_formats', 'pixbuf_get_from_drawable', 'pixbuf_loader_new',
@@ -871,7 +921,7 @@ def main():
                     'image_frame'        : None,
                     'image_layers'       : [],
                     'layer_index'        : 0,
-                    'tile_number'        : -3,
+                    'tile_number'        : -4,
                     'diff_2d_sim'        : diff_2d_sim(),
                     'display_time_index' : -1,
                     'running'            : False,
@@ -929,7 +979,8 @@ def main():
   if True: # An easy way to indent and still be legal Python
     zpa.add_menu_item ( tile_menu, menu_callback, "Tile 0",    ("Tile_0", zpa ) )
     zpa.add_menu_item ( tile_menu, menu_callback, "Tile -1",   ("Tile_-1", zpa ) )
-    zpa.add_menu_item ( tile_menu, menu_callback, "XPM",       ("Tile_-3", zpa ) )
+    zpa.add_menu_item ( tile_menu, menu_callback, "XPM 4-bit", ("Tile_-3", zpa ) )
+    zpa.add_menu_item ( tile_menu, menu_callback, "XPM 6-bit", ("Tile_-4", zpa ) )
     zpa.add_menu_sep  ( tile_menu )
     zpa.add_menu_item ( tile_menu, menu_callback, "XPM Test",  ("Tile_-2", zpa ) )
 
