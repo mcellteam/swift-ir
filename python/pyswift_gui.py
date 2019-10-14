@@ -164,6 +164,12 @@ point_cursor = gtk.gdk.CROSSHAIR
 global max_image_file_size
 max_image_file_size = 700000000
 
+global generate_as_tiled
+generate_as_tiled = False
+
+global show_tiled
+show_tiled = False
+
 global debug_level
 debug_level = 50
 
@@ -677,6 +683,346 @@ class annotated_image:
     self.graphics_items.append ( item )
 
 
+import struct
+
+class tag_record:
+  def __init__ ( self, tag, tagtype, tagcount, tagvalue ):
+    self.tag = tag
+    self.tagtype = tagtype
+    self.tagcount = tagcount
+    self.tagvalue = tagvalue
+  def __repr__ ( self ):
+    return ( "TR: " + str(self.tag) + ", " + str(self.tagtype) + ", " + str(self.tagcount) + ", " + str(self.tagvalue) )
+
+
+class tiled_tiff:
+  ''' This is an abstraction of a tiled tiff file to use for testing faster image display '''
+
+  def __repr__ ( self ):
+    tile_data_str = None
+    f = open ( self.file_name, 'rb' )
+    if len(self.tile_offsets) > 0:
+      # Seek to the last one
+      f.seek ( self.tile_offsets[-1] )
+      image_data = f.read ( self.tile_counts[-1] )
+      print ( "Read " + str(self.tile_counts[-1]) + " bytes at " + str(self.tile_offsets[-1]) + " from " + str(self.file_name) )
+      tile_data_str = str([ord(d) for d in image_data[0:20]])
+      print ( "  " + tile_data_str )
+    return ( tile_data_str )
+
+  def __init__ ( self, file_name ):
+
+    self.file_name = file_name
+    self.endian = '<' # Intel format
+    self.dir_record_list = []
+    self.tile_width = -1
+    self.tile_height = -1
+    self.tile_offsets = []
+    self.tile_counts = []
+
+    print ( "Reading from TIFF: " + str(file_name) )
+
+    tag_record_list = []
+    with open ( self.file_name, 'rb' ) as f:
+
+      d = f.read(50)
+      print ( "Tiff Data: " + str([ord(c) for c in d]) )
+      f.seek(0)
+
+      d = [ord(c) for c in f.read(4)] # Read 4 bytes of the header
+      if   d == [0x49, 0x49, 0x2a, 0x00]:
+        print ( "This is a TIFF file with Intel (little endian) byte ordering" )
+        self.endian = '<' # Intel format
+      elif d == [0x4d, 0x4d, 0x00, 0x2a]:
+        print ( "This is a TIFF file with Motorola (big endian) byte ordering" )
+        self.endian = '>' # Motorola format
+      else:
+        print ( "This is not a TIFF file" )
+        self.endian = None
+        return
+
+      # Read the offset of the first image directory from the header
+      offset = struct.unpack_from ( self.endian+"L", f.read(4), offset=0 )[0]
+      print ( "Offset = " + str(offset) )
+
+      dir_num = 1
+
+      while offset > 0:
+        f.seek ( offset )
+        numDirEntries = struct.unpack_from ( self.endian+'H', f.read(2), offset=0 )[0]
+        offset += 2
+        print ( "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
+        dir_num += 1
+        # Read the tags
+        f.seek ( offset )
+        for tagnum in range(numDirEntries):
+          tagtuple = struct.unpack_from ( self.endian+'HHLL', f.read(12), offset=0 )
+          tag = tagtuple[0]
+          tagtype = tagtuple[1]
+          tagcount = tagtuple[2]
+          tagvalue = tagtuple[3]
+          tag_record_list.append ( tag_record ( tag, tagtype, tagcount, tagvalue ) )
+          offset += 12
+          tagstr = self.str_from_tag ( tagtuple )
+          '''
+          if tagstr.endswith ( 'ASCII' ):
+            ascii_str = ":  \""
+            for i in range(tagcount):
+              try:
+                ascii_str += str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0].decode('utf-8'))
+              except:
+                ascii_str += '?'
+                f.seek ( tagvalue+i )
+                print ( "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
+            if len(ascii_str) > 60:
+              ascii_str = ascii_str[0:60]
+            ascii_str = ascii_str.replace ( "\n", " " )
+            ascii_str = ascii_str.replace ( "\r", " " )
+            tagstr += ascii_str + "\""
+          '''
+          print ( "  Tag = " + str(tagtuple) + " = " + tagstr )
+        self.dir_record_list.append ( tag_record_list )
+        tag_record_list = []
+        f.seek ( offset )
+        nextIFDOffset = struct.unpack_from ( self.endian+'L', f.read(4), offset=0 )[0]
+        offset = nextIFDOffset
+        print ( "\n" )
+
+      print ( "\n\n" )
+      print ( 120*"=" )
+      print ( "\n\n" )
+
+
+      dir_num = 1
+      for dir_record in self.dir_record_list:
+        print ( "Directory " + str(dir_num) + ":\n" )
+        dir_num += 1
+        bps = None
+        w = None
+        h = None
+        tw = None
+        tl = None
+        to = None
+        tc = None
+        offsets = None
+        counts = None
+        for tag_rec in dir_record:
+          print ( "  New tag: " + str(tag_rec) )
+          if tag_rec.tag == 256:
+            w = tag_rec.tagvalue
+            self.tile_width = w
+            print ( "    Width: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 257:
+            h = tag_rec.tagvalue
+            self.tile_height = h
+            print ( "    Height: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 258:
+            bps = tag_rec.tagvalue
+            print ( "    Bits/Samp: " + str(tag_rec.tagvalue) )
+            if bps != 8:
+              print ( "Can't handle files with " + str(bps) + " bits per sample" )
+              exit ( 0 )
+          if tag_rec.tag == 322:
+            tw = tag_rec.tagvalue
+            print ( "    TileWidth: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 323:
+            tl = tag_rec.tagvalue
+            print ( "    TileLength: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 324:
+            to = tag_rec.tagvalue
+            print ( "    TileOffsets: " + str(tag_rec.tagvalue) )
+            f.seek ( tag_rec.tagvalue )
+            offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_offsets = offsets
+            print ( "       " + str(offsets) )
+          if tag_rec.tag == 325:
+            tc = tag_rec.tagvalue
+            print ( "    TileByteCounts: " + str(tag_rec.tagvalue) )
+            f.seek ( tag_rec.tagvalue )
+            counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_counts = counts
+            print ( "       " + str(counts) )
+
+        if not (None in (bps, w, h, tw, tl, to, tc)):
+          print ( "\nRead from a block of tiles ...\n" )
+          for i in range(len(offsets)):
+            offset = offsets[i]
+            count = counts[i]
+            f.seek ( offset )
+            data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
+            #print ( "Read data " + str(data) + " from " + str(offset) )
+            #print ( "" )
+        '''
+        if not (None in (bps, w, h, tw, tl, to, tc)):
+          print ( "\nFound a block of tiles:\n" )
+          for i in range(len(offsets)):
+            offset = offsets[i]
+            count = counts[i]
+            f.seek ( offset )
+            data = struct.unpack_from ( self.endian+(count*"B"), f.read(count), offset=0 )
+            for r in range(tl):
+              print ( str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
+            print ( "" )
+        '''
+
+        # offset = 0 ############ Force a stop
+
+
+      print ( "\n\n" )
+
+  def is_immediate ( self, tagtuple ):
+    tag = tagtuple[0]
+    tagtype = tagtuple[1]
+    tagcount = tagtuple[2]
+    tagvalue = tagtuple[3]
+    if tagtype == 1:
+      # Byte
+      return (tagcount <= 4)
+    elif tagtype == 2:
+      # ASCII null-terminated string
+      # Assume that this is never in the tag?
+      return False
+    elif tagtype == 3:
+      # Short (2-byte)
+      return (tagcount <= 2)
+    elif tagtype == 4:
+      # Long (4-byte)
+      return (tagcount <= 1)
+    elif tagtype == 5:
+      # Rational (2 long values)
+      return False
+    elif tagtype == 6:
+      # Signed Byte
+      return (tagcount <= 4)
+    elif tagtype == 7:
+      # Undefined Byte
+      return (tagcount <= 4)
+    elif tagtype == 8:
+      # Signed Short
+      return (tagcount <= 2)
+    elif tagtype == 9:
+      # Signed Long
+      return (tagcount <= 1)
+    elif tagtype == 10:
+      # Signed Rational (2 long signed)
+      return False
+    elif tagtype == 11:
+      # Float (4 bytes)
+      return (tagcount <= 1)
+    elif tagtype == 12:
+      # Double (8 bytes)
+      return false
+
+
+  def str_from_tag ( self, t ):
+    global bigend
+
+    dtype = "Unknown"
+    if t[1] == 1:
+      dtype = "Byte"
+    elif t[1] == 2:
+      dtype = "ASCII"
+    elif t[1] == 3:
+      dtype = "Short"
+    elif t[1] == 4:
+      dtype = "Long"
+    elif t[1] == 5:
+      dtype = "Rational"
+
+    elif t[1] == 6:
+      dtype = "SByte"
+    elif t[1] == 7:
+      dtype = "UNDEF Byte"
+    elif t[1] == 8:
+      dtype = "SShort"
+    elif t[1] == 9:
+      dtype = "SLong"
+    elif t[1] == 10:
+      dtype = "SRational"
+    elif t[1] == 11:
+      dtype = "Float"
+    elif t[1] == 12:
+      dtype = "Double"
+
+    dlen = str(t[2])
+
+    tagid = None
+
+    if t[0] == 256:
+      tagid = "Width"
+    elif t[0] == 257:
+      tagid = "Height"
+    elif t[0] == 258:
+      tagid = "BitsPerSample"
+    elif t[0] == 259:
+      tagid = "Compression"
+    elif t[0] == 262:
+      tagid = "PhotoMetInterp"
+    elif t[0] == 266:
+      tagid = "FillOrder"
+    elif t[0] == 275:
+      tagid = "Orientation"
+    elif t[0] == 277:
+      tagid = "SampPerPix"
+    elif t[0] == 278:
+      tagid = "RowsPerStrip"
+    elif t[0] == 282:
+      tagid = "XResolution"
+    elif t[0] == 283:
+      tagid = "YResolution"
+    elif t[0] == 322:
+      tagid = "TileWidth"
+    elif t[0] == 323:
+      tagid = "TileLength"
+    elif t[0] == 274:
+      tagid = "Orientation"
+    elif t[0] == 254:
+      tagid = "NewSubFileType"
+    elif t[0] == 284:
+      tagid = "T4Options"
+    elif t[0] == 292:
+      tagid = "PlanarConfig"
+    elif t[0] == 296:
+      tagid = "ResolutionUnit"
+    elif t[0] == 297:
+      tagid = "PageNumber"
+    elif t[0] == 317:
+      tagid = "Predictor"
+    elif t[0] == 318:
+      tagid = "WhitePoint"
+    elif t[0] == 319:
+      tagid = "PrimChroma"
+    elif t[0] == 324:
+      tagid = "TileOffsets"
+    elif t[0] == 325:
+      tagid = "TileByteCounts"
+    elif t[0] == 323:
+      tagid = "TileLength"
+    elif t[0] == 322:
+      tagid = "TileWidth"
+    elif t[0] == 338:
+      tagid = "ExtraSamples"
+    elif t[0] == 530:
+      tagid = "YCbCrSubSampling"
+    elif t[0] == 273:
+      tagid = "StripOffsets"
+    elif t[0] == 279:
+      tagid = "StripByteCounts"
+    elif t[0] == 305:
+      tagid = "Software"
+    elif t[0] == 306:
+      tagid = "DateTime"
+    elif t[0] == 320:
+      tagid = "ColorMap"
+    elif t[0] == 339:
+      tagid = "SampleFormat"
+
+    if tagid is None:
+      tagid = "?????????"
+
+    return ( tagid + " ... " + dlen + " of " + dtype )
+
+
 
 class alignment_layer:
   ''' An alignment_layer has a base image and a set of images and processes representing the relationships to its neighbors '''
@@ -721,6 +1067,13 @@ class alignment_layer:
 
     # Always initialize with the image
     self.image_dict['base'] = self.base_annotated_image
+
+    global show_tiled
+    self.tile_data = None
+    if show_tiled:
+      print ( "Creating an alignment_layer with tiling enabled" )
+      self.tile_data = tiled_tiff ( self.base_image_name )
+
 
   def to_string ( self ):
     s = "AlignLayer \"" + str(self.base_image_name) + "\" with images:"
@@ -941,6 +1294,13 @@ class zoom_panel ( app_window.zoom_pan_area ):
               closest_dist = dist
           alignment_layer_index = closest_index
 
+    global show_tiled
+    if show_tiled:
+      if alignment_layer_index >= 0:
+        print ( "Read a tile just to check on the speed ..." )
+        al = alignment_layer_list[alignment_layer_index]
+        print ( "Tile data: " + str(al.tile_data) )
+
     # Display the alignment_layer parameters from the new section being viewed
     if alignment_layer_index >= 0:
       store_current_layer_into_fields()
@@ -1025,6 +1385,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
     global show_window_centers
     global show_window_affines
     global show_skipped_layers
+    global show_tiled
+
+    if show_tiled:
+      print ( "Showing tiled images where available ..." )
 
     # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
@@ -1247,6 +1611,10 @@ class zoom_panel ( app_window.zoom_pan_area ):
     else:
       self.pangolayout.set_text ( str(self.role)+":" )
     drawable.draw_layout ( gc, 3, 2, self.pangolayout )
+    # Draw the current scale
+    global current_scale
+    self.pangolayout.set_text ( str(current_scale) )
+    drawable.draw_layout ( gc, 10, 22, self.pangolayout )
 
     # Restore the previous color
     gc.foreground = old_fg
@@ -1366,6 +1734,7 @@ def background_callback ( zpa ):
 
 
 def add_panel_callback ( zpa, role="", point_add_enabled=False ):
+  print ( "Adding a panel with role " + str(role) )
   print_debug ( 50, "Add a Panel" )
   global image_hbox
   global panel_list
@@ -1585,6 +1954,8 @@ def write_json_project ( project_file_name, fb=None ):
     f.write ( '      }\n' )
     f.write ( '    },\n' )
     f.write ( '    "current_scale": ' + str(current_scale) + ',\n' )
+    f.write ( '    "current_layer": ' + str(alignment_layer_index) + ',\n' )
+
     f.write ( '    "scales": {\n' )
 
     last_scale_key = 1
@@ -2259,12 +2630,17 @@ def load_from_proj_dict ( proj_dict ):
         destination_path = os.path.join ( project_path, destination_path )
       destination_path = os.path.realpath ( destination_path )
       gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+
+    if 'current_scale' in proj_dict['data']:
+      current_scale = proj_dict['data']['current_scale']
+
     if 'scales' in proj_dict['data']:
 
       gui_fields.scales_list = sorted ( [ int(k) for k in proj_dict['data']['scales'].keys() ] )
       sd = proj_dict['data']['scales']
 
       scales_dict = {}
+      panel_names_list = []
 
       for scale_key in gui_fields.scales_list:
         if 'alignment_stack' in sd[str(scale_key)]:
@@ -2277,6 +2653,11 @@ def load_from_proj_dict ( proj_dict ):
             for json_alignment_layer in imagestack:
               if 'images' in json_alignment_layer:
                 im_list = json_alignment_layer['images']
+                # Add any needed panels for this scale and layer
+                for k in im_list.keys():
+                  if not (k in panel_names_list):
+                    panel_names_list.append ( k )
+
                 if 'base' in im_list:
                   base = im_list['base']
                   if 'filename' in base:
@@ -2392,9 +2773,67 @@ def load_from_proj_dict ( proj_dict ):
 
             scales_dict[scale_key] = alignment_layer_list
 
+
+      print ( "Final panel_names_list: " + str(panel_names_list) )
+
+      # Set up the preferred panels as needed
+      ref_panel = None
+      base_panel = None
+      aligned_panel = None
+
+      # Start by assigning any panels with roles already set
+      for panel in panel_list:
+        if panel.role == 'ref':
+          ref_panel = panel
+        if panel.role == 'base':
+          base_panel = panel
+        if panel.role == 'aligned':
+          aligned_panel = panel
+
+      # Assign any empty panels if needed
+      for panel in panel_list:
+        if panel.role == '':
+          if ref_panel == None:
+            panel.role = 'ref'
+            ref_panel = panel
+          elif base_panel == None:
+            panel.role = 'base'
+            base_panel = panel
+          elif aligned_panel == None:
+            panel.role = 'aligned'
+            aligned_panel = panel
+
+      # Finally add panels as needed
+      if ref_panel == None:
+        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
+      if base_panel == None:
+        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
+      if aligned_panel == None:
+        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
+
+      # The previous logic hasn't worked, so force all panels to be as desired for now
+      forced_panel_roles = ['ref', 'base', 'aligned']
+      for i in range ( min ( len(panel_list), len(forced_panel_roles) ) ):
+        panel_list[i].role = forced_panel_roles[i]
+
+      if ref_panel == None:
+        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
+      if base_panel == None:
+        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
+      if aligned_panel == None:
+        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
+
+      # TODO Add other panels as needed
+
+
       update_menu_scales_from_gui_fields()
 
       alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
+
+      set_selected_scale_to ( current_scale )
+
+    if 'current_layer' in proj_dict['data']:
+      alignment_layer_index = proj_dict['data']['current_layer']
 
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -2678,7 +3117,7 @@ def menu_callback ( widget, data=None ):
 
       file_chooser.destroy()
       print_debug ( 90, "Done with dialog" )
-      # Draw the windows
+      # Draw the panels ("windows")
       for panel in panel_list:
         panel.role = 'base'
         panel.force_center = True
@@ -2922,6 +3361,17 @@ def menu_callback ( widget, data=None ):
       set_selected_scale_to ( cur_scale )
 
 
+    elif command == "GenAsTiled":
+      global generate_as_tiled
+      generate_as_tiled = not generate_as_tiled
+      print ( "Generate as tiled = " + str(generate_as_tiled) )
+
+    elif command == "ShowTiled":
+      global show_tiled
+      show_tiled = not show_tiled
+      print ( "Show tiled = " + str(show_tiled) )
+
+
     elif command == "GenAllScales":
       print ( "Create images at all scales: " + str ( gui_fields.scales_list ) )
 
@@ -2961,17 +3411,36 @@ def menu_callback ( widget, data=None ):
               #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
               original_name = al.base_image_name
               new_name = os.path.join(src_path,os.path.basename(original_name))
-              if scale == 1:
-                if os.name == 'posix':
-                  print ( "Posix: Linking " + original_name + " to " + new_name )
-                  os.symlink ( original_name, new_name )
-                else:
-                  print ( "Non-Posix: Copying " + original_name + " to " + new_name )
-                  shutil.copyfile ( original_name, new_name )
-              else:
+              global generate_as_tiled
+              if generate_as_tiled:
+                # Generate as tiled images (means duplicating the originals also)
                 print ( "Resizing " + original_name + " to " + new_name )
-                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                align_swiftir.swiftir.saveImage ( img, new_name )
+                if False:
+                  # Generate internally
+                  # Don't know how to do this and make tiles yet
+                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  align_swiftir.swiftir.saveImage ( img, new_name )
+                else:
+                  # Scale as before:
+                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  align_swiftir.swiftir.saveImage ( img, new_name )
+                  # Use "convert" from ImageMagick to hopefully tile in place
+                  import subprocess
+                  p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
+                  p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+new_name] )
+              else:
+                # Generate non-tiled images
+                if scale == 1:
+                  if os.name == 'posix':
+                    print ( "Posix: Linking " + original_name + " to " + new_name )
+                    os.symlink ( original_name, new_name )
+                  else:
+                    print ( "Non-Posix: Copying " + original_name + " to " + new_name )
+                    shutil.copyfile ( original_name, new_name )
+                else:
+                  print ( "Resizing " + original_name + " to " + new_name )
+                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  align_swiftir.swiftir.saveImage ( img, new_name )
             except:
               print ( "Error: Failed to copy?" )
               pass
@@ -3030,7 +3499,7 @@ def menu_callback ( widget, data=None ):
 
         alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
 
-        # Draw the windows
+        # Draw the panels ("windows")
         for panel in panel_list:
           panel.role = 'base'
           panel.force_center = True
@@ -3449,23 +3918,53 @@ def center_all_images():
 def refresh_all_images():
   # Determine how many panels are needed and create them as needed
   global panel_list
+  global scales_dict
   max_extra_panels = 0
-  for a in alignment_layer_list:
-    if len(a.image_dict.keys()) > 0:
-      max_extra_panels = max(max_extra_panels, len(a.image_dict.keys()))
-  if max_extra_panels < 1:
-    # Must always keep one window
-    max_extra_panels = 1
-  print_debug ( 50, "Max extra = " + str(max_extra_panels) )
-  num_cur_extra_panels = len(panel_list)
-  if num_cur_extra_panels > max_extra_panels:
-    # Remove the difference:
-    for i in range(num_cur_extra_panels - max_extra_panels):
-      rem_panel_callback ( zpa_original )
-  elif num_cur_extra_panels < max_extra_panels:
-    # Add the difference
-    for i in range(max_extra_panels - num_cur_extra_panels):
-      add_panel_callback ( zpa_original )
+
+  panel_names_list = ['ref', 'base']
+
+  # Scan through all scales and all images to get the required set of roles (panel_names)
+  for scale_key in sorted(scales_dict.keys()):
+    align_layer_list_for_scale = scales_dict[scale_key]
+    if align_layer_list_for_scale != None:
+      for a in align_layer_list_for_scale:
+        for k in a.image_dict.keys():
+          if not (k in panel_names_list):
+            panel_names_list.append ( k )
+
+  print ( "Panel names list = " + str(panel_names_list) )
+
+  # Create a new panel list to eventually replace the old panel_list
+  new_panel_list = []
+
+  # Pull out the first panel of each type if it exists
+  for name in panel_names_list:
+    print ( "Looking for name " + name )
+    for current_panel in panel_list:
+      print ( "  Checking current_panel with role of " + current_panel.role )
+      if current_panel.role == name:
+        print ( "    This panel matched" )
+        new_panel_list.append ( current_panel )
+        panel_list.remove ( current_panel )
+        break
+  print ( "old_panel_list roles: " + str([p.role for p in panel_list]) )
+  print ( "new_panel_list roles: " + str([p.role for p in new_panel_list]) )
+
+  # Figure out which panels need to be deleted
+  panels_to_delete = []
+  for old_panel in panel_list:
+    if not (old_panel in new_panel_list):
+      panels_to_delete.append ( old_panel )
+
+  # Delete the GTK drawing areas for panels to be removed
+  for p in panels_to_delete:
+    global image_hbox
+    image_hbox.remove(p.drawing_area)
+
+  # Assign the new_panel_list to be the global panel_list
+  panel_list = new_panel_list
+
+  print ( "final_panel_list roles: " + str([p.role for p in panel_list]) )
 
 
 # Create the window and connect the events
@@ -3553,6 +4052,8 @@ def main():
   if True: # An easy way to indent and still be legal Python
     this_menu = scaling_menu
     zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
