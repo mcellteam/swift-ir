@@ -312,7 +312,7 @@ class zoom_pan_area:
 
 
   def key_press_callback ( self, widget, event, zpa ):
-    print ( "Key press event: " + str(event.keyval) + " = " + str(event) )
+    # print ( "Key press event: " + str(event.keyval) + " = " + str(event) )
     handled = False
     if event.type == gtk.gdk.KEY_PRESS:
       # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
