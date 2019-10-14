@@ -550,103 +550,31 @@ b64.extend ( [ '+', '/' ] )
 def get_image_data(zpa):
   global b64
 
-  if zpa.user_data['tile_number'] == -2:
-    #print ( "Test XPM -2" )
-    xpm = [
-    "16 16 3 1",
-    "       c None",
-    ".      c #000000",
-    "X      c #FFFFFF",
-    "                ",
-    "   ......       ",
-    "   .XXX.X.      ",
-    "   .XXX.XX.     ",
-    "   .XXX.XXX.    ",
-    "   .XXX.....    ",
-    "   .XXXXXXX.    ",
-    "   .XXXXXXX.    ",
-    "   .XXXXXXX.    ",
-    "   .XXXXXXX.    ",
-    "   .XXXXXXX.    ",
-    "   .XXXXXXX.    ",
-    "   .XXXXXXX.    ",
-    "   .........    ",
-    "                ",
-    "                "
-    ]
+  print ( "Get tile for image " + str(zpa.user_data['selected_image']) + ", and tile " + str(zpa.user_data['tile_number']) )
 
-    nr = 100
-    nc = 100
-    xpm = [ str(nr) + " " + str(nc) + " 16 1" ]
-    for i in range ( 16 ):
-      h = hex(i)[2]
-      k = chr(ord('a') + i)
-      xpm.append ( str(k) + " c #" + h + h + h  )
+  if len(zpa.user_data['image_layers']) > 0:
 
-    data = ""
-    for i in range (nr):
-      for j in range (nr):
-        data += ( chr ( ord('a') + ((i*j) % 256)/16 ) )
-      xpm.append ( data )
-      data = ""
+    # These should be positive tile numbers:
 
-    zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
-
-  elif zpa.user_data['tile_number'] == -3:
-
-    #print ( "Test 4 bit XPM -3" )
-
-    print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
-    layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
-    print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
-
-    #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
-
-    f = open ( layer.ptiled_image_name, 'rb' )
-    img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
-    f.seek ( img_tile.tile_offsets[0] )
-    d = f.read ( img_tile.tile_counts[0] )
-
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    nr = img_tile.tile_length
-    nc = img_tile.tile_width
-    xpm = [ str(nr) + " " + str(nc) + " 16 1" ]
-    for i in range ( 16 ):
-      h = hex(i)[2]
-      k = chr(ord('a') + i)
-      xpm.append ( str(k) + " c #" + h + h + h  )
-
-    data = ""
-    for r in range (nr):
-      for c in range (nc):
-        i = (r*256) + c
-        data += ( chr ( ord('a') + (ord(d[i]) % 256)/16 ) )
-      xpm.append ( data )
-      data = ""
-
-    zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
-
-  elif zpa.user_data['tile_number'] == -4:
-
-    #print ( "Test 6 bit XPM -4" )
-    if len(zpa.user_data['image_layers']) > 0:
+    if True:
 
       print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
       layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
       print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
 
-      #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
-
       f = open ( layer.ptiled_image_name, 'rb' )
-      img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
-      f.seek ( img_tile.tile_offsets[0] )
-      d = f.read ( img_tile.tile_counts[0] )
+      img = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
 
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      tile_num = zpa.user_data['tile_number']
+      if tile_num >= len(img.tile_offsets):
+        tile_num = len(img.tile_offsets)-1
 
-      nr = img_tile.tile_length
-      nc = img_tile.tile_width
+      #img_tile = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
+      f.seek ( img.tile_offsets[tile_num] )
+      d = f.read ( img.tile_counts[tile_num] )
+
+      nr = img.tile_length
+      nc = img.tile_width
 
       xpm = [ str(nr) + " " + str(nc) + " 64 1" ]
       for i in range ( 64 ):
@@ -666,75 +594,34 @@ def get_image_data(zpa):
 
       zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
 
-  else:
+    else:
 
-    print ( "Get an actual tile for tile # " + str(zpa.user_data['tile_number']) )
+      # Use binary file read to create the pixbuf (don't know how to do this in pyGTK)
 
-    if len(zpa.user_data['image_layers']) > 0:
+      #>>> [ s for s in dir(gtk.gdk) if 'pixbuf' in s ]
+      # ['pixbuf_get_file_info', 'pixbuf_get_formats', 'pixbuf_get_from_drawable', 'pixbuf_loader_new',
+      #  'pixbuf_loader_new_with_mime_type', 'pixbuf_new_from_array', 'pixbuf_new_from_data', 'pixbuf_new_from_file',
+      #  'pixbuf_new_from_file_at_scale', 'pixbuf_new_from_file_at_size', 'pixbuf_new_from_inline', 'pixbuf_new_from_stream',
+      #  'pixbuf_new_from_stream_at_scale', 'pixbuf_new_from_xpm_data']
+      print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
+      layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
+      print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
 
-      # These should be positive tile numbers:
+      #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
 
-      if True:
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-        print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
-        layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
-        print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
-
-        f = open ( layer.ptiled_image_name, 'rb' )
-        img = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
-        #img_tile = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
-        f.seek ( img.tile_offsets[zpa.user_data['tile_number']] )
-        d = f.read ( img.tile_counts[zpa.user_data['tile_number']] )
-
-        nr = img.tile_length
-        nc = img.tile_width
-
-        xpm = [ str(nr) + " " + str(nc) + " 64 1" ]
-        for i in range ( 64 ):
-          h = hex(4*i)[2:]
-          if len(h) <= 1: h = '0' + h
-          k = b64[i]
-          xpm.append ( str(k) + " c #" + h + h + h  )
-
-        data = ""
-        for r in range (nr):
-          for c in range (nc):
-            i = (r*256) + c
-            bindex = (ord(d[i])%256)/4
-            data += b64[bindex]
-          xpm.append ( data )
-          data = ""
-
-        zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
-
-      else:
-
-        # Use binary file read to create the pixbuf (don't know how to do this in pyGTK)
-
-        #>>> [ s for s in dir(gtk.gdk) if 'pixbuf' in s ]
-        # ['pixbuf_get_file_info', 'pixbuf_get_formats', 'pixbuf_get_from_drawable', 'pixbuf_loader_new',
-        #  'pixbuf_loader_new_with_mime_type', 'pixbuf_new_from_array', 'pixbuf_new_from_data', 'pixbuf_new_from_file',
-        #  'pixbuf_new_from_file_at_scale', 'pixbuf_new_from_file_at_size', 'pixbuf_new_from_inline', 'pixbuf_new_from_stream',
-        #  'pixbuf_new_from_stream_at_scale', 'pixbuf_new_from_xpm_data']
-        print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
-        layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
-        print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
-
-        #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( layer.ptiled_image_name )
-
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-        f = open ( layer.ptiled_image_name, 'rb' )
-        img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
-        f.seek ( img_tile.tile_offsets[0] )
-        d = f.read ( img_tile.tile_counts[0] )
-        #d = ''.join ( [ s+s+s+chr(255) for s in d ] )
-        #d = ''.join ( [ s+s+s for s in d ] )
-        zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_data ( d, gtk.gdk.COLORSPACE_RGB,
-                                                                      False, 8,
-                                                                      img_tile.tile_width,
-                                                                      img_tile.tile_length,
-                                                                      img_tile.tile_width )
+      f = open ( layer.ptiled_image_name, 'rb' )
+      img_tile = layer.tiff_struct.image_list[zpa.user_data['tile_number']]
+      f.seek ( img_tile.tile_offsets[0] )
+      d = f.read ( img_tile.tile_counts[0] )
+      #d = ''.join ( [ s+s+s+chr(255) for s in d ] )
+      #d = ''.join ( [ s+s+s for s in d ] )
+      zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_data ( d, gtk.gdk.COLORSPACE_RGB,
+                                                                    False, 8,
+                                                                    img_tile.tile_width,
+                                                                    img_tile.tile_length,
+                                                                    img_tile.tile_width )
   zpa.queue_draw()
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -764,6 +651,95 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
       zpa.queue_draw()
       return True
+
+
+def left_callback(zpa):
+  layers = zpa.user_data['image_layers']
+  layer = layers[zpa.user_data['layer_index']]
+  ts = layer.tiff_struct
+
+  offsets = ts.image_list[zpa.user_data['selected_image']].tile_offsets
+  counts = ts.image_list[zpa.user_data['selected_image']].tile_counts
+
+  print_debug ( 50, "Tile number before: " + str(zpa.user_data['tile_number']) )
+  zpa.user_data['tile_number'] += -1
+  if zpa.user_data['tile_number'] < 0:
+    zpa.user_data['tile_number'] = 0
+  print_debug ( 50, "Tile number after: " + str(zpa.user_data['tile_number']) )
+
+  get_image_data(zpa)
+  zpa.queue_draw()
+  return True
+
+
+def right_callback(zpa):
+  layers = zpa.user_data['image_layers']
+  layer = layers[zpa.user_data['layer_index']]
+  ts = layer.tiff_struct
+
+  offsets = ts.image_list[zpa.user_data['selected_image']].tile_offsets
+  counts = ts.image_list[zpa.user_data['selected_image']].tile_counts
+
+  print_debug ( 50, "Tile number before: " + str(zpa.user_data['tile_number']) )
+  zpa.user_data['tile_number'] += 1
+  if zpa.user_data['tile_number'] >= len(offsets):
+    zpa.user_data['tile_number'] = len(offsets) - 1
+  print_debug ( 50, "Tile number after: " + str(zpa.user_data['tile_number']) )
+
+  get_image_data(zpa)
+  zpa.queue_draw()
+  return True
+
+
+def scale_up_callback(zpa):
+  layers = zpa.user_data['image_layers']
+  layer = layers[zpa.user_data['layer_index']]
+  ts = layer.tiff_struct
+
+  im_num = zpa.user_data['selected_image']
+  im_num = im_num - 1  # Scaling up is going down in image number
+  if im_num < 0:
+    im_num = 0
+  if im_num >= len(ts.image_list):
+    im_num = len(ts.image_list) - 1
+
+  zpa.user_data['selected_image'] = im_num
+
+  offsets = ts.image_list[zpa.user_data['selected_image']].tile_offsets
+  counts = ts.image_list[zpa.user_data['selected_image']].tile_counts
+
+  if zpa.user_data['tile_number'] >= len(offsets):
+    zpa.user_data['tile_number'] = len(offsets) - 1
+
+  get_image_data(zpa)
+  zpa.queue_draw()
+  return True
+
+
+def scale_down_callback(zpa):
+  layers = zpa.user_data['image_layers']
+  layer = layers[zpa.user_data['layer_index']]
+  ts = layer.tiff_struct
+
+  im_num = zpa.user_data['selected_image']
+  im_num = im_num + 1  # Scaling up is going down in image number
+  if im_num < 0:
+    im_num = 0
+  if im_num >= len(ts.image_list):
+    im_num = len(ts.image_list) - 1
+
+  zpa.user_data['selected_image'] = im_num
+
+  offsets = ts.image_list[zpa.user_data['selected_image']].tile_offsets
+  counts = ts.image_list[zpa.user_data['selected_image']].tile_counts
+
+  if zpa.user_data['tile_number'] >= len(offsets):
+    zpa.user_data['tile_number'] = len(offsets) - 1
+
+  get_image_data(zpa)
+  zpa.queue_draw()
+  return True
+
 
 
 def step_callback(zpa):
@@ -901,7 +877,7 @@ def menu_callback ( widget, data=None ):
       dialog.vbox.pack_start(label)
       label.show()
       image_entry = gtk.Entry(20)
-      image_entry.set_text ( '' )
+      image_entry.set_text ( str(zpa.user_data['selected_image']) )
       dialog.vbox.pack_end(image_entry)
       image_entry.show()
 
@@ -914,40 +890,8 @@ def menu_callback ( widget, data=None ):
         else:
           print ( "Bad image index: " + str(num) )
 
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
       dialog.destroy()
 
-
-
-      '''
-      width_dict = {}
-      for im in ts.image_list:
-        width_dict[im.width] = im
-
-      label = gtk.Label("Tile Sizes: " + ' '.join([ str(s) for s in sorted(width_dict.keys())]) )
-      dialog = gtk.Dialog("Enter a Tile Size",
-                         None,
-                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-      dialog.vbox.pack_start(label)
-      label.show()
-      scales_entry = gtk.Entry(20)
-      scales_entry.set_text ( '' )
-      dialog.vbox.pack_end(scales_entry)
-      scales_entry.show()
-
-
-      response = dialog.run()
-      if response == gtk.RESPONSE_ACCEPT:
-        zpa.user_data['selected_width'] = int(scales_entry.get_text())
-        print ( "Selected width = " + str(zpa.user_data['selected_width']) )
-
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-      dialog.destroy()
-      '''
       get_image_data(zpa)
       zpa.queue_draw()
 
@@ -972,7 +916,7 @@ def menu_callback ( widget, data=None ):
       dialog.vbox.pack_start(label)
       label.show()
       tile_entry = gtk.Entry(20)
-      tile_entry.set_text ( '' )
+      tile_entry.set_text ( str(zpa.user_data['tile_number']) )
       dialog.vbox.pack_end(tile_entry)
       tile_entry.show()
 
@@ -1017,6 +961,19 @@ def menu_callback ( widget, data=None ):
     elif "Tile_" in command:
       try:
         tn = int(command[len("Tile_"):])
+
+        if tn < 0:
+
+          layers = zpa.user_data['image_layers']
+          layer = layers[zpa.user_data['layer_index']]
+          ts = layer.tiff_struct
+
+          offsets = ts.image_list[zpa.user_data['selected_image']].tile_offsets
+          counts = ts.image_list[zpa.user_data['selected_image']].tile_counts
+
+          while tn < 0:
+            tn = tn + len(offsets)
+
         zpa.user_data['tile_number'] = tn
         get_image_data(zpa)
         zpa.queue_draw()
@@ -1128,12 +1085,8 @@ def main():
   # Create a "Tile" menu
   (tile_menu, tile_item) = zpa.add_menu ( "Tile" )
   if True: # An easy way to indent and still be legal Python
-    zpa.add_menu_item ( tile_menu, menu_callback, "Tile 0",    ("Tile_0", zpa ) )
-    zpa.add_menu_item ( tile_menu, menu_callback, "Tile -1",   ("Tile_-1", zpa ) )
-    zpa.add_menu_item ( tile_menu, menu_callback, "XPM 4-bit", ("Tile_-3", zpa ) )
-    zpa.add_menu_item ( tile_menu, menu_callback, "XPM 6-bit", ("Tile_-4", zpa ) )
-    zpa.add_menu_sep  ( tile_menu )
-    zpa.add_menu_item ( tile_menu, menu_callback, "XPM Test",  ("Tile_-2", zpa ) )
+    zpa.add_menu_item ( tile_menu, menu_callback, "Tile 0,0",   ("Tile_0", zpa ) )
+    zpa.add_menu_item ( tile_menu, menu_callback, "Tile n,n",   ("Tile_-1", zpa ) )
     zpa.add_menu_sep  ( tile_menu )
     zpa.add_menu_item ( tile_menu, menu_callback, "Select",   ("TileSel", zpa ) )
 
@@ -1189,6 +1142,30 @@ def main():
 
   # Add some application specific buttons and their callbacks
 
+  step_button = gtk.Button("< Tile")
+  hbox.pack_start ( step_button, True, True, 0 )
+  step_button.connect_object ( "clicked", left_callback, zpa )
+  step_button.show()
+
+  dump_button = gtk.Button("Tile >")
+  hbox.pack_start ( dump_button, True, True, 0 )
+  dump_button.connect_object ( "clicked", right_callback, zpa )
+  dump_button.show()
+
+
+  run_button = gtk.Button("^ Scale")
+  hbox.pack_start ( run_button, True, True, 0 )
+  run_button.connect_object ( "clicked", scale_up_callback, zpa )
+  run_button.show()
+
+  stop_button = gtk.Button("Scale v")
+  hbox.pack_start ( stop_button, True, True, 0 )
+  stop_button.connect_object ( "clicked", scale_down_callback, zpa )
+  stop_button.show()
+
+
+
+  '''
   step_button = gtk.Button("Step")
   hbox.pack_start ( step_button, True, True, 0 )
   step_button.connect_object ( "clicked", step_callback, zpa )
@@ -1213,6 +1190,7 @@ def main():
   hbox.pack_start ( reset_button, True, True, 0 )
   reset_button.connect_object ( "clicked", reset_callback, zpa )
   reset_button.show()
+  '''
 
 
   #zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_file ( "vj_097_shift_rot_skew_crop_4k4k_1.jpg" )
