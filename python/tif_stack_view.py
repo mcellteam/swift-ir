@@ -683,8 +683,8 @@ def get_image_data(zpa):
         f = open ( layer.ptiled_image_name, 'rb' )
         img = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
         #img_tile = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
-        f.seek ( img.tile_offsets[0] )
-        d = f.read ( img.tile_counts[0] )
+        f.seek ( img.tile_offsets[zpa.user_data['tile_number']] )
+        d = f.read ( img.tile_counts[zpa.user_data['tile_number']] )
 
         nr = img.tile_length
         nc = img.tile_width
@@ -957,34 +957,39 @@ def menu_callback ( widget, data=None ):
       layers = zpa.user_data['image_layers']
       layer = layers[zpa.user_data['layer_index']]
       ts = layer.tiff_struct
-      width_dict = {}
-      for im in ts.image_list:
-        width_dict[im.width] = im
 
-      label = gtk.Label("Tile Sizes: " + ' '.join([ str(s) for s in sorted(width_dict.keys())]) )
-      dialog = gtk.Dialog("Enter a Tile Size",
+      offsets = ts.image_list[zpa.user_data['selected_image']].tile_offsets
+      counts = ts.image_list[zpa.user_data['selected_image']].tile_counts
+
+      label = gtk.Label("Tiles: 0 to " + str(len(offsets)-1))
+
+      #label = gtk.Label("Tiles: " + ' '.join([ str(s) for s in range(len(offsets))]))
+      dialog = gtk.Dialog("Enter a Tile number",
                          None,
                          gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
                          (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
                           gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
       dialog.vbox.pack_start(label)
       label.show()
-      scales_entry = gtk.Entry(20)
-      scales_entry.set_text ( '' )
-      dialog.vbox.pack_end(scales_entry)
-      scales_entry.show()
+      tile_entry = gtk.Entry(20)
+      tile_entry.set_text ( '' )
+      dialog.vbox.pack_end(tile_entry)
+      tile_entry.show()
 
       ### zpa.user_data['tile_number']
 
       response = dialog.run()
       if response == gtk.RESPONSE_ACCEPT:
-        zpa.user_data['selected_width'] = int(scales_entry.get_text())
-        print ( "Selected width = " + str(zpa.user_data['selected_width']) )
+        num = int(tile_entry.get_text())
+        if num in range(len(offsets)):
+          zpa.user_data['tile_number'] = num
+          print ( "Selected tile = " + str(zpa.user_data['tile_number']) )
 
-      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
       dialog.destroy()
 
+      get_image_data(zpa)
       zpa.queue_draw()
 
 
