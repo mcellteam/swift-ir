@@ -25,7 +25,7 @@ Together these ingredients comprise a procedure, or "recipe".
 
 class alignment_process:
 
-  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, cumulative_afm=None, x_bias=0.0, y_bias=0.0):
+  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, init_affine_matrix = None, cumulative_afm=None, x_bias=0.0, y_bias=0.0):
     self.recipe = None
     self.im_sta_fn = im_sta_fn
     self.im_mov_fn = im_mov_fn
@@ -47,6 +47,10 @@ class alignment_process:
 						   "method_results": {}
 						 }
       }
+    if type(init_affine_matrix) == type(None):
+      self.init_affine_matrix = swiftir.identityAffine()
+    else:
+      self.init_affine_matrix = init_affine_matrix
     if type(cumulative_afm) == type(None):
       self.cumulative_afm = swiftir.identityAffine()
     else:
@@ -55,9 +59,10 @@ class alignment_process:
 
   def align(self):
 
-    if self.layer_dict['align_to_ref_method']['selected_method']=='Auto Swim Align':
+    atrm = self.layer_dict['align_to_ref_method']
+    if atrm['selected_method']=='Auto Swim Align':
       result = self.auto_swim_align()
-    elif self.layer_dict['align_to_ref_method']['selected_method']=='Match Point Align':
+    elif atrm['selected_method']=='Match Point Align':
       result = self.auto_swim_align()
 
     return result
@@ -107,14 +112,20 @@ class alignment_process:
 
     self.recipe = align_recipe(im_sta, im_mov)
 
-    if self.layer_dict['align_to_ref_method']['selected_method']=='Auto Swim Align':
-      ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
-      ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
-      ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
-      self.recipe.add_ingredient(ingredient_1)
-      self.recipe.add_ingredient(ingredient_2x2)
-      self.recipe.add_ingredient(ingredient_4x4)
-    elif self.layer_dict['align_to_ref_method']['selected_method']=='Match Point Align':
+    atrm = self.layer_dict['align_to_ref_method']
+    if atrm['selected_method']=='Auto Swim Align':
+      alignment_option = atrm['method_data'].get('alignment_option')
+      if alignment_option == 'refine_affine':
+        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, afm=self.init_affine_matrix)
+        self.recipe.add_ingredient(ingredient_4x4)
+      else:
+        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
+        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
+        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
+        self.recipe.add_ingredient(ingredient_1)
+        self.recipe.add_ingredient(ingredient_2x2)
+        self.recipe.add_ingredient(ingredient_4x4)
+    elif atrm['selected_method']=='Match Point Align':
       # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
       mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
       mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
