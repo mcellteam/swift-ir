@@ -558,45 +558,66 @@ def get_image_data(zpa):
 
     if True:
 
+      # Create the pixbuf image by making an XPM image first
+
       print_debug ( 50, "New layer index = " + str(zpa.user_data['layer_index']) )
       layer = zpa.user_data['image_layers'][zpa.user_data['layer_index']]
       print_debug ( 50, "Image file = " + str(layer.ptiled_image_name) )
 
+      # Open the file (these file handles could be kept open for even more speed)
       f = open ( layer.ptiled_image_name, 'rb' )
       img = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
 
+      # Get the tile number, but be sure to truncate it for this image
       tile_num = zpa.user_data['tile_number']
       if tile_num >= len(img.tile_offsets):
         tile_num = len(img.tile_offsets)-1
 
-      #img_tile = layer.tiff_struct.image_list[zpa.user_data['selected_image']]
-      f.seek ( img.tile_offsets[tile_num] )
-      d = f.read ( img.tile_counts[tile_num] )
-
-      nr = img.tile_length
+      # Get the image size from the tile size
       nc = img.tile_width
+      nr = img.tile_length
 
+      d = None
+      if (img.width < img.tile_width) or (img.height < img.tile_length):
+        # Only read the image size not the tile size
+        print_debug ( -1, "Warning: The image is smaller than the tile size." )
+        if False:
+          # Doing this produces a bad image
+          if img.width < img.tile_width:
+            nc = img.width
+          if img.height < img.tile_length:
+            nr = img.height
+        f.seek ( img.tile_offsets[tile_num] )
+        d = f.read ( nc * nr )
+      else:
+        # Read the tile size
+        f.seek ( img.tile_offsets[tile_num] )
+        d = f.read ( img.tile_counts[tile_num] )
+
+      # XPM Header: #Rows #Cols #Colors #?
       xpm = [ str(nr) + " " + str(nc) + " 64 1" ]
+      # Write the color map (always use 64 colors)
       for i in range ( 64 ):
         h = hex(4*i)[2:]
         if len(h) <= 1: h = '0' + h
         k = b64[i]
         xpm.append ( str(k) + " c #" + h + h + h  )
-
+      # Write the pixel data in raster order
       data = ""
       for r in range (nr):
         for c in range (nc):
-          i = (r*256) + c
-          bindex = (ord(d[i])%256)/4
+          i = (r*nc) + c
+          bindex = (ord(d[i])%256)/4  # Convert to 6-bit value for Base64 encoding
           data += b64[bindex]
         xpm.append ( data )
         data = ""
 
+      # Create the pixbuf from the XPM data and make it the current frame:
       zpa.user_data['image_frame'] = gtk.gdk.pixbuf_new_from_xpm_data ( xpm )
 
     else:
 
-      # Use binary file read to create the pixbuf (don't know how to do this in pyGTK)
+      # Use binary file read to create the pixbuf (may not be possible in pyGTK?)
 
       #>>> [ s for s in dir(gtk.gdk) if 'pixbuf' in s ]
       # ['pixbuf_get_file_info', 'pixbuf_get_formats', 'pixbuf_get_from_drawable', 'pixbuf_loader_new',
@@ -797,8 +818,8 @@ def update_scales_menu_from_zpa ( zpa ):
     num_scales = len(ts.image_list)
 
     for s in range(num_scales):
-      item = gtk.MenuItem(label="Scale _" + str(s) )  # The underscore here signals a hot key
-      #item.set_active ( s == current_scale )
+      item = gtk.CheckMenuItem(label="Scale _" + str(s) )  # The underscore here signals a hot key
+      item.set_active ( s == zpa.user_data['selected_image'] )
       item.connect ( 'activate', menu_callback, ("Scale_"+str(s), zpa) ) # This underscore is part of the name
       scales_menu.append ( item )
       item.show()
@@ -933,6 +954,7 @@ def menu_callback ( widget, data=None ):
         num = int(command[len("Scale_"):])
         print ( "Scaling to " + str(num) )
         zpa.user_data['selected_image'] = num
+        update_scales_menu_from_zpa ( zpa )
         get_image_data(zpa)
         zpa.queue_draw()
       except:
