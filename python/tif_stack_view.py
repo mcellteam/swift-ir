@@ -540,7 +540,7 @@ def expose_callback ( drawing_area, event, zpa ):
   gc.foreground = old_fg
   return False
 
-
+# This is the Base64 data: A-Z, a-z, 0-9, +, /
 b64    =     [ chr(ord('A')+i) for i in range(26) ]
 b64.extend ( [ chr(ord('a')+i) for i in range(26) ] )
 b64.extend ( [ chr(ord('0')+i) for i in range(10) ] )
@@ -782,6 +782,31 @@ def stop_callback ( zpa ):
   zpa.user_data['running'] = False
   return True
 
+scales_menu = None
+
+def update_scales_menu_from_zpa ( zpa ):
+  print ( "Updating the scales menu" )
+  if scales_menu != None:
+    while len(scales_menu) > 0:
+      scales_menu.remove ( scales_menu.get_children()[0] )
+
+    layers = zpa.user_data['image_layers']
+    layer = layers[zpa.user_data['layer_index']]
+    ts = layer.tiff_struct
+
+    num_scales = len(ts.image_list)
+
+    for s in range(num_scales):
+      item = gtk.MenuItem(label="Scale _" + str(s) )  # The underscore here signals a hot key
+      #item.set_active ( s == current_scale )
+      item.connect ( 'activate', menu_callback, ("Scale_"+str(s), zpa) ) # This underscore is part of the name
+      scales_menu.append ( item )
+      item.show()
+
+    zpa.add_menu_sep  ( scales_menu )
+
+    zpa.add_menu_item ( scales_menu, menu_callback, "Select",   ("ScaleSel", zpa ) )
+
 
 def menu_callback ( widget, data=None ):
   # Menu items will trigger this call
@@ -790,6 +815,9 @@ def menu_callback ( widget, data=None ):
   # or a plain string:
   #  command_string
   # Checking the type() of data will determine which
+
+  print_debug ( 50, "Inside menu_callback with data = " + str(data) )
+
   if type(data) == type((True,False)):
     # Any tuple passed is assumed to be: (command, zpa)
     command = data[0]
@@ -849,6 +877,9 @@ def menu_callback ( widget, data=None ):
 
       file_chooser.destroy()
       print_debug ( 50, "Done with dialog" )
+
+      update_scales_menu_from_zpa ( zpa )
+
       #zpa.force_center = True
       get_image_data(zpa)
       zpa.queue_draw()
@@ -895,6 +926,18 @@ def menu_callback ( widget, data=None ):
       get_image_data(zpa)
       zpa.queue_draw()
 
+    elif command.startswith ( "Scale_" ):
+
+      print_debug ( 50, "Changing scale to " + command )
+      try:
+        num = int(command[len("Scale_"):])
+        print ( "Scaling to " + str(num) )
+        zpa.user_data['selected_image'] = num
+        get_image_data(zpa)
+        zpa.queue_draw()
+      except:
+        pass
+
     elif command == "TileSel":
       print_debug ( 50, "Tile Index" )
 
@@ -935,8 +978,6 @@ def menu_callback ( widget, data=None ):
 
       get_image_data(zpa)
       zpa.queue_draw()
-
-
 
     elif command == "ClearAll":
       print_debug ( 50, "Clearing all images" )
@@ -1076,6 +1117,7 @@ def main():
     zpa.add_menu_item ( images_menu, menu_callback, "Clear All",  ("ClearAll", zpa ) )
 
   # Create a "Scales" menu
+  global scales_menu
   (scales_menu, scales_item) = zpa.add_menu ( "_Scale" )
   if True: # An easy way to indent and still be legal Python
     zpa.add_menu_item ( scales_menu, menu_callback, "Scale _1",   ("Scale1", zpa ) )
