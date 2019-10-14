@@ -608,6 +608,9 @@ def get_image_data(zpa):
         for c in range (nc):
           i = (r*nc) + c
           bindex = (ord(d[i])%256)/4  # Convert to 6-bit value for Base64 encoding
+          if (r >= img.height) or (c >= img.width):
+            # Black out any extra
+            bindex = 0
           data += b64[bindex]
         xpm.append ( data )
         data = ""
