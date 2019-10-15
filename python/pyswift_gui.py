@@ -3021,6 +3021,7 @@ def set_selected_scale_to ( requested_scale ):
     print ( "Scale " + str(requested_scale) + " is not in " + str(scales_dict.keys()) )
 
 
+
 code_dialog = None
 code_store = None
 code_entry = None
@@ -3408,6 +3409,8 @@ def menu_callback ( widget, data=None ):
       except:
         cur_scale = -1
       set_selected_scale_to ( cur_scale )
+      print_debug ( 50, "Centering images when changing scales" )
+      center_all_images()
 
 
     elif command == "GenAsTiled":
