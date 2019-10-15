@@ -1932,6 +1932,8 @@ def write_json_project ( project_file_name, fb=None ):
   global alignment_layer_index
   global panel_list
 
+  global max_image_file_size
+
   global point_cursor
   global cursor_options
   global point_mode
@@ -1961,6 +1963,10 @@ def write_json_project ( project_file_name, fb=None ):
     f.write ( '{\n' )
     f.write ( '  "version": 0.2,\n' )
     f.write ( '  "method": "SWiFT-IR",\n' )
+
+    f.write ( '  "user_settings": {\n' )
+    f.write ( '    "max_image_file_size": ' + str(max_image_file_size) + '\n' )
+    f.write ( '  },\n' )
 
     global current_plot_code
     if len(current_plot_code.strip()) > 0:
@@ -2657,6 +2663,11 @@ def load_from_proj_dict ( proj_dict ):
     code_c = pickle.loads ( code_p )
     global current_plot_code
     current_plot_code = code_c
+
+  if 'user_settings' in proj_dict:
+    if 'max_image_file_size' in proj_dict['user_settings']:
+      global max_image_file_size
+      max_image_file_size = proj_dict['user_settings']['max_image_file_size']
 
   if 'data' in proj_dict:
     if 'destination_path' in proj_dict['data']:
