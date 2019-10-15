@@ -30,8 +30,8 @@ def lin_fit(x,y):
 
 sn = str(d['data']['current_scale'])
 s = d['data']['scales'][sn]['alignment_stack']
-afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s ])
-cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s ])
+afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s if 'affine_matrix in i['align_to_ref_method']['method_results'] ])
+cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s if 'cumulative_afm' in i['align_to_ref_method']['method_results'] ])
 
 cx = cafm[:,:,2][:,0]
 cy = cafm[:,:,2][:,1]
