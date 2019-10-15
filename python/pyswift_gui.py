@@ -167,6 +167,9 @@ max_image_file_size = 700000000
 global generate_as_tiled
 generate_as_tiled = False
 
+global import_tiled
+import_tiled = False
+
 global show_tiled
 show_tiled = False
 
@@ -609,79 +612,6 @@ class graphic_text (graphic_primitive):
     return False
 
 
-class annotated_image:
-  ''' An image with a series of drawing primitives defined in
-      the pixel coordinates of the image. '''
-  def __init__ ( self, file_name=None, clone_from=None, role=None ):
-    # Initialize everything to defaults
-    self.file_name = file_name
-    self.file_size = -1
-    self.image = None
-    self.graphics_items = []
-    self.role = role
-    # self.results_dict = None
-
-    # Copy in the clone if provided
-    if type(clone_from) != type(None):
-      self.file_name = clone_from.file_name
-      self.image = clone_from.image
-      self.graphics_items = [ gi for gi in clone_from.graphics_items ]
-
-    # Over-ride other items as provided
-    if type(file_name) != type(None):
-      self.file_name = file_name
-    if role != None:
-      self.role = role
-    if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
-      try:
-        f = file ( self.file_name )
-        f.seek (0, 2)
-        self.file_size = f.tell()
-        f.close()
-        global max_image_file_size
-        if self.file_size < max_image_file_size:
-          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
-          print_debug ( 50, "Loaded " + str(self.file_name) )
-        else:
-          self.image = None
-          print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
-          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
-      except:
-        print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
-        # exit(1)
-        self.image = None
-    if type(clone_from) == type(None):
-      self.add_file_name_graphic()
-
-  def to_string ( self ):
-    return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
-
-  def use_image_from ( self, other_annotated_image ):
-    self.file_name = other_annotated_image.file_name
-    self.image = other_annotated_image.image
-    self.add_file_name_graphic()
-
-  def add_file_name_graphic ( self ):
-    if type(self.file_name) != type(None):
-      self.graphics_items.insert ( 0, graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
-
-  def set_role ( self, role ):
-    self.role = role
-
-  def get_marker_points ( self ):
-    point_list = []
-    for item in self.graphics_items:
-      if item.marker:
-        point_list.append ( [item.x, item.y] )
-    return point_list
-
-  def clear_non_marker_graphics ( self ):
-    marker_list = [ gi for gi in self.graphics_items if gi.marker ]
-    self.graphics_items = marker_list
-
-  def add_graphic ( self, item ):
-    self.graphics_items.append ( item )
-
 
 import struct
 
@@ -1024,6 +954,83 @@ class tiled_tiff:
 
 
 
+class annotated_image:
+  ''' An image with a series of drawing primitives defined in
+      the pixel coordinates of the image. '''
+  def __init__ ( self, file_name=None, clone_from=None, role=None ):
+    # Initialize everything to defaults
+    self.file_name = file_name
+    self.file_size = -1
+    self.image = None
+    self.tiled_image = None
+    self.graphics_items = []
+    self.role = role
+    # self.results_dict = None
+
+    # Copy in the clone if provided
+    if type(clone_from) != type(None):
+      self.file_name = clone_from.file_name
+      self.image = clone_from.image
+      self.tiled_image = clone_from.tiled_image
+      self.graphics_items = [ gi for gi in clone_from.graphics_items ]
+
+    # Over-ride other items as provided
+    if type(file_name) != type(None):
+      self.file_name = file_name
+    if role != None:
+      self.role = role
+    if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
+      try:
+        f = file ( self.file_name )
+        f.seek (0, 2)
+        self.file_size = f.tell()
+        f.close()
+        global max_image_file_size
+        if self.file_size < max_image_file_size:
+          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+          print_debug ( 50, "Loaded " + str(self.file_name) )
+        else:
+          self.image = None
+          print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
+          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
+      except:
+        print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
+        # exit(1)
+        self.image = None
+    if type(clone_from) == type(None):
+      self.add_file_name_graphic()
+
+  def to_string ( self ):
+    return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
+
+  def use_image_from ( self, other_annotated_image ):
+    self.file_name = other_annotated_image.file_name
+    self.image = other_annotated_image.image
+    self.tiled_image = other_annotated_image.tiled_image
+    self.add_file_name_graphic()
+
+  def add_file_name_graphic ( self ):
+    if type(self.file_name) != type(None):
+      self.graphics_items.insert ( 0, graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+
+  def set_role ( self, role ):
+    self.role = role
+
+  def get_marker_points ( self ):
+    point_list = []
+    for item in self.graphics_items:
+      if item.marker:
+        point_list.append ( [item.x, item.y] )
+    return point_list
+
+  def clear_non_marker_graphics ( self ):
+    marker_list = [ gi for gi in self.graphics_items if gi.marker ]
+    self.graphics_items = marker_list
+
+  def add_graphic ( self, item ):
+    self.graphics_items.append ( item )
+
+
 class alignment_layer:
   ''' An alignment_layer has a base image and a set of images and processes representing the relationships to its neighbors '''
   def __init__ ( self, base=None ):
@@ -1080,6 +1087,11 @@ class alignment_layer:
     for k,v in self.image_dict.items():
       s = s + "\n  " + str(k) + ": " + v.to_string()
     return ( s )
+
+  def import_tiled_tiff ( self ):
+    # Import a file with the same base name as this, but with ".ttif" extension
+    tiled_name = os.path.splitext(self.base_image_name)[0] + ".ttif"
+    print ( "Importing tiled tiff named: " + str(tiled_name) )
 
 
 
@@ -3000,6 +3012,7 @@ def menu_callback ( widget, data=None ):
     global alignment_layer_list
     global alignment_layer_index
     global panel_list
+    global import_tiled
 
     global point_cursor
     global cursor_options
@@ -3366,6 +3379,10 @@ def menu_callback ( widget, data=None ):
       generate_as_tiled = not generate_as_tiled
       print ( "Generate as tiled = " + str(generate_as_tiled) )
 
+    elif command == "ImportTiled":
+      import_tiled = not import_tiled
+      print ( "Import tiled = " + str(import_tiled) )
+
     elif command == "ShowTiled":
       global show_tiled
       show_tiled = not show_tiled
@@ -3483,6 +3500,8 @@ def menu_callback ( widget, data=None ):
             for f in file_list:
               print ( " Found image file " + f )
               a = alignment_layer ( os.path.join ( subdir_path, f ) )
+              if import_tiled:
+                a.import_tiled_tiff()
               scales_dict[scale].append ( a )
 
             ##### Begin Pasted from OpenProj
