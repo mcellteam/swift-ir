@@ -167,6 +167,9 @@ max_image_file_size = 700000000
 global generate_as_tiled
 generate_as_tiled = False
 
+global import_tiled
+import_tiled = False
+
 global show_tiled
 show_tiled = False
 
@@ -609,79 +612,6 @@ class graphic_text (graphic_primitive):
     return False
 
 
-class annotated_image:
-  ''' An image with a series of drawing primitives defined in
-      the pixel coordinates of the image. '''
-  def __init__ ( self, file_name=None, clone_from=None, role=None ):
-    # Initialize everything to defaults
-    self.file_name = file_name
-    self.file_size = -1
-    self.image = None
-    self.graphics_items = []
-    self.role = role
-    # self.results_dict = None
-
-    # Copy in the clone if provided
-    if type(clone_from) != type(None):
-      self.file_name = clone_from.file_name
-      self.image = clone_from.image
-      self.graphics_items = [ gi for gi in clone_from.graphics_items ]
-
-    # Over-ride other items as provided
-    if type(file_name) != type(None):
-      self.file_name = file_name
-    if role != None:
-      self.role = role
-    if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
-      try:
-        f = file ( self.file_name )
-        f.seek (0, 2)
-        self.file_size = f.tell()
-        f.close()
-        global max_image_file_size
-        if self.file_size < max_image_file_size:
-          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
-          print_debug ( 50, "Loaded " + str(self.file_name) )
-        else:
-          self.image = None
-          print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
-          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
-      except:
-        print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
-        # exit(1)
-        self.image = None
-    if type(clone_from) == type(None):
-      self.add_file_name_graphic()
-
-  def to_string ( self ):
-    return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
-
-  def use_image_from ( self, other_annotated_image ):
-    self.file_name = other_annotated_image.file_name
-    self.image = other_annotated_image.image
-    self.add_file_name_graphic()
-
-  def add_file_name_graphic ( self ):
-    if type(self.file_name) != type(None):
-      self.graphics_items.insert ( 0, graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
-
-  def set_role ( self, role ):
-    self.role = role
-
-  def get_marker_points ( self ):
-    point_list = []
-    for item in self.graphics_items:
-      if item.marker:
-        point_list.append ( [item.x, item.y] )
-    return point_list
-
-  def clear_non_marker_graphics ( self ):
-    marker_list = [ gi for gi in self.graphics_items if gi.marker ]
-    self.graphics_items = marker_list
-
-  def add_graphic ( self, item ):
-    self.graphics_items.append ( item )
-
 
 import struct
 
@@ -703,12 +633,40 @@ class tiled_tiff:
     f = open ( self.file_name, 'rb' )
     if len(self.tile_offsets) > 0:
       # Seek to the last one
-      f.seek ( self.tile_offsets[-1] )
-      image_data = f.read ( self.tile_counts[-1] )
-      print ( "Read " + str(self.tile_counts[-1]) + " bytes at " + str(self.tile_offsets[-1]) + " from " + str(self.file_name) )
-      tile_data_str = str([ord(d) for d in image_data[0:20]])
+      f.seek ( self.tile_offsets[0] )
+      image_data = f.read ( self.tile_counts[0] )
+      print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+
+      # Print out a small corner of the tile:
+      num_rows = 40
+      num_cols = 80
+      print ( '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
+      color_table = []
+      for n in range(256):
+        color_table.append ( format(n,'02x') )
+      for v in color_table:
+        print ( '"' + v + ' c #' + v + v + v + '",' )
+
+      for row in range(num_rows):
+        pix_row = ""
+        for col in range(num_cols):
+          i = row * self.tile_width
+          i += col
+          pix_row += color_table[ord(image_data[i])]
+        print ( '"' + pix_row + '",' )
+
+      '''
+      pix_list = [ color_table[ord(i)] for i in image_data[0:num_pix] ]
+      #print ( "pix_list = " + str(pix_list) )
+
+      pix_row = ""
+      for i in range(len(pix_list)):
+        pix_row += pix_list[i]
+      print ( '"' + pix_row + '"' )
+      tile_data_str = str([ord(d) for d in image_data[0:num_pix]])
       print ( "  " + tile_data_str )
-    return ( tile_data_str )
+      '''
+    return ( "Done showing tiled_tiff" ) #tile_data_str )
 
   def __init__ ( self, file_name ):
 
@@ -1024,6 +982,89 @@ class tiled_tiff:
 
 
 
+class annotated_image:
+  ''' An image with a series of drawing primitives defined in
+      the pixel coordinates of the image. '''
+  def __init__ ( self, file_name=None, clone_from=None, role=None ):
+    # Initialize everything to defaults
+    self.file_name = file_name
+    self.file_size = -1
+    self.image = None
+    self.tiled_image = None
+    self.graphics_items = []
+    self.role = role
+    # self.results_dict = None
+
+    # Copy in the clone if provided
+    if type(clone_from) != type(None):
+      self.file_name = clone_from.file_name
+      self.image = clone_from.image
+      self.tiled_image = clone_from.tiled_image
+      self.graphics_items = [ gi for gi in clone_from.graphics_items ]
+
+    # Over-ride other items as provided
+    if type(file_name) != type(None):
+      self.file_name = file_name
+    if role != None:
+      self.role = role
+    if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
+      try:
+        f = file ( self.file_name )
+        f.seek (0, 2)
+        self.file_size = f.tell()
+        f.close()
+        global max_image_file_size
+        if self.file_size < max_image_file_size:
+          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+          print_debug ( 50, "Loaded " + str(self.file_name) )
+        else:
+          self.image = None
+          print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
+          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
+      except:
+        print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
+        # exit(1)
+        self.image = None
+
+    if (type(self.tiled_image) == type(None)) and (type(self.file_name) != type(None)):
+      if os.path.splitext(self.file_name)[1] == ".ttif":
+        # Read in the structure for a tiled_tiff image
+        self.tiled_image = tiled_tiff ( self.file_name )
+
+    if type(clone_from) == type(None):
+      self.add_file_name_graphic()
+
+  def to_string ( self ):
+    return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
+
+  def use_image_from ( self, other_annotated_image ):
+    self.file_name = other_annotated_image.file_name
+    self.image = other_annotated_image.image
+    self.tiled_image = other_annotated_image.tiled_image
+    self.add_file_name_graphic()
+
+  def add_file_name_graphic ( self ):
+    if type(self.file_name) != type(None):
+      self.graphics_items.insert ( 0, graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+
+  def set_role ( self, role ):
+    self.role = role
+
+  def get_marker_points ( self ):
+    point_list = []
+    for item in self.graphics_items:
+      if item.marker:
+        point_list.append ( [item.x, item.y] )
+    return point_list
+
+  def clear_non_marker_graphics ( self ):
+    marker_list = [ gi for gi in self.graphics_items if gi.marker ]
+    self.graphics_items = marker_list
+
+  def add_graphic ( self, item ):
+    self.graphics_items.append ( item )
+
+
 class alignment_layer:
   ''' An alignment_layer has a base image and a set of images and processes representing the relationships to its neighbors '''
   def __init__ ( self, base=None ):
@@ -1294,13 +1335,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
               closest_dist = dist
           alignment_layer_index = closest_index
 
-    global show_tiled
-    if show_tiled:
-      if alignment_layer_index >= 0:
-        print ( "Read a tile just to check on the speed ..." )
-        al = alignment_layer_list[alignment_layer_index]
-        print ( "Tile data: " + str(al.tile_data) )
-
     # Display the alignment_layer parameters from the new section being viewed
     if alignment_layer_index >= 0:
       store_current_layer_into_fields()
@@ -1387,9 +1421,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
     global show_skipped_layers
     global show_tiled
 
-    if show_tiled:
-      print ( "Showing tiled images where available ..." )
-
     # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
     pix_buf = None
@@ -1399,6 +1430,11 @@ class zoom_panel ( app_window.zoom_pan_area ):
         im_dict = alignment_layer_list[alignment_layer_index].image_dict
         if self.role in im_dict:
           pix_buf = im_dict[self.role].image
+          if show_tiled and not (im_dict[self.role].tiled_image is None):
+            print ( "Showing a tiled image ..." )
+            print ( "  " + str(im_dict[self.role].tiled_image) )
+
+
 
     if pix_buf != None:
       pbw = pix_buf.get_width()
@@ -3000,6 +3036,7 @@ def menu_callback ( widget, data=None ):
     global alignment_layer_list
     global alignment_layer_index
     global panel_list
+    global import_tiled
 
     global point_cursor
     global cursor_options
@@ -3098,6 +3135,7 @@ def menu_callback ( widget, data=None ):
       image_filter.add_pattern("*.[Pp][Nn][Gg]")
       image_filter.add_pattern("*.[Tt][Ii][Ff]")
       image_filter.add_pattern("*.[Tt][Ii][Ff][Ff]")
+      image_filter.add_pattern("*.[Tt][Tt][Ii][Ff]")
       image_filter.add_pattern("*.[Gg][Ii][Ff]")
       file_chooser.add_filter(image_filter)
       image_filter=gtk.FileFilter()
@@ -3366,6 +3404,10 @@ def menu_callback ( widget, data=None ):
       generate_as_tiled = not generate_as_tiled
       print ( "Generate as tiled = " + str(generate_as_tiled) )
 
+    elif command == "ImportTiled":
+      import_tiled = not import_tiled
+      print ( "Import tiled = " + str(import_tiled) )
+
     elif command == "ShowTiled":
       global show_tiled
       show_tiled = not show_tiled
@@ -3414,7 +3456,8 @@ def menu_callback ( widget, data=None ):
               global generate_as_tiled
               if generate_as_tiled:
                 # Generate as tiled images (means duplicating the originals also)
-                print ( "Resizing " + original_name + " to " + new_name )
+                tiled_name = os.path.splitext(new_name)[0] + ".ttif"
+                print ( "Resizing " + original_name + " to " + tiled_name )
                 if False:
                   # Generate internally
                   # Don't know how to do this and make tiles yet
@@ -3427,7 +3470,7 @@ def menu_callback ( widget, data=None ):
                   # Use "convert" from ImageMagick to hopefully tile in place
                   import subprocess
                   p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
-                  p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+new_name] )
+                  p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+tiled_name] )
               else:
                 # Generate non-tiled images
                 if scale == 1:
@@ -3475,7 +3518,7 @@ def menu_callback ( widget, data=None ):
             print ( "Importing from a subdirectory named " + subdir_path )
             file_list = os.listdir ( subdir_path )
             file_list = [ f for f in file_list if '.' in f ]  # Select only those that have a "." in the file name
-            file_list = [ f for f in file_list if f[f.rfind('.'):].lower() in ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.gif' ] ] # Be sure that they have a "." in the file name
+            file_list = [ f for f in file_list if f[f.rfind('.'):].lower() in ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.ttif', '.gif' ] ] # Be sure that they have a "." in the file name
             print ( "Presorted File List:\n" + str(file_list) )
             file_list = sorted(file_list)
             print ( "Sorted File List:\n" + str(file_list) )
@@ -4052,11 +4095,14 @@ def main():
   if True: # An easy way to indent and still be legal Python
     this_menu = scaling_menu
     zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Import Tiled",   ("ImportTiled", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
     '''
     # These aren't useful yet, so hide them for now ...
     zpa_original.add_menu_sep  ( this_menu )
