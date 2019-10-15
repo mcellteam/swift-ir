@@ -1088,11 +1088,6 @@ class alignment_layer:
       s = s + "\n  " + str(k) + ": " + v.to_string()
     return ( s )
 
-  def import_tiled_tiff ( self ):
-    # Import a file with the same base name as this, but with ".ttif" extension
-    tiled_name = os.path.splitext(self.base_image_name)[0] + ".ttif"
-    print ( "Importing tiled tiff named: " + str(tiled_name) )
-
 
 
 # These two global functions are handy for callbacks
@@ -3111,6 +3106,7 @@ def menu_callback ( widget, data=None ):
       image_filter.add_pattern("*.[Pp][Nn][Gg]")
       image_filter.add_pattern("*.[Tt][Ii][Ff]")
       image_filter.add_pattern("*.[Tt][Ii][Ff][Ff]")
+      image_filter.add_pattern("*.[Tt][Tt][Ii][Ff]")
       image_filter.add_pattern("*.[Gg][Ii][Ff]")
       file_chooser.add_filter(image_filter)
       image_filter=gtk.FileFilter()
@@ -3493,15 +3489,13 @@ def menu_callback ( widget, data=None ):
             print ( "Importing from a subdirectory named " + subdir_path )
             file_list = os.listdir ( subdir_path )
             file_list = [ f for f in file_list if '.' in f ]  # Select only those that have a "." in the file name
-            file_list = [ f for f in file_list if f[f.rfind('.'):].lower() in ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.gif' ] ] # Be sure that they have a "." in the file name
+            file_list = [ f for f in file_list if f[f.rfind('.'):].lower() in ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.ttif', '.gif' ] ] # Be sure that they have a "." in the file name
             print ( "Presorted File List:\n" + str(file_list) )
             file_list = sorted(file_list)
             print ( "Sorted File List:\n" + str(file_list) )
             for f in file_list:
               print ( " Found image file " + f )
               a = alignment_layer ( os.path.join ( subdir_path, f ) )
-              if import_tiled:
-                a.import_tiled_tiff()
               scales_dict[scale].append ( a )
 
             ##### Begin Pasted from OpenProj
