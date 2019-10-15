@@ -650,7 +650,7 @@ class tiled_tiff:
       for row in range(num_rows):
         pix_row = ""
         for col in range(num_cols):
-          i = row * self.tile_width
+          i = row * self.tile_width /4
           i += col
           pix_row += color_table[ord(image_data[i])]
         print ( '"' + pix_row + '",' )
