@@ -3414,7 +3414,8 @@ def menu_callback ( widget, data=None ):
               global generate_as_tiled
               if generate_as_tiled:
                 # Generate as tiled images (means duplicating the originals also)
-                print ( "Resizing " + original_name + " to " + new_name )
+                tiled_name = os.path.splitext(new_name)[0] + ".ttif"
+                print ( "Resizing " + original_name + " to " + tiled_name )
                 if False:
                   # Generate internally
                   # Don't know how to do this and make tiles yet
@@ -3427,7 +3428,7 @@ def menu_callback ( widget, data=None ):
                   # Use "convert" from ImageMagick to hopefully tile in place
                   import subprocess
                   p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
-                  p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+new_name] )
+                  p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+tiled_name] )
               else:
                 # Generate non-tiled images
                 if scale == 1:
@@ -4052,11 +4053,14 @@ def main():
   if True: # An easy way to indent and still be legal Python
     this_menu = scaling_menu
     zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Import Tiled",   ("ImportTiled", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
     '''
     # These aren't useful yet, so hide them for now ...
     zpa_original.add_menu_sep  ( this_menu )
