@@ -633,12 +633,40 @@ class tiled_tiff:
     f = open ( self.file_name, 'rb' )
     if len(self.tile_offsets) > 0:
       # Seek to the last one
-      f.seek ( self.tile_offsets[-1] )
-      image_data = f.read ( self.tile_counts[-1] )
-      print ( "Read " + str(self.tile_counts[-1]) + " bytes at " + str(self.tile_offsets[-1]) + " from " + str(self.file_name) )
-      tile_data_str = str([ord(d) for d in image_data[0:20]])
+      f.seek ( self.tile_offsets[0] )
+      image_data = f.read ( self.tile_counts[0] )
+      print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+
+      # Print out a small corner of the tile:
+      num_rows = 40
+      num_cols = 80
+      print ( '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
+      color_table = []
+      for n in range(256):
+        color_table.append ( format(n,'02x') )
+      for v in color_table:
+        print ( '"' + v + ' c #' + v + v + v + '",' )
+
+      for row in range(num_rows):
+        pix_row = ""
+        for col in range(num_cols):
+          i = row * self.tile_width
+          i += col
+          pix_row += color_table[ord(image_data[i])]
+        print ( '"' + pix_row + '",' )
+
+      '''
+      pix_list = [ color_table[ord(i)] for i in image_data[0:num_pix] ]
+      #print ( "pix_list = " + str(pix_list) )
+
+      pix_row = ""
+      for i in range(len(pix_list)):
+        pix_row += pix_list[i]
+      print ( '"' + pix_row + '"' )
+      tile_data_str = str([ord(d) for d in image_data[0:num_pix]])
       print ( "  " + tile_data_str )
-    return ( tile_data_str )
+      '''
+    return ( "Done showing tiled_tiff" ) #tile_data_str )
 
   def __init__ ( self, file_name ):
 
@@ -997,6 +1025,12 @@ class annotated_image:
         print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
         # exit(1)
         self.image = None
+
+    if (type(self.tiled_image) == type(None)) and (type(self.file_name) != type(None)):
+      if os.path.splitext(self.file_name)[1] == ".ttif":
+        # Read in the structure for a tiled_tiff image
+        self.tiled_image = tiled_tiff ( self.file_name )
+
     if type(clone_from) == type(None):
       self.add_file_name_graphic()
 
@@ -1301,13 +1335,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
               closest_dist = dist
           alignment_layer_index = closest_index
 
-    global show_tiled
-    if show_tiled:
-      if alignment_layer_index >= 0:
-        print ( "Read a tile just to check on the speed ..." )
-        al = alignment_layer_list[alignment_layer_index]
-        print ( "Tile data: " + str(al.tile_data) )
-
     # Display the alignment_layer parameters from the new section being viewed
     if alignment_layer_index >= 0:
       store_current_layer_into_fields()
@@ -1394,9 +1421,6 @@ class zoom_panel ( app_window.zoom_pan_area ):
     global show_skipped_layers
     global show_tiled
 
-    if show_tiled:
-      print ( "Showing tiled images where available ..." )
-
     # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
 
     pix_buf = None
@@ -1406,6 +1430,11 @@ class zoom_panel ( app_window.zoom_pan_area ):
         im_dict = alignment_layer_list[alignment_layer_index].image_dict
         if self.role in im_dict:
           pix_buf = im_dict[self.role].image
+          if show_tiled and not (im_dict[self.role].tiled_image is None):
+            print ( "Showing a tiled image ..." )
+            print ( "  " + str(im_dict[self.role].tiled_image) )
+
+
 
     if pix_buf != None:
       pbw = pix_buf.get_width()
