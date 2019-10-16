@@ -1431,8 +1431,14 @@ class zoom_panel ( app_window.zoom_pan_area ):
         if self.role in im_dict:
           pix_buf = im_dict[self.role].image
           if show_tiled and not (im_dict[self.role].tiled_image is None):
-            print ( "Showing a tiled image ..." )
+            print ( "Drawing a tiled image ..." )
             print ( "  " + str(im_dict[self.role].tiled_image) )
+
+            # Draw this window's role
+            gc.foreground = colormap.alloc_color(32767,65535,65535)
+            self.pangolayout.set_text ( str('Tiled Image') )
+            drawable.draw_layout ( gc, width/2, height/2, self.pangolayout )
+            pix_buf = None
 
 
 
@@ -3060,6 +3066,8 @@ def menu_callback ( widget, data=None ):
     global code_entry
     global current_plot_code
 
+    global generate_as_tiled
+
     if command == "Fast":
 
       zpa.user_data['frame_delay'] = 0.01
@@ -3414,7 +3422,6 @@ def menu_callback ( widget, data=None ):
 
 
     elif command == "GenAsTiled":
-      global generate_as_tiled
       generate_as_tiled = not generate_as_tiled
       print ( "Generate as tiled = " + str(generate_as_tiled) )
 
@@ -3426,6 +3433,7 @@ def menu_callback ( widget, data=None ):
       global show_tiled
       show_tiled = not show_tiled
       print ( "Show tiled = " + str(show_tiled) )
+      zpa_original.queue_draw()
 
 
     elif command == "GenAllScales":
@@ -3467,7 +3475,6 @@ def menu_callback ( widget, data=None ):
               #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
               original_name = al.base_image_name
               new_name = os.path.join(src_path,os.path.basename(original_name))
-              global generate_as_tiled
               if generate_as_tiled:
                 # Generate as tiled images (means duplicating the originals also)
                 tiled_name = os.path.splitext(new_name)[0] + ".ttif"
