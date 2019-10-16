@@ -104,6 +104,7 @@ class alignment_process:
       for y in range(ny):
         pa[0, x + nx*y] = int(0.5*s + s*x)
         pa[1, x + nx*y] = int(0.5*s + s*y)
+    wsf = 1.0
     s_4x4 = int(wsf*s)
     psta_4x4 = pa
 
@@ -116,7 +117,7 @@ class alignment_process:
     if atrm['selected_method']=='Auto Swim Align':
       alignment_option = atrm['method_data'].get('alignment_option')
       if alignment_option == 'refine_affine':
-        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, afm=self.init_affine_matrix)
+        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, wht=-0.68, afm=self.init_affine_matrix)
         self.recipe.add_ingredient(ingredient_4x4)
       else:
         ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
