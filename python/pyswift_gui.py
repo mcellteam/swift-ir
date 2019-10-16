@@ -680,6 +680,8 @@ class tiled_tiff:
     self.tile_offsets = []
     self.tile_counts = []
 
+    self.pixbuf = None
+
     print ( "Reading from TIFF: " + str(file_name) )
 
     tag_record_list = []
@@ -868,6 +870,11 @@ class tiled_tiff:
 
     return ( xpm_strings )
 
+
+  def get_tile_data_as_pixbuf ( self, tile_row, tile_col ):
+    if self.pixbuf == None:
+      self.pixbuf = gtk.gdk.pixbuf_new_from_xpm_data ( self.get_tile_data_as_xpm ( tile_row, tile_col ) )
+    return ( self.pixbuf )
 
 
   def is_immediate ( self, tagtuple ):
@@ -1474,8 +1481,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
           pix_buf = im_dict[self.role].image
           if show_tiled and not (im_dict[self.role].tiled_image is None):
             ti = im_dict[self.role].tiled_image
-            td_as_xpm = ti.get_tile_data_as_xpm ( 0, 0 )
-            pix_buf = gtk.gdk.pixbuf_new_from_xpm_data ( td_as_xpm )
+            pix_buf = ti.get_tile_data_as_pixbuf ( 0, 0 )
 
 
     if pix_buf != None:
