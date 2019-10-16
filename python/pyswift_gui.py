@@ -3492,6 +3492,8 @@ def menu_callback ( widget, data=None ):
                   import subprocess
                   p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
                   p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+tiled_name] )
+                  p.wait() # Allow the subprocess to complete before deleting the input file!!
+                  os.remove ( new_name ) # This would be the file name of the resized copy of the original image
               else:
                 # Generate non-tiled images
                 if scale == 1:
@@ -3625,7 +3627,7 @@ def menu_callback ( widget, data=None ):
     elif command == "DelMissingScales":
       print ( "Prune missing scales from: " + str ( gui_fields.scales_list ) )
 
-    elif command == "ClearAll":
+    elif command == "ClearLayers":
 
       clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
       response = clear_all.run()
@@ -3636,6 +3638,51 @@ def menu_callback ( widget, data=None ):
         alignment_layer_list = []
         current_scale = 1
         scales_dict[current_scale] = alignment_layer_list
+      zpa_original.queue_draw()
+      for p in panel_list:
+        p.queue_draw()
+      clear_all.destroy()
+
+    elif command == "ClearEverything":
+
+      clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove Everything?")
+      response = clear_all.run()
+      if response == gtk.RESPONSE_OK:
+        print_debug ( 20, "Clearing all layers..." )
+
+        for scale in scales_dict.keys():
+          print ( "Deleting images for scale " + str(scale) )
+          if True or (scale != 1):
+            subdir = 'scale_' + str(scale)
+            for subsubdir in ['img_aligned', 'img_src']:
+              subdir_path = os.path.join(destination_path,subdir,subsubdir)
+              print ( "Deleting from a subdirectory named " + subdir_path )
+
+              for al in scales_dict[scale]:
+                try:
+                  file_to_delete = os.path.join(subdir_path,os.path.basename(al.base_image_name))
+                  print_debug ( 30, "Deleting " + file_to_delete )
+                  os.remove ( file_to_delete )
+                except:
+                  # This will happen if the image had been deleted or hadn't been created (such as skipped).
+                  pass
+
+              try:
+                print_debug ( 30, "Deleting " + subdir_path )
+                os.remove ( subdir_path )
+              except:
+                # This will happen if the image had been deleted or hadn't been created (such as skipped).
+                pass
+
+              for al in scales_dict[scale]:
+                al.image_dict['aligned'] = annotated_image(None, role='aligned')
+
+        scales_dict = {}
+        alignment_layer_index = 0
+        alignment_layer_list = []
+        current_scale = 1
+        scales_dict[current_scale] = alignment_layer_list
+
       zpa_original.queue_draw()
       for p in panel_list:
         p.queue_draw()
@@ -4109,7 +4156,9 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Layers",  ("ClearLayers", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Everything",  ("ClearEverything", zpa_original ) )
 
   # Create a "Scaling" menu
   (scaling_menu, scaling_item) = zpa_original.add_menu ( "Scalin_g" )
