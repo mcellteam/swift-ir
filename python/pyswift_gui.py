@@ -638,8 +638,8 @@ class tiled_tiff:
       print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
 
       # Print out a small corner of the tile:
-      num_rows = 40
-      num_cols = 80
+      num_rows = self.tile_height
+      num_cols = self.tile_width
       print ( '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
       color_table = []
       for n in range(256):
@@ -650,7 +650,7 @@ class tiled_tiff:
       for row in range(num_rows):
         pix_row = ""
         for col in range(num_cols):
-          i = row * self.tile_width /4
+          i = row * self.tile_width
           i += col
           pix_row += color_table[ord(image_data[i])]
         print ( '"' + pix_row + '",' )
@@ -673,6 +673,8 @@ class tiled_tiff:
     self.file_name = file_name
     self.endian = '<' # Intel format
     self.dir_record_list = []
+    self.width = -1
+    self.height = -1
     self.tile_width = -1
     self.tile_height = -1
     self.tile_offsets = []
@@ -768,11 +770,11 @@ class tiled_tiff:
           print ( "  New tag: " + str(tag_rec) )
           if tag_rec.tag == 256:
             w = tag_rec.tagvalue
-            self.tile_width = w
+            self.width = w
             print ( "    Width: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 257:
             h = tag_rec.tagvalue
-            self.tile_height = h
+            self.height = h
             print ( "    Height: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 258:
             bps = tag_rec.tagvalue
@@ -782,9 +784,11 @@ class tiled_tiff:
               exit ( 0 )
           if tag_rec.tag == 322:
             tw = tag_rec.tagvalue
+            self.tile_width = tw
             print ( "    TileWidth: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 323:
             tl = tag_rec.tagvalue
+            self.tile_height = tl
             print ( "    TileLength: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 324:
             to = tag_rec.tagvalue
@@ -827,6 +831,44 @@ class tiled_tiff:
 
 
       print ( "\n\n" )
+
+  def get_tile_data_as_xpm ( self, tile_row, tile_col ):
+
+    print ( "Inside get_tile_data_as_xpm" )
+
+    xpm_strings = []
+
+    tile_data_str = None
+    f = open ( self.file_name, 'rb' )
+    if len(self.tile_offsets) > 0:
+      # Seek to the first one
+      f.seek ( self.tile_offsets[0] )
+      image_data = f.read ( self.tile_counts[0] )
+      print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+
+      # Convert the tile data to XPM format:
+
+      num_rows = self.tile_height
+      num_cols = self.tile_width
+      xpm_strings.append ( str(num_cols) + ' ' + str(num_rows) + ' 256 2' )
+
+      color_table = []
+      for n in range(256):
+        color_table.append ( format(n,'02x') )
+      for v in color_table:
+        xpm_strings.append ( v + ' c #' + v + v + v )
+
+      for row in range(num_rows):
+        pix_row = ""
+        for col in range(num_cols):
+          i = row * self.tile_width
+          i += col
+          pix_row += color_table[ord(image_data[i])]
+        xpm_strings.append ( pix_row )
+
+    return ( xpm_strings )
+
+
 
   def is_immediate ( self, tagtuple ):
     tag = tagtuple[0]
@@ -1431,15 +1473,9 @@ class zoom_panel ( app_window.zoom_pan_area ):
         if self.role in im_dict:
           pix_buf = im_dict[self.role].image
           if show_tiled and not (im_dict[self.role].tiled_image is None):
-            print ( "Drawing a tiled image ..." )
-            print ( "  " + str(im_dict[self.role].tiled_image) )
-
-            # Draw this window's role
-            gc.foreground = colormap.alloc_color(32767,65535,65535)
-            self.pangolayout.set_text ( str('Tiled Image') )
-            drawable.draw_layout ( gc, width/2, height/2, self.pangolayout )
-            pix_buf = None
-
+            ti = im_dict[self.role].tiled_image
+            td_as_xpm = ti.get_tile_data_as_xpm ( 0, 0 )
+            pix_buf = gtk.gdk.pixbuf_new_from_xpm_data ( td_as_xpm )
 
 
     if pix_buf != None:
