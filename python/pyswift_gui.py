@@ -30,7 +30,7 @@ def lin_fit(x,y):
 
 sn = str(d['data']['current_scale'])
 s = d['data']['scales'][sn]['alignment_stack']
-afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s if 'affine_matrix in i['align_to_ref_method']['method_results'] ])
+afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
 cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s if 'cumulative_afm' in i['align_to_ref_method']['method_results'] ])
 
 cx = cafm[:,:,2][:,0]
@@ -162,7 +162,7 @@ global point_cursor
 point_cursor = gtk.gdk.CROSSHAIR
 
 global max_image_file_size
-max_image_file_size = 700000000
+max_image_file_size = 100000000
 
 global generate_as_tiled
 generate_as_tiled = False
@@ -638,8 +638,8 @@ class tiled_tiff:
       print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
 
       # Print out a small corner of the tile:
-      num_rows = 40
-      num_cols = 80
+      num_rows = self.tile_height
+      num_cols = self.tile_width
       print ( '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
       color_table = []
       for n in range(256):
@@ -673,10 +673,14 @@ class tiled_tiff:
     self.file_name = file_name
     self.endian = '<' # Intel format
     self.dir_record_list = []
+    self.width = -1
+    self.height = -1
     self.tile_width = -1
     self.tile_height = -1
     self.tile_offsets = []
     self.tile_counts = []
+
+    self.pixbuf = None
 
     print ( "Reading from TIFF: " + str(file_name) )
 
@@ -768,11 +772,11 @@ class tiled_tiff:
           print ( "  New tag: " + str(tag_rec) )
           if tag_rec.tag == 256:
             w = tag_rec.tagvalue
-            self.tile_width = w
+            self.width = w
             print ( "    Width: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 257:
             h = tag_rec.tagvalue
-            self.tile_height = h
+            self.height = h
             print ( "    Height: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 258:
             bps = tag_rec.tagvalue
@@ -782,9 +786,11 @@ class tiled_tiff:
               exit ( 0 )
           if tag_rec.tag == 322:
             tw = tag_rec.tagvalue
+            self.tile_width = tw
             print ( "    TileWidth: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 323:
             tl = tag_rec.tagvalue
+            self.tile_height = tl
             print ( "    TileLength: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 324:
             to = tag_rec.tagvalue
@@ -827,6 +833,49 @@ class tiled_tiff:
 
 
       print ( "\n\n" )
+
+  def get_tile_data_as_xpm ( self, tile_row, tile_col ):
+
+    print ( "Inside get_tile_data_as_xpm" )
+
+    xpm_strings = []
+
+    tile_data_str = None
+    f = open ( self.file_name, 'rb' )
+    if len(self.tile_offsets) > 0:
+      # Seek to the first one
+      f.seek ( self.tile_offsets[0] )
+      image_data = f.read ( self.tile_counts[0] )
+      print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+
+      # Convert the tile data to XPM format:
+
+      num_rows = self.tile_height
+      num_cols = self.tile_width
+      xpm_strings.append ( str(num_cols) + ' ' + str(num_rows) + ' 256 2' )
+
+      color_table = []
+      for n in range(256):
+        color_table.append ( format(n,'02x') )
+      for v in color_table:
+        xpm_strings.append ( v + ' c #' + v + v + v )
+
+      for row in range(num_rows):
+        pix_row = ""
+        for col in range(num_cols):
+          i = row * self.tile_width
+          i += col
+          pix_row += color_table[ord(image_data[i])]
+        xpm_strings.append ( pix_row )
+
+    return ( xpm_strings )
+
+
+  def get_tile_data_as_pixbuf ( self, tile_row, tile_col ):
+    if self.pixbuf == None:
+      self.pixbuf = gtk.gdk.pixbuf_new_from_xpm_data ( self.get_tile_data_as_xpm ( tile_row, tile_col ) )
+    return ( self.pixbuf )
+
 
   def is_immediate ( self, tagtuple ):
     tag = tagtuple[0]
@@ -1431,9 +1480,8 @@ class zoom_panel ( app_window.zoom_pan_area ):
         if self.role in im_dict:
           pix_buf = im_dict[self.role].image
           if show_tiled and not (im_dict[self.role].tiled_image is None):
-            print ( "Showing a tiled image ..." )
-            print ( "  " + str(im_dict[self.role].tiled_image) )
-
+            ti = im_dict[self.role].tiled_image
+            pix_buf = ti.get_tile_data_as_pixbuf ( 0, 0 )
 
 
     if pix_buf != None:
@@ -1932,6 +1980,8 @@ def write_json_project ( project_file_name, fb=None ):
   global alignment_layer_index
   global panel_list
 
+  global max_image_file_size
+
   global point_cursor
   global cursor_options
   global point_mode
@@ -1961,6 +2011,10 @@ def write_json_project ( project_file_name, fb=None ):
     f.write ( '{\n' )
     f.write ( '  "version": 0.2,\n' )
     f.write ( '  "method": "SWiFT-IR",\n' )
+
+    f.write ( '  "user_settings": {\n' )
+    f.write ( '    "max_image_file_size": ' + str(max_image_file_size) + '\n' )
+    f.write ( '  },\n' )
 
     global current_plot_code
     if len(current_plot_code.strip()) > 0:
@@ -2658,6 +2712,11 @@ def load_from_proj_dict ( proj_dict ):
     global current_plot_code
     current_plot_code = code_c
 
+  if 'user_settings' in proj_dict:
+    if 'max_image_file_size' in proj_dict['user_settings']:
+      global max_image_file_size
+      max_image_file_size = proj_dict['user_settings']['max_image_file_size']
+
   if 'data' in proj_dict:
     if 'destination_path' in proj_dict['data']:
       destination_path = proj_dict['data']['destination_path']
@@ -3010,6 +3069,7 @@ def set_selected_scale_to ( requested_scale ):
     print ( "Scale " + str(requested_scale) + " is not in " + str(scales_dict.keys()) )
 
 
+
 code_dialog = None
 code_store = None
 code_entry = None
@@ -3047,6 +3107,8 @@ def menu_callback ( widget, data=None ):
     global code_store
     global code_entry
     global current_plot_code
+
+    global generate_as_tiled
 
     if command == "Fast":
 
@@ -3397,10 +3459,11 @@ def menu_callback ( widget, data=None ):
       except:
         cur_scale = -1
       set_selected_scale_to ( cur_scale )
+      print_debug ( 50, "Centering images when changing scales" )
+      center_all_images()
 
 
     elif command == "GenAsTiled":
-      global generate_as_tiled
       generate_as_tiled = not generate_as_tiled
       print ( "Generate as tiled = " + str(generate_as_tiled) )
 
@@ -3412,6 +3475,7 @@ def menu_callback ( widget, data=None ):
       global show_tiled
       show_tiled = not show_tiled
       print ( "Show tiled = " + str(show_tiled) )
+      zpa_original.queue_draw()
 
 
     elif command == "GenAllScales":
@@ -3453,7 +3517,6 @@ def menu_callback ( widget, data=None ):
               #original_name = os.path.join(destination_path,os.path.basename(al.base_image_name))
               original_name = al.base_image_name
               new_name = os.path.join(src_path,os.path.basename(original_name))
-              global generate_as_tiled
               if generate_as_tiled:
                 # Generate as tiled images (means duplicating the originals also)
                 tiled_name = os.path.splitext(new_name)[0] + ".ttif"
@@ -3471,6 +3534,8 @@ def menu_callback ( widget, data=None ):
                   import subprocess
                   p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
                   p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+tiled_name] )
+                  p.wait() # Allow the subprocess to complete before deleting the input file!!
+                  os.remove ( new_name ) # This would be the file name of the resized copy of the original image
               else:
                 # Generate non-tiled images
                 if scale == 1:
@@ -3604,7 +3669,7 @@ def menu_callback ( widget, data=None ):
     elif command == "DelMissingScales":
       print ( "Prune missing scales from: " + str ( gui_fields.scales_list ) )
 
-    elif command == "ClearAll":
+    elif command == "ClearLayers":
 
       clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
       response = clear_all.run()
@@ -3615,6 +3680,51 @@ def menu_callback ( widget, data=None ):
         alignment_layer_list = []
         current_scale = 1
         scales_dict[current_scale] = alignment_layer_list
+      zpa_original.queue_draw()
+      for p in panel_list:
+        p.queue_draw()
+      clear_all.destroy()
+
+    elif command == "ClearEverything":
+
+      clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove Everything?")
+      response = clear_all.run()
+      if response == gtk.RESPONSE_OK:
+        print_debug ( 20, "Clearing all layers..." )
+
+        for scale in scales_dict.keys():
+          print ( "Deleting images for scale " + str(scale) )
+          if True or (scale != 1):
+            subdir = 'scale_' + str(scale)
+            for subsubdir in ['img_aligned', 'img_src']:
+              subdir_path = os.path.join(destination_path,subdir,subsubdir)
+              print ( "Deleting from a subdirectory named " + subdir_path )
+
+              for al in scales_dict[scale]:
+                try:
+                  file_to_delete = os.path.join(subdir_path,os.path.basename(al.base_image_name))
+                  print_debug ( 30, "Deleting " + file_to_delete )
+                  os.remove ( file_to_delete )
+                except:
+                  # This will happen if the image had been deleted or hadn't been created (such as skipped).
+                  pass
+
+              try:
+                print_debug ( 30, "Deleting " + subdir_path )
+                os.remove ( subdir_path )
+              except:
+                # This will happen if the image had been deleted or hadn't been created (such as skipped).
+                pass
+
+              for al in scales_dict[scale]:
+                al.image_dict['aligned'] = annotated_image(None, role='aligned')
+
+        scales_dict = {}
+        alignment_layer_index = 0
+        alignment_layer_list = []
+        current_scale = 1
+        scales_dict[current_scale] = alignment_layer_list
+
       zpa_original.queue_draw()
       for p in panel_list:
         p.queue_draw()
@@ -4088,7 +4198,9 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Images",  ("ClearAll", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Layers",  ("ClearLayers", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Everything",  ("ClearEverything", zpa_original ) )
 
   # Create a "Scaling" menu
   (scaling_menu, scaling_item) = zpa_original.add_menu ( "Scalin_g" )
