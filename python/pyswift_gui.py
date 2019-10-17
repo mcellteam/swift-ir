@@ -2232,53 +2232,7 @@ def run_alignment_callback ( align_all ):
   #########################################################
   #########################################################
 
-  # Set up the preferred panels as needed
-  ref_panel = None
-  base_panel = None
-  aligned_panel = None
-
-  # Remove all windows to force desired arrangement
-  #print_debug ( 50, "Note: deleting all windows to force preferred" )
-  #while len(panel_list) > 0:
-  #  rem_panel_callback ( zpa_original )
-
-  # Start by assigning any panels with roles already set
-  for panel in panel_list:
-    if panel.role == 'ref':
-      ref_panel = panel
-    if panel.role == 'base':
-      base_panel = panel
-    if panel.role == 'aligned':
-      aligned_panel = panel
-
-  # Assign any empty panels if needed
-  for panel in panel_list:
-    if panel.role == '':
-      if ref_panel == None:
-        panel.role = 'ref'
-        ref_panel = panel
-      elif base_panel == None:
-        panel.role = 'base'
-        base_panel = panel
-      elif aligned_panel == None:
-        panel.role = 'aligned'
-        aligned_panel = panel
-
-  # Finally add panels as needed
-  if ref_panel == None:
-    add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
-  if base_panel == None:
-    add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
-  if aligned_panel == None:
-    add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
-
-  # The previous logic hasn't worked, so force all panels to be as desired for now
-  forced_panel_roles = ['ref', 'base', 'aligned']
-  for i in range ( min ( len(panel_list), len(forced_panel_roles) ) ):
-    panel_list[i].role = forced_panel_roles[i]
-
-
-
+  setup_initial_panels()
 
   print ( "Running with " + str(gui_fields.code_base_select.get_active_text()) )
 
@@ -2922,52 +2876,7 @@ def load_from_proj_dict ( proj_dict ):
 
       print ( "Final panel_names_list: " + str(panel_names_list) )
 
-      # Set up the preferred panels as needed
-      ref_panel = None
-      base_panel = None
-      aligned_panel = None
-
-      # Start by assigning any panels with roles already set
-      for panel in panel_list:
-        if panel.role == 'ref':
-          ref_panel = panel
-        if panel.role == 'base':
-          base_panel = panel
-        if panel.role == 'aligned':
-          aligned_panel = panel
-
-      # Assign any empty panels if needed
-      for panel in panel_list:
-        if panel.role == '':
-          if ref_panel == None:
-            panel.role = 'ref'
-            ref_panel = panel
-          elif base_panel == None:
-            panel.role = 'base'
-            base_panel = panel
-          elif aligned_panel == None:
-            panel.role = 'aligned'
-            aligned_panel = panel
-
-      # Finally add panels as needed
-      if ref_panel == None:
-        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
-      if base_panel == None:
-        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
-      if aligned_panel == None:
-        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
-
-      # The previous logic hasn't worked, so force all panels to be as desired for now
-      forced_panel_roles = ['ref', 'base', 'aligned']
-      for i in range ( min ( len(panel_list), len(forced_panel_roles) ) ):
-        panel_list[i].role = forced_panel_roles[i]
-
-      if ref_panel == None:
-        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
-      if base_panel == None:
-        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
-      if aligned_panel == None:
-        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
+      setup_initial_panels()
 
       # TODO Add other panels as needed
 
