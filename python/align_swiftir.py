@@ -75,6 +75,7 @@ class alignment_process:
 
     # window size scale factor
     wsf = 0.75
+#    wsf = 1.0
 
     pa = np.zeros((2,1))
     wwx = int(wsf*im_sta.shape[0])
@@ -117,7 +118,7 @@ class alignment_process:
     if atrm['selected_method']=='Auto Swim Align':
       alignment_option = atrm['method_data'].get('alignment_option')
       if alignment_option == 'refine_affine':
-        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, wht=-0.68, afm=self.init_affine_matrix)
+        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix)
         self.recipe.add_ingredient(ingredient_4x4)
       else:
         ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
@@ -187,7 +188,7 @@ class align_ingredient:
   #        If psta contains only one point then the estimated afm will be a translation matrix
   #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the 
   #        supplied afm matrix but do not refine the afm matrix
-  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.65, iters=2, align_mode='swim_align'):
+  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align'):
 
     self.afm = afm
     self.im_sta = im_sta
