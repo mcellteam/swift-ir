@@ -2155,32 +2155,10 @@ def str2D ( m ):
   s = s + ' ]'
   return ( s )
 
-def run_alignment_callback ( align_all ):
-  global alignment_layer_list
-  global alignment_layer_index
-  global destination_path
-  global gui_fields
+
+def setup_initial_panels():
+
   global panel_list
-  global project_file_name
-
-  store_fields_into_current_layer()
-
-  if len(destination_path) == 0:
-    dest_err_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Destination not set.")
-    response = dest_err_dialog.run()
-    dest_err_dialog.destroy()
-    return
-
-
-  scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "img_aligned")
-  print ( "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
-
-  #########################################################
-  #########################################################
-  ## This panel setup might be better in the runner?
-  #########################################################
-  #########################################################
-
   # Set up the preferred panels as needed
   ref_panel = None
   base_panel = None
@@ -2228,6 +2206,33 @@ def run_alignment_callback ( align_all ):
 
 
 
+def run_alignment_callback ( align_all ):
+  global alignment_layer_list
+  global alignment_layer_index
+  global destination_path
+  global gui_fields
+  global panel_list
+  global project_file_name
+
+  store_fields_into_current_layer()
+
+  if len(destination_path) == 0:
+    dest_err_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Destination not set.")
+    response = dest_err_dialog.run()
+    dest_err_dialog.destroy()
+    return
+
+
+  scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "img_aligned")
+  print ( "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
+
+  #########################################################
+  #########################################################
+  ## This panel setup might be better in the runner?
+  #########################################################
+  #########################################################
+
+  setup_initial_panels()
 
   print ( "Running with " + str(gui_fields.code_base_select.get_active_text()) )
 
@@ -2871,52 +2876,7 @@ def load_from_proj_dict ( proj_dict ):
 
       print ( "Final panel_names_list: " + str(panel_names_list) )
 
-      # Set up the preferred panels as needed
-      ref_panel = None
-      base_panel = None
-      aligned_panel = None
-
-      # Start by assigning any panels with roles already set
-      for panel in panel_list:
-        if panel.role == 'ref':
-          ref_panel = panel
-        if panel.role == 'base':
-          base_panel = panel
-        if panel.role == 'aligned':
-          aligned_panel = panel
-
-      # Assign any empty panels if needed
-      for panel in panel_list:
-        if panel.role == '':
-          if ref_panel == None:
-            panel.role = 'ref'
-            ref_panel = panel
-          elif base_panel == None:
-            panel.role = 'base'
-            base_panel = panel
-          elif aligned_panel == None:
-            panel.role = 'aligned'
-            aligned_panel = panel
-
-      # Finally add panels as needed
-      if ref_panel == None:
-        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
-      if base_panel == None:
-        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
-      if aligned_panel == None:
-        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
-
-      # The previous logic hasn't worked, so force all panels to be as desired for now
-      forced_panel_roles = ['ref', 'base', 'aligned']
-      for i in range ( min ( len(panel_list), len(forced_panel_roles) ) ):
-        panel_list[i].role = forced_panel_roles[i]
-
-      if ref_panel == None:
-        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
-      if base_panel == None:
-        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
-      if aligned_panel == None:
-        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
+      setup_initial_panels()
 
       # TODO Add other panels as needed
 
@@ -3238,6 +3198,9 @@ def menu_callback ( widget, data=None ):
         # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
         #a.image_dict['aligned'] = annotated_image(None,role='aligned')
         layer_index += 1
+
+      setup_initial_panels()
+
       refresh_all_images()
       center_all_images()
       panel_index = 0
