@@ -1969,6 +1969,10 @@ class StringBufferFile:
   def write ( self, s ):
     self.fs = self.fs + s
 
+def fstring ( fval ):
+  if math.isnan(fval):
+    return ( "NaN" )
+  return str(fval)
 
 def write_json_project ( project_file_name, fb=None ):
 
@@ -2111,8 +2115,8 @@ def write_json_project ( project_file_name, fb=None ):
             f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
             f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
             f.write ( '                "addy": ' + str(a.trans_addy) + ',\n' )
-            f.write ( '                "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
-            f.write ( '                "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
+            f.write ( '                "bias_x_per_image": ' + fstring(a.bias_dx) + ',\n' )
+            f.write ( '                "bias_y_per_image": ' + fstring(a.bias_dy) + ',\n' )
             f.write ( '                "output_level": 0\n' )
             f.write ( '              },\n' )
             f.write ( '              "method_results": {\n' )
@@ -2120,11 +2124,15 @@ def write_json_project ( project_file_name, fb=None ):
 
             if type(a.results_dict) != type(None):
               if 'affine' in a.results_dict:
-                f.write ( '                "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
+                smat = str(a.results_dict['affine'])
+                smat = smat.replace ( 'nan', 'NaN' )
+                f.write ( '                "affine_matrix": ' + smat + ',\n' )
               if 'cumulative_afm' in a.results_dict:
-                f.write ( '                "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
+                smat = str(a.results_dict['cumulative_afm'])
+                smat = smat.replace ( 'nan', 'NaN' )
+                f.write ( '                "cumulative_afm": ' + smat + ',\n' )
               if 'snr' in a.results_dict:
-                f.write ( '                "snr": ' + str(a.results_dict['snr']) + '\n' )
+                f.write ( '                "snr": ' + fstring(a.results_dict['snr']) + '\n' )
             f.write ( '              }\n' )
             f.write ( '            }\n' )
             if a != align_layer_list_for_scale[-1]:
@@ -3940,11 +3948,13 @@ def menu_callback ( widget, data=None ):
       fb = StringBufferFile()
       write_json_project ( project_file_name, fb=fb )
       if len(fb.fs.strip()) > 0:
-        d = json.loads ( fb.fs )
-
-        if (exec_code != None) and (len(exec_code) > 0):
-          # Run the current plot code
-          exec ( exec_code, locals() )
+        try:
+          d = json.loads ( fb.fs )
+          if (exec_code != None) and (len(exec_code) > 0):
+            # Run the current plot code
+            exec ( exec_code, locals() )
+        except:
+          print ( "Error when plotting" )
 
 
     elif command == "Exit":
