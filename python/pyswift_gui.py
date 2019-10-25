@@ -3786,6 +3786,11 @@ def menu_callback ( widget, data=None ):
       print_debug ( 50, "Centering images" )
       center_all_images()
 
+    elif command == "ActSize":
+
+      print_debug ( 50, "Showing actual size" )
+      show_all_actual_size()
+
     elif command == "WinCtrs":
 
       global show_window_centers
@@ -3994,6 +3999,15 @@ def lin_fit(x,y):
 
   return(m,b,r,p,stderr)
 
+def show_all_actual_size():
+  global panel_list
+  global alignment_layer_list
+  print_debug ( 50, "show_all_actual_size called with len(alignment_layer_index) = " + str(len(alignment_layer_list)) )
+  if len(alignment_layer_list) > 0:
+    # Apply to each of the panel images
+    for panel in panel_list:
+      panel.set_defaults()
+      panel.queue_draw()
 
 def center_all_images():
   global panel_list
