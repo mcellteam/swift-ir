@@ -726,6 +726,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   JFrame results_frame = null;
   swift_gui results_panel = null;
+  swift_gui source_panel = null;
   BufferedImage results_image = null;
   File results_image_file = null;
 
@@ -1072,6 +1073,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frames != null) {
           if (frames.size() > 0) {
             change_frame ( -e.getWheelRotation() );
+          } else {
+            if (source_panel != null) {
+              if (source_panel.frames != null) {
+                if (source_panel.frames.size() > 0) {
+                  source_panel.change_frame ( -e.getWheelRotation() );
+                  source_panel.repaint();
+                }
+              }
+            }
           }
         }
       } else {
@@ -2315,6 +2325,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         //// Results
         swift_gui swift_results_panel = new swift_gui();
+        swift_results_panel.source_panel = swift_gui_panel;
         swift_results_panel.parent_frame = app_frame;
         swift_results_panel.current_directory = System.getProperty("user.dir");
 
