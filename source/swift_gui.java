@@ -1279,12 +1279,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   */
   double[] concat_affine ( double[] a, double[] d ) {
     double[] r = new double[6];
-    r[0] = (a[0] * d[0]) + (a[1] * d[3]);
-    r[1] = (a[0] * d[1]) + (a[1] * d[4]);
-    r[2] = (a[0] * d[2]) + (a[1] * d[5]) + a[2];
-    r[3] = (a[3] * d[0]) + (a[4] * d[3]);
-    r[4] = (a[3] * d[1]) + (a[4] * d[4]);
-    r[5] = (a[3] * d[2]) + (a[4] * d[5]) + a[5];
+    r[0] = (d[0] * a[0]) + (d[1] * a[3]);
+    r[1] = (d[0] * a[1]) + (d[1] * a[4]);
+    r[2] = (d[0] * a[2]) + (d[1] * a[5]) + d[2];
+    r[3] = (d[3] * a[0]) + (d[4] * a[3]);
+    r[4] = (d[3] * a[1]) + (d[4] * a[4]);
+    r[5] = (d[3] * a[2]) + (d[4] * a[5]) + d[5];
     return ( r );
   }
 
