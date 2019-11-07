@@ -726,6 +726,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
   JFrame results_frame = null;
   swift_gui results_panel = null;
+  swift_gui source_panel = null;
   BufferedImage results_image = null;
   File results_image_file = null;
 
@@ -1072,6 +1073,15 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
         if (frames != null) {
           if (frames.size() > 0) {
             change_frame ( -e.getWheelRotation() );
+          } else {
+            if (source_panel != null) {
+              if (source_panel.frames != null) {
+                if (source_panel.frames.size() > 0) {
+                  source_panel.change_frame ( -e.getWheelRotation() );
+                  source_panel.repaint();
+                }
+              }
+            }
           }
         }
       } else {
@@ -1279,12 +1289,12 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
   */
   double[] concat_affine ( double[] a, double[] d ) {
     double[] r = new double[6];
-    r[0] = (a[0] * d[0]) + (a[1] * d[3]);
-    r[1] = (a[0] * d[1]) + (a[1] * d[4]);
-    r[2] = (a[0] * d[2]) + (a[1] * d[5]) + a[2];
-    r[3] = (a[3] * d[0]) + (a[4] * d[3]);
-    r[4] = (a[3] * d[1]) + (a[4] * d[4]);
-    r[5] = (a[3] * d[2]) + (a[4] * d[5]) + a[5];
+    r[0] = (d[0] * a[0]) + (d[1] * a[3]);
+    r[1] = (d[0] * a[1]) + (d[1] * a[4]);
+    r[2] = (d[0] * a[2]) + (d[1] * a[5]) + d[2];
+    r[3] = (d[3] * a[0]) + (d[4] * a[3]);
+    r[4] = (d[3] * a[1]) + (d[4] * a[4]);
+    r[5] = (d[3] * a[2]) + (d[4] * a[5]) + d[5];
     return ( r );
   }
 
@@ -2315,6 +2325,7 @@ public class swift_gui extends ZoomPanLib implements ActionListener, MouseMotion
 
         //// Results
         swift_gui swift_results_panel = new swift_gui();
+        swift_results_panel.source_panel = swift_gui_panel;
         swift_results_panel.parent_frame = app_frame;
         swift_results_panel.current_directory = System.getProperty("user.dir");
 

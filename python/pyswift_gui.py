@@ -369,8 +369,16 @@ class gui_fields_class:
     self.affine_addx_entry = None
     self.affine_addy_entry = None
     self.bias_check_box = None
+
+    # These are different per layer, but maintained to be the same
     self.bias_dx_entry = None
     self.bias_dy_entry = None
+
+    self.init_refine_apply_entry = None
+    self.bias_rotation_entry = None
+    self.bias_scale_x_entry = None
+    self.bias_scale_y_entry = None
+    self.bias_skew_x_entry = None
 
 
 ''' This variable gives global access to the GUI widgets '''
@@ -1146,6 +1154,12 @@ class alignment_layer:
     self.bias_dx = 0.0
     self.bias_dy = 0.0
 
+    self.init_refine_apply = 'Init Affine'
+    self.bias_rotation = 0.0
+    self.bias_scale_x = 0.0
+    self.bias_scale_y = 0.0
+    self.bias_skew_x = 0.0
+
     # This holds whatever is produced by this alignment
     self.results_dict = {}
 
@@ -1196,6 +1210,13 @@ def store_fields_into_current_layer():
       a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
       print ( "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
+
+      a.init_refine_apply = gui_fields.init_refine_apply_entry.get_active_text()
+      a.bias_rotation = float(gui_fields.bias_rotation_entry.get_text())
+      a.bias_scale_x = float(gui_fields.bias_scale_x_entry.get_text())
+      a.bias_scale_y = float(gui_fields.bias_scale_y_entry.get_text())
+      a.bias_skew_x = float(gui_fields.bias_skew_x_entry.get_text())
+
       # Store the bias values in all layers to give them a "global" feel
       # If the final version needs individual biases, just comment this code:
       if alignment_layer_list != None:
@@ -1203,6 +1224,12 @@ def store_fields_into_current_layer():
           for t in alignment_layer_list:
             t.bias_dx = a.bias_dx
             t.bias_dy = a.bias_dy
+            t.init_refine_apply = a.init_refine_apply
+            t.bias_rotation = a.bias_rotation
+            t.bias_scale_x = a.bias_scale_x
+            t.bias_scale_y = a.bias_scale_y
+            t.bias_skew_x = a.bias_skew_x
+
       print ( "Storing 3, a.bias_dx = " + str(a.bias_dx) )
 
 
@@ -1228,6 +1255,14 @@ def store_current_layer_into_fields():
       print ( "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
       gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
       gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
+
+      # TODO gui_fields.init_refine_apply_entry.set_text(str(a.init_refine_apply))
+      #gui_fields.init_refine_apply_entry.set_active ( a.init_refine_apply )
+      gui_fields.bias_rotation_entry.set_text(str(a.bias_rotation))
+      gui_fields.bias_scale_x_entry.set_text(str(a.bias_scale_x))
+      gui_fields.bias_scale_y_entry.set_text(str(a.bias_scale_y))
+      gui_fields.bias_skew_x_entry.set_text(str(a.bias_skew_x))
+
 
 
 class zoom_panel ( app_window.zoom_pan_area ):
@@ -1969,8 +2004,15 @@ class StringBufferFile:
   def write ( self, s ):
     self.fs = self.fs + s
 
+def fstring ( fval ):
+  if math.isnan(fval):
+    return ( "NaN" )
+  return str(fval)
 
 def write_json_project ( project_file_name, fb=None ):
+
+  # Update the data layer(s) from the current fields before writing!
+  store_fields_into_current_layer()
 
   global project_path
   # global project_file_name
@@ -2108,11 +2150,16 @@ def write_json_project ( project_file_name, fb=None ):
             f.write ( '              "selected_method": "' + str(a.align_method_text) + '",\n' )
             f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
             f.write ( '              "method_data": {\n' )
+            f.write ( '                "alignment_option": "' + str(a.init_refine_apply) + '",\n' )
             f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
             f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
             f.write ( '                "addy": ' + str(a.trans_addy) + ',\n' )
-            f.write ( '                "bias_x_per_image": ' + str(a.bias_dx) + ',\n' )
-            f.write ( '                "bias_y_per_image": ' + str(a.bias_dy) + ',\n' )
+            f.write ( '                "bias_x_per_image": ' + fstring(a.bias_dx) + ',\n' )
+            f.write ( '                "bias_y_per_image": ' + fstring(a.bias_dy) + ',\n' )
+            f.write ( '                "bias_scale_x_per_image": ' + fstring(a.bias_scale_x) + ',\n' )
+            f.write ( '                "bias_scale_y_per_image": ' + fstring(a.bias_scale_y) + ',\n' )
+            f.write ( '                "bias_skew_x_per_image": ' + fstring(a.bias_skew_x) + ',\n' )
+            f.write ( '                "bias_rot_per_image": ' + fstring(a.bias_rotation) + ',\n' )
             f.write ( '                "output_level": 0\n' )
             f.write ( '              },\n' )
             f.write ( '              "method_results": {\n' )
@@ -2120,11 +2167,15 @@ def write_json_project ( project_file_name, fb=None ):
 
             if type(a.results_dict) != type(None):
               if 'affine' in a.results_dict:
-                f.write ( '                "affine_matrix": ' + str(a.results_dict['affine']) + ',\n' )
+                smat = str(a.results_dict['affine'])
+                smat = smat.replace ( 'nan', 'NaN' )
+                f.write ( '                "affine_matrix": ' + smat + ',\n' )
               if 'cumulative_afm' in a.results_dict:
-                f.write ( '                "cumulative_afm": ' + str(a.results_dict['cumulative_afm']) + ',\n' )
+                smat = str(a.results_dict['cumulative_afm'])
+                smat = smat.replace ( 'nan', 'NaN' )
+                f.write ( '                "cumulative_afm": ' + smat + ',\n' )
               if 'snr' in a.results_dict:
-                f.write ( '                "snr": ' + str(a.results_dict['snr']) + '\n' )
+                f.write ( '                "snr": ' + fstring(a.results_dict['snr']) + '\n' )
             f.write ( '              }\n' )
             f.write ( '            }\n' )
             if a != align_layer_list_for_scale[-1]:
@@ -2155,32 +2206,10 @@ def str2D ( m ):
   s = s + ' ]'
   return ( s )
 
-def run_alignment_callback ( align_all ):
-  global alignment_layer_list
-  global alignment_layer_index
-  global destination_path
-  global gui_fields
+
+def setup_initial_panels():
+
   global panel_list
-  global project_file_name
-
-  store_fields_into_current_layer()
-
-  if len(destination_path) == 0:
-    dest_err_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Destination not set.")
-    response = dest_err_dialog.run()
-    dest_err_dialog.destroy()
-    return
-
-
-  scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "img_aligned")
-  print ( "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
-
-  #########################################################
-  #########################################################
-  ## This panel setup might be better in the runner?
-  #########################################################
-  #########################################################
-
   # Set up the preferred panels as needed
   ref_panel = None
   base_panel = None
@@ -2228,6 +2257,33 @@ def run_alignment_callback ( align_all ):
 
 
 
+def run_alignment_callback ( align_all ):
+  global alignment_layer_list
+  global alignment_layer_index
+  global destination_path
+  global gui_fields
+  global panel_list
+  global project_file_name
+
+  store_fields_into_current_layer()
+
+  if len(destination_path) == 0:
+    dest_err_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Destination not set.")
+    response = dest_err_dialog.run()
+    dest_err_dialog.destroy()
+    return
+
+
+  scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "img_aligned")
+  print ( "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
+
+  #########################################################
+  #########################################################
+  ## This panel setup might be better in the runner?
+  #########################################################
+  #########################################################
+
+  setup_initial_panels()
 
   print ( "Running with " + str(gui_fields.code_base_select.get_active_text()) )
 
@@ -2786,9 +2842,25 @@ def load_from_proj_dict ( proj_dict ):
                         print ( "Got method_data" + str(pars) )
                         if 'bias_x_per_image' in pars:
                           a.bias_dx = pars['bias_x_per_image']
-                          print ( "  Set bias_dx = " + str(a.bias_dx) )
+                          print ( "  ... found bias_x_per_image:" + str(a.bias_dx) )
                         if 'bias_y_per_image' in pars:
                           a.bias_dy = pars['bias_y_per_image']
+                          print ( "  ... found bias_y_per_image:" + str(a.bias_dy) )
+                        if 'alignment_option' in pars:
+                          a.init_refine_apply = pars['alignment_option']
+                          print ( "  ... found alignment_option:" + str(a.init_refine_apply) )
+                        if 'bias_scale_x_per_image' in pars:
+                          a.bias_scale_x = pars['bias_scale_x_per_image']
+                          print ( "  ... found bias_scale_x_per_image:" + str(a.bias_scale_x) )
+                        if 'bias_scale_y_per_image' in pars:
+                          a.bias_scale_y = pars['bias_scale_y_per_image']
+                          print ( "  ... found bias_scale_y_per_image:" + str(a.bias_scale_y) )
+                        if 'bias_skew_x_per_image' in pars:
+                          a.bias_skew_x = pars['bias_skew_x_per_image']
+                          print ( "  ... found bias_skew_x_per_image:" + str(a.bias_skew_x) )
+                        if 'bias_rot_per_image' in pars:
+                          a.bias_rotation = pars['bias_rot_per_image']
+                          print ( "  ... found bias_rot_per_image:" + str(a.bias_rotation) )
                         print ( "Internal bias_x: " + str(a.bias_dx) )
 
                       if 'method_results' in json_align_to_ref_method:
@@ -2871,52 +2943,7 @@ def load_from_proj_dict ( proj_dict ):
 
       print ( "Final panel_names_list: " + str(panel_names_list) )
 
-      # Set up the preferred panels as needed
-      ref_panel = None
-      base_panel = None
-      aligned_panel = None
-
-      # Start by assigning any panels with roles already set
-      for panel in panel_list:
-        if panel.role == 'ref':
-          ref_panel = panel
-        if panel.role == 'base':
-          base_panel = panel
-        if panel.role == 'aligned':
-          aligned_panel = panel
-
-      # Assign any empty panels if needed
-      for panel in panel_list:
-        if panel.role == '':
-          if ref_panel == None:
-            panel.role = 'ref'
-            ref_panel = panel
-          elif base_panel == None:
-            panel.role = 'base'
-            base_panel = panel
-          elif aligned_panel == None:
-            panel.role = 'aligned'
-            aligned_panel = panel
-
-      # Finally add panels as needed
-      if ref_panel == None:
-        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
-      if base_panel == None:
-        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
-      if aligned_panel == None:
-        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
-
-      # The previous logic hasn't worked, so force all panels to be as desired for now
-      forced_panel_roles = ['ref', 'base', 'aligned']
-      for i in range ( min ( len(panel_list), len(forced_panel_roles) ) ):
-        panel_list[i].role = forced_panel_roles[i]
-
-      if ref_panel == None:
-        add_panel_callback ( zpa_original, role='ref', point_add_enabled=True )
-      if base_panel == None:
-        add_panel_callback ( zpa_original, role='base', point_add_enabled=True )
-      if aligned_panel == None:
-        add_panel_callback ( zpa_original, role='aligned', point_add_enabled=False )
+      setup_initial_panels()
 
       # TODO Add other panels as needed
 
@@ -3238,6 +3265,9 @@ def menu_callback ( widget, data=None ):
         # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
         #a.image_dict['aligned'] = annotated_image(None,role='aligned')
         layer_index += 1
+
+      setup_initial_panels()
+
       refresh_all_images()
       center_all_images()
       panel_index = 0
@@ -3815,6 +3845,11 @@ def menu_callback ( widget, data=None ):
       print_debug ( 50, "Centering images" )
       center_all_images()
 
+    elif command == "ActSize":
+
+      print_debug ( 50, "Showing actual size" )
+      show_all_actual_size()
+
     elif command == "WinCtrs":
 
       global show_window_centers
@@ -3977,11 +4012,13 @@ def menu_callback ( widget, data=None ):
       fb = StringBufferFile()
       write_json_project ( project_file_name, fb=fb )
       if len(fb.fs.strip()) > 0:
-        d = json.loads ( fb.fs )
-
-        if (exec_code != None) and (len(exec_code) > 0):
-          # Run the current plot code
-          exec ( exec_code, locals() )
+        try:
+          d = json.loads ( fb.fs )
+          if (exec_code != None) and (len(exec_code) > 0):
+            # Run the current plot code
+            exec ( exec_code, locals() )
+        except:
+          print ( "Error when plotting" )
 
 
     elif command == "Exit":
@@ -4021,6 +4058,15 @@ def lin_fit(x,y):
 
   return(m,b,r,p,stderr)
 
+def show_all_actual_size():
+  global panel_list
+  global alignment_layer_list
+  print_debug ( 50, "show_all_actual_size called with len(alignment_layer_index) = " + str(len(alignment_layer_list)) )
+  if len(alignment_layer_list) > 0:
+    # Apply to each of the panel images
+    for panel in panel_list:
+      panel.set_defaults()
+      panel.queue_draw()
 
 def center_all_images():
   global panel_list
@@ -4651,6 +4697,92 @@ def main():
   gui_fields.bias_dy_entry.set_text ( str(alignment_layer_defaults.bias_dy) )
   label_entry.pack_start ( gui_fields.bias_dy_entry, True, True, 0 )
   gui_fields.bias_dy_entry.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+
+  a_label = gtk.Label(" ")
+  controls_hbox.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+
+  # Create a horizontal box to hold a row of controls
+  controls_hbox = gtk.HBox ( False, 10 )
+  controls_hbox.show()
+  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
+
+  # Create the init_refine_apply control (selects how to run)
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label(" ")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+
+  gui_fields.init_refine_apply_entry = gtk.ComboBox()
+  store = gtk.ListStore(str)
+  cell = gtk.CellRendererText()
+  gui_fields.init_refine_apply_entry.pack_start(cell)
+  gui_fields.init_refine_apply_entry.add_attribute(cell, 'text', 0)
+  # Options
+  store.append ( ['Init Affine'] )
+  store.append ( ['Refine Affine'] )
+  store.append ( ['Apply Affine'] )
+  # Dynamic alignment runners
+  gui_fields.init_refine_apply_entry.set_model(store)
+  gui_fields.init_refine_apply_entry.set_active(0)
+  label_entry.pack_start ( gui_fields.init_refine_apply_entry, True, True, 0 )
+  gui_fields.init_refine_apply_entry.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+
+  a_label = gtk.Label(" Biases:  ")
+  controls_hbox.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+
+  gui_fields.bias_check_box = gtk.CheckButton("  Bias Pass:")
+  #controls_hbox.pack_start ( gui_fields.bias_check_box, True, True, 0 )
+  #gui_fields.bias_check_box.show()
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label("rotation:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  gui_fields.bias_rotation_entry = gtk.Entry(5)
+  gui_fields.bias_rotation_entry.set_text ( str(alignment_layer_defaults.bias_rotation) )
+  label_entry.pack_start ( gui_fields.bias_rotation_entry, True, True, 0 )
+  gui_fields.bias_rotation_entry.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label("scale_x:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  gui_fields.bias_scale_x_entry = gtk.Entry(5)
+  gui_fields.bias_scale_x_entry.set_text ( str(alignment_layer_defaults.bias_scale_x) )
+  label_entry.pack_start ( gui_fields.bias_scale_x_entry, True, True, 0 )
+  gui_fields.bias_scale_x_entry.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label("scale_y:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  gui_fields.bias_scale_y_entry = gtk.Entry(5)
+  gui_fields.bias_scale_y_entry.set_text ( str(alignment_layer_defaults.bias_scale_y) )
+  label_entry.pack_start ( gui_fields.bias_scale_y_entry, True, True, 0 )
+  gui_fields.bias_scale_y_entry.show()
+  controls_hbox.pack_start ( label_entry, True, True, 0 )
+  label_entry.show()
+
+  label_entry = gtk.HBox ( False, 5 )
+  a_label = gtk.Label("scale_x:")
+  label_entry.pack_start ( a_label, True, True, 0 )
+  a_label.show()
+  gui_fields.bias_skew_x_entry = gtk.Entry(5)
+  gui_fields.bias_skew_x_entry.set_text ( str(alignment_layer_defaults.bias_skew_x) )
+  label_entry.pack_start ( gui_fields.bias_skew_x_entry, True, True, 0 )
+  gui_fields.bias_skew_x_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
   label_entry.show()
 
