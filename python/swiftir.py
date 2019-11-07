@@ -23,6 +23,7 @@ programs are planned.'''
 
 import numpy as np
 import cv2
+import os
 
 apo = []
 apo0 = []
@@ -264,7 +265,14 @@ def saveImage(img, ofn, qual=None):
     0 and 100, and must only be given if OFN ends in ".jpg". Default
     is 95.'''
     if qual is None:
-        cv2.imwrite(ofn, img)
+        ext = os.path.splitext(ofn)[-1]
+        if (ext == '.tif') or (ext == '.tiff') or (ext == '.TIF') or (ext == '.TIFF'):
+          # code 1 means uncompressed tif
+          # code 5 means LZW compressed tif
+#          cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, 1))
+          cv2.imwrite(ofn, img)
+        else:
+          cv2.imwrite(ofn, img)
     else:
         cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
 
