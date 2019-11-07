@@ -75,8 +75,11 @@ class alignment_process:
 
     # window size scale factor
     wsf = 0.75
+#    wsf = 1.0
 
     pa = np.zeros((2,1))
+    wwx_f = int(im_sta.shape[0])
+    wwy_f = int(im_sta.shape[1])
     wwx = int(wsf*im_sta.shape[0])
     wwy = int(wsf*im_sta.shape[1])
     cx = int(im_sta.shape[0]/2)
@@ -104,8 +107,8 @@ class alignment_process:
       for y in range(ny):
         pa[0, x + nx*y] = int(0.5*s + s*x)
         pa[1, x + nx*y] = int(0.5*s + s*y)
-    wsf = 1.0
-    s_4x4 = int(wsf*s)
+#    s_4x4 = int(wsf*s)
+    s_4x4 = int(s)
     psta_4x4 = pa
 
     s_mp = int(im_sta.shape[0]/32)
@@ -117,8 +120,10 @@ class alignment_process:
     if atrm['selected_method']=='Auto Swim Align':
       alignment_option = atrm['method_data'].get('alignment_option')
       if alignment_option == 'refine_affine':
-        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, wht=-0.68, afm=self.init_affine_matrix)
+        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix)
         self.recipe.add_ingredient(ingredient_4x4)
+      elif alignment_option == 'apply_affine':
+        self.recipe.afm = self.init_affine_matrix
       else:
         ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
         ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
@@ -135,13 +140,13 @@ class alignment_process:
       self.recipe.add_ingredient(ingredient_1_mp)
       self.recipe.add_ingredient(ingredient_2_mp)
 
-    ingredient_check_align = align_ingredient(ww=(wwx,wwy), psta=psta_1, iters=1, align_mode='check_align')
+    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align')
 
     self.recipe.add_ingredient(ingredient_check_align)
 
     self.recipe.execute()
 
-    self.cumulative_afm = swiftir.composeAffine(self.cumulative_afm,self.recipe.afm)
+    self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,self.cumulative_afm)
     self.cumulative_afm[0,2] -= self.x_bias
     self.cumulative_afm[1,2] -= self.y_bias
     im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
@@ -301,7 +306,7 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
   recipe.execute()
 
-  global_afm = swiftir.composeAffine(global_afm,recipe.afm)
+  global_afm = swiftir.composeAffine(recipe.afm,global_afm)
   im_aligned = swiftir.affineImage(global_afm,im_mov)
   ofn = os.path.join ( align_dir, os.path.basename(im_mov_fn) )
   swiftir.saveImage(im_aligned,ofn)
