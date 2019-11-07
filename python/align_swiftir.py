@@ -192,7 +192,7 @@ class align_ingredient:
   #        If psta contains only one point then the estimated afm will be a translation matrix
   #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the 
   #        supplied afm matrix but do not refine the afm matrix
-  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.65, iters=2, align_mode='swim_align'):
+  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align'):
 
     self.afm = afm
     self.im_sta = im_sta
