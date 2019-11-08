@@ -385,6 +385,8 @@ class gui_fields_class:
 gui_fields = gui_fields_class()
 
 
+alignment_opts = ["Init Affine", "Refine Affine", "Apply Affine"]
+
 class graphic_primitive:
   ''' This base class defines something that can be drawn '''
   def __init__ ( self ):
@@ -1257,7 +1259,8 @@ def store_current_layer_into_fields():
       gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
 
       # TODO gui_fields.init_refine_apply_entry.set_text(str(a.init_refine_apply))
-      #gui_fields.init_refine_apply_entry.set_active ( a.init_refine_apply )
+      gui_fields.init_refine_apply_entry.set_active ( alignment_opts.index(a.init_refine_apply) )
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       gui_fields.bias_rotation_entry.set_text(str(a.bias_rotation))
       gui_fields.bias_scale_x_entry.set_text(str(a.bias_scale_x))
       gui_fields.bias_scale_y_entry.set_text(str(a.bias_scale_y))
@@ -2150,6 +2153,7 @@ def write_json_project ( project_file_name, fb=None ):
             f.write ( '              "selected_method": "' + str(a.align_method_text) + '",\n' )
             f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
             f.write ( '              "method_data": {\n' )
+            f.write ( '                "alignment_options": [' + ', '.join ( ['"'+o+'"' for o in alignment_opts] ) + '],\n' )
             f.write ( '                "alignment_option": "' + str(a.init_refine_apply) + '",\n' )
             f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
             f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
@@ -2782,6 +2786,7 @@ def load_from_proj_dict ( proj_dict ):
       destination_path = os.path.realpath ( destination_path )
       gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
 
+    current_scale = 1
     if 'current_scale' in proj_dict['data']:
       current_scale = proj_dict['data']['current_scale']
 
@@ -2840,15 +2845,15 @@ def load_from_proj_dict ( proj_dict ):
                         a.bias_dx = 0
                         a.bias_dy = 0
                         print ( "Got method_data" + str(pars) )
+                        if 'alignment_option' in pars:
+                          a.init_refine_apply = pars['alignment_option']
+                          print ( "  ... found alignment_option:" + str(a.init_refine_apply) )
                         if 'bias_x_per_image' in pars:
                           a.bias_dx = pars['bias_x_per_image']
                           print ( "  ... found bias_x_per_image:" + str(a.bias_dx) )
                         if 'bias_y_per_image' in pars:
                           a.bias_dy = pars['bias_y_per_image']
                           print ( "  ... found bias_y_per_image:" + str(a.bias_dy) )
-                        if 'alignment_option' in pars:
-                          a.init_refine_apply = pars['alignment_option']
-                          print ( "  ... found alignment_option:" + str(a.init_refine_apply) )
                         if 'bias_scale_x_per_image' in pars:
                           a.bias_scale_x = pars['bias_scale_x_per_image']
                           print ( "  ... found bias_scale_x_per_image:" + str(a.bias_scale_x) )
@@ -2861,7 +2866,6 @@ def load_from_proj_dict ( proj_dict ):
                         if 'bias_rot_per_image' in pars:
                           a.bias_rotation = pars['bias_rot_per_image']
                           print ( "  ... found bias_rot_per_image:" + str(a.bias_rotation) )
-                        print ( "Internal bias_x: " + str(a.bias_dx) )
 
                       if 'method_results' in json_align_to_ref_method:
                         json_method_results = json_align_to_ref_method['method_results']
@@ -2943,6 +2947,8 @@ def load_from_proj_dict ( proj_dict ):
 
       print ( "Final panel_names_list: " + str(panel_names_list) )
 
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
       setup_initial_panels()
 
       # TODO Add other panels as needed
@@ -2951,6 +2957,10 @@ def load_from_proj_dict ( proj_dict ):
       update_menu_scales_from_gui_fields()
 
       alignment_layer_list = scales_dict[gui_fields.scales_list[0]]
+
+      # Because changing the scale will save values from fields into this layer ...
+      # We need to put these newly loaded layer values into the fields first:
+      store_current_layer_into_fields()
 
       set_selected_scale_to ( current_scale )
 
