@@ -23,6 +23,10 @@ Together these ingredients comprise a procedure, or "recipe".
 #recipe_dict['default'] = [affine_align_recipe(), affine_2x2_recipe, affine_4x4_recipe]
 #recipe_dict['match_point'] = [affine_translation_recipe, affine_2x2_recipe, affine_4x4_recipe]
 
+def prefix_lines ( i, s ):
+  return ( '\n'.join ( [ i + ss.rstrip() for ss in s.split('\n') if len(ss) > 0 ] ) + "\n" )
+
+
 class alignment_process:
 
   def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, init_affine_matrix = None, cumulative_afm=None, x_bias=0.0, y_bias=0.0):
@@ -56,6 +60,16 @@ class alignment_process:
     else:
       self.cumulative_afm = cumulative_afm
 
+  def __str__(self):
+    s = "alignment_process: \n"
+    s += "  dir: " + str(self.align_dir) + "\n"
+    s += "  sta: " + str(self.im_sta_fn) + "\n"
+    s += "  mov: " + str(self.im_mov_fn) + "\n"
+    if self.recipe == None:
+      s += "  rec: None\n"
+    else:
+      s += "  rec:\n" + prefix_lines('    ', str(self.recipe)) + "\n"
+    return s
 
   def align(self):
 
@@ -166,6 +180,16 @@ class align_recipe:
     self.im_mov = im_mov
     self.afm = swiftir.identityAffine()
 
+  def __str__(self):
+    s = "recipe: \n"
+    if self.ingredients == None:
+      s += "  ing[]: None\n"
+    else:
+      s += "  ing[]:\n"
+      for ing in self.ingredients:
+        s += prefix_lines ( '    ', str(ing) )
+    return s
+
   def add_ingredient(self, ingredient):
     ingredient.im_sta = self.im_sta
     ingredient.im_mov = self.im_mov
@@ -205,6 +229,14 @@ class align_ingredient:
     self.align_mode = align_mode
     self.snr = None
 
+  def __str__(self):
+    s =  "ingredient:\n"
+    s += "  mode: " + str(self.align_mode) + "\n"
+    s += "  ww: " + str(self.ww) + "\n"
+    s += "  psta:\n" + prefix_lines('    ', str(self.psta)) + "\n"
+    s += "  pmov:\n" + prefix_lines('    ', str(self.pmov)) + "\n"
+    s += "  afm:\n"  + prefix_lines('    ', str(self.afm)) + "\n"
+    return s
 
   def execute(self):
 
