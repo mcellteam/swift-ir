@@ -2521,7 +2521,13 @@ def run_alignment_callback ( align_all ):
                                                                                scale_dest_path, layer_dict=layer_dict,
                                                                                x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
                                                                                cumulative_afm=prev_afm )
+        print ( "\n\nBefore alignment:\n" )
+        print ( str(alignment_layer_list[j].align_proc) )
         alignment_layer_list[j].align_proc.align()
+        print ( "\n\nAfter alignment:\n" )
+        print ( str(alignment_layer_list[j].align_proc) )
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
         recipe = alignment_layer_list[j].align_proc.recipe
         new_name = os.path.join ( scale_dest_path, os.path.basename(alignment_layer_list[j].base_image_name) )
 
