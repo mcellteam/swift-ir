@@ -296,9 +296,9 @@ class align_ingredient:
 
     swim_ww_arg = '1024'
     if type(self.ww) == type((1,2)):
-      swim_ww_arg = self.ww[0]
+      swim_ww_arg = str(self.ww[0]) + "x" + str(self.ww[1])
     else:
-      swim_ww_arg = self.ww
+      swim_ww_arg = str(self.ww)
     #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     #swim_script = '%s\n' % (swim_request_string)
@@ -315,7 +315,7 @@ class align_ingredient:
 
     #self.set_swim_results(swim_stdout,swim_stderr)
 
-    swim_cmd_string = 'swim %d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    swim_cmd_string = 'swim %s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     print('swim_str:\n\n' + swim_cmd_string + '\n')
 
     swim_proc = sp.Popen([s for s in swim_cmd_string.split()],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
@@ -346,7 +346,10 @@ class align_ingredient:
       self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
       # Temporary: return an identity matrix and other "dummy" settings
-      self.afm = np.array ( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ] ] )
+      self.afm = np.array ( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ] ] )  # Identity matrix
+      theta = np.pi / 50
+      self.afm = np.array ( [ [ np.cos(theta), -np.sin(theta), 0.0 ], [ np.sin(theta), np.cos(theta), 0.0 ] ] )  # Identity matrix
+
       self.pmov = swiftir.stationaryToMoving(afm, self.psta)
       self.snr = np.ones ( len(self.psta[0]) ) * 999.0
 
