@@ -4806,7 +4806,7 @@ def main():
   label_entry.show()
 
   label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("scale_x:")
+  a_label = gtk.Label("skew_x:")
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_skew_x_entry = gtk.Entry(5)
