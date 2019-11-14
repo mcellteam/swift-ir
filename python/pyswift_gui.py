@@ -3852,6 +3852,14 @@ def menu_callback ( widget, data=None ):
         p.max_zoom_count = zpa_original.max_zoom_count
         p.min_zoom_count = zpa_original.min_zoom_count
 
+    elif command == "UseCVersion":
+
+      # This is a toggle
+      if align_swiftir.global_swiftir_mode == 'python':
+        align_swiftir.global_swiftir_mode = 'c'
+      else:
+        align_swiftir.global_swiftir_mode = 'python'
+
     elif command == "Refresh":
 
       refresh_all_images()
@@ -4306,6 +4314,8 @@ def main():
     this_menu = set_menu
     # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
