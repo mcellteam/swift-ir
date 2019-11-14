@@ -2262,6 +2262,7 @@ def setup_initial_panels():
 
 
 def run_alignment_callback ( align_all ):
+  global debug_level
   global alignment_layer_list
   global alignment_layer_index
   global destination_path
@@ -2526,6 +2527,7 @@ def run_alignment_callback ( align_all ):
         alignment_layer_list[j].align_proc.align()
         print ( "\n\nAfter alignment:\n" )
         print ( str(alignment_layer_list[j].align_proc) )
+
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
         recipe = alignment_layer_list[j].align_proc.recipe
@@ -3124,6 +3126,7 @@ def menu_callback ( widget, data=None ):
   # or a plain string:
   #  command_string
   # Checking the type() of data will determine which
+  global debug_level
 
   if type(data) == type((True,False)):
     # Any tuple passed is assumed to be: (command, zpa)
@@ -4059,6 +4062,7 @@ def menu_callback ( widget, data=None ):
 
       global debug_level
       debug_level = int(command[6:])
+      align_swiftir.debug_level = debug_level
       print_debug ( 10, "New debug level is " + str(debug_level) )
 
     else:
