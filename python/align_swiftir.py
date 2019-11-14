@@ -19,7 +19,7 @@ which brings the "moving" image into alignment with the "stationary" image.
 Together these ingredients comprise a procedure, or "recipe". 
 '''
 
-
+debug_level = 0
 
 #recipe_dict = {}
 
@@ -341,23 +341,36 @@ class align_ingredient:
       afm = swiftir.identityAffine()
 
     if self.swiftir_mode == 'c':
+
       print ( "Running c version of swim" )
       self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
-    self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-    sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
-    for i in range(self.iters):
-      mov = swiftir.movingPatches(self.im_mov, self.pmov, afm, self.ww)
-      (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-      self.pmov = self.pmov + dp
-      (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+      # Temporary: return an identity matrix and other "dummy" settings
+      self.afm = np.array ( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ] ] )
       self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-      print('  Affine err:  %g' % (err))
-      print('  SNR:  ', snr)
-    self.snr = snr
+      self.snr = np.ones ( len(self.psta[0]) ) * 999.0
+
+    else:
+
+      print ( "Running python version of swim" )
+      self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+      sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
+      for i in range(self.iters):
+        mov = swiftir.movingPatches(self.im_mov, self.pmov, afm, self.ww)
+        (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
+        self.pmov = self.pmov + dp
+        (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+        self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+        print('  Affine err:  %g' % (err))
+        print('  SNR:  ', snr)
+      self.snr = snr
 
     if self.align_mode == 'swim_align':
       self.afm = afm
+
+    global debug_level
+    if debug_level >= 90:
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     return(self.afm)
 
