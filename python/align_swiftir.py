@@ -5,6 +5,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+import subprocess as sp
+
+
 '''
 align_swiftir.py implements a simple generic interface for aligning two images in SWiFT-IR
 This version uses swiftir.py
@@ -128,20 +131,20 @@ class alignment_process:
     s_mp = int(im_sta.shape[0]/32)
 
 
-    self.recipe = align_recipe(im_sta, im_mov)
+    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
     atrm = self.layer_dict['align_to_ref_method']
     if atrm['selected_method']=='Auto Swim Align':
       alignment_option = atrm['method_data'].get('alignment_option')
       if alignment_option == 'refine_affine':
-        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix)
+        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
         self.recipe.add_ingredient(ingredient_4x4)
       elif alignment_option == 'apply_affine':
         self.recipe.afm = self.init_affine_matrix
       else:
-        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
-        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
-        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4)
+        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
         self.recipe.add_ingredient(ingredient_1)
         self.recipe.add_ingredient(ingredient_2x2)
         self.recipe.add_ingredient(ingredient_4x4)
@@ -149,12 +152,12 @@ class alignment_process:
       # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
       mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
       mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
-      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align')
-      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base)
+      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
       self.recipe.add_ingredient(ingredient_1_mp)
       self.recipe.add_ingredient(ingredient_2_mp)
 
-    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align')
+    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
     self.recipe.add_ingredient(ingredient_check_align)
 
@@ -174,10 +177,12 @@ class alignment_process:
 # Universal class for alignment recipes
 class align_recipe:
 
-  def __init__(self, im_sta, im_mov):
+  def __init__(self, im_sta, im_mov, im_sta_fn=None, im_mov_fn=None):
     self.ingredients = []
     self.im_sta = im_sta
     self.im_mov = im_mov
+    self.im_sta_fn = im_sta_fn
+    self.im_mov_fn = im_mov_fn
     self.afm = swiftir.identityAffine()
 
   def __str__(self):
@@ -193,6 +198,8 @@ class align_recipe:
   def add_ingredient(self, ingredient):
     ingredient.im_sta = self.im_sta
     ingredient.im_mov = self.im_mov
+    ingredient.im_sta_fn = self.im_sta_fn
+    ingredient.im_mov_fn = self.im_mov_fn
     self.ingredients.append(ingredient)
 
   def execute(self):
@@ -201,6 +208,7 @@ class align_recipe:
       self.afm = ingredient.execute()
 
 
+global_swiftir_mode = 'python'   # Either 'python' or 'c'
 
 # Universal class for alignment ingredients of recipes
 class align_ingredient:
@@ -216,11 +224,13 @@ class align_ingredient:
   #        If psta contains only one point then the estimated afm will be a translation matrix
   #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the 
   #        supplied afm matrix but do not refine the afm matrix
-  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align'):
+  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
 
     self.afm = afm
     self.im_sta = im_sta
     self.im_mov = im_mov
+    self.im_sta_fn = im_sta_fn
+    self.im_mov_fn = im_mov_fn
     self.ww = ww
     self.psta = psta
     self.pmov = pmov
@@ -228,6 +238,9 @@ class align_ingredient:
     self.iters = iters
     self.align_mode = align_mode
     self.snr = None
+
+    global global_swiftir_mode
+    self.swiftir_mode = global_swiftir_mode
 
   def __str__(self):
     s =  "ingredient:\n"
@@ -237,6 +250,79 @@ class align_ingredient:
     s += "  pmov:\n" + prefix_lines('    ', str(self.pmov)) + "\n"
     s += "  afm:\n"  + prefix_lines('    ', str(self.afm)) + "\n"
     return s
+
+  def set_swim_results(self,swim_stdout,swim_stderr):
+
+    toks = swim_stdout.replace('(',' ').replace(')',' ').strip().split()
+
+    self.snr = float(toks[0][0:-1])
+    self.base_x = float(toks[2])
+    self.base_y = float(toks[3])
+    self.adjust_x = float(toks[5])
+    self.adjust_y = float(toks[6])
+    self.dx = float(toks[8])
+    self.dy = float(toks[9])
+    self.m0 = float(toks[10])
+    self.flags = None
+    if len(toks)>11:
+      self.flags = toks[11:]  # Note flags: will be a str or list of strs
+
+#    warp_matrix[0,2]=dx
+#    warp_matrix[1,2]=dy
+#    print('%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
+    pass
+
+  def run_swim_c(self, im_base_fn, im_adj_fn, offx=0, offy=0, keep=None,base_x=None,base_y=None,adjust_x=None,adjust_y=None,rota=None,afm=None):
+
+    karg = ''
+    if keep != None:
+      karg = '-k %s' % (keep)
+
+    tar_arg = ''
+    if base_x!=None and base_y!=None:
+      tar_arg = '%s %s' % (base_x, base_y)
+
+    pat_arg = ''
+    if adjust_x!=None and adjust_y!=None:
+      pat_arg = '%s %s' % (adjust_x, adjust_y)
+
+    rota_arg = ''
+    if rota!=None:
+      rota_arg = '%s' % (rota)
+
+    afm_arg = ''
+    if type(afm)!=type(None):
+      afm_arg = '%.6f %.6f %.6f %.6f' % (afm[0,0], afm[0,1], afm[1,0], afm[1,1])
+
+    swim_ww_arg = '1024'
+    if type(self.ww) == type((1,2)):
+      swim_ww_arg = self.ww[0]
+    else:
+      swim_ww_arg = self.ww
+    #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    #swim_script = '%s\n' % (swim_request_string)
+    #print('swim_script:\n\n' + swim_script + '\n')
+
+    #swim_proc = sp.Popen(['swim',str(swim_ww_arg)],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+    #swim_stdout, swim_stderr = swim_proc.communicate(swim_script)
+
+
+    # Note: decode bytes if universal_newlines=False in Popen
+    #swim_stdout = swim_stdout.decode('utf-8')
+    #swim_stderr = swim_stderr.decode('utf-8')
+    #print('swim output: \n\n' + swim_stdout + '\n')
+
+    #self.set_swim_results(swim_stdout,swim_stderr)
+
+    swim_cmd_string = 'swim %d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    print('swim_str:\n\n' + swim_cmd_string + '\n')
+
+    swim_proc = sp.Popen([s for s in swim_cmd_string.split()],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+    swim_stdout, swim_stderr = swim_proc.communicate()
+
+    print('swim output: \n\n' + swim_stdout + '\n')
+
 
   def execute(self):
 
@@ -253,6 +339,10 @@ class align_ingredient:
     afm = self.afm
     if type(afm)==type(None):
       afm = swiftir.identityAffine()
+
+    if self.swiftir_mode == 'c':
+      print ( "Running c version of swim" )
+      self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
     self.pmov = swiftir.stationaryToMoving(afm, self.psta)
     sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
@@ -324,7 +414,7 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
   s_4x4 = s
   psta_4x4 = pa
 
-  recipe = align_recipe(im_sta, im_mov)
+  recipe = align_recipe(im_sta, im_mov, im_sta_fn=im_sta_fn, im_mov_fn=im_mov_fn)
 
   ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1)
   ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2)
