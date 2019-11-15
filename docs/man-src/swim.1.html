@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>swim</title><link rel="stylesheet" type="text/css" href="docbook-xsl.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /></head><body><div xml:lang="en" class="refentry" lang="en"><a id="idm1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>swim — Fourier-based image aligner</p></div><div class="refsynopsisdiv"><a id="_synopsis"></a><h2>Synopsis</h2><div class="orderedlist"><ol class="orderedlist" type="1"><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span> [options] <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>source</em></span>
+</li><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span> [options] <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub> <span class="emphasis"><em>source</em></span>
+</li><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span> [options] <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub> <span class="emphasis"><em>source</em></span> <span class="emphasis"><em>x</em></span><sub>src</sub> <span class="emphasis"><em>y</em></span><sub>src</sub>
+</li><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span> [options] <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub> <span class="emphasis"><em>source</em></span> <span class="emphasis"><em>x</em></span><sub>src</sub> <span class="emphasis"><em>y</em></span><sub>src</sub> <span class="emphasis"><em>φ</em></span><sub>src</sub>
+</li><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span> [options] <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub> <span class="emphasis"><em>source</em></span> <span class="emphasis"><em>x</em></span><sub>src</sub> <span class="emphasis"><em>y</em></span><sub>src</sub> <span class="emphasis"><em>M</em></span><sub>00</sub> <span class="emphasis"><em>M</em></span><sub>01</sub> <span class="emphasis"><em>M</em></span><sub>10</sub> <span class="emphasis"><em>M</em></span><sub>11</sub>
+</li><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span> [options] <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub> <span class="emphasis"><em>source</em></span> <span class="emphasis"><em>A</em></span><sub>00</sub> <span class="emphasis"><em>A</em></span><sup>-1</sup><sub>01</sub> <span class="emphasis"><em>A</em></span><sup>-1</sup><sub>02</sub> <span class="emphasis"><em>A</em></span><sup>-1</sup><sub>10</sub> <span class="emphasis"><em>A</em></span><sup>-1</sup><sub>11</sub> <span class="emphasis"><em>A</em></span><sup>-1</sup><sub>12</sub> -
+</li><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span> [options] <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub> <span class="emphasis"><em>source</em></span> <span class="emphasis"><em>A</em></span><sub>00</sub> <span class="emphasis"><em>A</em></span><sub>01</sub> <span class="emphasis"><em>A</em></span><sub>02</sub> <span class="emphasis"><em>A</em></span><sub>10</sub> <span class="emphasis"><em>A</em></span><sub>11</sub> <span class="emphasis"><em>A</em></span><sub>12</sub> x
+</li><li class="listitem">
+<span class="strong"><strong>swim</strong></span> <span class="emphasis"><em>size</em></span>
+</li></ol></div></div><div class="refsect1"><a id="_description"></a><h2>Description</h2><p><span class="strong"><strong>swim</strong></span> aligns a subsection of the image file <span class="emphasis"><em>source</em></span> with a subsection of
+ the image file <span class="emphasis"><em>target</em></span> using the SWiFT-IR algorithm described in Wetzel et al. (2016).</p><p><span class="emphasis"><em>size</em></span> specifies the size of the subsection to use and may be specified as a single number or in the form <span class="emphasis"><em>W</em></span>x<span class="emphasis"><em>H</em></span>.</p><p>In general, we need to have a point <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub> = (<span class="emphasis"><em>x</em></span><sub>tgt</sub>,
+<span class="emphasis"><em>y</em></span><sub>tgt</sub>) and a corresponding point <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> = (<span class="emphasis"><em>x</em></span><sub>src</sub>,
+<span class="emphasis"><em>y</em></span><sub>src</sub>). These can be explicitly given, or <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> can be
+inferred from an affine transformation <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> = <span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span>
+<span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub> + <span class="emphasis"><em><span class="strong"><strong>b</strong></span></em></span>.</p><p>In form (1),  <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub> and  <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> are the center of the respective images.</p><p>In form (2), <span class="emphasis"><em>x</em></span><sub>src</sub> is implicitly the same is <span class="emphasis"><em>x</em></span><sub>tgt</sub> and
+<span class="emphasis"><em>y</em></span><sub>src</sub> the same as <span class="emphasis"><em>y</em></span><sub>tgt</sub>. The transformation matrix <span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span> = [1 0; 0 1] with zero translation.</p><p>In form (3), the transformation matrix <span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span> = [1 0; 0 1], and the translation <span class="emphasis"><em><span class="strong"><strong>b</strong></span></em></span> is taken from <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub> and <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub>.</p><p>In form (4), the transformation matrix <span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span> is set to [cos(φ) sin(φ); -sin(φ) cos(φ)], where φ is the angle specified (in degrees).</p><p>In form (5), the transformation matrix is specified explicitly.</p><p>In forms (6) and (7), an affine transformation matrix <span class="emphasis"><em><span class="strong"><strong>A</strong></span></em></span> is
+specified. There <span class="strong"><strong>must</strong></span> a final argument after the number. If that
+argument starts with a hyphen, <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> = <span class="emphasis"><em><span class="strong"><strong>A</strong></span></em></span><sup>-1</sup>
+<span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub> and the transformation matrix <span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span> is likewise
+taken from <span class="emphasis"><em><span class="strong"><strong>A</strong></span></em></span><sup>-1</sup>. Otherwise, <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> = <span class="emphasis"><em><span class="strong"><strong>A</strong></span></em></span>
+<span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub>.</p><p>(Note that <span class="emphasis"><em><span class="strong"><strong>A</strong></span></em></span> <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span> := <span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span> <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span> + <span class="emphasis"><em><span class="strong"><strong>b</strong></span></em></span> if
+<span class="emphasis"><em><span class="strong"><strong>A</strong></span></em></span> = [ <span class="emphasis"><em>M</em></span><sub>00</sub> <span class="emphasis"><em>M</em></span><sub>01</sub> <span class="emphasis"><em>b</em></span><sub>0</sub>; <span class="emphasis"><em>M</em></span><sub>10</sub> <span class="emphasis"><em>M</em></span><sub>11</sub>
+<span class="emphasis"><em>b</em></span><sub>1</sub>].)</p><p>In form (8), commands are read from stdin. Lines starting with hash (“#”) are ignored.</p></div><div class="refsect1"><a id="_options"></a><h2>Options</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong"><strong>-A</strong></span>
+</span></dt><dd>
+Disable apodization. (Apodization is blending the edges to gray to avoid false spectral content.)
+</dd><dt><span class="term">
+<span class="strong"><strong>-H</strong></span>
+</span></dt><dd>
+Do not optimize horizontal translation.
+</dd><dt><span class="term">
+<span class="strong"><strong>-k <span class="emphasis"><em>str</em></span></strong></span>
+</span></dt><dd>
+Keep image. This causes apodized and transformed images to be saved to disk.
+</dd><dt><span class="term">
+<span class="strong"><strong>-i <span class="emphasis"><em>expr</em></span></strong></span>
+</span></dt><dd>
+Specify number of iterations. Default is one. Three may be a good choice.
+</dd><dt><span class="term">
+<span class="strong"><strong>-m <span class="emphasis"><em>expr</em></span></strong></span>
+</span></dt><dd>
+Specify multiplier applied to <span class="emphasis"><em>-x</em></span> and <span class="emphasis"><em>-y</em></span> arguments.
+</dd><dt><span class="term">
+<span class="strong"><strong>-r</strong></span>
+</span></dt><dd>
+Reverse video
+</dd><dt><span class="term">
+<span class="strong"><strong>-t <span class="emphasis"><em>snrthr</em></span>,<span class="emphasis"><em>xthr</em></span>,<span class="emphasis"><em>ythr</em></span></strong></span>
+</span></dt><dd>
+Set rejection thresholds for SNR
+   value and for shifts in pixels. Values are separated by
+   commas. <span class="emphasis"><em>x</em></span><sub>thr</sub> and <span class="emphasis"><em>y</em></span><sub>thr</sub> are applied to coordinates that
+   have been multiplied by the value given with <span class="strong"><strong>-m</strong></span>. Arithmetic is
+   not allowed.
+</dd><dt><span class="term">
+<span class="strong"><strong>-V</strong></span>
+</span></dt><dd>
+Do not optimize vertical translation.
+</dd></dl></div><p><span class="strong"><strong>-w <span class="emphasis"><em>expr</em></span></strong></span>: Specify whitening exponent. If set to zero, whitening is disabled.</p><p><span class="strong"><strong>-x <span class="emphasis"><em>expr</em></span></strong></span>: Specify additional shift for x-coordinate of center of patch</p><p><span class="strong"><strong>-y <span class="emphasis"><em>expr</em></span></strong></span>: Specifiy additional shift for y-coordinate of center of path</p><p><span class="strong"><strong>-$ <span class="emphasis"><em>n</em></span></strong></span>: Specify debug level</p><p>Expressions may contain addition, subtraction, multiplication,
+division, and exponentiation. Parentheses are supported. Variables are
+not supported.
+Note that unlike for <span class="strong"><strong>mir</strong></span>, there must be a space between the option
+name and the option value.</p><p>The translation specified by the <span class="strong"><strong>-x</strong></span> and <span class="strong"><strong>-y</strong></span> command line
+options are applied directly to <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub>. Transformed by
+<span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span> they are applied to <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub>. The multiplier specified
+by <span class="strong"><strong>-m</strong></span> is applied to all coordinates.</p></div><div class="refsect1"><a id="_output"></a><h2>Output</h2><p><span class="strong"><strong>swim</strong></span> outputs a line of the form</p><p><span class="emphasis"><em>SNR</em></span>: <span class="emphasis"><em>target</em></span> <span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub> <span class="emphasis"><em>source</em></span> <span class="emphasis"><em>x</em></span><sub>src</sub> <span class="emphasis"><em>y</em></span><sub>src</sub> <span class="emphasis"><em>φ</em></span><sub>src</sub> (Δ<span class="emphasis"><em>x</em></span> Δ<span class="emphasis"><em>y</em></span> <span class="emphasis"><em>m</em></span><sub>0</sub> <span class="emphasis"><em>flags</em></span>)</p><p>Here:</p><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="emphasis"><em>SNR</em></span>
+</span></dt><dd>
+is the signal to noise value of the match.
+</dd><dt><span class="term">
+<span class="emphasis"><em>target</em></span>
+</span></dt><dd>
+is the file name of the target image copied from the command line
+</dd><dt><span class="term">
+<span class="emphasis"><em>x</em></span><sub>tgt</sub> <span class="emphasis"><em>y</em></span><sub>tgt</sub>
+</span></dt><dd>
+are the coordinates of <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub> modified by the <span class="strong"><strong>-x</strong></span> and <span class="strong"><strong>-y</strong></span> command line options.
+</dd><dt><span class="term">
+<span class="emphasis"><em>source</em></span>
+</span></dt><dd>
+is the file name of the source image copied from the command line
+</dd><dt><span class="term">
+<span class="emphasis"><em>x</em></span><sub>src</sub> <span class="emphasis"><em>y</em></span><sub>src</sub>
+</span></dt><dd>
+are the optimized coordinates of <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> that match <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>tgt</sub>.
+</dd><dt><span class="term">
+<span class="emphasis"><em>φ</em></span><sub>src</sub>
+</span></dt><dd>
+is the optimized rotation.
+</dd></dl></div><p>Information in parentheses is somewhat redundant. Δ<span class="emphasis"><em>x</em></span> and Δ<span class="emphasis"><em>y</em></span> are the pixel shifts applied to <span class="emphasis"><em><span class="strong"><strong>p</strong></span></em></span><sub>src</sub> and<span class="emphasis"><em>m</em></span><sub>0</sub> := √(Δ<span class="emphasis"><em>x</em></span><sup>2</sup> + Δ<span class="emphasis"><em>y</em></span><sup>2</sup>). The <span class="emphasis"><em>flags</em></span> can indicate bad matches in x (“dx”), in y (“dy”), in both (“dxy”) if any shift is greater than a quarter of the window size. It can also indicate that a threshold has been exceeded (“dreset”)</p></div><div class="refsect1"><a id="_usage_note"></a><h2>Usage note</h2><p>Note that <span class="strong"><strong>mir</strong></span> uses output and input coordinates to place a source image in a target space and returns a “forward” transform that maps source to target as well as an “inverse” transform that maps target back to source. It is this inverse transform that can be fed to <span class="strong"><strong>swim</strong></span> as the <span class="emphasis"><em><span class="strong"><strong>M</strong></span></em></span> transformation matrix on a refinement pass.</p></div><div class="refsect1"><a id="_reference"></a><h2>Reference</h2><p>Wetzel AW, Bakal J, Dittrich M, Hildebrand DGC, Morgan JL, Lichtman
+JW, 2016. Registering large volume serial-section electron microscopy
+image sets for neural circuit reconstruction using FFT signal
+whitening. arXiv:1612.04787. <a class="ulink" href="https://arxiv.org/abs/1612.04787" target="_top">https://arxiv.org/abs/1612.04787</a>.</p></div><div class="refsect1"><a id="_author"></a><h2>Author</h2><p><span class="strong"><strong>swim</strong></span> was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar.</p></div></div></body></html>
