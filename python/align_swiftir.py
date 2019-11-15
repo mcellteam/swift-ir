@@ -121,28 +121,33 @@ class alignment_process:
     wsf = 0.75
 #    wsf = 1.0
 
-    pa = np.zeros((2,1))
-    wwx_f = int(im_sta.shape[0])
-    wwy_f = int(im_sta.shape[1])
-    wwx = int(wsf*im_sta.shape[0])
-    wwy = int(wsf*im_sta.shape[1])
-    cx = int(im_sta.shape[0]/2)
-    cy = int(im_sta.shape[1]/2)
+    # Set up 1x1 point and window
+    pa = np.zeros((2,1))                # Point Array for one point
+    wwx_f = int(im_sta.shape[0])        # Window Width in x (Full Size)
+    wwy_f = int(im_sta.shape[1])        # Window Width in y (Full Size)
+    wwx = int(wsf*im_sta.shape[0])      # Window Width in x Scaled
+    wwy = int(wsf*im_sta.shape[1])      # Window Width in y Scaled
+    cx = int(im_sta.shape[0]/2)         # Window Center in x
+    cy = int(im_sta.shape[1]/2)         # Window Center in y
     pa[0,0] = cx
     pa[1,0] = cy
     psta_1 = pa
 
+
+    # Set up 2x2 points and windows
     nx = 2
     ny = 2
-    pa = np.zeros((2,nx*ny))
-    s = int(im_sta.shape[0]/2)
+    pa = np.zeros((2,nx*ny))                # Point Array (2x4) points
+    s = int(im_sta.shape[0]/2)              # Initial Size of each window
     for x in range(nx):
       for y in range(ny):
-        pa[0, x + nx*y] = int(0.5*s + s*x)
-        pa[1, x + nx*y] = int(0.5*s + s*y)
+        pa[0, x + nx*y] = int(0.5*s + s*x)  # Point Array (2x4) points
+        pa[1, x + nx*y] = int(0.5*s + s*y)  # Point Array (2x4) points
     s_2x2 = int(wsf*s)
     psta_2x2 = pa
 
+
+    # Set up 4x4 points and windows
     nx = 4
     ny = 4
     pa = np.zeros((2,nx*ny))
@@ -155,6 +160,7 @@ class alignment_process:
     s_4x4 = int(s)
     psta_4x4 = pa
 
+    # Set up a window size for match point alignment (1/32 of x dimension)
     s_mp = int(im_sta.shape[0]/32)
 
     if debug_level >= 70:
@@ -173,6 +179,7 @@ class alignment_process:
       elif alignment_option == 'apply_affine':
         self.recipe.afm = self.init_affine_matrix
       else:
+        # Normal Auto Swim Align - Full Recipe
         ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
         ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
         ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
@@ -183,10 +190,12 @@ class alignment_process:
       # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
       mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
       mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
+      # First ingredient is to calculate the Affine matrix from match points alone
       ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      # Second ingredient is to refine the Affine matrix by swimming at each match point
       ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
-      self.recipe.add_ingredient(ingredient_1_mp)
-      self.recipe.add_ingredient(ingredient_2_mp)
+      self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
+      self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
 
     ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
@@ -399,7 +408,7 @@ class align_ingredient:
     if self.swiftir_mode == 'c':
 
       if debug_level >= 50: print ( "Running c version of swim" )
-      self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+      #self.pmov = swiftir.stationaryToMoving(afm, self.psta)
 
       res = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
@@ -421,7 +430,7 @@ class align_ingredient:
       #theta = np.pi / 50
       #self.afm = np.array ( [ [ np.cos(theta), -np.sin(theta), 0.0 ], [ np.sin(theta), np.cos(theta), 0.0 ] ] )  # Identity matrix
 
-      self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+      #self.pmov = swiftir.stationaryToMoving(afm, self.psta)
       #self.snr = np.ones ( len(self.psta[0]) ) * 999.0
 
     else:
