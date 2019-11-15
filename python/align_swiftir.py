@@ -39,7 +39,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
   #cmd_stderr = cmd_stderr.decode('utf-8')
   if debug_level > 50: print('command output: \n\n' + cmd_stdout + '\n')
 
-  return (cmd_stdout,cmd_stderr)
+  return ( { 'out': cmd_stdout, 'err': cmd_stderr } )
 
 
 
@@ -370,14 +370,14 @@ class align_ingredient:
     print ( "####################################" )
     '''
 
-    swim_arg_string = 'junk -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     print('swim_cmd_str: swim ' + str(swim_ww_arg) + '\n')
     print('swim_arg_str: ' + swim_arg_string + '\n')
 
     o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=swim_arg_string )
 
-    swim_out_lines = o[0].strip().split('\n')
-    swim_err_lines = o[1].strip().split('\n')
+    swim_out_lines = o['out'].strip().split('\n')
+    swim_err_lines = o['err'].strip().split('\n')
     swim_results = { 'out':swim_out_lines, 'err':swim_err_lines }
 
     if debug_level >= 95:
