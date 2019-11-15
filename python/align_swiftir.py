@@ -349,6 +349,7 @@ class align_ingredient:
 
     #self.set_swim_results(swim_stdout,swim_stderr)
 
+    '''
     swim_cmd_string = 'swim %s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     print('swim_str:\n\n' + swim_cmd_string + '\n')
 
@@ -358,9 +359,13 @@ class align_ingredient:
     print('swim output: \n\n' + swim_stdout + '\n')
 
     print ( "####################################" )
-    scmds = 'junk' + ' ' + 'vj_097_shift_rot_skew_crop_1.jpg' + ' ' + 'vj_097_shift_rot_skew_crop_2.jpg' + '\n' + 'junk vj_097_shift_rot_skew_crop_2.jpg' + ' ' + 'vj_097_shift_rot_skew_crop_3.jpg' + '\n'
+    '''
 
-    o = run_command ( "swim", arg_list=['256'], cmd_input=scmds )
+    swim_arg_string = 'junk -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    print('swim_cmd_str: swim ' + str(swim_ww_arg) + '\n')
+    print('swim_arg_str: ' + swim_arg_string + '\n')
+
+    o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=swim_arg_string )
 
     swim_out_lines = o[0].strip().split('\n')
     swim_err_lines = o[1].strip().split('\n')
@@ -398,13 +403,26 @@ class align_ingredient:
 
       res = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
+      # This puts all SNRs into a list (as it should)
+      self.snr = [ float(res['out'][n].split(':')[0]) for n in range(len(res['out'])) ]
+
+      # This just uses the first offset only
+      x0 = float(res['out'][0].split()[2])
+      y0 = float(res['out'][0].split()[3])
+      x1 = float(res['out'][0].split()[5])
+      y1 = float(res['out'][0].split()[6])
+
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+      self.afm = np.array ( [ [ 1.0, 0.0, x1-x0 ], [ 0.0, 1.0, y1-y0 ] ] )  # Offset matrix
+
       # Temporary: return an identity matrix and other "dummy" settings
-      self.afm = np.array ( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ] ] )  # Identity matrix
-      theta = np.pi / 50
-      self.afm = np.array ( [ [ np.cos(theta), -np.sin(theta), 0.0 ], [ np.sin(theta), np.cos(theta), 0.0 ] ] )  # Identity matrix
+      #self.afm = np.array ( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ] ] )  # Identity matrix
+      #theta = np.pi / 50
+      #self.afm = np.array ( [ [ np.cos(theta), -np.sin(theta), 0.0 ], [ np.sin(theta), np.cos(theta), 0.0 ] ] )  # Identity matrix
 
       self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-      self.snr = np.ones ( len(self.psta[0]) ) * 999.0
+      #self.snr = np.ones ( len(self.psta[0]) ) * 999.0
 
     else:
 

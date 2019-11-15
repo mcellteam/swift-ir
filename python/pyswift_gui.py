@@ -2561,7 +2561,7 @@ def run_alignment_callback ( align_all ):
             # ww is an integer, so turn it into an nxn tuple
             ww = (ww,ww)
           global show_window_centers
-          if True or show_window_centers:
+          if False or show_window_centers:
             # Draw dots in the center of each psta (could be pmov) with SNR for each
             for wi in range(s):
               annotated_img.graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c,graphic_group="Centers") )
