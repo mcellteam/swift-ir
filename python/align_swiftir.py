@@ -21,6 +21,28 @@ Together these ingredients comprise a procedure, or "recipe".
 
 debug_level = 0
 
+global_swiftir_mode = 'python'   # Either 'python' or 'c'
+
+def run_command(cmd, arg_list=None, cmd_input=None):
+
+  global debug_level
+
+  cmd_arg_list = [ cmd ]
+  if arg_list != None:
+    cmd_arg_list = [ a for a in arg_list ]
+    cmd_arg_list.insert ( 0, cmd )
+  cmd_proc = sp.Popen(cmd_arg_list,stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+  cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
+
+  # Note: decode bytes if universal_newlines=False in Popen
+  #cmd_stdout = cmd_stdout.decode('utf-8')
+  #cmd_stderr = cmd_stderr.decode('utf-8')
+  if debug_level > 50: print('command output: \n\n' + cmd_stdout + '\n')
+
+  return (cmd_stdout,cmd_stderr)
+
+
+
 #recipe_dict = {}
 
 #recipe_dict['default'] = [affine_align_recipe(), affine_2x2_recipe, affine_4x4_recipe]
@@ -87,6 +109,11 @@ class alignment_process:
   
   def auto_swim_align(self):
 
+    global debug_level
+    if debug_level >= 70:
+      print ( "*** top of auto_swim_align() ***" )
+
+
     im_sta = swiftir.loadImage(self.im_sta_fn)
     im_mov = swiftir.loadImage(self.im_mov_fn)
 
@@ -130,6 +157,10 @@ class alignment_process:
 
     s_mp = int(im_sta.shape[0]/32)
 
+    if debug_level >= 70:
+      print ( "  psta_1   = " + str(psta_1) )
+      print ( "  psta_2x2 = " + str(psta_2x2) )
+      print ( "  psta_4x4 = " + str(psta_4x4) )
 
     self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
@@ -208,7 +239,6 @@ class align_recipe:
       self.afm = ingredient.execute()
 
 
-global_swiftir_mode = 'python'   # Either 'python' or 'c'
 
 # Universal class for alignment ingredients of recipes
 class align_ingredient:
@@ -272,7 +302,11 @@ class align_ingredient:
 #    print('%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
     pass
 
-  def run_swim_c(self, im_base_fn, im_adj_fn, offx=0, offy=0, keep=None,base_x=None,base_y=None,adjust_x=None,adjust_y=None,rota=None,afm=None):
+
+
+  def run_swim_c ( self, im_base_fn, im_adj_fn, offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None ):
+
+    global debug_level
 
     karg = ''
     if keep != None:
@@ -323,8 +357,25 @@ class align_ingredient:
 
     print('swim output: \n\n' + swim_stdout + '\n')
 
+    print ( "####################################" )
+    scmds = 'junk' + ' ' + 'vj_097_shift_rot_skew_crop_1.jpg' + ' ' + 'vj_097_shift_rot_skew_crop_2.jpg' + '\n' + 'junk vj_097_shift_rot_skew_crop_2.jpg' + ' ' + 'vj_097_shift_rot_skew_crop_3.jpg' + '\n'
+
+    o = run_command ( "swim", arg_list=['256'], cmd_input=scmds )
+
+    swim_out_lines = o[0].strip().split('\n')
+    swim_err_lines = o[1].strip().split('\n')
+    swim_results = { 'out':swim_out_lines, 'err':swim_err_lines }
+
+    if debug_level >= 95:
+      print ( "Entering the command line debugger:" )
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    return swim_results
+
 
   def execute(self):
+
+    global debug_level
 
     # If ww==None then this is a Matching Point ingredient of a recipe
     # Calculate afm directly using psta and pmov as the matching points
@@ -342,8 +393,10 @@ class align_ingredient:
 
     if self.swiftir_mode == 'c':
 
-      print ( "Running c version of swim" )
-      self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
+      if debug_level >= 50: print ( "Running c version of swim" )
+      self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+
+      res = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
       # Temporary: return an identity matrix and other "dummy" settings
       self.afm = np.array ( [ [ 1.0, 0.0, 0.0 ], [ 0.0, 1.0, 0.0 ] ] )  # Identity matrix
@@ -355,7 +408,7 @@ class align_ingredient:
 
     else:
 
-      print ( "Running python version of swim" )
+      if debug_level >= 50: print ( "Running python version of swim" )
       self.pmov = swiftir.stationaryToMoving(afm, self.psta)
       sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
       for i in range(self.iters):
@@ -364,15 +417,15 @@ class align_ingredient:
         self.pmov = self.pmov + dp
         (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
         self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-        print('  Affine err:  %g' % (err))
-        print('  SNR:  ', snr)
+        if debug_level >= 0: print('  Affine err:  %g' % (err))
+        if debug_level >= 0: print('  SNR:  ', snr)
       self.snr = snr
 
     if self.align_mode == 'swim_align':
       self.afm = afm
 
-    global debug_level
     if debug_level >= 90:
+      print ( "Entering the command line debugger:" )
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     return(self.afm)
