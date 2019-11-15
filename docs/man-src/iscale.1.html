@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>iscale</title><link rel="stylesheet" type="text/css" href="docbook-xsl.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /></head><body><div xml:lang="en" class="refentry" lang="en"><a id="idm1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>iscale — Image scaler</p></div><div class="refsynopsisdiv"><a id="_synopsis"></a><h2>Synopsis</h2><p><span class="strong"><strong>iscale</strong></span> -v +<span class="emphasis"><em>scale</em></span> -<span class="emphasis"><em>contrast</em></span> p=<span class="emphasis"><em>outpath</em></span> <span class="emphasis"><em>infile</em></span> …</p></div><div class="refsect1"><a id="_description"></a><h2>Description</h2><p>The <span class="strong"><strong>iscale</strong></span> command loads any number of input files, reduces their
+sizes by a given scale factor in both x and y directions, and writes
+the results to a common output folder.</p><p>The scale factor may be specified on the command line following a plus
+sign. The default is 8.</p><p>An integer contrast may be specified to increase the image
+contrast. This works in a slightly unusual way: If &lt;<span class="emphasis"><em>x</em></span>&gt;
+is the average intensity of the image, then a pixel with intensity <span class="emphasis"><em>x</em></span>
+is mapped to 128 + <span class="emphasis"><em>c</em></span> * (<span class="emphasis"><em>x</em></span> - &lt;<span class="emphasis"><em>x</em></span>&gt;).</p><p>Normally, each output pixel is the average of a block of <span class="emphasis"><em>scale</em></span> x
+<span class="emphasis"><em>scale</em></span> input pixels. If, however, one or more -v arguments are given,
+the output is instead the | <span class="emphasis"><em>x</em></span> - &lt;<span class="emphasis"><em>x</em></span>&gt; | noise in each block.</p><p>If an input file is /path/to/file.ext and the scale factor is
+<span class="emphasis"><em>n</em></span>, then the output file is /path/to/S<span class="emphasis"><em>n</em></span>file.ext.</p><p>Exception: if “p=<span class="emphasis"><em>outpath</em></span>” is specified on the command line, the
+output file is outpath/S<span class="emphasis"><em>n</em></span>file.ext.</p><p><span class="strong"><strong>iscale</strong></span> is primarily intended for grayscale images. It will run on
+  RGB images as well, but contrast adjustment and variance measurement
+  are not supported.</p></div><div class="refsect1"><a id="_authors"></a><h2>Authors</h2><p><span class="strong"><strong>iscale</strong></span> was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar.</p></div></div></body></html>

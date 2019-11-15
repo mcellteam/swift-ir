@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>mir</title><link rel="stylesheet" type="text/css" href="docbook-xsl.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /></head><body><div xml:lang="en" class="refentry" lang="en"><a id="idm1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>mir — Multi Image Renderer</p></div><div class="refsynopsisdiv"><a id="_synopsis"></a><h2>Synopsis</h2><p><span class="strong"><strong>mir</strong></span> [-<span class="emphasis"><em>options</em></span>] [<span class="emphasis"><em>scriptfile</em></span>]</p></div><div class="refsect1"><a id="_description"></a><h2>Description</h2><p>The <span class="strong"><strong>mir</strong></span>(1) command runs the <span class="strong"><strong>mir</strong></span> interpreter on the named file. If no
+file is given, <span class="strong"><strong>mir</strong></span> reads from stdin.</p><p><span class="strong"><strong>mir</strong></span> is intended to apply geometric transformations to an image. It
+renders input files onto an output canvas by mapping points
+(<span class="emphasis"><em>x</em></span><sub>in</sub>, <span class="emphasis"><em>y</em></span><sub>in</sub>) from the source file onto points (<span class="emphasis"><em>x</em></span><sub>out</sub>,
+<span class="emphasis"><em>y</em></span><sub>out</sub>) on the output canvas. It can do so using a single affine
+transformation for the entire image, or by applying distinct affine
+transformations for triangular areas of the image. In the latter case,
+areas of the source image that are not covered by the triangulation
+are simply ignored.</p><p><span class="strong"><strong>mir</strong></span> reads a program that may consist of commands, blocks of vertex
+definitions, and blocks of triangle definitions. Typically, a program
+will consist of a “setup” section, followed by one or more “image
+placement” sections, followed by a command to write the output to a
+file.</p><p>Any command may appear in any section, although some obviously make more
+sense in certain contexts. Commands are all single letters followed by
+optional arguments. Multiple commands that do not take arguments may
+appear on the same line. The available commands are detailed
+below. A few commands (like <span class="strong"><strong>?</strong></span>, <span class="strong"><strong>~</strong></span>, and <span class="strong"><strong>E</strong></span>) are mainly for
+interactive use and testing purposes.</p><p><span class="strong"><strong>mir</strong></span> allows comments almost anywhere in its input: The hash
+ character (“#”) and any text following it up to the next new line are ignored.</p></div><div class="refsect1"><a id="_commands_in_the_emphasis_role_strong_mir_emphasis_language"></a><h2>Commands in the <span class="strong"><strong>mir</strong></span> language</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong"><strong>?</strong></span>
+</span></dt><dd>
+Show a brief help text about the available commands.
+</dd><dt><span class="term">
+<span class="strong"><strong>~</strong></span>
+</span></dt><dd>
+Display current transformation matrices.
+</dd><dt><span class="term">
+<span class="strong"><strong>A</strong></span> MF<sub>00</sub> MF<sub>01</sub> MF<sub>02</sub> MF<sub>10</sub> MF<sub>11</sub> MF<sub>12</sub>
+</span></dt><dd>
+Directly
+    specify new “forward” mapping. The “reverse” mapping is
+    automatically recalculated.
+</dd><dt><span class="term">
+<span class="strong"><strong>a</strong></span> MI<sub>00</sub> MI<sub>01</sub> MI<sub>02</sub> MI<sub>10</sub> MI<sub>11</sub> MI<sub>12</sub>
+</span></dt><dd>
+Directly
+    specify new “reverse” mapping. The “forward” mapping is
+    automatically recalculated.
+</dd><dt><span class="term">
+<span class="strong"><strong>B</strong></span> <span class="emphasis"><em>w</em></span><sub>out</sub> <span class="emphasis"><em>h</em></span><sub>out</sub> <span class="emphasis"><em>bpp</em></span><sub>out</sub> <span class="emphasis"><em>w</em></span><sub>tile</sub> <span class="emphasis"><em>h</em></span><sub>tile</sub>_ <span class="emphasis"><em>trans</em></span>
+</span></dt><dd>
+Specify
+    output width and height, output bytes per pixel, tile width and height,
+    and transparent input value.  <span class="emphasis"><em>w</em></span><sub>out</sub> <span class="emphasis"><em>h</em></span><sub>out</sub>, but not the other
+    parameters, are interpreted as multiples of the <span class="emphasis"><em>x</em></span> and <span class="emphasis"><em>y</em></span> output scales.
+    <span class="emphasis"><em>bpp</em></span> may be one (8 bits) or two (16 bits).
+</dd><dt><span class="term">
+<span class="strong"><strong>D</strong></span> <span class="emphasis"><em>name</em></span>
+</span></dt><dd>
+Directory prefix for all input filenames. There must be precisely
+    one space between the “D” and the directory name. The entire rest of the
+    line (up to the next newline) is interpreted as the prefix, including any
+    spaces.
+</dd><dt><span class="term">
+<span class="strong"><strong>E</strong></span>
+</span></dt><dd>
+Exit the program.
+</dd><dt><span class="term">
+<span class="strong"><strong>F</strong></span> <span class="emphasis"><em>name</em></span>
+</span></dt><dd>
+Read a new file. Any number of spaces and tab characters may
+    appear between the “F” and the filename. The filename may not contain
+    any spaces. The actual file loaded is determined by concatenating the
+    filename to the current directory prefix (without inserting a slash or
+    anything else). The program aborts if no filename is given, but quietly
+    substitutes a 1x1 image if the file cannot be read. If this is the first
+    image read, the size of the output image is set by the size of the image
+    loaded (unless explicitly given by a <span class="strong"><strong>B</strong></span> command or <span class="strong"><strong>-B</strong></span> option).
+    Reading a new image does not reset the transformation matrices.
+</dd><dt><span class="term">
+<span class="strong"><strong>G</strong></span>  MG<sub>00</sub> MG<sub>01</sub> MG<sub>02</sub> MG<sub>10</sub> MG<sub>11</sub> MG<sub>12</sub>
+</span></dt><dd>
+Directly
+    specify new “global” mapping. This mapping is not actually used
+    for rendering.
+</dd><dt><span class="term">
+<span class="strong"><strong>I</strong></span><span class="emphasis"><em>n</em></span>
+</span></dt><dd>
+Set interpolation level. <span class="emphasis"><em>n</em></span> must be 0, 1, or 2 for nearest
+    neighbor, bilinear, or bicubic interpolation.
+</dd><dt><span class="term">
+<span class="strong"><strong>O</strong></span> <span class="emphasis"><em>dx</em></span><sub>out</sub> <span class="emphasis"><em>dy</em></span><sub>out</sub> <span class="emphasis"><em>dx</em></span><sub>in</sub> <span class="emphasis"><em>dy</em></span><sub>in</sub>
+</span></dt><dd>
+Specify pixel offsets.
+    Arguments may contain basic math: Addition, subtraction, multiplication,
+    division, modulo, power, and parentheses are supported.
+</dd><dt><span class="term">
+<span class="strong"><strong>S</strong></span> <span class="emphasis"><em>S</em></span><sub>x</sub><sup>out</sup> <span class="emphasis"><em>S</em></span><sub>x</sub><sup>out</sup> <span class="emphasis"><em>S</em></span><sub>x</sub><sup>in</sup> <span class="emphasis"><em>S</em></span><sub>y</sub><sup>in</sup>
+</span></dt><dd>
+Specify scale factors.
+  These factors are applied to all subsequent vertex definitions and
+  also to the arguments of the <span class="strong"><strong>B</strong></span> command.
+</dd><dt><span class="term">
+<span class="strong"><strong>R</strong></span>
+</span></dt><dd>
+Render image directly. See below.
+</dd><dt><span class="term">
+<span class="strong"><strong>V</strong></span>
+</span></dt><dd>
+Toggle reverse video.
+</dd><dt><span class="term">
+<span class="strong"><strong>W</strong></span> <span class="emphasis"><em>name</em></span>
+</span></dt><dd>
+Write output image. Any number of spaces and tab characters may
+    appear between the “W” and the filename. The filename may not contain
+    any spaces. The “directory prefix” is not used. If tiling is enabled
+    (by specifying nonzero <span class="emphasis"><em>w</em></span><sub>tile</sub> and <span class="emphasis"><em>h</em></span><sub>tile</sub>_ to the <span class="strong"><strong>B</strong></span> command),
+    the <span class="emphasis"><em>name</em></span> must contain two <code class="literal">%i</code> place holders for <code class="literal">sprintf</code> to insert
+    the row and column indices of the tile (both counted from zero).
+    Writing an output image does not reset the transformation
+    matrices. If no <span class="strong"><strong>W</strong></span> command is given ever, the final output is
+    written to stdout in PGM format unless the program is terminated
+    by the <span class="strong"><strong>E</strong></span> command.
+</dd><dt><span class="term">
+<span class="strong"><strong>X</strong></span>
+</span></dt><dd>
+Following the <span class="strong"><strong>X</strong></span> command, lines that specify vertices are
+  interpreted as <span class="emphasis"><em>x</em></span><sub>in</sub> <span class="emphasis"><em>y</em></span><sub>in</sub> <span class="emphasis"><em>x</em></span><sub>out</sub> <span class="emphasis"><em>y</em></span><sub>out</sub> rather than
+   <span class="emphasis"><em>x</em></span><sub>out</sub> <span class="emphasis"><em>y</em></span><sub>out</sub> <span class="emphasis"><em>x</em></span><sub>in</sub> <span class="emphasis"><em>y</em></span><sub>in</sub>. A subsequent <span class="strong"><strong>X</strong></span>
+  command cancels this mode of operation.
+</dd><dt><span class="term">
+<span class="strong"><strong>Z</strong></span> <span class="emphasis"><em>n</em></span>
+</span></dt><dd>
+Zero the drawing space to the given gray value <span class="emphasis"><em>n</em></span>. If <span class="emphasis"><em>n</em></span> is
+    not given, the default is 0 (unless specified with the <span class="strong"><strong>-Z</strong></span>
+    command line option).
+</dd></dl></div></div><div class="refsect1"><a id="_rendering_images_with_an_explicit_transformation_matrix"></a><h2>Rendering images with an explicit transformation matrix</h2><p>The coordinate transformations used for rendering images may be
+specified explicitly with the <span class="strong"><strong>A</strong></span> or <span class="strong"><strong>a</strong></span> commands. In that case,
+after setup, the <span class="strong"><strong>R</strong></span> command may be issued directly.</p><p>Commonly, however, <span class="strong"><strong>mir</strong></span> is used to determine coordinate
+transformations from specified matchings between points in the output
+space and points in the input space. This can be done either in a
+global fashion, or in a local fashion using a triangular mesh over the
+image.</p></div><div class="refsect1"><a id="_rendering_images_with_a_global_affine_transformation_based_on_matched_vertices"></a><h2>Rendering images with a global affine transformation based on matched vertices</h2><p>If “vertex” lines precede the <span class="strong"><strong>R</strong></span> command, any previously
+specified matrices (see the <span class="strong"><strong>A</strong></span> and <span class="strong"><strong>a</strong></span> commands) are discarded,
+and the transformation is determined by a least-square optimization
+process over the given vertex pairs. Vertex lines consist of four
+coordinates on a line:</p><p><span class="emphasis"><em>x</em></span><sub>out</sub> <span class="emphasis"><em>y</em></span><sub>out</sub> <span class="emphasis"><em>x</em></span><sub>in</sub> <span class="emphasis"><em>y</em></span><sub>in</sub></p><p>(If the <span class="strong"><strong>X</strong></span> command is in effect, the order is
+<span class="emphasis"><em>x</em></span><sub>in</sub> <span class="emphasis"><em>y</em></span><sub>in</sub> <span class="emphasis"><em>x</em></span><sub>out</sub> <span class="emphasis"><em>y</em></span><sub>out</sub> instead.)
+Coordinates may be given directly as floating point numbers, but basic
+arithmetic is allowed: <span class="strong"><strong>mir</strong></span> understands
+multiplication, division, addition, subtraction, modulo, and power. It also
+understands parentheses. Importantly, however, spaces are not allowed
+inside equations. <span class="strong"><strong>mir</strong></span> also appears to allow for variable assignment
+and dereference, but the author of this page doesn’t yet understand
+how that works.</p><p>After evaluation, the current offset (<span class="strong"><strong>O</strong></span> command) is applied and
+then (!) the current scale (<span class="strong"><strong>S</strong></span> command).</p><p>Any number of vertex pairs may appear on consecutive lines.</p><p>After the last vertex line, the <span class="strong"><strong>R</strong></span> command should appear
+immediately without any other intervening commands.</p><p>The number of vertex pairs given determines how the affine
+transformation is constructed:
+* If zero, the matrices set by <span class="strong"><strong>A</strong></span> or <span class="strong"><strong>a</strong></span> are used.
+* If one, the vertex specifies a linear shift on top of existing scaling and/or
+    rotation set by <span class="strong"><strong>A</strong></span> or <span class="strong"><strong>a</strong></span>.
+* If two, calculates an affine transformation based on the two points and
+    a fictional point created as
+    (<span class="emphasis"><em>x</em></span><sub>1</sub> + <span class="emphasis"><em>y</em></span><sub>2</sub> − <span class="emphasis"><em>y</em></span><sub>1</sub>, <span class="emphasis"><em>y</em></span><sub>1</sub> + <span class="emphasis"><em>x</em></span><sub>1</sub> − <span class="emphasis"><em>x</em></span><sub>2</sub>).
+* If three or more, calculates an affine transformation by
+  least-squares optimization.</p></div><div class="refsect1"><a id="_rendering_images_with_local_affine_transformations"></a><h2>Rendering images with local affine transformations</h2><p>To render with locally defined transformations, first specify the
+vertices of any number of triangles using vertex lines as before, but
+do not issue an <span class="strong"><strong>R</strong></span> command immediately afterward. Instead, follow
+the vertex lines with a line consisting of a single “T” (for
+Triangles), followed by any number of “triangle lines.”</p><p>Triangles are defined by triplets <span class="emphasis"><em>i</em></span> <span class="emphasis"><em>j</em></span> <span class="emphasis"><em>k</em></span> which must
+be indices into the previously defined vertices (counting from
+zero). Specifying vertices that do not exist is likely to crash the
+program. Each triangle definition must be given its own line.</p><p>The triangles must be followed by the <span class="strong"><strong>R</strong></span> command.</p></div><div class="refsect1"><a id="_command_line_options"></a><h2>Command line options</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong"><strong>-B</strong></span><span class="emphasis"><em>w</em></span>,<span class="emphasis"><em>h</em></span>
+</span></dt><dd>
+Output width and height in pixels. The numbers are
+    multiplied by any scale factors set by a preceding <span class="strong"><strong>-S</strong></span> option.
+    Default: Determined from first-loaded input image.
+</dd><dt><span class="term">
+<span class="strong"><strong>-b</strong></span>
+</span></dt><dd>
+Save overlap images for later intensity correction.
+    Filename is constructed as <span class="emphasis"><em>input</em></span>.back.pgm, where <span class="emphasis"><em>input</em></span> is the
+    source filename with a three letter extension removed.
+</dd><dt><span class="term">
+<span class="strong"><strong>-g</strong></span>
+</span></dt><dd>
+Overlay a grid. If given twice, input image pixels are ignored entirely.
+</dd><dt><span class="term">
+<span class="strong"><strong>-i</strong></span>
+</span></dt><dd><p class="simpara">
+Increase interpolation level:
+</p><div class="itemizedlist"><ul class="itemizedlist" style="list-style-type: disc; "><li class="listitem">
+Default level is zero: nearest neighbor.
+</li><li class="listitem">
+Level one: bilinear.
+</li><li class="listitem">
+Level two (or more): bicubic.
+</li></ul></div></dd><dt><span class="term">
+<span class="strong"><strong>-N</strong></span><span class="emphasis"><em>n</em></span>
+</span></dt><dd>
+Least points. The result of inferring the affine transformation
+    may be rejected (forcing a recalculation) if the average error is too large,
+    but only if at least <span class="emphasis"><em>n</em></span> points remain available for the inference process.
+    Default value is 4.
+</dd><dt><span class="term">
+<span class="strong"><strong>-o</strong></span>
+</span></dt><dd>
+Show outline triangles instead of normal image output.
+</dd><dt><span class="term">
+<span class="strong"><strong>-r</strong></span>
+</span></dt><dd>
+Reverse video. Output image has reverse polarity of input images.
+</dd><dt><span class="term">
+<span class="strong"><strong>-S</strong></span><span class="emphasis"><em>S</em></span><sub>x</sub><sup>out</sup>,<span class="emphasis"><em>S</em></span><sub>x</sub><sup>out</sup>,<span class="emphasis"><em>S</em></span><sub>x</sub><sup>in</sup>,<span class="emphasis"><em>S</em></span><sub>y</sub><sup>in</sup>
+</span></dt><dd>
+Scale.
+    These scale factors are applied to all vertex coordinates.
+    Default values are 1 for all. [Interpretation of arguments is not
+    affected by the <span class="strong"><strong>-X</strong></span> option.]
+</dd><dt><span class="term">
+<span class="strong"><strong>-s</strong></span>
+</span></dt><dd>
+Show solid triangles instead of normal image output.
+</dd><dt><span class="term">
+<span class="strong"><strong>-T</strong></span><span class="emphasis"><em>n</em></span>
+</span></dt><dd>
+Transparent input value.
+    Pixels of this color are not copied to output. (Useful for out-of-bounds
+    areas.)
+     For unknown reasons, the value used to be interpreted as a multiple of the
+    <span class="emphasis"><em>x</em></span><sub>out</sub> scale in force at the time the option is seen, but DAW changed
+    that. Now it is simply a value between 0 and 255.
+</dd><dt><span class="term">
+<span class="strong"><strong>-X</strong></span>
+</span></dt><dd>
+Same as the <span class="strong"><strong>X</strong></span> command, this affects lines that consist of
+    four numbers.
+    With the <span class="strong"><strong>-X</strong></span> flag given, lines are interpreted as
+    <span class="emphasis"><em>x</em></span><sub>in</sub> <span class="emphasis"><em>y</em></span><sub>in</sub> <span class="emphasis"><em>x</em></span><sub>out</sub> <span class="emphasis"><em>y</em></span><sub>out</sub> rather than
+    <span class="emphasis"><em>x</em></span><sub>out</sub> <span class="emphasis"><em>y</em></span><sub>out</sub>  <span class="emphasis"><em>x</em></span><sub>in</sub> <span class="emphasis"><em>y</em></span><sub>in</sub>.
+</dd><dt><span class="term">
+<span class="strong"><strong>-Z</strong></span><span class="emphasis"><em>n</em></span>
+</span></dt><dd>
+Specifies background gray value for output. (The default is 0.)
+    For unknown reasons, the value used to be interpreted as a multiple of the
+    <span class="emphasis"><em>x</em></span><sub>out</sub> scale in force at the time the option is seen, but DAW changed
+    that. Now it is simply a value between 0 and 255.
+</dd><dt><span class="term">
+<span class="strong"><strong>-?</strong></span>
+</span></dt><dd>
+Enable prompting. (That is, show the text “Enter a MIR command &gt;”
+    when <span class="strong"><strong>mir</strong></span> is ready for command input.)
+</dd></dl></div><p>Options that do not take arguments can be combined. There may not be any
+spaces between options and their arguments.</p></div><div class="refsect1"><a id="_output"></a><h2>Output</h2><p><span class="strong"><strong>mir</strong></span>'s output consists of the constructed image file, lots of
+  debugging information on stderr, and information about computed
+  transformations on stdout. The latter has the form “_filename_ AF
+  <span class="emphasis"><em>m</em></span><sub>00</sub> <span class="emphasis"><em>m</em></span><sub>01</sub> <span class="emphasis"><em>m</em></span><sub>02</sub> <span class="emphasis"><em>m</em></span><sub>10</sub> <span class="emphasis"><em>m</em></span><sub>11</sub> <span class="emphasis"><em>m</em></span><sub>12</sub>”.
+  Precisely one such line appears for each <span class="strong"><strong>R</strong></span> command for which
+  <span class="strong"><strong>mir</strong></span> calculated a global affine transformation. <span class="strong"><strong>R</strong></span> commands
+  with triangulation result in one line for each triangle. Each
+  “AF” line is followed by an “AI” line with the inverse
+  transformation.</p></div><div class="refsect1"><a id="_author"></a><h2>Author</h2><p><span class="strong"><strong>mir</strong></span> was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar. DW does not yet fully understand <span class="strong"><strong>mir</strong></span>.</p></div></div></body></html>

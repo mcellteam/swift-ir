@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>iavg</title><link rel="stylesheet" type="text/css" href="docbook-xsl.css" /><meta name="generator" content="DocBook XSL Stylesheets V1.79.1" /></head><body><div xml:lang="en" class="refentry" lang="en"><a id="idm1"></a><div class="titlepage"></div><div class="refnamediv"><h2>Name</h2><p>iavg — Image combiner</p></div><div class="refsynopsisdiv"><a id="_synopsis"></a><h2>Synopsis</h2><p><span class="strong"><strong>iavg</strong></span> [options] imagefile1 imagefile2 …</p></div><div class="refsect1"><a id="_description"></a><h2>Description</h2><p>In default mode, <span class="strong"><strong>iavg</strong></span> calculates an average of a stack of images.</p></div><div class="refsect1"><a id="_options"></a><h2>Options</h2><div class="variablelist"><dl class="variablelist"><dt><span class="term">
+<span class="strong"><strong>-b<span class="emphasis"><em>n</em></span></strong></span>
+</span></dt><dd>
+Set black level to <span class="emphasis"><em>n</em></span> + 2.
+</dd><dt><span class="term">
+<span class="strong"><strong>-e</strong></span>
+</span></dt><dd>
+Fill black area near top edge with first nonblack
+   pixel. (This is mainly a hack for a specific application.)
+</dd><dt><span class="term">
+<span class="strong"><strong>-h</strong></span>
+</span></dt><dd>
+Calculate “HV” histograms.
+</dd><dt><span class="term">
+<span class="strong"><strong>-m</strong></span>
+</span></dt><dd>
+Enable use of x-ramps. (This is a hack for a specific
+   application.)
+</dd><dt><span class="term">
+<span class="strong"><strong>-q</strong></span>
+</span></dt><dd>
+Quiet (may be repeated to suppress yet more verbosity).
+</dd><dt><span class="term">
+<span class="strong"><strong>-r</strong></span>
+</span></dt><dd>
+Invert black/white in input images.
+</dd><dt><span class="term">
+<span class="strong"><strong>-w<span class="emphasis"><em>n</em></span></strong></span>
+</span></dt><dd>
+Set white level to <span class="emphasis"><em>n</em></span> + 2.
+</dd></dl></div><p>Other options select modes as in the following table:</p><div class="informaltable"><table class="informaltable" cellpadding="4px" style="border-collapse: collapse;border-top: 3px solid #527bbd; border-bottom: 3px solid #527bbd; border-left: 3px solid #527bbd; border-right: 3px solid #527bbd; "><colgroup><col class="col_1" /><col class="col_2" /></colgroup><tbody><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p><span class="strong"><strong>Option</strong></span></p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p><span class="strong"><strong>Mode</strong></span></p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-0 or -a</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Average of images with contrast rescaling (“adaptive”)</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-1</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Range (maximum - minimum) of images</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-2</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Minimum of images</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-3</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Minimum of images</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-4</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Average of horizontal contrast image</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-5 or -s</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Stack (output raw image data without headers)</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-6 or -i</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Stack of cumulative sums in z (no headers)</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-7   or -p</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Average only of non-black pixels</p></td></tr><tr><td style="border-right: 1px solid #527bbd; border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>-+</p></td><td style="border-bottom: 1px solid #527bbd; " align="left" valign="top"><p>Add all images together</p></td></tr><tr><td style="border-right: 1px solid #527bbd; " align="left" valign="top"><p>--</p></td><td style="" align="left" valign="top"><p>Subtract sum of secondary images from first image</p></td></tr></tbody></table></div><p>Of these, <span class="strong"><strong>-p</strong></span> (only) takes an optional argument that specifies the
+minimum number of images to consider. (Default is 4; if fewer are
+nonblack, the output value is 150.)</p><p>If no mode is specified, the default is simply averaging all pixel values.</p><p>Output is always written to stdout as a pgm image.</p></div><div class="refsect1"><a id="_notes"></a><h2>Notes</h2><p>In mode 7, an additional image file called “pixcnt.pgm” is created that
+holds the counts of nonblack pixels.</p><p>If histograms are enabled, a (normalized) histogram image is created
+that is 256 x (W+H) pixels large and contains the gray-value
+histograms taken over rows and columns of the source images. This
+image is saved as “xy_hists.pgm”.</p></div><div class="refsect1"><a id="_authors"></a><h2>Authors</h2><p><span class="strong"><strong>iavg</strong></span> was written by Tom Wetzel. This page was written by Daniel
+ Wagenaar.</p></div></div></body></html>
