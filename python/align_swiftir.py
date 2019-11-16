@@ -352,26 +352,39 @@ class align_ingredient:
     else:
       swim_ww_arg = str(self.ww)
 
+    print ( "--------------------------" )
+
+    print ( str(self) )
+
     swim_results = []
-    print ( "psta = " + str(self.psta) )
+    # print ( "psta = " + str(self.psta) )
+    multi_swim_arg_string = ""
     for i in range(len(self.psta[0])):
       offx = self.psta[0][i]
       offy = self.psta[1][i]
       print ( "Will run a swim of " + str(self.ww) + " at (" + str(self.psta[0][i]) + "," + str(self.psta[1][i]) + ")" )
-      swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+      # swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+      swim_arg_string = 'ww_' + swim_ww_arg + ' -i ' + str(self.iters) + ' -w ' + str(self.wht) + ' -x ' + str(offx) + ' -y ' + str(offy) + ' ' + karg + ' ' + im_base_fn + ' ' + tar_arg + ' ' + im_adj_fn + ' ' + pat_arg + ' ' + rota_arg + ' ' + afm_arg
       print ( "  " + swim_arg_string )
+      #print ( "  " + swim_arg_string2 )
+      multi_swim_arg_string += swim_arg_string + "\n"
 
-      o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=swim_arg_string )
+    print ( "" )
 
-      swim_out_lines = o['out'].strip().split('\n')
-      for l in swim_out_lines:
-        print ( "SWIM OUT: " + str(l) )
-      swim_err_lines = o['err'].strip().split('\n')
-      swim_results.append ( { 'out':swim_out_lines, 'err':swim_err_lines } )
+    o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
+
+    swim_out_lines = o['out'].strip().split('\n')
+    swim_err_lines = o['err'].strip().split('\n')
+    swim_results.append ( { 'out':swim_out_lines, 'err':swim_err_lines } )
+
+    for l in swim_out_lines:
+      print ( "SWIM OUT: " + str(l) )
 
     # Separate the results into a list of token lists
     toks = [ swim_results[i]['out'][0].replace('(',' ').replace(')',' ').strip().split() for i in range(len(swim_results)) ]
 
+
+    print ( "--------------------------" )
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
