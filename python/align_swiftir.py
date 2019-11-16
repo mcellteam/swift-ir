@@ -352,9 +352,27 @@ class align_ingredient:
     else:
       swim_ww_arg = str(self.ww)
 
+    swim_results = []
     print ( "psta = " + str(self.psta) )
     for i in range(len(self.psta[0])):
+      offx = self.psta[0][i]
+      offy = self.psta[1][i]
       print ( "Will run a swim of " + str(self.ww) + " at (" + str(self.psta[0][i]) + "," + str(self.psta[1][i]) + ")" )
+      swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+      print ( "  " + swim_arg_string )
+
+      o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=swim_arg_string )
+
+      swim_out_lines = o['out'].strip().split('\n')
+      for l in swim_out_lines:
+        print ( "SWIM OUT: " + str(l) )
+      swim_err_lines = o['err'].strip().split('\n')
+      swim_results.append ( { 'out':swim_out_lines, 'err':swim_err_lines } )
+
+    # Separate the results into a list of token lists
+    toks = [ swim_results[i]['out'][0].replace('(',' ').replace(')',' ').strip().split() for i in range(len(swim_results)) ]
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
@@ -387,6 +405,8 @@ class align_ingredient:
     swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     print('swim_cmd_str: swim ' + str(swim_ww_arg) + '\n')
     print('swim_arg_str: ' + swim_arg_string + '\n')
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=swim_arg_string )
 
@@ -455,8 +475,11 @@ class align_ingredient:
       self.pmov = swiftir.stationaryToMoving(afm, self.psta)
       sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
       for i in range(self.iters):
+        print ( 'psta = ' + str(self.psta) )
+        print ( 'pmov = ' + str(self.pmov) )
         mov = swiftir.movingPatches(self.im_mov, self.pmov, afm, self.ww)
         (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
+        if debug_level >= 0: print ( '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr) )
         self.pmov = self.pmov + dp
         (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
         self.pmov = swiftir.stationaryToMoving(afm, self.psta)
