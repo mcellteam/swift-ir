@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
+import sys
+
 import numpy as np
 import subprocess as sp
 from math import *
-
 
 '''
   Note:
@@ -292,189 +293,210 @@ def do_alignment ( swim_data_1, swim_data_2 ):
 
 if __name__ == "__main__":
 
-  #swim_test = swim_image_pair('256','test_im_1.jpg','test_im_2.jpg')
-  #swim_test.run_swim()
+  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-  #swim_requests = []
-  #swim_requests.append(swim_request('256','test_im_1.jpg','test_im_2.jpg'))
-  #swim_requests.append(swim_request('256','test_im_2.jpg','test_im_1.jpg'))
-  #swim_requests.append(swim_request('256','test_im_1.jpg','test_im_1.jpg'))
-
-  im_1 = 'Tile_r1-c1_LM9R5CA1series_244.jpg'
-  im_2 = 'Tile_r1-c1_LM9R5CA1series_246.jpg'
-
-  # Start from matching points:
-  match_pnts=[]
-  match_pnts.append([401,587,483,529])
-  match_pnts.append([632,638,686,584])
-  match_pnts.append([309,875,408,819])
-  match_pnts.append([151,299,231,231])
-
-  center = [512,512,578,453]
-
-  afm, aim = mir_calc_affine(match_pnts)
-  print('Match Points AI: \n\n' + str(aim) + '\n')
-
-  swim_req = swim_request('1024',im_1,im_2,iters='2',offset_x='0',offset_y='0',base_x='512',base_y='512',adjust_x='578',adjust_y='453',afm=aim,keep='keep.JPG')
-  swim_req.run_swim()
-
-  swim_requests = []
-  ww = '512'
-  wx = ['-300','0','300']
-  wy = ['-300','0','300']
-  for x in range(len(wx)):
-    for y in range(len(wy)):
-      swim_requests.append(swim_request(ww,im_1,im_2,iters='2',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
-
-  run_swim_requests(swim_requests)
-
-  afm, aim = mir_get_affine(swim_requests)
-
-  print('3x3 recipe 1,  AI: \n\n' + str(aim) + '\n')
+  args = sys.argv[1:]
 
 
-  #swim_req = swim_request('1024',im_1,im_2,iters='5',offset_x='0',offset_y='0',base_x='512',base_y='512',adjust_x='578',adjust_y='453',afm=aim,keep='keep.JPG')
-  #swim_req.run_swim()
+  if len(args) <= 0:
 
-  swim_req = swim_request('1024',im_1,im_2,iters='5',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim,keep='keep.JPG')
-  swim_req.run_swim()
+    # This is the previous default case
 
+    #swim_test = swim_image_pair('256','test_im_1.jpg','test_im_2.jpg')
+    #swim_test.run_swim()
 
-  exit()
+    #swim_requests = []
+    #swim_requests.append(swim_request('256','test_im_1.jpg','test_im_2.jpg'))
+    #swim_requests.append(swim_request('256','test_im_2.jpg','test_im_1.jpg'))
+    #swim_requests.append(swim_request('256','test_im_1.jpg','test_im_1.jpg'))
 
+    im_1 = 'Tile_r1-c1_LM9R5CA1series_244.jpg'
+    im_2 = 'Tile_r1-c1_LM9R5CA1series_246.jpg'
 
-  # Start: Find initial translation
+    # Start from matching points:
+    match_pnts=[]
+    match_pnts.append([401,587,483,529])
+    match_pnts.append([632,638,686,584])
+    match_pnts.append([309,875,408,819])
+    match_pnts.append([151,299,231,231])
 
-  swim_req = swim_request('1024', im_1, im_2, iters='5',keep='keep.JPG')
-  swim_req.run_swim()
+    center = [512,512,578,453]
 
+    afm, aim = mir_calc_affine(match_pnts)
+    print('Match Points AI: \n\n' + str(aim) + '\n')
 
-  # Find best translation and rotation
+    swim_req = swim_request('1024',im_1,im_2,iters='2',offset_x='0',offset_y='0',base_x='512',base_y='512',adjust_x='578',adjust_y='453',afm=aim,keep='keep.JPG')
+    swim_req.run_swim()
 
-  rad = pi/180.0
-  aim = np.eye(2, 3, dtype=np.float32)
+    swim_requests = []
+    ww = '512'
+    wx = ['-300','0','300']
+    wy = ['-300','0','300']
+    for x in range(len(wx)):
+      for y in range(len(wy)):
+        swim_requests.append(swim_request(ww,im_1,im_2,iters='2',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
 
-  best_snr = 0.0
-  best_angle = 0.0
-  for ang in np.arange(-4,4.01,0.2):
-    print('***** Trying Angle: %g' % (ang))
-    aim[0,0]=cos(ang)
-    aim[0,1]=sin(ang)
-    aim[1,0]=-sin(ang)
-    aim[1,1]=cos(ang)
-  #  swim_req_2 = swim_request('512',im_1,im_2,iters='5',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim)
-    swim_req_2 = swim_request('512',im_1,im_2,iters='5',offset_x='0',offset_y='0',base_x='512',base_y='512',adjust_x='578',adjust_y='453',afm=aim)
-    swim_req_2.run_swim()
-    if swim_req_2.snr > best_snr:
-      best_snr = swim_req_2.snr
-      best_angle = ang
-      best_swim = swim_req_2
+    run_swim_requests(swim_requests)
 
-  print('Best SNR: %g at angle %g' % (best_snr,best_angle))
+    afm, aim = mir_get_affine(swim_requests)
 
-  exit()
-
-
-  #for ang in np.arange(-5,5.01,0.5):
-  #  swim_req_2 = swim_request('512','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=str(ang))
-  #  swim_req_2.run_swim()
+    print('3x3 recipe 1,  AI: \n\n' + str(aim) + '\n')
 
 
-  ang='2.8'
+    #swim_req = swim_request('1024',im_1,im_2,iters='5',offset_x='0',offset_y='0',base_x='512',base_y='512',adjust_x='578',adjust_y='453',afm=aim,keep='keep.JPG')
+    #swim_req.run_swim()
 
-  swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
-  swim_req.run_swim()
-
-  swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
-  swim_req.run_swim()
-
-  swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
-  swim_req.run_swim()
-
-  swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
-  swim_req.run_swim()
-
-  swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
-  swim_req.run_swim()
+    swim_req = swim_request('1024',im_1,im_2,iters='5',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim,keep='keep.JPG')
+    swim_req.run_swim()
 
 
-  exit()
+    exit()
+
+  if '?' in args:
+
+    print ( "  " + sys.argv[0] + ": Run swim test cases" )
+    print ( "    angle_snr" )
+    print ( "    angletest" )
+    print ( "    multiswim" )
+
+    exit()
+
+  if 'angle_snr' in args:
+
+    # Start: Find initial translation
+
+    swim_req = swim_request('1024', im_1, im_2, iters='5',keep='keep.JPG')
+    swim_req.run_swim()
+
+
+    # Find best translation and rotation
+
+    rad = pi/180.0
+    aim = np.eye(2, 3, dtype=np.float32)
+
+    best_snr = 0.0
+    best_angle = 0.0
+    for ang in np.arange(-4,4.01,0.2):
+      print('***** Trying Angle: %g' % (ang))
+      aim[0,0]=cos(ang)
+      aim[0,1]=sin(ang)
+      aim[1,0]=-sin(ang)
+      aim[1,1]=cos(ang)
+    #  swim_req_2 = swim_request('512',im_1,im_2,iters='5',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim)
+      swim_req_2 = swim_request('512',im_1,im_2,iters='5',offset_x='0',offset_y='0',base_x='512',base_y='512',adjust_x='578',adjust_y='453',afm=aim)
+      swim_req_2.run_swim()
+      if swim_req_2.snr > best_snr:
+        best_snr = swim_req_2.snr
+        best_angle = ang
+        best_swim = swim_req_2
+
+    print('Best SNR: %g at angle %g' % (best_snr,best_angle))
+
+    exit()
+
+  if 'angletest' in args:
+
+    #for ang in np.arange(-5,5.01,0.5):
+    #  swim_req_2 = swim_request('512','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=str(ang))
+    #  swim_req_2.run_swim()
+
+
+    ang='2.8'
+
+    swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
+    swim_req.run_swim()
+
+    swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
+    swim_req.run_swim()
+
+    swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
+    swim_req.run_swim()
+
+    swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
+    swim_req.run_swim()
+
+    swim_req = swim_request('1024','Tile_r1-c1_LM9R5CA1series_244.jpg', 'Tile_r1-c1_LM9R5CA1series_246.jpg',iters=5,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,keep='keep.JPG')
+    swim_req.run_swim()
+
+    exit()
+
+
+  if 'multiswim' in args:
+
+    swim_requests = []
+    swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='512',offset_y='512',iters=5))
+    swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='512',offset_y='-512',iters=5))
+    swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='-512',offset_y='512',iters=5))
+    swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='-512',offset_y='-512',iters=5))
+    run_swim_requests(swim_requests)
+
+    afm, aim = mir_get_affine(swim_requests)
+
+    print('First AI: \n\n' + str(aim) + '\n')
+
+    '''
+    swim_requests = []
+    swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='512',offset_y='512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
+    swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='-512',offset_y='512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
+    swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='512',offset_y='-512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
+    swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='-512',offset_y='-512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
+    run_swim_requests(swim_requests)
+
+    afm, aim = mir_get_affine(swim_requests)
+
+    print('Second AI: \n\n' + str(aim) + '\n')
+    '''
+
+    swim_requests = []
+    ww = '512'
+    wx = ['-300','300']
+    wy = ['-300','300']
+    for x in range(len(wx)):
+      for y in range(len(wy)):
+        swim_requests.append(swim_request(ww,im_1,im_2,iters='5',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
+
+    run_swim_requests(swim_requests)
+
+    afm, aim = mir_get_affine(swim_requests)
+
+    print('2x2 recipe 1,  AI: \n\n' + str(aim) + '\n')
+
+
+    swim_requests = []
+    ww = '512'
+    wx = ['-300','300']
+    wy = ['-300','300']
+    for x in range(len(wx)):
+      for y in range(len(wy)):
+        swim_requests.append(swim_request(ww,im_1,im_2,iters='5',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
+
+    run_swim_requests(swim_requests)
+
+    afm, aim = mir_get_affine(swim_requests)
+
+    print('2x2 recipe 2  AI: \n\n' + str(aim) + '\n')
 
 
 
+    '''
+    swim_requests = []
+    ww = '256'
+    wx = ['-300','0','300']
+    wy = ['-300','0','300']
+    for x in range(len(wx)):
+      for y in range(len(wy)):
+        swim_requests.append(swim_request(ww,im_1,im_2,iters='5',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
 
-  swim_requests = []
-  swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='512',offset_y='512',iters=5))
-  swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='512',offset_y='-512',iters=5))
-  swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='-512',offset_y='512',iters=5))
-  swim_requests.append(swim_request('512',im_1,im_2,base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,rota=ang,offset_x='-512',offset_y='-512',iters=5))
-  run_swim_requests(swim_requests)
+    run_swim_requests(swim_requests)
 
-  afm, aim = mir_get_affine(swim_requests)
+    afm, aim = mir_get_affine(swim_requests)
 
-  print('First AI: \n\n' + str(aim) + '\n')
-
-  '''
-  swim_requests = []
-  swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='512',offset_y='512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
-  swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='-512',offset_y='512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
-  swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='512',offset_y='-512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
-  swim_requests.append(swim_request('512',im_1,im_2,iters='3',offset_x='-512',offset_y='-512',base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
-  run_swim_requests(swim_requests)
-
-  afm, aim = mir_get_affine(swim_requests)
-
-  print('Second AI: \n\n' + str(aim) + '\n')
-  '''
-
-  swim_requests = []
-  ww = '512'
-  wx = ['-300','300']
-  wy = ['-300','300']
-  for x in range(len(wx)):
-    for y in range(len(wy)):
-      swim_requests.append(swim_request(ww,im_1,im_2,iters='5',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
-
-  run_swim_requests(swim_requests)
-
-  afm, aim = mir_get_affine(swim_requests)
-
-  print('2x2 recipe 1,  AI: \n\n' + str(aim) + '\n')
+    print('3x3 recipe 1,  AI: \n\n' + str(aim) + '\n')
+    '''
 
 
-  swim_requests = []
-  ww = '512'
-  wx = ['-300','300']
-  wy = ['-300','300']
-  for x in range(len(wx)):
-    for y in range(len(wy)):
-      swim_requests.append(swim_request(ww,im_1,im_2,iters='5',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
+    #align_test = align_image_pair_recipe('test_im_1.jpg','test_im_2.jpg')
+    #align_test.mir_get_affine(swim_requests)
 
-  run_swim_requests(swim_requests)
-
-  afm, aim = mir_get_affine(swim_requests)
-
-  print('2x2 recipe 2  AI: \n\n' + str(aim) + '\n')
-
-
-
-  '''
-  swim_requests = []
-  ww = '256'
-  wx = ['-300','0','300']
-  wy = ['-300','0','300']
-  for x in range(len(wx)):
-    for y in range(len(wy)):
-      swim_requests.append(swim_request(ww,im_1,im_2,iters='5',offset_x=wx[x],offset_y=wy[y],base_x=swim_req.base_x,base_y=swim_req.base_y,adjust_x=swim_req.adjust_x,adjust_y=swim_req.adjust_y,afm=aim))
-
-  run_swim_requests(swim_requests)
-
-  afm, aim = mir_get_affine(swim_requests)
-
-  print('3x3 recipe 1,  AI: \n\n' + str(aim) + '\n')
-  '''
-
-
-  #align_test = align_image_pair_recipe('test_im_1.jpg','test_im_2.jpg')
-  #align_test.mir_get_affine(swim_requests)
+    exit()
 
