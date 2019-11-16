@@ -19,7 +19,7 @@ which brings the "moving" image into alignment with the "stationary" image.
 Together these ingredients comprise a procedure, or "recipe". 
 '''
 
-debug_level = 0
+debug_level = 50
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
 
@@ -67,15 +67,16 @@ class alignment_process:
       self.layer_dict = layer_dict
     else:
       self.layer_dict = {
-                          "align_to_ref_method": {
-                                                   "selected_method": "Auto Swim Align",
-                                                   "method_options": [
-                                                                       "Auto Swim Align",
-                                                                       "Match Point Align"
-                                                                     ],
-						   "method_data": {},
-						   "method_results": {}
-						 }
+         "align_to_ref_method": {
+           "selected_method": "Auto Swim Align",
+           "method_options": [
+                                 "Auto Swim Align",
+                                 "Match Point Align",
+                                 "Fixed Example"
+                             ],
+				   "method_data": {},
+				   "method_results": {}
+				 }
       }
     if type(init_affine_matrix) == type(None):
       self.init_affine_matrix = swiftir.identityAffine()
@@ -104,14 +105,122 @@ class alignment_process:
       result = self.auto_swim_align()
     elif atrm['selected_method']=='Match Point Align':
       result = self.auto_swim_align()
+    elif atrm['selected_method']=='Fixed Example':
+      result = self.fixed_example_align()
 
     return result
+
+
+  def fixed_example_align(self):
+
+    global debug_level
+    if debug_level >= 20:
+      print ( "*** top of fixed_example_align() ***" )
+
+    im_sta = swiftir.loadImage(self.im_sta_fn)
+    im_mov = swiftir.loadImage(self.im_mov_fn)
+
+    # window size scale factor
+    wsf = 0.75
+#    wsf = 1.0
+
+    # Set up 1x1 point and window
+    pa = np.zeros((2,1))                # Point Array for one point
+    wwx_f = int(im_sta.shape[0])        # Window Width in x (Full Size)
+    wwy_f = int(im_sta.shape[1])        # Window Width in y (Full Size)
+    wwx = int(wsf*im_sta.shape[0])      # Window Width in x Scaled
+    wwy = int(wsf*im_sta.shape[1])      # Window Width in y Scaled
+    cx = int(im_sta.shape[0]/2)         # Window Center in x
+    cy = int(im_sta.shape[1]/2)         # Window Center in y
+    pa[0,0] = cx
+    pa[1,0] = cy
+    psta_1 = pa
+
+
+    # Set up 2x2 points and windows
+    nx = 2
+    ny = 2
+    pa = np.zeros((2,nx*ny))                # Point Array (2x4) points
+    s = int(im_sta.shape[0]/2)              # Initial Size of each window
+    for x in range(nx):
+      for y in range(ny):
+        pa[0, x + nx*y] = int(0.5*s + s*x)  # Point Array (2x4) points
+        pa[1, x + nx*y] = int(0.5*s + s*y)  # Point Array (2x4) points
+    s_2x2 = int(wsf*s)
+    psta_2x2 = pa
+
+
+    # Set up 4x4 points and windows
+    nx = 4
+    ny = 4
+    pa = np.zeros((2,nx*ny))
+    s = int(im_sta.shape[0]/4)
+    for x in range(nx):
+      for y in range(ny):
+        pa[0, x + nx*y] = int(0.5*s + s*x)
+        pa[1, x + nx*y] = int(0.5*s + s*y)
+#    s_4x4 = int(wsf*s)
+    s_4x4 = int(s)
+    psta_4x4 = pa
+
+    # Set up a window size for match point alignment (1/32 of x dimension)
+    s_mp = int(im_sta.shape[0]/32)
+
+    if debug_level >= 70:
+      print ( "  psta_1   = " + str(psta_1) )
+      print ( "  psta_2x2 = " + str(psta_2x2) )
+      print ( "  psta_4x4 = " + str(psta_4x4) )
+
+    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+
+    atrm = self.layer_dict['align_to_ref_method']
+    if atrm['selected_method']=='Auto Swim Align':
+      alignment_option = atrm['method_data'].get('alignment_option')
+      if alignment_option == 'refine_affine':
+        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        self.recipe.add_ingredient(ingredient_4x4)
+      elif alignment_option == 'apply_affine':
+        self.recipe.afm = self.init_affine_matrix
+      else:
+        # Normal Auto Swim Align - Full Recipe
+        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        self.recipe.add_ingredient(ingredient_1)
+        self.recipe.add_ingredient(ingredient_2x2)
+        self.recipe.add_ingredient(ingredient_4x4)
+    elif atrm['selected_method']=='Match Point Align':
+      # Get match points from self.layer_dict['images']['base']['metadata']['match_points']
+      mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
+      mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
+      # First ingredient is to calculate the Affine matrix from match points alone
+      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      # Second ingredient is to refine the Affine matrix by swimming at each match point
+      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
+      self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
+
+    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+
+    self.recipe.add_ingredient(ingredient_check_align)
+
+    self.recipe.execute()
+
+    self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,self.cumulative_afm)
+    self.cumulative_afm[0,2] -= self.x_bias
+    self.cumulative_afm[1,2] -= self.y_bias
+    im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
+    ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
+    swiftir.saveImage(im_aligned,ofn)
+
+    return (self.cumulative_afm, self.recipe)
+
 
   
   def auto_swim_align(self):
 
     global debug_level
-    if debug_level >= 70:
+    if debug_level >= 20:
       print ( "*** top of auto_swim_align() ***" )
 
 
