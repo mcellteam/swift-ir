@@ -23,6 +23,7 @@ debug_level = 0
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
 
+
 def run_command(cmd, arg_list=None, cmd_input=None):
 
   global debug_level
@@ -281,6 +282,11 @@ class align_ingredient:
     global global_swiftir_mode
     self.swiftir_mode = global_swiftir_mode
 
+    if self.swiftir_mode == 'c':
+      print ( "Actually loading images" )
+      self.im_sta = swiftir.loadImage(self.im_sta_fn)
+      self.im_mov = swiftir.loadImage(self.im_mov_fn)
+
   def __str__(self):
     s =  "ingredient:\n"
     s += "  mode: " + str(self.align_mode) + "\n"
@@ -317,6 +323,9 @@ class align_ingredient:
 
     global debug_level
 
+    if debug_level >= 10:
+      print ( str(self) )
+
     karg = ''
     if keep != None:
       karg = '-k %s' % (keep)
@@ -342,6 +351,11 @@ class align_ingredient:
       swim_ww_arg = str(self.ww[0]) + "x" + str(self.ww[1])
     else:
       swim_ww_arg = str(self.ww)
+
+    print ( "psta = " + str(self.psta) )
+    for i in range(len(self.psta[0])):
+      print ( "Will run a swim of " + str(self.ww) + " at (" + str(self.psta[0][i]) + "," + str(self.psta[1][i]) + ")" )
+
     #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     #swim_script = '%s\n' % (swim_request_string)
@@ -406,6 +420,8 @@ class align_ingredient:
       afm = swiftir.identityAffine()
 
     if self.swiftir_mode == 'c':
+
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
       if debug_level >= 50: print ( "Running c version of swim" )
       #self.pmov = swiftir.stationaryToMoving(afm, self.psta)
@@ -473,6 +489,7 @@ def showdiff(ima, imb):
 
 def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
+  print ( "\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%% Static Function Call to align_images %%%%%%%%%%%%%%%%%%%%%%%%%%%\n" )
   if type(global_afm) == type(None):
     global_afm = swiftir.identityAffine()
 
@@ -531,11 +548,13 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
   return (global_afm, recipe)
 
+
+
 #import argparse
 import sys
 
-if __name__=='__main__':
 
+if __name__=='__main__':
   print ( "Running " + __file__ + ".__main__()" )
 
   # "Tile_r1-c1_LM9R5CA1series_247.jpg",
@@ -549,14 +568,14 @@ if __name__=='__main__':
   # Process and remove the fixed positional arguments
   args = sys.argv
   args = args[1:]  # Shift out this file name (argv[0])
-  if len(args) > 0:
+  if (len(args) > 0) and (not args[0].startswith('-')):
     f1 = args[0]
     f2 = args[0]
     args = args[1:]  # Shift out the first file name argument
-    if len(args) > 0:
+    if (len(args) > 0) and (not args[0].startswith('-')):
       f2 = args[0]
       args = args[1:]  # Shift out the second file name argument
-      if len(args) > 0:
+      if (len(args) > 0) and (not args[0].startswith('-')):
         out = args[0]
         args = args[1:]  # Shift out the destination argument
 
@@ -568,7 +587,12 @@ if __name__=='__main__':
   cumulative_afm = None
 
   while len(args) > 0:
-    if args[0] == '-xb':
+    print ( "Current args: " + str(args) )
+    if args[0] == '-c':
+      print ( "Running in 'c' mode" )
+      global_swiftir_mode = 'c'
+      args = args[1:]
+    elif args[0] == '-xb':
       args = args[1:]
       xbias = float(args[0])
       args = args[1:]
@@ -630,6 +654,8 @@ if __name__=='__main__':
           }
         }
 
+
+  print ( "Creating the alignment process" )
   align_proc = alignment_process ( f1,
                                    f2,
                                    out,
@@ -637,6 +663,18 @@ if __name__=='__main__':
                                    x_bias=xbias,
                                    y_bias=ybias,
                                    cumulative_afm=cumulative_afm )
+
+  if global_swiftir_mode == 'c':
+    print ( "Loading the images" )
+    if not (align_proc.recipe is None):
+      if not (align_proc.recipe.ingredients is None):
+        im_sta = swiftir.loadImage(f1)
+        im_mov = swiftir.loadImage(f2)
+        for ing in align_proc.recipe.ingredients:
+          ing.im_sta = im_sta
+          ing.im_mov = im_mov
+
+  print ( "Performing the alignment" )
   align_proc.align()
 
   """
