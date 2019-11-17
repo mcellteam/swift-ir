@@ -325,7 +325,10 @@ class align_ingredient:
 
     global debug_level
 
+    print ( "--------------------------" )
+
     if debug_level >= 10:
+      print ( "Inside run_swim_c() with self = align_ingredient:" )
       print ( str(self) )
 
     karg = ''
@@ -443,9 +446,9 @@ class align_ingredient:
     x1 = float(swim_results['out'][0].split()[5])
     y1 = float(swim_results['out'][0].split()[6])
 
-    new_afm = np.array ( [ [ 1.0, 0.0, x1-x0 ], [ 0.0, 1.0, y1-y0 ] ] )  # Offset matrix
+    self.afm = np.array ( [ [ 1.0, 0.0, x1-x0 ], [ 0.0, 1.0, y1-y0 ] ] )  # Offset matrix
 
-    return new_afm
+    return self.afm
 
 
   def execute(self):
