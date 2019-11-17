@@ -321,6 +321,102 @@ class align_ingredient:
 
 
 
+  def run_swim_c_old ( self, im_base_fn, im_adj_fn, offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None ):
+
+    global debug_level
+
+    if debug_level >= 10:
+      print ( str(self) )
+
+    karg = ''
+    if keep != None:
+      karg = '-k %s' % (keep)
+
+    tar_arg = ''
+    if base_x!=None and base_y!=None:
+      tar_arg = '%s %s' % (base_x, base_y)
+
+    pat_arg = ''
+    if adjust_x!=None and adjust_y!=None:
+      pat_arg = '%s %s' % (adjust_x, adjust_y)
+
+    rota_arg = ''
+    if rota!=None:
+      rota_arg = '%s' % (rota)
+
+    afm_arg = ''
+    if type(afm)!=type(None):
+      afm_arg = '%.6f %.6f %.6f %.6f' % (afm[0,0], afm[0,1], afm[1,0], afm[1,1])
+
+    swim_ww_arg = '1024'
+    if type(self.ww) == type((1,2)):
+      swim_ww_arg = str(self.ww[0]) + "x" + str(self.ww[1])
+    else:
+      swim_ww_arg = str(self.ww)
+
+    print ( "psta = " + str(self.psta) )
+    for i in range(len(self.psta[0])):
+      print ( "Will run a swim of " + str(self.ww) + " at (" + str(self.psta[0][i]) + "," + str(self.psta[1][i]) + ")" )
+
+    #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    #swim_request_string = 'swim_ww_%d -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    #swim_script = '%s\n' % (swim_request_string)
+    #print('swim_script:\n\n' + swim_script + '\n')
+
+    #swim_proc = sp.Popen(['swim',str(swim_ww_arg)],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+    #swim_stdout, swim_stderr = swim_proc.communicate(swim_script)
+
+
+    # Note: decode bytes if universal_newlines=False in Popen
+    #swim_stdout = swim_stdout.decode('utf-8')
+    #swim_stderr = swim_stderr.decode('utf-8')
+    #print('swim output: \n\n' + swim_stdout + '\n')
+
+    #self.set_swim_results(swim_stdout,swim_stderr)
+
+    '''
+    swim_cmd_string = 'swim %s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    print('swim_str:\n\n' + swim_cmd_string + '\n')
+
+    swim_proc = sp.Popen([s for s in swim_cmd_string.split()],stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
+    swim_stdout, swim_stderr = swim_proc.communicate()
+
+    print('swim output: \n\n' + swim_stdout + '\n')
+
+    print ( "####################################" )
+    '''
+
+    swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+    print('swim_cmd_str: swim ' + str(swim_ww_arg) + '\n')
+    print('swim_arg_str: ' + swim_arg_string + '\n')
+
+    o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=swim_arg_string )
+
+    swim_out_lines = o['out'].strip().split('\n')
+    swim_err_lines = o['err'].strip().split('\n')
+    swim_results = { 'out':swim_out_lines, 'err':swim_err_lines }
+
+    if debug_level >= 95:
+      print ( "Entering the command line debugger:" )
+      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+    # This puts all SNRs into a list (as it should)
+    self.snr = [ float(swim_results['out'][n].split(':')[0]) for n in range(len(swim_results['out'])) ]
+
+    # This just uses the first offset only
+    x0 = float(swim_results['out'][0].split()[2])
+    y0 = float(swim_results['out'][0].split()[3])
+    x1 = float(swim_results['out'][0].split()[5])
+    y1 = float(swim_results['out'][0].split()[6])
+
+    self.afm = np.array ( [ [ 1.0, 0.0, x1-x0 ], [ 0.0, 1.0, y1-y0 ] ] )  # Offset matrix
+
+    return self.afm
+
+
+
+
   def run_swim_c ( self, im_base_fn, im_adj_fn, offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None ):
 
     global debug_level
@@ -473,7 +569,7 @@ class align_ingredient:
 
       if debug_level >= 50: print ( "Running c version of swim" )
 
-      self.afm = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
+      self.afm = self.run_swim_c_old ( self.im_sta_fn, self.im_mov_fn )
 
     else:
 
