@@ -361,6 +361,9 @@ class align_ingredient:
     print ( "--------------------------" )
 
     print ( str(self) )
+
+    # Something in this code gives worse results than an earlier version when uncommented:
+
     """
     swim_results = []
     # print ( "psta = " + str(self.psta) )
