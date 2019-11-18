@@ -284,10 +284,10 @@ class align_ingredient:
     global global_swiftir_mode
     self.swiftir_mode = global_swiftir_mode
 
-    if self.swiftir_mode == 'c':
-      print ( "Actually loading images" )
-      self.im_sta = swiftir.loadImage(self.im_sta_fn)
-      self.im_mov = swiftir.loadImage(self.im_mov_fn)
+    #if self.swiftir_mode == 'c':
+    #  print ( "Actually loading images" )
+    #  self.im_sta = swiftir.loadImage(self.im_sta_fn)
+    #  self.im_mov = swiftir.loadImage(self.im_mov_fn)
 
   def __str__(self):
     s =  "ingredient:\n"
@@ -358,21 +358,26 @@ class align_ingredient:
     else:
       swim_ww_arg = str(self.ww)
 
+
     print ( "--------------------------" )
 
     print ( str(self) )
 
     # Something in this code gives worse results than an earlier version when uncommented:
 
-    """
+    wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
+    wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
+
     swim_results = []
     # print ( "psta = " + str(self.psta) )
     multi_swim_arg_string = ""
     for i in range(len(self.psta[0])):
-      offx = self.psta[0][i]
-      offy = self.psta[1][i]
-      print ( "Will run a swim of " + str(self.ww) + " at (" + str(self.psta[0][i]) + "," + str(self.psta[1][i]) + ")" )
+      offx = int( self.psta[0][i] - (wwx_f/2.0) )
+      offy = int( self.psta[1][i] - (wwy_f/2.0) )
+      #print ( "Will run a swim of " + str(self.ww) + " at (" + str(self.psta[0][i]) + "," + str(self.psta[1][i]) + ")" )
+      print ( "Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")" )
       # swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
+      # swim_arg_string = 'ww_' + swim_ww_arg + ' -i ' + str(self.iters) + ' -w ' + str(self.wht) + ' -x ' + str(offx) + ' -y ' + str(offy) + ' ' + karg + ' ' + im_base_fn + ' ' + tar_arg + ' ' + im_adj_fn + ' ' + pat_arg + ' ' + rota_arg + ' ' + afm_arg
       swim_arg_string = 'ww_' + swim_ww_arg + ' -i ' + str(self.iters) + ' -w ' + str(self.wht) + ' -x ' + str(offx) + ' -y ' + str(offy) + ' ' + karg + ' ' + im_base_fn + ' ' + tar_arg + ' ' + im_adj_fn + ' ' + pat_arg + ' ' + rota_arg + ' ' + afm_arg
       print ( "  " + swim_arg_string )
       #print ( "  " + swim_arg_string2 )
@@ -386,11 +391,58 @@ class align_ingredient:
     swim_err_lines = o['err'].strip().split('\n')
     swim_results.append ( { 'out':swim_out_lines, 'err':swim_err_lines } )
 
+    mir_script = ""
     for l in swim_out_lines:
       print ( "SWIM OUT: " + str(l) )
+      toks = l.replace('(',' ').replace(')',' ').strip().split()
+      mir_toks = [ toks[k] for k in [2,3,5,6] ]
+      print ( mir_toks )
+      mir_script += ' '.join(mir_toks) + '\n'
+    mir_script += 'R\n'
+
+    print ( "mir_script: " + mir_script )
+
+    o = run_command ( "mir", arg_list=[], cmd_input=mir_script )
+
+    mir_out_lines = o['out'].strip().split('\n')
+    mir_err_lines = o['err'].strip().split('\n')
+    print ( str(mir_out_lines) )
+    print ( str(mir_err_lines) )
 
     # Separate the results into a list of token lists
-    toks = [ swim_results[i]['out'][0].replace('(',' ').replace(')',' ').strip().split() for i in range(len(swim_results)) ]
+    #toks = [ swim_results[i]['out'][0].replace('(',' ').replace(')',' ').strip().split() for i in range(len(swim_results)) ]
+
+    afm = np.eye(2, 3, dtype=np.float32)
+    aim = np.eye(2, 3, dtype=np.float32)
+    for line in mir_out_lines:
+      print ( "Line: " + str(line) )
+      toks = line.strip().split()
+      if(toks[0]=='AF'):
+        afm[0,0] = float(toks[1])
+        afm[0,1] = float(toks[2])
+        afm[0,2] = float(toks[3])
+        afm[1,0] = float(toks[4])
+        afm[1,1] = float(toks[5])
+        afm[1,2] = float(toks[6])
+      if(toks[0]=='AI'):
+        aim[0,0] = float(toks[1])
+        aim[0,1] = float(toks[2])
+        aim[0,2] = float(toks[3])
+        aim[1,0] = float(toks[4])
+        aim[1,1] = float(toks[5])
+        aim[1,2] = float(toks[6])
+
+    print ( "AIM = " + str(aim) )
+    if self.align_mode == 'swim_align':
+      self.afm = aim
+
+    self.snr = [ 1.0 for n in range(len(swim_results)) ]
+
+    return ( self.afm )
+
+
+    self.afm = aim
+
 
 
     print ( "--------------------------" )
@@ -423,8 +475,8 @@ class align_ingredient:
 
     print ( "####################################" )
     '''
-    """
 
+    """
     swim_arg_string = 'ww_%s -i %s -w %s -x %s -y %s %s %s %s %s %s %s %s' % (swim_ww_arg, self.iters, self.wht, offx, offy, karg, im_base_fn, tar_arg, im_adj_fn, pat_arg, rota_arg, afm_arg)
     print('swim_cmd_str: swim ' + str(swim_ww_arg) + '\n')
     print('swim_arg_str: ' + swim_arg_string + '\n')
@@ -442,16 +494,19 @@ class align_ingredient:
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+    """
+
     # This puts all SNRs into a list (as it should)
-    self.snr = [ float(swim_results['out'][n].split(':')[0]) for n in range(len(swim_results['out'])) ]
+    #self.snr = [ float(swim_results['out'][n].split(':')[0]) for n in range(len(swim_results['out'])) ]
+    self.snr = [ 1.0 for n in range(len(swim_results)) ]
 
     # This just uses the first offset only
-    x0 = float(swim_results['out'][0].split()[2])
-    y0 = float(swim_results['out'][0].split()[3])
-    x1 = float(swim_results['out'][0].split()[5])
-    y1 = float(swim_results['out'][0].split()[6])
+    #x0 = float(swim_results['out'][0].split()[2])
+    #y0 = float(swim_results['out'][0].split()[3])
+    #x1 = float(swim_results['out'][0].split()[5])
+    #y1 = float(swim_results['out'][0].split()[6])
 
-    self.afm = np.array ( [ [ 1.0, 0.0, x1-x0 ], [ 0.0, 1.0, y1-y0 ] ] )  # Offset matrix
+    #self.afm = np.array ( [ [ 1.0, 0.0, x1-x0 ], [ 0.0, 1.0, y1-y0 ] ] )  # Offset matrix
 
     return self.afm
 
@@ -478,7 +533,7 @@ class align_ingredient:
 
       if debug_level >= 50: print ( "Running c version of swim" )
 
-      self.afm = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
+      afm = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
     else:
 
