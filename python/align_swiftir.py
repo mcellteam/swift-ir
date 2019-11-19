@@ -31,20 +31,23 @@ global_swiftir_mode = 'python'   # Either 'python' or 'c'
 
 def run_command(cmd, arg_list=None, cmd_input=None):
 
+  print_debug ( 10, "\n================== Run Command ==================" )
   cmd_arg_list = [ cmd ]
   if arg_list != None:
     cmd_arg_list = [ a for a in arg_list ]
     cmd_arg_list.insert ( 0, cmd )
-  print_debug ( 10, "Running command: " + str(cmd_arg_list) )
-  print_debug ( 30, "  Passing Data\n==========================\n" + str(cmd_input) + "==========================\n" )
+  print_debug ( 10, "  Running command: " + str(cmd_arg_list) )
+  print_debug ( 20, "   Passing Data\n==========================\n" + str(cmd_input) + "==========================\n" )
   cmd_proc = sp.Popen(cmd_arg_list,stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
   cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
 
   # Note: decode bytes if universal_newlines=False in Popen
   #cmd_stdout = cmd_stdout.decode('utf-8')
   #cmd_stderr = cmd_stderr.decode('utf-8')
-  print_debug ( 30, "command output: \n\n" + cmd_stdout + "==========================\n" )
-  print_debug ( 70, "command error: \n\n"  + cmd_stderr + "==========================\n" )
+  print_debug ( 20, "Command output: \n\n" + cmd_stdout + "==========================\n" )
+  print_debug ( 30, "Command error: \n\n"  + cmd_stderr + "==========================\n" )
+
+  print_debug ( 10, "=================================================\n" )
 
   return ( { 'out': cmd_stdout, 'err': cmd_stderr } )
 
@@ -325,17 +328,37 @@ class align_ingredient:
 
 
 
-  def run_swim_c ( self, im_base_fn, im_adj_fn, offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None ):
+  def run_swim_c ( self ): # , offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None ):
 
     print_debug ( 50, "--------------------------" )
 
     print_debug ( 50, "Inside run_swim_c() with self = align_ingredient:" )
     print_debug ( 50, str(self) )
 
-    karg = ''
-    if keep != None:
-      karg = '-k %s' % (keep)
+    wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
+    wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
+    cx = int(wwx_f / 2.0)
+    cy = int(wwy_f / 2.0)
 
+    base_x = str(cx)
+    base_y = str(cy)
+
+    adjust_x = '%.6f' % (cx + self.afm[0,2])
+    adjust_y = '%.6f' % (cy + self.afm[1,2])
+
+    afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0,0], self.afm[0,1], self.afm[1,0], self.afm[1,1])
+
+
+
+    karg = ''
+    #if keep != None:
+    #  karg = '-k %s' % (keep)
+
+    rota_arg = ''
+    #if rota!=None:
+    #  rota_arg = '%s' % (rota)
+
+    '''
     tar_arg = ''
     if base_x!=None and base_y!=None:
       tar_arg = '%s %s' % (base_x, base_y)
@@ -344,13 +367,10 @@ class align_ingredient:
     if adjust_x!=None and adjust_y!=None:
       pat_arg = '%s %s' % (adjust_x, adjust_y)
 
-    rota_arg = ''
-    if rota!=None:
-      rota_arg = '%s' % (rota)
-
     afm_arg = ''
     if type(afm)!=type(None):
       afm_arg = '%.6f %.6f %.6f %.6f' % (afm[0,0], afm[0,1], afm[1,0], afm[1,1])
+    '''
 
     swim_ww_arg = '1024'
     if type(self.ww) == type((1,2)):
@@ -363,9 +383,6 @@ class align_ingredient:
 
     print_debug ( 50, str(self) )
 
-    wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
-    wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
-
 
     print_debug ( 10, "" )
 
@@ -375,8 +392,21 @@ class align_ingredient:
     for i in range(len(self.psta[0])):
       offx = int( self.psta[0][i] - (wwx_f/2.0) )
       offy = int( self.psta[1][i] - (wwy_f/2.0) )
-      print_debug ( 10, "  Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")" )
-      swim_arg_string = 'ww_' + swim_ww_arg + ' -i ' + str(self.iters) + ' -w ' + str(self.wht) + ' -x ' + str(offx) + ' -y ' + str(offy) + ' ' + karg + ' ' + im_base_fn + ' ' + tar_arg + ' ' + im_adj_fn + ' ' + pat_arg + ' ' + rota_arg + ' ' + afm_arg
+      print_debug ( 10, "Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")" )
+      swim_arg_string = 'ww_' + swim_ww_arg + \
+                       ' -i ' + str(self.iters) + \
+                       ' -w ' + str(self.wht) + \
+                       ' -x ' + str(offx) + \
+                       ' -y ' + str(offy) + \
+                       ' ' + karg + \
+                       ' ' + self.im_sta_fn + \
+                       ' ' + base_x + \
+                       ' ' + base_y + \
+                       ' ' + self.im_mov_fn + \
+                       ' ' + adjust_x + \
+                       ' ' + adjust_y + \
+                       ' ' + rota_arg + \
+                       ' ' + afm_arg
       print_debug ( 20, "  " + swim_arg_string )
       #print_debug ( 50, "  " + swim_arg_string2 )
       multi_swim_arg_string += swim_arg_string + "\n"
@@ -391,13 +421,24 @@ class align_ingredient:
 
     mir_script = ""
     snr_list = []
+    dx = dy = 0.0
     for l in swim_out_lines:
-      print_debug ( 50, "SWIM OUT: " + str(l) )
-      toks = l.replace('(',' ').replace(')',' ').strip().split()
-      mir_toks = [ toks[k] for k in [2,3,5,6] ]
-      mir_script += ' '.join(mir_toks) + '\n'
-      print_debug ( 60, "SNR: " + str(toks[0]) )
-      snr_list.append ( float(toks[0][0:-1]) )
+      if len(swim_out_lines) == 1:
+        print_debug ( 50, "SWIM OUT: " + str(l) )
+        toks = l.replace('(',' ').replace(')',' ').strip().split()
+        dx = float(toks[8])
+        dy = float(toks[9])
+        mir_toks = [ toks[k] for k in [2,3,5,6] ]
+        mir_script += ' '.join(mir_toks) + '\n'
+        print_debug ( 60, "SNR: " + str(toks[0]) )
+        snr_list.append ( float(toks[0][0:-1]) )
+      else:
+        print_debug ( 50, "SWIM OUT: " + str(l) )
+        toks = l.replace('(',' ').replace(')',' ').strip().split()
+        mir_toks = [ toks[k] for k in [2,3,5,6] ]
+        mir_script += ' '.join(mir_toks) + '\n'
+        print_debug ( 60, "SNR: " + str(toks[0]) )
+        snr_list.append ( float(toks[0][0:-1]) )
     mir_script += 'R\n'
 
     # print_debug ( 50, "mir_script: " + mir_script )
@@ -413,23 +454,28 @@ class align_ingredient:
 
     afm = np.eye(2, 3, dtype=np.float32)
     aim = np.eye(2, 3, dtype=np.float32)
-    for line in mir_out_lines:
-      print_debug ( 70, "Line: " + str(line) )
-      toks = line.strip().split()
-      if(toks[0]=='AF'):
-        afm[0,0] = float(toks[1])
-        afm[0,1] = float(toks[2])
-        afm[0,2] = float(toks[3])
-        afm[1,0] = float(toks[4])
-        afm[1,1] = float(toks[5])
-        afm[1,2] = float(toks[6])
-      if(toks[0]=='AI'):
-        aim[0,0] = float(toks[1])
-        aim[0,1] = float(toks[2])
-        aim[0,2] = float(toks[3])
-        aim[1,0] = float(toks[4])
-        aim[1,1] = float(toks[5])
-        aim[1,2] = float(toks[6])
+
+    if len(swim_out_lines) == 1:
+      aim[0,2] = dx + 0.5
+      aim[1,2] = dy + 0.5
+    else:
+      for line in mir_out_lines:
+        print_debug ( 70, "Line: " + str(line) )
+        toks = line.strip().split()
+        if(toks[0]=='AF'):
+          afm[0,0] = float(toks[1])
+          afm[0,1] = float(toks[2])
+          afm[0,2] = float(toks[3]) - 0.5  # ???
+          afm[1,0] = float(toks[4])
+          afm[1,1] = float(toks[5])
+          afm[1,2] = float(toks[6]) - 0.5 # ???
+        if(toks[0]=='AI'):
+          aim[0,0] = float(toks[1])
+          aim[0,1] = float(toks[2])
+          aim[0,2] = float(toks[3]) + 0.5
+          aim[1,0] = float(toks[4])
+          aim[1,1] = float(toks[5])
+          aim[1,2] = float(toks[6]) + 0.5
 
     print_debug ( 20, "\nAIM = " + str(aim) )
 
@@ -463,7 +509,7 @@ class align_ingredient:
 
       print_debug ( 50, "Running c version of swim" )
 
-      afm = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
+      afm = self.run_swim_c()
 
     else:
 
