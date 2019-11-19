@@ -46,40 +46,106 @@ def run_command(cmd, arg_list=None, cmd_input=None):
 def main(args):
   print_debug ( 10, "Running " + __file__ + ".__main__()" )
 
+  f1 = None
+  f2 = None
+  N = 5
 
-  if len(sys.argv) > 1:
-    fn = sys.argv[1]
-    img = cv2.imread ( fn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE )
-    (h,w) = img.shape
+  if len(args) <= 2:
 
-    # Make a mir script
-    mir_script  = ''
-    mir_script += 'F ' + fn + os.linesep
-    R = 50
-    C = 50
+    print ( "Usage: python " + __file__ + " image1 image2 [N]" )
+
+  else:
+
+    # Process and remove the fixed positional arguments
+    args = args[1:]  # Shift out this file name (argv[0])
+    if (len(args) > 0) and (not args[0].startswith('-')):
+      f1 = args[0]
+      args = args[1:]  # Shift out the first file name argument
+      if (len(args) > 0) and (not args[0].startswith('-')):
+        f2 = args[0]
+        args = args[1:]  # Shift out the second file name argument
+        if (len(args) > 0) and (not args[0].startswith('-')):
+          N = int(args[0])
+          args = args[1:]  # Shift out the destination argument
+
+    print ( "Aligning " + f2 + " to " + f1 + " using a grid of " + str(N) + "x" + str(N) )
+
+    base = cv2.imread ( f1, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE )
+    move = cv2.imread ( f2, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE )
+    (h,w) = base.shape
+
+    # Calculate the points list and triangles
+
+    R = N
+    C = N
+    points = []
     for yi in range(R):
       ypre = yi * h / (R-1)
       ypost = ypre + 0
       for xi in range(C):
         xpre = xi * w / (C-1)
-        xpost = xpre + ((w/100) * math.sin(5*math.pi*yi/R))
-        mir_script += "%d %d %d %d" % (xpost, ypost, xpre, ypre) + os.linesep
-    mir_script += 'T' + os.linesep
+        # Put the same x,y pair in both parts of the array for now
+        points.append ( [xpre, ypre, xpre, ypre] )
 
+    triangles = []
     for yi in range(R-1):
       yleft = yi * C
       for xi in range(C-1):
-        mir_script += "%d %d %d" % (yleft+xi, yleft+C+xi, yleft+xi+1) + os.linesep
-        mir_script += "%d %d %d" % (yleft+xi+C+1, yleft+xi+1,yleft+C+xi) + os.linesep
+        triangles.append ( (yleft+xi, yleft+C+xi, yleft+xi+1) )
+        triangles.append ( (yleft+xi+C+1, yleft+xi+1,yleft+C+xi) )
+
+    # Make a script to run swim at each point
+
+    swim_script = ""
+    for p in points:
+      swim_script += "swim -x 0 -y 0 " + f1 + " " + str(p[0]) + " " + str(p[1]) + " " + f2 + " " + str(p[0]) + " " + str(p[1]) + os.linesep
+
+    print ( "\n=========== Swim Script ============\n" + str(swim_script) + "============================\n" )
+    o = run_command ( "swim", arg_list=['256'], cmd_input=swim_script )
+    swim_out_lines = o['out'].strip().split('\n')
+    swim_err_lines = o['err'].strip().split('\n')
+
+    if len(swim_out_lines) != len(points):
+      print ( "!!!! Warning: Output didn't match input" )
+      exit()
+
+    print ( "\nRaw Output:\n" )
+    for ol in swim_out_lines:
+      print ( "  " + str(ol) )
+
+    print ( "\nX Offset:\n" )
+    for ol in swim_out_lines:
+      parts = ol.replace('(',' ').replace(')',' ').strip().split()
+      print ( "  " + str(parts[8]) )
+
+    # Update the points array to include the deltas from swim in the first x,y pair
+
+    for i in range(len(points)):
+      ol = swim_out_lines[i]
+      parts = ol.replace('(',' ').replace(')',' ').strip().split()
+      dx = float(parts[8])
+      dy = float(parts[9])
+      points[i] = [ points[i][0]-dx, points[i][1]-dy, points[i][2], points[i][3] ]
+
+    # Make a script to run mir with the new point pairs
+
+    mir_script  = ''
+    mir_script += 'F ' + f2 + os.linesep
+
+    for pt in points:
+      mir_script += "%d %d %d %d" % (pt[0], pt[1], pt[2], pt[3]) + os.linesep
+    mir_script += 'T' + os.linesep
+
+    for tri in triangles:
+      mir_script += "%d %d %d" % (tri[0], tri[1], tri[2]) + os.linesep
+
     mir_script += 'W mir_align_out.jpg' + os.linesep
 
-    print ( mir_script )
+    #print ( mir_script )
 
-    #exit()
+    run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-  run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
 
 if __name__=='__main__':
