@@ -274,6 +274,8 @@ class align_ingredient:
   #        supplied afm matrix but do not refine the afm matrix
   def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
 
+    self.swim_drift = 0.5
+
     self.afm = afm
     self.im_sta = im_sta
     self.im_mov = im_mov
@@ -465,17 +467,17 @@ class align_ingredient:
         if(toks[0]=='AF'):
           afm[0,0] = float(toks[1])
           afm[0,1] = float(toks[2])
-          afm[0,2] = float(toks[3]) - 0.5  # ???
+          afm[0,2] = float(toks[3]) - self.swim_drift  # ???
           afm[1,0] = float(toks[4])
           afm[1,1] = float(toks[5])
-          afm[1,2] = float(toks[6]) - 0.5 # ???
+          afm[1,2] = float(toks[6]) - self.swim_drift # ???
         if(toks[0]=='AI'):
           aim[0,0] = float(toks[1])
           aim[0,1] = float(toks[2])
-          aim[0,2] = float(toks[3]) + 0.5
+          aim[0,2] = float(toks[3]) + self.swim_drift
           aim[1,0] = float(toks[4])
           aim[1,1] = float(toks[5])
-          aim[1,2] = float(toks[6]) + 0.5
+          aim[1,2] = float(toks[6]) + self.swim_drift
 
     print_debug ( 20, "\nAIM = " + str(aim) )
 
