@@ -1,7 +1,10 @@
 #!/usr/bin/env python2.7
 
-import numpy as np
 import os
+import sys
+import math
+import numpy as np
+import cv2
 
 import subprocess as sp
 
@@ -39,20 +42,46 @@ def run_command(cmd, arg_list=None, cmd_input=None):
   return ( { 'out': cmd_stdout, 'err': cmd_stderr } )
 
 
-import sys
 
-mir_script = """F vj_097_shift_rot_skew_crop_4k4k_1.jpg
-10 10 10 10
-10 3990 10 3990
-3990 10 3990 10
-3000 3000 3990 3990
-T
-0 1 3
-3 2 0
-W vj_mod.jpg"""
-
-if __name__=='__main__':
+def main(args):
   print_debug ( 10, "Running " + __file__ + ".__main__()" )
+
+
+  if len(sys.argv) > 1:
+    fn = sys.argv[1]
+    img = cv2.imread ( fn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE )
+    (h,w) = img.shape
+
+    # Make a mir script
+    mir_script  = ''
+    mir_script += 'F ' + fn + os.linesep
+    R = 50
+    C = 50
+    for yi in range(R):
+      ypre = yi * h / (R-1)
+      ypost = ypre + 0
+      for xi in range(C):
+        xpre = xi * w / (C-1)
+        xpost = xpre + ((w/100) * math.sin(5*math.pi*yi/R))
+        mir_script += "%d %d %d %d" % (xpost, ypost, xpre, ypre) + os.linesep
+    mir_script += 'T' + os.linesep
+
+    for yi in range(R-1):
+      yleft = yi * C
+      for xi in range(C-1):
+        mir_script += "%d %d %d" % (yleft+xi, yleft+C+xi, yleft+xi+1) + os.linesep
+        mir_script += "%d %d %d" % (yleft+xi+C+1, yleft+xi+1,yleft+C+xi) + os.linesep
+    mir_script += 'W mir_align_out.jpg' + os.linesep
+
+    print ( mir_script )
+
+    #exit()
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
   run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
+
+if __name__=='__main__':
+  main ( sys.argv )
 
