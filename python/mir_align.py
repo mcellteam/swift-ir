@@ -16,8 +16,6 @@ def print_debug ( level, str ):
   if level <= debug_level:
     print ( str )
 
-global_swiftir_mode = 'python'   # Either 'python' or 'c'
-
 
 def run_command(cmd, arg_list=None, cmd_input=None):
 
@@ -44,7 +42,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
 
 
 def main(args):
-  print_debug ( 10, "Running " + __file__ + ".__main__()" )
+  print_debug ( 10, "Running " + __file__ + ".__main__()\n" )
 
   f1 = None
   f2 = None
@@ -56,6 +54,7 @@ def main(args):
 
   else:
 
+    ww = 256
     # Process and remove the fixed positional arguments
     args = args[1:]  # Shift out this file name (argv[0])
     if (len(args) > 0) and (not args[0].startswith('-')):
@@ -65,14 +64,27 @@ def main(args):
         f2 = args[0]
         args = args[1:]  # Shift out the second file name argument
         if (len(args) > 0) and (not args[0].startswith('-')):
-          N = int(args[0])
+          if args[0].lower().startswith("w"):
+            ww = int(args[0][1:])
+            N = None
+          else:
+            N = int(args[0])
+            ww = None
           args = args[1:]  # Shift out the destination argument
-
-    print ( "Aligning " + f2 + " to " + f1 + " using a grid of " + str(N) + "x" + str(N) )
 
     base = cv2.imread ( f1, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE )
     move = cv2.imread ( f2, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE )
     (h,w) = base.shape
+
+    if N == None:
+      N = int ( 0.7 * ((h+w)/2) / ww )
+      print ( "Choice of window width " + str(ww) + " gives grid of " + str(N) + "x" + str(N) )
+    if ww == None:
+      ww = int ( 0.7 * ((h+w)/2) / N )
+      print ( "Choice of grid " + str(N) + "x" + str(N) + " gives window width of " + str(ww)  )
+
+
+    print ( "Aligning " + f2 + " to " + f1 + " using a grid of " + str(N) + "x" + str(N) )
 
     # Calculate the points list and triangles
 
@@ -100,8 +112,6 @@ def main(args):
     for p in points:
       swim_script += "swim -i 2 -x 0 -y 0 " + f1 + " " + str(p[0]) + " " + str(p[1]) + " " + f2 + " " + str(p[0]) + " " + str(p[1]) + os.linesep
 
-    ww = 256
-    ww = int ( 0.7 * ((h+w)/2) / N )
     print ( "\n=========== Swim Script ============\n" + str(swim_script) + "============================\n" )
     o = run_command ( "swim", arg_list=[str(ww)], cmd_input=swim_script )
     swim_out_lines = o['out'].strip().split('\n')
