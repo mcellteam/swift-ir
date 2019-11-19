@@ -178,7 +178,7 @@ debug_level = 10
 
 def print_debug ( level, str ):
   global debug_level
-  if level < debug_level:
+  if level <= debug_level:
     print ( str )
 
 ''' Available Cursors - some with descriptions
@@ -2269,6 +2269,9 @@ def run_alignment_callback ( align_all ):
   global panel_list
   global project_file_name
 
+  print_debug ( 20, "\n" )
+  print_debug ( 10, "\n\nStart Alignment" )
+
   store_fields_into_current_layer()
 
   if len(destination_path) == 0:
@@ -2514,7 +2517,8 @@ def run_alignment_callback ( align_all ):
 
         prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
 
-        print_debug ( 20, "\nAligning: i=" + str(i) + " to j=" + str(j) )
+        print_debug ( 20, "\n" )
+        print_debug ( 10, "\nAligning: i=" + str(i) + " to j=" + str(j) )
         print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + scale_dest_path + " )" )
 
         alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
