@@ -101,7 +101,7 @@ def main(args):
       swim_script += "swim -i 2 -x 0 -y 0 " + f1 + " " + str(p[0]) + " " + str(p[1]) + " " + f2 + " " + str(p[0]) + " " + str(p[1]) + os.linesep
 
     ww = 256
-    ww = int ( 2 * ((h+w)/2) / N )
+    ww = int ( 0.7 * ((h+w)/2) / N )
     print ( "\n=========== Swim Script ============\n" + str(swim_script) + "============================\n" )
     o = run_command ( "swim", arg_list=[str(ww)], cmd_input=swim_script )
     swim_out_lines = o['out'].strip().split('\n')
