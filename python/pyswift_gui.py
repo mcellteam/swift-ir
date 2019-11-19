@@ -79,21 +79,21 @@ np = None
 try:
   import numpy as np
 except:
-  print ( "Unable to plot without numpy" )
+  print_debug ( 1, "Unable to plot without numpy" )
   np = None
 
 sps = None
 try:
   import scipy.stats as sps
 except:
-  print ( "Unable to plot without scipy.stats" )
+  print_debug ( 1, "Unable to plot without scipy.stats" )
   sps = None
 
 plt = None
 try:
   import matplotlib.pyplot as plt
 except:
-  print ( "Unable to plot without matplotlib" )
+  print_debug ( 1, "Unable to plot without matplotlib" )
   plt = None
 
 
@@ -645,17 +645,17 @@ class tiled_tiff:
       # Seek to the last one
       f.seek ( self.tile_offsets[0] )
       image_data = f.read ( self.tile_counts[0] )
-      print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+      print_debug ( 1, "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
 
       # Print out a small corner of the tile:
       num_rows = self.tile_height
       num_cols = self.tile_width
-      print ( '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
+      print_debug ( 1, '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
       color_table = []
       for n in range(256):
         color_table.append ( format(n,'02x') )
       for v in color_table:
-        print ( '"' + v + ' c #' + v + v + v + '",' )
+        print_debug ( 1, '"' + v + ' c #' + v + v + v + '",' )
 
       for row in range(num_rows):
         pix_row = ""
@@ -663,18 +663,18 @@ class tiled_tiff:
           i = row * self.tile_width
           i += col
           pix_row += color_table[ord(image_data[i])]
-        print ( '"' + pix_row + '",' )
+        print_debug ( 1, '"' + pix_row + '",' )
 
       '''
       pix_list = [ color_table[ord(i)] for i in image_data[0:num_pix] ]
-      #print ( "pix_list = " + str(pix_list) )
+      #print_debug ( 1, "pix_list = " + str(pix_list) )
 
       pix_row = ""
       for i in range(len(pix_list)):
         pix_row += pix_list[i]
-      print ( '"' + pix_row + '"' )
+      print_debug ( 1, '"' + pix_row + '"' )
       tile_data_str = str([ord(d) for d in image_data[0:num_pix]])
-      print ( "  " + tile_data_str )
+      print_debug ( 1, "  " + tile_data_str )
       '''
     return ( "Done showing tiled_tiff" ) #tile_data_str )
 
@@ -692,30 +692,30 @@ class tiled_tiff:
 
     self.pixbuf = None
 
-    print ( "Reading from TIFF: " + str(file_name) )
+    print_debug ( 1, "Reading from TIFF: " + str(file_name) )
 
     tag_record_list = []
     with open ( self.file_name, 'rb' ) as f:
 
       d = f.read(50)
-      print ( "Tiff Data: " + str([ord(c) for c in d]) )
+      print_debug ( 1, "Tiff Data: " + str([ord(c) for c in d]) )
       f.seek(0)
 
       d = [ord(c) for c in f.read(4)] # Read 4 bytes of the header
       if   d == [0x49, 0x49, 0x2a, 0x00]:
-        print ( "This is a TIFF file with Intel (little endian) byte ordering" )
+        print_debug ( 1, "This is a TIFF file with Intel (little endian) byte ordering" )
         self.endian = '<' # Intel format
       elif d == [0x4d, 0x4d, 0x00, 0x2a]:
-        print ( "This is a TIFF file with Motorola (big endian) byte ordering" )
+        print_debug ( 1, "This is a TIFF file with Motorola (big endian) byte ordering" )
         self.endian = '>' # Motorola format
       else:
-        print ( "This is not a TIFF file" )
+        print_debug ( 1, "This is not a TIFF file" )
         self.endian = None
         return
 
       # Read the offset of the first image directory from the header
       offset = struct.unpack_from ( self.endian+"L", f.read(4), offset=0 )[0]
-      print ( "Offset = " + str(offset) )
+      print_debug ( 1, "Offset = " + str(offset) )
 
       dir_num = 1
 
@@ -723,7 +723,7 @@ class tiled_tiff:
         f.seek ( offset )
         numDirEntries = struct.unpack_from ( self.endian+'H', f.read(2), offset=0 )[0]
         offset += 2
-        print ( "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
+        print_debug ( 1, "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
         dir_num += 1
         # Read the tags
         f.seek ( offset )
@@ -745,29 +745,29 @@ class tiled_tiff:
               except:
                 ascii_str += '?'
                 f.seek ( tagvalue+i )
-                print ( "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
+                print_debug ( 1, "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
             if len(ascii_str) > 60:
               ascii_str = ascii_str[0:60]
             ascii_str = ascii_str.replace ( "\n", " " )
             ascii_str = ascii_str.replace ( "\r", " " )
             tagstr += ascii_str + "\""
           '''
-          print ( "  Tag = " + str(tagtuple) + " = " + tagstr )
+          print_debug ( 1, "  Tag = " + str(tagtuple) + " = " + tagstr )
         self.dir_record_list.append ( tag_record_list )
         tag_record_list = []
         f.seek ( offset )
         nextIFDOffset = struct.unpack_from ( self.endian+'L', f.read(4), offset=0 )[0]
         offset = nextIFDOffset
-        print ( "\n" )
+        print_debug ( 1, "\n" )
 
-      print ( "\n\n" )
-      print ( 120*"=" )
-      print ( "\n\n" )
+      print_debug ( 1, "\n\n" )
+      print_debug ( 1, 120*"=" )
+      print_debug ( 1, "\n\n" )
 
 
       dir_num = 1
       for dir_record in self.dir_record_list:
-        print ( "Directory " + str(dir_num) + ":\n" )
+        print_debug ( 1, "Directory " + str(dir_num) + ":\n" )
         dir_num += 1
         bps = None
         w = None
@@ -779,74 +779,74 @@ class tiled_tiff:
         offsets = None
         counts = None
         for tag_rec in dir_record:
-          print ( "  New tag: " + str(tag_rec) )
+          print_debug ( 1, "  New tag: " + str(tag_rec) )
           if tag_rec.tag == 256:
             w = tag_rec.tagvalue
             self.width = w
-            print ( "    Width: " + str(tag_rec.tagvalue) )
+            print_debug ( 1, "    Width: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 257:
             h = tag_rec.tagvalue
             self.height = h
-            print ( "    Height: " + str(tag_rec.tagvalue) )
+            print_debug ( 1, "    Height: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 258:
             bps = tag_rec.tagvalue
-            print ( "    Bits/Samp: " + str(tag_rec.tagvalue) )
+            print_debug ( 1, "    Bits/Samp: " + str(tag_rec.tagvalue) )
             if bps != 8:
-              print ( "Can't handle files with " + str(bps) + " bits per sample" )
+              print_debug ( 1, "Can't handle files with " + str(bps) + " bits per sample" )
               exit ( 0 )
           if tag_rec.tag == 322:
             tw = tag_rec.tagvalue
             self.tile_width = tw
-            print ( "    TileWidth: " + str(tag_rec.tagvalue) )
+            print_debug ( 1, "    TileWidth: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 323:
             tl = tag_rec.tagvalue
             self.tile_height = tl
-            print ( "    TileLength: " + str(tag_rec.tagvalue) )
+            print_debug ( 1, "    TileLength: " + str(tag_rec.tagvalue) )
           if tag_rec.tag == 324:
             to = tag_rec.tagvalue
-            print ( "    TileOffsets: " + str(tag_rec.tagvalue) )
+            print_debug ( 1, "    TileOffsets: " + str(tag_rec.tagvalue) )
             f.seek ( tag_rec.tagvalue )
             offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
             self.tile_offsets = offsets
-            print ( "       " + str(offsets) )
+            print_debug ( 1, "       " + str(offsets) )
           if tag_rec.tag == 325:
             tc = tag_rec.tagvalue
-            print ( "    TileByteCounts: " + str(tag_rec.tagvalue) )
+            print_debug ( 1, "    TileByteCounts: " + str(tag_rec.tagvalue) )
             f.seek ( tag_rec.tagvalue )
             counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
             self.tile_counts = counts
-            print ( "       " + str(counts) )
+            print_debug ( 1, "       " + str(counts) )
 
         if not (None in (bps, w, h, tw, tl, to, tc)):
-          print ( "\nRead from a block of tiles ...\n" )
+          print_debug ( 1, "\nRead from a block of tiles ...\n" )
           for i in range(len(offsets)):
             offset = offsets[i]
             count = counts[i]
             f.seek ( offset )
             data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
-            #print ( "Read data " + str(data) + " from " + str(offset) )
-            #print ( "" )
+            #print_debug ( 1, "Read data " + str(data) + " from " + str(offset) )
+            #print_debug ( 1, "" )
         '''
         if not (None in (bps, w, h, tw, tl, to, tc)):
-          print ( "\nFound a block of tiles:\n" )
+          print_debug ( 1, "\nFound a block of tiles:\n" )
           for i in range(len(offsets)):
             offset = offsets[i]
             count = counts[i]
             f.seek ( offset )
             data = struct.unpack_from ( self.endian+(count*"B"), f.read(count), offset=0 )
             for r in range(tl):
-              print ( str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
-            print ( "" )
+              print_debug ( 1, str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
+            print_debug ( 1, "" )
         '''
 
         # offset = 0 ############ Force a stop
 
 
-      print ( "\n\n" )
+      print_debug ( 1, "\n\n" )
 
   def get_tile_data_as_xpm ( self, tile_row, tile_col ):
 
-    print ( "Inside get_tile_data_as_xpm" )
+    print_debug ( 1, "Inside get_tile_data_as_xpm" )
 
     xpm_strings = []
 
@@ -856,7 +856,7 @@ class tiled_tiff:
       # Seek to the first one
       f.seek ( self.tile_offsets[0] )
       image_data = f.read ( self.tile_counts[0] )
-      print ( "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+      print_debug ( 1, "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
 
       # Convert the tile data to XPM format:
 
@@ -1177,7 +1177,7 @@ class alignment_layer:
     global show_tiled
     self.tile_data = None
     if show_tiled:
-      print ( "Creating an alignment_layer with tiling enabled" )
+      print_debug ( 1, "Creating an alignment_layer with tiling enabled" )
       self.tile_data = tiled_tiff ( self.base_image_name )
 
 
@@ -1207,10 +1207,10 @@ def store_fields_into_current_layer():
       a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
       a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
       a.bias_enabled = gui_fields.bias_check_box.get_active()
-      print ( "Storing 1, a.bias_dx = " + str(a.bias_dx) )
+      print_debug ( 1, "Storing 1, a.bias_dx = " + str(a.bias_dx) )
       a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
       a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
-      print ( "Storing 2, a.bias_dx = " + str(a.bias_dx) )
+      print_debug ( 1, "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
 
       a.init_refine_apply = gui_fields.init_refine_apply_entry.get_active_text()
@@ -1232,14 +1232,13 @@ def store_fields_into_current_layer():
             t.bias_scale_y = a.bias_scale_y
             t.bias_skew_x = a.bias_skew_x
 
-      print ( "Storing 3, a.bias_dx = " + str(a.bias_dx) )
+      print_debug ( 1, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
 
 
 def store_current_layer_into_fields():
   if (alignment_layer_list != None) and (alignment_layer_index >= 0):
     if alignment_layer_index < len(alignment_layer_list):
       a = alignment_layer_list[alignment_layer_index]
-      # print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name = " + a.base_image_name )
       print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
       print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
       gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
@@ -1254,7 +1253,7 @@ def store_current_layer_into_fields():
       gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
       gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
       gui_fields.bias_check_box.set_active(a.bias_enabled)
-      print ( "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
+      print_debug ( 70, "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
       gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
       gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
 
@@ -1338,7 +1337,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
         print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
 
         print_debug ( 50, "    Deleting point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
-        # print ( "image has " + str(len(this_image.graphics_items)) + " items" )
+        # print_debug ( 50, "image has " + str(len(this_image.graphics_items)) + " items" )
         for gi in [ x for x in this_image.graphics_items if x.marker ]:
           print_debug ( 50, "Item " + str(gi.to_string()) )
         # if this_image.point_add_enabled:
@@ -1856,7 +1855,7 @@ def background_callback ( zpa ):
 
 
 def add_panel_callback ( zpa, role="", point_add_enabled=False ):
-  print ( "Adding a panel with role " + str(role) )
+  print_debug ( 70, "Adding a panel with role " + str(role) )
   print_debug ( 50, "Add a Panel" )
   global image_hbox
   global panel_list
@@ -2063,7 +2062,7 @@ def write_json_project ( project_file_name, fb=None ):
 
     global current_plot_code
     if len(current_plot_code.strip()) > 0:
-      print ( "Saving custom plot code" )
+      print_debug ( 1, "Saving custom plot code" )
       code_p = pickle.dumps ( current_plot_code, protocol=0 )
       code_e = base64.b64encode ( code_p )
       sl = 40
@@ -2280,7 +2279,7 @@ def run_alignment_callback ( align_all ):
 
 
   scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "img_aligned")
-  print ( "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
+  print_debug ( 50, "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
 
   #########################################################
   #########################################################
@@ -2290,7 +2289,7 @@ def run_alignment_callback ( align_all ):
 
   setup_initial_panels()
 
-  print ( "Running with " + str(gui_fields.code_base_select.get_active_text()) )
+  print_debug ( 40, "Running with " + str(gui_fields.code_base_select.get_active_text()) )
 
   if str(gui_fields.code_base_select.get_active_text()) == "External Swim Align":
 
@@ -2522,11 +2521,11 @@ def run_alignment_callback ( align_all ):
                                                                                scale_dest_path, layer_dict=layer_dict,
                                                                                x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
                                                                                cumulative_afm=prev_afm )
-        print ( "\n\nBefore alignment:\n" )
-        print ( str(alignment_layer_list[j].align_proc) )
+        print_debug ( 70, "\n\nBefore alignment:\n" )
+        print_debug ( 70, str(alignment_layer_list[j].align_proc) )
         alignment_layer_list[j].align_proc.align()
-        print ( "\n\nAfter alignment:\n" )
-        print ( str(alignment_layer_list[j].align_proc) )
+        print_debug ( 70, "\n\nAfter alignment:\n" )
+        print_debug ( 70, str(alignment_layer_list[j].align_proc) )
 
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -2573,10 +2572,10 @@ def run_alignment_callback ( align_all ):
               alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_dot(r.psta[0][wi],r.psta[1][wi],6,'i',color=c,graphic_group="Centers") )
               alignment_layer_list[j].image_dict['base'].graphics_items.append ( graphic_text(r.psta[0][wi]+4,r.psta[1][wi],'%.1f'%r.snr[wi],'i',color=c,graphic_group="Centers") )
 
-          print ( "Length of psta = " + str(s) )
-          print ( "Length of gitems = " + str(len(annotated_img.graphics_items)) )
-          print ( "Length of gi ref = " + str(len(alignment_layer_list[j].image_dict['ref'].graphics_items)) )
-          print ( "Length of gi base = " + str(len(alignment_layer_list[j].image_dict['base'].graphics_items)) )
+          print_debug ( 70, "Length of psta = " + str(s) )
+          print_debug ( 70, "Length of gitems = " + str(len(annotated_img.graphics_items)) )
+          print_debug ( 70, "Length of gi ref = " + str(len(alignment_layer_list[j].image_dict['ref'].graphics_items)) )
+          print_debug ( 70, "Length of gi base = " + str(len(alignment_layer_list[j].image_dict['base'].graphics_items)) )
 
           print_debug ( 50, "  Recipe " + str(ri) + " has " + str(s) + " " + str(ww[0]) + "x" + str(ww[1]) + " windows" )
 
@@ -2627,7 +2626,7 @@ def run_alignment_callback ( align_all ):
     #########################################################
 
     runner_name = str(gui_fields.code_base_select.get_active_text())
-    print ( "Dynamic runner: " + runner_name )
+    print_debug ( 70, "Dynamic runner: " + runner_name )
 
     write_json_project ( "run_project.json" )
     module = __import__ ( runner_name[0:-3] )
@@ -2727,10 +2726,10 @@ def print_data_structures(panel_list, alignment_layer_list):
 
 def upgrade_proj_dict ( proj_dict ):
   if not ('version' in proj_dict):
-    print ( "Unable to read from files with no version number ... update code to handle this format." )
+    print_debug ( 0, "Unable to read from files with no version number ... update code to handle this format." )
     exit (99)
   if proj_dict['version'] < 0.099:
-    print ( "Unable to read from versions before 0.1 ... update code to handle this format." )
+    print_debug ( 0, "Unable to read from versions before 0.1 ... update code to handle this format." )
     exit (99)
   if proj_dict['version'] < 0.199:
     # This is pre 0.2, so add the "scales" key with a single scale of 1
@@ -2748,7 +2747,7 @@ def upgrade_proj_dict ( proj_dict ):
     proj_dict['version'] = 0.2
   if proj_dict['version'] > 0.201:
     # This program is not written for newer versions
-    print ( "Unable to read from versions above 0.2 ... update code to handle this format." )
+    print_debug ( 0, "Unable to read from versions above 0.2 ... update code to handle this format." )
     exit (99)
   return proj_dict
 
@@ -2852,28 +2851,28 @@ def load_from_proj_dict ( proj_dict ):
                         a.bias_enabled = False
                         a.bias_dx = 0
                         a.bias_dy = 0
-                        print ( "Got method_data" + str(pars) )
+                        print_debug ( 70, "Got method_data" + str(pars) )
                         if 'alignment_option' in pars:
                           a.init_refine_apply = pars['alignment_option']
-                          print ( "  ... found alignment_option:" + str(a.init_refine_apply) )
+                          print_debug ( 70, "  ... found alignment_option:" + str(a.init_refine_apply) )
                         if 'bias_x_per_image' in pars:
                           a.bias_dx = pars['bias_x_per_image']
-                          print ( "  ... found bias_x_per_image:" + str(a.bias_dx) )
+                          print_debug ( 70, "  ... found bias_x_per_image:" + str(a.bias_dx) )
                         if 'bias_y_per_image' in pars:
                           a.bias_dy = pars['bias_y_per_image']
-                          print ( "  ... found bias_y_per_image:" + str(a.bias_dy) )
+                          print_debug ( 70, "  ... found bias_y_per_image:" + str(a.bias_dy) )
                         if 'bias_scale_x_per_image' in pars:
                           a.bias_scale_x = pars['bias_scale_x_per_image']
-                          print ( "  ... found bias_scale_x_per_image:" + str(a.bias_scale_x) )
+                          print_debug ( 70, "  ... found bias_scale_x_per_image:" + str(a.bias_scale_x) )
                         if 'bias_scale_y_per_image' in pars:
                           a.bias_scale_y = pars['bias_scale_y_per_image']
-                          print ( "  ... found bias_scale_y_per_image:" + str(a.bias_scale_y) )
+                          print_debug ( 70, "  ... found bias_scale_y_per_image:" + str(a.bias_scale_y) )
                         if 'bias_skew_x_per_image' in pars:
                           a.bias_skew_x = pars['bias_skew_x_per_image']
-                          print ( "  ... found bias_skew_x_per_image:" + str(a.bias_skew_x) )
+                          print_debug ( 70, "  ... found bias_skew_x_per_image:" + str(a.bias_skew_x) )
                         if 'bias_rot_per_image' in pars:
                           a.bias_rotation = pars['bias_rot_per_image']
-                          print ( "  ... found bias_rot_per_image:" + str(a.bias_rotation) )
+                          print_debug ( 70, "  ... found bias_rot_per_image:" + str(a.bias_rotation) )
 
                       if 'method_results' in json_align_to_ref_method:
                         json_method_results = json_align_to_ref_method['method_results']
@@ -2948,12 +2947,12 @@ def load_from_proj_dict ( proj_dict ):
                             a.image_dict['aligned'].graphics_items.append ( graphic_primitive().from_json ( ann_item ) )
 
                     alignment_layer_list.append ( a )
-                    print ( "Internal bias_x after appending: " + str(a.bias_dx) )
+                    print_debug ( 70, "Internal bias_x after appending: " + str(a.bias_dx) )
 
             scales_dict[scale_key] = alignment_layer_list
 
 
-      print ( "Final panel_names_list: " + str(panel_names_list) )
+      print_debug ( 70, "Final panel_names_list: " + str(panel_names_list) )
 
       #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -3037,7 +3036,7 @@ def update_menu_scales_from_gui_fields():
   else:
     if not (current_scale in gui_fields.scales_list):
       current_scale = gui_fields.scales_list[0]
-  # print ( str(gui_fields.scales_list) )
+  # print_debug ( 70, str(gui_fields.scales_list) )
   # Update the menu items in the "Scales" menu
   # Note that this gets behind the scenes of the "app_window" API
   # Some of this could be added to the "app_window" API at some point
@@ -3045,7 +3044,7 @@ def update_menu_scales_from_gui_fields():
   scales_menu = None
   for m in menu_bar.get_children():
     label = m.get_children()[0].get_label()
-    # print ( label )
+    # print_debug ( 70, label )
     if label == '_Scales':
       scales_menu = m.get_submenu()
   if scales_menu != None:
@@ -3078,7 +3077,7 @@ def set_selected_scale_to ( requested_scale ):
     # Store the alignment_layer parameters into the image layer being exited
     store_fields_into_current_layer()
 
-    print ( "Changing to scale " + str(requested_scale) )
+    print_debug ( 40, "Changing to scale " + str(requested_scale) )
     # Save the current alignment_layer_list into the current_scale
     scales_dict[current_scale] = alignment_layer_list
     # Change the current scale
@@ -3093,7 +3092,7 @@ def set_selected_scale_to ( requested_scale ):
     scales_menu = None
     for m in menu_bar.get_children():
       label = m.get_children()[0].get_label()
-      # print ( label )
+      print_debug ( 70, label )
       if label == '_Scales':
         scales_menu = m.get_submenu()
     if scales_menu != None:
@@ -3111,7 +3110,7 @@ def set_selected_scale_to ( requested_scale ):
     store_current_layer_into_fields()
 
   else:
-    print ( "Scale " + str(requested_scale) + " is not in " + str(scales_dict.keys()) )
+    print_debug ( 70, "Scale " + str(requested_scale) + " is not in " + str(scales_dict.keys()) )
 
 
 
@@ -3466,13 +3465,13 @@ def menu_callback ( widget, data=None ):
       max_entry.show()
       response = dialog.run()
       if response == gtk.RESPONSE_ACCEPT:
-        print ( str(max_entry.get_text()) )
-        #print ( str ( [ int(t) for t in str(scales_entry.get_text()).split(' ') ] ) )
+        print_debug ( 70, str(max_entry.get_text()) )
+        #print_debug ( 50, str ( [ int(t) for t in str(scales_entry.get_text()).split(' ') ] ) )
         try:
           max_image_file_size = int(str(max_entry.get_text()))
-          print ( "Max file size set to " + str(max_image_file_size) )
+          print_debug ( 70, "Max file size set to " + str(max_image_file_size) )
         except:
-          print ( "Unable to parse " + str(max_entry.get_text()) + " into an integer" )
+          print_debug ( 70, "Unable to parse " + str(max_entry.get_text()) + " into an integer" )
       dialog.destroy()
 
     elif command == "DefScales":
@@ -3492,7 +3491,7 @@ def menu_callback ( widget, data=None ):
 
       response = dialog.run()
       if response == gtk.RESPONSE_ACCEPT:
-        # print ( str(scales_entry.get_text()) )
+        # print_debug ( 70, str(scales_entry.get_text()) )
         gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
         gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
 
@@ -3508,27 +3507,27 @@ def menu_callback ( widget, data=None ):
       except:
         cur_scale = -1
       set_selected_scale_to ( cur_scale )
-      print_debug ( 50, "Centering images when changing scales" )
+      print_debug ( 40, "Centering images when changing scales" )
       center_all_images()
 
 
     elif command == "GenAsTiled":
       generate_as_tiled = not generate_as_tiled
-      print ( "Generate as tiled = " + str(generate_as_tiled) )
+      print_debug ( 40, "Generate as tiled = " + str(generate_as_tiled) )
 
     elif command == "ImportTiled":
       import_tiled = not import_tiled
-      print ( "Import tiled = " + str(import_tiled) )
+      print_debug ( 40, "Import tiled = " + str(import_tiled) )
 
     elif command == "ShowTiled":
       global show_tiled
       show_tiled = not show_tiled
-      print ( "Show tiled = " + str(show_tiled) )
+      print_debug ( 40, "Show tiled = " + str(show_tiled) )
       zpa_original.queue_draw()
 
 
     elif command == "GenAllScales":
-      print ( "Create images at all scales: " + str ( gui_fields.scales_list ) )
+      print_debug ( 40, "Create images at all scales: " + str ( gui_fields.scales_list ) )
 
       if len(destination_path) <= 0:
         check_dest = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
@@ -3536,25 +3535,25 @@ def menu_callback ( widget, data=None ):
         check_dest.destroy()
       else:
         for scale in gui_fields.scales_list:
-          print ( "Creating images for scale " + str(scale) )
+          print_debug ( 70, "Creating images for scale " + str(scale) )
 
           subdir = 'scale_' + str(scale)
           subdir_path = os.path.join(destination_path,subdir)
-          print ( "Creating a subdirectory named " + subdir_path )
+          print_debug ( 70, "Creating a subdirectory named " + subdir_path )
           try:
             os.mkdir ( subdir_path )
           except:
             # This catches directories that already exist
             pass
           src_path = os.path.join(subdir_path,'img_src')
-          print ( "Creating source subsubdirectory named " + src_path )
+          print_debug ( 70, "Creating source subsubdirectory named " + src_path )
           try:
             os.mkdir ( src_path )
           except:
             # This catches directories that already exist
             pass
           aligned_path = os.path.join(subdir_path,'img_aligned')
-          print ( "Creating aligned subsubdirectory named " + aligned_path )
+          print_debug ( 70, "Creating aligned subsubdirectory named " + aligned_path )
           try:
             os.mkdir ( aligned_path )
           except:
@@ -3569,7 +3568,7 @@ def menu_callback ( widget, data=None ):
               if generate_as_tiled:
                 # Generate as tiled images (means duplicating the originals also)
                 tiled_name = os.path.splitext(new_name)[0] + ".ttif"
-                print ( "Resizing " + original_name + " to " + tiled_name )
+                print_debug ( 70, "Resizing " + original_name + " to " + tiled_name )
                 if False:
                   # Generate internally
                   # Don't know how to do this and make tiles yet
@@ -3589,25 +3588,25 @@ def menu_callback ( widget, data=None ):
                 # Generate non-tiled images
                 if scale == 1:
                   if os.name == 'posix':
-                    print ( "Posix: Linking " + original_name + " to " + new_name )
+                    print_debug ( 70, "Posix: Linking " + original_name + " to " + new_name )
                     os.symlink ( original_name, new_name )
                   else:
-                    print ( "Non-Posix: Copying " + original_name + " to " + new_name )
+                    print_debug ( 70, "Non-Posix: Copying " + original_name + " to " + new_name )
                     shutil.copyfile ( original_name, new_name )
                 else:
-                  print ( "Resizing " + original_name + " to " + new_name )
+                  print_debug ( 70, "Resizing " + original_name + " to " + new_name )
                   img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
                   align_swiftir.swiftir.saveImage ( img, new_name )
             except:
-              print ( "Error: Failed to copy?" )
+              print_debug ( 10, "Error: Failed to copy?" )
               pass
 
 
     elif command == "GenMissingScales":
-      print ( "Create images at missing scales in: " + str ( gui_fields.scales_list ) )
+      print_debug ( 20, "Create images at missing scales in: " + str ( gui_fields.scales_list ) )
 
     elif command == "ImportAllScales":
-      print ( "Import images at all scales in: " + str ( gui_fields.scales_list ) )
+      print_debug ( 20, "Import images at all scales in: " + str ( gui_fields.scales_list ) )
 
       if len(destination_path) <= 0:
         check_dest = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
@@ -3624,20 +3623,20 @@ def menu_callback ( widget, data=None ):
           p.queue_draw()
 
         for scale in gui_fields.scales_list:
-          print ( "Importing images for scale " + str(scale) )
+          print_debug ( 70, "Importing images for scale " + str(scale) )
           scales_dict[scale] = []
           if True or (scale != 1):
             subdir = 'scale_' + str(scale)
             subdir_path = os.path.join(destination_path,subdir,'img_src')
-            print ( "Importing from a subdirectory named " + subdir_path )
+            print_debug ( 70, "Importing from a subdirectory named " + subdir_path )
             file_list = os.listdir ( subdir_path )
             file_list = [ f for f in file_list if '.' in f ]  # Select only those that have a "." in the file name
             file_list = [ f for f in file_list if f[f.rfind('.'):].lower() in ['.jpg', '.jpeg', '.png', '.tif', '.tiff', '.ttif', '.gif' ] ] # Be sure that they have a "." in the file name
-            print ( "Presorted File List:\n" + str(file_list) )
+            print_debug ( 70, "Presorted File List:\n" + str(file_list) )
             file_list = sorted(file_list)
-            print ( "Sorted File List:\n" + str(file_list) )
+            print_debug ( 70, "Sorted File List:\n" + str(file_list) )
             for f in file_list:
-              print ( " Found image file " + f )
+              print_debug ( 70, " Found image file " + f )
               a = alignment_layer ( os.path.join ( subdir_path, f ) )
               scales_dict[scale].append ( a )
 
@@ -3703,9 +3702,9 @@ def menu_callback ( widget, data=None ):
 
       response = dialog.run()
       if response == gtk.RESPONSE_ACCEPT:
-        # print ( str(scales_entry.get_text()) )
+        # print_debug ( 70, str(scales_entry.get_text()) )
         for f in scales_to_delete:
-          print ( "Deleting all files in " + f )
+          print_debug ( 70, "Deleting all files in " + f )
 
         gui_fields.scales_list = [ 1 ]
 
@@ -3716,7 +3715,7 @@ def menu_callback ( widget, data=None ):
 
 
     elif command == "DelMissingScales":
-      print ( "Prune missing scales from: " + str ( gui_fields.scales_list ) )
+      print_debug ( 70, "Prune missing scales from: " + str ( gui_fields.scales_list ) )
 
     elif command == "ClearLayers":
 
@@ -3742,12 +3741,12 @@ def menu_callback ( widget, data=None ):
         print_debug ( 20, "Clearing all layers..." )
 
         for scale in scales_dict.keys():
-          print ( "Deleting images for scale " + str(scale) )
+          print_debug ( 70, "Deleting images for scale " + str(scale) )
           if True or (scale != 1):
             subdir = 'scale_' + str(scale)
             for subsubdir in ['img_aligned', 'img_src']:
               subdir_path = os.path.join(destination_path,subdir,subsubdir)
-              print ( "Deleting from a subdirectory named " + subdir_path )
+              print_debug ( 70, "Deleting from a subdirectory named " + subdir_path )
 
               for al in scales_dict[scale]:
                 try:
@@ -3792,11 +3791,11 @@ def menu_callback ( widget, data=None ):
           print_debug ( 20, "Clearing all output images..." )
 
           for scale in scales_dict.keys():
-            print ( "Deleting images for scale " + str(scale) )
+            print_debug ( 70, "Deleting images for scale " + str(scale) )
             if True or (scale != 1):
               subdir = 'scale_' + str(scale)
               subdir_path = os.path.join(destination_path,subdir,'img_aligned')
-              print ( "Deleting from a subdirectory named " + subdir_path )
+              print_debug ( 70, "Deleting from a subdirectory named " + subdir_path )
 
               for al in scales_dict[scale]:
                 try:
@@ -3973,22 +3972,22 @@ def menu_callback ( widget, data=None ):
 
     elif command == "DefPlotCode":
 
-      print ( "Set to Default Plotting Code" )
+      print_debug ( 70, "Set to Default Plotting Code" )
       current_plot_code = default_plot_code.strip()
 
       if code_dialog != None:
-        print ( "Creating the plot code dialog" )
+        print_debug ( 70, "Creating the plot code dialog" )
         code_store.set_text ( current_plot_code )
 
     elif command == "PlotCode":
 
-      print ( "Modify Plotting Code" )
+      print_debug ( 70, "Modify Plotting Code" )
 
       if len(current_plot_code) <= 0:
         current_plot_code = default_plot_code.strip()
 
       if code_dialog == None:
-        print ( "Creating the plot code dialog" )
+        print_debug ( 70, "Creating the plot code dialog" )
         #label = gtk.Label("Enter plotting code:")
         code_dialog = gtk.Dialog("Plot Code", None,
                            gtk.DIALOG_DESTROY_WITH_PARENT,
@@ -4007,12 +4006,12 @@ def menu_callback ( widget, data=None ):
         code_dialog.vbox.pack_end(code_entry)
         code_entry.show()
 
-      print ( "before run" )
+      print_debug ( 70, "before run" )
       response = code_dialog.run()
-      print ( "after run" )
+      print_debug ( 70, "after run" )
       # response = None
       if response == gtk.RESPONSE_ACCEPT:
-        print ( "Updating current plot code from dialog" )
+        print_debug ( 70, "Updating current plot code from dialog" )
         bi = code_store.get_iter_at_offset(0)
         ei = code_store.get_iter_at_offset(-1)
         txt = code_store.get_text(bi,ei)
@@ -4024,7 +4023,7 @@ def menu_callback ( widget, data=None ):
 
     elif command == "PlotExec":
 
-      print ( "Plotting ..." )
+      print_debug ( 70, "Plotting ..." )
 
       if code_store != None:
         bi = code_store.get_iter_at_offset(0)
@@ -4045,7 +4044,7 @@ def menu_callback ( widget, data=None ):
             # Run the current plot code
             exec ( exec_code, locals() )
         except:
-          print ( "Error when plotting" )
+          print_debug ( 1, "Error when plotting" )
 
 
     elif command == "Exit":
@@ -4139,7 +4138,7 @@ def center_all_images():
         panel.set_scale_to_fit ( 0, wxh[0], 0, wxh[1], win_size[0], win_size[1] )
         panel.queue_draw()
         print_debug ( 70, "  Panel " + str(panel_list.index(panel)) + " is set to: [" + str(wxh[0]) + " x " + str(wxh[1]) + "] in [" + str(win_size[0]) + "," + str(win_size[1]) + "]" )
-        print ("")
+        print_debug ( 70, "")
 
 
 def refresh_all_images():
@@ -4159,23 +4158,23 @@ def refresh_all_images():
           if not (k in panel_names_list):
             panel_names_list.append ( k )
 
-  print ( "Panel names list = " + str(panel_names_list) )
+  print_debug ( 70, "Panel names list = " + str(panel_names_list) )
 
   # Create a new panel list to eventually replace the old panel_list
   new_panel_list = []
 
   # Pull out the first panel of each type if it exists
   for name in panel_names_list:
-    print ( "Looking for name " + name )
+    print_debug ( 70, "Looking for name " + name )
     for current_panel in panel_list:
-      print ( "  Checking current_panel with role of " + current_panel.role )
+      print_debug ( 70, "  Checking current_panel with role of " + current_panel.role )
       if current_panel.role == name:
-        print ( "    This panel matched" )
+        print_debug ( 70, "    This panel matched" )
         new_panel_list.append ( current_panel )
         panel_list.remove ( current_panel )
         break
-  print ( "old_panel_list roles: " + str([p.role for p in panel_list]) )
-  print ( "new_panel_list roles: " + str([p.role for p in new_panel_list]) )
+  print_debug ( 70, "old_panel_list roles: " + str([p.role for p in panel_list]) )
+  print_debug ( 70, "new_panel_list roles: " + str([p.role for p in new_panel_list]) )
 
   # Figure out which panels need to be deleted
   panels_to_delete = []
@@ -4191,7 +4190,7 @@ def refresh_all_images():
   # Assign the new_panel_list to be the global panel_list
   panel_list = new_panel_list
 
-  print ( "final_panel_list roles: " + str([p.role for p in panel_list]) )
+  print_debug ( 70, "final_panel_list roles: " + str([p.role for p in panel_list]) )
 
 
 # Create the window and connect the events
@@ -4687,7 +4686,7 @@ def main():
   runner_files = [ f for f in os.listdir(".") if f.startswith('pyswift_run_') and f.endswith('.py') ]
   runner_files = [ f for f in runner_files if f != "pyswift_run_external.py" ]
   runner_files = sorted(runner_files)
-  print ( "Runner files = " + str(runner_files) )
+  print_debug ( 70, "Runner files = " + str(runner_files) )
   for f in runner_files:
     store.append ( [ f ] )
   gui_fields.code_base_select.set_model(store)
