@@ -387,11 +387,14 @@ class align_ingredient:
     swim_results.append ( { 'out':swim_out_lines, 'err':swim_err_lines } )
 
     mir_script = ""
+    snr_list = []
     for l in swim_out_lines:
       print ( "SWIM OUT: " + str(l) )
       toks = l.replace('(',' ').replace(')',' ').strip().split()
       mir_toks = [ toks[k] for k in [2,3,5,6] ]
       mir_script += ' '.join(mir_toks) + '\n'
+      print ( "SNR: " + str(toks[0]) )
+      snr_list.append ( float(toks[0][0:-1]) )
     mir_script += 'R\n'
 
     # print ( "mir_script: " + mir_script )
@@ -426,10 +429,12 @@ class align_ingredient:
         aim[1,2] = float(toks[6])
 
     print ( "AIM = " + str(aim) )
+
     if self.align_mode == 'swim_align':
       self.afm = aim
 
-    self.snr = [ 1.0 for n in range(len(swim_results)) ]
+    if self.align_mode == 'check_align':
+      self.snr = snr_list
 
     return ( self.afm )
 
