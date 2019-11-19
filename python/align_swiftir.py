@@ -23,7 +23,7 @@ debug_level = 10
 
 def print_debug ( level, str ):
   global debug_level
-  if level < debug_level:
+  if level <= debug_level:
     print ( str )
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
@@ -35,13 +35,16 @@ def run_command(cmd, arg_list=None, cmd_input=None):
   if arg_list != None:
     cmd_arg_list = [ a for a in arg_list ]
     cmd_arg_list.insert ( 0, cmd )
+  print_debug ( 10, "Running command: " + str(cmd_arg_list) )
+  print_debug ( 30, "  Passing Data\n==========================\n" + str(cmd_input) + "==========================\n" )
   cmd_proc = sp.Popen(cmd_arg_list,stdin=sp.PIPE,stdout=sp.PIPE,stderr=sp.PIPE,universal_newlines=True)
   cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
 
   # Note: decode bytes if universal_newlines=False in Popen
   #cmd_stdout = cmd_stdout.decode('utf-8')
   #cmd_stderr = cmd_stderr.decode('utf-8')
-  print_debug ( 50, 'command output: \n\n' + cmd_stdout + '\n' )
+  print_debug ( 30, "command output: \n\n" + cmd_stdout + "==========================\n" )
+  print_debug ( 70, "command error: \n\n"  + cmd_stderr + "==========================\n" )
 
   return ( { 'out': cmd_stdout, 'err': cmd_stderr } )
 
@@ -114,9 +117,9 @@ class alignment_process:
   def auto_swim_align(self):
 
     print_debug ( 50, "\n\n\n" )
-    print_debug ( 1, "********************************" )
-    print_debug ( 1, "*** Top of auto_swim_align() ***" )
-    print_debug ( 1, "********************************" )
+    print_debug ( 20, "********************************" )
+    print_debug ( 20, "*** Top of auto_swim_align() ***" )
+    print_debug ( 20, "********************************" )
     print_debug ( 50, "\n\n" )
 
     im_sta = swiftir.loadImage(self.im_sta_fn)
@@ -363,13 +366,16 @@ class align_ingredient:
     wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
     wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
 
+
+    print_debug ( 10, "" )
+
     swim_results = []
     # print_debug ( 50, "psta = " + str(self.psta) )
     multi_swim_arg_string = ""
     for i in range(len(self.psta[0])):
       offx = int( self.psta[0][i] - (wwx_f/2.0) )
       offy = int( self.psta[1][i] - (wwy_f/2.0) )
-      print_debug ( 10, "Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")" )
+      print_debug ( 10, "  Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")" )
       swim_arg_string = 'ww_' + swim_ww_arg + ' -i ' + str(self.iters) + ' -w ' + str(self.wht) + ' -x ' + str(offx) + ' -y ' + str(offy) + ' ' + karg + ' ' + im_base_fn + ' ' + tar_arg + ' ' + im_adj_fn + ' ' + pat_arg + ' ' + rota_arg + ' ' + afm_arg
       print_debug ( 20, "  " + swim_arg_string )
       #print_debug ( 50, "  " + swim_arg_string2 )
@@ -386,7 +392,7 @@ class align_ingredient:
     mir_script = ""
     snr_list = []
     for l in swim_out_lines:
-      print_debug ( 10, "SWIM OUT: " + str(l) )
+      print_debug ( 50, "SWIM OUT: " + str(l) )
       toks = l.replace('(',' ').replace(')',' ').strip().split()
       mir_toks = [ toks[k] for k in [2,3,5,6] ]
       mir_script += ' '.join(mir_toks) + '\n'
