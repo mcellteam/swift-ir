@@ -19,14 +19,17 @@ which brings the "moving" image into alignment with the "stationary" image.
 Together these ingredients comprise a procedure, or "recipe". 
 '''
 
-debug_level = 50
+debug_level = 10
+
+def print_debug ( level, str ):
+  global debug_level
+  if level < debug_level:
+    print ( str )
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
-
-  global debug_level
 
   cmd_arg_list = [ cmd ]
   if arg_list != None:
@@ -38,7 +41,7 @@ def run_command(cmd, arg_list=None, cmd_input=None):
   # Note: decode bytes if universal_newlines=False in Popen
   #cmd_stdout = cmd_stdout.decode('utf-8')
   #cmd_stderr = cmd_stderr.decode('utf-8')
-  if debug_level > 50: print('command output: \n\n' + cmd_stdout + '\n')
+  print_debug ( 50, 'command output: \n\n' + cmd_stdout + '\n' )
 
   return ( { 'out': cmd_stdout, 'err': cmd_stderr } )
 
@@ -110,19 +113,17 @@ class alignment_process:
   
   def auto_swim_align(self):
 
-    global debug_level
-    if debug_level >= 20:
-      print ( "*** top of auto_swim_align() ***" )
-
-    if debug_level >= 70:
-      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    print_debug ( 50, "\n\n\n" )
+    print_debug ( 1, "********************************" )
+    print_debug ( 1, "*** Top of auto_swim_align() ***" )
+    print_debug ( 1, "********************************" )
+    print_debug ( 50, "\n\n" )
 
     im_sta = swiftir.loadImage(self.im_sta_fn)
     im_mov = swiftir.loadImage(self.im_mov_fn)
 
     # window size scale factor
     wsf = 0.75
-#    wsf = 1.0
 
     # Set up 1x1 point and window
     pa = np.zeros((2,1))                # Point Array for one point
@@ -166,10 +167,9 @@ class alignment_process:
     # Set up a window size for match point alignment (1/32 of x dimension)
     s_mp = int(im_sta.shape[0]/32)
 
-    if debug_level >= 70:
-      print ( "  psta_1   = " + str(psta_1) )
-      print ( "  psta_2x2 = " + str(psta_2x2) )
-      print ( "  psta_4x4 = " + str(psta_4x4) )
+    print_debug ( 70, "  psta_1   = " + str(psta_1) )
+    print_debug ( 70, "  psta_2x2 = " + str(psta_2x2) )
+    print_debug ( 70, "  psta_4x4 = " + str(psta_4x4) )
 
     self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
@@ -285,7 +285,7 @@ class align_ingredient:
     self.swiftir_mode = global_swiftir_mode
 
     #if self.swiftir_mode == 'c':
-    #  print ( "Actually loading images" )
+    #  print_debug ( 70, "Actually loading images" )
     #  self.im_sta = swiftir.loadImage(self.im_sta_fn)
     #  self.im_mov = swiftir.loadImage(self.im_mov_fn)
 
@@ -316,7 +316,7 @@ class align_ingredient:
 
 #    warp_matrix[0,2]=dx
 #    warp_matrix[1,2]=dy
-#    print('%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
+#    print_debug ( 70, '%s %s : swim match:  SNR: %g  dX: %g  dY: %g' % (self.im_base, self.im_adjust, self.snr, self.dx, self.dy))
     pass
 
 
@@ -324,13 +324,10 @@ class align_ingredient:
 
   def run_swim_c ( self, im_base_fn, im_adj_fn, offx=0, offy=0, keep=None, base_x=None, base_y=None, adjust_x=None, adjust_y=None, rota=None, afm=None ):
 
-    global debug_level
+    print_debug ( 50, "--------------------------" )
 
-    print ( "--------------------------" )
-
-    if debug_level >= 10:
-      print ( "Inside run_swim_c() with self = align_ingredient:" )
-      print ( str(self) )
+    print_debug ( 50, "Inside run_swim_c() with self = align_ingredient:" )
+    print_debug ( 50, str(self) )
 
     karg = ''
     if keep != None:
@@ -359,26 +356,26 @@ class align_ingredient:
       swim_ww_arg = str(self.ww)
 
 
-    print ( "--------------------------" )
+    print_debug ( 20, "--------------------------" )
 
-    print ( str(self) )
+    print_debug ( 50, str(self) )
 
     wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
     wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
 
     swim_results = []
-    # print ( "psta = " + str(self.psta) )
+    # print_debug ( 50, "psta = " + str(self.psta) )
     multi_swim_arg_string = ""
     for i in range(len(self.psta[0])):
       offx = int( self.psta[0][i] - (wwx_f/2.0) )
       offy = int( self.psta[1][i] - (wwy_f/2.0) )
-      print ( "Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")" )
+      print_debug ( 10, "Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")" )
       swim_arg_string = 'ww_' + swim_ww_arg + ' -i ' + str(self.iters) + ' -w ' + str(self.wht) + ' -x ' + str(offx) + ' -y ' + str(offy) + ' ' + karg + ' ' + im_base_fn + ' ' + tar_arg + ' ' + im_adj_fn + ' ' + pat_arg + ' ' + rota_arg + ' ' + afm_arg
-      print ( "  " + swim_arg_string )
-      #print ( "  " + swim_arg_string2 )
+      print_debug ( 20, "  " + swim_arg_string )
+      #print_debug ( 50, "  " + swim_arg_string2 )
       multi_swim_arg_string += swim_arg_string + "\n"
 
-    print ( "" )
+    print_debug ( 10, "" )
 
     o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
 
@@ -389,29 +386,29 @@ class align_ingredient:
     mir_script = ""
     snr_list = []
     for l in swim_out_lines:
-      print ( "SWIM OUT: " + str(l) )
+      print_debug ( 10, "SWIM OUT: " + str(l) )
       toks = l.replace('(',' ').replace(')',' ').strip().split()
       mir_toks = [ toks[k] for k in [2,3,5,6] ]
       mir_script += ' '.join(mir_toks) + '\n'
-      print ( "SNR: " + str(toks[0]) )
+      print_debug ( 60, "SNR: " + str(toks[0]) )
       snr_list.append ( float(toks[0][0:-1]) )
     mir_script += 'R\n'
 
-    # print ( "mir_script: " + mir_script )
+    # print_debug ( 50, "mir_script: " + mir_script )
 
     o = run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
     mir_out_lines = o['out'].strip().split('\n')
     mir_err_lines = o['err'].strip().split('\n')
-    print ( str(mir_out_lines) )
-    print ( str(mir_err_lines) )
+    print_debug ( 60, str(mir_out_lines) )
+    print_debug ( 60, str(mir_err_lines) )
 
     # Separate the results into a list of token lists
 
     afm = np.eye(2, 3, dtype=np.float32)
     aim = np.eye(2, 3, dtype=np.float32)
     for line in mir_out_lines:
-      print ( "Line: " + str(line) )
+      print_debug ( 70, "Line: " + str(line) )
       toks = line.strip().split()
       if(toks[0]=='AF'):
         afm[0,0] = float(toks[1])
@@ -428,7 +425,7 @@ class align_ingredient:
         aim[1,1] = float(toks[5])
         aim[1,2] = float(toks[6])
 
-    print ( "AIM = " + str(aim) )
+    print_debug ( 20, "\nAIM = " + str(aim) )
 
     if self.align_mode == 'swim_align':
       self.afm = aim
@@ -441,8 +438,6 @@ class align_ingredient:
 
 
   def execute(self):
-
-    global debug_level
 
     # If ww==None then this is a Matching Point ingredient of a recipe
     # Calculate afm directly using psta and pmov as the matching points
@@ -460,33 +455,33 @@ class align_ingredient:
 
     if self.swiftir_mode == 'c':
 
-      if debug_level >= 50: print ( "Running c version of swim" )
+      print_debug ( 50, "Running c version of swim" )
 
       afm = self.run_swim_c ( self.im_sta_fn, self.im_mov_fn )
 
     else:
 
-      if debug_level >= 50: print ( "Running python version of swim" )
+      print_debug ( 50, "Running python version of swim" )
       self.pmov = swiftir.stationaryToMoving(afm, self.psta)
       sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
       for i in range(self.iters):
-        print ( 'psta = ' + str(self.psta) )
-        print ( 'pmov = ' + str(self.pmov) )
+        print_debug ( 50, 'psta = ' + str(self.psta) )
+        print_debug ( 50, 'pmov = ' + str(self.pmov) )
         mov = swiftir.movingPatches(self.im_mov, self.pmov, afm, self.ww)
         (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-        if debug_level >= 0: print ( '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr) )
+        print_debug ( 50, '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr) )
         self.pmov = self.pmov + dp
         (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
         self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-        if debug_level >= 0: print('  Affine err:  %g' % (err))
-        if debug_level >= 0: print('  SNR:  ', snr)
+        print_debug ( 50, '  Affine err:  %g' % (err))
+        print_debug ( 50, '  SNR:  ' + str(snr))
       self.snr = snr
 
     if self.align_mode == 'swim_align':
       self.afm = afm
 
     if debug_level >= 90:
-      print ( "Entering the command line debugger:" )
+      print_debug ( 50, "Entering the command line debugger:" )
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     return(self.afm)
@@ -496,7 +491,7 @@ class align_ingredient:
 def showdiff(ima, imb):
     err = ima.astype('float32') - imb.astype('float32')
     err = err[100:-100,100:-100]
-    print('rms image error = ', np.sqrt(np.mean(err*err)))
+    print_debug ( 1, 'rms image error = ', np.sqrt(np.mean(err*err)))
     blk = ima<imb
     dif = ima - imb
     dif[blk] = imb[blk] - ima[blk]
@@ -507,7 +502,7 @@ def showdiff(ima, imb):
 
 def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
-  print ( "\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%% Static Function Call to align_images %%%%%%%%%%%%%%%%%%%%%%%%%%%\n" )
+  print_debug ( 50, "\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%% Static Function Call to align_images %%%%%%%%%%%%%%%%%%%%%%%%%%%\n" )
   if type(global_afm) == type(None):
     global_afm = swiftir.identityAffine()
 
@@ -573,7 +568,7 @@ import sys
 
 
 if __name__=='__main__':
-  print ( "Running " + __file__ + ".__main__()" )
+  print_debug ( 50, "Running " + __file__ + ".__main__()" )
 
   # "Tile_r1-c1_LM9R5CA1series_247.jpg",
   # "Tile_r1-c1_LM9R5CA1series_248.jpg",
@@ -605,9 +600,9 @@ if __name__=='__main__':
   cumulative_afm = None
 
   while len(args) > 0:
-    print ( "Current args: " + str(args) )
+    print_debug ( 50, "Current args: " + str(args) )
     if args[0] == '-c':
-      print ( "Running in 'c' mode" )
+      print_debug ( 50, "Running in 'c' mode" )
       global_swiftir_mode = 'c'
       args = args[1:]
     elif args[0] == '-xb':
@@ -672,7 +667,7 @@ if __name__=='__main__':
           }
         }
 
-  print ( "Creating the alignment process" )
+  print_debug ( 50, "Creating the alignment process" )
   align_proc = alignment_process ( f1,
                                    f2,
                                    out,
@@ -682,7 +677,7 @@ if __name__=='__main__':
                                    cumulative_afm=cumulative_afm )
 
   if global_swiftir_mode == 'c':
-    print ( "Loading the images" )
+    print_debug ( 50, "Loading the images" )
     if not (align_proc.recipe is None):
       if not (align_proc.recipe.ingredients is None):
         im_sta = swiftir.loadImage(f1)
@@ -691,7 +686,7 @@ if __name__=='__main__':
           ing.im_sta = im_sta
           ing.im_mov = im_mov
 
-  print ( "Performing the alignment" )
+  print_debug ( 50, "Performing the alignment" )
   align_proc.align()
 
   """
@@ -720,8 +715,8 @@ if __name__=='__main__':
   sta = swiftir.stationaryPatches(im_sta, psta, ww)
   mov = swiftir.movingPatches(im_mov, pmov, afm, ww)
   (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=pmov, afm=afm, wht=-.65)
-  print(snr)
-  print(afm)
+  print_debug ( 50, snr)
+  print_debug ( 50, afm)
 
   #best = swiftir.alignmentImage(sta[0], mov[0])
   #plt.imshow(best,cmap='gray')

@@ -174,7 +174,7 @@ global show_tiled
 show_tiled = False
 
 global debug_level
-debug_level = 50
+debug_level = 10
 
 def print_debug ( level, str ):
   global debug_level
@@ -760,9 +760,9 @@ class tiled_tiff:
         offset = nextIFDOffset
         print_debug ( 1, "\n" )
 
-      print_debug ( 1, "\n\n" )
+      print_debug ( 50, "\n\n" )
       print_debug ( 1, 120*"=" )
-      print_debug ( 1, "\n\n" )
+      print_debug ( 50, "\n\n" )
 
 
       dir_num = 1
@@ -842,7 +842,7 @@ class tiled_tiff:
         # offset = 0 ############ Force a stop
 
 
-      print_debug ( 1, "\n\n" )
+      print_debug ( 50, "\n\n" )
 
   def get_tile_data_as_xpm ( self, tile_row, tile_col ):
 
@@ -1207,10 +1207,10 @@ def store_fields_into_current_layer():
       a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
       a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
       a.bias_enabled = gui_fields.bias_check_box.get_active()
-      print_debug ( 1, "Storing 1, a.bias_dx = " + str(a.bias_dx) )
+      print_debug ( 70, "Storing 1, a.bias_dx = " + str(a.bias_dx) )
       a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
       a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
-      print_debug ( 1, "Storing 2, a.bias_dx = " + str(a.bias_dx) )
+      print_debug ( 70, "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
 
       a.init_refine_apply = gui_fields.init_refine_apply_entry.get_active_text()
@@ -1232,7 +1232,7 @@ def store_fields_into_current_layer():
             t.bias_scale_y = a.bias_scale_y
             t.bias_skew_x = a.bias_skew_x
 
-      print_debug ( 1, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
+      print_debug ( 70, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
 
 
 def store_current_layer_into_fields():
@@ -2279,7 +2279,7 @@ def run_alignment_callback ( align_all ):
 
 
   scale_dest_path = os.path.join(destination_path, "scale_"+str(current_scale), "img_aligned")
-  print_debug ( 50, "\n\n\n scale_dest_path = " + scale_dest_path + "\n\n\n" )
+  print_debug ( 50, "\n\n scale_dest_path = " + scale_dest_path + "\n\n" )
 
   #########################################################
   #########################################################
@@ -2477,7 +2477,7 @@ def run_alignment_callback ( align_all ):
       annotated_img = None
       if i == j:
         # This case (i==j) means make a copy of the original in the destination location
-        print_debug ( 50, "Copying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
+        print_debug ( 20, "\nCopying ( " + alignment_layer_list[i].base_image_name + " to " + os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) + " )" )
         shutil.copyfile ( alignment_layer_list[i].base_image_name, os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
         # Create a new identity transform for this layer even though it's not otherwise needed
@@ -2514,17 +2514,17 @@ def run_alignment_callback ( align_all ):
 
         prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
 
-        print_debug ( 40, "Aligning: i=" + str(i) + " to j=" + str(j) )
+        print_debug ( 20, "\nAligning: i=" + str(i) + " to j=" + str(j) )
         print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + scale_dest_path + " )" )
 
         alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
                                                                                scale_dest_path, layer_dict=layer_dict,
                                                                                x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
                                                                                cumulative_afm=prev_afm )
-        print_debug ( 70, "\n\nBefore alignment:\n" )
+        print_debug ( 70, "\nBefore alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
         alignment_layer_list[j].align_proc.align()
-        print_debug ( 70, "\n\nAfter alignment:\n" )
+        print_debug ( 70, "\nAfter alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
 
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -4061,8 +4061,8 @@ def menu_callback ( widget, data=None ):
 
       global debug_level
       debug_level = int(command[6:])
+      print_debug ( -1, "Changing debug level from " + str(align_swiftir.debug_level) + " to " + str(debug_level) )
       align_swiftir.debug_level = debug_level
-      print_debug ( 10, "New debug level is " + str(debug_level) )
 
     else:
 
