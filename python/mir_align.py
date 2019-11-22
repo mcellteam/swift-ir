@@ -47,14 +47,16 @@ def main(args):
   f1 = None
   f2 = None
   N = 5
+  ww = None
 
   if len(args) <= 2:
 
-    print ( "Usage: python " + __file__ + " image1 image2 [N]" )
+    print ( "Usage: python " + __file__ + " image1 image2  # or w#" )
+    print ( " If a number (#) is provided, it defines a grid of #x#" )
+    print ( " If 'w' and a number (w#) is provided, it defines a window size" )
 
   else:
 
-    ww = 256
     # Process and remove the fixed positional arguments
     args = args[1:]  # Shift out this file name (argv[0])
     if (len(args) > 0) and (not args[0].startswith('-')):
@@ -81,7 +83,7 @@ def main(args):
       print ( "Choice of window width " + str(ww) + " gives grid of " + str(N) + "x" + str(N) )
     if ww == None:
       ww = int ( 0.7 * ((h+w)/2) / N )
-      print ( "Choice of grid " + str(N) + "x" + str(N) + " gives window width of " + str(ww)  )
+      print ( "Choice of grid " + str(N) + "x" + str(N) + " gives window width of " + str(ww) )
 
 
     print ( "Aligning " + f2 + " to " + f1 + " using a grid of " + str(N) + "x" + str(N) )
@@ -93,7 +95,6 @@ def main(args):
     points = []
     for yi in range(R):
       ypre = yi * h / (R-1)
-      ypost = ypre + 0
       for xi in range(C):
         xpre = xi * w / (C-1)
         # Put the same x,y pair in both parts of the array for now
