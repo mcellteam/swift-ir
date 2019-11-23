@@ -154,7 +154,7 @@ def main(args):
 
     mir_script += 'W mir_align_out.jpg' + os.linesep
 
-    #print ( mir_script )
+    print ( mir_script )
 
     run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
