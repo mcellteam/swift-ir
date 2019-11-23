@@ -3978,6 +3978,193 @@ def menu_callback ( widget, data=None ):
       for p in panel_list:
         p.drawing_area.queue_draw()
 
+    elif command == "Waves":
+
+      # Create wavy versions of the aligned images
+      print_debug ( 10, "Making Waves" )
+
+      for scale in scales_dict.keys():
+        print_debug ( 10, "Making waves at scale " + str(scale) )
+
+        if True or (scale != 1):
+          subdir = 'scale_' + str(scale)
+          subdir_path = os.path.join(destination_path,subdir,'img_wave')
+          print_debug ( 10, "Creating a subdirectory named " + subdir_path )
+          try:
+            os.mkdir ( subdir_path )
+          except:
+            # This catches directories that already exist
+            pass
+
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+          first_pass = True
+          for al in scales_dict[scale]:
+            if 'aligned' in al.image_dict:
+              img_rec = al.image_dict['aligned']
+              if img_rec.image != None:
+                img = img_rec.image
+                h = img.get_height()
+                w = img.get_width()
+
+                # Make a mir script
+
+                mir_script  = ''
+                mir_script += 'F ' + img_rec.file_name + os.linesep
+
+                if first_pass:
+                  mir_script += 'R' + os.linesep
+                else:
+                  # The following layers will all become wavy
+                  R = 50
+                  C = 50
+                  for yi in range(R):
+                    ypre = yi * h / (R-1)
+                    ypost = ypre + 0
+                    for xi in range(C):
+                      xpre = xi * w / (C-1)
+                      xpost = xpre + ((w/100) * math.sin(5*math.pi*yi/R))
+                      mir_script += "%d %d %d %d" % (xpost, ypost, xpre, ypre) + os.linesep
+                  mir_script += 'T' + os.linesep
+
+                  for yi in range(R-1):
+                    yleft = yi * C
+                    for xi in range(C-1):
+                      mir_script += "%d %d %d" % (yleft+xi, yleft+C+xi, yleft+xi+1) + os.linesep
+                      mir_script += "%d %d %d" % (yleft+xi+C+1, yleft+xi+1,yleft+C+xi) + os.linesep
+
+                mir_script += 'W ' + os.path.join(subdir_path,os.path.basename(al.base_image_name)) + os.linesep
+
+                print ( mir_script )
+
+                align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+                first_pass = False
+
+    elif command == "Grid":
+
+      # Generate aligned versions of the wavy images
+      print_debug ( 10, "Removing Waves" )
+
+      for scale in scales_dict.keys():
+        print_debug ( 10, "Removing waves at scale " + str(scale) )
+
+        if True or (scale != 1):
+          subdir = 'scale_' + str(scale)
+          subdir_path = os.path.join(destination_path,subdir,'img_grid')
+          print_debug ( 10, "Creating a subdirectory named " + subdir_path )
+          try:
+            os.mkdir ( subdir_path )
+          except:
+            # This catches directories that already exist
+            pass
+
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+          f1 = None
+          f2 = None
+
+          for al in scales_dict[scale]:
+
+            if 'aligned' in al.image_dict:
+              img_rec = al.image_dict['aligned']
+              if img_rec.image != None:
+                img = img_rec.image
+                h = img.get_height()
+                w = img.get_width()
+
+                f2 = img_rec.file_name
+
+                if f1 == None:
+
+                  # This is the first image so just copy it
+                  mir_script  = ''
+                  mir_script += 'F ' + f2 + os.linesep
+                  mir_script += 'R' + os.linesep
+                  mir_script += 'W ' + os.path.join(subdir_path,os.path.basename(f2)) + os.linesep
+
+                  # print ( mir_script )
+
+                  align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+
+                else:
+
+                  # This is a following image so align it
+
+                  N = 10
+                  ww = 32
+
+                  # Calculate the points list and triangles
+
+                  R = N
+                  C = N
+                  points = []
+                  for yi in range(R):
+                    ypre = yi * h / (R-1)
+                    for xi in range(C):
+                      xpre = xi * w / (C-1)
+                      # Put the same x,y pair in both parts of the array for now
+                      points.append ( [xpre, ypre, xpre, ypre] )
+
+                  triangles = []
+                  for yi in range(R-1):
+                    yleft = yi * C
+                    for xi in range(C-1):
+                      triangles.append ( (yleft+xi, yleft+C+xi, yleft+xi+1) )
+                      triangles.append ( (yleft+xi+C+1, yleft+xi+1,yleft+C+xi) )
+
+                  # Make a script to run swim at each point
+
+                  swim_script = ""
+                  for p in points:
+                    swim_script += "swim -i 2 -x 0 -y 0 " + f1 + " " + str(p[0]) + " " + str(p[1]) + " " + f2 + " " + str(p[0]) + " " + str(p[1]) + os.linesep
+
+                  print ( "\n=========== Swim Script ============\n" + str(swim_script) + "============================\n" )
+                  o = align_swiftir.run_command ( "swim", arg_list=[str(ww)], cmd_input=swim_script )
+                  swim_out_lines = o['out'].strip().split('\n')
+                  swim_err_lines = o['err'].strip().split('\n')
+
+                  if len(swim_out_lines) != len(points):
+                    print ( "!!!! Warning: Output didn't match input" )
+                    exit()
+
+                  print ( "\nRaw Output:\n" )
+                  for ol in swim_out_lines:
+                    print ( "  " + str(ol) )
+
+                  print ( "\nX Offset:\n" )
+                  for ol in swim_out_lines:
+                    parts = ol.replace('(',' ').replace(')',' ').strip().split()
+                    print ( "  " + str(parts[8]) )
+
+                  # Update the points array to include the deltas from swim in the first x,y pair
+
+                  for i in range(len(points)):
+                    ol = swim_out_lines[i]
+                    parts = ol.replace('(',' ').replace(')',' ').strip().split()
+                    dx = float(parts[8])
+                    dy = float(parts[9])
+                    points[i] = [ points[i][0]-dx, points[i][1]-dy, points[i][2], points[i][3] ]
+
+                  # Make a script to run mir with the new point pairs
+
+                  mir_script  = ''
+                  mir_script += 'F ' + f2 + os.linesep
+
+                  for pt in points:
+                    mir_script += "%d %d %d %d" % (pt[0], pt[1], pt[2], pt[3]) + os.linesep
+                  mir_script += 'T' + os.linesep
+
+                  for tri in triangles:
+                    mir_script += "%d %d %d" % (tri[0], tri[1], tri[2]) + os.linesep
+
+                  mir_script += 'W ' + os.path.join(subdir_path,os.path.basename(f2)) + os.linesep
+
+                  # print ( mir_script )
+
+                  align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+
+                f1 = f2
+
+
     elif command == "Structs":
 
       print_data_structures(panel_list, alignment_layer_list)
@@ -4357,6 +4544,9 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Print Affine",   ("Affine", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Print Structures",   ("Structs", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Make Waves",   ("Waves", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Grid Align",   ("Grid", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     for level in [ 10*x for x in range(0,11) ]:
       zpa_original.add_menu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
