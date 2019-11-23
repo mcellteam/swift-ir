@@ -4042,10 +4042,10 @@ def menu_callback ( widget, data=None ):
     elif command == "Grid":
 
       # Generate aligned versions of the wavy images
-      print_debug ( 10, "Removing Waves" )
+      print_debug ( 10, "Making Grid Alignment" )
 
       for scale in scales_dict.keys():
-        print_debug ( 10, "Removing waves at scale " + str(scale) )
+        print_debug ( 10, "Making grid alignment at scale " + str(scale) )
 
         if True or (scale != 1):
           subdir = 'scale_' + str(scale)
@@ -4056,8 +4056,6 @@ def menu_callback ( widget, data=None ):
           except:
             # This catches directories that already exist
             pass
-
-          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
           f1 = None
           f2 = None
@@ -4164,6 +4162,68 @@ def menu_callback ( widget, data=None ):
 
                 f1 = f2
 
+    elif command == "SWaves":
+
+      # Show the wavy images
+      print_debug ( 10, "Showing Wavy Images" )
+
+      for scale in scales_dict.keys():
+
+        if True or (scale != 1):
+          subdir = 'scale_' + str(scale)
+          subdir_path = os.path.join(destination_path,subdir,'img_wave')
+
+          f1 = None
+          f2 = None
+
+          for al in scales_dict[scale]:
+            al.image_dict['aligned'] = annotated_image ( os.path.join(subdir_path,os.path.basename(al.image_dict['aligned'].file_name)), role=al.image_dict['aligned'].role )
+
+      zpa.queue_draw()
+      for p in panel_list:
+        p.drawing_area.queue_draw()
+
+    elif command == "SGrid":
+
+      # Show the wavy images
+      print_debug ( 10, "Showing Wavy Images" )
+
+      for scale in scales_dict.keys():
+
+        if True or (scale != 1):
+          subdir = 'scale_' + str(scale)
+          subdir_path = os.path.join(destination_path,subdir,'img_grid')
+
+          f1 = None
+          f2 = None
+
+          for al in scales_dict[scale]:
+            al.image_dict['aligned'] = annotated_image ( os.path.join(subdir_path,os.path.basename(al.image_dict['aligned'].file_name)), role=al.image_dict['aligned'].role )
+
+      zpa.queue_draw()
+      for p in panel_list:
+        p.drawing_area.queue_draw()
+
+    elif command == "SAligned":
+
+      # Show the wavy images
+      print_debug ( 10, "Showing Wavy Images" )
+
+      for scale in scales_dict.keys():
+
+        if True or (scale != 1):
+          subdir = 'scale_' + str(scale)
+          subdir_path = os.path.join(destination_path,subdir,'img_aligned')
+
+          f1 = None
+          f2 = None
+
+          for al in scales_dict[scale]:
+            al.image_dict['aligned'] = annotated_image ( os.path.join(subdir_path,os.path.basename(al.image_dict['aligned'].file_name)), role=al.image_dict['aligned'].role )
+
+      zpa.queue_draw()
+      for p in panel_list:
+        p.drawing_area.queue_draw()
 
     elif command == "Structs":
 
@@ -4547,6 +4607,10 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Make Waves",   ("Waves", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Grid Align",   ("Grid", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Waves",   ("SWaves", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Grid",    ("SGrid", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Aligned",    ("SAligned", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     for level in [ 10*x for x in range(0,11) ]:
       zpa_original.add_menu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
