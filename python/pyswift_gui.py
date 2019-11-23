@@ -4292,13 +4292,11 @@ def main():
   if True: # An easy way to indent and still be legal Python
     this_menu = scaling_menu
     zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Import Tiled",   ("ImportTiled", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Import Tiled",   ("ImportTiled", zpa_original ) )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
     '''
     # These aren't useful yet, so hide them for now ...
