@@ -4672,8 +4672,11 @@ def main():
     zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Grid Align",    ("SGrid", zpa_original ), group=cbox_group, default=False )
     zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Aligned",    ("SAligned", zpa_original ), group=cbox_group, default=True )
     zpa_original.add_menu_sep  ( this_menu )
+    cbox_group = None
     for level in [ 10*x for x in range(0,11) ]:
-      zpa_original.add_menu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )
+      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ), group=cbox_group )
+      if cbox_group == None:
+        cbox_group = val
 
   # Create a "Show" menu
   (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
