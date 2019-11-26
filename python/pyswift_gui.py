@@ -3874,6 +3874,30 @@ def menu_callback ( widget, data=None ):
       else:
         align_swiftir.global_swiftir_mode = 'python'
 
+    elif command == "DoSwims":
+
+      # This is a toggle
+      if align_swiftir.global_do_swims == True:
+        align_swiftir.global_do_swims = False
+      else:
+        align_swiftir.global_do_swims = True
+
+    elif command == "DoCFMs":
+
+      # This is a toggle
+      if align_swiftir.global_do_cfms == True:
+        align_swiftir.global_do_cfms = False
+      else:
+        align_swiftir.global_do_cfms = True
+
+    elif command == "GenImgs":
+
+      # This is a toggle
+      if align_swiftir.global_gen_imgs == True:
+        align_swiftir.global_gen_imgs = False
+      else:
+        align_swiftir.global_gen_imgs = True
+
     elif command == "Refresh":
 
       refresh_all_images()
@@ -4215,8 +4239,8 @@ def menu_callback ( widget, data=None ):
 
     elif command == "SGrid":
 
-      # Show the wavy images
-      print_debug ( 10, "Showing Wavy Images" )
+      # Show the grid images
+      print_debug ( 10, "Showing Grid Aligned Images" )
 
       for scale in scales_dict.keys():
 
@@ -4236,8 +4260,8 @@ def menu_callback ( widget, data=None ):
 
     elif command == "SAligned":
 
-      # Show the wavy images
-      print_debug ( 10, "Showing Wavy Images" )
+      # Show the normal aligned images
+      print_debug ( 10, "Showing Normal Aligned Images" )
 
       for scale in scales_dict.keys():
 
@@ -4605,6 +4629,10 @@ def main():
     # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Perform Swims",   ("DoSwims", zpa_original ), default=True )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Update CFMs",   ("DoCFMs", zpa_original ), default=True )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Images",   ("GenImgs", zpa_original ), default=True )
+    zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
@@ -4639,9 +4667,10 @@ def main():
     zpa_original.add_menu_item ( this_menu, menu_callback, "Make Waves",   ("Waves", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Grid Align",   ("Grid", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Waves",   ("SWaves", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Grid Align",    ("SGrid", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Aligned",    ("SAligned", zpa_original ) )
+
+    cbox_group = zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Waves",   ("SWaves", zpa_original ), group=None, default=False )
+    zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Grid Align",    ("SGrid", zpa_original ), group=cbox_group, default=False )
+    zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Aligned",    ("SAligned", zpa_original ), group=cbox_group, default=True )
     zpa_original.add_menu_sep  ( this_menu )
     for level in [ 10*x for x in range(0,11) ]:
       zpa_original.add_menu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ) )

@@ -79,7 +79,7 @@ class zoom_pan_area:
 
     self.accel_group = gtk.AccelGroup()
     self.window.add_accel_group(self.accel_group)
-    
+
     self.user_data = None
 
   def set_defaults ( self ):
@@ -111,7 +111,7 @@ class zoom_pan_area:
     # Note that this sets the scale regardless of the scrolling zoom
     self.x_scale  = self.reset_x_scale = float(win_x2 - win_x1) / (user_x2 - user_x1)
     self.x_offset = self.reset_x_offset = win_x1 - ( user_x1 * self.x_scale )
-    
+
   def set_y_scale ( self, user_y1, win_y1, user_y2, win_y2 ):
     # Note that this sets the scale regardless of the scrolling zoom
     self.y_scale  = self.reset_y_scale = float(win_y2 - win_y1) / (user_y2 - user_y1)
@@ -192,7 +192,7 @@ class zoom_pan_area:
   def queue_draw ( self ):
     return ( self.drawing_area.queue_draw() )
 
-  
+
   def wx ( self, user_x ):
     return ( self.x_offset + (user_x * self.x_scale * self.zoom_scale ) )
   def wy ( self, user_y ):
@@ -219,7 +219,7 @@ class zoom_pan_area:
     return ( win_w / (self.x_scale * self.zoom_scale) )
   def h ( self, win_h ):
     return ( win_h / (self.y_scale * self.zoom_scale) )
-    
+
   def set_cursor ( self, gtk_gdk_cursor ):
     self.drawing_area.window.set_cursor ( gtk.gdk.Cursor(gtk_gdk_cursor) )  # gtk.gdk.HAND2 DRAFT_SMALL TARGET HAND1 SB_UP_ARROW CROSS CROSSHAIR CENTER_PTR CIRCLE DIAMOND_CROSS IRON_CROSS PLUS CROSS_REVERSE DOT DOTBOX FLEUR
 
@@ -238,6 +238,7 @@ class zoom_pan_area:
       item.add_accelerator("activate", self.accel_group, ord(key), mask, gtk.ACCEL_VISIBLE)
     parent.append ( item )
     item.show()
+    return ( item )
 
   def add_checkmenu_item ( self, parent, callback, label, data, key=None, mask=gtk.gdk.CONTROL_MASK, default=False ):
     item = gtk.CheckMenuItem(label=label)
@@ -247,6 +248,17 @@ class zoom_pan_area:
       item.add_accelerator("activate", self.accel_group, ord(key), mask, gtk.ACCEL_VISIBLE)
     parent.append ( item )
     item.show()
+    return ( item )
+
+  def add_radiomenu_item ( self, parent, callback, label, data, group=None, key=None, mask=gtk.gdk.CONTROL_MASK, default=False ):
+    item = gtk.RadioMenuItem(group, label=label)
+    item.set_active ( default )
+    item.connect ( "activate", callback, data )
+    if key != None:
+      item.add_accelerator("activate", self.accel_group, ord(key), mask, gtk.ACCEL_VISIBLE)
+    parent.append ( item )
+    item.show()
+    return ( item )
 
   def add_menu_sep ( self, parent ):
     item = gtk.SeparatorMenuItem()

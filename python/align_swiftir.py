@@ -16,7 +16,7 @@ The interface is composed of two classes:  align_recipe and align_ingredient
 The general concept is that the alignment of two images is accomplished by applying a
 a series of steps, or "ingredients" to first estimate and then refine the affine transform
 which brings the "moving" image into alignment with the "stationary" image.
-Together these ingredients comprise a procedure, or "recipe". 
+Together these ingredients comprise a procedure, or "recipe".
 '''
 
 debug_level = 10
@@ -27,6 +27,9 @@ def print_debug ( level, str ):
     print ( str )
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
+global_do_swims = True
+global_do_cfms = True
+global_gen_imgs = True
 
 
 def run_command(cmd, arg_list=None, cmd_input=None):
@@ -116,7 +119,7 @@ class alignment_process:
 
     return result
 
-  
+
   def auto_swim_align(self):
 
     print_debug ( 50, "\n\n\n" )
@@ -260,7 +263,7 @@ class align_recipe:
 
 # Universal class for alignment ingredients of recipes
 class align_ingredient:
- 
+
   # Constructor for ingredient of a recipe
   # Ingredients come in 3 main types where the type is determined by value of align_mode
   #   1) If align_mode is 'match_point_align' then this is a Matching Point ingredient
@@ -270,7 +273,7 @@ class align_ingredient:
   #        and corresponding windows (pmov) are contructed from psta and projected onto im_mov
   #        from which image matching is performed to estimate or refine the afm.
   #        If psta contains only one point then the estimated afm will be a translation matrix
-  #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the 
+  #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
   #        supplied afm matrix but do not refine the afm matrix
   def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
 
@@ -492,6 +495,14 @@ class align_ingredient:
 
 
   def execute(self):
+
+    global global_do_swims
+    global global_do_cfms
+    global global_gen_imgs
+
+    if global_do_swims: print ( "Doing swims" )
+    if global_do_cfms: print ( "Doing cfms" )
+    if global_gen_imgs: print ( "Generating images" )
 
     # If ww==None then this is a Matching Point ingredient of a recipe
     # Calculate afm directly using psta and pmov as the matching points
