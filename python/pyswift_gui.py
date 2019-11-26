@@ -4647,9 +4647,12 @@ def main():
     # So put in the main menu for now:
     # Add cursors from the "cursor_options" array
     cursor_index = 0
+    cbox_group = None
     for cursor_pair in cursor_options:
       cursor_option_string = cursor_pair[0]
-      zpa_original.add_menu_item ( this_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ) )
+      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ), group=cbox_group )
+      if cbox_group == None:
+        cbox_group = val
       if cursor_index in cursor_option_seps:
         zpa_original.add_menu_sep  ( this_menu )
       cursor_index += 1
