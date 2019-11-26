@@ -4609,7 +4609,7 @@ def main():
     zpa_original.add_menu_item ( this_menu, menu_callback, "Grid Align",   ("Grid", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Show Waves",   ("SWaves", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Grid",    ("SGrid", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Show Grid Align",    ("SGrid", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Show Aligned",    ("SAligned", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
     for level in [ 10*x for x in range(0,11) ]:
