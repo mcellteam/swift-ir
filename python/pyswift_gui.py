@@ -356,7 +356,7 @@ class gui_fields_class:
     self.snr_halt = None
     self.code_base_select = None
     self.scales_list = [1]
-
+    self.waves_dict = { 'R':50, 'C':50, 'A':0.01, 'F':5 }
 
     # These values are swapped while scrolling through the stack
     self.trans_ww_entry = None
@@ -3978,10 +3978,38 @@ def menu_callback ( widget, data=None ):
       for p in panel_list:
         p.drawing_area.queue_draw()
 
+    elif command == "DefWaves":
+
+      label = gtk.Label("Wave Def: " + str(gui_fields.waves_dict))
+      dialog = gtk.Dialog("Define Waves",
+                         None,
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+      dialog.vbox.pack_start(label)
+      label.show()
+      waves_entry = gtk.Entry(2*len(str(gui_fields.waves_dict)))
+
+      waves_entry.set_text ( str(gui_fields.waves_dict) )
+      dialog.vbox.pack_end(waves_entry)
+      waves_entry.show()
+
+      response = dialog.run()
+      if response == gtk.RESPONSE_ACCEPT:
+        print_debug ( 70, str(waves_entry.get_text()) )
+        gui_fields.waves_dict = eval ( waves_entry.get_text() )
+        print_debug ( 70, "Waves dict = " + str(gui_fields.waves_dict) )
+        #gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
+
+        #update_menu_scales_from_gui_fields()
+
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      dialog.destroy()
+
     elif command == "Waves":
 
       # Create wavy versions of the aligned images
-      print_debug ( 10, "Making Waves" )
+      print_debug ( 10, "Making Waves from Waves dict = " + str(gui_fields.waves_dict) )
 
       for scale in scales_dict.keys():
         print_debug ( 10, "Making waves at scale " + str(scale) )
@@ -4015,14 +4043,16 @@ def menu_callback ( widget, data=None ):
                   mir_script += 'R' + os.linesep
                 else:
                   # The following layers will all become wavy
-                  R = 50
-                  C = 50
+                  R = gui_fields.waves_dict['R']
+                  C = gui_fields.waves_dict['C']
+                  A = gui_fields.waves_dict['A']
+                  F = gui_fields.waves_dict['F']
                   for yi in range(R):
                     ypre = yi * h / (R-1)
                     ypost = ypre + 0
                     for xi in range(C):
                       xpre = xi * w / (C-1)
-                      xpost = xpre + ((w/100) * math.sin(5*math.pi*yi/R))
+                      xpost = xpre + ((w*A) * math.sin(F*math.pi*yi/R))
                       mir_script += "%d %d %d %d" % (xpost, ypost, xpre, ypre) + os.linesep
                   mir_script += 'T' + os.linesep
 
@@ -4605,6 +4635,7 @@ def main():
     zpa_original.add_menu_item ( this_menu, menu_callback, "Print Affine",   ("Affine", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Print Structures",   ("Structs", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Define Waves",    ("DefWaves", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Make Waves",   ("Waves", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Grid Align",   ("Grid", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
