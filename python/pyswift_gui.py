@@ -354,6 +354,7 @@ class gui_fields_class:
     self.code_base_select = None
     self.scales_list = [1]
     self.waves_dict = { 'R':50, 'C':50, 'A':0.01, 'F':5 }
+    self.grid_dict = { 'N':10, 'ww':32 }
 
     # These values are swapped while scrolling through the stack
     self.trans_ww_entry = None
@@ -4068,6 +4069,8 @@ def menu_callback ( widget, data=None ):
                   C = gui_fields.waves_dict['C']
                   A = gui_fields.waves_dict['A']
                   F = gui_fields.waves_dict['F']
+
+                  # Write the points for the mir script
                   for yi in range(R):
                     ypre = yi * h / (R-1)
                     ypost = ypre + 0
@@ -4077,18 +4080,49 @@ def menu_callback ( widget, data=None ):
                       mir_script += "%d %d %d %d" % (xpost, ypost, xpre, ypre) + os.linesep
                   mir_script += 'T' + os.linesep
 
+                  # Write the triangles for the mir script
                   for yi in range(R-1):
                     yleft = yi * C
                     for xi in range(C-1):
                       mir_script += "%d %d %d" % (yleft+xi, yleft+C+xi, yleft+xi+1) + os.linesep
                       mir_script += "%d %d %d" % (yleft+xi+C+1, yleft+xi+1,yleft+C+xi) + os.linesep
 
+                # Write the "Write" command for the mir script
                 mir_script += 'W ' + os.path.join(subdir_path,os.path.basename(al.base_image_name)) + os.linesep
 
                 print ( mir_script )
 
+                # Run the actual mir script
                 align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
                 first_pass = False
+
+    elif command == "DefGrid":
+
+      label = gtk.Label("Grid Def: " + str(gui_fields.grid_dict))
+      dialog = gtk.Dialog("Define Grid",
+                         None,
+                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
+                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+      dialog.vbox.pack_start(label)
+      label.show()
+      grid_entry = gtk.Entry(2*len(str(gui_fields.grid_dict)))
+
+      grid_entry.set_text ( str(gui_fields.grid_dict) )
+      dialog.vbox.pack_end(grid_entry)
+      grid_entry.show()
+
+      response = dialog.run()
+      if response == gtk.RESPONSE_ACCEPT:
+        print_debug ( 70, str(grid_entry.get_text()) )
+        gui_fields.grid_dict = eval ( grid_entry.get_text() )
+        print_debug ( 70, "Grid dict = " + str(gui_fields.grid_dict) )
+        #gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
+
+        #update_menu_scales_from_gui_fields()
+
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      dialog.destroy()
 
     elif command == "Grid":
 
@@ -4140,6 +4174,10 @@ def menu_callback ( widget, data=None ):
 
                   N = 10
                   ww = 32
+                  if 'N' in gui_fields.grid_dict:
+                    N = gui_fields.grid_dict['N']
+                  if 'ww' in gui_fields.grid_dict:
+                    ww = gui_fields.grid_dict['ww']
 
                   # Calculate the points list and triangles
 
@@ -4669,6 +4707,8 @@ def main():
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Define Waves",    ("DefWaves", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Make Waves",   ("Waves", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Define Grid",    ("DefGrid", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Grid Align",   ("Grid", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
 
