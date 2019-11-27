@@ -275,11 +275,8 @@ cursor_options = [
     ["Cursor_HAND1",     gtk.gdk.HAND1],
     ["Cursor_HAND2",     gtk.gdk.HAND2],
     ["Cursor_ARROW",     gtk.gdk.ARROW],
-
-
-    ["Cursor_ARROW", gtk.gdk.ARROW],
     ["Cursor_BASED_ARROW_DOWN", gtk.gdk.BASED_ARROW_DOWN],
-    ["Cursor_BASED_ARROW_UP", gtk.gdk.BASED_ARROW_UP],
+    ["Cursor_BASED_ARROW_UP", gtk.gdk.BASED_ARROW_UP]
     #["Cursor_BOAT", gtk.gdk.BOAT],
     #["Cursor_BOGOSITY", gtk.gdk.BOGOSITY],
     #["Cursor_BOTTOM_LEFT_CORNER", gtk.gdk.BOTTOM_LEFT_CORNER],
@@ -338,7 +335,7 @@ cursor_options = [
     #["Cursor_UMBRELLA", gtk.gdk.UMBRELLA],
     #["Cursor_UR_ANGLE", gtk.gdk.UR_ANGLE],
     #["Cursor_WATCH", gtk.gdk.WATCH],   # Animated "waiting" cursor!!
-    ["Cursor_XTERM", gtk.gdk.XTERM]
+    #["Cursor_XTERM", gtk.gdk.XTERM]
     # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
   ]
 global cursor_option_seps
@@ -4621,26 +4618,8 @@ def main():
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Alignment Point Mode",   ("PtMode", zpa_original ) )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Delete Points",   ("PtDel", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Alignment Points",   ("PtClear", zpa_original ) )
-
-  # Create a "Set" menu
-  (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = set_menu
-    # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Perform Swims",   ("DoSwims", zpa_original ), default=True )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Update CFMs",   ("DoCFMs", zpa_original ), default=True )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Images",   ("GenImgs", zpa_original ), default=True )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Default Plot Code",   ("DefPlotCode", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Custom Plot Code",   ("PlotCode", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    # Create a "Set/Cursor" submenu
+    # Create a "Set/Cursor" submenu for point mode only
     # This didn't work ...
     #  (cursor_menu, set_item) = this_menu.add_menu_item ( "_Cursor" )
     #  if True: # An easy way to indent and still be legal Python
@@ -4650,12 +4629,34 @@ def main():
     cbox_group = None
     for cursor_pair in cursor_options:
       cursor_option_string = cursor_pair[0]
-      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ), group=cbox_group )
+      selected = False
+      if cbox_group is None:
+        selected = True
+      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ), group=cbox_group, default=selected )
       if cbox_group == None:
         cbox_group = val
       if cursor_index in cursor_option_seps:
         zpa_original.add_menu_sep  ( this_menu )
       cursor_index += 1
+
+  # Create a "Set" menu
+  (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
+  if True: # An easy way to indent and still be legal Python
+    this_menu = set_menu
+    # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Perform Swims",   ("DoSwims", zpa_original ), default=align_swiftir.global_do_swims )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Update CFMs",   ("DoCFMs", zpa_original ), default=align_swiftir.global_do_cfms )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Images",   ("GenImgs", zpa_original ), default=align_swiftir.global_gen_imgs )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Default Plot Code",   ("DefPlotCode", zpa_original ) )
+    zpa_original.add_menu_item ( this_menu, menu_callback, "Custom Plot Code",   ("PlotCode", zpa_original ) )
+    zpa_original.add_menu_sep  ( this_menu )
 
   # Create a "Debug" menu
   (debug_menu, debug_item) = zpa_original.add_menu ( "_Debug" )
@@ -4676,8 +4677,12 @@ def main():
     zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Aligned",    ("SAligned", zpa_original ), group=cbox_group, default=True )
     zpa_original.add_menu_sep  ( this_menu )
     cbox_group = None
+    global debug_level
     for level in [ 10*x for x in range(0,11) ]:
-      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ), group=cbox_group )
+      selected = False
+      if (level>=debug_level) and (level<(debug_level+10)):
+        selected = True
+      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ), group=cbox_group, default=selected )
       if cbox_group == None:
         cbox_group = val
 
