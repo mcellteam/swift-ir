@@ -1078,8 +1078,10 @@ class annotated_image:
           self.image = None
           print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
           self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
-      except:
+      except Exception as e:
+        print ( "Exception caught while showing window centers: " + str(e) )
         print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
+        print_debug ( -1, "Exception: " + str(e) )
         # exit(1)
         self.image = None
 
