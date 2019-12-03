@@ -218,6 +218,8 @@ class alignment_process:
     self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,self.cumulative_afm)
     self.cumulative_afm[0,2] -= self.x_bias
     self.cumulative_afm[1,2] -= self.y_bias
+
+    # Generate and save the new image based on the cumulative AFM
     im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
     ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
     swiftir.saveImage(im_aligned,ofn)
@@ -418,6 +420,7 @@ class align_ingredient:
 
     print_debug ( 10, "" )
 
+    # This "swim" command calculates deltas for each of the swim_arg_string lines.
     o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
 
     swim_out_lines = o['out'].strip().split('\n')
@@ -448,6 +451,7 @@ class align_ingredient:
 
     # print_debug ( 50, "mir_script: " + mir_script )
 
+    # This "mir" command combines the deltas into a single affine matrix - No images are produced
     o = run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
     mir_out_lines = o['out'].strip().split('\n')
