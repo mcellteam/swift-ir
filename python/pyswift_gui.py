@@ -2525,7 +2525,19 @@ def run_alignment_callback ( align_all ):
                                                                                cumulative_afm=prev_afm )
         print_debug ( 70, "\nBefore alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
+
+        # This is the call to alignment_process.align() ...
+        #   ... which calls alignment_process.auto_swim_align() ...
+        #     ... which builds a recipe and calls recipe.execute() ...
+        #       ... which loops through each ingredient and calls ingredient.execute() ...
+        #         ... which performs either a Python swim or a C swim ...
+        # The actual loading and saving of images is done inside auto_swim_align via:
+        #     im_sta = swiftir.loadImage(self.im_sta_fn)
+        #     im_mov = swiftir.loadImage(self.im_mov_fn)
+        #     swiftir.saveImage(im_aligned,ofn)
+
         alignment_layer_list[j].align_proc.align()
+
         print_debug ( 70, "\nAfter alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
 
