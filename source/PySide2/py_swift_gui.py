@@ -39,6 +39,10 @@ class MainWindow(QMainWindow):
     def exit_app(self, checked):
         sys.exit()
 
+#__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+# This provides default command line parameters if none are given (as with "Idle")
+if len(sys.argv) <= 1:
+    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
 if __name__ == "__main__":
     options = argparse.ArgumentParser()
@@ -59,3 +63,4 @@ if __name__ == "__main__":
 
     window.show()
     sys.exit(app.exec_())
+
