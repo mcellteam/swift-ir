@@ -14,10 +14,10 @@ class MainWindow(QMainWindow):
 
         # Menu
         self.menu = self.menuBar()
-        self.file_menu = self.menu.addMenu("File")
+        self.file_menu = self.menu.addMenu("&File")
 
         # Exit QAction
-        exit_action = QAction("Exit", self)
+        exit_action = QAction("E&xit", self)
         exit_action.setShortcut("Ctrl+Q")
         exit_action.triggered.connect(self.exit_app)
 
