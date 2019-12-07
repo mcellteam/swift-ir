@@ -20,7 +20,10 @@ class ZoomPanWidget(QWidget):
 
         self.floatBased = False
         self.antialiased = False
-        self.frameNo = 0
+        self.wheel_index = 0
+        self.scroll_factor = 1.25
+        self.zoom_scale = 1.0
+
         self.mdx = 0
         self.mdy = 0
         self.ldx = 0
@@ -45,52 +48,54 @@ class ZoomPanWidget(QWidget):
     def sizeHint(self):
         return QSize(180, 180)
 
-    def nextAnimationFrame(self):
-        self.frameNo += 1
-        self.update()
-
     def mousePressEvent(self, event):
         print ( "mousePressEvent at " + str(event.x()) + ", " + str(event.y()) )
-        self.mdx = event.x()
-        self.mdy = event.y()
+        if event.button() == Qt.MouseButton.RightButton:
+            self.dx = self.mdx = self.ldx = 0
+            self.dy = self.mdy = self.ldy = 0
+            self.zoom_scale = 1.0
+        else:
+            self.mdx = event.x()
+            self.mdy = event.y()
         self.update()
 
     def mouseMoveEvent(self, event):
         # print ( "mouseMoveEvent at " + str(event.x()) + ", " + str(event.y()) )
-        self.dx = event.x() - self.mdx
-        self.dy = event.y() - self.mdy
+        self.dx = (event.x() - self.mdx) / self.zoom_scale
+        self.dy = (event.y() - self.mdy) / self.zoom_scale
         self.update()
 
     def mouseReleaseEvent(self, event):
         print ( "mouseReleaseEvent at " + str(event.x()) + ", " + str(event.y()) )
-        self.ldx = self.ldx + self.dx
-        self.ldy = self.ldy + self.dy
-        self.dx = 0
-        self.dy = 0
-        self.update()
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.ldx = self.ldx + self.dx
+            self.ldy = self.ldy + self.dy
+            self.dx = 0
+            self.dy = 0
+            self.update()
 
     def mouseDoubleClickEvent(self, event):
         print ( "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
         self.update()
 
     def wheelEvent(self, event):
-        print ( "Wheel Event with delta() = " + str(event.delta()) )
-        self.frameNo += event.delta()/12
-        if self.frameNo < 0:
-          self.frameNo = 0
+        self.wheel_index += event.delta()/120
+        self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+        print ( "Wheel index = " + str(self.wheel_index) + ", Scale = " + str(self.zoom_scale) )
         self.update()
 
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        if self.frameNo == 0:
+        if True:
             if self.pixmap != None:
+                painter.scale ( self.zoom_scale, self.zoom_scale )
                 painter.drawPixmap ( QPoint(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
             for diameter in range(0, 256, 9):
-                delta = abs((self.frameNo % 128) - diameter / 2)
+                delta = abs((self.wheel_index % 128) - diameter / 2)
                 alpha = 255 - (delta * delta) / 4 - diameter
                 if alpha > 0:
                     painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
