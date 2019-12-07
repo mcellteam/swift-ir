@@ -2,14 +2,9 @@ import sys
 import argparse
 import cv2
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QLabel, QAction
-from PySide2.QtGui import QPixmap
-from PySide2.QtCore import Slot, qApp
-
-from PySide2.QtCore import QRect, QRectF, QSize, Qt, QTimer, QPoint, QPointF
-from PySide2.QtGui import QColor, QPainter, QPalette, QPen
-from PySide2.QtWidgets import (QApplication, QFrame, QGridLayout, QLabel,
-        QSizePolicy, QWidget)
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
+from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
+from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 
 class ZoomPanWidget(QWidget):
@@ -26,6 +21,12 @@ class ZoomPanWidget(QWidget):
         self.floatBased = False
         self.antialiased = False
         self.frameNo = 0
+        self.mdx = 0
+        self.mdy = 0
+        self.ldx = 0
+        self.ldy = 0
+        self.dx = 0
+        self.dy = 0
 
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
@@ -48,6 +49,30 @@ class ZoomPanWidget(QWidget):
         self.frameNo += 1
         self.update()
 
+    def mousePressEvent(self, event):
+        print ( "mousePressEvent at " + str(event.x()) + ", " + str(event.y()) )
+        self.mdx = event.x()
+        self.mdy = event.y()
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        # print ( "mouseMoveEvent at " + str(event.x()) + ", " + str(event.y()) )
+        self.dx = event.x() - self.mdx
+        self.dy = event.y() - self.mdy
+        self.update()
+
+    def mouseReleaseEvent(self, event):
+        print ( "mouseReleaseEvent at " + str(event.x()) + ", " + str(event.y()) )
+        self.ldx = self.ldx + self.dx
+        self.ldy = self.ldy + self.dy
+        self.dx = 0
+        self.dy = 0
+        self.update()
+
+    def mouseDoubleClickEvent(self, event):
+        print ( "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
+        self.update()
+
     def wheelEvent(self, event):
         print ( "Wheel Event with delta() = " + str(event.delta()) )
         self.frameNo += event.delta()/12
@@ -55,14 +80,12 @@ class ZoomPanWidget(QWidget):
           self.frameNo = 0
         self.update()
 
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
     def paintEvent(self, event):
         painter = QPainter(self)
 
         if self.frameNo == 0:
             if self.pixmap != None:
-                painter.drawPixmap ( QPointF(0,0), self.pixmap )
+                painter.drawPixmap ( QPoint(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
@@ -71,20 +94,12 @@ class ZoomPanWidget(QWidget):
                 alpha = 255 - (delta * delta) / 4 - diameter
                 if alpha > 0:
                     painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-
                     if self.floatBased:
                         painter.drawEllipse(QRectF(-diameter / 2.0,
                                 -diameter / 2.0, diameter, diameter))
                     else:
                         painter.drawEllipse(QRect(-diameter / 2,
                                 -diameter / 2, diameter, diameter))
-
-class InnerWindow(QWidget):
-    def __init__(self):
-        QWidget.__init__(self)
-        self.layout = QHBoxLayout()
-
-        super(InnerWindow, self).__init__()
 
 
 # MainWindow contains the Menu Bar and the Status Bar
@@ -123,7 +138,6 @@ class MainWindow(QMainWindow):
     def exit_app(self, checked):
         sys.exit()
 
-#__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 # This provides default command line parameters if none are given (as with "Idle")
 if len(sys.argv) <= 1:
     sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
