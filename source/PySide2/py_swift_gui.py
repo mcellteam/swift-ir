@@ -6,15 +6,22 @@ from PySide2.QtWidgets import QApplication, QMainWindow, QLabel, QAction
 from PySide2.QtGui import QPixmap
 from PySide2.QtCore import Slot, qApp
 
-from PySide2.QtCore import QRect, QRectF, QSize, Qt, QTimer
+from PySide2.QtCore import QRect, QRectF, QSize, Qt, QTimer, QPoint, QPointF
 from PySide2.QtGui import QColor, QPainter, QPalette, QPen
 from PySide2.QtWidgets import (QApplication, QFrame, QGridLayout, QLabel,
         QSizePolicy, QWidget)
 
 
 class ZoomPanWidget(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, fname=None):
         super(ZoomPanWidget, self).__init__(parent)
+
+        self.fname = fname
+        self.pixmap = None
+
+        if self.fname != None:
+          if len(self.fname) > 0:
+            self.pixmap = QPixmap(fname)
 
         self.floatBased = False
         self.antialiased = False
@@ -52,27 +59,41 @@ class ZoomPanWidget(QWidget):
 
     def paintEvent(self, event):
         painter = QPainter(self)
-        painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-        painter.translate(self.width() / 2, self.height() / 2)
 
-        for diameter in range(0, 256, 9):
-            delta = abs((self.frameNo % 128) - diameter / 2)
-            alpha = 255 - (delta * delta) / 4 - diameter
-            if alpha > 0:
-                painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
+        if self.frameNo == 0:
+            if self.pixmap != None:
+                painter.drawPixmap ( QPointF(0,0), self.pixmap )
+        else:
+            painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+            painter.translate(self.width() / 2, self.height() / 2)
+            for diameter in range(0, 256, 9):
+                delta = abs((self.frameNo % 128) - diameter / 2)
+                alpha = 255 - (delta * delta) / 4 - diameter
+                if alpha > 0:
+                    painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
 
-                if self.floatBased:
-                    painter.drawEllipse(QRectF(-diameter / 2.0,
-                            -diameter / 2.0, diameter, diameter))
-                else:
-                    painter.drawEllipse(QRect(-diameter / 2,
-                            -diameter / 2, diameter, diameter))
+                    if self.floatBased:
+                        painter.drawEllipse(QRectF(-diameter / 2.0,
+                                -diameter / 2.0, diameter, diameter))
+                    else:
+                        painter.drawEllipse(QRect(-diameter / 2,
+                                -diameter / 2, diameter, diameter))
+
+class InnerWindow(QWidget):
+    def __init__(self):
+        QWidget.__init__(self)
+        self.layout = QHBoxLayout()
+
+        super(InnerWindow, self).__init__()
 
 
+# MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
-    def __init__(self, widget, fname):
+    def __init__(self, fname):
         QMainWindow.__init__(self)
         self.setWindowTitle("PySide2 Image Viewer")
+
+        self.zpa = ZoomPanWidget(fname=fname)
 
         # Menu
         self.menu = self.menuBar()
@@ -94,7 +115,8 @@ class MainWindow(QMainWindow):
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
         self.setMinimumWidth(800)
         self.setMinimumHeight(600)
-        self.setCentralWidget(widget)
+
+        self.setCentralWidget(self.zpa)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     @Slot()
@@ -115,14 +137,7 @@ if __name__ == "__main__":
     # Qt Application
     app = QApplication(sys.argv)
 
-    # QLabel with an image
-    label = QLabel()
-    pixmap = QPixmap(fname)
-    label.setPixmap(pixmap)
-
-    zpa = ZoomPanWidget()
-
-    window = MainWindow(zpa,fname)
+    window = MainWindow(fname)
     # window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
 
     window.show()
