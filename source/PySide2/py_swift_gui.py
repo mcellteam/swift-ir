@@ -71,8 +71,6 @@ class ZoomPanWidget(QWidget):
         ex = event.x()
         ey = event.y()
 
-        print ( "mousePressEvent at " + str(ex) + ", " + str(ey) + ", with button " + str(event.button()) )
-        print ( "  Image x,y = " + str(self.image_x(ex)) + ", " + str(self.image_y(ey)) )
         self.last_button = event.button()
         if event.button() == Qt.MouseButton.RightButton:
             # Resest the pan and zoom
@@ -89,14 +87,12 @@ class ZoomPanWidget(QWidget):
         self.update()
 
     def mouseMoveEvent(self, event):
-        # print ( "mouseMoveEvent at " + str(event.x()) + ", " + str(event.y()) + ", with button " + str(event.button()) )
         if self.last_button == Qt.MouseButton.LeftButton:
             self.dx = (event.x() - self.mdx) / self.zoom_scale
             self.dy = (event.y() - self.mdy) / self.zoom_scale
             self.update()
 
     def mouseReleaseEvent(self, event):
-        # print ( "mouseReleaseEvent at " + str(event.x()) + ", " + str(event.y()) )
         if event.button() == Qt.MouseButton.LeftButton:
             self.ldx = self.ldx + self.dx
             self.ldy = self.ldy + self.dy
@@ -113,9 +109,6 @@ class ZoomPanWidget(QWidget):
 
         mouse_win_x = event.x()
         mouse_win_y = event.y()
-        #print ( "mouseWheelEvent at window " + str(mouse_win_x) + ", " + str(mouse_win_y) )
-        mouse_image_x = self.image_x(mouse_win_x)
-        mouse_image_y = self.image_y(mouse_win_y)
 
         old_scale = self.zoom_scale
         new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
