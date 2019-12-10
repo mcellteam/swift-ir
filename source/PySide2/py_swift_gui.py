@@ -23,16 +23,35 @@ class ZoomPanWidget(QWidget):
         self.wheel_index = 0
         self.scroll_factor = 1.25
         self.zoom_scale = 1.0
+        self.last_button = Qt.MouseButton.NoButton
 
-        self.mdx = 0
-        self.mdy = 0
-        self.ldx = 0
-        self.ldy = 0
-        self.dx = 0
-        self.dy = 0
+        self.mdx = 0  # Mouse Down x (screen x of mouse down at start of drag)
+        self.mdy = 0  # Mouse Down y (screen y of mouse down at start of drag)
+        self.ldx = 0  # Last dx (fixed while dragging)
+        self.ldy = 0  # Last dy (fixed while dragging)
+        self.dx = 0   # Offset in x of the image
+        self.dy = 0   # Offset in y of the image
 
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    def image_x ( self, win_x ):
+        img_x = (win_x/self.zoom_scale) - self.ldx
+        return ( img_x )
+
+    def image_y ( self, win_y ):
+        img_y = (win_y/self.zoom_scale) - self.ldy
+        return ( img_y )
+
+    def dump(self):
+        print ( "wheel = " + str(self.wheel_index) )
+        print ( "zoom = " + str(self.zoom_scale) )
+        print ( "ldx  = " + str(self.ldx) )
+        print ( "ldy  = " + str(self.ldy) )
+        print ( "mdx  = " + str(self.mdx) )
+        print ( "mdy  = " + str(self.mdy) )
+        print ( " dx  = " + str(self.dx) )
+        print ( " dy  = " + str(self.dy) )
 
     def setFloatBased(self, floatBased):
         self.floatBased = floatBased
@@ -49,24 +68,35 @@ class ZoomPanWidget(QWidget):
         return QSize(180, 180)
 
     def mousePressEvent(self, event):
-        print ( "mousePressEvent at " + str(event.x()) + ", " + str(event.y()) )
+        ex = event.x()
+        ey = event.y()
+
+        print ( "mousePressEvent at " + str(ex) + ", " + str(ey) + ", with button " + str(event.button()) )
+        print ( "  Image x,y = " + str(self.image_x(ex)) + ", " + str(self.image_y(ey)) )
+        self.last_button = event.button()
         if event.button() == Qt.MouseButton.RightButton:
+            # Resest the pan and zoom
             self.dx = self.mdx = self.ldx = 0
             self.dy = self.mdy = self.ldy = 0
+            self.wheel_index = 0
             self.zoom_scale = 1.0
+        elif event.button() == Qt.MouseButton.MiddleButton:
+            self.dump()
         else:
-            self.mdx = event.x()
-            self.mdy = event.y()
+            # Set the Mouse Down position to be the screen location of the mouse
+            self.mdx = ex
+            self.mdy = ey
         self.update()
 
     def mouseMoveEvent(self, event):
-        # print ( "mouseMoveEvent at " + str(event.x()) + ", " + str(event.y()) )
-        self.dx = (event.x() - self.mdx) / self.zoom_scale
-        self.dy = (event.y() - self.mdy) / self.zoom_scale
-        self.update()
+        # print ( "mouseMoveEvent at " + str(event.x()) + ", " + str(event.y()) + ", with button " + str(event.button()) )
+        if self.last_button == Qt.MouseButton.LeftButton:
+            self.dx = (event.x() - self.mdx) / self.zoom_scale
+            self.dy = (event.y() - self.mdy) / self.zoom_scale
+            self.update()
 
     def mouseReleaseEvent(self, event):
-        print ( "mouseReleaseEvent at " + str(event.x()) + ", " + str(event.y()) )
+        # print ( "mouseReleaseEvent at " + str(event.x()) + ", " + str(event.y()) )
         if event.button() == Qt.MouseButton.LeftButton:
             self.ldx = self.ldx + self.dx
             self.ldy = self.ldy + self.dy
@@ -80,8 +110,19 @@ class ZoomPanWidget(QWidget):
 
     def wheelEvent(self, event):
         self.wheel_index += event.delta()/120
-        self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
-        print ( "Wheel index = " + str(self.wheel_index) + ", Scale = " + str(self.zoom_scale) )
+
+        mouse_win_x = event.x()
+        mouse_win_y = event.y()
+        #print ( "mouseWheelEvent at window " + str(mouse_win_x) + ", " + str(mouse_win_y) )
+        mouse_image_x = self.image_x(mouse_win_x)
+        mouse_image_y = self.image_y(mouse_win_y)
+
+        old_scale = self.zoom_scale
+        new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+
+        self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+        self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+
         self.update()
 
     def paintEvent(self, event):
@@ -90,7 +131,7 @@ class ZoomPanWidget(QWidget):
         if True:
             if self.pixmap != None:
                 painter.scale ( self.zoom_scale, self.zoom_scale )
-                painter.drawPixmap ( QPoint(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
+                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
@@ -118,6 +159,7 @@ class MainWindow(QMainWindow):
         # Menu
         self.menu = self.menuBar()
         self.file_menu = self.menu.addMenu("&File")
+        self.debug_menu = self.menu.addMenu("&Debug")
 
         # Exit QAction
         exit_action = QAction("E&xit", self)
@@ -125,6 +167,13 @@ class MainWindow(QMainWindow):
         exit_action.triggered.connect(self.exit_app)
 
         self.file_menu.addAction(exit_action)
+
+        # Python Console QAction
+        console_action = QAction("&Python Console", self)
+        console_action.setShortcut("Ctrl+P")
+        console_action.triggered.connect(self.py_console)
+
+        self.debug_menu.addAction(console_action)
 
         # Status Bar
         self.status = self.statusBar()
@@ -142,6 +191,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def exit_app(self, checked):
         sys.exit()
+
+    @Slot()
+    def py_console(self, checked):
+        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 # This provides default command line parameters if none are given (as with "Idle")
 if len(sys.argv) <= 1:
