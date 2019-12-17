@@ -166,10 +166,44 @@ class MainWindow(QMainWindow):
                   [ 'E&xit', 'Ctrl+Q', self.exit_app ]
                 ]
               ],
-              [ '&Set',
+              [ '&Images',
                 [
-                  [ '&Max Image Size', 'Ctrl+M', self.not_yet ],
-                  [ '&Cursor',
+                  [ '&Import...', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Center', None, self.not_yet ],
+                  [ 'Actual Size', None, self.not_yet ],
+                  [ 'Refresh', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Clear Out Images', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Clear All Layers', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Clear Everything', None, self.not_yet ]
+                ]
+              ],
+              [ '&Scaling',
+                [
+                  [ '&Define Scales', None, self.not_yet ],
+                  [ '&Generate All Scales', None, self.not_yet ],
+                  [ '&Import All Scales', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ '&Generate Tiled', None, self.not_yet ],
+                  [ '&Import Tiled', None, self.not_yet ],
+                  [ '&Show Tiled', None, self.not_yet ]
+                ]
+              ],
+              [ '&Scales',
+                [
+                  [ '&Scale 1', None, self.not_yet ]
+                ]
+              ],
+              [ '&Points',
+                [
+                  [ '&Alignment Point Mode', None, self.not_yet ],
+                  [ '&Delete Points', None, self.not_yet ],
+                  [ '&Clear All Alignment Points', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ '&Point Cursor',
                     [
                       [ 'Crosshair', None, self.not_yet ],
                       [ 'Target', None, self.not_yet ]
@@ -177,9 +211,67 @@ class MainWindow(QMainWindow):
                   ]
                 ]
               ],
+              [ '&Set',
+                [
+                  [ '&Max Image Size', 'Ctrl+M', self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Perform Swims', None, self.not_yet ],
+                  [ 'Update CFMs', None, self.not_yet ],
+                  [ 'Generate Images', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Use C Version', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Unlimited Zoom', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Default Plot Code', None, self.not_yet ],
+                  [ 'Custom Plot Code', None, self.not_yet ],
+                ]
+              ],
+              [ '&Show',
+                [
+                  [ 'Window Centers', None, self.not_yet ],
+                  [ 'Affines', None, self.not_yet ],
+                  [ 'Skipped Images', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Plot', None, self.not_yet ],
+                ]
+              ],
               [ '&Debug',
                 [
-                  [ '&Python Console', 'Ctrl+P', self.py_console ]
+                  [ '&Python Console', 'Ctrl+P', self.py_console ],
+                  [ '-', None, None ],
+                  [ 'Print Affine', None, self.not_yet ],
+                  [ 'Print Structures', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Define Waves', None, self.not_yet ],
+                  [ 'Make Waves', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Define Grid', None, self.not_yet ],
+                  [ 'Grid Align', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Show Waves', None, self.not_yet ],
+                  [ 'Show Grid Align', None, self.not_yet ],
+                  [ 'Show Aligned', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ '&Set Debug Level',
+                    [
+                      [ 'Level 0', None, self.not_yet ],
+                      [ 'Level 10', None, self.not_yet ],
+                      [ 'Level 20', None, self.not_yet ],
+                      [ 'Level 30', None, self.not_yet ],
+                      [ 'Level 40', None, self.not_yet ],
+                      [ 'Level 50', None, self.not_yet ],
+                      [ 'Level 60', None, self.not_yet ],
+                      [ 'Level 70', None, self.not_yet ],
+                      [ 'Level 80', None, self.not_yet ],
+                      [ 'Level 90', None, self.not_yet ],
+                      [ 'Level 100', None, self.not_yet ]
+                    ]
+                  ]
+                ]
+              ],
+              [ '&Help',
+                [
                 ]
               ]
             ]
@@ -192,7 +284,7 @@ class MainWindow(QMainWindow):
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumWidth(800)
+        self.setMinimumWidth(900)
         self.setMinimumHeight(600)
 
         self.setCentralWidget(self.zpa)
