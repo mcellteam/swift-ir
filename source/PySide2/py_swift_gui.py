@@ -143,30 +143,47 @@ class ZoomPanWidget(QWidget):
 
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
+
     def __init__(self, fname):
+
         QMainWindow.__init__(self)
         self.setWindowTitle("PySide2 Image Viewer")
 
         self.zpa = ZoomPanWidget(fname=fname)
 
-        # Menu
+        # Menu Bar
         self.menu = self.menuBar()
-        self.file_menu = self.menu.addMenu("&File")
-        self.debug_menu = self.menu.addMenu("&Debug")
-
-        # Exit QAction
-        exit_action = QAction("E&xit", self)
-        exit_action.setShortcut("Ctrl+Q")
-        exit_action.triggered.connect(self.exit_app)
-
-        self.file_menu.addAction(exit_action)
-
-        # Python Console QAction
-        console_action = QAction("&Python Console", self)
-        console_action.setShortcut("Ctrl+P")
-        console_action.triggered.connect(self.py_console)
-
-        self.debug_menu.addAction(console_action)
+        ml = [
+              [ '&File',
+                [
+                  [ '&New Project', 'Ctrl+N', self.not_yet ],
+                  [ '&Open Project', 'Ctrl+O', self.not_yet ],
+                  [ '&Save Project', 'Ctrl+S', self.not_yet ],
+                  [ 'Save Project &As', 'Ctrl+A', self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Set Destination...', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app ]
+                ]
+              ],
+              [ '&Set',
+                [
+                  [ '&Max Image Size', 'Ctrl+M', self.not_yet ],
+                  [ '&Cursor',
+                    [
+                      [ 'Crosshair', None, self.not_yet ],
+                      [ 'Target', None, self.not_yet ]
+                    ]
+                  ]
+                ]
+              ],
+              [ '&Debug',
+                [
+                  [ '&Python Console', 'Ctrl+P', self.py_console ]
+                ]
+              ]
+            ]
+        self.build_menu_from_list ( self.menu, ml )
 
         # Status Bar
         self.status = self.statusBar()
@@ -181,13 +198,40 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.zpa)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+    def build_menu_from_list (self, parent, menu_list):
+        for item in menu_list:
+          if type(item[1]) == type([]):
+            # This is a submenu
+            sub = parent.addMenu(item[0])
+            self.build_menu_from_list ( sub, item[1] )
+          else:
+            # This is a menu item (action) or a separator
+            if item[0] == '-':
+              # This is a separator
+              parent.addSeparator()
+            else:
+              # This is a menu item (action) with name, accel, callback
+              action = QAction ( item[0], self)
+              if item[1] != None:
+                action.setShortcut ( item[1] )
+              if item[2] != None:
+                action.triggered.connect ( item[2] )
+              parent.addAction ( action )
+
+
+    @Slot()
+    def not_yet(self, checked):
+        print ( "Function is not implemented yet" )
+
     @Slot()
     def exit_app(self, checked):
         sys.exit()
 
     @Slot()
     def py_console(self, checked):
+        print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
 
 # This provides default command line parameters if none are given (as with "Idle")
 if len(sys.argv) <= 1:
