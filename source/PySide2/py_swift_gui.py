@@ -272,6 +272,13 @@ class MainWindow(QMainWindow):
               ],
               [ '&Help',
                 [
+                  [ 'Manual...', None, self.not_yet ],
+                  [ 'Key Commands...', None, self.not_yet ],
+                  [ 'Mouse Clicks...', None, self.not_yet ],
+                  [ '-', None, None ],
+                  [ 'Skipped Images', None, self.not_yet ],
+                  [ 'License...', None, self.not_yet ],
+                  [ 'Version...', None, self.not_yet ]
                 ]
               ]
             ]
@@ -284,8 +291,8 @@ class MainWindow(QMainWindow):
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumWidth(900)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(1400)
+        self.setMinimumHeight(1024)
 
         self.setCentralWidget(self.zpa)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
