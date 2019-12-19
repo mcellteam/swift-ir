@@ -2,7 +2,7 @@ import sys
 import argparse
 import cv2
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QGridLayout, QLineEdit
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -149,7 +149,8 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.setWindowTitle("PySide2 Image Viewer")
 
-        self.zpa = ZoomPanWidget(fname=fname)
+        self.zpa1 = ZoomPanWidget(fname=fname)
+        self.zpa2 = ZoomPanWidget(fname=fname)
 
         # Menu Bar
         self.menu = self.menuBar()
@@ -255,17 +256,17 @@ class MainWindow(QMainWindow):
                   [ '-', None, None ],
                   [ '&Set Debug Level',
                     [
-                      [ 'Level 0', None, self.not_yet ],
-                      [ 'Level 10', None, self.not_yet ],
-                      [ 'Level 20', None, self.not_yet ],
-                      [ 'Level 30', None, self.not_yet ],
-                      [ 'Level 40', None, self.not_yet ],
-                      [ 'Level 50', None, self.not_yet ],
-                      [ 'Level 60', None, self.not_yet ],
-                      [ 'Level 70', None, self.not_yet ],
-                      [ 'Level 80', None, self.not_yet ],
-                      [ 'Level 90', None, self.not_yet ],
-                      [ 'Level 100', None, self.not_yet ]
+                      [ 'Level 0', None, self.not_yet, 'level' ],
+                      [ 'Level 10', None, self.not_yet, 'level' ],
+                      [ 'Level 20', None, self.not_yet, 'level' ],
+                      [ 'Level 30', None, self.not_yet, 'level' ],
+                      [ 'Level 40', None, self.not_yet, 'level' ],
+                      [ 'Level 50', None, self.not_yet, 'level' ],
+                      [ 'Level 60', None, self.not_yet, 'level' ],
+                      [ 'Level 70', None, self.not_yet, 'level' ],
+                      [ 'Level 80', None, self.not_yet, 'level' ],
+                      [ 'Level 90', None, self.not_yet, 'level' ],
+                      [ 'Level 100', None, self.not_yet, 'level' ]
                     ]
                   ]
                 ]
@@ -294,7 +295,16 @@ class MainWindow(QMainWindow):
         self.setMinimumWidth(1400)
         self.setMinimumHeight(1024)
 
-        self.setCentralWidget(self.zpa)
+        self.central_widget = QWidget()
+        layout = QGridLayout()
+        layout.addWidget ( self.zpa1, 0, 0 )
+        layout.addWidget ( self.zpa2, 0, 1 )
+        self.control_panel = QLineEdit ( "Control Panel" )
+        layout.addWidget ( self.control_panel, 1, 0, 1, 2 )
+        self.central_widget.setLayout(layout)
+
+        self.setCentralWidget(self.central_widget)
+        #self.setCentralWidget(self.zpa1)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def build_menu_from_list (self, parent, menu_list):
@@ -310,12 +320,23 @@ class MainWindow(QMainWindow):
               parent.addSeparator()
             else:
               # This is a menu item (action) with name, accel, callback
-              action = QAction ( item[0], self)
+              action = QAction ( item[0], self )
               if item[1] != None:
                 action.setShortcut ( item[1] )
               if item[2] != None:
                 action.triggered.connect ( item[2] )
               parent.addAction ( action )
+              if (len(item) >= 4) and (type(item[3])==type(None)):
+                # This is either a radio button menu item or a checkbox menu item
+                if type(item[3])==type(None):
+                  # This is a checkbox item
+                  pass
+                else:
+                  # This is a radio button item with the 4th value as a group name
+                  pass
+              else:
+                # This is a normal menu item
+                pass
 
 
     @Slot()
