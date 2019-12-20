@@ -6,6 +6,7 @@ from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QActio
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
+import py_swift_tiff
 
 class ZoomPanWidget(QWidget):
     def __init__(self, parent=None, fname=None):
@@ -360,8 +361,17 @@ if len(sys.argv) <= 1:
 if __name__ == "__main__":
     options = argparse.ArgumentParser()
     options.add_argument("-f", "--file", type=str, required=True)
+    options.add_argument("-t", "--tiff", type=str, required=False)
     args = options.parse_args()
-    fname = args.file
+    fname = ''
+    if 'file' in args:
+      fname = args.file
+    tname = ''
+    if 'tiff' in args:
+      tname = args.tiff
+      py_swift_tiff.dump_tiff ( tname )
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     # Qt Application
     app = QApplication(sys.argv)
