@@ -363,13 +363,15 @@ if __name__ == "__main__":
     options.add_argument("-f", "--file", type=str, required=True)
     options.add_argument("-t", "--tiff", type=str, required=False)
     args = options.parse_args()
+    print ( str(args) )
     fname = ''
     if 'file' in args:
       fname = args.file
     tname = ''
     if 'tiff' in args:
-      tname = args.tiff
-      py_swift_tiff.dump_tiff ( tname )
+      if args.tiff != None:
+        tname = args.tiff
+        py_swift_tiff.dump_tiff ( tname )
 
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
