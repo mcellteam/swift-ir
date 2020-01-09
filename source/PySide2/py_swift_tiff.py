@@ -212,9 +212,12 @@ def dump_tiff ( fname ):
   print ( "Reading tif file named " + str(fname) + "\n" )
 
   fdata = None
+  flen = None
   with open ( fname, mode='rb' ) as f:
     fdata = f.read()
+    flen = f.seek(0,2)
 
+  print ( "File length = " + str(flen) )
   bigend = False
   send = '<'
 
@@ -356,6 +359,10 @@ def dump_tiff ( fname ):
         try:
           data = struct.unpack_from ( send+"BBBB", fdata, offset=offset )
         except:
+          exi = sys.exc_info()
+          print ( "Exception type = " + str(exi[0]) )
+          print ( "Exception value = " + str(exi[1]) )
+          print ( "Exception trace = " + str(exi[2]) )
           __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         #print ( "Read data " + str(data) + " from " + str(offset) )
         #print ( "" )
