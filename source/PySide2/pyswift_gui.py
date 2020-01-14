@@ -1424,234 +1424,236 @@ class tiled_tiff:
     return ( tagid + " ... " + dlen + " of " + dtype )
 
 
-if gtk_mode:
 
-  class annotated_image:
-    ''' An image with a series of drawing primitives defined in
-        the pixel coordinates of the image. '''
-    def __init__ ( self, file_name=None, clone_from=None, role=None ):
-      # Initialize everything to defaults
+class annotated_image:
+  ''' An image with a series of drawing primitives defined in
+      the pixel coordinates of the image. '''
+  def __init__ ( self, file_name=None, clone_from=None, role=None ):
+    # Initialize everything to defaults
+    self.file_name = file_name
+    self.file_size = -1
+    self.image = None
+    self.tiled_image = None
+    self.graphics_items = []
+    self.role = role
+    # self.results_dict = None
+
+    # Copy in the clone if provided
+    if type(clone_from) != type(None):
+      self.file_name = clone_from.file_name
+      self.image = clone_from.image
+      self.tiled_image = clone_from.tiled_image
+      self.graphics_items = [ gi for gi in clone_from.graphics_items ]
+
+    # Over-ride other items as provided
+    if type(file_name) != type(None):
       self.file_name = file_name
-      self.file_size = -1
-      self.image = None
-      self.tiled_image = None
-      self.graphics_items = []
+    if role != None:
       self.role = role
-      # self.results_dict = None
-
-      # Copy in the clone if provided
-      if type(clone_from) != type(None):
-        self.file_name = clone_from.file_name
-        self.image = clone_from.image
-        self.tiled_image = clone_from.tiled_image
-        self.graphics_items = [ gi for gi in clone_from.graphics_items ]
-
-      # Over-ride other items as provided
-      if type(file_name) != type(None):
-        self.file_name = file_name
-      if role != None:
-        self.role = role
-      if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
-        try:
-          f = file ( self.file_name )
-          f.seek (0, 2)
-          self.file_size = f.tell()
-          f.close()
-          global max_image_file_size
-          if self.file_size < max_image_file_size:
-            self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
-            print_debug ( 50, "Loaded " + str(self.file_name) )
-          else:
-            self.image = None
-            print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
-            self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
-        except Exception as e:
-          print ( "Exception caught while showing window centers: " + str(e) )
-          print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
-          print_debug ( -1, "Exception: " + str(e) )
-          # exit(1)
+    if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
+      try:
+        f = file ( self.file_name )
+        f.seek (0, 2)
+        self.file_size = f.tell()
+        f.close()
+        global max_image_file_size
+        if self.file_size < max_image_file_size:
+          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+          print_debug ( 50, "Loaded " + str(self.file_name) )
+        else:
           self.image = None
+          print_debug ( -1, "File " + str(self.file_name) + " (" + str(self.file_size) + " bytes) is too large to load." )
+          self.graphics_items.insert ( 0, graphic_text(0.4, 0.5, "File Size: " + str(self.file_size), coordsys='s', color=[1, 0.5, 0.5], temp=True) )
+      except Exception as e:
+        print ( "Exception caught while showing window centers: " + str(e) )
+        print_debug ( -1, "Got an exception in annotated_image constructor reading annotated image " + str(self.file_name) )
+        print_debug ( -1, "Exception: " + str(e) )
+        # exit(1)
+        self.image = None
 
-      if (type(self.tiled_image) == type(None)) and (type(self.file_name) != type(None)):
-        if os.path.splitext(self.file_name)[1] == ".ttif":
-          # Read in the structure for a tiled_tiff image
-          self.tiled_image = tiled_tiff ( self.file_name )
+    if (type(self.tiled_image) == type(None)) and (type(self.file_name) != type(None)):
+      if os.path.splitext(self.file_name)[1] == ".ttif":
+        # Read in the structure for a tiled_tiff image
+        self.tiled_image = tiled_tiff ( self.file_name )
 
-      if type(clone_from) == type(None):
-        self.add_file_name_graphic()
-
-    def to_string ( self ):
-      return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
-
-    def use_image_from ( self, other_annotated_image ):
-      self.file_name = other_annotated_image.file_name
-      self.image = other_annotated_image.image
-      self.tiled_image = other_annotated_image.tiled_image
+    if type(clone_from) == type(None):
       self.add_file_name_graphic()
 
-    def add_file_name_graphic ( self ):
-      if type(self.file_name) != type(None):
-        self.graphics_items.insert ( 0, graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
+  def to_string ( self ):
+    return ( "AnnoImage \"" + str(self.file_name) + "\" with annotations: " + str([gi.to_string() for gi in self.graphics_items]) )
 
-    def set_role ( self, role ):
-      self.role = role
+  def use_image_from ( self, other_annotated_image ):
+    self.file_name = other_annotated_image.file_name
+    self.image = other_annotated_image.image
+    self.tiled_image = other_annotated_image.tiled_image
+    self.add_file_name_graphic()
 
-    def get_marker_points ( self ):
-      point_list = []
-      for item in self.graphics_items:
-        if item.marker:
-          point_list.append ( [item.x, item.y] )
-      return point_list
+  def add_file_name_graphic ( self ):
+    if type(self.file_name) != type(None):
+      self.graphics_items.insert ( 0, graphic_text(100, 2, self.file_name.split('/')[-1], coordsys='p', color=[1, 1, 1]) )
 
-    def clear_non_marker_graphics ( self ):
-      marker_list = [ gi for gi in self.graphics_items if gi.marker ]
-      self.graphics_items = marker_list
+  def set_role ( self, role ):
+    self.role = role
 
-    def add_graphic ( self, item ):
-      self.graphics_items.append ( item )
+  def get_marker_points ( self ):
+    point_list = []
+    for item in self.graphics_items:
+      if item.marker:
+        point_list.append ( [item.x, item.y] )
+    return point_list
 
+  def clear_non_marker_graphics ( self ):
+    marker_list = [ gi for gi in self.graphics_items if gi.marker ]
+    self.graphics_items = marker_list
 
-  class alignment_layer:
-    ''' An alignment_layer has a base image and a set of images and processes representing the relationships to its neighbors '''
-    def __init__ ( self, base=None ):
-      print_debug ( 50, "Constructing new alignment_layer with base " + str(base) )
-      self.base_image_name = base
-      self.align_proc = None
-      self.align_method = 0
-      self.align_method_text = 'Auto Swim Align'
-
-      # This holds a single annotated image
-      self.base_annotated_image = None
-
-      # This holds the annotated images to be stored and/or displayed.
-      self.image_dict = {}
-
-      # These are the parameters used for this layer
-      self.trans_ww = 256
-      self.trans_addx = 256
-      self.trans_addy = 256
-
-      self.skip = False
-      self.snr_skip = False
-
-      self.affine_enabled = True
-      self.affine_ww = 256
-      self.affine_addx = 256
-      self.affine_addy = 256
-
-      self.bias_enabled = True
-      self.bias_dx = 0.0
-      self.bias_dy = 0.0
-
-      self.init_refine_apply = 'Init Affine'
-      self.bias_rotation = 0.0
-      self.bias_scale_x = 0.0
-      self.bias_scale_y = 0.0
-      self.bias_skew_x = 0.0
-
-      # This holds whatever is produced by this alignment
-      self.results_dict = {}
-
-      try:
-        self.base_annotated_image = annotated_image ( self.base_image_name, role="base" )
-        # By default, the first (and only) image in the list will be the base image
-      except:
-        self.base_annotated_image = annotated_image ( None, role="base" )
-
-      # Always initialize with the image
-      self.image_dict['base'] = self.base_annotated_image
-
-      global show_tiled
-      self.tile_data = None
-      if show_tiled:
-        print_debug ( 1, "Creating an alignment_layer with tiling enabled" )
-        self.tile_data = tiled_tiff ( self.base_image_name )
+  def add_graphic ( self, item ):
+    self.graphics_items.append ( item )
 
 
-    def to_string ( self ):
-      s = "AlignLayer \"" + str(self.base_image_name) + "\" with images:"
-      for k,v in self.image_dict.items():
-        s = s + "\n  " + str(k) + ": " + v.to_string()
-      return ( s )
+class alignment_layer:
+  ''' An alignment_layer has a base image and a set of images and processes representing the relationships to its neighbors '''
+  def __init__ ( self, base=None ):
+    print_debug ( 50, "Constructing new alignment_layer with base " + str(base) )
+    self.base_image_name = base
+    self.align_proc = None
+    self.align_method = 0
+    self.align_method_text = 'Auto Swim Align'
+
+    # This holds a single annotated image
+    self.base_annotated_image = None
+
+    # This holds the annotated images to be stored and/or displayed.
+    self.image_dict = {}
+
+    # These are the parameters used for this layer
+    self.trans_ww = 256
+    self.trans_addx = 256
+    self.trans_addy = 256
+
+    self.skip = False
+    self.snr_skip = False
+
+    self.affine_enabled = True
+    self.affine_ww = 256
+    self.affine_addx = 256
+    self.affine_addy = 256
+
+    self.bias_enabled = True
+    self.bias_dx = 0.0
+    self.bias_dy = 0.0
+
+    self.init_refine_apply = 'Init Affine'
+    self.bias_rotation = 0.0
+    self.bias_scale_x = 0.0
+    self.bias_scale_y = 0.0
+    self.bias_skew_x = 0.0
+
+    # This holds whatever is produced by this alignment
+    self.results_dict = {}
+
+    try:
+      self.base_annotated_image = annotated_image ( self.base_image_name, role="base" )
+      # By default, the first (and only) image in the list will be the base image
+    except:
+      self.base_annotated_image = annotated_image ( None, role="base" )
+
+    # Always initialize with the image
+    self.image_dict['base'] = self.base_annotated_image
+
+    global show_tiled
+    self.tile_data = None
+    if show_tiled:
+      print_debug ( 1, "Creating an alignment_layer with tiling enabled" )
+      self.tile_data = tiled_tiff ( self.base_image_name )
+
+
+  def to_string ( self ):
+    s = "AlignLayer \"" + str(self.base_image_name) + "\" with images:"
+    for k,v in self.image_dict.items():
+      s = s + "\n  " + str(k) + ": " + v.to_string()
+    return ( s )
 
 
 
-  # These two global functions are handy for callbacks
+# These two global functions are handy for callbacks
 
-  def store_fields_into_current_layer():
-    if (alignment_layer_list != None) and (alignment_layer_index >= 0):
-      if alignment_layer_index < len(alignment_layer_list):
-        a = alignment_layer_list[alignment_layer_index]
-        a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
-        a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
-        a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
-        a.skip = gui_fields.skip_check_box.get_active()
-        a.align_method      = gui_fields.align_method_select.get_active()
-        a.align_method_text = gui_fields.align_method_select.get_active_text()
-        a.affine_enabled = gui_fields.affine_check_box.get_active()
-        a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
+def store_fields_into_current_layer():
+  if (alignment_layer_list != None) and (alignment_layer_index >= 0):
+    if alignment_layer_index < len(alignment_layer_list):
+      a = alignment_layer_list[alignment_layer_index]
+      a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
+      a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
+      a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
+      a.skip = gui_fields.skip_check_box.get_active()
+      a.align_method      = gui_fields.align_method_select.get_active()
+      a.align_method_text = gui_fields.align_method_select.get_active_text()
+      a.affine_enabled = gui_fields.affine_check_box.get_active()
+      a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
 
-        a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
-        a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
-        a.bias_enabled = gui_fields.bias_check_box.get_active()
-        print_debug ( 70, "Storing 1, a.bias_dx = " + str(a.bias_dx) )
-        a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
-        a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
-        print_debug ( 70, "Storing 2, a.bias_dx = " + str(a.bias_dx) )
-
-
-        a.init_refine_apply = gui_fields.init_refine_apply_entry.get_active_text()
-        a.bias_rotation = float(gui_fields.bias_rotation_entry.get_text())
-        a.bias_scale_x = float(gui_fields.bias_scale_x_entry.get_text())
-        a.bias_scale_y = float(gui_fields.bias_scale_y_entry.get_text())
-        a.bias_skew_x = float(gui_fields.bias_skew_x_entry.get_text())
-
-        # Store the bias values in all layers to give them a "global" feel
-        # If the final version needs individual biases, just comment this code:
-        if alignment_layer_list != None:
-          if len(alignment_layer_list) > 0:
-            for t in alignment_layer_list:
-              t.bias_dx = a.bias_dx
-              t.bias_dy = a.bias_dy
-              t.init_refine_apply = a.init_refine_apply
-              t.bias_rotation = a.bias_rotation
-              t.bias_scale_x = a.bias_scale_x
-              t.bias_scale_y = a.bias_scale_y
-              t.bias_skew_x = a.bias_skew_x
-
-        print_debug ( 70, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
+      a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
+      a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
+      a.bias_enabled = gui_fields.bias_check_box.get_active()
+      print_debug ( 70, "Storing 1, a.bias_dx = " + str(a.bias_dx) )
+      a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
+      a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
+      print_debug ( 70, "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
 
-  def store_current_layer_into_fields():
-    if (alignment_layer_list != None) and (alignment_layer_index >= 0):
-      if alignment_layer_index < len(alignment_layer_list):
-        a = alignment_layer_list[alignment_layer_index]
-        print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
-        print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
-        gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
-        gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
-        gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
-        gui_fields.skip_check_box.set_active ( a.skip )
-        gui_fields.align_method_select.set_active ( a.align_method )
-        # gui_fields.align_method_select.set_active_text ( a.align_method_text )
-        gui_fields.affine_check_box.set_active ( a.affine_enabled )
-        gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
+      a.init_refine_apply = gui_fields.init_refine_apply_entry.get_active_text()
+      a.bias_rotation = float(gui_fields.bias_rotation_entry.get_text())
+      a.bias_scale_x = float(gui_fields.bias_scale_x_entry.get_text())
+      a.bias_scale_y = float(gui_fields.bias_scale_y_entry.get_text())
+      a.bias_skew_x = float(gui_fields.bias_skew_x_entry.get_text())
 
-        gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
-        gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
-        gui_fields.bias_check_box.set_active(a.bias_enabled)
-        print_debug ( 70, "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
-        gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
-        gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
+      # Store the bias values in all layers to give them a "global" feel
+      # If the final version needs individual biases, just comment this code:
+      if alignment_layer_list != None:
+        if len(alignment_layer_list) > 0:
+          for t in alignment_layer_list:
+            t.bias_dx = a.bias_dx
+            t.bias_dy = a.bias_dy
+            t.init_refine_apply = a.init_refine_apply
+            t.bias_rotation = a.bias_rotation
+            t.bias_scale_x = a.bias_scale_x
+            t.bias_scale_y = a.bias_scale_y
+            t.bias_skew_x = a.bias_skew_x
 
-        # TODO gui_fields.init_refine_apply_entry.set_text(str(a.init_refine_apply))
-        gui_fields.init_refine_apply_entry.set_active ( alignment_opts.index(a.init_refine_apply) )
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        gui_fields.bias_rotation_entry.set_text(str(a.bias_rotation))
-        gui_fields.bias_scale_x_entry.set_text(str(a.bias_scale_x))
-        gui_fields.bias_scale_y_entry.set_text(str(a.bias_scale_y))
-        gui_fields.bias_skew_x_entry.set_text(str(a.bias_skew_x))
+      print_debug ( 70, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
 
+
+def store_current_layer_into_fields():
+  if (alignment_layer_list != None) and (alignment_layer_index >= 0):
+    if alignment_layer_index < len(alignment_layer_list):
+      a = alignment_layer_list[alignment_layer_index]
+      print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
+      print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
+      gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
+      gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
+      gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
+      gui_fields.skip_check_box.set_active ( a.skip )
+      gui_fields.align_method_select.set_active ( a.align_method )
+      # gui_fields.align_method_select.set_active_text ( a.align_method_text )
+      gui_fields.affine_check_box.set_active ( a.affine_enabled )
+      gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
+
+      gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
+      gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
+      gui_fields.bias_check_box.set_active(a.bias_enabled)
+      print_debug ( 70, "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
+      gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
+      gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
+
+      # TODO gui_fields.init_refine_apply_entry.set_text(str(a.init_refine_apply))
+      gui_fields.init_refine_apply_entry.set_active ( alignment_opts.index(a.init_refine_apply) )
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      gui_fields.bias_rotation_entry.set_text(str(a.bias_rotation))
+      gui_fields.bias_scale_x_entry.set_text(str(a.bias_scale_x))
+      gui_fields.bias_scale_y_entry.set_text(str(a.bias_scale_y))
+      gui_fields.bias_skew_x_entry.set_text(str(a.bias_skew_x))
+
+
+
+if gtk_mode:
 
 
   class zoom_panel ( app_window.zoom_pan_area ):
