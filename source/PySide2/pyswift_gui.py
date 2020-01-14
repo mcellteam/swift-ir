@@ -1682,483 +1682,482 @@ def store_current_layer_into_fields():
 
 
 
-if gtk_mode:
+class zoom_panel ( app_window.zoom_pan_area ):
+  '''zoom_panel - provide a drawing area that can be zoomed and panned.'''
+  global gui_fields
+  global panel_list
+
+  def __init__ ( self, window, win_width, win_height, role="", point_add_enabled=False ):
+
+    self.panel_dict = {}
+    self.role = role
+    self.point_add_enabled = point_add_enabled
+    self.force_center = False
+
+    # Call the constructor for the parent app_window.zoom_pan_area:
+    app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, role )
+
+    # Connect the scroll event for the drawing area (from zoom_pan_area) to a local function:
+    self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
+    self.drawing_area.connect ( "key_press_event", self.key_press_callback, self )
+    #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+
+    # Create a "pango_layout" which seems to be needed for drawing text
+    self.pangolayout = window.create_pango_layout("")
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+  def button_press_callback ( self, canvas, event, zpa ):
+    global alignment_layer_list
+    global alignment_layer_index
+    if self.point_add_enabled:
+      if point_mode and not point_delete_mode:
+        print_debug ( 50, "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+        print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+
+        #  print_debug ( 50, "Adding a marker point to the original image" )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+        this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+        print_debug ( 50, "    Storing point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
+        # if this_image.point_add_enabled:
+        if self.point_add_enabled:
+          this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+
+      if point_delete_mode:
+        print_debug ( 50, "Got a button press in point delete mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+
+        this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
+
+        image_click_x = self.x(event.x)
+        image_click_y = self.y(event.y)
+
+        closest_x = 0
+        closest_y = 0
+        closest_dist = sys.float_info.max
+        marker_list = [ item for item in this_image.graphics_items if item.marker ]
+        closest_marker = None
+        for gi in marker_list:
+          print_debug ( 50, "Clicked at " + str(image_click_x) + "," + str(image_click_y) + ", marker at : " + str(gi.x) + "," + str(gi.y) )
+          this_dist = math.pow(image_click_x-gi.x, 2) + math.pow(image_click_y-gi.y, 2)
+          if this_dist < closest_dist:
+            closest_x = gi.x
+            closest_y = gi.y
+            closest_dist = this_dist
+            closest_marker = gi
+        print_debug ( 50, "Closest pt = " + str(closest_x) + "," + str(closest_y) )
+        if math.sqrt(closest_dist) < 20:
+          print_debug ( 50, "Removing the point" )
+          this_image.graphics_items.remove ( closest_marker )
+
+        print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+
+        print_debug ( 50, "    Deleting point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
+        # print_debug ( 50, "image has " + str(len(this_image.graphics_items)) + " items" )
+        for gi in [ x for x in this_image.graphics_items if x.marker ]:
+          print_debug ( 50, "Item " + str(gi.to_string()) )
+        # if this_image.point_add_enabled:
+        #if self.point_add_enabled:
+        #  this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
+
+      # Draw the windows
+      zpa_original.queue_draw()
+      for p in panel_list:
+        p.queue_draw()
 
 
-  class zoom_panel ( app_window.zoom_pan_area ):
-    '''zoom_panel - provide a drawing area that can be zoomed and panned.'''
-    global gui_fields
-    global panel_list
+    # print_debug ( 50, "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+    if 'GDK_SHIFT_MASK' in event.get_state().value_names:
+      # Do any special processing for shift click
+      # Print the mouse location in screen coordinates:
+      print_debug ( 50, "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+      # Print the mouse location in image coordinates:
+      print_debug ( 50, "pyswift_gui:   Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
+      # return ( app_window.zoom_pan_area.button_press_callback ( self, canvas, event, zpa ) )
+      return True # Event has been handled
+    else:
+      # Call the parent's function to handle the click
+      return ( app_window.zoom_pan_area.button_press_callback ( self, canvas, event, zpa ) )
+    return True  # Event has been handled, do not propagate further
 
-    def __init__ ( self, window, win_width, win_height, role="", point_add_enabled=False ):
+  def button_release_callback ( self, canvas, event, zpa ):
+    #print_debug ( 50, "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
+    return ( app_window.zoom_pan_area.button_release_callback ( self, canvas, event, zpa ) )
 
-      self.panel_dict = {}
-      self.role = role
-      self.point_add_enabled = point_add_enabled
-      self.force_center = False
+  def move_through_stack ( self, direction ):
+    global alignment_layer_list
+    global alignment_layer_index
+    global show_skipped_layers
 
-      # Call the constructor for the parent app_window.zoom_pan_area:
-      app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, role )
+    # Store the alignment_layer parameters into the image layer being exited
+    store_fields_into_current_layer()
 
-      # Connect the scroll event for the drawing area (from zoom_pan_area) to a local function:
-      self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
-      self.drawing_area.connect ( "key_press_event", self.key_press_callback, self )
-      #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
-
-      # Create a "pango_layout" which seems to be needed for drawing text
-      self.pangolayout = window.create_pango_layout("")
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    def button_press_callback ( self, canvas, event, zpa ):
-      global alignment_layer_list
-      global alignment_layer_index
-      if self.point_add_enabled:
-        if point_mode and not point_delete_mode:
-          print_debug ( 50, "Got a button press in point mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-          print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
-
-          #  print_debug ( 50, "Adding a marker point to the original image" )
-          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-          this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
-          print_debug ( 50, "    Storing point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
-          # if this_image.point_add_enabled:
-          if self.point_add_enabled:
-            this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
-
-        if point_delete_mode:
-          print_debug ( 50, "Got a button press in point delete mode at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-
-          this_image = alignment_layer_list[alignment_layer_index].image_dict[self.role]
-
-          image_click_x = self.x(event.x)
-          image_click_y = self.y(event.y)
-
-          closest_x = 0
-          closest_y = 0
-          closest_dist = sys.float_info.max
-          marker_list = [ item for item in this_image.graphics_items if item.marker ]
-          closest_marker = None
-          for gi in marker_list:
-            print_debug ( 50, "Clicked at " + str(image_click_x) + "," + str(image_click_y) + ", marker at : " + str(gi.x) + "," + str(gi.y) )
-            this_dist = math.pow(image_click_x-gi.x, 2) + math.pow(image_click_y-gi.y, 2)
-            if this_dist < closest_dist:
-              closest_x = gi.x
-              closest_y = gi.y
-              closest_dist = this_dist
-              closest_marker = gi
-          print_debug ( 50, "Closest pt = " + str(closest_x) + "," + str(closest_y) )
-          if math.sqrt(closest_dist) < 20:
-            print_debug ( 50, "Removing the point" )
-            this_image.graphics_items.remove ( closest_marker )
-
-          print_debug ( 50, "  Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
-
-          print_debug ( 50, "    Deleting point in layer " + str(alignment_layer_index) + ", for role " + str(self.role) )
-          # print_debug ( 50, "image has " + str(len(this_image.graphics_items)) + " items" )
-          for gi in [ x for x in this_image.graphics_items if x.marker ]:
-            print_debug ( 50, "Item " + str(gi.to_string()) )
-          # if this_image.point_add_enabled:
-          #if self.point_add_enabled:
-          #  this_image.graphics_items.append ( graphic_marker(self.x(event.x),self.y(event.y),6,'i',[1, 0, 0]) )
-
-        # Draw the windows
-        zpa_original.queue_draw()
-        for p in panel_list:
-          p.queue_draw()
-
-
-      # print_debug ( 50, "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-      if 'GDK_SHIFT_MASK' in event.get_state().value_names:
-        # Do any special processing for shift click
-        # Print the mouse location in screen coordinates:
-        print_debug ( 50, "pyswift_gui: A mouse button was pressed at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-        # Print the mouse location in image coordinates:
-        print_debug ( 50, "pyswift_gui:   Image coordinates: " + str(self.x(event.x)) + "," + str(self.y(event.y)) )
-        # return ( app_window.zoom_pan_area.button_press_callback ( self, canvas, event, zpa ) )
-        return True # Event has been handled
-      else:
-        # Call the parent's function to handle the click
-        return ( app_window.zoom_pan_area.button_press_callback ( self, canvas, event, zpa ) )
-      return True  # Event has been handled, do not propagate further
-
-    def button_release_callback ( self, canvas, event, zpa ):
-      #print_debug ( 50, "A mouse button was released at x = " + str(event.x) + ", y = " + str(event.y) + "  state = " + str(event.state) )
-      return ( app_window.zoom_pan_area.button_release_callback ( self, canvas, event, zpa ) )
-
-    def move_through_stack ( self, direction ):
-      global alignment_layer_list
-      global alignment_layer_index
-      global show_skipped_layers
-
-      # Store the alignment_layer parameters into the image layer being exited
-      store_fields_into_current_layer()
-
-      if show_skipped_layers:
-        # Move to the next image layer (potentially)
-        alignment_layer_index += direction
+    if show_skipped_layers:
+      # Move to the next image layer (potentially)
+      alignment_layer_index += direction
+      if direction > 0:
+        if alignment_layer_index >= len(alignment_layer_list):
+          alignment_layer_index =  len(alignment_layer_list)-1
+      elif direction < 0:
+        if alignment_layer_index < 0:
+          alignment_layer_index = 0
+    else:
+      # Move to the next non-skipped image layer (potentially)
+      unskipped = [ i for i in range(len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
+      print_debug ( 50, "Unskipped indexes: " + str(unskipped) )
+      if len(unskipped) > 0:
         if direction > 0:
-          if alignment_layer_index >= len(alignment_layer_list):
-            alignment_layer_index =  len(alignment_layer_list)-1
+          next_index = -1
+          for u in unskipped:
+            if u > alignment_layer_index:
+              next_index = u
+              break
+          if next_index >= 0:
+            # There was a next index, so use it
+            alignment_layer_index = next_index
         elif direction < 0:
-          if alignment_layer_index < 0:
-            alignment_layer_index = 0
-      else:
-        # Move to the next non-skipped image layer (potentially)
-        unskipped = [ i for i in range(len(alignment_layer_list)) if alignment_layer_list[i].skip == False ]
-        print_debug ( 50, "Unskipped indexes: " + str(unskipped) )
-        if len(unskipped) > 0:
-          if direction > 0:
-            next_index = -1
-            for u in unskipped:
-              if u > alignment_layer_index:
-                next_index = u
-                break
-            if next_index >= 0:
-              # There was a next index, so use it
-              alignment_layer_index = next_index
-          elif direction < 0:
-            next_index = -1
-            unskipped.reverse()
-            for u in unskipped:
-              if u < alignment_layer_index:
-                next_index = u
-                break
-            if next_index >= 0:
-              # There was a next index, so use it
-              alignment_layer_index = next_index
-          else: # direction == 0
-            # Move to the closest layer
-            print_debug ( 50, "Finding closest unskipped layer ..." )
-            closest_index = -1
-            closest_dist = 100 * len(alignment_layer_list)
-            for u in unskipped:
-              dist = abs(alignment_layer_index - u)
-              if dist < closest_dist:
-                closest_index = u
-                closest_dist = dist
-            alignment_layer_index = closest_index
+          next_index = -1
+          unskipped.reverse()
+          for u in unskipped:
+            if u < alignment_layer_index:
+              next_index = u
+              break
+          if next_index >= 0:
+            # There was a next index, so use it
+            alignment_layer_index = next_index
+        else: # direction == 0
+          # Move to the closest layer
+          print_debug ( 50, "Finding closest unskipped layer ..." )
+          closest_index = -1
+          closest_dist = 100 * len(alignment_layer_list)
+          for u in unskipped:
+            dist = abs(alignment_layer_index - u)
+            if dist < closest_dist:
+              closest_index = u
+              closest_dist = dist
+          alignment_layer_index = closest_index
 
-      # Display the alignment_layer parameters from the new section being viewed
-      if alignment_layer_index >= 0:
-        store_current_layer_into_fields()
+    # Display the alignment_layer parameters from the new section being viewed
+    if alignment_layer_index >= 0:
+      store_current_layer_into_fields()
 
 
-    def mouse_scroll_callback ( self, canvas, event, zpa ):
-      ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
+  def mouse_scroll_callback ( self, canvas, event, zpa ):
+    ''' Overload the base mouse_scroll_callback to provide custom UNshifted action. '''
 
-      if 'GDK_SHIFT_MASK' in event.get_state().value_names:
-        # Use shifted scroll wheel to zoom the image size
-        return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
-      else:
-        # Use normal (unshifted) scroll wheel to move through the stack
-
-        global alignment_layer_list
-        global alignment_layer_index
-        print_debug ( 50, "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
-        if len(alignment_layer_list) <= 0:
-          alignment_layer_index = -1
-          print_debug ( 60, " Index = " + str(alignment_layer_index) )
-        else:
-          if event.direction == gtk.gdk.SCROLL_UP:
-            self.move_through_stack ( 1 )
-          elif event.direction == gtk.gdk.SCROLL_DOWN:
-            self.move_through_stack ( -1 )
-
-          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-        # Draw the windows
-        zpa_original.queue_draw()
-        for p in panel_list:
-          p.queue_draw()
-        return True
-
-    def mouse_motion_callback ( self, canvas, event, zpa ):
-      ''' Overload the base mouse_motion_callback when shifted '''
-      if 'GDK_SHIFT_MASK' in event.get_state().value_names:
-        # Ignore the event
-        return False
-      else:
-        # Call the parent's function to handle the motion
-        return ( app_window.zoom_pan_area.mouse_motion_callback ( self, canvas, event, zpa ) )
-
-    def key_press_callback ( self, widget, event, zpa ):
-      print_debug ( 50, "Key press event: " + str(event.keyval) + " = " + str(event) )
-      handled = False
-      if (event.type == gtk.gdk.KEY_PRESS) and (event.keyval in [65362,65364]):  # Up arrow: increase the y offset
-        print_debug ( 50, "Arrow key" )
-        if event.keyval == 65362:  # Up arrow: Move
-          self.move_through_stack ( 1 )
-        if event.keyval == 65364:  # Down arrow: Move
-          self.move_through_stack ( -1 )
-        widget.queue_draw()
-        # Draw the windows
-        zpa_original.queue_draw()
-        for p in panel_list:
-          p.queue_draw()
-        handled = True  # Event has been handled, do not propagate further
-      else:
-        handled = app_window.zoom_pan_area.key_press_callback ( self, widget, event, zpa )
-      return handled
-
-    def expose_callback ( self, drawing_area, event, zpa ):
-      ''' Draw all the elements in this window '''
-      if self.force_center:
-        center_all_images()
-        self.force_center = False
-      x, y, width, height = event.area  # This is the area of the portion newly exposed
-      width, height = drawing_area.window.get_size()  # This is the area of the entire window
-      x, y = drawing_area.window.get_origin()
-      drawable = drawing_area.window
-      colormap = drawing_area.get_colormap()
-      gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
-      # Save the current color
-      old_fg = gc.foreground
-      # Clear the screen with black
-      gc.foreground = colormap.alloc_color(0,0,0)
-      drawable.draw_rectangle(gc, True, 0, 0, width, height)
+    if 'GDK_SHIFT_MASK' in event.get_state().value_names:
+      # Use shifted scroll wheel to zoom the image size
+      return ( app_window.zoom_pan_area.mouse_scroll_callback ( self, canvas, event, zpa ) )
+    else:
+      # Use normal (unshifted) scroll wheel to move through the stack
 
       global alignment_layer_list
       global alignment_layer_index
-      global show_window_centers
-      global show_window_affines
-      global show_skipped_layers
-      global show_tiled
-
-      # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
-
-      pix_buf = None
-      if len(alignment_layer_list) > 0:
-        # Draw one of the images
-        if alignment_layer_index < len(alignment_layer_list):
-          im_dict = alignment_layer_list[alignment_layer_index].image_dict
-          if self.role in im_dict:
-            pix_buf = im_dict[self.role].image
-            if show_tiled and not (im_dict[self.role].tiled_image is None):
-              ti = im_dict[self.role].tiled_image
-              pix_buf = ti.get_tile_data_as_pixbuf ( 0, 0 )
-
-
-      if pix_buf != None:
-        pbw = pix_buf.get_width()
-        pbh = pix_buf.get_height()
-        scale_w = zpa.ww(pbw) / pbw
-        scale_h = zpa.wh(pbh) / pbh
-
-        # The following chunk of code was an attempt
-        #   to only draw the part of the image that
-        #   is showing in the window. In the Java
-        #   version, the code simply calculates the
-        #   two corners of the image in screen space,
-        #   and requests that it be drawn. The Java
-        #   drawing API knows to clip the image as
-        #   needed and does so very efficiently. But
-        #   GTK (at least in this version) is very
-        #   inefficient, and the drawing performance
-        #   declines very rapidly as the image is
-        #   zoomed in. At some point, the application
-        #   effectively locks up. This is fine for
-        #   early testing, but will need to be fixed
-        #   eventually. One possible solution is to
-        #   use a newer version of GTK. That may fix
-        #   it with no changes (as the Java version).
-        #   If not, the following code may be needed
-        #   as a starting point to clip out the part
-        #   of the image to be drawn and draw it to
-        #   the proper window coordinates.
-
-        ##scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_BILINEAR )
-        #scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
-        #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-
-        #(dw,dh) = drawable.get_size()
-        #pbcs = pix_buf.get_colorspace()
-        # dest_pm = gtk.gdk.Pixmap ( drawable, dw, dh )
-        #dest = gtk.gdk.Pixbuf ( pbcs, False, drawable.get_depth(), dw, dh )
-        #dest = gtk.gdk.Pixbuf ( pbcs, False, 8, dw, dh )  # For some reason the depth seems to have to be 8
-        #pix_buf.scale(dest, 0, 0, 10, 10, 0, 0, 1, 1, gtk.gdk.INTERP_NEAREST)
-        #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-
-        #gtk.gdk
+      print_debug ( 50, "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
+      if len(alignment_layer_list) <= 0:
+        alignment_layer_index = -1
+        print_debug ( 60, " Index = " + str(alignment_layer_index) )
+      else:
+        if event.direction == gtk.gdk.SCROLL_UP:
+          self.move_through_stack ( 1 )
+        elif event.direction == gtk.gdk.SCROLL_DOWN:
+          self.move_through_stack ( -1 )
 
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-        # Note: The Java code scales the image as it is drawn and doesn't create large images as is done here.
-        #       However, the Python call ("gdk_draw_pixbuf") doesn't provide a scaling term (see call below).
-        #
-        #   The scale_simple call can create huge images that quickly overwhelm the available memory.
-        #   This code should be re-written to scale only the portion of the image to actually be rendered.
-        #
-        #   It should likely use "scale" rather than "scale_simple":
-        #     (from https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html#gdk-pixbuf-scale-simple)
-        #
-        #      gdk_pixbuf_scale_simple (const GdkPixbuf *src,  // a GdkPixbuf - in Python, this is the object itself
-        #                        int dest_width,               // the width of the region to render
-        #                        int dest_height,              // the height of the region to render
-        #                        GdkInterpType interp_type);   // the interpolation type for the transformation.
-        #
-        #      gdk_pixbuf_scale (const GdkPixbuf *src,   // a GdkPixbuf - in Python, this is the object itself
-        #                        GdkPixbuf *dest,        // the GdkPixbuf into which to render the results
-        #                        int dest_x,             // the left coordinate for region to render
-        #                        int dest_y,             // the top coordinate for region to render
-        #                        int dest_width,         // the width of the region to render
-        #                        int dest_height,        // the height of the region to render
-        #                        double offset_x,        // the offset in the X direction (currently rounded to an integer)
-        #                        double offset_y,        // the offset in the Y direction (currently rounded to an integer)
-        #                        double scale_x,         // the scale factor in the X direction
-        #                        double scale_y,         // the scale factor in the Y direction
-        #                        GdkInterpType interp_type); // the interpolation type for the transformation.
-        #
-        #      (from https://developer.gnome.org/gdk2/stable/gdk2-Drawing-Primitives.html#gdk-draw-pixbuf)
-        #      gdk_draw_pixbuf (GdkDrawable *drawable,   // a GdkDrawable - in Python, this is the drawable object itself
-        #                       GdkGC *gc,               // a GdkGC, used for clipping, or NULL.
-        #                       const GdkPixbuf *pixbuf, // a GdkPixbuf
-        #                       gint src_x,              // Source X coordinate within pixbuf.
-        #                       gint src_y,              // Source Y coordinates within pixbuf.
-        #                       gint dest_x,             // Destination X coordinate within drawable.
-        #                       gint dest_y,             // Destination Y coordinate within drawable.
-        #                       gint width,              // Width of region to render, in pixels, or -1 to use pixbuf width.
-        #                       gint height,             // Height of region to render, in pixels, or -1 to use pixbuf height.
-        #                       GdkRgbDither dither,     // Dithering mode for GdkRGB.
-        #                       gint x_dither,           // X offset for dither.
-        #                       gint y_dither);          // Y offset for dither.
+      # Draw the windows
+      zpa_original.queue_draw()
+      for p in panel_list:
+        p.queue_draw()
+      return True
 
-        """
-        def draw_pixbuf(gc, pixbuf, src_x, src_y, dest_x, dest_y, width=-1, height=-1, dither=gtk.gdk.RGB_DITHER_NORMAL, x_dither=0, y_dither=0)
-
-          gc : a gtk.gdk.GC, used for clipping, or None
-          pixbuf : a gtk.gdk.Pixbuf
-          src_x : Source X coordinate within pixbuf.
-          src_y : Source Y coordinate within pixbuf.
-          dest_x : Destination X coordinate within drawable.
-          dest_y : Destination Y coordinate within drawable.
-          width : Width of region to render, in pixels, or -1 to use pixbuf width. Must be specified in PyGTK 2.2.
-          height : Height of region to render, in pixels, or -1 to use pixbuf height. Must be specified in PyGTK 2.2
-          dither : Dithering mode for GdkRGB.
-          x_dither : X offset for dither.
-          y_dither : Y offset for dither.
-
-        The draw_pixbuf() method renders a rectangular portion of a gtk.gdk.Pixbuf specified by pixbuf
-        to the drawable using the gtk.gdk.GC specified by gc. The portion of pixbuf that is rendered is
-        specified by the origin point (src_x src_y) and the width and height arguments. pixbuf is rendered
-        to the location in the drawable specified by (dest_x dest_y). dither specifies the dithering mode a
-        s one of:
-
-          gtk.gdk.RGB_DITHER_NONE 	  Never use dithering.
-
-          gtk.gdk.RGB_DITHER_NORMAL   Use dithering in 8 bits per pixel (and below) only.
-
-          gtk.gdk.RGB_DITHER_MAX	    Use dithering in 16 bits per pixel and below.
-
-        The destination drawable must have a colormap. All windows have a colormap, however, pixmaps only have
-        colormap by default if they were created with a non-None window argument. Otherwise a colormap must be
-        set on them with the gtk.gdk.Drawable.set_colormap() method.
-
-        On older X servers, rendering pixbufs with an alpha channel involves round trips to the X server, and
-        may be somewhat slow. The clip mask of gc is ignored, but clip rectangles and clip regions work fine.
-
-        ========
-        https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html
-        C:
-        void gdk_pixbuf_scale (const GdkPixbuf *src,
-                      GdkPixbuf *dest,
-                      int dest_x,
-                      int dest_y,
-                      int dest_width,
-                      int dest_height,
-                      double offset_x,
-                      double offset_y,
-                      double scale_x,
-                      double scale_y,
-                      GdkInterpType interp_type);
-        Python:
-           src.scale ( dest, dest_x, dest_y, dest_width, dest_height, offset_x, offset_y, scale_x, scale_y, interp_type )
-              src          a GdkPixbuf
-              dest         the GdkPixbuf into which to render the results
-              dest_x       the left coordinate for region to render
-              dest_y       the top coordinate for region to render
-              dest_width   the width of the region to render
-              dest_height  the height of the region to render
-              offset_x     the offset in the X direction (currently rounded to an integer)
-              offset_y     the offset in the Y direction (currently rounded to an integer)
-              scale_x      the scale factor in the X direction
-              scale_y      the scale factor in the Y direction
-              interp_type  the interpolation type for the transformation.
-        """
-        try:
-          scale_to_w = int(pbw*scale_w)
-          scale_to_h = int(pbh*scale_h)
-          if scale_to_w * scale_to_h > 0:
-            # print_debug ( 50, "Scaling with " + str(int(pbw*scale_w)) + " " + str(int(pbh*scale_h)) )
-            scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
-            drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-        except:
-          pass
-
-      # Draw any annotations in the list
-      if len(alignment_layer_list) > 0:
-        # Draw annotations
-        if alignment_layer_index < len(alignment_layer_list):
-          im_dict = alignment_layer_list[alignment_layer_index].image_dict
-          if self.role in im_dict:
-            image_to_draw = im_dict[self.role]
-            color_index = 0
-            for graphics_item in image_to_draw.graphics_items:
-              if graphics_item.marker:
-                color_index += 1
-                graphics_item.set_color_from_index ( color_index )
-                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-              else:
-                if graphics_item.graphic_group == 'default':
-                  graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-                elif (graphics_item.graphic_group == 'Centers') and show_window_centers:
-                  graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-                elif (graphics_item.graphic_group == 'Affines') and show_window_affines:
-                  graphics_item.draw ( zpa, drawing_area, self.pangolayout )
-            if alignment_layer_list[alignment_layer_index].skip:
-              # Draw the skipped X
-              gc.foreground = colormap.alloc_color(65535,0,0)
-              for delta in range(-10,11):
-                if delta >= 0:
-                  drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
-                  drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
-                else:
-                  drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
-                  drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
-            elif alignment_layer_list[alignment_layer_index].snr_skip:
-              # Draw the SNR skipped /
-              gc.foreground = colormap.alloc_color(65535,65535,0)
-              for delta in range(-6,7):
-                if delta >= 0:
-                  # drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
-                  drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
-                else:
-                  # drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
-                  drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
-
-
-      # Draw a separator between the panes
-      gc.foreground = colormap.alloc_color(32767,32767,32767)
-      drawable.draw_line ( gc, 0, 0, 0, height )
-      drawable.draw_line ( gc, width-1, 0, width-1, height )
-
-      # Draw this window's role
-      gc.foreground = colormap.alloc_color(65535,65535,32767)
-      if str(self.role) == str('base'):
-        # Special case to change "base" to "src"
-        self.pangolayout.set_text ( str('src')+":" )
-      else:
-        self.pangolayout.set_text ( str(self.role)+":" )
-      drawable.draw_layout ( gc, 3, 2, self.pangolayout )
-      # Draw the current scale
-      global current_scale
-      self.pangolayout.set_text ( str(current_scale) )
-      drawable.draw_layout ( gc, 10, 22, self.pangolayout )
-
-      # Restore the previous color
-      gc.foreground = old_fg
+  def mouse_motion_callback ( self, canvas, event, zpa ):
+    ''' Overload the base mouse_motion_callback when shifted '''
+    if 'GDK_SHIFT_MASK' in event.get_state().value_names:
+      # Ignore the event
       return False
+    else:
+      # Call the parent's function to handle the motion
+      return ( app_window.zoom_pan_area.mouse_motion_callback ( self, canvas, event, zpa ) )
 
+  def key_press_callback ( self, widget, event, zpa ):
+    print_debug ( 50, "Key press event: " + str(event.keyval) + " = " + str(event) )
+    handled = False
+    if (event.type == gtk.gdk.KEY_PRESS) and (event.keyval in [65362,65364]):  # Up arrow: increase the y offset
+      print_debug ( 50, "Arrow key" )
+      if event.keyval == 65362:  # Up arrow: Move
+        self.move_through_stack ( 1 )
+      if event.keyval == 65364:  # Down arrow: Move
+        self.move_through_stack ( -1 )
+      widget.queue_draw()
+      # Draw the windows
+      zpa_original.queue_draw()
+      for p in panel_list:
+        p.queue_draw()
+      handled = True  # Event has been handled, do not propagate further
+    else:
+      handled = app_window.zoom_pan_area.key_press_callback ( self, widget, event, zpa )
+    return handled
+
+  def expose_callback ( self, drawing_area, event, zpa ):
+    ''' Draw all the elements in this window '''
+    if self.force_center:
+      center_all_images()
+      self.force_center = False
+    x, y, width, height = event.area  # This is the area of the portion newly exposed
+    width, height = drawing_area.window.get_size()  # This is the area of the entire window
+    x, y = drawing_area.window.get_origin()
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    # Save the current color
+    old_fg = gc.foreground
+    # Clear the screen with black
+    gc.foreground = colormap.alloc_color(0,0,0)
+    drawable.draw_rectangle(gc, True, 0, 0, width, height)
+
+    global alignment_layer_list
+    global alignment_layer_index
+    global show_window_centers
+    global show_window_affines
+    global show_skipped_layers
+    global show_tiled
+
+    # print_debug ( 50, "Painting with len(alignment_layer_list) = " + str(len(alignment_layer_list)) )
+
+    pix_buf = None
+    if len(alignment_layer_list) > 0:
+      # Draw one of the images
+      if alignment_layer_index < len(alignment_layer_list):
+        im_dict = alignment_layer_list[alignment_layer_index].image_dict
+        if self.role in im_dict:
+          pix_buf = im_dict[self.role].image
+          if show_tiled and not (im_dict[self.role].tiled_image is None):
+            ti = im_dict[self.role].tiled_image
+            pix_buf = ti.get_tile_data_as_pixbuf ( 0, 0 )
+
+
+    if pix_buf != None:
+      pbw = pix_buf.get_width()
+      pbh = pix_buf.get_height()
+      scale_w = zpa.ww(pbw) / pbw
+      scale_h = zpa.wh(pbh) / pbh
+
+      # The following chunk of code was an attempt
+      #   to only draw the part of the image that
+      #   is showing in the window. In the Java
+      #   version, the code simply calculates the
+      #   two corners of the image in screen space,
+      #   and requests that it be drawn. The Java
+      #   drawing API knows to clip the image as
+      #   needed and does so very efficiently. But
+      #   GTK (at least in this version) is very
+      #   inefficient, and the drawing performance
+      #   declines very rapidly as the image is
+      #   zoomed in. At some point, the application
+      #   effectively locks up. This is fine for
+      #   early testing, but will need to be fixed
+      #   eventually. One possible solution is to
+      #   use a newer version of GTK. That may fix
+      #   it with no changes (as the Java version).
+      #   If not, the following code may be needed
+      #   as a starting point to clip out the part
+      #   of the image to be drawn and draw it to
+      #   the proper window coordinates.
+
+      ##scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_BILINEAR )
+      #scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
+      #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+
+      #(dw,dh) = drawable.get_size()
+      #pbcs = pix_buf.get_colorspace()
+      # dest_pm = gtk.gdk.Pixmap ( drawable, dw, dh )
+      #dest = gtk.gdk.Pixbuf ( pbcs, False, drawable.get_depth(), dw, dh )
+      #dest = gtk.gdk.Pixbuf ( pbcs, False, 8, dw, dh )  # For some reason the depth seems to have to be 8
+      #pix_buf.scale(dest, 0, 0, 10, 10, 0, 0, 1, 1, gtk.gdk.INTERP_NEAREST)
+      #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+
+      #gtk.gdk
+
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+      # Note: The Java code scales the image as it is drawn and doesn't create large images as is done here.
+      #       However, the Python call ("gdk_draw_pixbuf") doesn't provide a scaling term (see call below).
+      #
+      #   The scale_simple call can create huge images that quickly overwhelm the available memory.
+      #   This code should be re-written to scale only the portion of the image to actually be rendered.
+      #
+      #   It should likely use "scale" rather than "scale_simple":
+      #     (from https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html#gdk-pixbuf-scale-simple)
+      #
+      #      gdk_pixbuf_scale_simple (const GdkPixbuf *src,  // a GdkPixbuf - in Python, this is the object itself
+      #                        int dest_width,               // the width of the region to render
+      #                        int dest_height,              // the height of the region to render
+      #                        GdkInterpType interp_type);   // the interpolation type for the transformation.
+      #
+      #      gdk_pixbuf_scale (const GdkPixbuf *src,   // a GdkPixbuf - in Python, this is the object itself
+      #                        GdkPixbuf *dest,        // the GdkPixbuf into which to render the results
+      #                        int dest_x,             // the left coordinate for region to render
+      #                        int dest_y,             // the top coordinate for region to render
+      #                        int dest_width,         // the width of the region to render
+      #                        int dest_height,        // the height of the region to render
+      #                        double offset_x,        // the offset in the X direction (currently rounded to an integer)
+      #                        double offset_y,        // the offset in the Y direction (currently rounded to an integer)
+      #                        double scale_x,         // the scale factor in the X direction
+      #                        double scale_y,         // the scale factor in the Y direction
+      #                        GdkInterpType interp_type); // the interpolation type for the transformation.
+      #
+      #      (from https://developer.gnome.org/gdk2/stable/gdk2-Drawing-Primitives.html#gdk-draw-pixbuf)
+      #      gdk_draw_pixbuf (GdkDrawable *drawable,   // a GdkDrawable - in Python, this is the drawable object itself
+      #                       GdkGC *gc,               // a GdkGC, used for clipping, or NULL.
+      #                       const GdkPixbuf *pixbuf, // a GdkPixbuf
+      #                       gint src_x,              // Source X coordinate within pixbuf.
+      #                       gint src_y,              // Source Y coordinates within pixbuf.
+      #                       gint dest_x,             // Destination X coordinate within drawable.
+      #                       gint dest_y,             // Destination Y coordinate within drawable.
+      #                       gint width,              // Width of region to render, in pixels, or -1 to use pixbuf width.
+      #                       gint height,             // Height of region to render, in pixels, or -1 to use pixbuf height.
+      #                       GdkRgbDither dither,     // Dithering mode for GdkRGB.
+      #                       gint x_dither,           // X offset for dither.
+      #                       gint y_dither);          // Y offset for dither.
+
+      """
+      def draw_pixbuf(gc, pixbuf, src_x, src_y, dest_x, dest_y, width=-1, height=-1, dither=gtk.gdk.RGB_DITHER_NORMAL, x_dither=0, y_dither=0)
+
+        gc : a gtk.gdk.GC, used for clipping, or None
+        pixbuf : a gtk.gdk.Pixbuf
+        src_x : Source X coordinate within pixbuf.
+        src_y : Source Y coordinate within pixbuf.
+        dest_x : Destination X coordinate within drawable.
+        dest_y : Destination Y coordinate within drawable.
+        width : Width of region to render, in pixels, or -1 to use pixbuf width. Must be specified in PyGTK 2.2.
+        height : Height of region to render, in pixels, or -1 to use pixbuf height. Must be specified in PyGTK 2.2
+        dither : Dithering mode for GdkRGB.
+        x_dither : X offset for dither.
+        y_dither : Y offset for dither.
+
+      The draw_pixbuf() method renders a rectangular portion of a gtk.gdk.Pixbuf specified by pixbuf
+      to the drawable using the gtk.gdk.GC specified by gc. The portion of pixbuf that is rendered is
+      specified by the origin point (src_x src_y) and the width and height arguments. pixbuf is rendered
+      to the location in the drawable specified by (dest_x dest_y). dither specifies the dithering mode a
+      s one of:
+
+        gtk.gdk.RGB_DITHER_NONE 	  Never use dithering.
+
+        gtk.gdk.RGB_DITHER_NORMAL   Use dithering in 8 bits per pixel (and below) only.
+
+        gtk.gdk.RGB_DITHER_MAX	    Use dithering in 16 bits per pixel and below.
+
+      The destination drawable must have a colormap. All windows have a colormap, however, pixmaps only have
+      colormap by default if they were created with a non-None window argument. Otherwise a colormap must be
+      set on them with the gtk.gdk.Drawable.set_colormap() method.
+
+      On older X servers, rendering pixbufs with an alpha channel involves round trips to the X server, and
+      may be somewhat slow. The clip mask of gc is ignored, but clip rectangles and clip regions work fine.
+
+      ========
+      https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html
+      C:
+      void gdk_pixbuf_scale (const GdkPixbuf *src,
+                    GdkPixbuf *dest,
+                    int dest_x,
+                    int dest_y,
+                    int dest_width,
+                    int dest_height,
+                    double offset_x,
+                    double offset_y,
+                    double scale_x,
+                    double scale_y,
+                    GdkInterpType interp_type);
+      Python:
+         src.scale ( dest, dest_x, dest_y, dest_width, dest_height, offset_x, offset_y, scale_x, scale_y, interp_type )
+            src          a GdkPixbuf
+            dest         the GdkPixbuf into which to render the results
+            dest_x       the left coordinate for region to render
+            dest_y       the top coordinate for region to render
+            dest_width   the width of the region to render
+            dest_height  the height of the region to render
+            offset_x     the offset in the X direction (currently rounded to an integer)
+            offset_y     the offset in the Y direction (currently rounded to an integer)
+            scale_x      the scale factor in the X direction
+            scale_y      the scale factor in the Y direction
+            interp_type  the interpolation type for the transformation.
+      """
+      try:
+        scale_to_w = int(pbw*scale_w)
+        scale_to_h = int(pbh*scale_h)
+        if scale_to_w * scale_to_h > 0:
+          # print_debug ( 50, "Scaling with " + str(int(pbw*scale_w)) + " " + str(int(pbh*scale_h)) )
+          scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
+          drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
+      except:
+        pass
+
+    # Draw any annotations in the list
+    if len(alignment_layer_list) > 0:
+      # Draw annotations
+      if alignment_layer_index < len(alignment_layer_list):
+        im_dict = alignment_layer_list[alignment_layer_index].image_dict
+        if self.role in im_dict:
+          image_to_draw = im_dict[self.role]
+          color_index = 0
+          for graphics_item in image_to_draw.graphics_items:
+            if graphics_item.marker:
+              color_index += 1
+              graphics_item.set_color_from_index ( color_index )
+              graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+            else:
+              if graphics_item.graphic_group == 'default':
+                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+              elif (graphics_item.graphic_group == 'Centers') and show_window_centers:
+                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+              elif (graphics_item.graphic_group == 'Affines') and show_window_affines:
+                graphics_item.draw ( zpa, drawing_area, self.pangolayout )
+          if alignment_layer_list[alignment_layer_index].skip:
+            # Draw the skipped X
+            gc.foreground = colormap.alloc_color(65535,0,0)
+            for delta in range(-10,11):
+              if delta >= 0:
+                drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
+                drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
+              else:
+                drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
+                drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
+          elif alignment_layer_list[alignment_layer_index].snr_skip:
+            # Draw the SNR skipped /
+            gc.foreground = colormap.alloc_color(65535,65535,0)
+            for delta in range(-6,7):
+              if delta >= 0:
+                # drawable.draw_line ( gc, 0+delta, 0, width, height-delta ) # upper left to lower right
+                drawable.draw_line ( gc, 0, height-delta, width-delta, 0 ) # lower left to upper right
+              else:
+                # drawable.draw_line ( gc, 0, 0-delta, width+delta, height ) # upper left to lower right
+                drawable.draw_line ( gc, 0-delta, height, width, 0-delta ) # lower left to upper right
+
+
+    # Draw a separator between the panes
+    gc.foreground = colormap.alloc_color(32767,32767,32767)
+    drawable.draw_line ( gc, 0, 0, 0, height )
+    drawable.draw_line ( gc, width-1, 0, width-1, height )
+
+    # Draw this window's role
+    gc.foreground = colormap.alloc_color(65535,65535,32767)
+    if str(self.role) == str('base'):
+      # Special case to change "base" to "src"
+      self.pangolayout.set_text ( str('src')+":" )
+    else:
+      self.pangolayout.set_text ( str(self.role)+":" )
+    drawable.draw_layout ( gc, 3, 2, self.pangolayout )
+    # Draw the current scale
+    global current_scale
+    self.pangolayout.set_text ( str(current_scale) )
+    drawable.draw_layout ( gc, 10, 22, self.pangolayout )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+
+if gtk_mode:
 
   def set_all_or_fwd_callback ( set_all ):
     if set_all:
