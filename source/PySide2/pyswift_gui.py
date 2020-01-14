@@ -92,6 +92,169 @@ if not gtk_mode:
 
 if gtk_mode:
 
+  ''' Available GTK Cursors - some with descriptions
+
+    DOTBOX - box with midpoint ticks indicating center
+    TARGET - box with midpoint ticks indicating center (same as DOTBOX?)
+    CROSS - thin +
+    CROSSHAIR - thin +
+    CROSS_REVERSE - thin +
+    DIAMOND_CROSS - thin +
+    PLUS - thick +
+    X_CURSOR - thick X
+    IRON_CROSS - might show center point somewhat
+    DOT - white circle with black fill
+    HAND2 - pointing
+    HAND1 - pointing
+    CIRCLE - Normal arrow with a small circle near shaft
+    CENTER_PTR - Arrow pointing up
+    STAR - 5 point star
+
+    ARROW
+    BASED_ARROW_DOWN
+    BASED_ARROW_UP
+    BOAT
+    BOGOSITY
+    BOTTOM_LEFT_CORNER
+    BOTTOM_RIGHT_CORNER
+    BOTTOM_SIDE
+    BOTTOM_TEE
+    BOX_SPIRAL
+    CLOCK
+    COFFEE_MUG
+    DOUBLE_ARROW
+    DRAFT_LARGE
+    DRAFT_SMALL
+    DRAPED_BOX
+    EXCHANGE
+    FLEUR
+    GOBBLER
+    GUMBY
+    HEART
+    ICON
+    LEFT_PTR
+    LEFT_SIDE
+    LEFT_TEE
+    LEFTBUTTON
+    LL_ANGLE
+    LR_ANGLE
+    MAN
+    MIDDLEBUTTON
+    MOUSE
+    PENCIL
+    PIRATE
+    QUESTION_ARROW
+    RIGHT_PTR
+    RIGHT_SIDE
+    RIGHT_TEE
+    RIGHTBUTTON
+    RTL_LOGO
+    SAILBOAT
+    SB_DOWN_ARROW
+    SB_H_DOUBLE_ARROW
+    SB_LEFT_ARROW
+    SB_RIGHT_ARROW
+    SB_UP_ARROW
+    SB_V_DOUBLE_ARROW
+    SHUTTLE
+    SIZING
+    SPIDER
+    SPRAYCAN
+    TCROSS
+    TOP_LEFT_ARROW
+    TOP_LEFT_CORNER
+    TOP_RIGHT_CORNER
+    TOP_SIDE
+    TOP_TEE
+    TREK
+    UL_ANGLE
+    UMBRELLA
+    UR_ANGLE
+    WATCH
+    XTERM
+    CURSOR_IS_PIXMAP
+  '''
+
+  global cursor_options
+  if gtk_mode:
+    cursor_options = [
+        ["Cursor_CROSSHAIR", gtk.gdk.CROSSHAIR],
+        ["Cursor_TARGET",    gtk.gdk.TARGET],
+        ["Cursor_X_CURSOR",  gtk.gdk.X_CURSOR],
+        ["Cursor_PLUS",      gtk.gdk.PLUS],
+        ["Cursor_DOTBOX",    gtk.gdk.DOTBOX],
+        ["Cursor_CROSS",     gtk.gdk.CROSS],
+        ["Cursor_HAND1",     gtk.gdk.HAND1],
+        ["Cursor_HAND2",     gtk.gdk.HAND2],
+        ["Cursor_ARROW",     gtk.gdk.ARROW],
+        ["Cursor_BASED_ARROW_DOWN", gtk.gdk.BASED_ARROW_DOWN],
+        ["Cursor_BASED_ARROW_UP", gtk.gdk.BASED_ARROW_UP]
+        #["Cursor_BOAT", gtk.gdk.BOAT],
+        #["Cursor_BOGOSITY", gtk.gdk.BOGOSITY],
+        #["Cursor_BOTTOM_LEFT_CORNER", gtk.gdk.BOTTOM_LEFT_CORNER],
+        #["Cursor_BOTTOM_RIGHT_CORNER", gtk.gdk.BOTTOM_RIGHT_CORNER],
+        #["Cursor_BOTTOM_SIDE", gtk.gdk.BOTTOM_SIDE],
+        #["Cursor_BOTTOM_TEE", gtk.gdk.BOTTOM_TEE],
+        #["Cursor_BOX_SPIRAL", gtk.gdk.BOX_SPIRAL],
+        #["Cursor_CLOCK", gtk.gdk.CLOCK],
+        #["Cursor_COFFEE_MUG", gtk.gdk.COFFEE_MUG],
+        #["Cursor_DOUBLE_ARROW", gtk.gdk.DOUBLE_ARROW],
+        #["Cursor_DRAFT_LARGE", gtk.gdk.DRAFT_LARGE],
+        #["Cursor_DRAFT_SMALL", gtk.gdk.DRAFT_SMALL],
+        #["Cursor_DRAPED_BOX", gtk.gdk.DRAPED_BOX],
+        #["Cursor_EXCHANGE", gtk.gdk.EXCHANGE],
+        #["Cursor_FLEUR", gtk.gdk.FLEUR],
+        #["Cursor_GOBBLER", gtk.gdk.GOBBLER],
+        #["Cursor_GUMBY", gtk.gdk.GUMBY],
+        #["Cursor_HEART", gtk.gdk.HEART],
+        #["Cursor_ICON", gtk.gdk.ICON],
+        #["Cursor_LEFT_PTR", gtk.gdk.LEFT_PTR],
+        #["Cursor_LEFT_SIDE", gtk.gdk.LEFT_SIDE],
+        #["Cursor_LEFT_TEE", gtk.gdk.LEFT_TEE],
+        #["Cursor_LEFTBUTTON", gtk.gdk.LEFTBUTTON],
+        #["Cursor_LL_ANGLE", gtk.gdk.LL_ANGLE],
+        #["Cursor_LR_ANGLE", gtk.gdk.LR_ANGLE],
+        #["Cursor_MAN", gtk.gdk.MAN],
+        #["Cursor_MIDDLEBUTTON", gtk.gdk.MIDDLEBUTTON],
+        #["Cursor_MOUSE", gtk.gdk.MOUSE],
+        #["Cursor_PENCIL", gtk.gdk.PENCIL],
+        #["Cursor_PIRATE", gtk.gdk.PIRATE],
+        #["Cursor_QUESTION_ARROW", gtk.gdk.QUESTION_ARROW],
+        #["Cursor_RIGHT_PTR", gtk.gdk.RIGHT_PTR],
+        #["Cursor_RIGHT_SIDE", gtk.gdk.RIGHT_SIDE],
+        #["Cursor_RIGHT_TEE", gtk.gdk.RIGHT_TEE],
+        #["Cursor_RIGHTBUTTON", gtk.gdk.RIGHTBUTTON],
+        #["Cursor_RTL_LOGO", gtk.gdk.RTL_LOGO],
+        #["Cursor_SAILBOAT", gtk.gdk.SAILBOAT],
+        #["Cursor_SB_DOWN_ARROW", gtk.gdk.SB_DOWN_ARROW],
+        #["Cursor_SB_H_DOUBLE_ARROW", gtk.gdk.SB_H_DOUBLE_ARROW],
+        #["Cursor_SB_LEFT_ARROW", gtk.gdk.SB_LEFT_ARROW],
+        #["Cursor_SB_RIGHT_ARROW", gtk.gdk.SB_RIGHT_ARROW],
+        #["Cursor_SB_UP_ARROW", gtk.gdk.SB_UP_ARROW],
+        #["Cursor_SB_V_DOUBLE_ARROW", gtk.gdk.SB_V_DOUBLE_ARROW],
+        #["Cursor_SHUTTLE", gtk.gdk.SHUTTLE],
+        #["Cursor_SIZING", gtk.gdk.SIZING],
+        #["Cursor_SPIDER", gtk.gdk.SPIDER],
+        #["Cursor_SPRAYCAN", gtk.gdk.SPRAYCAN],
+        #["Cursor_TCROSS", gtk.gdk.TCROSS],
+        #["Cursor_TOP_LEFT_ARROW", gtk.gdk.TOP_LEFT_ARROW],
+        #["Cursor_TOP_LEFT_CORNER", gtk.gdk.TOP_LEFT_CORNER],
+        #["Cursor_TOP_RIGHT_CORNER", gtk.gdk.TOP_RIGHT_CORNER],
+        #["Cursor_TOP_SIDE", gtk.gdk.TOP_SIDE],
+        #["Cursor_TOP_TEE", gtk.gdk.TOP_TEE],
+        #["Cursor_TREK", gtk.gdk.TREK],
+        #["Cursor_UL_ANGLE", gtk.gdk.UL_ANGLE],
+        #["Cursor_UMBRELLA", gtk.gdk.UMBRELLA],
+        #["Cursor_UR_ANGLE", gtk.gdk.UR_ANGLE],
+        #["Cursor_WATCH", gtk.gdk.WATCH],   # Animated "waiting" cursor!!
+        #["Cursor_XTERM", gtk.gdk.XTERM]
+        # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
+      ]
+
+
+
+if gtk_mode:
+
   class app_window:
 
     # import app_window
@@ -639,791 +802,629 @@ class graphic_primitive:
       return graphic_text ( 10, 130, 'No type field in graphics item.' )
 
 
+class graphic_line (graphic_primitive):
+  def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
+    self.marker = False
+    self.graphic_group = graphic_group
+    self.x1 = x1
+    self.y1 = y1
+    self.x2 = x2
+    self.y2 = y2
+    self.coordsys = coordsys
+    self.color = color
+  def to_string ( self ):
+    return ( "line (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"line", "group":"' + str(self.graphic_group) + '", "x1":' + str(self.x1) + ', "y1":' + str(self.y1) + ', "x2":' + str(self.x2) + ', "y2":' + str(self.y2) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x1 = self.x1
+    y1 = self.y1
+    x2 = self.x2
+    y2 = self.y2
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x1 = zpa.wxi(x1)
+      y1 = zpa.wyi(y1)
+      x2 = zpa.wxi(x2)
+      y2 = zpa.wyi(y2)
+    drawable.draw_line ( gc, x1,   y1,   x2,   y2   )
+    drawable.draw_line ( gc, x1+1, y1,   x2+1, y2   )
+    drawable.draw_line ( gc, x1,   y1+1, x2,   y2+1 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+
+class graphic_rect (graphic_primitive):
+  def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
+    self.marker = False
+    self.graphic_group = graphic_group
+    self.x = x
+    self.y = y
+    self.dx = dx
+    self.dy = dy
+    self.coordsys = coordsys
+    self.color = color
+  def to_string ( self ):
+    return ( "rect (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"rect", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x1) + ', "y":' + str(self.y1) + ', "dx":' + str(self.dx) + ', "dy":' + str(self.dy) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    dx = self.dx
+    dy = self.dy
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+      dx = zpa.wwi(dx)
+      dy = zpa.whi(dy)
+    drawable.draw_rectangle ( gc, False, x, y, dx, dy )
+    drawable.draw_rectangle ( gc, False, x-1, y-1, dx+2, dy+2 )
+    drawable.draw_rectangle ( gc, False, x-2, y-2, dx+4, dy+4 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+
+class graphic_marker (graphic_primitive):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
+    self.marker = True
+    self.graphic_group = graphic_group
+    self.x = x
+    self.y = y
+    self.r = r
+    self.coordsys = coordsys
+    self.color = color
+  def to_string ( self ):
+    return ( "marker at (" + str(self.r10(self.x)) + "," + str(self.r10(self.y)) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"marker", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    r = self.r
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+    drawable.draw_arc ( gc, False, x-r, y-r, 2*r, 2*r, 0, 360*64 )
+    for d in range(5):
+      rd = r+d
+      drawable.draw_arc ( gc, False, x-rd, y-rd, 2*rd, 2*rd, 0, 360*64 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+
+class graphic_dot (graphic_primitive):
+  def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
+    self.temp = False
+    self.marker = False
+    self.graphic_group = graphic_group
+    self.x = x
+    self.y = y
+    self.r = r
+    self.coordsys = coordsys
+    self.color = color
+  def to_string ( self ):
+    return ( "dot at (" + str(self.x) + "," + str(self.y) + "),r=" + str(self.r) )
+  def to_json_string ( self ):
+    return ( '{ "type":"dot", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    r = self.r
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+    drawable.draw_arc ( gc, True, x-r, y-r, 2*r, 2*r, 0, 360*64 )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+
+class graphic_text (graphic_primitive):
+  def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default", temp=False ):
+    self.temp = temp
+    self.marker = False
+    self.graphic_group = graphic_group
+    self.x = x
+    self.y = y
+    self.s = s
+    self.coordsys = coordsys
+    self.color = color
+  def to_string ( self ):
+    return ( "text \"" + str(self.s) + "\" at (" + str(self.x) + "," + str(self.y) + ")" )
+  def to_json_string ( self ):
+    return ( '{ "type":"text", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "s":"' + str(self.s) + '", "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
+  def draw ( self, zpa, drawing_area, pgl ):
+    drawable = drawing_area.window
+    colormap = drawing_area.get_colormap()
+    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    width, height = drawable.get_size()  # This is the area of the entire window
+    #x, y = drawing_area.get_origin()
+    old_fg = gc.foreground
+    gc.foreground = self.alloc_color ( colormap )
+
+    x = self.x
+    y = self.y
+    if self.coordsys == 'i':
+      # Convert to image coordinates before drawing
+      x = zpa.wxi(x)
+      y = zpa.wyi(y)
+    if self.coordsys == 's':
+      # Convert to image coordinates before drawing
+      x = int ( width * self.x )
+      y = int ( height * self.y )
+    pgl.set_text ( self.s )
+    drawable.draw_layout ( gc, x, y, pgl )
+
+    # Restore the previous color
+    gc.foreground = old_fg
+    return False
+
+
+
+import struct
+
+class tag_record:
+  def __init__ ( self, tag, tagtype, tagcount, tagvalue ):
+    self.tag = tag
+    self.tagtype = tagtype
+    self.tagcount = tagcount
+    self.tagvalue = tagvalue
+  def __repr__ ( self ):
+    return ( "TR: " + str(self.tag) + ", " + str(self.tagtype) + ", " + str(self.tagcount) + ", " + str(self.tagvalue) )
+
+
+class tiled_tiff:
+  ''' This is an abstraction of a tiled tiff file to use for testing faster image display '''
+
+  def __repr__ ( self ):
+    tile_data_str = None
+    f = open ( self.file_name, 'rb' )
+    if len(self.tile_offsets) > 0:
+      # Seek to the last one
+      f.seek ( self.tile_offsets[0] )
+      image_data = f.read ( self.tile_counts[0] )
+      print_debug ( 1, "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+
+      # Print out a small corner of the tile:
+      num_rows = self.tile_height
+      num_cols = self.tile_width
+      print_debug ( 1, '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
+      color_table = []
+      for n in range(256):
+        color_table.append ( format(n,'02x') )
+      for v in color_table:
+        print_debug ( 1, '"' + v + ' c #' + v + v + v + '",' )
+
+      for row in range(num_rows):
+        pix_row = ""
+        for col in range(num_cols):
+          i = row * self.tile_width
+          i += col
+          pix_row += color_table[ord(image_data[i])]
+        print_debug ( 1, '"' + pix_row + '",' )
+
+      '''
+      pix_list = [ color_table[ord(i)] for i in image_data[0:num_pix] ]
+      #print_debug ( 1, "pix_list = " + str(pix_list) )
+
+      pix_row = ""
+      for i in range(len(pix_list)):
+        pix_row += pix_list[i]
+      print_debug ( 1, '"' + pix_row + '"' )
+      tile_data_str = str([ord(d) for d in image_data[0:num_pix]])
+      print_debug ( 1, "  " + tile_data_str )
+      '''
+    return ( "Done showing tiled_tiff" ) #tile_data_str )
+
+  def __init__ ( self, file_name ):
+
+    self.file_name = file_name
+    self.endian = '<' # Intel format
+    self.dir_record_list = []
+    self.width = -1
+    self.height = -1
+    self.tile_width = -1
+    self.tile_height = -1
+    self.tile_offsets = []
+    self.tile_counts = []
+
+    self.pixbuf = None
+
+    print_debug ( 1, "Reading from TIFF: " + str(file_name) )
+
+    tag_record_list = []
+    with open ( self.file_name, 'rb' ) as f:
+
+      d = f.read(50)
+      print_debug ( 1, "Tiff Data: " + str([ord(c) for c in d]) )
+      f.seek(0)
+
+      d = [ord(c) for c in f.read(4)] # Read 4 bytes of the header
+      if   d == [0x49, 0x49, 0x2a, 0x00]:
+        print_debug ( 1, "This is a TIFF file with Intel (little endian) byte ordering" )
+        self.endian = '<' # Intel format
+      elif d == [0x4d, 0x4d, 0x00, 0x2a]:
+        print_debug ( 1, "This is a TIFF file with Motorola (big endian) byte ordering" )
+        self.endian = '>' # Motorola format
+      else:
+        print_debug ( 1, "This is not a TIFF file" )
+        self.endian = None
+        return
+
+      # Read the offset of the first image directory from the header
+      offset = struct.unpack_from ( self.endian+"L", f.read(4), offset=0 )[0]
+      print_debug ( 1, "Offset = " + str(offset) )
+
+      dir_num = 1
+
+      while offset > 0:
+        f.seek ( offset )
+        numDirEntries = struct.unpack_from ( self.endian+'H', f.read(2), offset=0 )[0]
+        offset += 2
+        print_debug ( 1, "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
+        dir_num += 1
+        # Read the tags
+        f.seek ( offset )
+        for tagnum in range(numDirEntries):
+          tagtuple = struct.unpack_from ( self.endian+'HHLL', f.read(12), offset=0 )
+          tag = tagtuple[0]
+          tagtype = tagtuple[1]
+          tagcount = tagtuple[2]
+          tagvalue = tagtuple[3]
+          tag_record_list.append ( tag_record ( tag, tagtype, tagcount, tagvalue ) )
+          offset += 12
+          tagstr = self.str_from_tag ( tagtuple )
+          '''
+          if tagstr.endswith ( 'ASCII' ):
+            ascii_str = ":  \""
+            for i in range(tagcount):
+              try:
+                ascii_str += str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0].decode('utf-8'))
+              except:
+                ascii_str += '?'
+                f.seek ( tagvalue+i )
+                print_debug ( 1, "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
+            if len(ascii_str) > 60:
+              ascii_str = ascii_str[0:60]
+            ascii_str = ascii_str.replace ( "\n", " " )
+            ascii_str = ascii_str.replace ( "\r", " " )
+            tagstr += ascii_str + "\""
+          '''
+          print_debug ( 1, "  Tag = " + str(tagtuple) + " = " + tagstr )
+        self.dir_record_list.append ( tag_record_list )
+        tag_record_list = []
+        f.seek ( offset )
+        nextIFDOffset = struct.unpack_from ( self.endian+'L', f.read(4), offset=0 )[0]
+        offset = nextIFDOffset
+        print_debug ( 1, "\n" )
+
+      print_debug ( 50, "\n\n" )
+      print_debug ( 1, 120*"=" )
+      print_debug ( 50, "\n\n" )
+
+
+      dir_num = 1
+      for dir_record in self.dir_record_list:
+        print_debug ( 1, "Directory " + str(dir_num) + ":\n" )
+        dir_num += 1
+        bps = None
+        w = None
+        h = None
+        tw = None
+        tl = None
+        to = None
+        tc = None
+        offsets = None
+        counts = None
+        for tag_rec in dir_record:
+          print_debug ( 1, "  New tag: " + str(tag_rec) )
+          if tag_rec.tag == 256:
+            w = tag_rec.tagvalue
+            self.width = w
+            print_debug ( 1, "    Width: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 257:
+            h = tag_rec.tagvalue
+            self.height = h
+            print_debug ( 1, "    Height: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 258:
+            bps = tag_rec.tagvalue
+            print_debug ( 1, "    Bits/Samp: " + str(tag_rec.tagvalue) )
+            if bps != 8:
+              print_debug ( 1, "Can't handle files with " + str(bps) + " bits per sample" )
+              exit ( 0 )
+          if tag_rec.tag == 322:
+            tw = tag_rec.tagvalue
+            self.tile_width = tw
+            print_debug ( 1, "    TileWidth: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 323:
+            tl = tag_rec.tagvalue
+            self.tile_height = tl
+            print_debug ( 1, "    TileLength: " + str(tag_rec.tagvalue) )
+          if tag_rec.tag == 324:
+            to = tag_rec.tagvalue
+            print_debug ( 1, "    TileOffsets: " + str(tag_rec.tagvalue) )
+            f.seek ( tag_rec.tagvalue )
+            offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_offsets = offsets
+            print_debug ( 1, "       " + str(offsets) )
+          if tag_rec.tag == 325:
+            tc = tag_rec.tagvalue
+            print_debug ( 1, "    TileByteCounts: " + str(tag_rec.tagvalue) )
+            f.seek ( tag_rec.tagvalue )
+            counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
+            self.tile_counts = counts
+            print_debug ( 1, "       " + str(counts) )
+
+        if not (None in (bps, w, h, tw, tl, to, tc)):
+          print_debug ( 1, "\nRead from a block of tiles ...\n" )
+          for i in range(len(offsets)):
+            offset = offsets[i]
+            count = counts[i]
+            f.seek ( offset )
+            data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
+            #print_debug ( 1, "Read data " + str(data) + " from " + str(offset) )
+            #print_debug ( 1, "" )
+        '''
+        if not (None in (bps, w, h, tw, tl, to, tc)):
+          print_debug ( 1, "\nFound a block of tiles:\n" )
+          for i in range(len(offsets)):
+            offset = offsets[i]
+            count = counts[i]
+            f.seek ( offset )
+            data = struct.unpack_from ( self.endian+(count*"B"), f.read(count), offset=0 )
+            for r in range(tl):
+              print_debug ( 1, str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
+            print_debug ( 1, "" )
+        '''
+
+        # offset = 0 ############ Force a stop
+
+
+      print_debug ( 50, "\n\n" )
+
+  def get_tile_data_as_xpm ( self, tile_row, tile_col ):
+
+    print_debug ( 1, "Inside get_tile_data_as_xpm" )
+
+    xpm_strings = []
+
+    tile_data_str = None
+    f = open ( self.file_name, 'rb' )
+    if len(self.tile_offsets) > 0:
+      # Seek to the first one
+      f.seek ( self.tile_offsets[0] )
+      image_data = f.read ( self.tile_counts[0] )
+      print_debug ( 1, "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
+
+      # Convert the tile data to XPM format:
+
+      num_rows = self.tile_height
+      num_cols = self.tile_width
+      xpm_strings.append ( str(num_cols) + ' ' + str(num_rows) + ' 256 2' )
+
+      color_table = []
+      for n in range(256):
+        color_table.append ( format(n,'02x') )
+      for v in color_table:
+        xpm_strings.append ( v + ' c #' + v + v + v )
+
+      for row in range(num_rows):
+        pix_row = ""
+        for col in range(num_cols):
+          i = row * self.tile_width
+          i += col
+          pix_row += color_table[ord(image_data[i])]
+        xpm_strings.append ( pix_row )
+
+    return ( xpm_strings )
+
+
+  def get_tile_data_as_pixbuf ( self, tile_row, tile_col ):
+    if self.pixbuf == None:
+      self.pixbuf = gtk.gdk.pixbuf_new_from_xpm_data ( self.get_tile_data_as_xpm ( tile_row, tile_col ) )
+    return ( self.pixbuf )
+
+
+  def is_immediate ( self, tagtuple ):
+    tag = tagtuple[0]
+    tagtype = tagtuple[1]
+    tagcount = tagtuple[2]
+    tagvalue = tagtuple[3]
+    if tagtype == 1:
+      # Byte
+      return (tagcount <= 4)
+    elif tagtype == 2:
+      # ASCII null-terminated string
+      # Assume that this is never in the tag?
+      return False
+    elif tagtype == 3:
+      # Short (2-byte)
+      return (tagcount <= 2)
+    elif tagtype == 4:
+      # Long (4-byte)
+      return (tagcount <= 1)
+    elif tagtype == 5:
+      # Rational (2 long values)
+      return False
+    elif tagtype == 6:
+      # Signed Byte
+      return (tagcount <= 4)
+    elif tagtype == 7:
+      # Undefined Byte
+      return (tagcount <= 4)
+    elif tagtype == 8:
+      # Signed Short
+      return (tagcount <= 2)
+    elif tagtype == 9:
+      # Signed Long
+      return (tagcount <= 1)
+    elif tagtype == 10:
+      # Signed Rational (2 long signed)
+      return False
+    elif tagtype == 11:
+      # Float (4 bytes)
+      return (tagcount <= 1)
+    elif tagtype == 12:
+      # Double (8 bytes)
+      return false
+
+
+  def str_from_tag ( self, t ):
+    global bigend
+
+    dtype = "Unknown"
+    if t[1] == 1:
+      dtype = "Byte"
+    elif t[1] == 2:
+      dtype = "ASCII"
+    elif t[1] == 3:
+      dtype = "Short"
+    elif t[1] == 4:
+      dtype = "Long"
+    elif t[1] == 5:
+      dtype = "Rational"
+
+    elif t[1] == 6:
+      dtype = "SByte"
+    elif t[1] == 7:
+      dtype = "UNDEF Byte"
+    elif t[1] == 8:
+      dtype = "SShort"
+    elif t[1] == 9:
+      dtype = "SLong"
+    elif t[1] == 10:
+      dtype = "SRational"
+    elif t[1] == 11:
+      dtype = "Float"
+    elif t[1] == 12:
+      dtype = "Double"
+
+    dlen = str(t[2])
+
+    tagid = None
+
+    if t[0] == 256:
+      tagid = "Width"
+    elif t[0] == 257:
+      tagid = "Height"
+    elif t[0] == 258:
+      tagid = "BitsPerSample"
+    elif t[0] == 259:
+      tagid = "Compression"
+    elif t[0] == 262:
+      tagid = "PhotoMetInterp"
+    elif t[0] == 266:
+      tagid = "FillOrder"
+    elif t[0] == 275:
+      tagid = "Orientation"
+    elif t[0] == 277:
+      tagid = "SampPerPix"
+    elif t[0] == 278:
+      tagid = "RowsPerStrip"
+    elif t[0] == 282:
+      tagid = "XResolution"
+    elif t[0] == 283:
+      tagid = "YResolution"
+    elif t[0] == 322:
+      tagid = "TileWidth"
+    elif t[0] == 323:
+      tagid = "TileLength"
+    elif t[0] == 274:
+      tagid = "Orientation"
+    elif t[0] == 254:
+      tagid = "NewSubFileType"
+    elif t[0] == 284:
+      tagid = "T4Options"
+    elif t[0] == 292:
+      tagid = "PlanarConfig"
+    elif t[0] == 296:
+      tagid = "ResolutionUnit"
+    elif t[0] == 297:
+      tagid = "PageNumber"
+    elif t[0] == 317:
+      tagid = "Predictor"
+    elif t[0] == 318:
+      tagid = "WhitePoint"
+    elif t[0] == 319:
+      tagid = "PrimChroma"
+    elif t[0] == 324:
+      tagid = "TileOffsets"
+    elif t[0] == 325:
+      tagid = "TileByteCounts"
+    elif t[0] == 323:
+      tagid = "TileLength"
+    elif t[0] == 322:
+      tagid = "TileWidth"
+    elif t[0] == 338:
+      tagid = "ExtraSamples"
+    elif t[0] == 530:
+      tagid = "YCbCrSubSampling"
+    elif t[0] == 273:
+      tagid = "StripOffsets"
+    elif t[0] == 279:
+      tagid = "StripByteCounts"
+    elif t[0] == 305:
+      tagid = "Software"
+    elif t[0] == 306:
+      tagid = "DateTime"
+    elif t[0] == 320:
+      tagid = "ColorMap"
+    elif t[0] == 339:
+      tagid = "SampleFormat"
+
+    if tagid is None:
+      tagid = "?????????"
+
+    return ( tagid + " ... " + dlen + " of " + dtype )
 
 
 if gtk_mode:
-
-  ''' Available GTK Cursors - some with descriptions
-
-    DOTBOX - box with midpoint ticks indicating center
-    TARGET - box with midpoint ticks indicating center (same as DOTBOX?)
-    CROSS - thin +
-    CROSSHAIR - thin +
-    CROSS_REVERSE - thin +
-    DIAMOND_CROSS - thin +
-    PLUS - thick +
-    X_CURSOR - thick X
-    IRON_CROSS - might show center point somewhat
-    DOT - white circle with black fill
-    HAND2 - pointing
-    HAND1 - pointing
-    CIRCLE - Normal arrow with a small circle near shaft
-    CENTER_PTR - Arrow pointing up
-    STAR - 5 point star
-
-    ARROW
-    BASED_ARROW_DOWN
-    BASED_ARROW_UP
-    BOAT
-    BOGOSITY
-    BOTTOM_LEFT_CORNER
-    BOTTOM_RIGHT_CORNER
-    BOTTOM_SIDE
-    BOTTOM_TEE
-    BOX_SPIRAL
-    CLOCK
-    COFFEE_MUG
-    DOUBLE_ARROW
-    DRAFT_LARGE
-    DRAFT_SMALL
-    DRAPED_BOX
-    EXCHANGE
-    FLEUR
-    GOBBLER
-    GUMBY
-    HEART
-    ICON
-    LEFT_PTR
-    LEFT_SIDE
-    LEFT_TEE
-    LEFTBUTTON
-    LL_ANGLE
-    LR_ANGLE
-    MAN
-    MIDDLEBUTTON
-    MOUSE
-    PENCIL
-    PIRATE
-    QUESTION_ARROW
-    RIGHT_PTR
-    RIGHT_SIDE
-    RIGHT_TEE
-    RIGHTBUTTON
-    RTL_LOGO
-    SAILBOAT
-    SB_DOWN_ARROW
-    SB_H_DOUBLE_ARROW
-    SB_LEFT_ARROW
-    SB_RIGHT_ARROW
-    SB_UP_ARROW
-    SB_V_DOUBLE_ARROW
-    SHUTTLE
-    SIZING
-    SPIDER
-    SPRAYCAN
-    TCROSS
-    TOP_LEFT_ARROW
-    TOP_LEFT_CORNER
-    TOP_RIGHT_CORNER
-    TOP_SIDE
-    TOP_TEE
-    TREK
-    UL_ANGLE
-    UMBRELLA
-    UR_ANGLE
-    WATCH
-    XTERM
-    CURSOR_IS_PIXMAP
-  '''
-
-  global cursor_options
-  if gtk_mode:
-    cursor_options = [
-        ["Cursor_CROSSHAIR", gtk.gdk.CROSSHAIR],
-        ["Cursor_TARGET",    gtk.gdk.TARGET],
-        ["Cursor_X_CURSOR",  gtk.gdk.X_CURSOR],
-        ["Cursor_PLUS",      gtk.gdk.PLUS],
-        ["Cursor_DOTBOX",    gtk.gdk.DOTBOX],
-        ["Cursor_CROSS",     gtk.gdk.CROSS],
-        ["Cursor_HAND1",     gtk.gdk.HAND1],
-        ["Cursor_HAND2",     gtk.gdk.HAND2],
-        ["Cursor_ARROW",     gtk.gdk.ARROW],
-        ["Cursor_BASED_ARROW_DOWN", gtk.gdk.BASED_ARROW_DOWN],
-        ["Cursor_BASED_ARROW_UP", gtk.gdk.BASED_ARROW_UP]
-        #["Cursor_BOAT", gtk.gdk.BOAT],
-        #["Cursor_BOGOSITY", gtk.gdk.BOGOSITY],
-        #["Cursor_BOTTOM_LEFT_CORNER", gtk.gdk.BOTTOM_LEFT_CORNER],
-        #["Cursor_BOTTOM_RIGHT_CORNER", gtk.gdk.BOTTOM_RIGHT_CORNER],
-        #["Cursor_BOTTOM_SIDE", gtk.gdk.BOTTOM_SIDE],
-        #["Cursor_BOTTOM_TEE", gtk.gdk.BOTTOM_TEE],
-        #["Cursor_BOX_SPIRAL", gtk.gdk.BOX_SPIRAL],
-        #["Cursor_CLOCK", gtk.gdk.CLOCK],
-        #["Cursor_COFFEE_MUG", gtk.gdk.COFFEE_MUG],
-        #["Cursor_DOUBLE_ARROW", gtk.gdk.DOUBLE_ARROW],
-        #["Cursor_DRAFT_LARGE", gtk.gdk.DRAFT_LARGE],
-        #["Cursor_DRAFT_SMALL", gtk.gdk.DRAFT_SMALL],
-        #["Cursor_DRAPED_BOX", gtk.gdk.DRAPED_BOX],
-        #["Cursor_EXCHANGE", gtk.gdk.EXCHANGE],
-        #["Cursor_FLEUR", gtk.gdk.FLEUR],
-        #["Cursor_GOBBLER", gtk.gdk.GOBBLER],
-        #["Cursor_GUMBY", gtk.gdk.GUMBY],
-        #["Cursor_HEART", gtk.gdk.HEART],
-        #["Cursor_ICON", gtk.gdk.ICON],
-        #["Cursor_LEFT_PTR", gtk.gdk.LEFT_PTR],
-        #["Cursor_LEFT_SIDE", gtk.gdk.LEFT_SIDE],
-        #["Cursor_LEFT_TEE", gtk.gdk.LEFT_TEE],
-        #["Cursor_LEFTBUTTON", gtk.gdk.LEFTBUTTON],
-        #["Cursor_LL_ANGLE", gtk.gdk.LL_ANGLE],
-        #["Cursor_LR_ANGLE", gtk.gdk.LR_ANGLE],
-        #["Cursor_MAN", gtk.gdk.MAN],
-        #["Cursor_MIDDLEBUTTON", gtk.gdk.MIDDLEBUTTON],
-        #["Cursor_MOUSE", gtk.gdk.MOUSE],
-        #["Cursor_PENCIL", gtk.gdk.PENCIL],
-        #["Cursor_PIRATE", gtk.gdk.PIRATE],
-        #["Cursor_QUESTION_ARROW", gtk.gdk.QUESTION_ARROW],
-        #["Cursor_RIGHT_PTR", gtk.gdk.RIGHT_PTR],
-        #["Cursor_RIGHT_SIDE", gtk.gdk.RIGHT_SIDE],
-        #["Cursor_RIGHT_TEE", gtk.gdk.RIGHT_TEE],
-        #["Cursor_RIGHTBUTTON", gtk.gdk.RIGHTBUTTON],
-        #["Cursor_RTL_LOGO", gtk.gdk.RTL_LOGO],
-        #["Cursor_SAILBOAT", gtk.gdk.SAILBOAT],
-        #["Cursor_SB_DOWN_ARROW", gtk.gdk.SB_DOWN_ARROW],
-        #["Cursor_SB_H_DOUBLE_ARROW", gtk.gdk.SB_H_DOUBLE_ARROW],
-        #["Cursor_SB_LEFT_ARROW", gtk.gdk.SB_LEFT_ARROW],
-        #["Cursor_SB_RIGHT_ARROW", gtk.gdk.SB_RIGHT_ARROW],
-        #["Cursor_SB_UP_ARROW", gtk.gdk.SB_UP_ARROW],
-        #["Cursor_SB_V_DOUBLE_ARROW", gtk.gdk.SB_V_DOUBLE_ARROW],
-        #["Cursor_SHUTTLE", gtk.gdk.SHUTTLE],
-        #["Cursor_SIZING", gtk.gdk.SIZING],
-        #["Cursor_SPIDER", gtk.gdk.SPIDER],
-        #["Cursor_SPRAYCAN", gtk.gdk.SPRAYCAN],
-        #["Cursor_TCROSS", gtk.gdk.TCROSS],
-        #["Cursor_TOP_LEFT_ARROW", gtk.gdk.TOP_LEFT_ARROW],
-        #["Cursor_TOP_LEFT_CORNER", gtk.gdk.TOP_LEFT_CORNER],
-        #["Cursor_TOP_RIGHT_CORNER", gtk.gdk.TOP_RIGHT_CORNER],
-        #["Cursor_TOP_SIDE", gtk.gdk.TOP_SIDE],
-        #["Cursor_TOP_TEE", gtk.gdk.TOP_TEE],
-        #["Cursor_TREK", gtk.gdk.TREK],
-        #["Cursor_UL_ANGLE", gtk.gdk.UL_ANGLE],
-        #["Cursor_UMBRELLA", gtk.gdk.UMBRELLA],
-        #["Cursor_UR_ANGLE", gtk.gdk.UR_ANGLE],
-        #["Cursor_WATCH", gtk.gdk.WATCH],   # Animated "waiting" cursor!!
-        #["Cursor_XTERM", gtk.gdk.XTERM]
-        # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
-      ]
-
-  class graphic_line (graphic_primitive):
-    def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
-      self.temp = False
-      self.marker = False
-      self.graphic_group = graphic_group
-      self.x1 = x1
-      self.y1 = y1
-      self.x2 = x2
-      self.y2 = y2
-      self.coordsys = coordsys
-      self.color = color
-    def to_string ( self ):
-      return ( "line (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
-    def to_json_string ( self ):
-      return ( '{ "type":"line", "group":"' + str(self.graphic_group) + '", "x1":' + str(self.x1) + ', "y1":' + str(self.y1) + ', "x2":' + str(self.x2) + ', "y2":' + str(self.y2) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
-    def draw ( self, zpa, drawing_area, pgl ):
-      drawable = drawing_area.window
-      colormap = drawing_area.get_colormap()
-      gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
-      width, height = drawable.get_size()  # This is the area of the entire window
-      #x, y = drawing_area.get_origin()
-      old_fg = gc.foreground
-      gc.foreground = self.alloc_color ( colormap )
-
-      x1 = self.x1
-      y1 = self.y1
-      x2 = self.x2
-      y2 = self.y2
-      if self.coordsys == 'i':
-        # Convert to image coordinates before drawing
-        x1 = zpa.wxi(x1)
-        y1 = zpa.wyi(y1)
-        x2 = zpa.wxi(x2)
-        y2 = zpa.wyi(y2)
-      drawable.draw_line ( gc, x1,   y1,   x2,   y2   )
-      drawable.draw_line ( gc, x1+1, y1,   x2+1, y2   )
-      drawable.draw_line ( gc, x1,   y1+1, x2,   y2+1 )
-
-      # Restore the previous color
-      gc.foreground = old_fg
-      return False
-
-
-  class graphic_rect (graphic_primitive):
-    def __init__ ( self, x, y, dx, dy, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
-      self.temp = False
-      self.marker = False
-      self.graphic_group = graphic_group
-      self.x = x
-      self.y = y
-      self.dx = dx
-      self.dy = dy
-      self.coordsys = coordsys
-      self.color = color
-    def to_string ( self ):
-      return ( "rect (" + str(self.x1) + "," + str(self.y1) + ") to (" + str(self.x2) + "," + str(self.y2) + ")" )
-    def to_json_string ( self ):
-      return ( '{ "type":"rect", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x1) + ', "y":' + str(self.y1) + ', "dx":' + str(self.dx) + ', "dy":' + str(self.dy) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
-    def draw ( self, zpa, drawing_area, pgl ):
-      drawable = drawing_area.window
-      colormap = drawing_area.get_colormap()
-      gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
-      width, height = drawable.get_size()  # This is the area of the entire window
-      #x, y = drawing_area.get_origin()
-      old_fg = gc.foreground
-      gc.foreground = self.alloc_color ( colormap )
-
-      x = self.x
-      y = self.y
-      dx = self.dx
-      dy = self.dy
-      if self.coordsys == 'i':
-        # Convert to image coordinates before drawing
-        x = zpa.wxi(x)
-        y = zpa.wyi(y)
-        dx = zpa.wwi(dx)
-        dy = zpa.whi(dy)
-      drawable.draw_rectangle ( gc, False, x, y, dx, dy )
-      drawable.draw_rectangle ( gc, False, x-1, y-1, dx+2, dy+2 )
-      drawable.draw_rectangle ( gc, False, x-2, y-2, dx+4, dy+4 )
-
-      # Restore the previous color
-      gc.foreground = old_fg
-      return False
-
-
-  class graphic_marker (graphic_primitive):
-    def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
-      self.temp = False
-      self.marker = True
-      self.graphic_group = graphic_group
-      self.x = x
-      self.y = y
-      self.r = r
-      self.coordsys = coordsys
-      self.color = color
-    def to_string ( self ):
-      return ( "marker at (" + str(self.r10(self.x)) + "," + str(self.r10(self.y)) + ")" )
-    def to_json_string ( self ):
-      return ( '{ "type":"marker", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
-    def draw ( self, zpa, drawing_area, pgl ):
-      drawable = drawing_area.window
-      colormap = drawing_area.get_colormap()
-      gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
-      width, height = drawable.get_size()  # This is the area of the entire window
-      #x, y = drawing_area.get_origin()
-      old_fg = gc.foreground
-      gc.foreground = self.alloc_color ( colormap )
-
-      x = self.x
-      y = self.y
-      r = self.r
-      if self.coordsys == 'i':
-        # Convert to image coordinates before drawing
-        x = zpa.wxi(x)
-        y = zpa.wyi(y)
-      drawable.draw_arc ( gc, False, x-r, y-r, 2*r, 2*r, 0, 360*64 )
-      for d in range(5):
-        rd = r+d
-        drawable.draw_arc ( gc, False, x-rd, y-rd, 2*rd, 2*rd, 0, 360*64 )
-
-      # Restore the previous color
-      gc.foreground = old_fg
-      return False
-
-
-  class graphic_dot (graphic_primitive):
-    def __init__ ( self, x, y, r, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
-      self.temp = False
-      self.marker = False
-      self.graphic_group = graphic_group
-      self.x = x
-      self.y = y
-      self.r = r
-      self.coordsys = coordsys
-      self.color = color
-    def to_string ( self ):
-      return ( "dot at (" + str(self.x) + "," + str(self.y) + "),r=" + str(self.r) )
-    def to_json_string ( self ):
-      return ( '{ "type":"dot", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "r":' + str(self.r) + ', "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
-    def draw ( self, zpa, drawing_area, pgl ):
-      drawable = drawing_area.window
-      colormap = drawing_area.get_colormap()
-      gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
-      width, height = drawable.get_size()  # This is the area of the entire window
-      #x, y = drawing_area.get_origin()
-      old_fg = gc.foreground
-      gc.foreground = self.alloc_color ( colormap )
-
-      x = self.x
-      y = self.y
-      r = self.r
-      if self.coordsys == 'i':
-        # Convert to image coordinates before drawing
-        x = zpa.wxi(x)
-        y = zpa.wyi(y)
-      drawable.draw_arc ( gc, True, x-r, y-r, 2*r, 2*r, 0, 360*64 )
-
-      # Restore the previous color
-      gc.foreground = old_fg
-      return False
-
-
-  class graphic_text (graphic_primitive):
-    def __init__ ( self, x, y, s, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default", temp=False ):
-      self.temp = temp
-      self.marker = False
-      self.graphic_group = graphic_group
-      self.x = x
-      self.y = y
-      self.s = s
-      self.coordsys = coordsys
-      self.color = color
-    def to_string ( self ):
-      return ( "text \"" + str(self.s) + "\" at (" + str(self.x) + "," + str(self.y) + ")" )
-    def to_json_string ( self ):
-      return ( '{ "type":"text", "group":"' + str(self.graphic_group) + '", "x":' + str(self.x) + ', "y":' + str(self.y) + ', "s":"' + str(self.s) + '", "coordsys":"' + str(self.coordsys) + '", "color":' + str(self.color) + ' }' )
-    def draw ( self, zpa, drawing_area, pgl ):
-      drawable = drawing_area.window
-      colormap = drawing_area.get_colormap()
-      gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
-      width, height = drawable.get_size()  # This is the area of the entire window
-      #x, y = drawing_area.get_origin()
-      old_fg = gc.foreground
-      gc.foreground = self.alloc_color ( colormap )
-
-      x = self.x
-      y = self.y
-      if self.coordsys == 'i':
-        # Convert to image coordinates before drawing
-        x = zpa.wxi(x)
-        y = zpa.wyi(y)
-      if self.coordsys == 's':
-        # Convert to image coordinates before drawing
-        x = int ( width * self.x )
-        y = int ( height * self.y )
-      pgl.set_text ( self.s )
-      drawable.draw_layout ( gc, x, y, pgl )
-
-      # Restore the previous color
-      gc.foreground = old_fg
-      return False
-
-
-
-  import struct
-
-  class tag_record:
-    def __init__ ( self, tag, tagtype, tagcount, tagvalue ):
-      self.tag = tag
-      self.tagtype = tagtype
-      self.tagcount = tagcount
-      self.tagvalue = tagvalue
-    def __repr__ ( self ):
-      return ( "TR: " + str(self.tag) + ", " + str(self.tagtype) + ", " + str(self.tagcount) + ", " + str(self.tagvalue) )
-
-
-  class tiled_tiff:
-    ''' This is an abstraction of a tiled tiff file to use for testing faster image display '''
-
-    def __repr__ ( self ):
-      tile_data_str = None
-      f = open ( self.file_name, 'rb' )
-      if len(self.tile_offsets) > 0:
-        # Seek to the last one
-        f.seek ( self.tile_offsets[0] )
-        image_data = f.read ( self.tile_counts[0] )
-        print_debug ( 1, "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
-
-        # Print out a small corner of the tile:
-        num_rows = self.tile_height
-        num_cols = self.tile_width
-        print_debug ( 1, '"' + str(num_cols) + ' ' + str(num_rows) + ' 256 2",' )
-        color_table = []
-        for n in range(256):
-          color_table.append ( format(n,'02x') )
-        for v in color_table:
-          print_debug ( 1, '"' + v + ' c #' + v + v + v + '",' )
-
-        for row in range(num_rows):
-          pix_row = ""
-          for col in range(num_cols):
-            i = row * self.tile_width
-            i += col
-            pix_row += color_table[ord(image_data[i])]
-          print_debug ( 1, '"' + pix_row + '",' )
-
-        '''
-        pix_list = [ color_table[ord(i)] for i in image_data[0:num_pix] ]
-        #print_debug ( 1, "pix_list = " + str(pix_list) )
-
-        pix_row = ""
-        for i in range(len(pix_list)):
-          pix_row += pix_list[i]
-        print_debug ( 1, '"' + pix_row + '"' )
-        tile_data_str = str([ord(d) for d in image_data[0:num_pix]])
-        print_debug ( 1, "  " + tile_data_str )
-        '''
-      return ( "Done showing tiled_tiff" ) #tile_data_str )
-
-    def __init__ ( self, file_name ):
-
-      self.file_name = file_name
-      self.endian = '<' # Intel format
-      self.dir_record_list = []
-      self.width = -1
-      self.height = -1
-      self.tile_width = -1
-      self.tile_height = -1
-      self.tile_offsets = []
-      self.tile_counts = []
-
-      self.pixbuf = None
-
-      print_debug ( 1, "Reading from TIFF: " + str(file_name) )
-
-      tag_record_list = []
-      with open ( self.file_name, 'rb' ) as f:
-
-        d = f.read(50)
-        print_debug ( 1, "Tiff Data: " + str([ord(c) for c in d]) )
-        f.seek(0)
-
-        d = [ord(c) for c in f.read(4)] # Read 4 bytes of the header
-        if   d == [0x49, 0x49, 0x2a, 0x00]:
-          print_debug ( 1, "This is a TIFF file with Intel (little endian) byte ordering" )
-          self.endian = '<' # Intel format
-        elif d == [0x4d, 0x4d, 0x00, 0x2a]:
-          print_debug ( 1, "This is a TIFF file with Motorola (big endian) byte ordering" )
-          self.endian = '>' # Motorola format
-        else:
-          print_debug ( 1, "This is not a TIFF file" )
-          self.endian = None
-          return
-
-        # Read the offset of the first image directory from the header
-        offset = struct.unpack_from ( self.endian+"L", f.read(4), offset=0 )[0]
-        print_debug ( 1, "Offset = " + str(offset) )
-
-        dir_num = 1
-
-        while offset > 0:
-          f.seek ( offset )
-          numDirEntries = struct.unpack_from ( self.endian+'H', f.read(2), offset=0 )[0]
-          offset += 2
-          print_debug ( 1, "Directory " + str(dir_num) + " has NumDirEntries = " + str(numDirEntries) )
-          dir_num += 1
-          # Read the tags
-          f.seek ( offset )
-          for tagnum in range(numDirEntries):
-            tagtuple = struct.unpack_from ( self.endian+'HHLL', f.read(12), offset=0 )
-            tag = tagtuple[0]
-            tagtype = tagtuple[1]
-            tagcount = tagtuple[2]
-            tagvalue = tagtuple[3]
-            tag_record_list.append ( tag_record ( tag, tagtype, tagcount, tagvalue ) )
-            offset += 12
-            tagstr = self.str_from_tag ( tagtuple )
-            '''
-            if tagstr.endswith ( 'ASCII' ):
-              ascii_str = ":  \""
-              for i in range(tagcount):
-                try:
-                  ascii_str += str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0].decode('utf-8'))
-                except:
-                  ascii_str += '?'
-                  f.seek ( tagvalue+i )
-                  print_debug ( 1, "     Decoding error for " + str(struct.unpack_from ( self.endian+'s', f.read(2), offset=tagvalue+i )[0]) + " in following tag:" )
-              if len(ascii_str) > 60:
-                ascii_str = ascii_str[0:60]
-              ascii_str = ascii_str.replace ( "\n", " " )
-              ascii_str = ascii_str.replace ( "\r", " " )
-              tagstr += ascii_str + "\""
-            '''
-            print_debug ( 1, "  Tag = " + str(tagtuple) + " = " + tagstr )
-          self.dir_record_list.append ( tag_record_list )
-          tag_record_list = []
-          f.seek ( offset )
-          nextIFDOffset = struct.unpack_from ( self.endian+'L', f.read(4), offset=0 )[0]
-          offset = nextIFDOffset
-          print_debug ( 1, "\n" )
-
-        print_debug ( 50, "\n\n" )
-        print_debug ( 1, 120*"=" )
-        print_debug ( 50, "\n\n" )
-
-
-        dir_num = 1
-        for dir_record in self.dir_record_list:
-          print_debug ( 1, "Directory " + str(dir_num) + ":\n" )
-          dir_num += 1
-          bps = None
-          w = None
-          h = None
-          tw = None
-          tl = None
-          to = None
-          tc = None
-          offsets = None
-          counts = None
-          for tag_rec in dir_record:
-            print_debug ( 1, "  New tag: " + str(tag_rec) )
-            if tag_rec.tag == 256:
-              w = tag_rec.tagvalue
-              self.width = w
-              print_debug ( 1, "    Width: " + str(tag_rec.tagvalue) )
-            if tag_rec.tag == 257:
-              h = tag_rec.tagvalue
-              self.height = h
-              print_debug ( 1, "    Height: " + str(tag_rec.tagvalue) )
-            if tag_rec.tag == 258:
-              bps = tag_rec.tagvalue
-              print_debug ( 1, "    Bits/Samp: " + str(tag_rec.tagvalue) )
-              if bps != 8:
-                print_debug ( 1, "Can't handle files with " + str(bps) + " bits per sample" )
-                exit ( 0 )
-            if tag_rec.tag == 322:
-              tw = tag_rec.tagvalue
-              self.tile_width = tw
-              print_debug ( 1, "    TileWidth: " + str(tag_rec.tagvalue) )
-            if tag_rec.tag == 323:
-              tl = tag_rec.tagvalue
-              self.tile_height = tl
-              print_debug ( 1, "    TileLength: " + str(tag_rec.tagvalue) )
-            if tag_rec.tag == 324:
-              to = tag_rec.tagvalue
-              print_debug ( 1, "    TileOffsets: " + str(tag_rec.tagvalue) )
-              f.seek ( tag_rec.tagvalue )
-              offsets = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
-              self.tile_offsets = offsets
-              print_debug ( 1, "       " + str(offsets) )
-            if tag_rec.tag == 325:
-              tc = tag_rec.tagvalue
-              print_debug ( 1, "    TileByteCounts: " + str(tag_rec.tagvalue) )
-              f.seek ( tag_rec.tagvalue )
-              counts = struct.unpack_from ( self.endian+(tag_rec.tagcount*"L"), f.read(4*tag_rec.tagcount), offset=0 )
-              self.tile_counts = counts
-              print_debug ( 1, "       " + str(counts) )
-
-          if not (None in (bps, w, h, tw, tl, to, tc)):
-            print_debug ( 1, "\nRead from a block of tiles ...\n" )
-            for i in range(len(offsets)):
-              offset = offsets[i]
-              count = counts[i]
-              f.seek ( offset )
-              data = struct.unpack_from ( self.endian+"BBBB", f.read(4), offset=0 )
-              #print_debug ( 1, "Read data " + str(data) + " from " + str(offset) )
-              #print_debug ( 1, "" )
-          '''
-          if not (None in (bps, w, h, tw, tl, to, tc)):
-            print_debug ( 1, "\nFound a block of tiles:\n" )
-            for i in range(len(offsets)):
-              offset = offsets[i]
-              count = counts[i]
-              f.seek ( offset )
-              data = struct.unpack_from ( self.endian+(count*"B"), f.read(count), offset=0 )
-              for r in range(tl):
-                print_debug ( 1, str ( [ data[(r*tw)+d] for d in range(tw) ] ) )
-              print_debug ( 1, "" )
-          '''
-
-          # offset = 0 ############ Force a stop
-
-
-        print_debug ( 50, "\n\n" )
-
-    def get_tile_data_as_xpm ( self, tile_row, tile_col ):
-
-      print_debug ( 1, "Inside get_tile_data_as_xpm" )
-
-      xpm_strings = []
-
-      tile_data_str = None
-      f = open ( self.file_name, 'rb' )
-      if len(self.tile_offsets) > 0:
-        # Seek to the first one
-        f.seek ( self.tile_offsets[0] )
-        image_data = f.read ( self.tile_counts[0] )
-        print_debug ( 1, "Read " + str(self.tile_counts[0]) + " bytes at " + str(self.tile_offsets[0]) + " from " + str(self.file_name) )
-
-        # Convert the tile data to XPM format:
-
-        num_rows = self.tile_height
-        num_cols = self.tile_width
-        xpm_strings.append ( str(num_cols) + ' ' + str(num_rows) + ' 256 2' )
-
-        color_table = []
-        for n in range(256):
-          color_table.append ( format(n,'02x') )
-        for v in color_table:
-          xpm_strings.append ( v + ' c #' + v + v + v )
-
-        for row in range(num_rows):
-          pix_row = ""
-          for col in range(num_cols):
-            i = row * self.tile_width
-            i += col
-            pix_row += color_table[ord(image_data[i])]
-          xpm_strings.append ( pix_row )
-
-      return ( xpm_strings )
-
-
-    def get_tile_data_as_pixbuf ( self, tile_row, tile_col ):
-      if self.pixbuf == None:
-        self.pixbuf = gtk.gdk.pixbuf_new_from_xpm_data ( self.get_tile_data_as_xpm ( tile_row, tile_col ) )
-      return ( self.pixbuf )
-
-
-    def is_immediate ( self, tagtuple ):
-      tag = tagtuple[0]
-      tagtype = tagtuple[1]
-      tagcount = tagtuple[2]
-      tagvalue = tagtuple[3]
-      if tagtype == 1:
-        # Byte
-        return (tagcount <= 4)
-      elif tagtype == 2:
-        # ASCII null-terminated string
-        # Assume that this is never in the tag?
-        return False
-      elif tagtype == 3:
-        # Short (2-byte)
-        return (tagcount <= 2)
-      elif tagtype == 4:
-        # Long (4-byte)
-        return (tagcount <= 1)
-      elif tagtype == 5:
-        # Rational (2 long values)
-        return False
-      elif tagtype == 6:
-        # Signed Byte
-        return (tagcount <= 4)
-      elif tagtype == 7:
-        # Undefined Byte
-        return (tagcount <= 4)
-      elif tagtype == 8:
-        # Signed Short
-        return (tagcount <= 2)
-      elif tagtype == 9:
-        # Signed Long
-        return (tagcount <= 1)
-      elif tagtype == 10:
-        # Signed Rational (2 long signed)
-        return False
-      elif tagtype == 11:
-        # Float (4 bytes)
-        return (tagcount <= 1)
-      elif tagtype == 12:
-        # Double (8 bytes)
-        return false
-
-
-    def str_from_tag ( self, t ):
-      global bigend
-
-      dtype = "Unknown"
-      if t[1] == 1:
-        dtype = "Byte"
-      elif t[1] == 2:
-        dtype = "ASCII"
-      elif t[1] == 3:
-        dtype = "Short"
-      elif t[1] == 4:
-        dtype = "Long"
-      elif t[1] == 5:
-        dtype = "Rational"
-
-      elif t[1] == 6:
-        dtype = "SByte"
-      elif t[1] == 7:
-        dtype = "UNDEF Byte"
-      elif t[1] == 8:
-        dtype = "SShort"
-      elif t[1] == 9:
-        dtype = "SLong"
-      elif t[1] == 10:
-        dtype = "SRational"
-      elif t[1] == 11:
-        dtype = "Float"
-      elif t[1] == 12:
-        dtype = "Double"
-
-      dlen = str(t[2])
-
-      tagid = None
-
-      if t[0] == 256:
-        tagid = "Width"
-      elif t[0] == 257:
-        tagid = "Height"
-      elif t[0] == 258:
-        tagid = "BitsPerSample"
-      elif t[0] == 259:
-        tagid = "Compression"
-      elif t[0] == 262:
-        tagid = "PhotoMetInterp"
-      elif t[0] == 266:
-        tagid = "FillOrder"
-      elif t[0] == 275:
-        tagid = "Orientation"
-      elif t[0] == 277:
-        tagid = "SampPerPix"
-      elif t[0] == 278:
-        tagid = "RowsPerStrip"
-      elif t[0] == 282:
-        tagid = "XResolution"
-      elif t[0] == 283:
-        tagid = "YResolution"
-      elif t[0] == 322:
-        tagid = "TileWidth"
-      elif t[0] == 323:
-        tagid = "TileLength"
-      elif t[0] == 274:
-        tagid = "Orientation"
-      elif t[0] == 254:
-        tagid = "NewSubFileType"
-      elif t[0] == 284:
-        tagid = "T4Options"
-      elif t[0] == 292:
-        tagid = "PlanarConfig"
-      elif t[0] == 296:
-        tagid = "ResolutionUnit"
-      elif t[0] == 297:
-        tagid = "PageNumber"
-      elif t[0] == 317:
-        tagid = "Predictor"
-      elif t[0] == 318:
-        tagid = "WhitePoint"
-      elif t[0] == 319:
-        tagid = "PrimChroma"
-      elif t[0] == 324:
-        tagid = "TileOffsets"
-      elif t[0] == 325:
-        tagid = "TileByteCounts"
-      elif t[0] == 323:
-        tagid = "TileLength"
-      elif t[0] == 322:
-        tagid = "TileWidth"
-      elif t[0] == 338:
-        tagid = "ExtraSamples"
-      elif t[0] == 530:
-        tagid = "YCbCrSubSampling"
-      elif t[0] == 273:
-        tagid = "StripOffsets"
-      elif t[0] == 279:
-        tagid = "StripByteCounts"
-      elif t[0] == 305:
-        tagid = "Software"
-      elif t[0] == 306:
-        tagid = "DateTime"
-      elif t[0] == 320:
-        tagid = "ColorMap"
-      elif t[0] == 339:
-        tagid = "SampleFormat"
-
-      if tagid is None:
-        tagid = "?????????"
-
-      return ( tagid + " ... " + dlen + " of " + dtype )
-
-
 
   class annotated_image:
     ''' An image with a series of drawing primitives defined in
