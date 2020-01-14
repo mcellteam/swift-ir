@@ -451,119 +451,199 @@ if gtk_mode:
 
 
 
+# Import optional packages (mostly for plotting)
+
+np = None
+try:
+  import numpy as np
+except:
+  print_debug ( 1, "Unable to plot without numpy" )
+  np = None
+
+sps = None
+try:
+  import scipy.stats as sps
+except:
+  print_debug ( 1, "Unable to plot without scipy.stats" )
+  sps = None
+
+plt = None
+try:
+  import matplotlib.pyplot as plt
+except:
+  print_debug ( 1, "Unable to plot without matplotlib" )
+  plt = None
+
+
+# Create one variable to check for plotting being available
+global plotting_available
+plotting_available = not ( None in (np, sps, plt) )
+
+# Code common to GTK and Qt
+
+global image_hbox
+image_hbox = None
+
+global zpa_original
+zpa_original = None
+
+global panel_list
+panel_list = []
+
+global global_win_width
+global global_win_height
+global_win_width = 600
+global_win_height = 600
+
+global alignment_layer_list
+alignment_layer_list = []
+global alignment_layer_index
+alignment_layer_index = -1
+
+global current_scale
+current_scale = 1
+global scales_dict
+scales_dict = {}
+scales_dict[current_scale] = alignment_layer_list
+
+global project_file_name
+project_file_name = ""
+
+global project_path
+project_path = None
+
+global destination_path
+destination_path = ""
+
+global window
+window = None
+
+global menu_bar
+menu_bar = None
+
+global show_window_affines
+show_window_affines = False
+
+global show_window_centers
+show_window_centers = False
+
+global show_skipped_layers
+show_skipped_layers = True
+
+global point_mode
+point_mode = False
+
+global point_delete_mode
+point_delete_mode = False
+
+global point_cursor
+if gtk_mode:
+  point_cursor = gtk.gdk.CROSSHAIR
+
+
+global max_image_file_size
+max_image_file_size = 100000000
+
+global generate_as_tiled
+generate_as_tiled = False
+
+global import_tiled
+import_tiled = False
+
+global show_tiled
+show_tiled = False
+
+global debug_level
+debug_level = 10
+
+def print_debug ( level, str ):
+  global debug_level
+  if level <= debug_level:
+    print ( str )
+
+global cursor_option_seps
+cursor_option_seps = [2, 5, 7]
+
+class gui_fields_class:
+  ''' This class holds GUI widgets and not the persistent data. '''
+  def __init__(self):
+    # These values remain constant while scrolling through the stack
+    self.proj_label = None
+    self.dest_label = None
+    self.num_align_forward = None
+    self.jump_to_index = None
+    self.snr_skip = None
+    self.snr_halt = None
+    self.code_base_select = None
+    self.scales_list = [1]
+    self.waves_dict = { 'R':50, 'C':50, 'A':0.01, 'F':5 }
+    self.grid_dict = { 'N':10, 'ww':32 }
+
+    # These values are swapped while scrolling through the stack
+    self.trans_ww_entry = None
+    self.trans_addx_entry = None
+    self.trans_addy_entry = None
+    self.skip_check_box = None
+    self.align_method_select = None
+    self.affine_check_box = None
+    self.affine_ww_entry = None
+    self.affine_addx_entry = None
+    self.affine_addy_entry = None
+    self.bias_check_box = None
+
+    # These are different per layer, but maintained to be the same
+    self.bias_dx_entry = None
+    self.bias_dy_entry = None
+
+    self.init_refine_apply_entry = None
+    self.bias_rotation_entry = None
+    self.bias_scale_x_entry = None
+    self.bias_scale_y_entry = None
+    self.bias_skew_x_entry = None
+
+
+''' This variable gives global access to the GUI widgets '''
+gui_fields = gui_fields_class()
+
+alignment_opts = ["Init Affine", "Refine Affine", "Apply Affine"]
+
+class graphic_primitive:
+  ''' This base class defines something that can be drawn '''
+  def __init__ ( self ):
+    self.temp = False
+    self.marker = False
+    self.coordsys = 'p' # 'p' = Pixel Coordinates, 'i' = Image Coordinates, 's' = Scaled Coordinates (0.0 to 1.0)
+    self.color = [1.0, 1.0, 1.0]
+  def alloc_color ( self, colormap ):
+    return colormap.alloc_color(int(65535*self.color[0]),int(65535*self.color[1]),int(65535*self.color[2]))
+  def set_color_from_index ( self, i, mx=1 ):
+    self.color = [mx*((i/(2**j))%2) for j in range(3)]
+  def r10(self,x):
+    return round(x*10)/10
+  def jb ( self, bool_val ):
+    if bool_val:
+      return ( "true" )
+    else:
+      return ( "false" )
+    return
+  def from_json ( self, json_dict ):
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    if 'type' in json_dict:
+      if json_dict['type'] == 'dot':
+        return graphic_dot ( json_dict['x'], json_dict['y'], json_dict['r'], json_dict['coordsys'], json_dict['color'], json_dict['group'] )
+      elif json_dict['type'] == 'text':
+        return graphic_text ( json_dict['x'], json_dict['y'], json_dict['s'], json_dict['coordsys'], json_dict['color'], json_dict['group'] )
+      else:
+        return graphic_text ( 10, 100, "Drawing not supported for type:" + json_dict['type'] )
+    else:
+      return graphic_text ( 10, 130, 'No type field in graphics item.' )
+
+
+
+
 if gtk_mode:
 
-  # Import optional packages (mostly for plotting)
-
-  np = None
-  try:
-    import numpy as np
-  except:
-    print_debug ( 1, "Unable to plot without numpy" )
-    np = None
-
-  sps = None
-  try:
-    import scipy.stats as sps
-  except:
-    print_debug ( 1, "Unable to plot without scipy.stats" )
-    sps = None
-
-  plt = None
-  try:
-    import matplotlib.pyplot as plt
-  except:
-    print_debug ( 1, "Unable to plot without matplotlib" )
-    plt = None
-
-
-  # Create one variable to check for plotting being available
-  global plotting_available
-  plotting_available = not ( None in (np, sps, plt) )
-
-
-
-  global image_hbox
-  image_hbox = None
-
-  global zpa_original
-  zpa_original = None
-
-  global panel_list
-  panel_list = []
-
-  global global_win_width
-  global global_win_height
-  global_win_width = 600
-  global_win_height = 600
-
-  global alignment_layer_list
-  alignment_layer_list = []
-  global alignment_layer_index
-  alignment_layer_index = -1
-
-  global current_scale
-  current_scale = 1
-  global scales_dict
-  scales_dict = {}
-  scales_dict[current_scale] = alignment_layer_list
-
-  global project_file_name
-  project_file_name = ""
-
-  global project_path
-  project_path = None
-
-  global destination_path
-  destination_path = ""
-
-  global window
-  window = None
-
-  global menu_bar
-  menu_bar = None
-
-  global show_window_affines
-  show_window_affines = False
-
-  global show_window_centers
-  show_window_centers = False
-
-  global show_skipped_layers
-  show_skipped_layers = True
-
-  global point_mode
-  point_mode = False
-
-  global point_delete_mode
-  point_delete_mode = False
-
-  global point_cursor
-  if gtk_mode:
-    point_cursor = gtk.gdk.CROSSHAIR
-
-
-  global max_image_file_size
-  max_image_file_size = 100000000
-
-  global generate_as_tiled
-  generate_as_tiled = False
-
-  global import_tiled
-  import_tiled = False
-
-  global show_tiled
-  show_tiled = False
-
-  global debug_level
-  debug_level = 10
-
-  def print_debug ( level, str ):
-    global debug_level
-    if level <= debug_level:
-      print ( str )
-
-  ''' Available Cursors - some with descriptions
+  ''' Available GTK Cursors - some with descriptions
 
     DOTBOX - box with midpoint ticks indicating center
     TARGET - box with midpoint ticks indicating center (same as DOTBOX?)
@@ -721,83 +801,6 @@ if gtk_mode:
         #["Cursor_XTERM", gtk.gdk.XTERM]
         # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
       ]
-  global cursor_option_seps
-  cursor_option_seps = [2, 5, 7]
-
-  class gui_fields_class:
-    ''' This class holds GUI widgets and not the persistent data. '''
-    def __init__(self):
-      # These values remain constant while scrolling through the stack
-      self.proj_label = None
-      self.dest_label = None
-      self.num_align_forward = None
-      self.jump_to_index = None
-      self.snr_skip = None
-      self.snr_halt = None
-      self.code_base_select = None
-      self.scales_list = [1]
-      self.waves_dict = { 'R':50, 'C':50, 'A':0.01, 'F':5 }
-      self.grid_dict = { 'N':10, 'ww':32 }
-
-      # These values are swapped while scrolling through the stack
-      self.trans_ww_entry = None
-      self.trans_addx_entry = None
-      self.trans_addy_entry = None
-      self.skip_check_box = None
-      self.align_method_select = None
-      self.affine_check_box = None
-      self.affine_ww_entry = None
-      self.affine_addx_entry = None
-      self.affine_addy_entry = None
-      self.bias_check_box = None
-
-      # These are different per layer, but maintained to be the same
-      self.bias_dx_entry = None
-      self.bias_dy_entry = None
-
-      self.init_refine_apply_entry = None
-      self.bias_rotation_entry = None
-      self.bias_scale_x_entry = None
-      self.bias_scale_y_entry = None
-      self.bias_skew_x_entry = None
-
-
-  ''' This variable gives global access to the GUI widgets '''
-  gui_fields = gui_fields_class()
-
-
-  alignment_opts = ["Init Affine", "Refine Affine", "Apply Affine"]
-
-  class graphic_primitive:
-    ''' This base class defines something that can be drawn '''
-    def __init__ ( self ):
-      self.temp = False
-      self.marker = False
-      self.coordsys = 'p' # 'p' = Pixel Coordinates, 'i' = Image Coordinates, 's' = Scaled Coordinates (0.0 to 1.0)
-      self.color = [1.0, 1.0, 1.0]
-    def alloc_color ( self, colormap ):
-      return colormap.alloc_color(int(65535*self.color[0]),int(65535*self.color[1]),int(65535*self.color[2]))
-    def set_color_from_index ( self, i, mx=1 ):
-      self.color = [mx*((i/(2**j))%2) for j in range(3)]
-    def r10(self,x):
-      return round(x*10)/10
-    def jb ( self, bool_val ):
-      if bool_val:
-        return ( "true" )
-      else:
-        return ( "false" )
-      return
-    def from_json ( self, json_dict ):
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      if 'type' in json_dict:
-        if json_dict['type'] == 'dot':
-          return graphic_dot ( json_dict['x'], json_dict['y'], json_dict['r'], json_dict['coordsys'], json_dict['color'], json_dict['group'] )
-        elif json_dict['type'] == 'text':
-          return graphic_text ( json_dict['x'], json_dict['y'], json_dict['s'], json_dict['coordsys'], json_dict['color'], json_dict['group'] )
-        else:
-          return graphic_text ( 10, 100, "Drawing not supported for type:" + json_dict['type'] )
-      else:
-        return graphic_text ( 10, 130, 'No type field in graphics item.' )
 
   class graphic_line (graphic_primitive):
     def __init__ ( self, x1, y1, x2, y2, coordsys='i', color=[1.0,1.0,1.0], graphic_group="default" ):
