@@ -1,4 +1,71 @@
+#!/usr/bin/env python
+
+#__import__('code').interact(local = locals())
+
+#import numpy as np
+#import cv2
+
+global default_plot_code
+default_plot_code = """print ( "Default Plotting" )
+
+print ( 'Data is in "d"' )
+print ( 'd.keys() = ' + str(d.keys()) )
+print ( 'd["data"].keys() = ' + str(d['data'].keys()) )
+print ( 'd["data"]["scales"].keys() = ' + str(d['data']['scales'].keys()) )
+for k in d['data']['scales'].keys():
+  stack = d['data']['scales'][k]['alignment_stack']
+  print ( '  d["data"]["scales"][' + k + '].keys() = ' + str(d['data']['scales'][k].keys()) + ' of ' + str(len(stack)) )
+  #for s in stack:
+  #  print ( "    \"" + s['images']['aligned']['filename'] + "\"" )
+
+import numpy as np
+import scipy.stats as sps
+import matplotlib.pyplot as plt
+
+# Do Linear Regression of X,Y data
+def lin_fit(x,y):
+  (m,b,r,p,stderr) = sps.linregress(x,y)
+  print('linear regression:')
+  return(m,b,r,p,stderr)
+
+sn = str(d['data']['current_scale'])
+s = d['data']['scales'][sn]['alignment_stack']
+afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
+cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in s if 'cumulative_afm' in i['align_to_ref_method']['method_results'] ])
+
+cx = cafm[:,:,2][:,0]
+cy = cafm[:,:,2][:,1]
+
+(mx,bx,r,p,stderr) = lin_fit(np.arange(len(cx)),cx)
+(my,by,r,p,stderr) = lin_fit(np.arange(len(cy)),cy)
+xl = mx*np.arange(len(cx))+bx
+yl = my*np.arange(len(cy))+by
+
+print("(mx,bx): ",mx,bx)
+print("(my,by): ",my,by)
+
+p = plt.scatter(np.arange(len(cx)),cx)
+p = plt.scatter(np.arange(len(cy)),cy)
+p = plt.scatter(np.arange(len(cx)),xl)
+p = plt.scatter(np.arange(len(cy)),yl)
+plt.show()
+"""
+
+global current_plot_code
+current_plot_code = ""
+
+
+import pickle
+import base64
+
+import time
+import os
 import sys
+import json
+import math
+import random
+import shutil
+
 import argparse
 import cv2
 
@@ -354,9 +421,11 @@ class MainWindow(QMainWindow):
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+
 # This provides default command line parameters if none are given (as with "Idle")
 if len(sys.argv) <= 1:
     sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
+
 
 if __name__ == "__main__":
     options = argparse.ArgumentParser()
