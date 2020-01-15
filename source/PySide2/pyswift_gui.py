@@ -9,6 +9,9 @@ if __name__ == '__main__':
     for arg in sys.argv[1:]:
       if arg == 'gtk':
         gtk_mode = True
+  else:
+    gtk_mode = True
+
 
 #__import__('code').interact(local = locals())
 
@@ -3243,11 +3246,18 @@ def load_from_proj_dict ( proj_dict ):
   if 'data' in proj_dict:
     if 'destination_path' in proj_dict['data']:
       destination_path = proj_dict['data']['destination_path']
+      print ( "load_from_proj_dict found destination_path = " + destination_path )
+      print ( "load_from_proj_dict found project_path = " + str(project_path) )
       # Make the destination absolute
       if not os.path.isabs(destination_path):
         destination_path = os.path.join ( project_path, destination_path )
       destination_path = os.path.realpath ( destination_path )
-      gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+
+      global gtk_mode
+      if gtk_mode:
+        gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+      else:
+        gui_fields.proj_label.setText ( "Destination: " + str(destination_path) )
 
     current_scale = 1
     if 'current_scale' in proj_dict['data']:
@@ -6007,17 +6017,17 @@ if not gtk_mode:
                       [ '-', None, None ],
                       [ '&Set Debug Level',
                         [
-                          [ 'Level 0', None, self.not_yet, 'level' ],
-                          [ 'Level 10', None, self.not_yet, 'level' ],
-                          [ 'Level 20', None, self.not_yet, 'level' ],
-                          [ 'Level 30', None, self.not_yet, 'level' ],
-                          [ 'Level 40', None, self.not_yet, 'level' ],
-                          [ 'Level 50', None, self.not_yet, 'level' ],
-                          [ 'Level 60', None, self.not_yet, 'level' ],
-                          [ 'Level 70', None, self.not_yet, 'level' ],
-                          [ 'Level 80', None, self.not_yet, 'level' ],
-                          [ 'Level 90', None, self.not_yet, 'level' ],
-                          [ 'Level 100', None, self.not_yet, 'level' ]
+                          [ 'Level 0', None, self.debug_0, 'level' ],
+                          [ 'Level 10', None, self.debug_10, 'level' ],
+                          [ 'Level 20', None, self.debug_20, 'level' ],
+                          [ 'Level 30', None, self.debug_30, 'level' ],
+                          [ 'Level 40', None, self.debug_40, 'level' ],
+                          [ 'Level 50', None, self.debug_50, 'level' ],
+                          [ 'Level 60', None, self.debug_60, 'level' ],
+                          [ 'Level 70', None, self.debug_70, 'level' ],
+                          [ 'Level 80', None, self.debug_80, 'level' ],
+                          [ 'Level 90', None, self.debug_90, 'level' ],
+                          [ 'Level 100', None, self.debug_100, 'level' ]
                         ]
                       ]
                     ]
@@ -6047,12 +6057,41 @@ if not gtk_mode:
             self.setMinimumHeight(1024)
 
             self.central_widget = QWidget()
-            layout = QGridLayout()
-            layout.addWidget ( self.zpa1, 0, 0 )
-            layout.addWidget ( self.zpa2, 0, 1 )
-            self.control_panel = QLineEdit ( "Control Panel" )
-            layout.addWidget ( self.control_panel, 1, 0, 1, 2 )
-            self.central_widget.setLayout(layout)
+            central_layout = QGridLayout()
+            central_layout.addWidget ( self.zpa1, 0, 0 )
+            central_layout.addWidget ( self.zpa2, 0, 1 )
+
+            self.control_panel = QWidget()
+            control_panel_layout = QGridLayout()
+
+            gui_fields.proj_label = QLabel ( "Project File" )
+            # gui_fields.proj_label.setAlignment ( "" )
+            control_panel_layout.addWidget ( gui_fields.proj_label, 0, 0 )
+
+            gui_fields.dest_label = QLabel ( "Destination" )
+            control_panel_layout.addWidget ( gui_fields.dest_label, 1, 0 )
+
+            self.row_3 = QLineEdit ( "Jump To" )
+            control_panel_layout.addWidget ( self.row_3, 2, 0 )
+
+            self.row_4 = QLineEdit ( "SNR Skip" )
+            control_panel_layout.addWidget ( self.row_4, 3, 0 )
+
+            self.row_5 = QLineEdit ( "Internal Swim" )
+            control_panel_layout.addWidget ( self.row_5, 4, 0 )
+
+            self.row_6 = QLineEdit ( "Init Affine" )
+            control_panel_layout.addWidget ( self.row_6, 5, 0 )
+
+            self.row_7 = QLineEdit ( "Align All" )
+            control_panel_layout.addWidget ( self.row_7, 6, 0 )
+
+
+            self.control_panel.setLayout(control_panel_layout)
+
+
+            central_layout.addWidget ( self.control_panel, 1, 0, 1, 2 )
+            self.central_widget.setLayout(central_layout)
 
             self.setCentralWidget(self.central_widget)
             #self.setCentralWidget(self.zpa1)
@@ -6103,9 +6142,101 @@ if not gtk_mode:
             print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
             __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+        @Slot()
+        def debug_0(self, checked):
+            print ( "\nSetting debug_level to 0.\n" )
+            global debug_level
+            debug_level = 0
+
+        @Slot()
+        def debug_10(self, checked):
+            print ( "\nSetting debug_level to 10.\n" )
+            global debug_level
+            debug_level = 10
+
+        @Slot()
+        def debug_20(self, checked):
+            print ( "\nSetting debug_level to 20.\n" )
+            global debug_level
+            debug_level = 20
+
+        @Slot()
+        def debug_30(self, checked):
+            print ( "\nSetting debug_level to 30.\n" )
+            global debug_level
+            debug_level = 30
+
+        @Slot()
+        def debug_40(self, checked):
+            print ( "\nSetting debug_level to 40.\n" )
+            global debug_level
+            debug_level = 40
+
+        @Slot()
+        def debug_50(self, checked):
+            print ( "\nSetting debug_level to 50.\n" )
+            global debug_level
+            debug_level = 50
+
+        @Slot()
+        def debug_60(self, checked):
+            print ( "\nSetting debug_level to 60.\n" )
+            global debug_level
+            debug_level = 60
+
+        @Slot()
+        def debug_70(self, checked):
+            print ( "\nSetting debug_level to 70.\n" )
+            global debug_level
+            debug_level = 70
+
+        @Slot()
+        def debug_80(self, checked):
+            print ( "\nSetting debug_level to 80.\n" )
+            global debug_level
+            debug_level = 80
+
+        @Slot()
+        def debug_90(self, checked):
+            print ( "\nSetting debug_level to 90.\n" )
+            global debug_level
+            debug_level = 90
+
+        @Slot()
+        def debug_100(self, checked):
+            print ( "\nSetting debug_level to 100.\n" )
+            global debug_level
+            debug_level = 100
+
 
         @Slot()
         def open_project(self, checked):
+
+            global debug_level
+
+            global project_path
+            global project_file_name
+            global destination_path
+            global zpa_original
+            global scales_dict
+            global current_scale
+            global alignment_layer_list
+            global alignment_layer_index
+            global panel_list
+            global import_tiled
+
+            global point_cursor
+            global cursor_options
+            global point_mode
+            global point_delete_mode
+
+            global code_dialog
+            global code_store
+            global code_entry
+            global current_plot_code
+
+            global generate_as_tiled
+
             print ( "\nOpening Project.\n" )
 
             options = QtWidgets.QFileDialog.Options()
@@ -6125,7 +6256,11 @@ if not gtk_mode:
                   project_file_name = open_name
                   project_path = os.path.dirname(project_file_name)
 
-                  gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+                  global gtk_mode
+                  if gtk_mode:
+                    gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+                  else:
+                    gui_fields.proj_label.setText ( "Project File: " + str(project_file_name) )
 
                   f = open ( project_file_name, 'r' )
                   text = f.read()
@@ -6230,11 +6365,8 @@ if not gtk_mode:
 
 
 if __name__ == '__main__':
-  import sys
-  if len(sys.argv) > 1:
-    for arg in sys.argv[1:]:
-      if arg == 'gtk':
-        gtk_main()
-      if arg == 'qt':
-        qt_main()
+  if gtk_mode:
+    gtk_main()
+  else:
+    qt_main()
 
