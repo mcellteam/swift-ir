@@ -69,11 +69,13 @@ import shutil
 import argparse
 import cv2
 
+from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QGridLayout, QLineEdit
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 ############ Begin fake GTK module for constants ############
+
 class gtk:
   STATE_NORMAL = None
   def __init__(self):
@@ -128,6 +130,9 @@ class gtk:
       self.BASED_ARROW_DOWN = None
       self.BASED_ARROW_UP = None
       self.XXXXXX = None
+    def pixbuf_new_from_file ( file_name ):
+      return None
+
 ############ End fake GTK module for constants ############
 
 ############ Begin app_window ############
@@ -1319,7 +1324,7 @@ class annotated_image:
         f.close()
         global max_image_file_size
         if self.file_size < max_image_file_size:
-          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+          self.image = QPixmap(self.file_name)
           print_debug ( 50, "Loaded " + str(self.file_name) )
         else:
           self.image = None
@@ -1514,6 +1519,140 @@ def store_current_layer_into_fields():
 
 
 
+
+
+class ZoomPanWidget(QWidget):
+    def __init__(self, parent=None, fname=None):
+        super(ZoomPanWidget, self).__init__(parent)
+
+        self.fname = fname
+        self.pixmap = None
+
+        if self.fname != None:
+          if len(self.fname) > 0:
+            self.pixmap = QPixmap(fname)
+
+        self.floatBased = False
+        self.antialiased = False
+        self.wheel_index = 0
+        self.scroll_factor = 1.25
+        self.zoom_scale = 1.0
+        self.last_button = Qt.MouseButton.NoButton
+
+        self.mdx = 0  # Mouse Down x (screen x of mouse down at start of drag)
+        self.mdy = 0  # Mouse Down y (screen y of mouse down at start of drag)
+        self.ldx = 0  # Last dx (fixed while dragging)
+        self.ldy = 0  # Last dy (fixed while dragging)
+        self.dx = 0   # Offset in x of the image
+        self.dy = 0   # Offset in y of the image
+
+        self.setBackgroundRole(QPalette.Base)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    def image_x ( self, win_x ):
+        img_x = (win_x/self.zoom_scale) - self.ldx
+        return ( img_x )
+
+    def image_y ( self, win_y ):
+        img_y = (win_y/self.zoom_scale) - self.ldy
+        return ( img_y )
+
+    def dump(self):
+        print ( "wheel = " + str(self.wheel_index) )
+        print ( "zoom = " + str(self.zoom_scale) )
+        print ( "ldx  = " + str(self.ldx) )
+        print ( "ldy  = " + str(self.ldy) )
+        print ( "mdx  = " + str(self.mdx) )
+        print ( "mdy  = " + str(self.mdy) )
+        print ( " dx  = " + str(self.dx) )
+        print ( " dy  = " + str(self.dy) )
+
+    def setFloatBased(self, floatBased):
+        self.floatBased = floatBased
+        self.update()
+
+    def setAntialiased(self, antialiased):
+        self.antialiased = antialiased
+        self.update()
+
+    def minimumSizeHint(self):
+        return QSize(50, 50)
+
+    def sizeHint(self):
+        return QSize(180, 180)
+
+    def mousePressEvent(self, event):
+        ex = event.x()
+        ey = event.y()
+
+        self.last_button = event.button()
+        if event.button() == Qt.MouseButton.RightButton:
+            # Resest the pan and zoom
+            self.dx = self.mdx = self.ldx = 0
+            self.dy = self.mdy = self.ldy = 0
+            self.wheel_index = 0
+            self.zoom_scale = 1.0
+        elif event.button() == Qt.MouseButton.MiddleButton:
+            self.dump()
+        else:
+            # Set the Mouse Down position to be the screen location of the mouse
+            self.mdx = ex
+            self.mdy = ey
+        self.update()
+
+    def mouseMoveEvent(self, event):
+        if self.last_button == Qt.MouseButton.LeftButton:
+            self.dx = (event.x() - self.mdx) / self.zoom_scale
+            self.dy = (event.y() - self.mdy) / self.zoom_scale
+            self.update()
+
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.ldx = self.ldx + self.dx
+            self.ldy = self.ldy + self.dy
+            self.dx = 0
+            self.dy = 0
+            self.update()
+
+    def mouseDoubleClickEvent(self, event):
+        print ( "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
+        self.update()
+
+    def wheelEvent(self, event):
+        self.wheel_index += event.delta()/120
+
+        mouse_win_x = event.x()
+        mouse_win_y = event.y()
+
+        old_scale = self.zoom_scale
+        new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+
+        self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+        self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+
+        self.update()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+        if True:
+            if self.pixmap != None:
+                painter.scale ( self.zoom_scale, self.zoom_scale )
+                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
+        else:
+            painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+            painter.translate(self.width() / 2, self.height() / 2)
+            for diameter in range(0, 256, 9):
+                delta = abs((self.wheel_index % 128) - diameter / 2)
+                alpha = 255 - (delta * delta) / 4 - diameter
+                if alpha > 0:
+                    painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
+                    if self.floatBased:
+                        painter.drawEllipse(QRectF(-diameter / 2.0,
+                                -diameter / 2.0, diameter, diameter))
+                    else:
+                        painter.drawEllipse(QRect(-diameter / 2,
+                                -diameter / 2, diameter, diameter))
 
 
 
@@ -1991,6 +2130,9 @@ class zoom_panel ( app_window.zoom_pan_area ):
     # Restore the previous color
     gc.foreground = old_fg
     return False
+
+
+
 
 
 def set_all_or_fwd_callback ( set_all ):
@@ -3066,7 +3208,7 @@ def load_from_proj_dict ( proj_dict ):
       if not os.path.isabs(destination_path):
         destination_path = os.path.join ( project_path, destination_path )
       destination_path = os.path.realpath ( destination_path )
-      gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+      gui_fields.dest_label.setText ( "Destination: " + str(destination_path) )
 
     current_scale = 1
     if 'current_scale' in proj_dict['data']:
@@ -3430,37 +3572,7 @@ def menu_callback ( widget, data=None ):
 
     global generate_as_tiled
 
-    if command == "Fast":
-
-      zpa.user_data['frame_delay'] = 0.01
-
-    elif command == "Med":
-
-      zpa.user_data['frame_delay'] = 0.1
-
-    elif command == "Slow":
-
-      zpa.user_data['frame_delay'] = 1.0
-
-    elif command == "ToggleLegend":
-
-      zpa.user_data['show_legend'] = not zpa.user_data['show_legend']
-      zpa.queue_draw()
-
-    elif command == "Affine":
-
-      for i in range(len(alignment_layer_list)):
-
-        if type(alignment_layer_list[i]) == type(None):
-          print_debug ( 5, "  Layer " + str(i) + ": Alignment is None" )
-        else:
-          if type(alignment_layer_list[i].align_proc) == type(None):
-            print_debug ( 5, "  Layer " + str(i) + ": Alignment Process is None" )
-          else:
-            affine = alignment_layer_list[i].align_proc.cumulative_afm
-            print_debug ( 50, "  Layer " + str(i) + ": Affine is " + str(affine) )
-
-    elif command == "Debug":
+    if command == "Debug":
 
       print_debug ( -1, "Handy global items:" )
       print_debug ( -1, "  project_path" )
@@ -3479,6 +3591,20 @@ def menu_callback ( widget, data=None ):
 
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
       zpa.queue_draw()
+
+    elif command == "Affine":
+
+      for i in range(len(alignment_layer_list)):
+
+        if type(alignment_layer_list[i]) == type(None):
+          print_debug ( 5, "  Layer " + str(i) + ": Alignment is None" )
+        else:
+          if type(alignment_layer_list[i].align_proc) == type(None):
+            print_debug ( 5, "  Layer " + str(i) + ": Alignment Process is None" )
+          else:
+            affine = alignment_layer_list[i].align_proc.cumulative_afm
+            print_debug ( 50, "  Layer " + str(i) + ": Affine is " + str(affine) )
+
 
     elif command == "SetDest":
 
@@ -3585,23 +3711,18 @@ def menu_callback ( widget, data=None ):
 
     elif command == "OpenProj":
 
-      file_chooser = gtk.FileChooserDialog(title="Open Project", action=gtk.FILE_CHOOSER_ACTION_OPEN,
-	                                         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-      file_chooser.set_select_multiple(False)
-      file_chooser.set_default_response(gtk.RESPONSE_OK)
+      print ( "\nOpening Project.\n" )
 
-      image_filter=gtk.FileFilter()
-      image_filter.set_name("JSON")
-      image_filter.add_pattern("*.json")
-      file_chooser.add_filter(image_filter)
-      image_filter=gtk.FileFilter()
-      image_filter.set_name("All Files")
-      image_filter.add_pattern("*")
-      file_chooser.add_filter(image_filter)
-      response = file_chooser.run()
-
-      if response == gtk.RESPONSE_OK:
-        open_name = file_chooser.get_filename()
+      options = QtWidgets.QFileDialog.Options()
+      if not True:  # self.native.isChecked():
+          options |= QtWidgets.QFileDialog.DontUseNativeDialog
+      open_name, filtr = QtWidgets.QFileDialog.getOpenFileName(None, # Had been self
+              "QFileDialog.getOpenFileName()",
+              #self.openFileNameLabel.text(),
+              "Open a Project",
+              "JSON Files (*.json);;All Files (*)", "", options)
+      if open_name:
+        print ( "Opening " + open_name )
         if open_name != None:
           open_name = os.path.realpath(open_name)
           if not os.path.isdir(open_name):
@@ -3609,7 +3730,7 @@ def menu_callback ( widget, data=None ):
             project_file_name = open_name
             project_path = os.path.dirname(project_file_name)
 
-            gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+            gui_fields.proj_label.setText ( "Project File: " + str(project_file_name) )
 
             f = open ( project_file_name, 'r' )
             text = f.read()
@@ -3666,6 +3787,102 @@ def menu_callback ( widget, data=None ):
               f.write ( proj_encoded_dict )
               f.close()
             '''
+
+
+
+      """
+      file_chooser.destroy()
+      print_debug ( 90, "Done with dialog" )
+
+      update_newly_loaded_proj()
+      """
+
+
+
+
+      '''
+      file_chooser = gtk.FileChooserDialog(title="Open Project", action=gtk.FILE_CHOOSER_ACTION_OPEN,
+	                                         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+      file_chooser.set_select_multiple(False)
+      file_chooser.set_default_response(gtk.RESPONSE_OK)
+
+      image_filter=gtk.FileFilter()
+      image_filter.set_name("JSON")
+      image_filter.add_pattern("*.json")
+      file_chooser.add_filter(image_filter)
+      image_filter=gtk.FileFilter()
+      image_filter.set_name("All Files")
+      image_filter.add_pattern("*")
+      file_chooser.add_filter(image_filter)
+      response = file_chooser.run()
+
+      if response == gtk.RESPONSE_OK:
+        open_name = file_chooser.get_filename()
+        if open_name != None:
+          open_name = os.path.realpath(open_name)
+          if not os.path.isdir(open_name):
+            # It's a real file
+            project_file_name = open_name
+            project_path = os.path.dirname(project_file_name)
+
+            gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+
+            f = open ( project_file_name, 'r' )
+            text = f.read()
+            f.close()
+
+            proj_dict = json.loads ( text )
+            print_debug ( 70, str(proj_dict) )
+            print_debug ( 5, "Project file version " + str(proj_dict['version']) )
+
+            load_from_proj_dict ( proj_dict )
+      '''
+
+      '''
+      # Test to explore how the JSONEncoder works for indenting JSON output
+      # This works reasonably well, but short arrays and dictionaries are not in-line
+      # Also note that this must be done BEFORE calling load_from_proj_dict
+      # This is because load_from_proj_dict appears to add non-JSON compatible objects
+      '''
+
+      ''' In later tests this gives an error ... so comment out
+
+        Saving JSON to "test_json_output.json"
+        Traceback (most recent call last):
+          File "pyswift_gui.py", line 2547, in menu_callback
+            proj_encoded_dict = jdencode.encode ( proj_dict )
+          File "/usr/lib/python2.7/json/encoder.py", line 209, in encode
+            chunks = list(chunks)
+          File "/usr/lib/python2.7/json/encoder.py", line 434, in _iterencode
+            for chunk in _iterencode_dict(o, _current_indent_level):
+          File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
+            for chunk in chunks:
+          File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
+            for chunk in chunks:
+          File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
+            for chunk in chunks:
+          File "/usr/lib/python2.7/json/encoder.py", line 332, in _iterencode_list
+            for chunk in chunks:
+          File "/usr/lib/python2.7/json/encoder.py", line 442, in _iterencode
+            o = _default(o)
+          File "/usr/lib/python2.7/json/encoder.py", line 184, in default
+            raise TypeError(repr(o) + " is not JSON serializable")
+        TypeError: <__main__.alignment_layer instance at 0x7f9fe9a89a28> is not JSON serializable
+
+      print_debug ( 0, "Saving JSON to \"test_json_output.json\"" )
+      jdencode = json.JSONEncoder ( indent=2, separators=(",", ": ") )
+      if False:
+        proj_encoded_dict = jdencode.iterencode ( proj_dict )
+        f = open ( "test_json_output.json", 'w' )
+        for chunk in proj_encoded_dict:
+          f.write ( chunk )
+        f.close()
+      else:
+        proj_encoded_dict = jdencode.encode ( proj_dict )
+        f = open ( "test_json_output.json", 'w' )
+        f.write ( proj_encoded_dict )
+        f.close()
+      '''
 
 
 
@@ -4807,884 +5024,6 @@ def refresh_all_images():
 
 
 
-# Create the window and connect the events
-def gtk_main_gui_builder():
-
-  global gui_fields
-  global window
-  global menu_bar
-  global panel_list
-
-  # Create a top-level GTK window
-  window = gtk.Window ( gtk.WINDOW_TOPLEVEL )
-  window.set_title ( "Python GTK version of SWiFT-GUI" )
-
-  # Create a zoom/pan area to hold all of the drawing
-
-  global zpa_original
-  zpa_original = zoom_panel(window,global_win_width,global_win_height,"base",point_add_enabled=True)
-  zpa_original.force_center = True
-
-  global panel_list
-  panel_list.append ( zpa_original )
-
-  zpa_original.user_data = {
-                    'image_frame'        : None,
-                    'image_frames'       : [],
-                    'frame_number'       : -1,
-                    'running'            : False,
-                    'last_update'        : -1,
-                    'show_legend'        : True,
-                    'frame_delay'        : 0.1,
-                    'size'               : 1.0
-                  }
-
-  # Set the relationships between "user" coordinates and "screen" coordinates
-
-  zpa_original.set_x_scale ( 0.0, 300, 100.0, 400 )
-  zpa_original.set_y_scale ( 0.0, 250 ,100.0, 350 )
-
-  # Create a vertical box to hold the menu, drawing area, and buttons
-  main_win_vbox = gtk.VBox ( homogeneous=False, spacing=0 )
-  window.add(main_win_vbox)
-  main_win_vbox.show()
-
-  # Connect GTK's "main_quit" function to the window's "destroy" event
-  window.connect ( "destroy", lambda w: gtk.main_quit() )
-
-  # Create a menu bar and add it to the vertical box
-  menu_bar = gtk.MenuBar()
-  main_win_vbox.pack_start(menu_bar, expand=False, fill=False, padding=0)
-
-  global cursor_options
-  global cursor_option_seps
-
-  # Create a "File" menu
-  (file_menu, file_item) = zpa_original.add_menu ( "_File" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = file_menu
-    zpa_original.add_menu_item ( this_menu, menu_callback, "New Project",  ("NewProj", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Open Project",  ("OpenProj", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Save Project",  ("SaveProj", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Save Project As...",  ("SaveProjAs", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Set Destination",  ("SetDest", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    # zpa_original.add_menu_item ( this_menu, menu_callback, "List >",  ("List", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Exit",       ("Exit", zpa_original ) )
-
-  # Create an "Images" menu
-  (image_menu, image_item) = zpa_original.add_menu ( "_Images" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = image_menu
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Import...",  ("ImImport", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Center",  ("ImCenter", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Actual Size",  ("ActSize", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Refresh",  ("Refresh", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Out Images",  ("ClearOut", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Layers",  ("ClearLayers", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear Everything",  ("ClearEverything", zpa_original ) )
-
-  # Create a "Scaling" menu
-  (scaling_menu, scaling_item) = zpa_original.add_menu ( "Scalin_g" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = scaling_menu
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Define Scales",  ("DefScales", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Generate All Scales",  ("GenAllScales", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Import All Scales",  ("ImportAllScales", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Tiled",   ("GenAsTiled", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Import Tiled",   ("ImportTiled", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Show Tiled",   ("ShowTiled", zpa_original ) )
-    '''
-    # These aren't useful yet, so hide them for now ...
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Generate Missing",  ("GenMissingScales", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Delete All Scales",  ("DelAllScales", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Delete Missing Scales",  ("DelMissingScales", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    '''
-
-  # Create a "Scales" menu
-  (scales_menu, scales_item) = zpa_original.add_menu ( "_Scales" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = scales_menu
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Scale 1",   ("SelectScale_1", zpa_original ), default=True )
-
-  # Create a "Points" menu
-  (points_menu, points_item) = zpa_original.add_menu ( "_Points" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = points_menu
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Alignment Point Mode",   ("PtMode", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Delete Points",   ("PtDel", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Clear All Alignment Points",   ("PtClear", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    # Create a "Set/Cursor" submenu for point mode only
-    # This didn't work ...
-    #  (cursor_menu, set_item) = this_menu.add_menu_item ( "_Cursor" )
-    #  if True: # An easy way to indent and still be legal Python
-    # So put in the main menu for now:
-    # Add cursors from the "cursor_options" array
-    cursor_index = 0
-    cbox_group = None
-    for cursor_pair in cursor_options:
-      cursor_option_string = cursor_pair[0]
-      selected = False
-      if cbox_group is None:
-        selected = True
-      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, cursor_option_string[len('Cursor_'):],   (cursor_option_string, zpa_original ), group=cbox_group, default=selected )
-      if cbox_group == None:
-        cbox_group = val
-      if cursor_index in cursor_option_seps:
-        zpa_original.add_menu_sep  ( this_menu )
-      cursor_index += 1
-
-  # Create a "Set" menu
-  (set_menu, set_item) = zpa_original.add_menu ( "_Set" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = set_menu
-    # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Perform Swims",   ("DoSwims", zpa_original ), default=align_swiftir.global_do_swims )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Update CFMs",   ("DoCFMs", zpa_original ), default=align_swiftir.global_do_cfms )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Images",   ("GenImgs", zpa_original ), default=align_swiftir.global_gen_imgs )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "UnLimited Zoom",   ("UnLimZoom", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Default Plot Code",   ("DefPlotCode", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Custom Plot Code",   ("PlotCode", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-
-  # Create a "Debug" menu
-  (debug_menu, debug_item) = zpa_original.add_menu ( "_Debug" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = debug_menu
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Python Console",   ("Debug", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Print Affine",   ("Affine", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Print Structures",   ("Structs", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Define Waves",    ("DefWaves", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Make Waves",   ("Waves", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Define Grid",    ("DefGrid", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Grid Align",   ("Grid", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-
-    cbox_group = zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Waves",   ("SWaves", zpa_original ), group=None, default=False )
-    zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Grid Align",    ("SGrid", zpa_original ), group=cbox_group, default=False )
-    zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Show Aligned",    ("SAligned", zpa_original ), group=cbox_group, default=True )
-    zpa_original.add_menu_sep  ( this_menu )
-    cbox_group = None
-    global debug_level
-    for level in [ 10*x for x in range(0,11) ]:
-      selected = False
-      if (level>=debug_level) and (level<(debug_level+10)):
-        selected = True
-      val = zpa_original.add_radiomenu_item ( this_menu, menu_callback, "Level " + str(level),   ("Level " + str(level), zpa_original ), group=cbox_group, default=selected )
-      if cbox_group == None:
-        cbox_group = val
-
-  # Create a "Show" menu
-  (show_menu, show_item) = zpa_original.add_menu ( "_Show" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = show_menu
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Window Centers",   ("WinCtrs", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Affines",   ("Affines", zpa_original ) )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Skipped Images",   ("ShowSkipped", zpa_original ), default=True )
-    global plotting_available
-    if plotting_available:
-      # Only show this menu option if all of the plotting libraries have been found
-      zpa_original.add_menu_sep  ( this_menu )
-      zpa_original.add_menu_item ( this_menu, menu_callback, "Plot",   ("PlotExec", zpa_original ) )
-
-  # Create a "Help" menu
-  (help_menu, help_item) = zpa_original.add_menu ( "_Help" )
-  if True: # An easy way to indent and still be legal Python
-    this_menu = help_menu
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Manual...",   ("Manual", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Key commands...",   ("Key Commands", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Mouse clicks...",   ("Mouse Clicks", zpa_original ) )
-    zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "License...",   ("License", zpa_original ) )
-    zpa_original.add_menu_item ( this_menu, menu_callback, "Version...",   ("Version", zpa_original ) )
-
-  # Append the menus to the menu bar itself
-  menu_bar.append ( file_item )
-  menu_bar.append ( image_item )
-  menu_bar.append ( scaling_item )
-  menu_bar.append ( scales_item )
-  menu_bar.append ( points_item )
-  menu_bar.append ( set_item )
-  menu_bar.append ( show_item )
-  menu_bar.append ( debug_item )
-  menu_bar.append ( help_item )
-
-  # Show the menu bar itself (everything must be shown!!)
-  menu_bar.show()
-
-  # Create the horizontal image box
-  global image_hbox
-  image_hbox = gtk.HBox ( True, 0 )
-  panel_list = []
-
-  # The zoom/pan area has its own drawing area (that it zooms and pans)
-  original_drawing_area = zpa_original.get_drawing_area()
-
-  panel_list.append ( zpa_original )
-
-  # Add the zoom/pan area to the vertical box (becomes the main area)
-  image_hbox.pack_start(original_drawing_area, True, True, 0)
-
-  image_hbox.show()
-  main_win_vbox.pack_start(image_hbox, True, True, 0)
-  original_drawing_area.show()
-
-  # The zoom/pan area doesn't draw anything, so add our custom expose callback
-  original_drawing_area.connect ( "expose_event", zpa_original.expose_callback, zpa_original )
-
-  # Set the events that the zoom/pan area must respond to
-  #  Note that zooming and panning requires button press and pointer motion
-  #  Other events can be set and handled by user code as well
-  original_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
-                                   | gtk.gdk.LEAVE_NOTIFY_MASK
-                                   | gtk.gdk.BUTTON_PRESS_MASK
-                                   | gtk.gdk.POINTER_MOTION_MASK
-                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
-
-  alignment_layer_defaults = alignment_layer()
-
-  # Create a Vertical box to hold rows of buttons
-  controls_vbox = gtk.VBox ( True, 10 )
-  controls_vbox.show()
-  main_win_vbox.pack_start ( controls_vbox, False, False, 0 )
-
-  # Add some rows of application specific controls and their callbacks
-
-  # Create a horizontal box to hold a row of controls
-
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-  gui_fields.proj_label = gtk.Label("Project File: " + str(project_file_name))
-  controls_hbox.pack_start ( gui_fields.proj_label, True, True, 0 )
-  gui_fields.proj_label.show()
-
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-  gui_fields.dest_label = gtk.Label("Destination: " + str(destination_path))
-  controls_hbox.pack_start ( gui_fields.dest_label, True, True, 0 )
-  gui_fields.dest_label.show()
-
-
-  # Create a horizontal box to hold a row of controls
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Button("Jump To:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", jump_to_callback, zpa_original )
-  button.show()
-  gui_fields.jump_to_index = gtk.Entry(6)
-  gui_fields.jump_to_index.set_text ( '1' )
-  label_entry.pack_start ( gui_fields.jump_to_index, True, True, 0 )
-  gui_fields.jump_to_index.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  '''
-  a_label = gtk.Label("Translation Pass:")
-  controls_hbox.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-
-  # The variable "label_entry" is used for a transient hbox containing a label and an entry
-  # The variable
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("WW:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  '''
-  gui_fields.trans_ww_entry = gtk.Entry(5)
-  gui_fields.trans_ww_entry.set_text ( '0' )
-  '''
-  gui_fields.trans_ww_entry.set_text ( str(alignment_layer_defaults.trans_ww) )
-  label_entry.pack_start ( gui_fields.trans_ww_entry, True, True, 0 )
-  gui_fields.trans_ww_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("Addx:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  '''
-  gui_fields.trans_addx_entry = gtk.Entry(6)
-  gui_fields.trans_addx_entry.set_text ( '0' )
-  '''
-  gui_fields.trans_addx_entry.set_text ( str(alignment_layer_defaults.trans_addx) )
-  label_entry.pack_start ( gui_fields.trans_addx_entry, True, True, 0 )
-  gui_fields.trans_addx_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("Addy:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  '''
-  gui_fields.trans_addy_entry = gtk.Entry(6)
-  gui_fields.trans_addy_entry.set_text ( '0' )
-  '''
-  gui_fields.trans_addy_entry.set_text ( str(alignment_layer_defaults.trans_addy) )
-  label_entry.pack_start ( gui_fields.trans_addy_entry, True, True, 0 )
-  gui_fields.trans_addy_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-  '''
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label(" ")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.skip_check_box = gtk.CheckButton("Skip")
-  gui_fields.skip_check_box.connect_object ( "clicked", change_skip_callback, False )
-  label_entry.pack_start ( gui_fields.skip_check_box, True, True, 0 )
-  gui_fields.skip_check_box.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-  button = gtk.Button("Clear All Skips")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", clear_all_skips_callback, False )
-  button.show()
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label(" ")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  #junk_skip_check_box = gtk.ComboBox("Alignment")
-  gui_fields.align_method_select = gtk.ComboBox()
-  store = gtk.ListStore(str)
-  cell = gtk.CellRendererText()
-  gui_fields.align_method_select.pack_start(cell)
-  gui_fields.align_method_select.add_attribute(cell, 'text', 0)
-  store.append ( ['Auto Swim Align'] )
-  store.append ( ['Match Point Align'] )
-  gui_fields.align_method_select.set_model(store)
-  gui_fields.align_method_select.set_active(0)
-  label_entry.pack_start ( gui_fields.align_method_select, True, True, 0 )
-  gui_fields.align_method_select.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  '''
-  # Create a horizontal box to hold a row of controls
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-
-  a_label = gtk.Label(" ")
-  controls_hbox.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-
-  '''
-  gui_fields.affine_check_box = gtk.CheckButton("  Affine Pass:")
-  gui_fields.affine_check_box.set_active(True)
-  '''
-  gui_fields.affine_check_box.set_active(True)
-  controls_hbox.pack_start ( gui_fields.affine_check_box, True, True, 0 )
-  gui_fields.affine_check_box.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("WW:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  '''
-  gui_fields.affine_ww_entry = gtk.Entry(5)
-  gui_fields.affine_ww_entry.set_text ( '0' )
-  '''
-  gui_fields.affine_ww_entry.set_text ( str(alignment_layer_defaults.affine_ww) )
-  label_entry.pack_start ( gui_fields.affine_ww_entry, True, True, 0 )
-  gui_fields.affine_ww_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("Addx:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  '''
-  gui_fields.affine_addx_entry = gtk.Entry(6)
-  gui_fields.affine_addx_entry.set_text ( '0' )
-  '''
-  gui_fields.affine_addx_entry.set_text ( str(alignment_layer_defaults.affine_addx) )
-  label_entry.pack_start ( gui_fields.affine_addx_entry, True, True, 0 )
-  gui_fields.affine_addx_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("Addy:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  '''
-  gui_fields.affine_addy_entry = gtk.Entry(6)
-  gui_fields.affine_addy_entry.set_text ( '0' )
-  '''
-  gui_fields.affine_addy_entry.set_text ( str(alignment_layer_defaults.affine_addy) )
-  label_entry.pack_start ( gui_fields.affine_addy_entry, True, True, 0 )
-  gui_fields.affine_addy_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  a_label = gtk.Label(" ")
-  controls_hbox.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  '''
-
-
-
-  # Create a horizontal box to hold a row of controls
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("SNR Skip:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.snr_skip = gtk.Entry(6)
-  gui_fields.snr_skip.set_text ( '' )
-  label_entry.pack_start ( gui_fields.snr_skip, True, True, 0 )
-  gui_fields.snr_skip.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  button = gtk.Button("All SNR Skip -> Skip")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", snr_skip_to_skip_callback, False )
-  button.show()
-
-  button = gtk.Button("Clear SNR Skips")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", clear_snr_skip_to_skip_callback, False )
-  button.show()
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("SNR Halt:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.snr_halt = gtk.Entry(6)
-  gui_fields.snr_halt.set_text ( '' )
-  label_entry.pack_start ( gui_fields.snr_halt, True, True, 0 )
-  gui_fields.snr_halt.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-
-  # Create a horizontal box to hold a row of controls
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-
-  # Create the code_base_select control (selects how to run)
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label(" ")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  #junk_skip_check_box = gtk.ComboBox("Alignment")
-  gui_fields.code_base_select = gtk.ComboBox()
-  store = gtk.ListStore(str)
-  cell = gtk.CellRendererText()
-  gui_fields.code_base_select.pack_start(cell)
-  gui_fields.code_base_select.add_attribute(cell, 'text', 0)
-  # Hard-coded alignment runners
-  store.append ( ['Internal Swim Align'] )
-  store.append ( ['External Swim Align'] )
-  # Dynamic alignment runners
-  runner_files = [ f for f in os.listdir(".") if f.startswith('pyswift_run_') and f.endswith('.py') ]
-  runner_files = [ f for f in runner_files if f != "pyswift_run_external.py" ]
-  runner_files = sorted(runner_files)
-  print_debug ( 70, "Runner files = " + str(runner_files) )
-  for f in runner_files:
-    store.append ( [ f ] )
-  gui_fields.code_base_select.set_model(store)
-  gui_fields.code_base_select.set_active(0)
-  label_entry.pack_start ( gui_fields.code_base_select, True, True, 0 )
-  gui_fields.code_base_select.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  a_label = gtk.Label(" Bias Pass:  ")
-  controls_hbox.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-
-  gui_fields.bias_check_box = gtk.CheckButton("  Bias Pass:")
-  #controls_hbox.pack_start ( gui_fields.bias_check_box, True, True, 0 )
-  #gui_fields.bias_check_box.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("dx per image:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.bias_dx_entry = gtk.Entry(5)
-  gui_fields.bias_dx_entry.set_text ( str(alignment_layer_defaults.bias_dx) )
-  label_entry.pack_start ( gui_fields.bias_dx_entry, True, True, 0 )
-  gui_fields.bias_dx_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("dy per image:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.bias_dy_entry = gtk.Entry(5)
-  gui_fields.bias_dy_entry.set_text ( str(alignment_layer_defaults.bias_dy) )
-  label_entry.pack_start ( gui_fields.bias_dy_entry, True, True, 0 )
-  gui_fields.bias_dy_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  a_label = gtk.Label(" ")
-  controls_hbox.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-
-  # Create a horizontal box to hold a row of controls
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-
-  # Create the init_refine_apply control (selects how to run)
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label(" ")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-
-  gui_fields.init_refine_apply_entry = gtk.ComboBox()
-  store = gtk.ListStore(str)
-  cell = gtk.CellRendererText()
-  gui_fields.init_refine_apply_entry.pack_start(cell)
-  gui_fields.init_refine_apply_entry.add_attribute(cell, 'text', 0)
-  # Options
-  store.append ( ['Init Affine'] )
-  store.append ( ['Refine Affine'] )
-  store.append ( ['Apply Affine'] )
-  # Dynamic alignment runners
-  gui_fields.init_refine_apply_entry.set_model(store)
-  gui_fields.init_refine_apply_entry.set_active(0)
-  label_entry.pack_start ( gui_fields.init_refine_apply_entry, True, True, 0 )
-  gui_fields.init_refine_apply_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  a_label = gtk.Label(" Biases:  ")
-  controls_hbox.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-
-  gui_fields.bias_check_box = gtk.CheckButton("  Bias Pass:")
-  #controls_hbox.pack_start ( gui_fields.bias_check_box, True, True, 0 )
-  #gui_fields.bias_check_box.show()
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("rotation:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.bias_rotation_entry = gtk.Entry(5)
-  gui_fields.bias_rotation_entry.set_text ( str(alignment_layer_defaults.bias_rotation) )
-  label_entry.pack_start ( gui_fields.bias_rotation_entry, True, True, 0 )
-  gui_fields.bias_rotation_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("scale_x:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.bias_scale_x_entry = gtk.Entry(5)
-  gui_fields.bias_scale_x_entry.set_text ( str(alignment_layer_defaults.bias_scale_x) )
-  label_entry.pack_start ( gui_fields.bias_scale_x_entry, True, True, 0 )
-  gui_fields.bias_scale_x_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("scale_y:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.bias_scale_y_entry = gtk.Entry(5)
-  gui_fields.bias_scale_y_entry.set_text ( str(alignment_layer_defaults.bias_scale_y) )
-  label_entry.pack_start ( gui_fields.bias_scale_y_entry, True, True, 0 )
-  gui_fields.bias_scale_y_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("skew_x:")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.bias_skew_x_entry = gtk.Entry(5)
-  gui_fields.bias_skew_x_entry.set_text ( str(alignment_layer_defaults.bias_skew_x) )
-  label_entry.pack_start ( gui_fields.bias_skew_x_entry, True, True, 0 )
-  gui_fields.bias_skew_x_entry.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-
-  a_label = gtk.Label(" ")
-  controls_hbox.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-
-
-  '''
-  # Create a horizontal box to hold a row of controls
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-
-  button = gtk.Button("Set All")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", set_all_or_fwd_callback, True )
-  button.show()
-
-  button = gtk.Button("Set Forward")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", set_all_or_fwd_callback, False )
-  button.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  button = gtk.Button("Jump To:")
-  label_entry.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", jump_to_callback, zpa_original )
-  button.show()
-  gui_fields.jump_to_index = gtk.Entry(6)
-  gui_fields.jump_to_index.set_text ( '1' )
-  label_entry.pack_start ( gui_fields.jump_to_index, True, True, 0 )
-  gui_fields.jump_to_index.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-  '''
-
-
-
-  # Create a horizontal box to hold a row of controls
-  controls_hbox = gtk.HBox ( False, 10 )
-  controls_hbox.show()
-  controls_vbox.pack_start ( controls_hbox, False, False, 0 )
-
-  button = gtk.Button("Align All")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", run_alignment_callback, True )
-  button.show()
-
-  button = gtk.Button("Align Forward")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", run_alignment_callback, False )
-  button.show()
-
-
-  label_entry = gtk.HBox ( False, 5 )
-  a_label = gtk.Label("# Forward")
-  label_entry.pack_start ( a_label, True, True, 0 )
-  a_label.show()
-  gui_fields.num_align_forward = gtk.Entry(6)
-  gui_fields.num_align_forward.set_text ( '1' )
-  label_entry.pack_start ( gui_fields.num_align_forward, True, True, 0 )
-  gui_fields.num_align_forward.show()
-  controls_hbox.pack_start ( label_entry, True, True, 0 )
-  label_entry.show()
-
-  '''
-  button = gtk.Button("Abort")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", stop_callback, zpa_original )
-  button.show()
-
-  button = gtk.Button("+")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", add_panel_callback, zpa_original )
-  button.show()
-
-  button = gtk.Button("-")
-  controls_hbox.pack_start ( button, True, True, 0 )
-  button.connect_object ( "clicked", rem_panel_callback, zpa_original )
-  button.show()
-  '''
-
-  # Show the main window
-  window.show()
-
-  # gtk.idle_add ( background_callback, zpa_original )
-
-  # Turn control over to GTK to run everything from here onward.
-  gtk.main()
-  return 0
-
-
-
-
-
-class ZoomPanWidget(QWidget):
-    def __init__(self, parent=None, fname=None):
-        super(ZoomPanWidget, self).__init__(parent)
-
-        self.fname = fname
-        self.pixmap = None
-
-        if self.fname != None:
-          if len(self.fname) > 0:
-            self.pixmap = QPixmap(fname)
-
-        self.floatBased = False
-        self.antialiased = False
-        self.wheel_index = 0
-        self.scroll_factor = 1.25
-        self.zoom_scale = 1.0
-        self.last_button = Qt.MouseButton.NoButton
-
-        self.mdx = 0  # Mouse Down x (screen x of mouse down at start of drag)
-        self.mdy = 0  # Mouse Down y (screen y of mouse down at start of drag)
-        self.ldx = 0  # Last dx (fixed while dragging)
-        self.ldy = 0  # Last dy (fixed while dragging)
-        self.dx = 0   # Offset in x of the image
-        self.dy = 0   # Offset in y of the image
-
-        self.setBackgroundRole(QPalette.Base)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-    def image_x ( self, win_x ):
-        img_x = (win_x/self.zoom_scale) - self.ldx
-        return ( img_x )
-
-    def image_y ( self, win_y ):
-        img_y = (win_y/self.zoom_scale) - self.ldy
-        return ( img_y )
-
-    def dump(self):
-        print ( "wheel = " + str(self.wheel_index) )
-        print ( "zoom = " + str(self.zoom_scale) )
-        print ( "ldx  = " + str(self.ldx) )
-        print ( "ldy  = " + str(self.ldy) )
-        print ( "mdx  = " + str(self.mdx) )
-        print ( "mdy  = " + str(self.mdy) )
-        print ( " dx  = " + str(self.dx) )
-        print ( " dy  = " + str(self.dy) )
-
-    def setFloatBased(self, floatBased):
-        self.floatBased = floatBased
-        self.update()
-
-    def setAntialiased(self, antialiased):
-        self.antialiased = antialiased
-        self.update()
-
-    def minimumSizeHint(self):
-        return QSize(50, 50)
-
-    def sizeHint(self):
-        return QSize(180, 180)
-
-    def mousePressEvent(self, event):
-        ex = event.x()
-        ey = event.y()
-
-        self.last_button = event.button()
-        if event.button() == Qt.MouseButton.RightButton:
-            # Resest the pan and zoom
-            self.dx = self.mdx = self.ldx = 0
-            self.dy = self.mdy = self.ldy = 0
-            self.wheel_index = 0
-            self.zoom_scale = 1.0
-        elif event.button() == Qt.MouseButton.MiddleButton:
-            self.dump()
-        else:
-            # Set the Mouse Down position to be the screen location of the mouse
-            self.mdx = ex
-            self.mdy = ey
-        self.update()
-
-    def mouseMoveEvent(self, event):
-        if self.last_button == Qt.MouseButton.LeftButton:
-            self.dx = (event.x() - self.mdx) / self.zoom_scale
-            self.dy = (event.y() - self.mdy) / self.zoom_scale
-            self.update()
-
-    def mouseReleaseEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.ldx = self.ldx + self.dx
-            self.ldy = self.ldy + self.dy
-            self.dx = 0
-            self.dy = 0
-            self.update()
-
-    def mouseDoubleClickEvent(self, event):
-        print ( "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
-        self.update()
-
-    def wheelEvent(self, event):
-        self.wheel_index += event.delta()/120
-
-        mouse_win_x = event.x()
-        mouse_win_y = event.y()
-
-        old_scale = self.zoom_scale
-        new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
-
-        self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
-        self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
-
-        self.update()
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-
-        if True:
-            if self.pixmap != None:
-                painter.scale ( self.zoom_scale, self.zoom_scale )
-                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
-        else:
-            painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-            painter.translate(self.width() / 2, self.height() / 2)
-            for diameter in range(0, 256, 9):
-                delta = abs((self.wheel_index % 128) - diameter / 2)
-                alpha = 255 - (delta * delta) / 4 - diameter
-                if alpha > 0:
-                    painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-                    if self.floatBased:
-                        painter.drawEllipse(QRectF(-diameter / 2.0,
-                                -diameter / 2.0, diameter, diameter))
-                    else:
-                        painter.drawEllipse(QRect(-diameter / 2,
-                                -diameter / 2, diameter, diameter))
-
-
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
@@ -5784,7 +5123,8 @@ class MainWindow(QMainWindow):
               ],
               [ '&Debug',
                 [
-                  [ '&Python Console', 'Ctrl+P', self.py_console, False, None, ("Debug", self.zpa1) ],
+                  [ '&Python Console', 'Ctrl+P', self.menu_handler, False, None, ("Debug", self.zpa1) ],
+                  ### [ '&Python Console', 'Ctrl+P', self.py_console, False, None, ("Debug", self.zpa1) ],
                   [ '-', None, None, None, None, None ],
                   [ 'Print Affine', None, self.menu_handler, False, None, ("Affine", self.zpa1) ],
                   [ 'Print Structures', None, self.menu_handler, False, None, ("Structs", self.zpa1) ],
@@ -5933,7 +5273,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def menu_handler(self, checked):
         qaction = self.sender()
-        print ( "Menu data contains: " + str(qaction.data()) )
+        data = qaction.data()
+        print ( "Menu data contains: " + str(data) )
+        menu_callback ( None, data=data )
 
     @Slot()
     def not_yet(self, checked):
@@ -5944,11 +5286,10 @@ class MainWindow(QMainWindow):
     def exit_app(self, checked):
         sys.exit()
 
-    @Slot()
-    def py_console(self, checked):
-        print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
-        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
+    #@Slot()
+    #def py_console(self, checked):
+    #    print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
+    #    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 # This provides default command line parameters if none are given (as with "Idle")
