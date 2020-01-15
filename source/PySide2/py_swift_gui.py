@@ -4808,7 +4808,7 @@ def refresh_all_images():
 
 
 # Create the window and connect the events
-def main():
+def gtk_main_gui_builder():
 
   global gui_fields
   global window
@@ -5698,132 +5698,132 @@ class MainWindow(QMainWindow):
 
         # Menu Bar
         self.menu = self.menuBar()
+        ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox, 4:Checkbox-Group-Name, 5:User-Data
         ml = [
               [ '&File',
                 [
-                  [ '&New Project', 'Ctrl+N', self.not_yet ],
-                  [ '&Open Project', 'Ctrl+O', self.not_yet ],
-                  [ '&Save Project', 'Ctrl+S', self.not_yet ],
-                  [ 'Save Project &As', 'Ctrl+A', self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Set Destination...', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'E&xit', 'Ctrl+Q', self.exit_app ]
+                  [ '&New Project', 'Ctrl+N', self.menu_handler, False, None, ("NewProj", self.zpa1) ],
+                  [ '&Open Project', 'Ctrl+O', self.menu_handler, False, None, ("OpenProj", self.zpa1) ],
+                  [ '&Save Project', 'Ctrl+S', self.menu_handler, False, None, ("SaveProj", self.zpa1) ],
+                  [ 'Save Project &As', 'Ctrl+A', self.menu_handler, False, None, ("SaveProjAs", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Set Destination...', None, self.menu_handler, False, None, ("SetDest", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, False, None, ("Exit", self.zpa1) ]
                 ]
               ],
               [ '&Images',
                 [
-                  [ '&Import...', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Center', None, self.not_yet ],
-                  [ 'Actual Size', None, self.not_yet ],
-                  [ 'Refresh', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Clear Out Images', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Clear All Layers', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Clear Everything', None, self.not_yet ]
+                  [ '&Import...', None, self.menu_handler, False, None, ("ImImport", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Center', None, self.menu_handler, False, None, ("ImCenter", self.zpa1) ],
+                  [ 'Actual Size', None, self.menu_handler, False, None, ("ActSize", self.zpa1) ],
+                  [ 'Refresh', None, self.menu_handler, False, None, ("Refresh", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Clear Out Images', None, self.menu_handler, False, None, ("ClearOut", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Clear All Layers', None, self.menu_handler, False, None, ("ClearLayers", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Clear Everything', None, self.menu_handler, False, None, ("ClearEverything", self.zpa1) ]
                 ]
               ],
               [ '&Scaling',
                 [
-                  [ '&Define Scales', None, self.not_yet ],
-                  [ '&Generate All Scales', None, self.not_yet ],
-                  [ '&Import All Scales', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ '&Generate Tiled', None, self.not_yet ],
-                  [ '&Import Tiled', None, self.not_yet ],
-                  [ '&Show Tiled', None, self.not_yet ]
+                  [ '&Define Scales', None, self.menu_handler, False, None, ("DefScales", self.zpa1) ],
+                  [ '&Generate All Scales', None, self.menu_handler, False, None, ("GenAllScales", self.zpa1) ],
+                  [ '&Import All Scales', None, self.menu_handler, False, None, ("ImportAllScales", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ '&Generate Tiled', None, self.menu_handler, False, None, ("GenAsTiled", self.zpa1) ],
+                  [ '&Import Tiled', None, self.menu_handler, False, None, ("ImportTiled", self.zpa1) ],
+                  [ '&Show Tiled', None, self.menu_handler, False, None, ("ShowTiled", self.zpa1) ]
                 ]
               ],
               [ '&Scales',
                 [
-                  [ '&Scale 1', None, self.not_yet ]
+                  [ '&Scale 1', None, self.menu_handler, False, None, ("SelectScale_1", self.zpa1) ]
                 ]
               ],
               [ '&Points',
                 [
-                  [ '&Alignment Point Mode', None, self.not_yet ],
-                  [ '&Delete Points', None, self.not_yet ],
-                  [ '&Clear All Alignment Points', None, self.not_yet ],
-                  [ '-', None, None ],
+                  [ '&Alignment Point Mode', None, self.menu_handler, False, None, ("PtMode", self.zpa1) ],
+                  [ '&Delete Points', None, self.menu_handler, False, None, ("PtDel", self.zpa1) ],
+                  [ '&Clear All Alignment Points', None, self.menu_handler, False, None, ("PtClear", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
                   [ '&Point Cursor',
                     [
-                      [ 'Crosshair', None, self.not_yet ],
-                      [ 'Target', None, self.not_yet ]
+                      [ 'Crosshair', None, self.menu_handler, False, None, ("Cursor_XHAIR", self.zpa1) ],
+                      [ 'Target', None, self.menu_handler, False, None, ("Cursor_TARGET", self.zpa1) ]
                     ]
                   ]
                 ]
               ],
               [ '&Set',
                 [
-                  [ '&Max Image Size', 'Ctrl+M', self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Perform Swims', None, self.not_yet ],
-                  [ 'Update CFMs', None, self.not_yet ],
-                  [ 'Generate Images', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Use C Version', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Unlimited Zoom', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Default Plot Code', None, self.not_yet ],
-                  [ 'Custom Plot Code', None, self.not_yet ],
+                  [ '&Max Image Size', 'Ctrl+M', self.menu_handler, False, None, ("MaxFileSize", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Perform Swims', None, self.menu_handler, False, None, ("DoSwims", self.zpa1) ],
+                  [ 'Update CFMs', None, self.menu_handler, False, None, ("DoCFMs", self.zpa1) ],
+                  [ 'Generate Images', None, self.menu_handler, False, None, ("GenImgs", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Use C Version', None, self.menu_handler, False, None, ("UseCVersion", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Unlimited Zoom', None, self.menu_handler, False, None, ("UnLimZoom", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Default Plot Code', None, self.menu_handler, False, None, ("DefPlotCode", self.zpa1) ],
+                  [ 'Custom Plot Code', None, self.menu_handler, False, None, ("PlotCode", self.zpa1) ]
                 ]
               ],
               [ '&Show',
                 [
-                  [ 'Window Centers', None, self.not_yet ],
-                  [ 'Affines', None, self.not_yet ],
-                  [ 'Skipped Images', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Plot', None, self.not_yet ],
+                  [ 'Window Centers', None, self.menu_handler, False, None, ("WinCtrs", self.zpa1) ],
+                  [ 'Affines', None, self.menu_handler, False, None, ("Affines", self.zpa1) ],
+                  [ 'Skipped Images', None, self.menu_handler, False, None, ("ShowSkipped", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Plot', None, self.menu_handler, False, None, ("PlotExec", self.zpa1) ]
                 ]
               ],
               [ '&Debug',
                 [
-                  [ '&Python Console', 'Ctrl+P', self.py_console ],
-                  [ '-', None, None ],
-                  [ 'Print Affine', None, self.not_yet ],
-                  [ 'Print Structures', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Define Waves', None, self.not_yet ],
-                  [ 'Make Waves', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Define Grid', None, self.not_yet ],
-                  [ 'Grid Align', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Show Waves', None, self.not_yet ],
-                  [ 'Show Grid Align', None, self.not_yet ],
-                  [ 'Show Aligned', None, self.not_yet ],
-                  [ '-', None, None ],
+                  [ '&Python Console', 'Ctrl+P', self.py_console, False, None, ("Debug", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Print Affine', None, self.menu_handler, False, None, ("Affine", self.zpa1) ],
+                  [ 'Print Structures', None, self.menu_handler, False, None, ("Structs", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Define Waves', None, self.menu_handler, False, None, ("DefWaves", self.zpa1) ],
+                  [ 'Make Waves', None, self.menu_handler, False, None, ("Waves", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Define Grid', None, self.menu_handler, False, None, ("DefGrid", self.zpa1) ],
+                  [ 'Grid Align', None, self.menu_handler, False, None, ("Grid", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Show Waves', None, self.menu_handler, False, None, ("SWaves", self.zpa1) ],
+                  [ 'Show Grid Align', None, self.menu_handler, False, None, ("SGrid", self.zpa1) ],
+                  [ 'Show Aligned', None, self.menu_handler, False, None, ("SAligned", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
                   [ '&Set Debug Level',
                     [
-                      [ 'Level 0', None, self.not_yet, 'level' ],
-                      [ 'Level 10', None, self.not_yet, 'level' ],
-                      [ 'Level 20', None, self.not_yet, 'level' ],
-                      [ 'Level 30', None, self.not_yet, 'level' ],
-                      [ 'Level 40', None, self.not_yet, 'level' ],
-                      [ 'Level 50', None, self.not_yet, 'level' ],
-                      [ 'Level 60', None, self.not_yet, 'level' ],
-                      [ 'Level 70', None, self.not_yet, 'level' ],
-                      [ 'Level 80', None, self.not_yet, 'level' ],
-                      [ 'Level 90', None, self.not_yet, 'level' ],
-                      [ 'Level 100', None, self.not_yet, 'level' ]
+                      [ 'Level 0', None, self.menu_handler, False, 'level', ("Level 0", self.zpa1) ],
+                      [ 'Level 10', None, self.menu_handler, False, 'level', ("Level 10", self.zpa1) ],
+                      [ 'Level 20', None, self.menu_handler, False, 'level', ("Level 20", self.zpa1) ],
+                      [ 'Level 30', None, self.menu_handler, False, 'level', ("Level 30", self.zpa1) ],
+                      [ 'Level 40', None, self.menu_handler, False, 'level', ("Level 40", self.zpa1) ],
+                      [ 'Level 50', None, self.menu_handler, False, 'level', ("Level 50", self.zpa1) ],
+                      [ 'Level 60', None, self.menu_handler, False, 'level', ("Level 60", self.zpa1) ],
+                      [ 'Level 70', None, self.menu_handler, False, 'level', ("Level 70", self.zpa1) ],
+                      [ 'Level 80', None, self.menu_handler, False, 'level', ("Level 80", self.zpa1) ],
+                      [ 'Level 90', None, self.menu_handler, False, 'level', ("Level 90", self.zpa1) ],
+                      [ 'Level 100', None, self.menu_handler, False, 'level', ("Level 100", self.zpa1) ]
                     ]
                   ]
                 ]
               ],
               [ '&Help',
                 [
-                  [ 'Manual...', None, self.not_yet ],
-                  [ 'Key Commands...', None, self.not_yet ],
-                  [ 'Mouse Clicks...', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Skipped Images', None, self.not_yet ],
-                  [ 'License...', None, self.not_yet ],
-                  [ 'Version...', None, self.not_yet ]
+                  [ 'Manual...', None, self.menu_handler, False, None, ("Manual", self.zpa1) ],
+                  [ 'Key Commands...', None, self.menu_handler, False, None, ("Key Commands", self.zpa1) ],
+                  [ 'Mouse Clicks...', None, self.menu_handler, False, None, ("Mouse Clicks", self.zpa1) ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'License...', None, self.menu_handler, False, None, ("License", self.zpa1) ],
+                  [ 'Version...', None, self.menu_handler, False, None, ("Version", self.zpa1) ]
                 ]
               ]
             ]
@@ -5840,43 +5840,90 @@ class MainWindow(QMainWindow):
         self.setMinimumHeight(1024)
 
         self.central_widget = QWidget()
-        layout = QGridLayout()
-        layout.addWidget ( self.zpa1, 0, 0 )
-        layout.addWidget ( self.zpa2, 0, 1 )
-        self.control_panel = QLineEdit ( "Control Panel" )
-        layout.addWidget ( self.control_panel, 1, 0, 1, 2 )
-        self.central_widget.setLayout(layout)
+        central_layout = QGridLayout()
+        central_layout.addWidget ( self.zpa1, 0, 0 )
+        central_layout.addWidget ( self.zpa2, 0, 1 )
+
+        self.control_panel = QWidget()
+        control_panel_layout = QGridLayout()
+
+        gui_fields.proj_label = QLabel ( "Project File" )
+        # gui_fields.proj_label.setAlignment ( "" )
+        control_panel_layout.addWidget ( gui_fields.proj_label, 0, 0 )
+
+        gui_fields.dest_label = QLabel ( "Destination" )
+        control_panel_layout.addWidget ( gui_fields.dest_label, 1, 0 )
+
+        self.row_3 = QLineEdit ( "Jump To" )
+        control_panel_layout.addWidget ( self.row_3, 2, 0 )
+
+        self.row_4 = QLineEdit ( "SNR Skip" )
+        control_panel_layout.addWidget ( self.row_4, 3, 0 )
+
+        self.row_5 = QLineEdit ( "Internal Swim" )
+        control_panel_layout.addWidget ( self.row_5, 4, 0 )
+
+        self.row_6 = QLineEdit ( "Init Affine" )
+        control_panel_layout.addWidget ( self.row_6, 5, 0 )
+
+        self.row_7 = QLineEdit ( "Align All" )
+        control_panel_layout.addWidget ( self.row_7, 6, 0 )
+
+
+        self.control_panel.setLayout(control_panel_layout)
+
+
+        central_layout.addWidget ( self.control_panel, 1, 0, 1, 2 )
+        self.central_widget.setLayout(central_layout)
 
         self.setCentralWidget(self.central_widget)
         #self.setCentralWidget(self.zpa1)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+
     def build_menu_from_list (self, parent, menu_list):
+
+        # print ( str(len(menu_list)) )
+
         for item in menu_list:
           if type(item[1]) == type([]):
             # This is a submenu
             sub = parent.addMenu(item[0])
             self.build_menu_from_list ( sub, item[1] )
           else:
+            if len(item) != 6:
+              print ( "\n\n###########################" )
+              print ( "Menu list error 2: " + str(item) )
+              print ( "###########################\n\n" )
+
             # This is a menu item (action) or a separator
             if item[0] == '-':
               # This is a separator
               parent.addSeparator()
             else:
-              # This is a menu item (action) with name, accel, callback
+              # This is a menu item (action) with name, accel, callback, and options
+              # QAction(text[, parent=None])
               action = QAction ( item[0], self )
               if item[1] != None:
                 action.setShortcut ( item[1] )
               if item[2] != None:
                 action.triggered.connect ( item[2] )
+              if item[3] != None:
+                # Make this a check box
+                pass
+              if item[4] != None:
+                # Make this a check box member of this group
+                pass
+              if item[5] != None:
+                action.setData ( item[5] )
               parent.addAction ( action )
-              if (len(item) >= 4) and (type(item[3])==type(None)):
+              if item[3]:
                 # This is either a radio button menu item or a checkbox menu item
-                if type(item[3])==type(None):
+                if type(item[4])==type(None):
                   # This is a checkbox item
                   pass
                 else:
-                  # This is a radio button item with the 4th value as a group name
+                  # This is a radio button item with the 5th value as a group name
                   pass
               else:
                 # This is a normal menu item
@@ -5884,8 +5931,14 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
+    def menu_handler(self, checked):
+        qaction = self.sender()
+        print ( "Menu data contains: " + str(qaction.data()) )
+
+    @Slot()
     def not_yet(self, checked):
         print ( "Function is not implemented yet" )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     @Slot()
     def exit_app(self, checked):
