@@ -140,6 +140,62 @@ class gtk:
 
 ############ End fake GTK module for constants ############
 
+class DrawingAreaWidget(QWidget):
+    def __init__( self ):
+      self.expose_callback = None
+
+    class window:
+        def set_cursor ( cursor ):
+          pass
+
+    def show(self):
+        pass
+
+    def connect ( event_string, callback, panel ):
+        if event_string == "expose_event":
+            self.expose_callback = callback
+
+    def queue_draw(self):
+        pass
+
+    def get_size(self):
+        return ( (999, 888) )
+
+    def get_origin(self):
+        return ( (0, 0) )
+
+    def get_colormap(self):
+        return ( (0, 0) )
+
+    def default_expose_callback(self, event):
+        painter = QPainter(self)
+
+        if False:
+            if self.pixmap != None:
+                painter.scale ( self.zoom_scale, self.zoom_scale )
+                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
+        else:
+            painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+            painter.translate(self.width() / 2, self.height() / 2)
+            for diameter in range(0, 256, 9):
+                delta = abs((self.wheel_index % 128) - diameter / 2)
+                alpha = 255 - (delta * delta) / 4 - diameter
+                if alpha > 0:
+                    painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
+                    if self.floatBased:
+                        painter.drawEllipse(QRectF(-diameter / 2.0,
+                                -diameter / 2.0, diameter, diameter))
+                    else:
+                        painter.drawEllipse(QRect(-diameter / 2,
+                                -diameter / 2, diameter, diameter))
+
+    def paintEvent(self, event):
+        if self.expose_callback == None:
+          self.default_expose_callback ( event )
+        else:
+          self.expose_callback ( event )
+
+
 
 ############ Begin app_window ############
 
@@ -154,28 +210,29 @@ class app_window:
       self.window = window
       self.name = name
       self.set_defaults()
-      self.drawing_area = gtk.DrawingArea()
-      self.drawing_area.set_flags ( gtk.CAN_FOCUS )
-      self.drawing_area.set_size_request(win_width,win_height)
+      self.drawing_area = DrawingAreaWidget()
+      #self.drawing_area = gtk.DrawingArea()
+      #self.drawing_area.set_flags ( gtk.CAN_FOCUS )
+      #self.drawing_area.set_size_request(win_width,win_height)
 
-      # self.drawing_area.connect ( "expose_event", expose_callback, self )
-      self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
-      self.drawing_area.connect ( "key_press_event", self.key_press_callback, self )
-      self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
-      self.drawing_area.connect ( "button_release_event", self.button_release_callback, self )
-      self.drawing_area.connect ( "motion_notify_event", self.mouse_motion_callback, self )
+      ## self.drawing_area.connect ( "expose_event", expose_callback, self )
+      #self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
+      #self.drawing_area.connect ( "key_press_event", self.key_press_callback, self )
+      #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+      #self.drawing_area.connect ( "button_release_event", self.button_release_callback, self )
+      #self.drawing_area.connect ( "motion_notify_event", self.mouse_motion_callback, self )
 
-      self.drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
-                                   | gtk.gdk.ENTER_NOTIFY_MASK
-                                   | gtk.gdk.LEAVE_NOTIFY_MASK
-                                   | gtk.gdk.KEY_PRESS_MASK
-                                   | gtk.gdk.BUTTON_PRESS_MASK
-                                   | gtk.gdk.BUTTON_RELEASE_MASK
-                                   | gtk.gdk.POINTER_MOTION_MASK
-                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
+      #self.drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
+      #                             | gtk.gdk.ENTER_NOTIFY_MASK
+      #                             | gtk.gdk.LEAVE_NOTIFY_MASK
+      #                             | gtk.gdk.KEY_PRESS_MASK
+      #                             | gtk.gdk.BUTTON_PRESS_MASK
+      #                             | gtk.gdk.BUTTON_RELEASE_MASK
+      #                             | gtk.gdk.POINTER_MOTION_MASK
+      #                             | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
-      self.accel_group = gtk.AccelGroup()
-      self.window.add_accel_group(self.accel_group)
+      #self.accel_group = gtk.AccelGroup()
+      #self.window.add_accel_group(self.accel_group)
 
       self.user_data = None
 
@@ -520,7 +577,7 @@ project_file_name = ""
 global project_path
 project_path = None
 
-global destination_path
+#global destination_path
 destination_path = ""
 
 global window
@@ -820,7 +877,7 @@ class graphic_line (graphic_primitive):
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
-    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    ### gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
     width, height = drawable.get_size()  # This is the area of the entire window
     #x, y = drawing_area.get_origin()
     old_fg = gc.foreground
@@ -863,7 +920,7 @@ class graphic_rect (graphic_primitive):
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
-    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    ### gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
     width, height = drawable.get_size()  # This is the area of the entire window
     #x, y = drawing_area.get_origin()
     old_fg = gc.foreground
@@ -905,7 +962,7 @@ class graphic_marker (graphic_primitive):
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
-    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    ### gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
     width, height = drawable.get_size()  # This is the area of the entire window
     #x, y = drawing_area.get_origin()
     old_fg = gc.foreground
@@ -945,7 +1002,7 @@ class graphic_dot (graphic_primitive):
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
-    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    ### gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
     width, height = drawable.get_size()  # This is the area of the entire window
     #x, y = drawing_area.get_origin()
     old_fg = gc.foreground
@@ -982,7 +1039,7 @@ class graphic_text (graphic_primitive):
   def draw ( self, zpa, drawing_area, pgl ):
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
-    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    ### gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
     width, height = drawable.get_size()  # This is the area of the entire window
     #x, y = drawing_area.get_origin()
     old_fg = gc.foreground
@@ -998,7 +1055,7 @@ class graphic_text (graphic_primitive):
       # Convert to image coordinates before drawing
       x = int ( width * self.x )
       y = int ( height * self.y )
-    pgl.set_text ( self.s )
+    pgl.setText ( self.s )
     drawable.draw_layout ( gc, x, y, pgl )
 
     # Restore the previous color
@@ -1627,29 +1684,29 @@ def store_current_layer_into_fields():
       a = alignment_layer_list[alignment_layer_index]
       print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
       print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
-      gui_fields.trans_ww_entry.set_text ( str(a.trans_ww) )
-      gui_fields.trans_addx_entry.set_text ( str(a.trans_addx) )
-      gui_fields.trans_addy_entry.set_text ( str(a.trans_addy) )
+      gui_fields.trans_ww_entry.setText ( str(a.trans_ww) )
+      gui_fields.trans_addx_entry.setText ( str(a.trans_addx) )
+      gui_fields.trans_addy_entry.setText ( str(a.trans_addy) )
       gui_fields.skip_check_box.set_active ( a.skip )
       gui_fields.align_method_select.set_active ( a.align_method )
       # gui_fields.align_method_select.set_active_text ( a.align_method_text )
       gui_fields.affine_check_box.set_active ( a.affine_enabled )
-      gui_fields.affine_ww_entry.set_text ( str(a.affine_ww) )
+      gui_fields.affine_ww_entry.setText ( str(a.affine_ww) )
 
-      gui_fields.affine_addx_entry.set_text(str(a.affine_addx))
-      gui_fields.affine_addy_entry.set_text(str(a.affine_addy))
+      gui_fields.affine_addx_entry.setText(str(a.affine_addx))
+      gui_fields.affine_addy_entry.setText(str(a.affine_addy))
       gui_fields.bias_check_box.set_active(a.bias_enabled)
       print_debug ( 70, "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
-      gui_fields.bias_dx_entry.set_text(str(a.bias_dx))
-      gui_fields.bias_dy_entry.set_text(str(a.bias_dy))
+      gui_fields.bias_dx_entry.setText(str(a.bias_dx))
+      gui_fields.bias_dy_entry.setText(str(a.bias_dy))
 
-      # TODO gui_fields.init_refine_apply_entry.set_text(str(a.init_refine_apply))
+      # TODO gui_fields.init_refine_apply_entry.setText(str(a.init_refine_apply))
       gui_fields.init_refine_apply_entry.set_active ( alignment_opts.index(a.init_refine_apply) )
       # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      gui_fields.bias_rotation_entry.set_text(str(a.bias_rotation))
-      gui_fields.bias_scale_x_entry.set_text(str(a.bias_scale_x))
-      gui_fields.bias_scale_y_entry.set_text(str(a.bias_scale_y))
-      gui_fields.bias_skew_x_entry.set_text(str(a.bias_skew_x))
+      gui_fields.bias_rotation_entry.setText(str(a.bias_rotation))
+      gui_fields.bias_scale_x_entry.setText(str(a.bias_scale_x))
+      gui_fields.bias_scale_y_entry.setText(str(a.bias_scale_y))
+      gui_fields.bias_skew_x_entry.setText(str(a.bias_skew_x))
 
 
 
@@ -1669,12 +1726,12 @@ class zoom_panel ( app_window.zoom_pan_area ):
     app_window.zoom_pan_area.__init__ ( self, window, win_width, win_height, role )
 
     # Connect the scroll event for the drawing area (from zoom_pan_area) to a local function:
-    self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
-    self.drawing_area.connect ( "key_press_event", self.key_press_callback, self )
-    #self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
+    #self.drawing_area.connect ( "scroll_event", self.mouse_scroll_callback, self )
+    #self.drawing_area.connect ( "key_press_event", self.key_press_callback, self )
+    ##self.drawing_area.connect ( "button_press_event", self.button_press_callback, self )
 
     # Create a "pango_layout" which seems to be needed for drawing text
-    self.pangolayout = window.create_pango_layout("")
+    #self.pangolayout = window.create_pango_layout("")
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
   def button_press_callback ( self, canvas, event, zpa ):
@@ -1879,7 +1936,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
     x, y = drawing_area.window.get_origin()
     drawable = drawing_area.window
     colormap = drawing_area.get_colormap()
-    gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
+    ### gc = drawing_area.get_style().fg_gc[gtk.STATE_NORMAL]
     # Save the current color
     old_fg = gc.foreground
     # Clear the screen with black
@@ -2114,13 +2171,13 @@ class zoom_panel ( app_window.zoom_pan_area ):
     gc.foreground = colormap.alloc_color(65535,65535,32767)
     if str(self.role) == str('base'):
       # Special case to change "base" to "src"
-      self.pangolayout.set_text ( str('src')+":" )
+      self.pangolayout.setText ( str('src')+":" )
     else:
-      self.pangolayout.set_text ( str(self.role)+":" )
+      self.pangolayout.setText ( str(self.role)+":" )
     drawable.draw_layout ( gc, 3, 2, self.pangolayout )
     # Draw the current scale
     global current_scale
-    self.pangolayout.set_text ( str(current_scale) )
+    self.pangolayout.setText ( str(current_scale) )
     drawable.draw_layout ( gc, 10, 22, self.pangolayout )
 
     # Restore the previous color
@@ -2423,7 +2480,7 @@ def write_json_project ( project_file_name, fb=None ):
 
   if len(project_file_name) > 0:
     # Actually write the file
-    gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+    gui_fields.proj_label.setText ( "Project File: " + str(project_file_name) )
     rel_dest_path = ""
     if len(destination_path) > 0:
       rel_dest_path = os.path.relpath(destination_path,start=project_path)
@@ -3201,7 +3258,7 @@ def load_from_proj_dict ( proj_dict ):
       if not os.path.isabs(destination_path):
         destination_path = os.path.join ( project_path, destination_path )
       destination_path = os.path.realpath ( destination_path )
-      gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+      gui_fields.dest_label.setText ( "Destination: " + str(destination_path) )
 
     current_scale = 1
     if 'current_scale' in proj_dict['data']:
@@ -3537,33 +3594,34 @@ def menu_callback ( widget, data=None ):
   # Checking the type() of data will determine which
   global debug_level
 
+  global project_path
+  global project_file_name
+  global destination_path
+  global zpa_original
+  global scales_dict
+  global current_scale
+  global alignment_layer_list
+  global alignment_layer_index
+  global panel_list
+  global import_tiled
+
+  global point_cursor
+  global cursor_options
+  global point_mode
+  global point_delete_mode
+
+  global code_dialog
+  global code_store
+  global code_entry
+  global current_plot_code
+
+  global generate_as_tiled
+
+
   if type(data) == type((True,False)):
     # Any tuple passed is assumed to be: (command, zpa)
     command = data[0]
     zpa = data[1]
-
-    global project_path
-    global project_file_name
-    global destination_path
-    global zpa_original
-    global scales_dict
-    global current_scale
-    global alignment_layer_list
-    global alignment_layer_index
-    global panel_list
-    global import_tiled
-
-    global point_cursor
-    global cursor_options
-    global point_mode
-    global point_delete_mode
-
-    global code_dialog
-    global code_store
-    global code_entry
-    global current_plot_code
-
-    global generate_as_tiled
 
     if command == "Fast":
 
@@ -3630,7 +3688,7 @@ def menu_callback ( widget, data=None ):
         destination_path = os.path.realpath(destination_path)
         print_debug ( 50, "Selected Directory: " + str(destination_path) )
 
-        gui_fields.dest_label.set_text ( "Destination: " + str(destination_path) )
+        gui_fields.dest_label.setText ( "Destination: " + str(destination_path) )
 
       file_chooser.destroy()
       print_debug ( 90, "Done with dialog" )
@@ -3717,9 +3775,42 @@ def menu_callback ( widget, data=None ):
       ##### End Pasted from OpenProj
 
 
-
     elif command == "OpenProj":
 
+      print ( "\nOpening Project.\n" )
+
+      options = QtWidgets.QFileDialog.Options()
+      if not True:  # self.native.isChecked():
+          options |= QtWidgets.QFileDialog.DontUseNativeDialog
+      open_name, filtr = QtWidgets.QFileDialog.getOpenFileName(None,  # None was self
+              "QFileDialog.getOpenFileName()",
+              #self.openFileNameLabel.text(),
+              "Open a Project",
+              "JSON Files (*.json);;All Files (*)", "", options)
+      if open_name:
+        print ( "Opening " + open_name )
+        if open_name != None:
+          open_name = os.path.realpath(open_name)
+          if not os.path.isdir(open_name):
+            # It's a real file
+            project_file_name = open_name
+            project_path = os.path.dirname(project_file_name)
+
+            gui_fields.proj_label.setText ( "Project File: " + str(project_file_name) )
+
+            f = open ( project_file_name, 'r' )
+            text = f.read()
+            f.close()
+
+            proj_dict = json.loads ( text )
+            print_debug ( 70, str(proj_dict) )
+            print_debug ( 5, "Project file version " + str(proj_dict['version']) )
+
+            load_from_proj_dict ( proj_dict )
+
+      update_newly_loaded_proj()
+
+      '''
       file_chooser = gtk.FileChooserDialog(title="Open Project", action=gtk.FILE_CHOOSER_ACTION_OPEN,
 	                                         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
       file_chooser.set_select_multiple(False)
@@ -3744,7 +3835,7 @@ def menu_callback ( widget, data=None ):
             project_file_name = open_name
             project_path = os.path.dirname(project_file_name)
 
-            gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+            gui_fields.proj_label.setText ( "Project File: " + str(project_file_name) )
 
             f = open ( project_file_name, 'r' )
             text = f.read()
@@ -3756,58 +3847,11 @@ def menu_callback ( widget, data=None ):
 
             load_from_proj_dict ( proj_dict )
 
-            '''
-            # Test to explore how the JSONEncoder works for indenting JSON output
-            # This works reasonably well, but short arrays and dictionaries are not in-line
-            # Also note that this must be done BEFORE calling load_from_proj_dict
-            # This is because load_from_proj_dict appears to add non-JSON compatible objects
-            '''
-
-            ''' In later tests this gives an error ... so comment out
-
-              Saving JSON to "test_json_output.json"
-              Traceback (most recent call last):
-                File "pyswift_gui.py", line 2547, in menu_callback
-                  proj_encoded_dict = jdencode.encode ( proj_dict )
-                File "/usr/lib/python2.7/json/encoder.py", line 209, in encode
-                  chunks = list(chunks)
-                File "/usr/lib/python2.7/json/encoder.py", line 434, in _iterencode
-                  for chunk in _iterencode_dict(o, _current_indent_level):
-                File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
-                  for chunk in chunks:
-                File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
-                  for chunk in chunks:
-                File "/usr/lib/python2.7/json/encoder.py", line 408, in _iterencode_dict
-                  for chunk in chunks:
-                File "/usr/lib/python2.7/json/encoder.py", line 332, in _iterencode_list
-                  for chunk in chunks:
-                File "/usr/lib/python2.7/json/encoder.py", line 442, in _iterencode
-                  o = _default(o)
-                File "/usr/lib/python2.7/json/encoder.py", line 184, in default
-                  raise TypeError(repr(o) + " is not JSON serializable")
-              TypeError: <__main__.alignment_layer instance at 0x7f9fe9a89a28> is not JSON serializable
-
-            print_debug ( 0, "Saving JSON to \"test_json_output.json\"" )
-            jdencode = json.JSONEncoder ( indent=2, separators=(",", ": ") )
-            if False:
-              proj_encoded_dict = jdencode.iterencode ( proj_dict )
-              f = open ( "test_json_output.json", 'w' )
-              for chunk in proj_encoded_dict:
-                f.write ( chunk )
-              f.close()
-            else:
-              proj_encoded_dict = jdencode.encode ( proj_dict )
-              f = open ( "test_json_output.json", 'w' )
-              f.write ( proj_encoded_dict )
-              f.close()
-            '''
-
-
-
       file_chooser.destroy()
       print_debug ( 90, "Done with dialog" )
 
       update_newly_loaded_proj()
+      '''
 
 
 
@@ -3865,7 +3909,7 @@ def menu_callback ( widget, data=None ):
       dialog.vbox.pack_start(label)
       label.show()
       max_entry = gtk.Entry(20)
-      max_entry.set_text ( str ( max_image_file_size ) )
+      max_entry.setText ( str ( max_image_file_size ) )
 
       #checkbox = gtk.CheckButton("Useless checkbox")
       #dialog.vbox.pack_end(checkbox)
@@ -3895,7 +3939,7 @@ def menu_callback ( widget, data=None ):
       dialog.vbox.pack_start(label)
       label.show()
       scales_entry = gtk.Entry(20)
-      scales_entry.set_text ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
+      scales_entry.setText ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
       dialog.vbox.pack_end(scales_entry)
       scales_entry.show()
 
@@ -4412,7 +4456,7 @@ def menu_callback ( widget, data=None ):
       label.show()
       waves_entry = gtk.Entry(2*len(str(gui_fields.waves_dict)))
 
-      waves_entry.set_text ( str(gui_fields.waves_dict) )
+      waves_entry.setText ( str(gui_fields.waves_dict) )
       dialog.vbox.pack_end(waves_entry)
       waves_entry.show()
 
@@ -4508,7 +4552,7 @@ def menu_callback ( widget, data=None ):
       label.show()
       grid_entry = gtk.Entry(2*len(str(gui_fields.grid_dict)))
 
-      grid_entry.set_text ( str(gui_fields.grid_dict) )
+      grid_entry.setText ( str(gui_fields.grid_dict) )
       dialog.vbox.pack_end(grid_entry)
       grid_entry.show()
 
@@ -4725,7 +4769,7 @@ def menu_callback ( widget, data=None ):
 
       if code_dialog != None:
         print_debug ( 70, "Creating the plot code dialog" )
-        code_store.set_text ( current_plot_code )
+        code_store.setText ( current_plot_code )
 
     elif command == "PlotCode":
 
@@ -4745,12 +4789,12 @@ def menu_callback ( widget, data=None ):
         #label.show()
         code_store = gtk.TextBuffer()
 
-        code_store.set_text ( current_plot_code )
+        code_store.setText ( current_plot_code )
 
         code_entry = gtk.TextView(buffer=code_store)
 
         #scales_entry = gtk.Entry(20)
-        #scales_entry.set_text ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
+        #scales_entry.setText ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
         code_dialog.vbox.pack_end(code_entry)
         code_entry.show()
 
@@ -5231,7 +5275,7 @@ def main():
   button.connect_object ( "clicked", jump_to_callback, zpa_original )
   button.show()
   gui_fields.jump_to_index = gtk.Entry(6)
-  gui_fields.jump_to_index.set_text ( '1' )
+  gui_fields.jump_to_index.setText ( '1' )
   label_entry.pack_start ( gui_fields.jump_to_index, True, True, 0 )
   gui_fields.jump_to_index.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5251,9 +5295,9 @@ def main():
   a_label.show()
   '''
   gui_fields.trans_ww_entry = gtk.Entry(5)
-  gui_fields.trans_ww_entry.set_text ( '0' )
+  gui_fields.trans_ww_entry.setText ( '0' )
   '''
-  gui_fields.trans_ww_entry.set_text ( str(alignment_layer_defaults.trans_ww) )
+  gui_fields.trans_ww_entry.setText ( str(alignment_layer_defaults.trans_ww) )
   label_entry.pack_start ( gui_fields.trans_ww_entry, True, True, 0 )
   gui_fields.trans_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5266,9 +5310,9 @@ def main():
   a_label.show()
   '''
   gui_fields.trans_addx_entry = gtk.Entry(6)
-  gui_fields.trans_addx_entry.set_text ( '0' )
+  gui_fields.trans_addx_entry.setText ( '0' )
   '''
-  gui_fields.trans_addx_entry.set_text ( str(alignment_layer_defaults.trans_addx) )
+  gui_fields.trans_addx_entry.setText ( str(alignment_layer_defaults.trans_addx) )
   label_entry.pack_start ( gui_fields.trans_addx_entry, True, True, 0 )
   gui_fields.trans_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5281,9 +5325,9 @@ def main():
   a_label.show()
   '''
   gui_fields.trans_addy_entry = gtk.Entry(6)
-  gui_fields.trans_addy_entry.set_text ( '0' )
+  gui_fields.trans_addy_entry.setText ( '0' )
   '''
-  gui_fields.trans_addy_entry.set_text ( str(alignment_layer_defaults.trans_addy) )
+  gui_fields.trans_addy_entry.setText ( str(alignment_layer_defaults.trans_addy) )
   label_entry.pack_start ( gui_fields.trans_addy_entry, True, True, 0 )
   gui_fields.trans_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5352,9 +5396,9 @@ def main():
   a_label.show()
   '''
   gui_fields.affine_ww_entry = gtk.Entry(5)
-  gui_fields.affine_ww_entry.set_text ( '0' )
+  gui_fields.affine_ww_entry.setText ( '0' )
   '''
-  gui_fields.affine_ww_entry.set_text ( str(alignment_layer_defaults.affine_ww) )
+  gui_fields.affine_ww_entry.setText ( str(alignment_layer_defaults.affine_ww) )
   label_entry.pack_start ( gui_fields.affine_ww_entry, True, True, 0 )
   gui_fields.affine_ww_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5367,9 +5411,9 @@ def main():
   a_label.show()
   '''
   gui_fields.affine_addx_entry = gtk.Entry(6)
-  gui_fields.affine_addx_entry.set_text ( '0' )
+  gui_fields.affine_addx_entry.setText ( '0' )
   '''
-  gui_fields.affine_addx_entry.set_text ( str(alignment_layer_defaults.affine_addx) )
+  gui_fields.affine_addx_entry.setText ( str(alignment_layer_defaults.affine_addx) )
   label_entry.pack_start ( gui_fields.affine_addx_entry, True, True, 0 )
   gui_fields.affine_addx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5382,9 +5426,9 @@ def main():
   a_label.show()
   '''
   gui_fields.affine_addy_entry = gtk.Entry(6)
-  gui_fields.affine_addy_entry.set_text ( '0' )
+  gui_fields.affine_addy_entry.setText ( '0' )
   '''
-  gui_fields.affine_addy_entry.set_text ( str(alignment_layer_defaults.affine_addy) )
+  gui_fields.affine_addy_entry.setText ( str(alignment_layer_defaults.affine_addy) )
   label_entry.pack_start ( gui_fields.affine_addy_entry, True, True, 0 )
   gui_fields.affine_addy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5408,7 +5452,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.snr_skip = gtk.Entry(6)
-  gui_fields.snr_skip.set_text ( '' )
+  gui_fields.snr_skip.setText ( '' )
   label_entry.pack_start ( gui_fields.snr_skip, True, True, 0 )
   gui_fields.snr_skip.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5430,7 +5474,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.snr_halt = gtk.Entry(6)
-  gui_fields.snr_halt.set_text ( '' )
+  gui_fields.snr_halt.setText ( '' )
   label_entry.pack_start ( gui_fields.snr_halt, True, True, 0 )
   gui_fields.snr_halt.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5486,7 +5530,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_dx_entry = gtk.Entry(5)
-  gui_fields.bias_dx_entry.set_text ( str(alignment_layer_defaults.bias_dx) )
+  gui_fields.bias_dx_entry.setText ( str(alignment_layer_defaults.bias_dx) )
   label_entry.pack_start ( gui_fields.bias_dx_entry, True, True, 0 )
   gui_fields.bias_dx_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5498,7 +5542,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_dy_entry = gtk.Entry(5)
-  gui_fields.bias_dy_entry.set_text ( str(alignment_layer_defaults.bias_dy) )
+  gui_fields.bias_dy_entry.setText ( str(alignment_layer_defaults.bias_dy) )
   label_entry.pack_start ( gui_fields.bias_dy_entry, True, True, 0 )
   gui_fields.bias_dy_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5551,7 +5595,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_rotation_entry = gtk.Entry(5)
-  gui_fields.bias_rotation_entry.set_text ( str(alignment_layer_defaults.bias_rotation) )
+  gui_fields.bias_rotation_entry.setText ( str(alignment_layer_defaults.bias_rotation) )
   label_entry.pack_start ( gui_fields.bias_rotation_entry, True, True, 0 )
   gui_fields.bias_rotation_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5562,7 +5606,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_scale_x_entry = gtk.Entry(5)
-  gui_fields.bias_scale_x_entry.set_text ( str(alignment_layer_defaults.bias_scale_x) )
+  gui_fields.bias_scale_x_entry.setText ( str(alignment_layer_defaults.bias_scale_x) )
   label_entry.pack_start ( gui_fields.bias_scale_x_entry, True, True, 0 )
   gui_fields.bias_scale_x_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5573,7 +5617,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_scale_y_entry = gtk.Entry(5)
-  gui_fields.bias_scale_y_entry.set_text ( str(alignment_layer_defaults.bias_scale_y) )
+  gui_fields.bias_scale_y_entry.setText ( str(alignment_layer_defaults.bias_scale_y) )
   label_entry.pack_start ( gui_fields.bias_scale_y_entry, True, True, 0 )
   gui_fields.bias_scale_y_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5584,7 +5628,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.bias_skew_x_entry = gtk.Entry(5)
-  gui_fields.bias_skew_x_entry.set_text ( str(alignment_layer_defaults.bias_skew_x) )
+  gui_fields.bias_skew_x_entry.setText ( str(alignment_layer_defaults.bias_skew_x) )
   label_entry.pack_start ( gui_fields.bias_skew_x_entry, True, True, 0 )
   gui_fields.bias_skew_x_entry.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5619,7 +5663,7 @@ def main():
   button.connect_object ( "clicked", jump_to_callback, zpa_original )
   button.show()
   gui_fields.jump_to_index = gtk.Entry(6)
-  gui_fields.jump_to_index.set_text ( '1' )
+  gui_fields.jump_to_index.setText ( '1' )
   label_entry.pack_start ( gui_fields.jump_to_index, True, True, 0 )
   gui_fields.jump_to_index.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5649,7 +5693,7 @@ def main():
   label_entry.pack_start ( a_label, True, True, 0 )
   a_label.show()
   gui_fields.num_align_forward = gtk.Entry(6)
-  gui_fields.num_align_forward.set_text ( '1' )
+  gui_fields.num_align_forward.setText ( '1' )
   label_entry.pack_start ( gui_fields.num_align_forward, True, True, 0 )
   gui_fields.num_align_forward.show()
   controls_hbox.pack_start ( label_entry, True, True, 0 )
@@ -5688,7 +5732,30 @@ class MainWindow(QMainWindow):
     def __init__(self, fname):
 
         QMainWindow.__init__(self)
-        self.setWindowTitle("PySide2 Image Viewer")
+        self.setWindowTitle("Python PySide2 version of SWiFT-GUI")
+
+        global zpa_original
+        zpa_original = zoom_panel(window,global_win_width,global_win_height,"base",point_add_enabled=True)
+        zpa_original.force_center = True
+
+        global panel_list
+        panel_list.append ( zpa_original )
+
+        zpa_original.user_data = {
+                          'image_frame'        : None,
+                          'image_frames'       : [],
+                          'frame_number'       : -1,
+                          'running'            : False,
+                          'last_update'        : -1,
+                          'show_legend'        : True,
+                          'frame_delay'        : 0.1,
+                          'size'               : 1.0
+                        }
+
+        # Set the relationships between "user" coordinates and "screen" coordinates
+
+        zpa_original.set_x_scale ( 0.0, 300, 100.0, 400 )
+        zpa_original.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
         self.zpa1 = None
         #self.zpa1 = app_window.zoom_pan_area(fname=fname)
