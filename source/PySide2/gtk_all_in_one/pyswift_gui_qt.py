@@ -2459,7 +2459,7 @@ def clear_snr_skip_to_skip_callback ( flag ):
   return True
 
 
-import thread  # Not available in Python3
+# import thread  # Not available in Python3
 
 import align_swiftir
 
