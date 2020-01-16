@@ -76,7 +76,7 @@ import cv2
 
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QGridLayout, QLineEdit
-from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
+from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 ############ Begin fake GTK module for constants ############
@@ -142,20 +142,26 @@ class gtk:
 
 class DrawingAreaWidget(QWidget):
     def __init__( self ):
+      # QWidget.__init__ ( self )
+      super(DrawingAreaWidget, self).__init__()
       self.expose_callback = None
 
     class window:
         def set_cursor ( cursor ):
           pass
+        def get_size (self):
+          return ( (999, 888) )
 
     def show(self):
         pass
 
-    def connect ( event_string, callback, panel ):
+    def connect_expose ( self, event_string, callback, panel ):
         if event_string == "expose_event":
             self.expose_callback = callback
 
     def queue_draw(self):
+        print ( "DrawingAreaWidget.queue_draw() called with self.expose_callback = " + str(self.expose_callback) )
+        QApplication.sendEvent ( self, QPaintEvent(QRegion(0, 0, 999, 888)) )
         pass
 
     def get_size(self):
@@ -168,6 +174,7 @@ class DrawingAreaWidget(QWidget):
         return ( (0, 0) )
 
     def default_expose_callback(self, event):
+        print ( "DrawingAreaWidget.default_expose_callback() called" )
         painter = QPainter(self)
 
         if False:
@@ -175,14 +182,14 @@ class DrawingAreaWidget(QWidget):
                 painter.scale ( self.zoom_scale, self.zoom_scale )
                 painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
         else:
-            painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+            # painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
             for diameter in range(0, 256, 9):
-                delta = abs((self.wheel_index % 128) - diameter / 2)
+                delta = 3 # abs((self.wheel_index % 128) - diameter / 2)
                 alpha = 255 - (delta * delta) / 4 - diameter
                 if alpha > 0:
                     painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-                    if self.floatBased:
+                    if True: #self.floatBased:
                         painter.drawEllipse(QRectF(-diameter / 2.0,
                                 -diameter / 2.0, diameter, diameter))
                     else:
@@ -190,6 +197,7 @@ class DrawingAreaWidget(QWidget):
                                 -diameter / 2, diameter, diameter))
 
     def paintEvent(self, event):
+        print ( "Got a paintEvent" )
         if self.expose_callback == None:
           self.default_expose_callback ( event )
         else:
@@ -344,6 +352,7 @@ class app_window:
 
 
     def queue_draw ( self ):
+      print ( "zoom_pan_area.queue_draw() called" )
       return ( self.drawing_area.queue_draw() )
 
 
@@ -1515,7 +1524,8 @@ class annotated_image:
         f.close()
         global max_image_file_size
         if self.file_size < max_image_file_size:
-          self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+          #self.image = gtk.gdk.pixbuf_new_from_file ( self.file_name )
+          self.image = QPixmap ( self.file_name )
           print_debug ( 50, "Loaded " + str(self.file_name) )
         else:
           self.image = None
@@ -1638,6 +1648,7 @@ def store_fields_into_current_layer():
   if (alignment_layer_list != None) and (alignment_layer_index >= 0):
     if alignment_layer_index < len(alignment_layer_list):
       a = alignment_layer_list[alignment_layer_index]
+      '''  THESE Still need to be implemented!!!
       a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
       a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
       a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
@@ -1676,6 +1687,7 @@ def store_fields_into_current_layer():
             t.bias_skew_x = a.bias_skew_x
 
       print_debug ( 70, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
+      '''
 
 
 def store_current_layer_into_fields():
@@ -1684,6 +1696,7 @@ def store_current_layer_into_fields():
       a = alignment_layer_list[alignment_layer_index]
       print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
       print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
+      ''' THESE Still need to be implemented!!!
       gui_fields.trans_ww_entry.setText ( str(a.trans_ww) )
       gui_fields.trans_addx_entry.setText ( str(a.trans_addx) )
       gui_fields.trans_addy_entry.setText ( str(a.trans_addy) )
@@ -1707,6 +1720,7 @@ def store_current_layer_into_fields():
       gui_fields.bias_scale_x_entry.setText(str(a.bias_scale_x))
       gui_fields.bias_scale_y_entry.setText(str(a.bias_scale_y))
       gui_fields.bias_skew_x_entry.setText(str(a.bias_skew_x))
+      '''
 
 
 
@@ -1928,6 +1942,7 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
   def expose_callback ( self, drawing_area, event, zpa ):
     ''' Draw all the elements in this window '''
+    print ( "zoom_panel.expose_callback() called" )
     if self.force_center:
       center_all_images()
       self.force_center = False
@@ -1965,8 +1980,8 @@ class zoom_panel ( app_window.zoom_pan_area ):
 
 
     if pix_buf != None:
-      pbw = pix_buf.get_width()
-      pbh = pix_buf.get_height()
+      pbw = pix_buf.width()
+      pbh = pix_buf.height()
       scale_w = zpa.ww(pbw) / pbw
       scale_h = zpa.wh(pbh) / pbh
 
@@ -2328,21 +2343,26 @@ def add_panel_callback ( zpa, role="", point_add_enabled=False ):
   new_panel_drawing_area = new_panel.get_drawing_area()
 
   # Add the zoom/pan area to the vertical box (becomes the main area)
-  image_hbox.pack_start(new_panel_drawing_area, True, True, 0)
+  #image_hbox.pack_start(new_panel_drawing_area, True, True, 0)
+
+  hbox_layout = QGridLayout()
+  hbox_layout.addWidget ( new_panel_drawing_area, 0, 0 )
+  image_hbox.setLayout(hbox_layout)
+
 
   new_panel_drawing_area.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
-  new_panel_drawing_area.connect ( "expose_event", new_panel.expose_callback, new_panel )
+  new_panel_drawing_area.connect_expose ( "expose_event", new_panel.expose_callback, new_panel )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
   #  Other events can be set and handled by user code as well
-  new_panel_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
-                                   | gtk.gdk.LEAVE_NOTIFY_MASK
-                                   | gtk.gdk.BUTTON_PRESS_MASK
-                                   | gtk.gdk.POINTER_MOTION_MASK
-                                   | gtk.gdk.POINTER_MOTION_HINT_MASK )
+  #new_panel_drawing_area.set_events ( gtk.gdk.EXPOSURE_MASK
+  #                                 | gtk.gdk.LEAVE_NOTIFY_MASK
+  #                                 | gtk.gdk.BUTTON_PRESS_MASK
+  #                                 | gtk.gdk.POINTER_MOTION_MASK
+  #                                 | gtk.gdk.POINTER_MOTION_HINT_MASK )
 
   panel_list.append ( new_panel )
   return True
@@ -3509,11 +3529,12 @@ def update_menu_scales_from_gui_fields():
   # Some of this could be added to the "app_window" API at some point
   global menu_bar
   scales_menu = None
-  for m in menu_bar.get_children():
-    label = m.get_children()[0].get_label()
-    # print_debug ( 70, label )
-    if label == '_Scales':
-      scales_menu = m.get_submenu()
+  if not (menu_bar is None):
+    for m in menu_bar.get_children():
+      label = m.get_children()[0].get_label()
+      # print_debug ( 70, label )
+      if label == '_Scales':
+        scales_menu = m.get_submenu()
   if scales_menu != None:
     # Remove all the old items and recreate them from the current list
     while len(scales_menu) > 0:
@@ -3557,11 +3578,12 @@ def set_selected_scale_to ( requested_scale ):
 
     global menu_bar
     scales_menu = None
-    for m in menu_bar.get_children():
-      label = m.get_children()[0].get_label()
-      print_debug ( 70, label )
-      if label == '_Scales':
-        scales_menu = m.get_submenu()
+    if not (menu_bar is None):
+      for m in menu_bar.get_children():
+        label = m.get_children()[0].get_label()
+        print_debug ( 70, label )
+        if label == '_Scales':
+          scales_menu = m.get_submenu()
     if scales_menu != None:
       # Remove all the old items and recreate them from the current list
       while len(scales_menu) > 0:
@@ -4497,8 +4519,8 @@ def menu_callback ( widget, data=None ):
               img_rec = al.image_dict['aligned']
               if img_rec.image != None:
                 img = img_rec.image
-                h = img.get_height()
-                w = img.get_width()
+                h = img.height()
+                w = img.width()
 
                 # Make a mir script
 
@@ -4595,8 +4617,8 @@ def menu_callback ( widget, data=None ):
               img_rec = al.image_dict['aligned']
               if img_rec.image != None:
                 img = img_rec.image
-                h = img.get_height()
-                w = img.get_width()
+                h = img.height()
+                w = img.width()
 
                 f2 = img_rec.file_name
 
@@ -4897,7 +4919,8 @@ def center_all_images():
     max_win = [1,1]
     for panel in panel_list:
       panel.queue_draw()
-      win_size = panel.drawing_area.window.get_size()
+      ##win_size = panel.drawing_area.window.get_size()
+      win_size = (999,888)
       if max_win[0] < win_size[0]:
          max_win[0] = win_size[0]
       if max_win[1] < win_size[1]:
@@ -4919,10 +4942,10 @@ def center_all_images():
           if type(pix_buf) != type(None):
             if type(wxh) == type(None):
                wxh = [0,0]
-            if wxh[0] < pix_buf.get_width():
-               wxh[0] = pix_buf.get_width()
-            if wxh[1] < pix_buf.get_height():
-               wxh[1] = pix_buf.get_height()
+            if wxh[0] < pix_buf.width():
+               wxh[0] = pix_buf.width()
+            if wxh[1] < pix_buf.height():
+               wxh[1] = pix_buf.height()
       if type(wxh) != type(None):
         print_debug ( 70, "  For panel " + str(panel_list.index(panel)) + " image size is: [" + str(wxh[0]) + " x " + str(wxh[1]) + "]" )
         # pix_buf = alignment_layer_list[alignment_layer_index].image_dict[panel.role].image
@@ -5226,7 +5249,7 @@ def main():
   original_drawing_area.show()
 
   # The zoom/pan area doesn't draw anything, so add our custom expose callback
-  original_drawing_area.connect ( "expose_event", zpa_original.expose_callback, zpa_original )
+  original_drawing_area.connect_expose ( "expose_event", zpa_original.expose_callback, zpa_original )
 
   # Set the events that the zoom/pan area must respond to
   #  Note that zooming and panning requires button press and pointer motion
@@ -5914,8 +5937,15 @@ class MainWindow(QMainWindow):
         central_layout = QGridLayout()
         #central_layout.addWidget ( self.zpa1, 0, 0 )
         #central_layout.addWidget ( self.zpa2, 0, 1 )
-        central_layout.addWidget ( QWidget(), 0, 0 )
-        central_layout.addWidget ( QWidget(), 0, 1 )
+
+        global image_hbox
+        image_hbox = QWidget()
+        hbox_layout = QGridLayout()
+        hbox_layout.addWidget ( QWidget(), 0, 0 ) # Left image proxy
+        hbox_layout.addWidget ( QWidget(), 0, 1 ) # Right image proxy
+        image_hbox.setLayout(hbox_layout)
+
+        central_layout.addWidget ( image_hbox, 0, 0 )
 
         print ( "Creating control panel" )
         self.control_panel = QWidget()
