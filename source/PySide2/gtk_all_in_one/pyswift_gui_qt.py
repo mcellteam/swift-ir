@@ -75,7 +75,7 @@ import cv2
 #import gtk
 
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QGridLayout, QLineEdit
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QGridLayout, QLineEdit, QPushButton
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -5973,7 +5973,7 @@ class MainWindow(QMainWindow):
         gui_fields.dest_label = QLabel ( "Destination" )
         control_panel_layout.addWidget ( gui_fields.dest_label, 1, 0 )
 
-        self.row_3 = QLineEdit ( "Jump To" )
+        self.row_3 = QPushButton ( "Jump To" )
         control_panel_layout.addWidget ( self.row_3, 2, 0 )
 
         self.row_4 = QLineEdit ( "SNR Skip" )
@@ -5985,7 +5985,7 @@ class MainWindow(QMainWindow):
         self.row_6 = QLineEdit ( "Init Affine" )
         control_panel_layout.addWidget ( self.row_6, 5, 0 )
 
-        self.row_7 = QLineEdit ( "Align All" )
+        self.row_7 = QPushButton ( "Align All" )
         control_panel_layout.addWidget ( self.row_7, 6, 0 )
 
 
