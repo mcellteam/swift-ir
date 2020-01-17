@@ -1513,29 +1513,25 @@ class ZoomPanWidget ( QWidget ):
   def paintEvent(self, event):
       painter = QPainter(self)
 
-      if True:
-          if self.pixmap != None:
-              painter.scale ( self.zoom_scale, self.zoom_scale )
-              painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
+      if self.pixmap != None:
+        painter.scale ( self.zoom_scale, self.zoom_scale )
+        painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
       else:
-          painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-          painter.translate(self.width() / 2, self.height() / 2)
-          for diameter in range(0, 256, 9):
-              delta = abs((self.wheel_index % 128) - diameter / 2)
-              alpha = 255 - (delta * delta) / 4 - diameter
-              if alpha > 0:
-                  painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-                  if self.floatBased:
-                      painter.drawEllipse(QRectF(-diameter / 2.0,
-                              -diameter / 2.0, diameter, diameter))
-                  else:
-                      painter.drawEllipse(QRect(-diameter / 2,
-                              -diameter / 2, diameter, diameter))
-
-
+        painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+        painter.translate(self.width() / 2, self.height() / 2)
+        for diameter in range(0, 256, 9):
+          delta = abs((self.wheel_index % 128) - diameter / 2)
+          alpha = 255 - (delta * delta) / 4 - diameter
+          if alpha > 0:
+            painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
+            if self.floatBased:
+              painter.drawEllipse(QRectF(-diameter / 2.0, -diameter / 2.0, diameter, diameter))
+            else:
+              painter.drawEllipse(QRect(-diameter / 2, -diameter / 2, diameter, diameter))
 
 
   class window:
+      # This is a dummy to provide functions that were in GTK
       def set_cursor ( cursor ):
         pass
       def get_size (self):
@@ -1550,8 +1546,7 @@ class ZoomPanWidget ( QWidget ):
 
   def queue_draw(self):
       print ( "ZoomPanWidget.queue_draw() called with self.expose_callback = " + str(self.expose_callback) )
-      #QApplication.sendEvent ( self, QPaintEvent(QRegion(0, 0, 999, 888)) )
-      pass
+      self.update()
 
   def get_size(self):
       return ( (999, 888) )
@@ -1561,61 +1556,6 @@ class ZoomPanWidget ( QWidget ):
 
   def get_colormap(self):
       return ( (0, 0) )
-
-  def default_expose_callback(self, event):
-      print ( "DrawingAreaWidget.default_expose_callback() called" )
-      painter = QPainter(self)
-
-      if False:
-          if self.pixmap != None:
-              painter.scale ( self.zoom_scale, self.zoom_scale )
-              painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
-      else:
-          # painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-          painter.translate(self.width() / 2, self.height() / 2)
-          for diameter in range(0, 256, 9):
-              delta = 3 # abs((self.wheel_index % 128) - diameter / 2)
-              alpha = 255 - (delta * delta) / 4 - diameter
-              if alpha > 0:
-                  painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-                  if True: #self.floatBased:
-                      painter.drawEllipse(QRectF(-diameter / 2.0,
-                              -diameter / 2.0, diameter, diameter))
-                  else:
-                      painter.drawEllipse(QRect(-diameter / 2,
-                              -diameter / 2, diameter, diameter))
-  '''
-  def paintEvent(self, event):
-      print ( "Got a paintEvent" )
-      if self.expose_callback == None:
-        self.default_expose_callback ( event )
-      else:
-        self.expose_callback ( event )
-
-  def paintEvent(self, event):
-      painter = QPainter(self)
-      print ( "paintEvent callback has been called" )
-
-      if True:
-          if self.pixmap != None:
-              painter.scale ( self.zoom_scale, self.zoom_scale )
-              painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
-      else:
-          painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-          painter.translate(self.width() / 2, self.height() / 2)
-          for diameter in range(0, 256, 9):
-              delta = abs((self.wheel_index % 128) - diameter / 2)
-              alpha = 255 - (delta * delta) / 4 - diameter
-              if alpha > 0:
-                  painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-                  if self.floatBased:
-                      painter.drawEllipse(QRectF(-diameter / 2.0,
-                              -diameter / 2.0, diameter, diameter))
-                  else:
-                      painter.drawEllipse(QRect(-diameter / 2,
-                              -diameter / 2, diameter, diameter))
-
-  '''
 
 
   def set_defaults ( self ):
@@ -2134,146 +2074,6 @@ class ZoomPanWidget ( QWidget ):
       scale_w = zpa.ww(pbw) / pbw
       scale_h = zpa.wh(pbh) / pbh
 
-      # The following chunk of code was an attempt
-      #   to only draw the part of the image that
-      #   is showing in the window. In the Java
-      #   version, the code simply calculates the
-      #   two corners of the image in screen space,
-      #   and requests that it be drawn. The Java
-      #   drawing API knows to clip the image as
-      #   needed and does so very efficiently. But
-      #   GTK (at least in this version) is very
-      #   inefficient, and the drawing performance
-      #   declines very rapidly as the image is
-      #   zoomed in. At some point, the application
-      #   effectively locks up. This is fine for
-      #   early testing, but will need to be fixed
-      #   eventually. One possible solution is to
-      #   use a newer version of GTK. That may fix
-      #   it with no changes (as the Java version).
-      #   If not, the following code may be needed
-      #   as a starting point to clip out the part
-      #   of the image to be drawn and draw it to
-      #   the proper window coordinates.
-
-      ##scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_BILINEAR )
-      #scaled_image = pix_buf.scale_simple( int(pbw*scale_w), int(pbh*scale_h), gtk.gdk.INTERP_NEAREST )
-      #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-
-      #(dw,dh) = drawable.get_size()
-      #pbcs = pix_buf.get_colorspace()
-      # dest_pm = gtk.gdk.Pixmap ( drawable, dw, dh )
-      #dest = gtk.gdk.Pixbuf ( pbcs, False, drawable.get_depth(), dw, dh )
-      #dest = gtk.gdk.Pixbuf ( pbcs, False, 8, dw, dh )  # For some reason the depth seems to have to be 8
-      #pix_buf.scale(dest, 0, 0, 10, 10, 0, 0, 1, 1, gtk.gdk.INTERP_NEAREST)
-      #drawable.draw_pixbuf ( gc, scaled_image, 0, 0, zpa.wxi(0), zpa.wyi(0), -1, -1, gtk.gdk.RGB_DITHER_NONE )
-
-      #gtk.gdk
-
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-      # Note: The Java code scales the image as it is drawn and doesn't create large images as is done here.
-      #       However, the Python call ("gdk_draw_pixbuf") doesn't provide a scaling term (see call below).
-      #
-      #   The scale_simple call can create huge images that quickly overwhelm the available memory.
-      #   This code should be re-written to scale only the portion of the image to actually be rendered.
-      #
-      #   It should likely use "scale" rather than "scale_simple":
-      #     (from https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html#gdk-pixbuf-scale-simple)
-      #
-      #      gdk_pixbuf_scale_simple (const GdkPixbuf *src,  // a GdkPixbuf - in Python, this is the object itself
-      #                        int dest_width,               // the width of the region to render
-      #                        int dest_height,              // the height of the region to render
-      #                        GdkInterpType interp_type);   // the interpolation type for the transformation.
-      #
-      #      gdk_pixbuf_scale (const GdkPixbuf *src,   // a GdkPixbuf - in Python, this is the object itself
-      #                        GdkPixbuf *dest,        // the GdkPixbuf into which to render the results
-      #                        int dest_x,             // the left coordinate for region to render
-      #                        int dest_y,             // the top coordinate for region to render
-      #                        int dest_width,         // the width of the region to render
-      #                        int dest_height,        // the height of the region to render
-      #                        double offset_x,        // the offset in the X direction (currently rounded to an integer)
-      #                        double offset_y,        // the offset in the Y direction (currently rounded to an integer)
-      #                        double scale_x,         // the scale factor in the X direction
-      #                        double scale_y,         // the scale factor in the Y direction
-      #                        GdkInterpType interp_type); // the interpolation type for the transformation.
-      #
-      #      (from https://developer.gnome.org/gdk2/stable/gdk2-Drawing-Primitives.html#gdk-draw-pixbuf)
-      #      gdk_draw_pixbuf (GdkDrawable *drawable,   // a GdkDrawable - in Python, this is the drawable object itself
-      #                       GdkGC *gc,               // a GdkGC, used for clipping, or NULL.
-      #                       const GdkPixbuf *pixbuf, // a GdkPixbuf
-      #                       gint src_x,              // Source X coordinate within pixbuf.
-      #                       gint src_y,              // Source Y coordinates within pixbuf.
-      #                       gint dest_x,             // Destination X coordinate within drawable.
-      #                       gint dest_y,             // Destination Y coordinate within drawable.
-      #                       gint width,              // Width of region to render, in pixels, or -1 to use pixbuf width.
-      #                       gint height,             // Height of region to render, in pixels, or -1 to use pixbuf height.
-      #                       GdkRgbDither dither,     // Dithering mode for GdkRGB.
-      #                       gint x_dither,           // X offset for dither.
-      #                       gint y_dither);          // Y offset for dither.
-
-      """
-      def draw_pixbuf(gc, pixbuf, src_x, src_y, dest_x, dest_y, width=-1, height=-1, dither=gtk.gdk.RGB_DITHER_NORMAL, x_dither=0, y_dither=0)
-
-        gc : a gtk.gdk.GC, used for clipping, or None
-        pixbuf : a gtk.gdk.Pixbuf
-        src_x : Source X coordinate within pixbuf.
-        src_y : Source Y coordinate within pixbuf.
-        dest_x : Destination X coordinate within drawable.
-        dest_y : Destination Y coordinate within drawable.
-        width : Width of region to render, in pixels, or -1 to use pixbuf width. Must be specified in PyGTK 2.2.
-        height : Height of region to render, in pixels, or -1 to use pixbuf height. Must be specified in PyGTK 2.2
-        dither : Dithering mode for GdkRGB.
-        x_dither : X offset for dither.
-        y_dither : Y offset for dither.
-
-      The draw_pixbuf() method renders a rectangular portion of a gtk.gdk.Pixbuf specified by pixbuf
-      to the drawable using the gtk.gdk.GC specified by gc. The portion of pixbuf that is rendered is
-      specified by the origin point (src_x src_y) and the width and height arguments. pixbuf is rendered
-      to the location in the drawable specified by (dest_x dest_y). dither specifies the dithering mode a
-      s one of:
-
-        gtk.gdk.RGB_DITHER_NONE 	  Never use dithering.
-
-        gtk.gdk.RGB_DITHER_NORMAL   Use dithering in 8 bits per pixel (and below) only.
-
-        gtk.gdk.RGB_DITHER_MAX	    Use dithering in 16 bits per pixel and below.
-
-      The destination drawable must have a colormap. All windows have a colormap, however, pixmaps only have
-      colormap by default if they were created with a non-None window argument. Otherwise a colormap must be
-      set on them with the gtk.gdk.Drawable.set_colormap() method.
-
-      On older X servers, rendering pixbufs with an alpha channel involves round trips to the X server, and
-      may be somewhat slow. The clip mask of gc is ignored, but clip rectangles and clip regions work fine.
-
-      ========
-      https://developer.gnome.org/gdk-pixbuf/stable/gdk-pixbuf-Scaling.html
-      C:
-      void gdk_pixbuf_scale (const GdkPixbuf *src,
-                    GdkPixbuf *dest,
-                    int dest_x,
-                    int dest_y,
-                    int dest_width,
-                    int dest_height,
-                    double offset_x,
-                    double offset_y,
-                    double scale_x,
-                    double scale_y,
-                    GdkInterpType interp_type);
-      Python:
-         src.scale ( dest, dest_x, dest_y, dest_width, dest_height, offset_x, offset_y, scale_x, scale_y, interp_type )
-            src          a GdkPixbuf
-            dest         the GdkPixbuf into which to render the results
-            dest_x       the left coordinate for region to render
-            dest_y       the top coordinate for region to render
-            dest_width   the width of the region to render
-            dest_height  the height of the region to render
-            offset_x     the offset in the X direction (currently rounded to an integer)
-            offset_y     the offset in the Y direction (currently rounded to an integer)
-            scale_x      the scale factor in the X direction
-            scale_y      the scale factor in the Y direction
-            interp_type  the interpolation type for the transformation.
-      """
       try:
         scale_to_w = int(pbw*scale_w)
         scale_to_h = int(pbh*scale_h)
