@@ -1512,22 +1512,39 @@ class ZoomPanWidget ( QWidget ):
 
   def paintEvent(self, event):
       painter = QPainter(self)
-
-      if self.pixmap != None:
-        painter.scale ( self.zoom_scale, self.zoom_scale )
-        painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
-      else:
-        painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-        painter.translate(self.width() / 2, self.height() / 2)
-        for diameter in range(0, 256, 9):
-          delta = abs((self.wheel_index % 128) - diameter / 2)
-          alpha = 255 - (delta * delta) / 4 - diameter
-          if alpha > 0:
-            painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-            if self.floatBased:
-              painter.drawEllipse(QRectF(-diameter / 2.0, -diameter / 2.0, diameter, diameter))
-            else:
-              painter.drawEllipse(QRect(-diameter / 2, -diameter / 2, diameter, diameter))
+      try:
+        if self.pixmap != None:
+          # print ( "Inside paintEvent with self.pixmap valid" )
+          if alignment_layer_list != None:
+            if len(alignment_layer_list) > 0:
+              al = alignment_layer_list[alignment_layer_index]
+              im_dict = al.image_dict
+              if self.role in im_dict:
+                ann_image = im_dict[self.role]
+                pixmap = ann_image.image
+                if pixmap != None:
+                  painter.scale ( self.zoom_scale, self.zoom_scale )
+                  painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+        else:
+          painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+          painter.translate(self.width() / 2, self.height() / 2)
+          for diameter in range(0, 256, 9):
+            delta = abs((self.wheel_index % 128) - diameter / 2)
+            alpha = 255 - (delta * delta) / 4 - diameter
+            if alpha > 0:
+              painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
+              if self.floatBased:
+                painter.drawEllipse(QRectF(-diameter / 2.0, -diameter / 2.0, diameter, diameter))
+              else:
+                painter.drawEllipse(QRect(-diameter / 2, -diameter / 2, diameter, diameter))
+      except:
+        print ("Exception found: " + str(sys.exc_info()) )
+        #print ( "Before painter.end(), painter.isActive = " + str(painter.isActive()) )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        painter.end()
+        #print ( "After painter.end(), painter.isActive = " + str(painter.isActive()) )
+        #del(painter)
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
   class window:
@@ -1668,6 +1685,7 @@ class ZoomPanWidget ( QWidget ):
   def queue_draw ( self ):
     print ( "ZoomPanWidget.queue_draw() called" )
     #return ( self.drawing_area.queue_draw() )
+    self.update()
 
 
   def wx ( self, user_x ):
@@ -2624,6 +2642,7 @@ def str2D ( m ):
 
 def setup_initial_panels():
 
+  print ( "Setup initial panels called" )
   global panel_list
   # Set up the preferred panels as needed
   ref_panel = None
