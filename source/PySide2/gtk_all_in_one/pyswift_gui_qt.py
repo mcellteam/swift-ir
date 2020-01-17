@@ -1403,9 +1403,6 @@ class ZoomPanWidget ( QWidget ):
     #self.pangolayout = window.create_pango_layout("")
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    print ( "Opening vj_097_1k1k_1.jpg" )
-    self.pixmap = QPixmap("vj_097_1k1k_1.jpg")
-
     self.expose_callback = None
 
     self.floatBased = False
@@ -1497,46 +1494,73 @@ class ZoomPanWidget ( QWidget ):
       self.update()
 
   def wheelEvent(self, event):
-      self.wheel_index += event.delta()/120
+      # Wheel unshifted moves through layers, shifted zooms
+      kmods = event.modifiers()
+      if ( long(kmods) and long(Qt.ShiftModifier) ) == 0 :
+        # Unshifted Scroll Wheel moves through layers
+        layer_delta = event.delta()/120
 
-      mouse_win_x = event.x()
-      mouse_win_y = event.y()
+        global alignment_layer_list
+        global alignment_layer_index
+        global panel_list
 
-      old_scale = self.zoom_scale
-      new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+        print_debug ( 50, "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
+        if len(alignment_layer_list) <= 0:
+          alignment_layer_index = -1
+          print_debug ( 60, " Index = " + str(alignment_layer_index) )
+        else:
+          if layer_delta > 0:
+            self.move_through_stack ( 1 )
+          elif layer_delta < 0:
+            self.move_through_stack ( -1 )
 
-      self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
-      self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+        # Draw the windows
+        self.update()
+        zpa_original.queue_draw()
+        for p in panel_list:
+          p.update()
+
+      else:
+        # Shifted Scroll Wheel zooms
+        self.wheel_index += event.delta()/120
+
+        mouse_win_x = event.x()
+        mouse_win_y = event.y()
+
+        old_scale = self.zoom_scale
+        new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+
+        self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+        self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
 
       self.update()
 
   def paintEvent(self, event):
       painter = QPainter(self)
       try:
-        if self.pixmap != None:
-          # print ( "Inside paintEvent with self.pixmap valid" )
-          if alignment_layer_list != None:
-            if len(alignment_layer_list) > 0:
-              al = alignment_layer_list[alignment_layer_index]
-              im_dict = al.image_dict
-              if self.role in im_dict:
-                ann_image = im_dict[self.role]
-                pixmap = ann_image.image
-                if pixmap != None:
-                  painter.scale ( self.zoom_scale, self.zoom_scale )
-                  painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
-        else:
-          painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-          painter.translate(self.width() / 2, self.height() / 2)
-          for diameter in range(0, 256, 9):
-            delta = abs((self.wheel_index % 128) - diameter / 2)
-            alpha = 255 - (delta * delta) / 4 - diameter
-            if alpha > 0:
-              painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-              if self.floatBased:
-                painter.drawEllipse(QRectF(-diameter / 2.0, -diameter / 2.0, diameter, diameter))
-              else:
-                painter.drawEllipse(QRect(-diameter / 2, -diameter / 2, diameter, diameter))
+        if alignment_layer_list != None:
+          if len(alignment_layer_list) > 0:
+            al = alignment_layer_list[alignment_layer_index]
+            im_dict = al.image_dict
+            if self.role in im_dict:
+              ann_image = im_dict[self.role]
+              pixmap = ann_image.image
+              if pixmap != None:
+                painter.scale ( self.zoom_scale, self.zoom_scale )
+                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+          else:
+            # Draw a default picture of concentric circles
+            painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+            painter.translate(self.width() / 2, self.height() / 2)
+            for diameter in range(0, 256, 9):
+              delta = abs(((10*(self.wheel_index+10)) % 128) - diameter / 2)
+              alpha = 255 - (delta * delta) / 4 - diameter
+              if alpha > 0:
+                painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
+                if self.floatBased:
+                  painter.drawEllipse(QRectF(-diameter / 2.0, -diameter / 2.0, diameter, diameter))
+                else:
+                  painter.drawEllipse(QRect(-diameter / 2, -diameter / 2, diameter, diameter))
       except:
         print ("Exception found: " + str(sys.exc_info()) )
         #print ( "Before painter.end(), painter.isActive = " + str(painter.isActive()) )
@@ -1561,9 +1585,11 @@ class ZoomPanWidget ( QWidget ):
       if event_string == "expose_event":
           self.expose_callback = callback
 
+  '''
   def queue_draw(self):
-      print ( "ZoomPanWidget.queue_draw() called with self.expose_callback = " + str(self.expose_callback) )
+      print_debug ( 50, "ZoomPanWidget.queue_draw() called with self.expose_callback = " + str(self.expose_callback) )
       self.update()
+  '''
 
   def get_size(self):
       return ( (999, 888) )
@@ -1683,7 +1709,7 @@ class ZoomPanWidget ( QWidget ):
 
 
   def queue_draw ( self ):
-    print ( "ZoomPanWidget.queue_draw() called" )
+    print_debug ( 50, "ZoomPanWidget.queue_draw() called" )
     #return ( self.drawing_area.queue_draw() )
     self.update()
 
@@ -2642,7 +2668,7 @@ def str2D ( m ):
 
 def setup_initial_panels():
 
-  print ( "Setup initial panels called" )
+  print_debug ( 50, "Setup initial panels called" )
   global panel_list
   # Set up the preferred panels as needed
   ref_panel = None
@@ -5720,7 +5746,7 @@ def main():
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
-    def __init__(self, fname):
+    def __init__(self, fname):  # This file name is probably not needed any more
 
         QMainWindow.__init__(self)
         self.setWindowTitle("Python PySide2 version of SWiFT-GUI")
@@ -5909,7 +5935,8 @@ class MainWindow(QMainWindow):
         print ( "Creating status bar" )
         # Status Bar
         self.status = self.statusBar()
-        self.status.showMessage("File: "+fname)
+        # self.status.showMessage("File: "+fname)
+        self.status.showMessage("Status ... ")
 
         print ( "Checking geometry" )
         # Window dimensions
