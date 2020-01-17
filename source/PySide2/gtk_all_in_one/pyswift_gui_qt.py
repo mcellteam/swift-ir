@@ -1267,30 +1267,29 @@ def store_fields_into_current_layer():
   if (alignment_layer_list != None) and (alignment_layer_index >= 0):
     if alignment_layer_index < len(alignment_layer_list):
       a = alignment_layer_list[alignment_layer_index]
-      '''  THESE Still need to be implemented!!!
-      a.trans_ww = int(gui_fields.trans_ww_entry.get_text())
-      a.trans_addx = int(gui_fields.trans_addx_entry.get_text())
-      a.trans_addy = int(gui_fields.trans_addy_entry.get_text())
-      a.skip = gui_fields.skip_check_box.get_active()
-      a.align_method      = gui_fields.align_method_select.get_active()
-      a.align_method_text = gui_fields.align_method_select.get_active_text()
-      a.affine_enabled = gui_fields.affine_check_box.get_active()
-      a.affine_ww = int(gui_fields.affine_ww_entry.get_text())
+      a.trans_ww = int(gui_fields.trans_ww_entry.text())
+      a.trans_addx = int(gui_fields.trans_addx_entry.text())
+      a.trans_addy = int(gui_fields.trans_addy_entry.text())
+      a.skip = gui_fields.skip_check_box.isChecked()
+      a.align_method      = gui_fields.align_method_select.currentIndex()
+      a.align_method_text = gui_fields.align_method_select.currentText()
 
-      a.affine_addx = int(gui_fields.affine_addx_entry.get_text())
-      a.affine_addy = int(gui_fields.affine_addy_entry.get_text())
-      a.bias_enabled = gui_fields.bias_check_box.get_active()
+      a.affine_enabled = gui_fields.affine_check_box.isChecked()
+      a.affine_ww = int(gui_fields.affine_ww_entry.text())
+
+      a.affine_addx = int(gui_fields.affine_addx_entry.text())
+      a.affine_addy = int(gui_fields.affine_addy_entry.text())
+      a.bias_enabled = gui_fields.bias_check_box.isChecked()
       print_debug ( 70, "Storing 1, a.bias_dx = " + str(a.bias_dx) )
-      a.bias_dx = float(gui_fields.bias_dx_entry.get_text())
-      a.bias_dy = float(gui_fields.bias_dy_entry.get_text())
+      a.bias_dx = float(gui_fields.bias_dx_entry.text())
+      a.bias_dy = float(gui_fields.bias_dy_entry.text())
       print_debug ( 70, "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
-
-      a.init_refine_apply = gui_fields.init_refine_apply_entry.get_active_text()
-      a.bias_rotation = float(gui_fields.bias_rotation_entry.get_text())
-      a.bias_scale_x = float(gui_fields.bias_scale_x_entry.get_text())
-      a.bias_scale_y = float(gui_fields.bias_scale_y_entry.get_text())
-      a.bias_skew_x = float(gui_fields.bias_skew_x_entry.get_text())
+      a.init_refine_apply = gui_fields.init_refine_apply_entry.currentText()
+      a.bias_rotation = float(gui_fields.bias_rotation_entry.text())
+      a.bias_scale_x = float(gui_fields.bias_scale_x_entry.text())
+      a.bias_scale_y = float(gui_fields.bias_scale_y_entry.text())
+      a.bias_skew_x = float(gui_fields.bias_skew_x_entry.text())
 
       # Store the bias values in all layers to give them a "global" feel
       # If the final version needs individual biases, just comment this code:
@@ -1304,9 +1303,8 @@ def store_fields_into_current_layer():
             t.bias_scale_x = a.bias_scale_x
             t.bias_scale_y = a.bias_scale_y
             t.bias_skew_x = a.bias_skew_x
-
       print_debug ( 70, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
-      '''
+
 
 
 def store_current_layer_into_fields():
@@ -1315,32 +1313,31 @@ def store_current_layer_into_fields():
       a = alignment_layer_list[alignment_layer_index]
       print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
       print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
-      ''' THESE Still need to be implemented!!!
       gui_fields.trans_ww_entry.setText ( str(a.trans_ww) )
       gui_fields.trans_addx_entry.setText ( str(a.trans_addx) )
       gui_fields.trans_addy_entry.setText ( str(a.trans_addy) )
-      gui_fields.skip_check_box.set_active ( a.skip )
-      gui_fields.align_method_select.set_active ( a.align_method )
-      # gui_fields.align_method_select.set_active_text ( a.align_method_text )
-      gui_fields.affine_check_box.set_active ( a.affine_enabled )
+      gui_fields.skip_check_box.setChecked ( a.skip )
+      gui_fields.align_method_select.setCurrentIndex ( a.align_method )
+      # gui_fields.align_method_select.setCurrentText ( a.align_method_text )
+
+      gui_fields.affine_check_box.setChecked ( a.affine_enabled )
       gui_fields.affine_ww_entry.setText ( str(a.affine_ww) )
 
       gui_fields.affine_addx_entry.setText(str(a.affine_addx))
       gui_fields.affine_addy_entry.setText(str(a.affine_addy))
-      gui_fields.bias_check_box.set_active(a.bias_enabled)
+      gui_fields.bias_check_box.setChecked(a.bias_enabled)
       print_debug ( 70, "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
       gui_fields.bias_dx_entry.setText(str(a.bias_dx))
       gui_fields.bias_dy_entry.setText(str(a.bias_dy))
 
-      # TODO gui_fields.init_refine_apply_entry.setText(str(a.init_refine_apply))
-      gui_fields.init_refine_apply_entry.set_active ( alignment_opts.index(a.init_refine_apply) )
-      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      gui_fields.init_refine_apply_entry.setCurrentIndex ( alignment_opts.index(a.init_refine_apply) )
+      # gui_fields.init_refine_apply_entry.setCurrentText ( alignment_opts.index(a.init_refine_apply) )
       gui_fields.bias_rotation_entry.setText(str(a.bias_rotation))
       gui_fields.bias_scale_x_entry.setText(str(a.bias_scale_x))
       gui_fields.bias_scale_y_entry.setText(str(a.bias_scale_y))
       gui_fields.bias_skew_x_entry.setText(str(a.bias_skew_x))
-      '''
 
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 class ZoomPanWidget ( QWidget ):
@@ -2717,6 +2714,11 @@ def setup_initial_panels():
     panel_list[i].role = forced_panel_roles[i]
 
 
+def run_alignment_forward():
+  run_alignment_callback ( False )
+
+def run_alignment_all():
+  run_alignment_callback ( True )
 
 def run_alignment_callback ( align_all ):
   global debug_level
@@ -2750,9 +2752,9 @@ def run_alignment_callback ( align_all ):
 
   setup_initial_panels()
 
-  print_debug ( 40, "Running with " + str(gui_fields.code_base_select.get_active_text()) )
+  print_debug ( 40, "Running with " + str(gui_fields.code_base_select.currentText()) )
 
-  if str(gui_fields.code_base_select.get_active_text()) == "External Swim Align":
+  if str(gui_fields.code_base_select.currentText()) == "External Swim Align":
 
     #########################################################
     #########################################################
@@ -2803,7 +2805,7 @@ def run_alignment_callback ( align_all ):
                            project_file_name )
 
 
-  elif str(gui_fields.code_base_select.get_active_text()) == "Internal Swim Align":
+  elif str(gui_fields.code_base_select.currentText()) == "Internal Swim Align":
 
     #########################################################
     #########################################################
@@ -2845,7 +2847,7 @@ def run_alignment_callback ( align_all ):
         new_pairs = [ p for p in align_pairs if p[1] >= alignment_layer_index ]
       align_pairs = new_pairs
       # Remove any pairs beyond the number forward
-      num_forward_str = gui_fields.num_align_forward.get_text()
+      num_forward_str = gui_fields.num_align_forward.text()
       if len(num_forward_str.strip()) > 0:
         # A forward limit has been entered
         try:
@@ -3070,7 +3072,7 @@ def run_alignment_callback ( align_all ):
         alignment_layer_list[j].results_dict['cumulative_afm'] = [ [ c for c in r ] for r in alignment_layer_list[j].align_proc.cumulative_afm ]  # Make a copy
 
       # Check to see if this image should be marked for SNR skipping:
-      snr_skip_str = gui_fields.snr_skip.get_text()
+      snr_skip_str = gui_fields.snr_skip.text()
       if len(snr_skip_str.strip()) > 0:
         # An snr_skip limit has been entered
         try:
@@ -3085,7 +3087,7 @@ def run_alignment_callback ( align_all ):
           print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
 
       # Check to see if the alignment should proceed at all
-      snr_halt_str = gui_fields.snr_halt.get_text()
+      snr_halt_str = gui_fields.snr_halt.text()
       if len(snr_halt_str.strip()) > 0:
         # An snr_halt limit has been entered
         try:
@@ -3107,7 +3109,7 @@ def run_alignment_callback ( align_all ):
     #########################################################
     #########################################################
 
-    runner_name = str(gui_fields.code_base_select.get_active_text())
+    runner_name = str(gui_fields.code_base_select.currentText())
     print_debug ( 70, "Dynamic runner: " + runner_name )
 
     write_json_project ( "run_project.json" )
@@ -3118,7 +3120,7 @@ def run_alignment_callback ( align_all ):
       module.debug_level = debug_level
 
     num_forward = None
-    num_forward_str = gui_fields.num_align_forward.get_text()
+    num_forward_str = gui_fields.num_align_forward.text()
     if len(num_forward_str.strip()) > 0:
       # A forward limit has been entered
       try:
@@ -3127,7 +3129,7 @@ def run_alignment_callback ( align_all ):
         num_forward = None
 
     snr_skip = None
-    snr_skip_str = gui_fields.snr_skip.get_text()
+    snr_skip_str = gui_fields.snr_skip.text()
     if len(snr_skip_str.strip()) > 0:
       # An snr_skip limit has been entered
       try:
@@ -3136,7 +3138,7 @@ def run_alignment_callback ( align_all ):
         print_debug ( 1, "The SNR Skip value should be a number and not " + snr_skip_str )
 
     snr_halt = None
-    snr_halt_str = gui_fields.snr_halt.get_text()
+    snr_halt_str = gui_fields.snr_halt.text()
     if len(snr_halt_str.strip()) > 0:
       # An snr_halt limit has been entered
       try:
@@ -5006,6 +5008,7 @@ def refresh_all_images():
 # Create the window and connect the events
 def main():
 
+  print ( "The old main was called" )
   global gui_fields
   global window
   global menu_bar
@@ -5749,6 +5752,8 @@ class MainWindow(QMainWindow):
 
     def __init__(self, fname):  # This file name is probably not needed any more
 
+        global gui_fields # This contains all of the Widgets so they are available everywhere
+
         QMainWindow.__init__(self)
         self.setWindowTitle("Python PySide2 version of SWiFT-GUI")
 
@@ -5981,19 +5986,19 @@ class MainWindow(QMainWindow):
         self.jump_to_button = QPushButton ( "Jump To:" )
         row_layout.addWidget ( self.jump_to_button )
 
-        self.jump_to_field = QLineEdit ( "1" )
-        row_layout.addWidget ( self.jump_to_field )
+        gui_fields.jump_to_index = QLineEdit ( "1" )
+        row_layout.addWidget ( gui_fields.jump_to_index )
 
-        self.skip_check = QCheckBox ( "Skip" )
-        row_layout.addWidget ( self.skip_check )
+        gui_fields.skip_check_box = QCheckBox ( "Skip" )
+        row_layout.addWidget ( gui_fields.skip_check_box )
 
         self.clear_skips_button = QPushButton ( "Clear All Skips" )
         row_layout.addWidget ( self.clear_skips_button )
 
-        self.align_method = QComboBox()
-        self.align_method.insertItem ( -1, "Auto Swim Align" )
-        self.align_method.insertItem ( -1, "Match Point Align" )
-        row_layout.addWidget ( self.align_method )
+        gui_fields.align_method_select = QComboBox()
+        gui_fields.align_method_select.insertItem ( -1, "Auto Swim Align" )
+        gui_fields.align_method_select.insertItem ( -1, "Match Point Align" )
+        row_layout.addWidget ( gui_fields.align_method_select )
 
         self.row_3.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_3 )
@@ -6005,8 +6010,8 @@ class MainWindow(QMainWindow):
         a_label = QLabel ( "SNR Skip:" )
         row_layout.addWidget ( a_label )
 
-        self.snr_skip_field = QLineEdit ( "" )
-        row_layout.addWidget ( self.snr_skip_field )
+        gui_fields.snr_skip = QLineEdit ( "" )
+        row_layout.addWidget ( gui_fields.snr_skip )
 
         self.snr_skip_to_skip = QPushButton ( "All SNR Skip -> Skip" )
         row_layout.addWidget ( self.snr_skip_to_skip )
@@ -6017,8 +6022,8 @@ class MainWindow(QMainWindow):
         a_label = QLabel ( "SNR Halt:" )
         row_layout.addWidget ( a_label )
 
-        self.snr_halt_field = QLineEdit ( "" )
-        row_layout.addWidget ( self.snr_halt_field )
+        gui_fields.snr_halt = QLineEdit ( "" )
+        row_layout.addWidget ( gui_fields.snr_halt )
 
         self.row_4.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_4 )
@@ -6027,10 +6032,10 @@ class MainWindow(QMainWindow):
         self.row_5 = QWidget()
         row_layout = QHBoxLayout()
 
-        self.internal_external = QComboBox()
-        self.internal_external.insertItem ( -1, "Internal Swim Align" )
-        self.internal_external.insertItem ( -1, "External Swim Align" )
-        row_layout.addWidget ( self.internal_external )
+        gui_fields.code_base_select = QComboBox()
+        gui_fields.code_base_select.insertItem ( -1, "Internal Swim Align" )
+        gui_fields.code_base_select.insertItem ( -1, "External Swim Align" )
+        row_layout.addWidget ( gui_fields.code_base_select )
 
         a_label = QLabel ( "Bias Pass:" )
         row_layout.addWidget ( a_label )
@@ -6038,14 +6043,14 @@ class MainWindow(QMainWindow):
         a_label = QLabel ( "dx per image:" )
         row_layout.addWidget ( a_label )
 
-        self.dx_field = QLineEdit ( "0.0" )
-        row_layout.addWidget ( self.dx_field )
+        gui_fields.bias_dx_entry = QLineEdit ( "0.0" )
+        row_layout.addWidget ( gui_fields.bias_dx_entry )
 
         a_label = QLabel ( "dy per image:" )
         row_layout.addWidget ( a_label )
 
-        self.dy_field = QLineEdit ( "0.0" )
-        row_layout.addWidget ( self.dy_field )
+        gui_fields.bias_dy_entry = QLineEdit ( "0.0" )
+        row_layout.addWidget ( gui_fields.bias_dy_entry )
 
         self.row_5.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_5 )
@@ -6054,11 +6059,11 @@ class MainWindow(QMainWindow):
         self.row_6 = QWidget()
         row_layout = QHBoxLayout()
 
-        self.init_refine_apply = QComboBox()
-        self.init_refine_apply.insertItem ( -1, "Init Affine" )
-        self.init_refine_apply.insertItem ( -1, "Refine Affine" )
-        self.init_refine_apply.insertItem ( -1, "Apply Affine" )
-        row_layout.addWidget ( self.init_refine_apply )
+        gui_fields.init_refine_apply_entry = QComboBox()
+        gui_fields.init_refine_apply_entry.insertItem ( -1, "Init Affine" )
+        gui_fields.init_refine_apply_entry.insertItem ( -1, "Refine Affine" )
+        gui_fields.init_refine_apply_entry.insertItem ( -1, "Apply Affine" )
+        row_layout.addWidget ( gui_fields.init_refine_apply_entry )
 
         a_label = QLabel ( "Biases:" )
         row_layout.addWidget ( a_label )
@@ -6066,26 +6071,26 @@ class MainWindow(QMainWindow):
         a_label = QLabel ( "rotation:" )
         row_layout.addWidget ( a_label )
 
-        self.rotation_field = QLineEdit ( "0.0" )
-        row_layout.addWidget ( self.rotation_field )
+        gui_fields.bias_rotation_entry = QLineEdit ( "0.0" )
+        row_layout.addWidget ( gui_fields.bias_rotation_entry )
 
         a_label = QLabel ( "scale_x:" )
         row_layout.addWidget ( a_label )
 
-        self.scale_x_field = QLineEdit ( "0.0" )
-        row_layout.addWidget ( self.scale_x_field )
+        gui_fields.bias_scale_x_entry = QLineEdit ( "0.0" )
+        row_layout.addWidget ( gui_fields.bias_scale_x_entry )
 
         a_label = QLabel ( "scale_y:" )
         row_layout.addWidget ( a_label )
 
-        self.scale_y_field = QLineEdit ( "0.0" )
-        row_layout.addWidget ( self.scale_y_field )
+        gui_fields.bias_scale_y_entry = QLineEdit ( "0.0" )
+        row_layout.addWidget ( gui_fields.bias_scale_y_entry )
 
         a_label = QLabel ( "skew_x:" )
         row_layout.addWidget ( a_label )
 
-        self.skew_x_field = QLineEdit ( "0.0" )
-        row_layout.addWidget ( self.skew_x_field )
+        gui_fields.bias_skew_x_entry = QLineEdit ( "0.0" )
+        row_layout.addWidget ( gui_fields.bias_skew_x_entry )
 
         self.row_6.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_6 )
@@ -6095,16 +6100,18 @@ class MainWindow(QMainWindow):
         row_layout = QHBoxLayout()
 
         self.align_all_button = QPushButton ( "Align All" )
+        self.align_all_button.clicked.connect ( run_alignment_all )
         row_layout.addWidget ( self.align_all_button )
 
         self.align_fwd_button = QPushButton ( "Align Forward" )
+        self.align_fwd_button.clicked.connect ( run_alignment_forward )
         row_layout.addWidget ( self.align_fwd_button )
 
         a_label = QLabel ( "# Forward" )
         row_layout.addWidget ( a_label )
 
-        a_field = QLineEdit ( "1" )
-        row_layout.addWidget ( a_field )
+        gui_fields.num_align_forward = QLineEdit ( "1" )
+        row_layout.addWidget ( gui_fields.num_align_forward )
 
         self.row_7.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_7 )
@@ -6120,6 +6127,18 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.central_widget)
         #self.setCentralWidget(self.zpa1)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+        # These are other fields that may not be in use or displayed
+        gui_fields.trans_ww_entry = QLineEdit ( "0" )
+        gui_fields.trans_addx_entry = QLineEdit ( "0" )
+        gui_fields.trans_addy_entry = QLineEdit ( "0" )
+        gui_fields.affine_check_box = QCheckBox ( "  Affine Pass:" )
+        gui_fields.bias_check_box = QCheckBox ( "  Bias Pass:" )
+        gui_fields.affine_check_box.setChecked ( True )
+        gui_fields.affine_ww_entry = QLineEdit ( "0" )
+        gui_fields.affine_addx_entry = QLineEdit ( "0" )
+        gui_fields.affine_addy_entry = QLineEdit ( "0" )
 
 
     def build_menu_from_list (self, parent, menu_list):
