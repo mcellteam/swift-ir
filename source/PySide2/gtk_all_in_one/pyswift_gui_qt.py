@@ -2339,8 +2339,8 @@ def add_panel_callback ( zpa, role="", point_add_enabled=False ):
   # Add the zoom/pan area to the vertical box (becomes the main area)
   #image_hbox.pack_start(new_panel_drawing_area, True, True, 0)
 
-  hbox_layout = QGridLayout()
-  hbox_layout.addWidget ( new_panel_drawing_area, 0, 0 )
+  hbox_layout = QHBoxLayout()
+  hbox_layout.addWidget ( new_panel_drawing_area )
   image_hbox.setLayout(hbox_layout)
 
 
@@ -5949,18 +5949,16 @@ class MainWindow(QMainWindow):
 
         print ( "Creating central widget holding the image windows" )
         self.central_widget = QWidget()
-        central_layout = QGridLayout()
-        #central_layout.addWidget ( self.zpa1, 0, 0 )
-        #central_layout.addWidget ( self.zpa2, 0, 1 )
+        central_layout = QVBoxLayout()
 
         global image_hbox
         image_hbox = QWidget()
-        hbox_layout = QGridLayout()
-        hbox_layout.addWidget ( self.zpa1, 0, 0 ) # Left image proxy
-        hbox_layout.addWidget ( self.zpa2, 0, 1 ) # Right image proxy
+        hbox_layout = QHBoxLayout()
+        hbox_layout.addWidget ( self.zpa1 ) # Left image proxy
+        hbox_layout.addWidget ( self.zpa2 ) # Right image proxy
         image_hbox.setLayout(hbox_layout)
 
-        central_layout.addWidget ( image_hbox, 0, 0 )
+        central_layout.addWidget ( image_hbox )
 
 
         print ( "Creating control panel" )
@@ -6009,7 +6007,7 @@ class MainWindow(QMainWindow):
         self.control_panel.setLayout(control_panel_layout)
 
 
-        central_layout.addWidget ( self.control_panel, 1, 0, 1, 2 )
+        central_layout.addWidget ( self.control_panel )
         self.central_widget.setLayout(central_layout)
 
         print ( "Setting central widget" )
