@@ -1403,7 +1403,137 @@ class ZoomPanWidget ( QWidget ):
     #self.pangolayout = window.create_pango_layout("")
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+    print ( "Opening vj_097_1k1k_1.jpg" )
+    self.pixmap = QPixmap("vj_097_1k1k_1.jpg")
+
     self.expose_callback = None
+
+    self.floatBased = False
+    self.antialiased = False
+    self.wheel_index = 0
+    self.scroll_factor = 1.25
+    self.zoom_scale = 1.0
+    self.last_button = Qt.MouseButton.NoButton
+
+    self.mdx = 0  # Mouse Down x (screen x of mouse down at start of drag)
+    self.mdy = 0  # Mouse Down y (screen y of mouse down at start of drag)
+    self.ldx = 0  # Last dx (fixed while dragging)
+    self.ldy = 0  # Last dy (fixed while dragging)
+    self.dx = 0   # Offset in x of the image
+    self.dy = 0   # Offset in y of the image
+
+    self.setBackgroundRole(QPalette.Base)
+    self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+
+
+  def image_x ( self, win_x ):
+      img_x = (win_x/self.zoom_scale) - self.ldx
+      return ( img_x )
+
+  def image_y ( self, win_y ):
+      img_y = (win_y/self.zoom_scale) - self.ldy
+      return ( img_y )
+
+  def dump(self):
+      print ( "wheel = " + str(self.wheel_index) )
+      print ( "zoom = " + str(self.zoom_scale) )
+      print ( "ldx  = " + str(self.ldx) )
+      print ( "ldy  = " + str(self.ldy) )
+      print ( "mdx  = " + str(self.mdx) )
+      print ( "mdy  = " + str(self.mdy) )
+      print ( " dx  = " + str(self.dx) )
+      print ( " dy  = " + str(self.dy) )
+
+  def setFloatBased(self, floatBased):
+      self.floatBased = floatBased
+      self.update()
+
+  def setAntialiased(self, antialiased):
+      self.antialiased = antialiased
+      self.update()
+
+  def minimumSizeHint(self):
+      return QSize(50, 50)
+
+  def sizeHint(self):
+      return QSize(180, 180)
+
+  def mousePressEvent(self, event):
+      ex = event.x()
+      ey = event.y()
+
+      self.last_button = event.button()
+      if event.button() == Qt.MouseButton.RightButton:
+          # Resest the pan and zoom
+          self.dx = self.mdx = self.ldx = 0
+          self.dy = self.mdy = self.ldy = 0
+          self.wheel_index = 0
+          self.zoom_scale = 1.0
+      elif event.button() == Qt.MouseButton.MiddleButton:
+          self.dump()
+      else:
+          # Set the Mouse Down position to be the screen location of the mouse
+          self.mdx = ex
+          self.mdy = ey
+      self.update()
+
+  def mouseMoveEvent(self, event):
+      if self.last_button == Qt.MouseButton.LeftButton:
+          self.dx = (event.x() - self.mdx) / self.zoom_scale
+          self.dy = (event.y() - self.mdy) / self.zoom_scale
+          self.update()
+
+  def mouseReleaseEvent(self, event):
+      if event.button() == Qt.MouseButton.LeftButton:
+          self.ldx = self.ldx + self.dx
+          self.ldy = self.ldy + self.dy
+          self.dx = 0
+          self.dy = 0
+          self.update()
+
+  def mouseDoubleClickEvent(self, event):
+      print ( "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
+      self.update()
+
+  def wheelEvent(self, event):
+      self.wheel_index += event.delta()/120
+
+      mouse_win_x = event.x()
+      mouse_win_y = event.y()
+
+      old_scale = self.zoom_scale
+      new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+
+      self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+      self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+
+      self.update()
+
+  def paintEvent(self, event):
+      painter = QPainter(self)
+
+      if True:
+          if self.pixmap != None:
+              painter.scale ( self.zoom_scale, self.zoom_scale )
+              painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
+      else:
+          painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
+          painter.translate(self.width() / 2, self.height() / 2)
+          for diameter in range(0, 256, 9):
+              delta = abs((self.wheel_index % 128) - diameter / 2)
+              alpha = 255 - (delta * delta) / 4 - diameter
+              if alpha > 0:
+                  painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
+                  if self.floatBased:
+                      painter.drawEllipse(QRectF(-diameter / 2.0,
+                              -diameter / 2.0, diameter, diameter))
+                  else:
+                      painter.drawEllipse(QRect(-diameter / 2,
+                              -diameter / 2, diameter, diameter))
+
+
+
 
   class window:
       def set_cursor ( cursor ):
@@ -1461,10 +1591,10 @@ class ZoomPanWidget ( QWidget ):
         self.default_expose_callback ( event )
       else:
         self.expose_callback ( event )
-  '''
 
   def paintEvent(self, event):
       painter = QPainter(self)
+      print ( "paintEvent callback has been called" )
 
       if True:
           if self.pixmap != None:
@@ -1485,6 +1615,7 @@ class ZoomPanWidget ( QWidget ):
                       painter.drawEllipse(QRect(-diameter / 2,
                               -diameter / 2, diameter, diameter))
 
+  '''
 
 
   def set_defaults ( self ):
@@ -5798,7 +5929,26 @@ class MainWindow(QMainWindow):
         zpa_original.set_x_scale ( 0.0, 300, 100.0, 400 )
         zpa_original.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
-        self.zpa1 = None
+        self.zpa1 = zpa_original
+        self.zpa2 = ZoomPanWidget(window,global_win_width,global_win_height,"base",point_add_enabled=True)
+        self.zpa2.force_center = True
+
+        panel_list.append ( self.zpa2 )
+        self.zpa2.user_data = {
+                          'image_frame'        : None,
+                          'image_frames'       : [],
+                          'frame_number'       : -1,
+                          'running'            : False,
+                          'last_update'        : -1,
+                          'show_legend'        : True,
+                          'frame_delay'        : 0.1,
+                          'size'               : 1.0
+                        }
+        self.zpa2.set_x_scale ( 0.0, 300, 100.0, 400 )
+        self.zpa2.set_y_scale ( 0.0, 250 ,100.0, 350 )
+
+
+
         #self.zpa1 = app_window.zoom_pan_area(fname=fname)
         #self.zpa2 = app_window.zoom_pan_area(fname=fname)
 
@@ -5959,8 +6109,8 @@ class MainWindow(QMainWindow):
         global image_hbox
         image_hbox = QWidget()
         hbox_layout = QGridLayout()
-        hbox_layout.addWidget ( QWidget(), 0, 0 ) # Left image proxy
-        hbox_layout.addWidget ( QWidget(), 0, 1 ) # Right image proxy
+        hbox_layout.addWidget ( self.zpa1, 0, 0 ) # Left image proxy
+        hbox_layout.addWidget ( self.zpa2, 0, 1 ) # Right image proxy
         image_hbox.setLayout(hbox_layout)
 
         central_layout.addWidget ( image_hbox, 0, 0 )
@@ -6085,7 +6235,7 @@ if __name__ == '__main__':
   app = QApplication(sys.argv)
   print ( "QApplication created" )
 
-  window = MainWindow("vj_097_shift_rot_skew_crop_1k1k_1.jpg")
+  window = MainWindow("vj_097_1k1k_1.jpg")
   # window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
 
   print ( "Main Window created" )
