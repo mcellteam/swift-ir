@@ -76,7 +76,7 @@ import cv2
 
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
-from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout
+from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -5965,24 +5965,124 @@ class MainWindow(QMainWindow):
         self.control_panel = QWidget()
         control_panel_layout = QVBoxLayout()
 
+
         gui_fields.proj_label = QLabel ( "Project File:" )
         # gui_fields.proj_label.setAlignment ( "" )
         control_panel_layout.addWidget ( gui_fields.proj_label )
 
+
         gui_fields.dest_label = QLabel ( "Destination:" )
         control_panel_layout.addWidget ( gui_fields.dest_label )
 
-        self.row_3 = QPushButton ( "Jump To" )
+
+        self.row_3 = QWidget()
+        row_layout = QHBoxLayout()
+
+        self.jump_to_button = QPushButton ( "Jump To:" )
+        row_layout.addWidget ( self.jump_to_button )
+
+        self.jump_to_field = QLineEdit ( "1" )
+        row_layout.addWidget ( self.jump_to_field )
+
+        self.skip_check = QCheckBox ( "Skip" )
+        row_layout.addWidget ( self.skip_check )
+
+        self.clear_skips_button = QPushButton ( "Clear All Skips" )
+        row_layout.addWidget ( self.clear_skips_button )
+
+        self.align_method = QPushButton ( "Auto Swim Align" )
+        row_layout.addWidget ( self.align_method )
+
+        self.row_3.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_3 )
 
-        self.row_4 = QLineEdit ( "SNR Skip" )
+
+        self.row_4 = QWidget()
+        row_layout = QHBoxLayout()
+
+        a_label = QLabel ( "SNR Skip:" )
+        row_layout.addWidget ( a_label )
+
+        self.snr_skip_field = QLineEdit ( "" )
+        row_layout.addWidget ( self.snr_skip_field )
+
+        self.snr_skip_to_skip = QPushButton ( "All SNR Skip -> Skip" )
+        row_layout.addWidget ( self.snr_skip_to_skip )
+
+        self.clear_snr_skips = QPushButton ( "Clear SNR Skips" )
+        row_layout.addWidget ( self.clear_snr_skips )
+
+        a_label = QLabel ( "SNR Halt:" )
+        row_layout.addWidget ( a_label )
+
+        self.snr_halt_field = QLineEdit ( "" )
+        row_layout.addWidget ( self.snr_halt_field )
+
+        self.row_4.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_4 )
 
-        self.row_5 = QLineEdit ( "Internal Swim" )
+
+        self.row_5 = QWidget()
+        row_layout = QHBoxLayout()
+
+        self.internal_external = QPushButton ( "Internal Swim Align" )
+        row_layout.addWidget ( self.internal_external )
+
+        a_label = QLabel ( "Bias Pass:" )
+        row_layout.addWidget ( a_label )
+
+        a_label = QLabel ( "dx per image:" )
+        row_layout.addWidget ( a_label )
+
+        self.dx_field = QLineEdit ( "0.0" )
+        row_layout.addWidget ( self.dx_field )
+
+        a_label = QLabel ( "dy per image:" )
+        row_layout.addWidget ( a_label )
+
+        self.dy_field = QLineEdit ( "0.0" )
+        row_layout.addWidget ( self.dy_field )
+
+        self.row_5.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_5 )
 
-        self.row_6 = QLineEdit ( "Init Affine" )
+
+        self.row_6 = QWidget()
+        row_layout = QHBoxLayout()
+
+        self.init_refine_apply = QPushButton ( "Init Affine" )
+        row_layout.addWidget ( self.init_refine_apply )
+
+        a_label = QLabel ( "Biases:" )
+        row_layout.addWidget ( a_label )
+
+        a_label = QLabel ( "rotation:" )
+        row_layout.addWidget ( a_label )
+
+        self.rotation_field = QLineEdit ( "0.0" )
+        row_layout.addWidget ( self.rotation_field )
+
+        a_label = QLabel ( "scale_x:" )
+        row_layout.addWidget ( a_label )
+
+        self.scale_x_field = QLineEdit ( "0.0" )
+        row_layout.addWidget ( self.scale_x_field )
+
+        a_label = QLabel ( "scale_y:" )
+        row_layout.addWidget ( a_label )
+
+        self.scale_y_field = QLineEdit ( "0.0" )
+        row_layout.addWidget ( self.scale_y_field )
+
+        a_label = QLabel ( "skew_x:" )
+        row_layout.addWidget ( a_label )
+
+        self.skew_x_field = QLineEdit ( "0.0" )
+        row_layout.addWidget ( self.skew_x_field )
+
+        self.row_6.setLayout ( row_layout )
         control_panel_layout.addWidget ( self.row_6 )
+
 
         self.row_7 = QWidget()
         row_layout = QHBoxLayout()
@@ -6000,7 +6100,6 @@ class MainWindow(QMainWindow):
         row_layout.addWidget ( a_field )
 
         self.row_7.setLayout ( row_layout )
-
         control_panel_layout.addWidget ( self.row_7 )
 
 
