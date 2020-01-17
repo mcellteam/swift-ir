@@ -76,7 +76,7 @@ import cv2
 
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
-from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox
+from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox, QComboBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -5990,7 +5990,9 @@ class MainWindow(QMainWindow):
         self.clear_skips_button = QPushButton ( "Clear All Skips" )
         row_layout.addWidget ( self.clear_skips_button )
 
-        self.align_method = QPushButton ( "Auto Swim Align" )
+        self.align_method = QComboBox()
+        self.align_method.insertItem ( -1, "Auto Swim Align" )
+        self.align_method.insertItem ( -1, "Match Point Align" )
         row_layout.addWidget ( self.align_method )
 
         self.row_3.setLayout ( row_layout )
@@ -6025,7 +6027,9 @@ class MainWindow(QMainWindow):
         self.row_5 = QWidget()
         row_layout = QHBoxLayout()
 
-        self.internal_external = QPushButton ( "Internal Swim Align" )
+        self.internal_external = QComboBox()
+        self.internal_external.insertItem ( -1, "Internal Swim Align" )
+        self.internal_external.insertItem ( -1, "External Swim Align" )
         row_layout.addWidget ( self.internal_external )
 
         a_label = QLabel ( "Bias Pass:" )
@@ -6050,7 +6054,10 @@ class MainWindow(QMainWindow):
         self.row_6 = QWidget()
         row_layout = QHBoxLayout()
 
-        self.init_refine_apply = QPushButton ( "Init Affine" )
+        self.init_refine_apply = QComboBox()
+        self.init_refine_apply.insertItem ( -1, "Init Affine" )
+        self.init_refine_apply.insertItem ( -1, "Refine Affine" )
+        self.init_refine_apply.insertItem ( -1, "Apply Affine" )
         row_layout.addWidget ( self.init_refine_apply )
 
         a_label = QLabel ( "Biases:" )
