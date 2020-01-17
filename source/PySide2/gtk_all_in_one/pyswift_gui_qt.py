@@ -4949,7 +4949,7 @@ def refresh_all_images():
   # Delete the GTK drawing areas for panels to be removed
   for p in panels_to_delete:
     global image_hbox
-    image_hbox.remove(p.drawing_area)
+    image_hbox.layout().removeWidget(p.drawing_area)
 
   # Assign the new_panel_list to be the global panel_list
   panel_list = new_panel_list
