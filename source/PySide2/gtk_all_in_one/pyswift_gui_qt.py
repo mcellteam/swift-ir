@@ -5,7 +5,6 @@
 #import numpy as np
 #import cv2
 
-global default_plot_code
 default_plot_code = """print ( "Default Plotting" )
 
 print ( 'Data is in "d"' )
@@ -51,7 +50,6 @@ p = plt.scatter(np.arange(len(cy)),yl)
 plt.show()
 """
 
-global current_plot_code
 current_plot_code = ""
 
 
@@ -69,15 +67,11 @@ import shutil
 import argparse
 import cv2
 
-#import pygtk
-#pygtk.require('2.0')
-#import gobject
-#import gtk
 
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
 from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox, QComboBox
-from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent
+from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent, QBrush
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 ############ Begin fake GTK module for constants ############
@@ -169,82 +163,57 @@ except:
 
 
 # Create one variable to check for plotting being available
-global plotting_available
 plotting_available = not ( None in (np, sps, plt) )
 
 
 
-global image_hbox
 image_hbox = None
 
-global zpa_original
 zpa_original = None
 
-global panel_list
 panel_list = []
 
-global global_win_width
-global global_win_height
 global_win_width = 600
 global_win_height = 600
 
-global alignment_layer_list
 alignment_layer_list = []
-global alignment_layer_index
 alignment_layer_index = -1
 
-global current_scale
 current_scale = 1
-global scales_dict
+
 scales_dict = {}
 scales_dict[current_scale] = alignment_layer_list
 
-global project_file_name
 project_file_name = ""
 
-global project_path
 project_path = None
 
-#global destination_path
 destination_path = ""
 
-global window
 window = None
 
-global menu_bar
 menu_bar = None
 
-global show_window_affines
 show_window_affines = False
 
-global show_window_centers
 show_window_centers = False
 
-global show_skipped_layers
 show_skipped_layers = True
 
-global point_mode
 point_mode = False
 
-global point_delete_mode
 point_delete_mode = False
 
-global point_cursor
 point_cursor = gtk.gdk.CROSSHAIR
 
-global max_image_file_size
 max_image_file_size = 100000000
 
-global generate_as_tiled
 generate_as_tiled = False
 
-global import_tiled
 import_tiled = False
 
-global show_tiled
 show_tiled = False
 
-global debug_level
 debug_level = 10
 
 def print_debug ( level, str ):
@@ -335,7 +304,6 @@ def print_debug ( level, str ):
   CURSOR_IS_PIXMAP
 '''
 
-global cursor_options
 cursor_options = [
     ["Cursor_CROSSHAIR", gtk.gdk.CROSSHAIR],
     ["Cursor_TARGET",    gtk.gdk.TARGET],
@@ -409,7 +377,7 @@ cursor_options = [
     #["Cursor_XTERM", gtk.gdk.XTERM]
     # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
   ]
-global cursor_option_seps
+
 cursor_option_seps = [2, 5, 7]
 
 class gui_fields_class:
@@ -1417,6 +1385,7 @@ class ZoomPanWidget ( QWidget ):
     self.dx = 0   # Offset in x of the image
     self.dy = 0   # Offset in y of the image
 
+    #self.setAutoFillBackground(True)
     self.setBackgroundRole(QPalette.Base)
     self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -1535,6 +1504,7 @@ class ZoomPanWidget ( QWidget ):
 
   def paintEvent(self, event):
       painter = QPainter(self)
+      #painter.setBackground(QBrush(Qt.black))
       try:
         if alignment_layer_list != None:
           if len(alignment_layer_list) > 0:
@@ -3806,6 +3776,7 @@ def menu_callback ( widget, data=None ):
               #self.openFileNameLabel.text(),
               "Open a Project",
               "JSON Files (*.json);;All Files (*)", "", options)
+      print ( "\nDone with QFileDialog.\n" )
       if open_name:
         print ( "Opening " + open_name )
         if open_name != None:
@@ -5046,6 +5017,7 @@ class MainWindow(QMainWindow):
         zpa_original.set_y_scale ( 0.0, 250 ,100.0, 350 )
 
         self.zpa1 = zpa_original
+
         self.zpa2 = ZoomPanWidget(window,global_win_width,global_win_height,"base",point_add_enabled=True)
         self.zpa2.force_center = True
 
@@ -5062,6 +5034,26 @@ class MainWindow(QMainWindow):
                         }
         self.zpa2.set_x_scale ( 0.0, 300, 100.0, 400 )
         self.zpa2.set_y_scale ( 0.0, 250 ,100.0, 350 )
+
+
+
+        self.zpa3 = ZoomPanWidget(window,global_win_width,global_win_height,"base",point_add_enabled=True)
+        self.zpa3.force_center = True
+
+        panel_list.append ( self.zpa3 )
+        self.zpa3.user_data = {
+                          'image_frame'        : None,
+                          'image_frames'       : [],
+                          'frame_number'       : -1,
+                          'running'            : False,
+                          'last_update'        : -1,
+                          'show_legend'        : True,
+                          'frame_delay'        : 0.1,
+                          'size'               : 1.0
+                        }
+        self.zpa3.set_x_scale ( 0.0, 300, 100.0, 400 )
+        self.zpa3.set_y_scale ( 0.0, 250 ,100.0, 350 )
+
 
 
 
@@ -5207,7 +5199,7 @@ class MainWindow(QMainWindow):
         # Status Bar
         self.status = self.statusBar()
         # self.status.showMessage("File: "+fname)
-        self.status.showMessage("Status ... ")
+        self.status.showMessage("Status ... ", 5000) # Show for 5 seconds
 
         print ( "Checking geometry" )
         # Window dimensions
@@ -5226,6 +5218,7 @@ class MainWindow(QMainWindow):
         hbox_layout = QHBoxLayout()
         hbox_layout.addWidget ( self.zpa1 ) # Left image proxy
         hbox_layout.addWidget ( self.zpa2 ) # Right image proxy
+        hbox_layout.addWidget ( self.zpa3 ) # Right image proxy
         image_hbox.setLayout(hbox_layout)
 
         central_layout.addWidget ( image_hbox )
