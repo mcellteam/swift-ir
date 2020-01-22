@@ -3678,24 +3678,27 @@ def menu_callback ( widget, data=None ):
 
     elif command == "SetDest":
 
-      file_chooser = gtk.FileChooserDialog(title="Select Destination Directory", action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,
-		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
-      file_chooser.set_select_multiple(False)
-      file_chooser.set_default_response(gtk.RESPONSE_OK)
-      response = file_chooser.run()
-      if response == gtk.RESPONSE_OK:
-        destination_path = file_chooser.get_filename()
-        # Ensure that it's actually a directory and not a file:
-        if not os.path.isdir(destination_path):
-          destination_path = os.path.dirname(destination_path)
-        destination_path = os.path.realpath(destination_path)
-        print_debug ( 50, "Selected Directory: " + str(destination_path) )
+      options = QtWidgets.QFileDialog.Options()
+      if not True:  # self.native.isChecked():
+          options |= QtWidgets.QFileDialog.DontUseNativeDialog
+      path = QtWidgets.QFileDialog.getExistingDirectory(None,  "Destination Directory" )
 
-        gui_fields.dest_label.setText ( "Destination: " + str(destination_path) )
+      if path != None:
+        if len(path) > 0:
 
-      file_chooser.destroy()
-      print_debug ( 90, "Done with dialog" )
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+          print_debug ( 20, "Selected Path: " + str(path) )
+
+          # Ensure that it's actually a directory and not a file:
+          if os.path.isdir(path):
+            destination_path = path
+          else:
+            destination_path = os.path.dirname(path)
+          # Ensure a "real" path:
+          destination_path = os.path.realpath(destination_path)
+          print_debug ( 50, "Selected Directory: " + str(destination_path) )
+
+          gui_fields.dest_label.setText ( "Destination: " + str(destination_path) )
+
       zpa.queue_draw()
 
     elif command == "ImImport":
@@ -3762,87 +3765,6 @@ def menu_callback ( widget, data=None ):
           zpa_original.force_center = True
           zpa_original.queue_draw()
           ##### End Pasted from OpenProj
-
-      #### GTK Version:
-      '''
-      file_chooser = gtk.FileChooserDialog(title="Select Images", action=gtk.FILE_CHOOSER_ACTION_OPEN,
-		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-      file_chooser.set_select_multiple(True)
-      file_chooser.set_default_response(gtk.RESPONSE_OK)
-      #file_chooser.show()
-
-      image_filter=gtk.FileFilter()
-      image_filter.set_name("Images")
-      image_filter.add_pattern("*.[Jj][Pp][Gg]")
-      image_filter.add_pattern("*.[Jj][Pp][Ee][Gg]")
-      image_filter.add_pattern("*.[Pp][Nn][Gg]")
-      image_filter.add_pattern("*.[Tt][Ii][Ff]")
-      image_filter.add_pattern("*.[Tt][Ii][Ff][Ff]")
-      image_filter.add_pattern("*.[Tt][Tt][Ii][Ff]")
-      image_filter.add_pattern("*.[Gg][Ii][Ff]")
-      file_chooser.add_filter(image_filter)
-      image_filter=gtk.FileFilter()
-      image_filter.set_name("All Files")
-      image_filter.add_pattern("*")
-      file_chooser.add_filter(image_filter)
-      response = file_chooser.run()
-
-      if response == gtk.RESPONSE_OK:
-        file_name_list = file_chooser.get_filenames()
-        print_debug ( 20, "Selected Files: " + str(file_name_list) )
-        # alignment_layer_list = []
-        # scales_dict[current_scale] = alignment_layer_list
-        for f in file_name_list:
-          a = alignment_layer ( f )
-          alignment_layer_list.append ( a )
-
-      file_chooser.destroy()
-      print_debug ( 90, "Done with dialog" )
-      # Draw the panels ("windows")
-      for panel in panel_list:
-        panel.role = 'base'
-        panel.force_center = True
-        panel.queue_draw()
-      zpa_original.force_center = True
-      zpa_original.queue_draw()
-
-      ##### Begin Pasted from OpenProj
-      print_debug ( 90, "Done with dialog" )
-      # Copy the "base" images into the "ref" images for the next layer
-      # This is SWiFT specific, but makes it simpler to use for now
-      layer_index = 0
-      for a in alignment_layer_list:
-        if layer_index > 0:
-          # Create a reference image from the previous layer if it wasn't read in via the JSON above
-          if not 'ref' in a.image_dict:
-            a.image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict['base'],role="ref")
-        # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
-        #a.image_dict['aligned'] = annotated_image(None,role='aligned')
-        layer_index += 1
-
-      setup_initial_panels()
-
-      refresh_all_images()
-      center_all_images()
-      panel_index = 0
-      for panel in panel_list:
-        if panel_index == 0:
-          panel.role = 'ref'
-          panel.point_add_enabled = True
-        elif panel_index == 1:
-          panel.role = 'base'
-          panel.point_add_enabled = True
-        elif panel_index == 2:
-          panel.role = 'aligned'
-          panel.point_add_enabled = False
-        panel.force_center = True
-        panel.queue_draw()
-        panel_index += 1
-      zpa_original.force_center = True
-      zpa_original.queue_draw()
-      ##### End Pasted from OpenProj
-      '''
-
 
     elif command == "OpenProj":
 
@@ -3918,35 +3840,20 @@ def menu_callback ( widget, data=None ):
 
       global max_image_file_size
 
-      input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image File Size:", max_image_file_size, 0 )
+      input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image File Size:", max_image_file_size )
       if ok:
         max_image_file_size = input_val
 
     elif command == "DefScales":
 
-      label = gtk.Label("Enter list of scales:")
-      dialog = gtk.Dialog("Define Scales",
-                         None,
-                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-      dialog.vbox.pack_start(label)
-      label.show()
-      scales_entry = gtk.Entry(20)
-      scales_entry.setText ( str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) ) )
-      dialog.vbox.pack_end(scales_entry)
-      scales_entry.show()
+      l = str ( ' '.join ( [ str(n) for n in gui_fields.scales_list ] ) )
 
-      response = dialog.run()
-      if response == gtk.RESPONSE_ACCEPT:
-        # print_debug ( 70, str(scales_entry.get_text()) )
-        gui_fields.scales_list = [ t for t in str(scales_entry.get_text()).split(' ') ]
+      input_val, ok = QInputDialog().getText ( None, "Enter list of scales", "List of Scales:", echo=QLineEdit.Normal, text=l )
+      if ok:
+        gui_fields.scales_list = [ t for t in str(input_val).split(' ') ]
         gui_fields.scales_list = [ int(t) for t in gui_fields.scales_list if len(t) > 0 ]
 
         update_menu_scales_from_gui_fields()
-
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      dialog.destroy()
 
     elif command.startswith ('SelectScale_'):
       cur_scale = -1
