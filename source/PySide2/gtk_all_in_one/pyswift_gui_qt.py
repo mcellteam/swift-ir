@@ -1105,7 +1105,7 @@ class annotated_image:
       self.role = role
     if (type(self.image) == type(None)) and (type(self.file_name) != type(None)):
       try:
-        f = file ( self.file_name )
+        f = open ( self.file_name )
         f.seek (0, 2)
         self.file_size = f.tell()
         f.close()
@@ -1196,7 +1196,8 @@ class alignment_layer:
     self.bias_dx = 0.0
     self.bias_dy = 0.0
 
-    self.init_refine_apply = 'Init Affine'
+    self.init_refine_apply = 0
+    self.init_refine_apply_text = 'Init Affine'
     self.bias_rotation = 0.0
     self.bias_scale_x = 0.0
     self.bias_scale_y = 0.0
@@ -1248,19 +1249,18 @@ def store_fields_into_current_layer():
       a.affine_addx = int(gui_fields.affine_addx_entry.text())
       a.affine_addy = int(gui_fields.affine_addy_entry.text())
       a.bias_enabled = gui_fields.bias_check_box.isChecked()
-      print_debug ( 70, "Storing 1, a.bias_dx = " + str(a.bias_dx) )
       a.bias_dx = float(gui_fields.bias_dx_entry.text())
       a.bias_dy = float(gui_fields.bias_dy_entry.text())
-      print_debug ( 70, "Storing 2, a.bias_dx = " + str(a.bias_dx) )
 
-      a.init_refine_apply = gui_fields.init_refine_apply_entry.currentText()
+      a.init_refine_apply      = gui_fields.init_refine_apply_entry.currentIndex()
+      a.init_refine_apply_text = gui_fields.init_refine_apply_entry.currentText()
       a.bias_rotation = float(gui_fields.bias_rotation_entry.text())
       a.bias_scale_x = float(gui_fields.bias_scale_x_entry.text())
       a.bias_scale_y = float(gui_fields.bias_scale_y_entry.text())
       a.bias_skew_x = float(gui_fields.bias_skew_x_entry.text())
 
-      # Store the bias values in all layers to give them a "global" feel
-      # If the final version needs individual biases, just comment this code:
+      # Store the various values in all layers to give them a "global" feel
+      # If the final version needs individual versions, just comment this code:
       if alignment_layer_list != None:
         if len(alignment_layer_list) > 0:
           for t in alignment_layer_list:
@@ -1271,16 +1271,12 @@ def store_fields_into_current_layer():
             t.bias_scale_x = a.bias_scale_x
             t.bias_scale_y = a.bias_scale_y
             t.bias_skew_x = a.bias_skew_x
-      print_debug ( 70, "Storing 3, a.bias_dx = " + str(a.bias_dx) )
-
 
 
 def store_current_layer_into_fields():
   if (alignment_layer_list != None) and (alignment_layer_index >= 0):
     if alignment_layer_index < len(alignment_layer_list):
       a = alignment_layer_list[alignment_layer_index]
-      print_debug ( 50, " Index = " + str(alignment_layer_index) + ", base_name_ann = " + a.base_annotated_image.file_name )
-      print_debug ( 50, "  trans_ww = " + str(a.trans_ww) + ", trans_addx = " + str(a.trans_addx) + ", trans_addy = " + str(a.trans_addy) )
       gui_fields.trans_ww_entry.setText ( str(a.trans_ww) )
       gui_fields.trans_addx_entry.setText ( str(a.trans_addx) )
       gui_fields.trans_addy_entry.setText ( str(a.trans_addy) )
@@ -1294,18 +1290,16 @@ def store_current_layer_into_fields():
       gui_fields.affine_addx_entry.setText(str(a.affine_addx))
       gui_fields.affine_addy_entry.setText(str(a.affine_addy))
       gui_fields.bias_check_box.setChecked(a.bias_enabled)
-      print_debug ( 70, "store_current_layer_into_fields for " + str(alignment_layer_index) + " with bias_dx = " + str(a.bias_dx) )
       gui_fields.bias_dx_entry.setText(str(a.bias_dx))
       gui_fields.bias_dy_entry.setText(str(a.bias_dy))
 
-      gui_fields.init_refine_apply_entry.setCurrentIndex ( alignment_opts.index(a.init_refine_apply) )
-      # gui_fields.init_refine_apply_entry.setCurrentText ( alignment_opts.index(a.init_refine_apply) )
+      gui_fields.init_refine_apply_entry.setCurrentIndex ( a.init_refine_apply )
+      # gui_fields.init_refine_apply_entry.setCurrentText ( a.init_refine_apply_text )
       gui_fields.bias_rotation_entry.setText(str(a.bias_rotation))
       gui_fields.bias_scale_x_entry.setText(str(a.bias_scale_x))
       gui_fields.bias_scale_y_entry.setText(str(a.bias_scale_y))
       gui_fields.bias_skew_x_entry.setText(str(a.bias_skew_x))
 
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 class ZoomPanWidget ( QWidget ):
@@ -1463,7 +1457,7 @@ class ZoomPanWidget ( QWidget ):
   def wheelEvent(self, event):
       # Wheel unshifted moves through layers, shifted zooms
       kmods = event.modifiers()
-      if ( long(kmods) and long(Qt.ShiftModifier) ) == 0 :
+      if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
         # Unshifted Scroll Wheel moves through layers
         layer_delta = event.delta()/120
 
@@ -2163,6 +2157,10 @@ class ZoomPanWidget ( QWidget ):
     return False
 
 
+'''
+This code isn't currently being called and may be out of date.
+Check carefully before putting back into use.
+
 def set_all_or_fwd_callback ( set_all ):
   if set_all:
     print_debug ( 50, "Setting All ..." )
@@ -2189,6 +2187,12 @@ def set_all_or_fwd_callback ( set_all ):
       template.bias_dx = float(gui_fields.bias_dx_entry.get_text())
       template.bias_dy = float(gui_fields.bias_dy_entry.get_text())
 
+      # TODO Look into how this should be handled here ... this function is not currently being called.
+
+      #template.init_refine_apply_entry.setCurrentIndex ( a.init_refine_apply )
+      # gui_fields.init_refine_apply_entry.setCurrentIndex ( alignment_opts.index(a.init_refine_apply) )
+      # gui_fields.init_refine_apply_entry.setCurrentText ( alignment_opts.index(a.init_refine_apply) )
+
       # Copy the template into all other sections as appropriate
       copy = False
       for a in alignment_layer_list:
@@ -2210,6 +2214,7 @@ def set_all_or_fwd_callback ( set_all ):
           a.bias_dy = template.bias_dy
 
   return True
+'''
 
 def change_skip_callback(zpa):
   global gui_fields
@@ -2460,6 +2465,7 @@ def write_json_project ( project_file_name, fb=None ):
   global gui_fields
 
   global scales_dict
+  global alignment_opts
 
   if len(project_file_name) > 0:
     # Actually write the file
@@ -3291,6 +3297,7 @@ def load_from_proj_dict ( proj_dict ):
 
                     if 'align_to_ref_method' in json_alignment_layer:
                       json_align_to_ref_method = json_alignment_layer['align_to_ref_method']
+
                       a.align_method_text = str(json_align_to_ref_method['selected_method'])
                       opts = [ str(x) for x in json_align_to_ref_method['method_options'] ]
                       a.align_method = opts.index(a.align_method_text)
@@ -3309,7 +3316,11 @@ def load_from_proj_dict ( proj_dict ):
                         a.bias_dy = 0
                         print_debug ( 70, "Got method_data" + str(pars) )
                         if 'alignment_option' in pars:
-                          a.init_refine_apply = pars['alignment_option']
+                          opts = [ str(x) for x in pars['alignment_options'] ]
+                          sel_opt = str(pars['alignment_option'])
+                          a.init_refine_apply_text = sel_opt
+                          a.init_refine_apply = opts.index(sel_opt)
+                          a.init_refine_apply_text = pars['alignment_option']
                           print_debug ( 70, "  ... found alignment_option:" + str(a.init_refine_apply) )
                         if 'bias_x_per_image' in pars:
                           a.bias_dx = pars['bias_x_per_image']
@@ -5256,8 +5267,8 @@ class MainWindow(QMainWindow):
         row_layout.addWidget ( self.clear_skips_button )
 
         gui_fields.align_method_select = QComboBox()
-        gui_fields.align_method_select.insertItem ( -1, "Auto Swim Align" )
-        gui_fields.align_method_select.insertItem ( -1, "Match Point Align" )
+        gui_fields.align_method_select.insertItem ( gui_fields.align_method_select.count()+1, "Auto Swim Align" )
+        gui_fields.align_method_select.insertItem ( gui_fields.align_method_select.count()+1, "Match Point Align" )
         row_layout.addWidget ( gui_fields.align_method_select )
 
         self.row_3.setLayout ( row_layout )
@@ -5293,8 +5304,8 @@ class MainWindow(QMainWindow):
         row_layout = QHBoxLayout()
 
         gui_fields.code_base_select = QComboBox()
-        gui_fields.code_base_select.insertItem ( -1, "Internal Swim Align" )
-        gui_fields.code_base_select.insertItem ( -1, "External Swim Align" )
+        gui_fields.code_base_select.insertItem ( gui_fields.code_base_select.count()+1, "Internal Swim Align" )
+        gui_fields.code_base_select.insertItem ( gui_fields.code_base_select.count()+1, "External Swim Align" )
         row_layout.addWidget ( gui_fields.code_base_select )
 
         a_label = QLabel ( "Bias Pass:" )
@@ -5320,9 +5331,9 @@ class MainWindow(QMainWindow):
         row_layout = QHBoxLayout()
 
         gui_fields.init_refine_apply_entry = QComboBox()
-        gui_fields.init_refine_apply_entry.insertItem ( -1, "Init Affine" )
-        gui_fields.init_refine_apply_entry.insertItem ( -1, "Refine Affine" )
-        gui_fields.init_refine_apply_entry.insertItem ( -1, "Apply Affine" )
+        gui_fields.init_refine_apply_entry.insertItem ( gui_fields.init_refine_apply_entry.count()+1, "Init Affine" )
+        gui_fields.init_refine_apply_entry.insertItem ( gui_fields.init_refine_apply_entry.count()+1, "Refine Affine" )
+        gui_fields.init_refine_apply_entry.insertItem ( gui_fields.init_refine_apply_entry.count()+1, "Apply Affine" )
         row_layout.addWidget ( gui_fields.init_refine_apply_entry )
 
         a_label = QLabel ( "Biases:" )
