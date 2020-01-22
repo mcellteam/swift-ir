@@ -2585,7 +2585,7 @@ def write_json_project ( project_file_name, fb=None ):
             f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
             f.write ( '              "method_data": {\n' )
             f.write ( '                "alignment_options": [' + ', '.join ( ['"'+o+'"' for o in alignment_opts] ) + '],\n' )
-            f.write ( '                "alignment_option": "' + str(a.init_refine_apply) + '",\n' )
+            f.write ( '                "alignment_option": "' + str(a.init_refine_apply_text) + '",\n' )
             f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
             f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
             f.write ( '                "addy": ' + str(a.trans_addy) + ',\n' )
@@ -3813,92 +3813,39 @@ def menu_callback ( widget, data=None ):
 
       update_newly_loaded_proj()
 
-      '''
-      file_chooser = gtk.FileChooserDialog(title="Open Project", action=gtk.FILE_CHOOSER_ACTION_OPEN,
-	                                         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
-      file_chooser.set_select_multiple(False)
-      file_chooser.set_default_response(gtk.RESPONSE_OK)
-
-      image_filter=gtk.FileFilter()
-      image_filter.set_name("JSON")
-      image_filter.add_pattern("*.json")
-      file_chooser.add_filter(image_filter)
-      image_filter=gtk.FileFilter()
-      image_filter.set_name("All Files")
-      image_filter.add_pattern("*")
-      file_chooser.add_filter(image_filter)
-      response = file_chooser.run()
-
-      if response == gtk.RESPONSE_OK:
-        open_name = file_chooser.get_filename()
-        if open_name != None:
-          open_name = os.path.realpath(open_name)
-          if not os.path.isdir(open_name):
-            # It's a real file
-            project_file_name = open_name
-            project_path = os.path.dirname(project_file_name)
-
-            gui_fields.proj_label.setText ( "Project File: " + str(project_file_name) )
-
-            f = open ( project_file_name, 'r' )
-            text = f.read()
-            f.close()
-
-            proj_dict = json.loads ( text )
-            print_debug ( 70, str(proj_dict) )
-            print_debug ( 5, "Project file version " + str(proj_dict['version']) )
-
-            load_from_proj_dict ( proj_dict )
-
-      file_chooser.destroy()
-      print_debug ( 90, "Done with dialog" )
-
-      update_newly_loaded_proj()
-      '''
-
-
-
     elif (command == "SaveProj") or (command == "SaveProjAs"):
 
-      print_debug ( 50, "Save with: project_path = " + str(project_path) )
-      print_debug ( 50, "Save with: project_file_name = " + str(project_file_name) )
+      print_debug ( 50, "\nSaving Project.\n" )
+
       if (len(project_file_name) <= 0) or (command == "SaveProjAs"):
-        # Prompt for a file name
+        # Need to get a file name
 
-        file_chooser = gtk.FileChooserDialog(title="Save Project", action=gtk.FILE_CHOOSER_ACTION_SAVE,
-		                                         buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_SAVE, gtk.RESPONSE_OK))
-        file_chooser.set_select_multiple(False)
-        file_chooser.set_default_response(gtk.RESPONSE_OK)
-        #file_chooser.show()
-
-        image_filter=gtk.FileFilter()
-        image_filter.set_name("JSON")
-        image_filter.add_pattern("*.json")
-        file_chooser.add_filter(image_filter)
-        image_filter=gtk.FileFilter()
-        image_filter.set_name("All Files")
-        image_filter.add_pattern("*")
-        file_chooser.add_filter(image_filter)
-        response = file_chooser.run()
-
-        if response == gtk.RESPONSE_OK:
-          save_name = file_chooser.get_filename()
+        options = QtWidgets.QFileDialog.Options()
+        if not True:  # self.native.isChecked():
+            options |= QtWidgets.QFileDialog.DontUseNativeDialog
+        save_name, filtr = QtWidgets.QFileDialog.getSaveFileName(None,  # None was self
+                "QFileDialog.getSaveFileName()",
+                #self.openFileNameLabel.text(),
+                "Save a Project",
+                "JSON Files (*.json);;All Files (*)", "", options)
+        print ( "\nDone with QFileDialog.\n" )
+        if save_name:
+          print ( "Saving " + save_name )
           if save_name != None:
-
             save_name = os.path.realpath(save_name)
             if not os.path.isdir(save_name):
               # It's a real file
               project_file_name = save_name
               project_path = os.path.dirname(project_file_name)
 
-        file_chooser.destroy()
-        print_debug ( 90, "Done with dialog" )
+              #gui_fields.proj_label.setText ( "Project File: " + str(project_file_name) )
 
       if len(project_file_name) > 0:
 
         # Call the project writing function
 
         write_json_project ( project_file_name )
+
 
     elif command == "MaxFileSize":
 
@@ -5466,6 +5413,7 @@ class MainWindow(QMainWindow):
         qaction = self.sender()
         data = qaction.data()
         print ( "Menu data contains: " + str(data) )
+        # Pass to the menu_callback that was used in the GTK version
         menu_callback ( None, data=data )
 
     @Slot()
