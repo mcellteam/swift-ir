@@ -3699,6 +3699,71 @@ def menu_callback ( widget, data=None ):
 
     elif command == "ImImport":
 
+      print ( "Importing Images.\n" )
+
+      options = QtWidgets.QFileDialog.Options()
+      if not True:  # self.native.isChecked():
+          options |= QtWidgets.QFileDialog.DontUseNativeDialog
+      file_name_list, filtr = QtWidgets.QFileDialog.getOpenFileNames(None,  # None was self
+              "Select Images to Import",
+              #self.openFileNameLabel.text(),
+              "Select Images",
+              "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
+      if file_name_list != None:
+        if len(file_name_list) > 0:
+
+          print_debug ( 20, "Selected Files: " + str(file_name_list) )
+          # alignment_layer_list = []
+          # scales_dict[current_scale] = alignment_layer_list
+          for f in file_name_list:
+            a = alignment_layer ( f )
+            alignment_layer_list.append ( a )
+
+          # Draw the panels ("windows")
+          for panel in panel_list:
+            panel.role = 'base'
+            panel.force_center = True
+            panel.queue_draw()
+          zpa_original.force_center = True
+          zpa_original.queue_draw()
+
+          ##### Begin Pasted from OpenProj
+          # Copy the "base" images into the "ref" images for the next layer
+          # This is SWiFT specific, but makes it simpler to use for now
+          layer_index = 0
+          for a in alignment_layer_list:
+            if layer_index > 0:
+              # Create a reference image from the previous layer if it wasn't read in via the JSON above
+              if not 'ref' in a.image_dict:
+                a.image_dict['ref'] = annotated_image(clone_from=alignment_layer_list[layer_index-1].image_dict['base'],role="ref")
+            # Create an empty aligned image as a place holder (to keep the panels from changing after alignment)
+            #a.image_dict['aligned'] = annotated_image(None,role='aligned')
+            layer_index += 1
+
+          setup_initial_panels()
+
+          refresh_all_images()
+          center_all_images()
+          panel_index = 0
+          for panel in panel_list:
+            if panel_index == 0:
+              panel.role = 'ref'
+              panel.point_add_enabled = True
+            elif panel_index == 1:
+              panel.role = 'base'
+              panel.point_add_enabled = True
+            elif panel_index == 2:
+              panel.role = 'aligned'
+              panel.point_add_enabled = False
+            panel.force_center = True
+            panel.queue_draw()
+            panel_index += 1
+          zpa_original.force_center = True
+          zpa_original.queue_draw()
+          ##### End Pasted from OpenProj
+
+      #### GTK Version:
+      '''
       file_chooser = gtk.FileChooserDialog(title="Select Images", action=gtk.FILE_CHOOSER_ACTION_OPEN,
 		                                       buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OPEN, gtk.RESPONSE_OK))
       file_chooser.set_select_multiple(True)
@@ -3775,6 +3840,7 @@ def menu_callback ( widget, data=None ):
       zpa_original.force_center = True
       zpa_original.queue_draw()
       ##### End Pasted from OpenProj
+      '''
 
 
     elif command == "OpenProj":
