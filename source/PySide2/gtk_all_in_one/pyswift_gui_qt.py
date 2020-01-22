@@ -71,6 +71,7 @@ import cv2
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
 from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox, QComboBox
+from PySide2.QtWidgets import QInputDialog
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent, QBrush
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -3916,33 +3917,10 @@ def menu_callback ( widget, data=None ):
     elif command == "MaxFileSize":
 
       global max_image_file_size
-      label = gtk.Label("Enter max image file size:")
-      dialog = gtk.Dialog("Set Max Image File Size",
-                         None,
-                         gtk.DIALOG_MODAL | gtk.DIALOG_DESTROY_WITH_PARENT,
-                         (gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
-                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
-      dialog.vbox.pack_start(label)
-      label.show()
-      max_entry = gtk.Entry(20)
-      max_entry.setText ( str ( max_image_file_size ) )
 
-      #checkbox = gtk.CheckButton("Useless checkbox")
-      #dialog.vbox.pack_end(checkbox)
-      dialog.vbox.pack_end(max_entry)
-      #dialog.action_area.pack_end(checkbox)
-      #checkbox.show()
-      max_entry.show()
-      response = dialog.run()
-      if response == gtk.RESPONSE_ACCEPT:
-        print_debug ( 70, str(max_entry.get_text()) )
-        #print_debug ( 50, str ( [ int(t) for t in str(scales_entry.get_text()).split(' ') ] ) )
-        try:
-          max_image_file_size = int(str(max_entry.get_text()))
-          print_debug ( 70, "Max file size set to " + str(max_image_file_size) )
-        except:
-          print_debug ( 70, "Unable to parse " + str(max_entry.get_text()) + " into an integer" )
-      dialog.destroy()
+      input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image File Size:", max_image_file_size, 0 )
+      if ok:
+        max_image_file_size = input_val
 
     elif command == "DefScales":
 
@@ -5231,8 +5209,8 @@ class MainWindow(QMainWindow):
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumWidth(1400)
-        self.setMinimumHeight(1024)
+        self.setMinimumWidth(2000)
+        self.setMinimumHeight(1400)
         print ( "Done Checking geometry" )
 
         print ( "Creating central widget holding the image windows" )
