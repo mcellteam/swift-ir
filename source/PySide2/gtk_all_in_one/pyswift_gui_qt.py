@@ -71,7 +71,7 @@ import cv2
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
 from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox, QComboBox
-from PySide2.QtWidgets import QInputDialog
+from PySide2.QtWidgets import QInputDialog, QErrorMessage, QMessageBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent, QBrush
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -2533,9 +2533,12 @@ def write_json_project ( project_file_name, fb=None ):
 
       align_layer_list_for_scale = scales_dict[scale_key]
 
-      f.write ( '      "' + str(scale_key) + '": {\n' )
       if align_layer_list_for_scale != None:
-        if len(align_layer_list_for_scale) > 0:
+        f.write ( '      "' + str(scale_key) + '": {\n' )
+        if len(align_layer_list_for_scale) <= 0:
+          print ( "Alignment layer list for scale " + str(scale_key) + " is empty." )
+          f.write ( '      }\n' )
+        else:
           f.write ( '        "alignment_stack": [\n' )
           for a in align_layer_list_for_scale:
             f.write ( '          {\n' )
@@ -2624,9 +2627,9 @@ def write_json_project ( project_file_name, fb=None ):
           else:
             f.write ( '      }\n' )
 
-    f.write ( '    }\n' ) # "scales": {
+    f.write ( '    }\n' ) # "scales"
 
-    f.write ( '  }\n' ) # "data": {
+    f.write ( '  }\n' ) # "data"
 
     f.write ( '}\n' ) # End of entire dictionary
 
@@ -2714,9 +2717,9 @@ def run_alignment_callback ( align_all ):
   store_fields_into_current_layer()
 
   if len(destination_path) == 0:
-    dest_err_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Destination not set.")
-    response = dest_err_dialog.run()
-    dest_err_dialog.destroy()
+    input_val, ok = QInputDialog().getText ( None, "Error", "Destination not set.", echo=QLineEdit.Normal, text="" )
+    if ok:
+      print ( "Input = " + str(input_val) )
     return
 
 
@@ -3197,9 +3200,10 @@ def upgrade_proj_dict ( proj_dict ):
   if proj_dict['version'] < 0.199:
     # This is pre 0.2, so add the "scales" key with a single scale of 1
     # The previous alignment stack will now reside below key "1"
-    warn_dialog = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK, message_format="Upgrading model from " + str(proj_dict['version']) + " to 0.2\nSaving will use the new format." )
-    response = warn_dialog.run()
-    warn_dialog.destroy()
+
+    input_val, ok = QInputDialog().getText ( None, "Note", "Upgrading model from " + str(proj_dict['version']) + " to 0.2\nSaving will use the new format.", echo=QLineEdit.Normal, text="" )
+    if ok:
+      print ( "Input = " + str(input_val) )
 
     # Create the new structure
     proj_dict['data']['scales'] = {}
@@ -3815,7 +3819,7 @@ def menu_callback ( widget, data=None ):
         save_name, filtr = QtWidgets.QFileDialog.getSaveFileName(None,  # None was self
                 "QFileDialog.getSaveFileName()",
                 #self.openFileNameLabel.text(),
-                "Save a Project",
+                "", # Default for file name
                 "JSON Files (*.json);;All Files (*)", "", options)
         print ( "\nDone with QFileDialog.\n" )
         if save_name:
@@ -3885,9 +3889,19 @@ def menu_callback ( widget, data=None ):
       print_debug ( 40, "Create images at all scales: " + str ( gui_fields.scales_list ) )
 
       if len(destination_path) <= 0:
-        check_dest = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
-        response = check_dest.run()
-        check_dest.destroy()
+        #m = QMessageBox()
+        #m.showMessage ( "No Destination Set" )
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText("Error")
+        msg.setInformativeText('No Destination Set')
+        msg.setWindowTitle("Error")
+        msg.exec_()
+
+        input_val, ok = QInputDialog().getText ( None, "Error", "No Destination Set", echo=QLineEdit.Normal, text="" )
+        if ok:
+          print ( "Input = " + str(input_val) )
+
       else:
         for scale in gui_fields.scales_list:
           print_debug ( 70, "Creating images for scale " + str(scale) )
@@ -3942,9 +3956,14 @@ def menu_callback ( widget, data=None ):
               else:
                 # Generate non-tiled images
                 if scale == 1:
+                  # Try to link rather than copy
                   if os.name == 'posix':
                     print_debug ( 70, "Posix: Linking " + original_name + " to " + new_name )
-                    os.symlink ( original_name, new_name )
+                    # If this file already exists as a link, then there should be no error.
+                    try:
+                      os.symlink ( original_name, new_name )
+                    except:
+                      print_debug ( 60, "Unable to make sym link from " + original_name + " to " + new_name )
                   else:
                     print_debug ( 70, "Non-Posix: Copying " + original_name + " to " + new_name )
                     shutil.copyfile ( original_name, new_name )
@@ -3953,7 +3972,8 @@ def menu_callback ( widget, data=None ):
                   img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
                   align_swiftir.swiftir.saveImage ( img, new_name )
             except:
-              print_debug ( 10, "Error: Failed to copy?" )
+              print_debug ( -1, "Error: Failed to copy?" )
+              print_debug ( -1, "Exception = " + str(sys.exc_info()) )
               pass
 
 
@@ -3964,9 +3984,11 @@ def menu_callback ( widget, data=None ):
       print_debug ( 20, "Import images at all scales in: " + str ( gui_fields.scales_list ) )
 
       if len(destination_path) <= 0:
-        check_dest = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
-        response = check_dest.run()
-        check_dest.destroy()
+
+        input_val, ok = QInputDialog().getText ( None, "Error", "No Destination Set", echo=QLineEdit.Normal, text="" )
+        if ok:
+          print ( "Input = " + str(input_val) )
+
       else:
 
         print_debug ( 20, "Clearing all layers..." )
@@ -4074,9 +4096,9 @@ def menu_callback ( widget, data=None ):
 
     elif command == "ClearLayers":
 
-      clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Layers?")
-      response = clear_all.run()
-      if response == gtk.RESPONSE_OK:
+      input_val, ok = QInputDialog().getText ( None, "Question", "Remove All Layers?", echo=QLineEdit.Normal, text="" )
+      if ok:
+        print ( "Input = " + str(input_val) )
         print_debug ( 20, "Clearing all layers..." )
         scales_dict = {}
         alignment_layer_index = 0
@@ -4086,15 +4108,13 @@ def menu_callback ( widget, data=None ):
       zpa_original.queue_draw()
       for p in panel_list:
         p.queue_draw()
-      clear_all.destroy()
 
     elif command == "ClearEverything":
 
-      clear_all = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove Everything?")
-      response = clear_all.run()
-      if response == gtk.RESPONSE_OK:
+      input_val, ok = QInputDialog().getText ( None, "Question", "Remove Everything?", echo=QLineEdit.Normal, text="" )
+      if ok:
+        print ( "Input = " + str(input_val) )
         print_debug ( 20, "Clearing all layers..." )
-
         for scale in scales_dict.keys():
           print_debug ( 70, "Deleting images for scale " + str(scale) )
           if True or (scale != 1):
@@ -4136,13 +4156,16 @@ def menu_callback ( widget, data=None ):
     elif command == "ClearOut":
 
       if len(destination_path) <= 0:
-        clear_out = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="No Destination Set")
-        response = clear_out.run()
-        clear_out.destroy()
+
+        input_val, ok = QInputDialog().getText ( None, "Error", "No Destination Set", echo=QLineEdit.Normal, text="" )
+        if ok:
+          print ( "Input = " + str(input_val) )
+
       else:
-        clear_out = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Remove All Output?")
-        response = clear_out.run()
-        if response == gtk.RESPONSE_OK:
+
+        input_val, ok = QInputDialog().getText ( None, "Question", "Remove All Output?", echo=QLineEdit.Normal, text="" )
+        if ok:
+          print ( "Input = " + str(input_val) )
           print_debug ( 20, "Clearing all output images..." )
 
           for scale in scales_dict.keys():
@@ -4185,7 +4208,6 @@ def menu_callback ( widget, data=None ):
           zpa_original.queue_draw()
           for p in panel_list:
             p.queue_draw()
-        clear_out.destroy()
 
     elif command == "LimZoom":
 
@@ -4742,13 +4764,11 @@ def menu_callback ( widget, data=None ):
 
     elif command == "Exit":
 
-      get_exit = gtk.MessageDialog(flags=gtk.DIALOG_MODAL, type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_OK_CANCEL, message_format="Exit?")
-      response = get_exit.run()
-      if response == gtk.RESPONSE_OK:
+      input_val, ok = QInputDialog().getText ( None, "Question", "Exit?", echo=QLineEdit.Normal, text="" )
+      if ok:
+        print ( "Input = " + str(input_val) )
         print_debug ( 50, "Exiting." )
-        get_exit.destroy()
         exit()
-      get_exit.destroy()
 
     elif command.startswith ('Level '):
 
