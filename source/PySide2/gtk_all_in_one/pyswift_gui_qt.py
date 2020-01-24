@@ -71,7 +71,7 @@ import cv2
 from PySide2 import QtWidgets  # This was done in the standarddialogs.py example and is relatively handy
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
 from PySide2.QtWidgets import QGridLayout, QLineEdit, QPushButton, QHBoxLayout, QVBoxLayout, QCheckBox, QComboBox
-from PySide2.QtWidgets import QInputDialog, QErrorMessage, QMessageBox
+from PySide2.QtWidgets import QInputDialog, QErrorMessage, QMessageBox, QMenu, QAction, QActionGroup
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QShowEvent, QExposeEvent, QRegion, QPaintEvent, QBrush
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -192,6 +192,9 @@ project_path = None
 destination_path = ""
 
 window = None
+
+scales_menu = None
+scales_group = None
 
 menu_bar = None
 
@@ -317,66 +320,6 @@ cursor_options = [
     ["Cursor_ARROW",     gtk.gdk.ARROW],
     ["Cursor_BASED_ARROW_DOWN", gtk.gdk.BASED_ARROW_DOWN],
     ["Cursor_BASED_ARROW_UP", gtk.gdk.BASED_ARROW_UP]
-    #["Cursor_BOAT", gtk.gdk.BOAT],
-    #["Cursor_BOGOSITY", gtk.gdk.BOGOSITY],
-    #["Cursor_BOTTOM_LEFT_CORNER", gtk.gdk.BOTTOM_LEFT_CORNER],
-    #["Cursor_BOTTOM_RIGHT_CORNER", gtk.gdk.BOTTOM_RIGHT_CORNER],
-    #["Cursor_BOTTOM_SIDE", gtk.gdk.BOTTOM_SIDE],
-    #["Cursor_BOTTOM_TEE", gtk.gdk.BOTTOM_TEE],
-    #["Cursor_BOX_SPIRAL", gtk.gdk.BOX_SPIRAL],
-    #["Cursor_CLOCK", gtk.gdk.CLOCK],
-    #["Cursor_COFFEE_MUG", gtk.gdk.COFFEE_MUG],
-    #["Cursor_DOUBLE_ARROW", gtk.gdk.DOUBLE_ARROW],
-    #["Cursor_DRAFT_LARGE", gtk.gdk.DRAFT_LARGE],
-    #["Cursor_DRAFT_SMALL", gtk.gdk.DRAFT_SMALL],
-    #["Cursor_DRAPED_BOX", gtk.gdk.DRAPED_BOX],
-    #["Cursor_EXCHANGE", gtk.gdk.EXCHANGE],
-    #["Cursor_FLEUR", gtk.gdk.FLEUR],
-    #["Cursor_GOBBLER", gtk.gdk.GOBBLER],
-    #["Cursor_GUMBY", gtk.gdk.GUMBY],
-    #["Cursor_HEART", gtk.gdk.HEART],
-    #["Cursor_ICON", gtk.gdk.ICON],
-    #["Cursor_LEFT_PTR", gtk.gdk.LEFT_PTR],
-    #["Cursor_LEFT_SIDE", gtk.gdk.LEFT_SIDE],
-    #["Cursor_LEFT_TEE", gtk.gdk.LEFT_TEE],
-    #["Cursor_LEFTBUTTON", gtk.gdk.LEFTBUTTON],
-    #["Cursor_LL_ANGLE", gtk.gdk.LL_ANGLE],
-    #["Cursor_LR_ANGLE", gtk.gdk.LR_ANGLE],
-    #["Cursor_MAN", gtk.gdk.MAN],
-    #["Cursor_MIDDLEBUTTON", gtk.gdk.MIDDLEBUTTON],
-    #["Cursor_MOUSE", gtk.gdk.MOUSE],
-    #["Cursor_PENCIL", gtk.gdk.PENCIL],
-    #["Cursor_PIRATE", gtk.gdk.PIRATE],
-    #["Cursor_QUESTION_ARROW", gtk.gdk.QUESTION_ARROW],
-    #["Cursor_RIGHT_PTR", gtk.gdk.RIGHT_PTR],
-    #["Cursor_RIGHT_SIDE", gtk.gdk.RIGHT_SIDE],
-    #["Cursor_RIGHT_TEE", gtk.gdk.RIGHT_TEE],
-    #["Cursor_RIGHTBUTTON", gtk.gdk.RIGHTBUTTON],
-    #["Cursor_RTL_LOGO", gtk.gdk.RTL_LOGO],
-    #["Cursor_SAILBOAT", gtk.gdk.SAILBOAT],
-    #["Cursor_SB_DOWN_ARROW", gtk.gdk.SB_DOWN_ARROW],
-    #["Cursor_SB_H_DOUBLE_ARROW", gtk.gdk.SB_H_DOUBLE_ARROW],
-    #["Cursor_SB_LEFT_ARROW", gtk.gdk.SB_LEFT_ARROW],
-    #["Cursor_SB_RIGHT_ARROW", gtk.gdk.SB_RIGHT_ARROW],
-    #["Cursor_SB_UP_ARROW", gtk.gdk.SB_UP_ARROW],
-    #["Cursor_SB_V_DOUBLE_ARROW", gtk.gdk.SB_V_DOUBLE_ARROW],
-    #["Cursor_SHUTTLE", gtk.gdk.SHUTTLE],
-    #["Cursor_SIZING", gtk.gdk.SIZING],
-    #["Cursor_SPIDER", gtk.gdk.SPIDER],
-    #["Cursor_SPRAYCAN", gtk.gdk.SPRAYCAN],
-    #["Cursor_TCROSS", gtk.gdk.TCROSS],
-    #["Cursor_TOP_LEFT_ARROW", gtk.gdk.TOP_LEFT_ARROW],
-    #["Cursor_TOP_LEFT_CORNER", gtk.gdk.TOP_LEFT_CORNER],
-    #["Cursor_TOP_RIGHT_CORNER", gtk.gdk.TOP_RIGHT_CORNER],
-    #["Cursor_TOP_SIDE", gtk.gdk.TOP_SIDE],
-    #["Cursor_TOP_TEE", gtk.gdk.TOP_TEE],
-    #["Cursor_TREK", gtk.gdk.TREK],
-    #["Cursor_UL_ANGLE", gtk.gdk.UL_ANGLE],
-    #["Cursor_UMBRELLA", gtk.gdk.UMBRELLA],
-    #["Cursor_UR_ANGLE", gtk.gdk.UR_ANGLE],
-    #["Cursor_WATCH", gtk.gdk.WATCH],   # Animated "waiting" cursor!!
-    #["Cursor_XTERM", gtk.gdk.XTERM]
-    # ["Cursor_CURSOR_IS_PIXMAP", gtk.gdk.CURSOR_IS_PIXMAP]  # This will crash!!
   ]
 
 cursor_option_seps = [2, 5, 7]
@@ -1710,6 +1653,7 @@ class ZoomPanWidget ( QWidget ):
     self.drawing_area.window.set_cursor ( gtk.gdk.Cursor(gtk_gdk_cursor) )  # gtk.gdk.HAND2 DRAFT_SMALL TARGET HAND1 SB_UP_ARROW CROSS CROSSHAIR CENTER_PTR CIRCLE DIAMOND_CROSS IRON_CROSS PLUS CROSS_REVERSE DOT DOTBOX FLEUR
 
 
+  '''
   def add_menu ( self, label ):
     menu = gtk.Menu()
     item = gtk.MenuItem(label)
@@ -1750,6 +1694,7 @@ class ZoomPanWidget ( QWidget ):
     item = gtk.SeparatorMenuItem()
     parent.append ( item )
     item.show()
+  '''
 
 
   def mouse_scroll_callback ( self, canvas, event, zpa ):
@@ -3502,6 +3447,12 @@ def update_menu_scales_from_gui_fields():
   global scales_dict
   global current_scale
   global gui_fields
+  global menu_bar
+  global window
+  global scales_menu
+  global scales_group
+
+  print ( "Menu Bar = " + str(menu_bar) )
 
   if len(gui_fields.scales_list) <= 0:
     current_scale = 1
@@ -3512,24 +3463,40 @@ def update_menu_scales_from_gui_fields():
   # Update the menu items in the "Scales" menu
   # Note that this gets behind the scenes of the "app_window" API
   # Some of this could be added to the "app_window" API at some point
-  global menu_bar
+
   scales_menu = None
   if not (menu_bar is None):
-    for m in menu_bar.get_children():
-      label = m.get_children()[0].get_label()
-      # print_debug ( 70, label )
-      if label == '_Scales':
-        scales_menu = m.get_submenu()
+    for m in menu_bar.children():
+      if type(m) == QMenu:
+        label = m.title()
+        print ( "Menu Label = " + label )
+        if 'Scales' in label:
+          scales_menu = m
+          break
+
   if scales_menu != None:
     # Remove all the old items and recreate them from the current list
-    while len(scales_menu) > 0:
-      scales_menu.remove ( scales_menu.get_children()[0] )
+    while len(scales_menu.actions()) > 0:
+      scales_menu.removeAction(scales_menu.actions()[0])
+      print ( "Removing a scale" )
+
+    # Regenerate all new scales
+    scales_group = QActionGroup ( window )
+    first = True
     for s in gui_fields.scales_list:
-      item = gtk.CheckMenuItem(label="Scale "+str(s))
-      item.set_active ( s == current_scale )
-      item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
-      scales_menu.append ( item )
-      item.show()
+      name = "Scale " + str(s)
+      print ( "Adding: " + name )
+      item = QAction ( name, window )
+      item.data = name
+      item.setCheckable(True)
+      if first:
+        item.setChecked(True)
+        first = False
+
+      item.triggered.connect ( window.menu_handler )
+      #item.triggered.connect(lambda: self.opt_n(name, opt_action)) # Lambda needed as wrapper to pass an argument
+      scales_group.addAction ( item )
+      scales_menu.addAction ( item )
 
   # Add the scales to the menu
   for s in gui_fields.scales_list:
@@ -3544,6 +3511,9 @@ def set_selected_scale_to ( requested_scale ):
   global alignment_layer_list
   global zpa_original
   global panel_list
+  global menu_bar
+  global scales_menu
+  global scales_group
 
   if requested_scale in scales_dict:
 
@@ -3561,7 +3531,8 @@ def set_selected_scale_to ( requested_scale ):
     for p in panel_list:
       p.queue_draw()
 
-    global menu_bar
+    # Maybe this is done elsewhere now??  TODO
+    '''
     scales_menu = None
     if not (menu_bar is None):
       for m in menu_bar.get_children():
@@ -3579,6 +3550,7 @@ def set_selected_scale_to ( requested_scale ):
         item.connect ( 'activate', menu_callback, ("SelectScale_"+str(s), zpa_original) )
         scales_menu.append ( item )
         item.show()
+    '''
 
     # Display the alignment_layer parameters from the new section being viewed
     store_current_layer_into_fields()
@@ -4994,6 +4966,8 @@ class MainWindow(QMainWindow):
         # Menu Bar
         print ( "Creating menu bar" )
         self.menu = self.menuBar()
+        global menu_bar
+        menu_bar = self.menu
         ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox, 4:Checkbox-Group-Name, 5:User-Data
         ml = [
               [ '&File',
@@ -5381,11 +5355,20 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def menu_handler(self, checked):
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         qaction = self.sender()
-        data = qaction.data()
-        print ( "Menu data contains: " + str(data) )
-        # Pass to the menu_callback that was used in the GTK version
-        menu_callback ( None, data=data )
+        if type(qaction.data) == type('abc'):
+          # This should be a scale change
+          scale_int = str(qaction.data).split(' ')[-1].strip()
+          print ( "Changing scales to: " + str(scale_int) )
+          menu_command = "SelectScale_" + str(scale_int)
+          menu_callback ( None, data=(menu_command,zpa_original) )
+        else:
+          # This is some other menu item
+          data = qaction.data()
+          print ( "Menu data contains: " + str(data) )
+          # Pass to the menu_callback that was used in the GTK version
+          menu_callback ( None, data=data )
 
     @Slot()
     def not_yet(self, checked):
@@ -5398,14 +5381,16 @@ class MainWindow(QMainWindow):
 
     #@Slot()
     #def py_console(self, checked):
-    #    print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
-    #    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    # print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 
 
 if __name__ == '__main__':
   import sys
+
+  global window
 
   # Qt Application
   app = QApplication(sys.argv)
