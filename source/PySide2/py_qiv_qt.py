@@ -4,10 +4,11 @@ import cv2
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel
 from PySide2.QtWidgets import QAction, QSizePolicy, QFileDialog, QInputDialog
-from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
+from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
+#from PySide2.QtCore import ArrowCursor, WaitCursor
 
-
+app = None
 debug_level = 20
 preloading_range = 5
 max_image_file_size = 1000000000
@@ -40,8 +41,10 @@ class ImageLayer:
               self.image_size = f.tell()
               f.close()
             if self.image_size <= max_image_file_size:
+              app.setOverrideCursor(Qt.WaitCursor)
               print_debug ( 10, "Loading image: \"" + self.image_file_name + "\"" )
               self.pixmap = QPixmap(self.image_file_name)
+              app.restoreOverrideCursor()
             else:
               print_debug ( 10, "Skipping image: \"" + self.image_file_name + "\" (" + str(self.image_size) + " > " + str(max_image_file_size) + ")" )
     def unload ( self ):
@@ -415,6 +418,8 @@ class MainWindow(QMainWindow):
         if file_name_list != None:
           if len(file_name_list) > 0:
 
+            self.zpa.update() # Attempt to hide the file dialog before opening ...
+
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
             this_file_index = len(alignment_layer_list)
             for f in file_name_list:
@@ -476,6 +481,8 @@ class MainWindow(QMainWindow):
 #    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
 if __name__ == "__main__":
+    global app
+
     options = argparse.ArgumentParser()
     options.add_argument("-f", "--file", type=str, required=False)
     args = options.parse_args()
