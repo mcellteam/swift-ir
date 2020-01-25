@@ -2,12 +2,15 @@ import sys
 import argparse
 import cv2
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QFileDialog
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel
+from PySide2.QtWidgets import QAction, QSizePolicy, QFileDialog, QInputDialog
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 
-debug_level = 10
+debug_level = 20
+preloading_range = 5
+max_image_file_size = 1000000000
 
 alignment_layer_list = []
 alignment_layer_index = 0
@@ -20,13 +23,29 @@ def print_debug ( level, str ):
     print ( str )
 
 class ImageLayer:
-    def __init__ ( self, file_name ):
+    def __init__ ( self, file_name, load_now=False ):
         self.image_file_name = file_name
+        self.image_size = None
         self.pixmap = None
+        if load_now:
+          self.load()
+    def load ( self ):
+        global max_image_file_size
         if self.image_file_name != None:
           if len(self.image_file_name) > 0:
-            print_debug ( 30, "Loading image: \"" + self.image_file_name + "\"" )
-            self.pixmap = QPixmap(self.image_file_name)
+            if self.image_size == None:
+              # Get the size if needed
+              f = open ( self.image_file_name )
+              f.seek (0, 2)  # Seek to the end
+              self.image_size = f.tell()
+              f.close()
+            if self.image_size <= max_image_file_size:
+              print_debug ( 10, "Loading image: \"" + self.image_file_name + "\"" )
+              self.pixmap = QPixmap(self.image_file_name)
+            else:
+              print_debug ( 10, "Skipping image: \"" + self.image_file_name + "\" (" + str(self.image_size) + " > " + str(max_image_file_size) + ")" )
+    def unload ( self ):
+        self.pixmap = None
 
 class ZoomPanWidget(QWidget):
     def __init__(self, parent=None, fname=None):
@@ -36,7 +55,7 @@ class ZoomPanWidget(QWidget):
         global alignment_layer_index
 
         if fname != None:
-          alignment_layer_list.append ( ImageLayer ( fname ) )
+          alignment_layer_list.append ( ImageLayer ( fname, load_now=True ) )
 
         self.floatBased = False
         self.antialiased = False
@@ -129,6 +148,7 @@ class ZoomPanWidget(QWidget):
         global alignment_layer_list
         global alignment_layer_index
         global main_window
+        global preloading_range
 
         kmods = event.modifiers()
         if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
@@ -148,6 +168,15 @@ class ZoomPanWidget(QWidget):
                 if alignment_layer_index < 0:
                   alignment_layer_index = 0
               main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+
+            # Load a new image as needed
+            if alignment_layer_list[alignment_layer_index].pixmap == None:
+              alignment_layer_list[alignment_layer_index].load()
+
+            # Unload other images no longer needed
+            for i in range(len(alignment_layer_list)):
+              if abs(i-alignment_layer_index) >= preloading_range:
+                alignment_layer_list[i].unload()
 
             self.update()
 
@@ -224,15 +253,17 @@ class MainWindow(QMainWindow):
                   [ 'Actual Size', None, self.not_yet ],
                   [ 'Refresh', None, self.not_yet ],
                   [ '-', None, None ],
-                  [ 'Remove This Layer', None, self.remove_this_layer ],
-                  [ 'Remove All Layers', None, self.remove_all_layers ]
+                  [ 'Remove this Layer', None, self.remove_this_layer ],
+                  [ 'Remove ALL Layers', None, self.remove_all_layers ]
                 ]
               ],
               [ '&Set',
                 [
-                  [ '&Max Image Size', 'Ctrl+M', self.not_yet ],
+                  [ '&Max Image Size', 'Ctrl+M', self.set_max_image_size ],
                   [ '-', None, None ],
-                  [ 'Unlimited Zoom', None, self.not_yet ],
+                  #[ 'Unlimited Zoom', None, self.not_yet ],
+                  #[ '-', None, None ],
+                  [ 'Num to Preload', None, self.set_preloading_range ]
                 ]
               ],
               [ '&Debug',
@@ -370,6 +401,7 @@ class MainWindow(QMainWindow):
     def import_images(self, checked):
         global alignment_layer_list
         global alignment_layer_index
+        global preloading_range
 
         options = QFileDialog.Options()
         if False:  # self.native.isChecked():
@@ -384,8 +416,10 @@ class MainWindow(QMainWindow):
           if len(file_name_list) > 0:
 
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
+            this_file_index = len(alignment_layer_list)
             for f in file_name_list:
-              alignment_layer_list.append ( ImageLayer ( f ) )
+              alignment_layer_list.append ( ImageLayer ( f, load_now=(abs(this_file_index-alignment_layer_index)<preloading_range) ) )
+              this_file_index += 1
 
             # Draw the panels ("windows")
             #self.zpa.force_center = True
@@ -412,6 +446,20 @@ class MainWindow(QMainWindow):
         alignment_layer_list = []
         self.zpa.update()
 
+
+    @Slot()
+    def set_max_image_size(self, checked):
+      global max_image_file_size
+      input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image Size:", max_image_file_size )
+      if ok:
+        max_image_file_size = input_val
+
+    @Slot()
+    def set_preloading_range(self, checked):
+      global preloading_range
+      input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
+      if ok:
+        preloading_range = input_val
 
     @Slot()
     def exit_app(self, checked):
