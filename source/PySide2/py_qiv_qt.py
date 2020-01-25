@@ -2,21 +2,41 @@ import sys
 import argparse
 import cv2
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QFileDialog
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
+
+debug_level = 10
+
+alignment_layer_list = []
+alignment_layer_index = 0
+
+main_window = None
+
+def print_debug ( level, str ):
+  global debug_level
+  if level <= debug_level:
+    print ( str )
+
+class ImageLayer:
+    def __init__ ( self, file_name ):
+        self.image_file_name = file_name
+        self.pixmap = None
+        if self.image_file_name != None:
+          if len(self.image_file_name) > 0:
+            print_debug ( 30, "Loading image: \"" + self.image_file_name + "\"" )
+            self.pixmap = QPixmap(self.image_file_name)
 
 class ZoomPanWidget(QWidget):
     def __init__(self, parent=None, fname=None):
         super(ZoomPanWidget, self).__init__(parent)
 
-        self.fname = fname
-        self.pixmap = None
+        global alignment_layer_list
+        global alignment_layer_index
 
-        if self.fname != None:
-          if len(self.fname) > 0:
-            self.pixmap = QPixmap(fname)
+        if fname != None:
+          alignment_layer_list.append ( ImageLayer ( fname ) )
 
         self.floatBased = False
         self.antialiased = False
@@ -101,30 +121,66 @@ class ZoomPanWidget(QWidget):
             self.update()
 
     def mouseDoubleClickEvent(self, event):
-        print ( "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
+        print_debug ( 50, "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
         self.update()
 
     def wheelEvent(self, event):
-        self.wheel_index += event.delta()/120
 
-        mouse_win_x = event.x()
-        mouse_win_y = event.y()
+        global alignment_layer_list
+        global alignment_layer_index
+        global main_window
 
-        old_scale = self.zoom_scale
-        new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+        kmods = event.modifiers()
+        if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
+            # Unshifted Scroll Wheel moves through layers
+            layer_delta = event.delta()/120
 
-        self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
-        self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+            print_debug ( 50, "Wheel Event: Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
+            if len(alignment_layer_list) <= 0:
+              alignment_layer_index = 0
+              print_debug ( 60, " Index = " + str(alignment_layer_index) )
+            else:
+              alignment_layer_index += layer_delta
+              if layer_delta > 0:
+                if alignment_layer_index >= len(alignment_layer_list):
+                  alignment_layer_index =  len(alignment_layer_list)-1
+              elif layer_delta < 0:
+                if alignment_layer_index < 0:
+                  alignment_layer_index = 0
+              main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+
+            self.update()
+
+
+        else:
+            # Shifted Scroll Wheel zooms
+            self.wheel_index += event.delta()/120
+
+            mouse_win_x = event.x()
+            mouse_win_y = event.y()
+
+            old_scale = self.zoom_scale
+            new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+
+            self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+            self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
 
         self.update()
 
     def paintEvent(self, event):
+        global alignment_layer_list
+        global alignment_layer_index
+
         painter = QPainter(self)
 
         if True:
-            if self.pixmap != None:
-                painter.scale ( self.zoom_scale, self.zoom_scale )
-                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), self.pixmap )
+            print_debug ( 50, "Painting layer " + str(alignment_layer_index) )
+            if len(alignment_layer_list) > 0:
+              if (alignment_layer_index >= 0) and (alignment_layer_index < len(alignment_layer_list)):
+                if alignment_layer_list[alignment_layer_index].pixmap != None:
+                    painter.scale ( self.zoom_scale, self.zoom_scale )
+                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), alignment_layer_list[alignment_layer_index].pixmap )
+
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
@@ -156,116 +212,48 @@ class MainWindow(QMainWindow):
         ml = [
               [ '&File',
                 [
-                  [ '&New Project', 'Ctrl+N', self.not_yet ],
-                  [ '&Open Project', 'Ctrl+O', self.not_yet ],
-                  [ '&Save Project', 'Ctrl+S', self.not_yet ],
-                  [ 'Save Project &As', 'Ctrl+A', self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Set Destination...', None, self.not_yet ],
-                  [ '-', None, None ],
+                  [ '&Import Images...', None, self.import_images ],
                   [ 'E&xit', 'Ctrl+Q', self.exit_app ]
                 ]
               ],
               [ '&Images',
                 [
-                  [ '&Import...', None, self.not_yet ],
+                  [ '&Import...', None, self.import_images ],
                   [ '-', None, None ],
                   [ 'Center', None, self.not_yet ],
                   [ 'Actual Size', None, self.not_yet ],
                   [ 'Refresh', None, self.not_yet ],
                   [ '-', None, None ],
-                  [ 'Clear Out Images', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Clear All Layers', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Clear Everything', None, self.not_yet ]
-                ]
-              ],
-              [ '&Scaling',
-                [
-                  [ '&Define Scales', None, self.not_yet ],
-                  [ '&Generate All Scales', None, self.not_yet ],
-                  [ '&Import All Scales', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ '&Generate Tiled', None, self.not_yet ],
-                  [ '&Import Tiled', None, self.not_yet ],
-                  [ '&Show Tiled', None, self.not_yet ]
-                ]
-              ],
-              [ '&Scales',
-                [
-                  [ '&Scale 1', None, self.not_yet ]
-                ]
-              ],
-              [ '&Points',
-                [
-                  [ '&Alignment Point Mode', None, self.not_yet ],
-                  [ '&Delete Points', None, self.not_yet ],
-                  [ '&Clear All Alignment Points', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ '&Point Cursor',
-                    [
-                      [ 'Crosshair', None, self.not_yet ],
-                      [ 'Target', None, self.not_yet ]
-                    ]
-                  ]
+                  [ 'Remove This Layer', None, self.remove_this_layer ],
+                  [ 'Remove All Layers', None, self.remove_all_layers ]
                 ]
               ],
               [ '&Set',
                 [
                   [ '&Max Image Size', 'Ctrl+M', self.not_yet ],
                   [ '-', None, None ],
-                  [ 'Perform Swims', None, self.not_yet ],
-                  [ 'Update CFMs', None, self.not_yet ],
-                  [ 'Generate Images', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Use C Version', None, self.not_yet ],
-                  [ '-', None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Default Plot Code', None, self.not_yet ],
-                  [ 'Custom Plot Code', None, self.not_yet ],
-                ]
-              ],
-              [ '&Show',
-                [
-                  [ 'Window Centers', None, self.not_yet ],
-                  [ 'Affines', None, self.not_yet ],
-                  [ 'Skipped Images', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Plot', None, self.not_yet ],
                 ]
               ],
               [ '&Debug',
                 [
                   [ '&Python Console', 'Ctrl+P', self.py_console ],
                   [ '-', None, None ],
-                  [ 'Print Affine', None, self.not_yet ],
                   [ 'Print Structures', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Define Waves', None, self.not_yet ],
-                  [ 'Make Waves', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Define Grid', None, self.not_yet ],
-                  [ 'Grid Align', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Show Waves', None, self.not_yet ],
-                  [ 'Show Grid Align', None, self.not_yet ],
-                  [ 'Show Aligned', None, self.not_yet ],
                   [ '-', None, None ],
                   [ '&Set Debug Level',
                     [
-                      [ 'Level 0', None, self.not_yet ],
-                      [ 'Level 10', None, self.not_yet ],
-                      [ 'Level 20', None, self.not_yet ],
-                      [ 'Level 30', None, self.not_yet ],
-                      [ 'Level 40', None, self.not_yet ],
-                      [ 'Level 50', None, self.not_yet ],
-                      [ 'Level 60', None, self.not_yet ],
-                      [ 'Level 70', None, self.not_yet ],
-                      [ 'Level 80', None, self.not_yet ],
-                      [ 'Level 90', None, self.not_yet ],
-                      [ 'Level 100', None, self.not_yet ]
+                      [ 'Level 0', None, self.set_debug_level_0 ],
+                      [ 'Level 10', None, self.set_debug_level_10 ],
+                      [ 'Level 20', None, self.set_debug_level_20 ],
+                      [ 'Level 30', None, self.set_debug_level_30 ],
+                      [ 'Level 40', None, self.set_debug_level_40 ],
+                      [ 'Level 50', None, self.set_debug_level_50 ],
+                      [ 'Level 60', None, self.set_debug_level_60 ],
+                      [ 'Level 70', None, self.set_debug_level_70 ],
+                      [ 'Level 80', None, self.set_debug_level_80 ],
+                      [ 'Level 90', None, self.set_debug_level_90 ],
+                      [ 'Level 100', None, self.set_debug_level_100 ]
                     ]
                   ]
                 ]
@@ -273,12 +261,6 @@ class MainWindow(QMainWindow):
               [ '&Help',
                 [
                   [ 'Manual...', None, self.not_yet ],
-                  [ 'Key Commands...', None, self.not_yet ],
-                  [ 'Mouse Clicks...', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Skipped Images', None, self.not_yet ],
-                  [ 'License...', None, self.not_yet ],
-                  [ 'Version...', None, self.not_yet ]
                 ]
               ]
             ]
@@ -286,7 +268,10 @@ class MainWindow(QMainWindow):
 
         # Status Bar
         self.status = self.statusBar()
-        self.status.showMessage("File: "+fname)
+        if fname == None:
+          self.status.showMessage("")
+        else:
+          self.status.showMessage("File: "+fname)
 
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
@@ -317,10 +302,116 @@ class MainWindow(QMainWindow):
                 action.triggered.connect ( item[2] )
               parent.addAction ( action )
 
-
     @Slot()
     def not_yet(self, checked):
         print ( "Function is not implemented yet" )
+
+    def set_debug_level(self, value):
+        global debug_level
+        print ( "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
+        debug_level = value
+
+    @Slot()
+    def set_debug_level_0(self, checked):
+        self.set_debug_level(0)
+
+    @Slot()
+    def set_debug_level_10(self, checked):
+        self.set_debug_level(10)
+
+    @Slot()
+    def set_debug_level_20(self, checked):
+        self.set_debug_level(20)
+
+    @Slot()
+    def set_debug_level_30(self, checked):
+        self.set_debug_level(30)
+
+    @Slot()
+    def set_debug_level_40(self, checked):
+        self.set_debug_level(40)
+
+    @Slot()
+    def set_debug_level_50(self, checked):
+        self.set_debug_level(50)
+
+    @Slot()
+    def set_debug_level_60(self, checked):
+        self.set_debug_level(60)
+
+    @Slot()
+    def set_debug_level_70(self, checked):
+        self.set_debug_level(70)
+
+    @Slot()
+    def set_debug_level_80(self, checked):
+        self.set_debug_level(80)
+
+    @Slot()
+    def set_debug_level_90(self, checked):
+        self.set_debug_level(90)
+
+    @Slot()
+    def set_debug_level_100(self, checked):
+        self.set_debug_level(100)
+
+
+    @Slot()
+    def opt_n(self, option_name, option_action):
+        if 'num' in dir(option_action):
+          print_debug ( 50, "Dynamic Option[" + str(option_action.num) + "]: \"" + option_name + "\"" )
+        else:
+          print_debug ( 50, "Dynamic Option: \"" + option_name + "\"" )
+        print_debug ( 50, "  Action: " + str(option_action) )
+
+
+
+    @Slot()
+    def import_images(self, checked):
+        global alignment_layer_list
+        global alignment_layer_index
+
+        options = QFileDialog.Options()
+        if False:  # self.native.isChecked():
+            options |= QFileDialog.DontUseNativeDialog
+
+        file_name_list, filtr = QFileDialog.getOpenFileNames ( None,  # None was self
+                                                               "Select Images to Import",
+                                                               #self.openFileNameLabel.text(),
+                                                               "Select Images",
+                                                               "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
+        if file_name_list != None:
+          if len(file_name_list) > 0:
+
+            print_debug ( 20, "Selected Files: " + str(file_name_list) )
+            for f in file_name_list:
+              alignment_layer_list.append ( ImageLayer ( f ) )
+
+            # Draw the panels ("windows")
+            #self.zpa.force_center = True
+            #self.zpa.queue_draw()
+            self.zpa.update()
+
+        if len(alignment_layer_list) > 0:
+            self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+
+    @Slot()
+    def remove_this_layer(self, checked):
+        global alignment_layer_list
+        global alignment_layer_index
+        alignment_layer_list = alignment_layer_list[0:alignment_layer_index] + alignment_layer_list[alignment_layer_index+1:]
+        if alignment_layer_index > 0:
+          alignment_layer_index += -1
+        self.zpa.update()
+
+    @Slot()
+    def remove_all_layers(self, checked):
+        global alignment_layer_list
+        global alignment_layer_index
+        alignment_layer_index = 0
+        alignment_layer_list = []
+        self.zpa.update()
+
 
     @Slot()
     def exit_app(self, checked):
@@ -333,21 +424,21 @@ class MainWindow(QMainWindow):
 
 
 # This provides default command line parameters if none are given (as with "Idle")
-if len(sys.argv) <= 1:
-    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
+#if len(sys.argv) <= 1:
+#    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
 if __name__ == "__main__":
     options = argparse.ArgumentParser()
-    options.add_argument("-f", "--file", type=str, required=True)
+    options.add_argument("-f", "--file", type=str, required=False)
     args = options.parse_args()
     fname = args.file
 
     # Qt Application
     app = QApplication(sys.argv)
 
-    window = MainWindow(fname)
-    # window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
+    main_window = MainWindow(fname)
+    # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
 
-    window.show()
+    main_window.show()
     sys.exit(app.exec_())
 
