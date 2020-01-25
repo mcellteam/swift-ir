@@ -1409,7 +1409,7 @@ class ZoomPanWidget ( QWidget ):
         global alignment_layer_index
         global panel_list
 
-        print_debug ( 50, "Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
+        print_debug ( 50, "Wheel Event: Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
         if len(alignment_layer_list) <= 0:
           alignment_layer_index = -1
           print_debug ( 60, " Index = " + str(alignment_layer_index) )
