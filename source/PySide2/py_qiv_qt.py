@@ -3,7 +3,7 @@ import argparse
 import cv2
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel
-from PySide2.QtWidgets import QAction, QSizePolicy, QFileDialog, QInputDialog
+from PySide2.QtWidgets import QAction, QActionGroup, QSizePolicy, QFileDialog, QInputDialog
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 #from PySide2.QtCore import ArrowCursor, WaitCursor
@@ -245,63 +245,65 @@ class MainWindow(QMainWindow):
         self.zpa = ZoomPanWidget(fname=fname)
 
         # Menu Bar
+        self.action_groups = {}
         self.menu = self.menuBar()
+        ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
         ml = [
               [ '&File',
                 [
-                  [ '&Import Images...', None, self.import_images ],
-                  [ 'E&xit', 'Ctrl+Q', self.exit_app ]
+                  [ '&Import Images...', None, self.import_images, None, None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
                 ]
               ],
               [ '&Images',
                 [
-                  [ '&Import...', None, self.import_images ],
-                  [ '-', None, None ],
-                  [ 'Center', None, self.not_yet ],
-                  [ 'Actual Size', None, self.not_yet ],
-                  [ 'Refresh', None, self.not_yet ],
-                  [ '-', None, None ],
-                  [ 'Remove this Layer', None, self.remove_this_layer ],
-                  [ 'Remove ALL Layers', None, self.remove_all_layers ]
+                  [ '&Import...', None, self.import_images, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Center', None, self.not_yet, None, None, None ],
+                  [ 'Actual Size', None, self.not_yet, None, None, None ],
+                  [ 'Refresh', None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
+                  [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ]
                 ]
               ],
               [ '&Set',
                 [
-                  [ '&Max Image Size', 'Ctrl+M', self.set_max_image_size ],
-                  [ '-', None, None ],
-                  #[ 'Unlimited Zoom', None, self.not_yet ],
-                  #[ '-', None, None ],
-                  [ 'Num to Preload', None, self.set_preloading_range ],
-                  [ '-', None, None ],
-                  [ 'Show Border', None, self.toggle_border ]
+                  [ '&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  #[ 'Unlimited Zoom', None, self.not_yet, None, None, None ],
+                  #[ '-', None, None, None, None, None ],
+                  [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Show Border', None, self.toggle_border, False, None, None ]
                 ]
               ],
               [ '&Debug',
                 [
-                  [ '&Python Console', 'Ctrl+P', self.py_console ],
-                  [ '-', None, None ],
-                  [ 'Print Structures', None, self.not_yet ],
-                  [ '-', None, None ],
+                  [ '&Python Console', 'Ctrl+P', self.py_console, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Print Structures', None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
                   [ '&Set Debug Level',
                     [
-                      [ 'Level 0', None, self.set_debug_level_0 ],
-                      [ 'Level 10', None, self.set_debug_level_10 ],
-                      [ 'Level 20', None, self.set_debug_level_20 ],
-                      [ 'Level 30', None, self.set_debug_level_30 ],
-                      [ 'Level 40', None, self.set_debug_level_40 ],
-                      [ 'Level 50', None, self.set_debug_level_50 ],
-                      [ 'Level 60', None, self.set_debug_level_60 ],
-                      [ 'Level 70', None, self.set_debug_level_70 ],
-                      [ 'Level 80', None, self.set_debug_level_80 ],
-                      [ 'Level 90', None, self.set_debug_level_90 ],
-                      [ 'Level 100', None, self.set_debug_level_100 ]
+                      [ 'Level 0',   None, self.set_debug_level_0,   False, "DebugLevel", None ],
+                      [ 'Level 10',  None, self.set_debug_level_10,  False, "DebugLevel", None ],
+                      [ 'Level 20',  None, self.set_debug_level_20,  True,  "DebugLevel", None ],
+                      [ 'Level 30',  None, self.set_debug_level_30,  False, "DebugLevel", None ],
+                      [ 'Level 40',  None, self.set_debug_level_40,  False, "DebugLevel", None ],
+                      [ 'Level 50',  None, self.set_debug_level_50,  False, "DebugLevel", None ],
+                      [ 'Level 60',  None, self.set_debug_level_60,  False, "DebugLevel", None ],
+                      [ 'Level 70',  None, self.set_debug_level_70,  False, "DebugLevel", None ],
+                      [ 'Level 80',  None, self.set_debug_level_80,  False, "DebugLevel", None ],
+                      [ 'Level 90',  None, self.set_debug_level_90,  False, "DebugLevel", None ],
+                      [ 'Level 100', None, self.set_debug_level_100, False, "DebugLevel", None ]
                     ]
                   ]
                 ]
               ],
               [ '&Help',
                 [
-                  [ 'Manual...', None, self.not_yet ],
+                  [ 'Manual...', None, self.not_yet, None, None, None ],
                 ]
               ]
             ]
@@ -324,6 +326,19 @@ class MainWindow(QMainWindow):
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def build_menu_from_list (self, parent, menu_list):
+        # Get the group names first
+        for item in menu_list:
+          if type(item[1]) == type([]):
+            # This is a submenu
+            pass
+          else:
+            # This is a menu item (action) or a separator
+            if item[4] != None:
+              # This is a group name so add it as needed
+              if not (item[4] in self.action_groups):
+                # This is a new group:
+                self.action_groups[item[4]] = QActionGroup ( self )
+
         for item in menu_list:
           if type(item[1]) == type([]):
             # This is a submenu
@@ -341,8 +356,14 @@ class MainWindow(QMainWindow):
                 action.setShortcut ( item[1] )
               if item[2] != None:
                 action.triggered.connect ( item[2] )
-              if item[0] == "Show Border":
+              if item[3] != None:
                 action.setCheckable(True)
+                action.setChecked(item[3])
+              if item[4] != None:
+                self.action_groups[item[4]].addAction(action)
+
+              #if item[0] == "Show Border":
+              #  action.setCheckable(True)
               parent.addAction ( action )
 
     @Slot()
@@ -401,7 +422,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def toggle_border(self, checked):
-        self.zpa.draw_border = not self.zpa.draw_border
+        print_debug ( 90, "toggle_border called with checked = " + str(checked) )
+        self.zpa.draw_border = checked
         self.zpa.update()
 
 
@@ -469,17 +491,23 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_max_image_size(self, checked):
-      global max_image_file_size
-      input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image Size:", max_image_file_size )
-      if ok:
-        max_image_file_size = input_val
+        global max_image_file_size
+        input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image Size:", max_image_file_size )
+        if ok:
+          max_image_file_size = input_val
 
     @Slot()
     def set_preloading_range(self, checked):
-      global preloading_range
-      input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
-      if ok:
-        preloading_range = input_val
+        global alignment_layer_list
+        global alignment_layer_index
+        global preloading_range
+        input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
+        if ok:
+          preloading_range = input_val
+          # Unload images to bring total down to preloading value
+          for i in range(len(alignment_layer_list)):
+            if abs(i-alignment_layer_index) >= preloading_range:
+              alignment_layer_list[i].unload()
 
     @Slot()
     def exit_app(self, checked):
