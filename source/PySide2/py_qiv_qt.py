@@ -74,6 +74,8 @@ class ZoomPanWidget(QWidget):
         self.dx = 0   # Offset in x of the image
         self.dy = 0   # Offset in y of the image
 
+        self.draw_border = False
+
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -209,10 +211,13 @@ class ZoomPanWidget(QWidget):
             print_debug ( 50, "Painting layer " + str(alignment_layer_index) )
             if len(alignment_layer_list) > 0:
               if (alignment_layer_index >= 0) and (alignment_layer_index < len(alignment_layer_list)):
-                if alignment_layer_list[alignment_layer_index].pixmap != None:
+                pixmap = alignment_layer_list[alignment_layer_index].pixmap
+                if pixmap != None:
                     painter.scale ( self.zoom_scale, self.zoom_scale )
-                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), alignment_layer_list[alignment_layer_index].pixmap )
-
+                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+                    if self.draw_border:
+                        # Draw an optional border around the image
+                        painter.drawRect ( self.ldx+self.dx-1, self.ldy+self.dy-1, pixmap.width()+2, pixmap.height()+2 )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
@@ -266,7 +271,9 @@ class MainWindow(QMainWindow):
                   [ '-', None, None ],
                   #[ 'Unlimited Zoom', None, self.not_yet ],
                   #[ '-', None, None ],
-                  [ 'Num to Preload', None, self.set_preloading_range ]
+                  [ 'Num to Preload', None, self.set_preloading_range ],
+                  [ '-', None, None ],
+                  [ 'Show Border', None, self.toggle_border ]
                 ]
               ],
               [ '&Debug',
@@ -334,6 +341,8 @@ class MainWindow(QMainWindow):
                 action.setShortcut ( item[1] )
               if item[2] != None:
                 action.triggered.connect ( item[2] )
+              if item[0] == "Show Border":
+                action.setCheckable(True)
               parent.addAction ( action )
 
     @Slot()
@@ -388,6 +397,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def set_debug_level_100(self, checked):
         self.set_debug_level(100)
+
+
+    @Slot()
+    def toggle_border(self, checked):
+        self.zpa.draw_border = not self.zpa.draw_border
+        self.zpa.update()
 
 
     @Slot()
