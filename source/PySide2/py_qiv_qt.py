@@ -217,7 +217,7 @@ class ZoomPanWidget(QWidget):
                     painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
                     if self.draw_border:
                         # Draw an optional border around the image
-                        painter.drawRect ( self.ldx+self.dx-1, self.ldy+self.dy-1, pixmap.width()+2, pixmap.height()+2 )
+                        painter.drawRect ( QRectF ( self.ldx+self.dx-1, self.ldy+self.dy-1, pixmap.width()+2, pixmap.height()+2 ) )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
