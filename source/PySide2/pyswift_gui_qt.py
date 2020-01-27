@@ -1454,7 +1454,7 @@ class ZoomPanWidget ( QWidget ):
               if pixmap != None:
                 painter.scale ( self.zoom_scale, self.zoom_scale )
                 painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
-                painter.drawRect ( self.ldx+self.dx-1, self.ldy+self.dy-1, pixmap.width()+2, pixmap.height()+2 )
+                painter.drawRect ( QRectF ( self.ldx+self.dx-1, self.ldy+self.dy-1, pixmap.width()+2, pixmap.height()+2 ) )
                 # painter.drawEllipse ( self.ldx+self.dx, self.ldy+self.dy, 20, 20 )
           else:
             # Draw a default picture of concentric circles
