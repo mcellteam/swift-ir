@@ -24,7 +24,6 @@ def print_debug ( level, str ):
     print ( str )
 
 class ImageLibrary:
-
     def __init__ ( self ):
         self.images = {}
 
@@ -49,8 +48,9 @@ class ImageLibrary:
 
 image_library = ImageLibrary()
 
-class ImageLayer:
-    def __init__ ( self, file_name, load_now=False ):
+class AnnotatedImage:
+    def __init__ ( self, role, file_name, load_now=False ):
+        self.role = role
         self.image_file_name = os.path.realpath(os.path.normpath(file_name))
         self.image_size = None
         self.pixmap = None
@@ -83,17 +83,41 @@ class ImageLayer:
         self.pixmap = None
         found = False
         for alignment_layer in alignment_layer_list:
-          if alignment_layer.image_file_name == self.image_file_name:
-            if alignment_layer != self:
-              found = True
-              break
+          for image in alignment_layer.image_list:
+            if image.image_file_name == self.image_file_name:
+              if image != self:
+                found = True
+                break
         if not found:
           image_library.remove_image_reference ( self.image_file_name )
 
+next_role_number = 1
+
+class DisplayLayer:
+    def __init__ ( self, file_name, load_now=False ):
+        global next_role_number
+        self.image_list = []
+        self.image_list.append ( AnnotatedImage ( str(next_role_number), file_name, load_now ) )
+
+    def isLoaded ( self ):
+        for im in self.image_list:
+            if im.pixmap == None:
+                return ( False )
+        return ( True )
+
+    def load ( self ):
+        for im in self.image_list:
+            im.load()
+
+    def unload ( self ):
+        for im in self.image_list:
+            im.unload()
+
 
 class ZoomPanWidget(QWidget):
-    def __init__(self, parent=None, fname=None):
+    def __init__(self, role, parent=None, fname=None):
         super(ZoomPanWidget, self).__init__(parent)
+        self.role = role
 
         global alignment_layer_list
         global alignment_layer_index
@@ -101,7 +125,7 @@ class ZoomPanWidget(QWidget):
         self.parent = parent
 
         if fname != None:
-          alignment_layer_list.append ( ImageLayer ( fname, load_now=True ) )
+          alignment_layer_list.append ( DisplayLayer ( fname, load_now=True ) )
 
         self.floatBased = False
         self.antialiased = False
@@ -126,11 +150,11 @@ class ZoomPanWidget(QWidget):
         # The update will be called on a particular ZoomPanWidget (this "self")
         # Call the super "update" function for this panel's QWidget (this "self")
         super(ZoomPanWidget, self).update()
-        # Call the super "update" functions for the other panels' QWidgets
+        # Call the super "update" functions for the other panels' QWidgets (their "panel")
         if self.parent.panel_list != None:
-            for p in self.parent.panel_list:
-                if p != self:
-                    super(ZoomPanWidget, p).update()
+            for panel in self.parent.panel_list:
+                if panel != self:
+                    super(ZoomPanWidget, panel).update()
 
 
     def image_x ( self, win_x ):
@@ -226,7 +250,7 @@ class ZoomPanWidget(QWidget):
               elif layer_delta < 0:
                 if alignment_layer_index < 0:
                   alignment_layer_index = 0
-              main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+              ##main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
             # Unload images no longer needed
             for i in range(len(alignment_layer_list)):
@@ -234,7 +258,7 @@ class ZoomPanWidget(QWidget):
                 alignment_layer_list[i].unload()
 
             # Load a new image as needed
-            if alignment_layer_list[alignment_layer_index].pixmap == None:
+            if not alignment_layer_list[alignment_layer_index].isLoaded():
               alignment_layer_list[alignment_layer_index].load()
 
             self.update()
@@ -266,7 +290,14 @@ class ZoomPanWidget(QWidget):
             print_debug ( 50, "Painting layer " + str(alignment_layer_index) )
             if len(alignment_layer_list) > 0:
               if (alignment_layer_index >= 0) and (alignment_layer_index < len(alignment_layer_list)):
-                pixmap = alignment_layer_list[alignment_layer_index].pixmap
+
+                pixmap = None
+                for layer_image in alignment_layer_list[alignment_layer_index].image_list:
+                  if layer_image.role == self.role:
+                    pixmap = layer_image.pixmap
+
+
+                # pixmap = alignment_layer_list[alignment_layer_index].pixmap
                 if pixmap != None:
                     painter.scale ( self.zoom_scale, self.zoom_scale )
                     painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
@@ -298,8 +329,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PySide2 Image Viewer")
 
         self.panel_list = []
-        self.panel_list.append ( ZoomPanWidget(parent=self, fname=fname) )
-        self.panel_list.append ( ZoomPanWidget(parent=self, fname=fname) )
+        self.panel_list.append ( ZoomPanWidget(role='1', parent=self, fname=fname) )
+        # self.panel_list.append ( ZoomPanWidget(role='2', parent=self, fname=fname) )
 
         self.image_hbox = QWidget()
         self.image_hbox_layout = QHBoxLayout()
@@ -321,6 +352,11 @@ class MainWindow(QMainWindow):
               [ '&Images',
                 [
                   [ '&Import...', None, self.import_images, None, None, None ],
+                  [ '&Import into',
+                    [
+                      [ 'New Role',  None, self.import_images_new_role, None, None, None ],
+                    ]
+                  ],
                   [ '-', None, None, None, None, None ],
                   [ 'Center', None, self.not_yet, None, None, None ],
                   [ 'Actual Size', None, self.not_yet, None, None, None ],
@@ -507,6 +543,10 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         global preloading_range
 
+        global next_role_number
+
+        print_debug ( 5, "  Importing images for role: " + str(next_role_number) )
+
         options = QFileDialog.Options()
         if False:  # self.native.isChecked():
             options |= QFileDialog.DontUseNativeDialog
@@ -524,18 +564,54 @@ class MainWindow(QMainWindow):
                 p.update()
 
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
-            this_file_index = len(alignment_layer_list)
+            print_debug ( 20, "" )
             for f in file_name_list:
-              alignment_layer_list.append ( ImageLayer ( f, load_now=(abs(this_file_index-alignment_layer_index)<preloading_range) ) )
-              this_file_index += 1
+              # Find next layer with an empty role matching the requested next_role_number
+              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(next_role_number) )
+              found_layer = None
+              this_layer_index = 0
+              for alignment_layer in alignment_layer_list:
+                role_taken = False
+                for image in alignment_layer.image_list:
+                  print_debug ( 10, "Checking image role of " + image.role + " against next_role_number of " + str(next_role_number) )
+                  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                  if image.role == str(next_role_number):
+                    role_taken = True
+                    break
+                print_debug ( 10, "Searched layer and role_taken = " + str(role_taken) )
+                if not role_taken:
+                  # Add the image here at this layer
+                  found_layer = alignment_layer
+                  break
+                this_layer_index += 1
+              if found_layer:
+                # Add the image/role to the found layer
+                print_debug ( 10, "Adding to layer " + str(this_layer_index) )
+                found_layer.image_list.append ( AnnotatedImage ( str(next_role_number), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+              else:
+                # Add a new layer for the image
+                print_debug ( 10, "Creating a new layer at " + str(this_layer_index) )
+                alignment_layer_list.append ( DisplayLayer ( f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+
 
             # Draw the panels ("windows")
             for p in self.panel_list:
                 p.force_center = True
                 p.update()
 
-        if len(alignment_layer_list) > 0:
-            self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+        #if len(alignment_layer_list) > 0:
+        #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+
+
+    @Slot()
+    def import_images_new_role(self, checked):
+        global next_role_number
+        next_role_number += 1
+        self.import_images ( checked )
+        self.panel_list.append ( ZoomPanWidget(role=str(next_role_number), parent=self, fname=fname) )
+        self.image_hbox_layout.addWidget ( self.panel_list[-1] )
+        #self.image_hbox.setLayout(self.image_hbox_layout)
+
 
     @Slot()
     def remove_this_layer(self, checked):
