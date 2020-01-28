@@ -91,13 +91,13 @@ class AnnotatedImage:
         if not found:
           image_library.remove_image_reference ( self.image_file_name )
 
-next_role_number = 1
+import_role_number = 1
 
 class DisplayLayer:
     def __init__ ( self, file_name, load_now=False ):
-        global next_role_number
+        global import_role_number
         self.image_list = []
-        self.image_list.append ( AnnotatedImage ( str(next_role_number), file_name, load_now ) )
+        self.image_list.append ( AnnotatedImage ( str(import_role_number), file_name, load_now ) )
 
     def isLoaded ( self ):
         for im in self.image_list:
@@ -258,8 +258,9 @@ class ZoomPanWidget(QWidget):
                 alignment_layer_list[i].unload()
 
             # Load a new image as needed
-            if not alignment_layer_list[alignment_layer_index].isLoaded():
-              alignment_layer_list[alignment_layer_index].load()
+            if len(alignment_layer_list) > 0:
+              if not alignment_layer_list[alignment_layer_index].isLoaded():
+                alignment_layer_list[alignment_layer_index].load()
 
             self.update()
 
@@ -330,7 +331,6 @@ class MainWindow(QMainWindow):
 
         self.panel_list = []
         self.panel_list.append ( ZoomPanWidget(role='1', parent=self, fname=fname) )
-        # self.panel_list.append ( ZoomPanWidget(role='2', parent=self, fname=fname) )
 
         self.image_hbox = QWidget()
         self.image_hbox_layout = QHBoxLayout()
@@ -355,6 +355,7 @@ class MainWindow(QMainWindow):
                   [ '&Import into',
                     [
                       [ 'New Role',  None, self.import_images_new_role, None, None, None ],
+                      [ 'Selected Role',  None, self.import_images_selected_role, None, None, None ]
                     ]
                   ],
                   [ '-', None, None, None, None, None ],
@@ -543,9 +544,9 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         global preloading_range
 
-        global next_role_number
+        global import_role_number
 
-        print_debug ( 5, "  Importing images for role: " + str(next_role_number) )
+        print_debug ( 5, "  Importing images for role: " + str(import_role_number) )
 
         options = QFileDialog.Options()
         if False:  # self.native.isChecked():
@@ -566,16 +567,16 @@ class MainWindow(QMainWindow):
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
             print_debug ( 20, "" )
             for f in file_name_list:
-              # Find next layer with an empty role matching the requested next_role_number
-              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(next_role_number) )
+              # Find next layer with an empty role matching the requested import_role_number
+              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(import_role_number) )
               found_layer = None
               this_layer_index = 0
               for alignment_layer in alignment_layer_list:
                 role_taken = False
                 for image in alignment_layer.image_list:
-                  print_debug ( 10, "Checking image role of " + image.role + " against next_role_number of " + str(next_role_number) )
+                  print_debug ( 10, "Checking image role of " + image.role + " against import_role_number of " + str(import_role_number) )
                   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                  if image.role == str(next_role_number):
+                  if image.role == str(import_role_number):
                     role_taken = True
                     break
                 print_debug ( 10, "Searched layer and role_taken = " + str(role_taken) )
@@ -587,17 +588,18 @@ class MainWindow(QMainWindow):
               if found_layer:
                 # Add the image/role to the found layer
                 print_debug ( 10, "Adding to layer " + str(this_layer_index) )
-                found_layer.image_list.append ( AnnotatedImage ( str(next_role_number), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+                found_layer.image_list.append ( AnnotatedImage ( str(import_role_number), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
               else:
                 # Add a new layer for the image
                 print_debug ( 10, "Creating a new layer at " + str(this_layer_index) )
                 alignment_layer_list.append ( DisplayLayer ( f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
 
-
             # Draw the panels ("windows")
             for p in self.panel_list:
                 p.force_center = True
                 p.update()
+
+        self.update()
 
         #if len(alignment_layer_list) > 0:
         #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
@@ -605,13 +607,19 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def import_images_new_role(self, checked):
-        global next_role_number
-        next_role_number += 1
+        global import_role_number
+        import_role_number += 1
         self.import_images ( checked )
-        self.panel_list.append ( ZoomPanWidget(role=str(next_role_number), parent=self, fname=fname) )
+        self.panel_list.append ( ZoomPanWidget(role=str(import_role_number), parent=self, fname=fname) )
         self.image_hbox_layout.addWidget ( self.panel_list[-1] )
-        #self.image_hbox.setLayout(self.image_hbox_layout)
 
+    @Slot()
+    def import_images_selected_role(self, checked):
+        global import_role_number
+        input_val, ok = QInputDialog().getInt ( None, "Enter Role Number", "Role Number:", import_role_number )
+        if ok:
+          import_role_number = input_val
+          self.import_images ( checked )
 
     @Slot()
     def remove_this_layer(self, checked):
@@ -627,10 +635,15 @@ class MainWindow(QMainWindow):
     def remove_all_layers(self, checked):
         global alignment_layer_list
         global alignment_layer_index
+        global main_window
+        global import_role_number
         alignment_layer_index = 0
         alignment_layer_list = []
-        for p in self.panel_list:
-            p.update()
+        for w in main_window.panel_list:
+            main_window.image_hbox_layout.removeWidget(w)
+        main_window.panel_list = []
+        import_role_number = 1
+        self.update()
 
 
     @Slot()
