@@ -1,4 +1,5 @@
 import sys
+import os
 import argparse
 import cv2
 
@@ -6,7 +7,6 @@ from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxL
 from PySide2.QtWidgets import QAction, QActionGroup, QSizePolicy, QFileDialog, QInputDialog
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
-#from PySide2.QtCore import ArrowCursor, WaitCursor
 
 app = None
 debug_level = 20
@@ -23,16 +23,43 @@ def print_debug ( level, str ):
   if level <= debug_level:
     print ( str )
 
+class ImageLibrary:
+
+    def __init__ ( self ):
+        self.images = {}
+
+    def get_image_reference ( self, file_path ):
+        image_ref = None
+        real_norm_path = os.path.realpath(os.path.normpath(file_path))
+        if real_norm_path in self.images:
+            image_ref = self.images[real_norm_path]
+        else:
+            print_debug ( 10, "Loading image: \"" + real_norm_path + "\"" )
+            self.images[real_norm_path] = QPixmap(real_norm_path)
+            image_ref = self.images[real_norm_path]
+        return ( image_ref )
+
+    def remove_image_reference ( self, file_path ):
+        image_ref = None
+        real_norm_path = os.path.realpath(os.path.normpath(file_path))
+        if real_norm_path in self.images:
+            print_debug ( 10, "Unloading image: \"" + real_norm_path + "\"" )
+            image_ref = self.images.pop(real_norm_path)
+        return ( image_ref )
+
+image_library = ImageLibrary()
 
 class ImageLayer:
     def __init__ ( self, file_name, load_now=False ):
-        self.image_file_name = file_name
+        self.image_file_name = os.path.realpath(os.path.normpath(file_name))
         self.image_size = None
         self.pixmap = None
         if load_now:
           self.load()
+
     def load ( self ):
         global max_image_file_size
+        global image_library
         if self.image_file_name != None:
           if len(self.image_file_name) > 0:
             if self.image_size == None:
@@ -43,13 +70,25 @@ class ImageLayer:
               f.close()
             if self.image_size <= max_image_file_size:
               app.setOverrideCursor(Qt.WaitCursor)
-              print_debug ( 10, "Loading image: \"" + self.image_file_name + "\"" )
-              self.pixmap = QPixmap(self.image_file_name)
+              ##print_debug ( 10, "Loading image: \"" + self.image_file_name + "\"" )
+              ##self.pixmap = QPixmap(self.image_file_name)
+              self.pixmap = image_library.get_image_reference(self.image_file_name)
               app.restoreOverrideCursor()
             else:
               print_debug ( 10, "Skipping image: \"" + self.image_file_name + "\" (" + str(self.image_size) + " > " + str(max_image_file_size) + ")" )
+
     def unload ( self ):
+        global alignment_layer_list
+        global image_library
         self.pixmap = None
+        found = False
+        for alignment_layer in alignment_layer_list:
+          if alignment_layer.image_file_name == self.image_file_name:
+            if alignment_layer != self:
+              found = True
+              break
+        if not found:
+          image_library.remove_image_reference ( self.image_file_name )
 
 
 class ZoomPanWidget(QWidget):
@@ -84,13 +123,15 @@ class ZoomPanWidget(QWidget):
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def update ( self ):
-        # Call the QWidget's "update" function for this panel
+        # The update will be called on a particular ZoomPanWidget (this "self")
+        # Call the super "update" function for this panel's QWidget (this "self")
         super(ZoomPanWidget, self).update()
+        # Call the super "update" functions for the other panels' QWidgets
         if self.parent.panel_list != None:
-            # Call the QWidget's "update" functions for other panels
             for p in self.parent.panel_list:
                 if p != self:
                     super(ZoomPanWidget, p).update()
+
 
     def image_x ( self, win_x ):
         img_x = (win_x/self.zoom_scale) - self.ldx
@@ -187,14 +228,14 @@ class ZoomPanWidget(QWidget):
                   alignment_layer_index = 0
               main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
-            # Load a new image as needed
-            if alignment_layer_list[alignment_layer_index].pixmap == None:
-              alignment_layer_list[alignment_layer_index].load()
-
-            # Unload other images no longer needed
+            # Unload images no longer needed
             for i in range(len(alignment_layer_list)):
               if abs(i-alignment_layer_index) >= preloading_range:
                 alignment_layer_list[i].unload()
+
+            # Load a new image as needed
+            if alignment_layer_list[alignment_layer_index].pixmap == None:
+              alignment_layer_list[alignment_layer_index].load()
 
             self.update()
 
@@ -261,10 +302,10 @@ class MainWindow(QMainWindow):
         self.panel_list.append ( ZoomPanWidget(parent=self, fname=fname) )
 
         self.image_hbox = QWidget()
-        hbox_layout = QHBoxLayout()
+        self.image_hbox_layout = QHBoxLayout()
         for p in self.panel_list:
-            hbox_layout.addWidget ( p )
-        self.image_hbox.setLayout(hbox_layout)
+            self.image_hbox_layout.addWidget ( p )
+        self.image_hbox.setLayout(self.image_hbox_layout)
 
         # Menu Bar
         self.action_groups = {}
@@ -489,9 +530,8 @@ class MainWindow(QMainWindow):
               this_file_index += 1
 
             # Draw the panels ("windows")
-            #self.panel_list[0].force_center = True
-            #self.panel_list[0].queue_draw()
             for p in self.panel_list:
+                p.force_center = True
                 p.update()
 
         if len(alignment_layer_list) > 0:
