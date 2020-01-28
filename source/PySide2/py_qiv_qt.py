@@ -2,7 +2,7 @@ import sys
 import argparse
 import cv2
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout
 from PySide2.QtWidgets import QAction, QActionGroup, QSizePolicy, QFileDialog, QInputDialog
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
@@ -22,6 +22,7 @@ def print_debug ( level, str ):
   global debug_level
   if level <= debug_level:
     print ( str )
+
 
 class ImageLayer:
     def __init__ ( self, file_name, load_now=False ):
@@ -50,12 +51,15 @@ class ImageLayer:
     def unload ( self ):
         self.pixmap = None
 
+
 class ZoomPanWidget(QWidget):
     def __init__(self, parent=None, fname=None):
         super(ZoomPanWidget, self).__init__(parent)
 
         global alignment_layer_list
         global alignment_layer_index
+
+        self.parent = parent
 
         if fname != None:
           alignment_layer_list.append ( ImageLayer ( fname, load_now=True ) )
@@ -78,6 +82,15 @@ class ZoomPanWidget(QWidget):
 
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    def update ( self ):
+        # Call the QWidget's "update" function for this panel
+        super(ZoomPanWidget, self).update()
+        if self.parent.panel_list != None:
+            # Call the QWidget's "update" functions for other panels
+            for p in self.parent.panel_list:
+                if p != self:
+                    super(ZoomPanWidget, p).update()
 
     def image_x ( self, win_x ):
         img_x = (win_x/self.zoom_scale) - self.ldx
@@ -201,6 +214,7 @@ class ZoomPanWidget(QWidget):
 
         self.update()
 
+
     def paintEvent(self, event):
         global alignment_layer_list
         global alignment_layer_index
@@ -242,7 +256,15 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.setWindowTitle("PySide2 Image Viewer")
 
-        self.zpa = ZoomPanWidget(fname=fname)
+        self.panel_list = []
+        self.panel_list.append ( ZoomPanWidget(parent=self, fname=fname) )
+        self.panel_list.append ( ZoomPanWidget(parent=self, fname=fname) )
+
+        self.image_hbox = QWidget()
+        hbox_layout = QHBoxLayout()
+        for p in self.panel_list:
+            hbox_layout.addWidget ( p )
+        self.image_hbox.setLayout(hbox_layout)
 
         # Menu Bar
         self.action_groups = {}
@@ -322,7 +344,7 @@ class MainWindow(QMainWindow):
         self.setMinimumWidth(1400)
         self.setMinimumHeight(1024)
 
-        self.setCentralWidget(self.zpa)
+        self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def build_menu_from_list (self, parent, menu_list):
@@ -423,8 +445,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def toggle_border(self, checked):
         print_debug ( 90, "toggle_border called with checked = " + str(checked) )
-        self.zpa.draw_border = checked
-        self.zpa.update()
+        for p in self.panel_list:
+            p.draw_border = checked
+            p.update()
 
 
     @Slot()
@@ -455,7 +478,9 @@ class MainWindow(QMainWindow):
         if file_name_list != None:
           if len(file_name_list) > 0:
 
-            self.zpa.update() # Attempt to hide the file dialog before opening ...
+            # Attempt to hide the file dialog before opening ...
+            for p in self.panel_list:
+                p.update()
 
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
             this_file_index = len(alignment_layer_list)
@@ -464,9 +489,10 @@ class MainWindow(QMainWindow):
               this_file_index += 1
 
             # Draw the panels ("windows")
-            #self.zpa.force_center = True
-            #self.zpa.queue_draw()
-            self.zpa.update()
+            #self.panel_list[0].force_center = True
+            #self.panel_list[0].queue_draw()
+            for p in self.panel_list:
+                p.update()
 
         if len(alignment_layer_list) > 0:
             self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
@@ -478,7 +504,8 @@ class MainWindow(QMainWindow):
         alignment_layer_list = alignment_layer_list[0:alignment_layer_index] + alignment_layer_list[alignment_layer_index+1:]
         if alignment_layer_index > 0:
           alignment_layer_index += -1
-        self.zpa.update()
+        for p in self.panel_list:
+            p.update()
 
     @Slot()
     def remove_all_layers(self, checked):
@@ -486,7 +513,8 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         alignment_layer_index = 0
         alignment_layer_list = []
-        self.zpa.update()
+        for p in self.panel_list:
+            p.update()
 
 
     @Slot()
