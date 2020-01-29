@@ -26,7 +26,8 @@ def print_debug ( level, str ):
   if level <= debug_level:
     print ( str )
 
-global_swiftir_mode = 'python'   # Either 'python' or 'c'
+#global_swiftir_mode = 'python'   # Either 'python' or 'c'
+global_swiftir_mode = 'c'   # Either 'python' or 'c'
 global_do_swims = True
 global_do_cfms = True
 global_gen_imgs = True
@@ -67,7 +68,7 @@ def prefix_lines ( i, s ):
 
 class alignment_process:
 
-  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, init_affine_matrix = None, cumulative_afm=None, x_bias=0.0, y_bias=0.0):
+  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, init_affine_matrix = None, x_bias=0.0, y_bias=0.0, cumulative_afm=None):
     self.recipe = None
     self.im_sta_fn = im_sta_fn
     self.im_mov_fn = im_mov_fn
@@ -93,10 +94,7 @@ class alignment_process:
       self.init_affine_matrix = swiftir.identityAffine()
     else:
       self.init_affine_matrix = init_affine_matrix
-    if type(cumulative_afm) == type(None):
-      self.cumulative_afm = swiftir.identityAffine()
-    else:
-      self.cumulative_afm = cumulative_afm
+    self.cumulative_afm = swiftir.identityAffine()
 
   def __str__(self):
     s = "alignment_process: \n"
@@ -109,18 +107,18 @@ class alignment_process:
       s += "  rec:\n" + prefix_lines('    ', str(self.recipe)) + "\n"
     return s
 
-  def align(self):
+  def align(self,c_afm,save=True):
 
     atrm = self.layer_dict['align_to_ref_method']
     if atrm['selected_method']=='Auto Swim Align':
-      result = self.auto_swim_align()
+      result = self.auto_swim_align(c_afm,save=save)
     elif atrm['selected_method']=='Match Point Align':
-      result = self.auto_swim_align()
+      result = self.auto_swim_align(c_afm,save=save)
 
     return result
 
-
-  def auto_swim_align(self):
+  
+  def auto_swim_align(self,c_afm,save=True):
 
     print_debug ( 50, "\n\n\n" )
     print_debug ( 20, "********************************" )
@@ -133,6 +131,8 @@ class alignment_process:
 
     # window size scale factor
     wsf = 0.75
+#    wsf = 0.80
+#    wsf = 1.0
 
     # Set up 1x1 point and window
     pa = np.zeros((2,1))                # Point Array for one point
@@ -169,8 +169,8 @@ class alignment_process:
       for y in range(ny):
         pa[0, x + nx*y] = int(0.5*s + s*x)
         pa[1, x + nx*y] = int(0.5*s + s*y)
-#    s_4x4 = int(wsf*s)
-    s_4x4 = int(s)
+    s_4x4 = int(wsf*s)
+#    s_4x4 = int(s)
     psta_4x4 = pa
 
     # Set up a window size for match point alignment (1/32 of x dimension)
@@ -215,16 +215,51 @@ class alignment_process:
 
     self.recipe.execute()
 
+    self.setCafm(c_afm,bias_mat=None)
+
+    '''
     self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,self.cumulative_afm)
     self.cumulative_afm[0,2] -= self.x_bias
     self.cumulative_afm[1,2] -= self.y_bias
+    '''
 
-    # Generate and save the new image based on the cumulative AFM
+    if save:
+      self.saveAligned()
+
+    '''
     im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
     ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
     swiftir.saveImage(im_aligned,ofn)
+    '''
 
-    return (self.cumulative_afm, self.recipe)
+    return self.cumulative_afm
+
+
+  def setCafm(self,c_afm,bias_mat=None):
+    self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,c_afm)
+    '''
+    # Previous method for applying trans bias
+    self.cumulative_afm[0,2] -= self.x_bias
+    self.cumulative_afm[1,2] -= self.y_bias
+    '''
+    # Apply bias_mat if given
+    if type(bias_mat) != type(None):
+      self.cumulative_afm = swiftir.composeAffine(bias_mat,self.cumulative_afm)
+
+    return self.cumulative_afm
+
+
+  def saveAligned(self, rect=None, apodize=False, grayBorder=False):
+
+      im_mov = swiftir.loadImage(self.im_mov_fn)
+      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
+#      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
+      ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
+      if apodize:
+        im_apo = swiftir.apodize2(im_aligned, wfrac=1/3.)
+        swiftir.saveImage(im_apo,ofn)
+      else:
+        swiftir.saveImage(im_aligned,ofn)
 
 
 
@@ -265,7 +300,7 @@ class align_recipe:
 
 # Universal class for alignment ingredients of recipes
 class align_ingredient:
-
+ 
   # Constructor for ingredient of a recipe
   # Ingredients come in 3 main types where the type is determined by value of align_mode
   #   1) If align_mode is 'match_point_align' then this is a Matching Point ingredient
@@ -275,7 +310,7 @@ class align_ingredient:
   #        and corresponding windows (pmov) are contructed from psta and projected onto im_mov
   #        from which image matching is performed to estimate or refine the afm.
   #        If psta contains only one point then the estimated afm will be a translation matrix
-  #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
+  #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the 
   #        supplied afm matrix but do not refine the afm matrix
   def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
 
@@ -290,9 +325,11 @@ class align_ingredient:
     self.psta = psta
     self.pmov = pmov
     self.wht = wht
+#    self.wht = -0.3
     self.iters = iters
     self.align_mode = align_mode
     self.snr = None
+    self.threshold = (3.5,200,200)
 
     global global_swiftir_mode
     self.swiftir_mode = global_swiftir_mode
@@ -420,7 +457,6 @@ class align_ingredient:
 
     print_debug ( 10, "" )
 
-    # This "swim" command calculates deltas for each of the swim_arg_string lines.
     o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
 
     swim_out_lines = o['out'].strip().split('\n')
@@ -451,7 +487,6 @@ class align_ingredient:
 
     # print_debug ( 50, "mir_script: " + mir_script )
 
-    # This "mir" command combines the deltas into a single affine matrix - No images are produced
     o = run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
     mir_out_lines = o['out'].strip().split('\n')
@@ -494,7 +529,7 @@ class align_ingredient:
     if self.align_mode == 'check_align':
       self.snr = snr_list
 
-    return ( self.afm )
+    return self.afm
 
 
 
@@ -508,13 +543,14 @@ class align_ingredient:
     if global_do_cfms: print ( "Doing cfms" )
     if global_gen_imgs: print ( "Generating images" )
 
+
     # If ww==None then this is a Matching Point ingredient of a recipe
     # Calculate afm directly using psta and pmov as the matching points
     if self.align_mode == 'match_point_align':
       (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
       self.ww = (0.0, 0.0)
       self.snr = np.zeros(len(self.psta[0]))
-      return(self.afm)
+      return self.afm
 
     #  Otherwise, this is a swim window match ingredient
     #  Refine the afm via swim and mir
@@ -553,7 +589,7 @@ class align_ingredient:
       print_debug ( 50, "Entering the command line debugger:" )
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    return(self.afm)
+    return self.afm
 
 
 
