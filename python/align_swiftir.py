@@ -26,8 +26,8 @@ def print_debug ( level, str ):
   if level <= debug_level:
     print ( str )
 
-#global_swiftir_mode = 'python'   # Either 'python' or 'c'
-global_swiftir_mode = 'c'   # Either 'python' or 'c'
+global_swiftir_mode = 'python'   # Either 'python' or 'c'
+#global_swiftir_mode = 'c'   # Either 'python' or 'c'
 global_do_swims = True
 global_do_cfms = True
 global_gen_imgs = True
