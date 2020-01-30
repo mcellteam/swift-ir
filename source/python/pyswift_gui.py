@@ -2484,10 +2484,15 @@ def run_alignment_callback ( align_all ):
         shutil.copyfile ( alignment_layer_list[i].base_image_name, os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
         # Create a new identity transform for this layer even though it's not otherwise needed
+#        alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+#                                                                               scale_dest_path, layer_dict=layer_dict,
+#                                                                               x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+#                                                                               cumulative_afm=None )
+        # Create a new identity transform for this layer even though it's not otherwise needed
+        # Like above commented code but do not pass cumulative_afm arg
         alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
                                                                                scale_dest_path, layer_dict=layer_dict,
-                                                                               x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                               cumulative_afm=None )
+                                                                               x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy)
 
         alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
         #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -2515,7 +2520,7 @@ def run_alignment_callback ( align_all ):
           print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative affine matrix." )
           return
 
-        prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
+        c_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
 
         print_debug ( 20, "\n" )
         print_debug ( 10, "\nAligning: i=" + str(i) + " to j=" + str(j) )
@@ -2524,7 +2529,7 @@ def run_alignment_callback ( align_all ):
         alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
                                                                                scale_dest_path, layer_dict=layer_dict,
                                                                                x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                               cumulative_afm=prev_afm )
+                                                                               cumulative_afm=c_afm )
         print_debug ( 70, "\nBefore alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
 
@@ -2538,7 +2543,7 @@ def run_alignment_callback ( align_all ):
         #     im_mov = swiftir.loadImage(self.im_mov_fn)
         #     swiftir.saveImage(im_aligned,ofn)
 
-        alignment_layer_list[j].align_proc.align()
+        alignment_layer_list[j].align_proc.align(c_afm)
 
         print_debug ( 70, "\nAfter alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
