@@ -322,11 +322,11 @@ class ZoomPanWidget(QWidget):
                 # pixmap = alignment_layer_list[alignment_layer_index].pixmap
                 if pixmap != None:
                     painter.scale ( self.zoom_scale, self.zoom_scale )
-                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
                     if self.draw_border:
                         # Draw an optional border around the image
-                        painter.setPen(QPen(QColor(255, 255, 255, 255),1))
-                        painter.drawRect ( QRectF ( self.ldx+self.dx-1, self.ldy+self.dy-1, pixmap.width()+2, pixmap.height()+2 ) )
+                        painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                        painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
@@ -348,7 +348,9 @@ class MainWindow(QMainWindow):
 
     def init_panels (self):
         self.panel_list = []
-        self.panel_list.append ( ZoomPanWidget(role='1', parent=self, fname=fname) )
+        zpw = ZoomPanWidget(role='1', parent=self, fname=fname)
+        zpw.draw_border = self.draw_border
+        self.panel_list.append ( zpw )
 
         self.image_hbox = QWidget()
         self.image_hbox.setStyleSheet("background-color:black;")
@@ -362,6 +364,8 @@ class MainWindow(QMainWindow):
 
         QMainWindow.__init__(self)
         self.setWindowTitle("PySide2 Image Viewer")
+
+        self.draw_border = False
 
         self.init_panels()
 
@@ -551,8 +555,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def toggle_border(self, checked):
         print_debug ( 90, "toggle_border called with checked = " + str(checked) )
+        self.draw_border = checked
         for p in self.panel_list:
-            p.draw_border = checked
+            p.draw_border = self.draw_border
             p.update()
 
 
@@ -638,7 +643,9 @@ class MainWindow(QMainWindow):
         global import_role_number
         import_role_number += 1
         self.import_images ( checked )
-        self.panel_list.append ( ZoomPanWidget(role=str(import_role_number), parent=self, fname=fname) )
+        zpw = ZoomPanWidget(role=str(import_role_number), parent=self, fname=fname)
+        zpw.draw_border = self.draw_border
+        self.panel_list.append ( zpw )
         self.image_hbox_layout.addWidget ( self.panel_list[-1] )
 
     @Slot()
