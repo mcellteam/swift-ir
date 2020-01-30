@@ -373,6 +373,9 @@ class ControlPanelWidget(QWidget):
                       item_widget.setAlignment(Qt.AlignHCenter)
                   elif type(item) == type([]):
                       item_widget = QPushButton ( str(item[0]) )
+                  elif isinstance(item, CallbackButton):
+                      item_widget = QPushButton ( str(item.button_text) )
+                      item_widget.clicked.connect ( item.button_callback )
                   else:
                       item_widget = QLineEdit ( str(item) )
                       item_widget.setAlignment(Qt.AlignHCenter)
@@ -383,6 +386,13 @@ class ControlPanelWidget(QWidget):
         #self.control_panel_layout.addWidget ( QLabel ( "Control Panel Line 2" ) )
 
 
+class CallbackButton:
+    def __init__ ( self, button_text, button_callback ):
+        self.button_text = button_text
+        self.button_callback = button_callback
+
+def align_forward():
+    print ( "Aligning Forward ..." )
 
 
 # MainWindow contains the Menu Bar and the Status Bar
@@ -429,7 +439,7 @@ class MainWindow(QMainWindow):
               # Items
               ['Align All'],
               "      ",
-              ['Align Forward'],
+              CallbackButton('Align Forward', align_forward),
               "      ",
               "# Forward", 1
             ] # End fourth row
@@ -863,6 +873,23 @@ class MainWindow(QMainWindow):
     def py_console(self, checked):
         print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+def run_app(file_name=None):
+    global fname
+    global app
+    global main_window
+
+    fname = file_name
+
+    # Qt Application
+    app = QApplication(sys.argv)
+
+    main_window = MainWindow(fname)
+    # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
+
+    main_window.show()
+    sys.exit(app.exec_())
 
 
 # This provides default command line parameters if none are given (as with "Idle")
