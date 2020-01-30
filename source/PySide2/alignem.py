@@ -27,7 +27,7 @@ else:
 import swift_project
 
 
-debug_level = 20
+debug_level = 10
 def print_debug ( level, str ):
   global debug_level
   if level <= debug_level:
@@ -378,7 +378,13 @@ class MainWindow(QMainWindow):
         ml = [
               [ '&File',
                 [
-                  [ '&Import Images...', None, self.import_images, None, None, None ],
+                  [ '&New Project', 'Ctrl+N', self.not_yet, None, None, None ],
+                  [ '&Open Project', 'Ctrl+O', self.not_yet, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.not_yet, None, None, None ],
+                  [ 'Save Project &As', 'Ctrl+A', self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Set Destination...', None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
                   [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
                 ]
               ],
@@ -401,6 +407,36 @@ class MainWindow(QMainWindow):
                   [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
                 ]
               ],
+              [ '&Scaling',
+                [
+                  [ '&Define Scales', None, self.not_yet, None, None, None ],
+                  [ '&Generate All Scales', None, self.not_yet, None, None, None ],
+                  [ '&Import All Scales', None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ '&Generate Tiled', None, self.not_yet, False, None, None ],
+                  [ '&Import Tiled', None, self.not_yet, False, None, None ],
+                  [ '&Show Tiled', None, self.not_yet, False, None, None ]
+                ]
+              ],
+              [ '&Scales',
+                [
+                  [ '&Scale 1', None, self.not_yet, True, "Scales", None ]
+                ]
+              ],
+              [ '&Points',
+                [
+                  [ '&Alignment Point Mode', None, self.not_yet, False, None, None ],
+                  [ '&Delete Points', None, self.not_yet, False, None, None ],
+                  [ '&Clear All Alignment Points', None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ '&Point Cursor',
+                    [
+                      [ 'Crosshair', None, self.not_yet, True, "Cursor", None ],
+                      [ 'Target', None, self.not_yet, False, "Cursor", None ]
+                    ]
+                  ]
+                ]
+              ],
               [ '&Set',
                 [
                   [ '&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None ],
@@ -409,7 +445,27 @@ class MainWindow(QMainWindow):
                   #[ '-', None, None, None, None, None ],
                   [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Show Border', None, self.toggle_border, False, None, None ]
+                  [ 'Show Border', None, self.toggle_border, False, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Perform Swims', None, self.not_yet, True, None, None ],
+                  [ 'Update CFMs', None, self.not_yet, True, None, None ],
+                  [ 'Generate Images', None, self.not_yet, True, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Use C Version', None, self.not_yet, False, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Default Plot Code', None, self.not_yet, None, None, None ],
+                  [ 'Custom Plot Code', None, self.not_yet, None, None, None ]
+                ]
+              ],
+              [ '&Show',
+                [
+                  [ 'Window Centers', None, self.not_yet, False, None, None ],
+                  [ 'Affines', None, self.not_yet, False, None, None ],
+                  [ 'Skipped Images', None, self.not_yet, True, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Plot', None, self.not_yet, None, None, None ]
                 ]
               ],
               [ '&Debug',
@@ -418,11 +474,24 @@ class MainWindow(QMainWindow):
                   [ '-', None, None, None, None, None ],
                   [ 'Print Structures', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
+                  [ 'Print Affine',     None, self.not_yet, None, None, None ],
+                  [ 'Print Structures', None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Define Waves', None, self.not_yet, None, None, None ],
+                  [ 'Make Waves',   None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Define Grid', None, self.not_yet, None, None, None ],
+                  [ 'Grid Align',  None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Show Waves',      None, self.not_yet, False, "GridMode", None ],
+                  [ 'Show Grid Align', None, self.not_yet, False, "GridMode", None ],
+                  [ 'Show Aligned',    None, self.not_yet, True,  "GridMode", None ],
+                  [ '-', None, None, None, None, None ],
                   [ '&Set Debug Level',
                     [
                       [ 'Level 0',   None, self.set_debug_level, False, "DebugLevel", 0 ],
-                      [ 'Level 10',  None, self.set_debug_level, False, "DebugLevel", 10 ],
-                      [ 'Level 20',  None, self.set_debug_level, True,  "DebugLevel", 20 ],
+                      [ 'Level 10',  None, self.set_debug_level, True,  "DebugLevel", 10 ],
+                      [ 'Level 20',  None, self.set_debug_level, False, "DebugLevel", 20 ],
                       [ 'Level 30',  None, self.set_debug_level, False, "DebugLevel", 30 ],
                       [ 'Level 40',  None, self.set_debug_level, False, "DebugLevel", 40 ],
                       [ 'Level 50',  None, self.set_debug_level, False, "DebugLevel", 50 ],
@@ -437,7 +506,7 @@ class MainWindow(QMainWindow):
               ],
               [ '&Help',
                 [
-                  [ 'Manual...', None, self.not_yet, None, None, None ],
+                  [ 'About...', None, self.not_yet, None, None, None ],
                 ]
               ]
             ]
