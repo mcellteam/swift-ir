@@ -420,17 +420,17 @@ class MainWindow(QMainWindow):
                   [ '-', None, None, None, None, None ],
                   [ '&Set Debug Level',
                     [
-                      [ 'Level 0',   None, self.set_debug_level_0,   False, "DebugLevel", None ],
-                      [ 'Level 10',  None, self.set_debug_level_10,  False, "DebugLevel", None ],
-                      [ 'Level 20',  None, self.set_debug_level_20,  True,  "DebugLevel", None ],
-                      [ 'Level 30',  None, self.set_debug_level_30,  False, "DebugLevel", None ],
-                      [ 'Level 40',  None, self.set_debug_level_40,  False, "DebugLevel", None ],
-                      [ 'Level 50',  None, self.set_debug_level_50,  False, "DebugLevel", None ],
-                      [ 'Level 60',  None, self.set_debug_level_60,  False, "DebugLevel", None ],
-                      [ 'Level 70',  None, self.set_debug_level_70,  False, "DebugLevel", None ],
-                      [ 'Level 80',  None, self.set_debug_level_80,  False, "DebugLevel", None ],
-                      [ 'Level 90',  None, self.set_debug_level_90,  False, "DebugLevel", None ],
-                      [ 'Level 100', None, self.set_debug_level_100, False, "DebugLevel", None ]
+                      [ 'Level 0',   None, self.set_debug_level, False, "DebugLevel", 0 ],
+                      [ 'Level 10',  None, self.set_debug_level, False, "DebugLevel", 10 ],
+                      [ 'Level 20',  None, self.set_debug_level, True,  "DebugLevel", 20 ],
+                      [ 'Level 30',  None, self.set_debug_level, False, "DebugLevel", 30 ],
+                      [ 'Level 40',  None, self.set_debug_level, False, "DebugLevel", 40 ],
+                      [ 'Level 50',  None, self.set_debug_level, False, "DebugLevel", 50 ],
+                      [ 'Level 60',  None, self.set_debug_level, False, "DebugLevel", 60 ],
+                      [ 'Level 70',  None, self.set_debug_level, False, "DebugLevel", 70 ],
+                      [ 'Level 80',  None, self.set_debug_level, False, "DebugLevel", 80 ],
+                      [ 'Level 90',  None, self.set_debug_level, False, "DebugLevel", 90 ],
+                      [ 'Level 100', None, self.set_debug_level, False, "DebugLevel", 100 ]
                     ]
                   ]
                 ]
@@ -496,62 +496,22 @@ class MainWindow(QMainWindow):
               if item[4] != None:
                 self.action_groups[item[4]].addAction(action)
 
-              #if item[0] == "Show Border":
-              #  action.setCheckable(True)
               parent.addAction ( action )
 
     @Slot()
     def not_yet(self, checked):
         print ( "Function is not implemented yet" )
 
-    def set_debug_level(self, value):
+    @Slot()
+    def set_debug_level(self, checked):
         global debug_level
-        print ( "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
-        debug_level = value
-
-    @Slot()
-    def set_debug_level_0(self, checked):
-        self.set_debug_level(0)
-
-    @Slot()
-    def set_debug_level_10(self, checked):
-        self.set_debug_level(10)
-
-    @Slot()
-    def set_debug_level_20(self, checked):
-        self.set_debug_level(20)
-
-    @Slot()
-    def set_debug_level_30(self, checked):
-        self.set_debug_level(30)
-
-    @Slot()
-    def set_debug_level_40(self, checked):
-        self.set_debug_level(40)
-
-    @Slot()
-    def set_debug_level_50(self, checked):
-        self.set_debug_level(50)
-
-    @Slot()
-    def set_debug_level_60(self, checked):
-        self.set_debug_level(60)
-
-    @Slot()
-    def set_debug_level_70(self, checked):
-        self.set_debug_level(70)
-
-    @Slot()
-    def set_debug_level_80(self, checked):
-        self.set_debug_level(80)
-
-    @Slot()
-    def set_debug_level_90(self, checked):
-        self.set_debug_level(90)
-
-    @Slot()
-    def set_debug_level_100(self, checked):
-        self.set_debug_level(100)
+        action_text = self.sender().text()
+        try:
+            value = int(action_text.split(' ')[1])
+            print ( "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
+            debug_level = value
+        except:
+            print ( "Invalid debug value in: \"" + str(action_text) )
 
 
     @Slot()
