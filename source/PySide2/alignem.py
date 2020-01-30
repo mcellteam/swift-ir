@@ -140,6 +140,8 @@ class ZoomPanWidget(QWidget):
         super(ZoomPanWidget, self).__init__(parent)
         self.role = role
 
+        # This seems to be ignored here: self.setStyleSheet("background-color:green;")
+
         global alignment_layer_list
         global alignment_layer_index
 
@@ -164,7 +166,7 @@ class ZoomPanWidget(QWidget):
 
         self.draw_border = False
 
-        self.setBackgroundRole(QPalette.Base)
+        # self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def update ( self ):
@@ -363,7 +365,7 @@ class MainWindow(QMainWindow):
     def __init__(self, fname):
 
         QMainWindow.__init__(self)
-        self.setWindowTitle("PySide2 Image Viewer")
+        self.setWindowTitle("Align EM")
 
         self.draw_border = False
 
