@@ -3,8 +3,8 @@ import os
 import argparse
 import cv2
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout
-from PySide2.QtWidgets import QAction, QActionGroup, QSizePolicy, QFileDialog, QInputDialog, QLineEdit
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
+from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -370,9 +370,12 @@ class ControlPanelWidget(QWidget):
                   item_widget = None
                   if type(item) == type('a'):
                       item_widget = QLabel ( str(item) )
+                      item_widget.setAlignment(Qt.AlignHCenter)
+                  elif type(item) == type([]):
+                      item_widget = QPushButton ( str(item[0]) )
                   else:
                       item_widget = QLineEdit ( str(item) )
-                  item_widget.setAlignment(Qt.AlignHCenter)
+                      item_widget.setAlignment(Qt.AlignHCenter)
                   row_box_layout.addWidget ( item_widget )
               self.control_panel_layout.addWidget ( row_box )
 
@@ -421,7 +424,15 @@ class MainWindow(QMainWindow):
               "e: ", 1110,
               "      ",
               "f: ", 1111
-            ] # End third row
+            ], # End third row
+            [ # Begin fourth row
+              # Items
+              ['Align All'],
+              "      ",
+              ['Align Forward'],
+              "      ",
+              "# Forward", 1
+            ] # End fourth row
           ] # End first pane
         ]
 
