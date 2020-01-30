@@ -3,8 +3,8 @@ import os
 import argparse
 import cv2
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout
-from PySide2.QtWidgets import QAction, QActionGroup, QSizePolicy, QFileDialog, QInputDialog
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout
+from PySide2.QtWidgets import QAction, QActionGroup, QSizePolicy, QFileDialog, QInputDialog, QLineEdit
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -345,6 +345,43 @@ class ZoomPanWidget(QWidget):
                                 -diameter / 2, diameter, diameter))
 
 
+
+class ControlPanelWidget(QWidget):
+
+    def __init__(self, control_model=None):
+        super(ControlPanelWidget, self).__init__()
+        self.cm = control_model
+        #self.control_panel = QWidget()
+        self.control_panel_layout = QVBoxLayout()
+        self.setLayout(self.control_panel_layout)
+
+        if self.cm != None:
+            # Only show the first pane for now
+            rows = control_model[0]
+            print ( "Pane contains " + str(len(rows)) + " rows" )
+
+            for row in rows:
+              row_box = QWidget()
+              row_box_layout = QHBoxLayout()
+              row_box.setLayout ( row_box_layout )
+              print ( "Row contains " + str(len(row)) + " items" )
+              for item in row:
+                  print ( "  Item is " + str(item) )
+                  item_widget = None
+                  if type(item) == type('a'):
+                      item_widget = QLabel ( str(item) )
+                  else:
+                      item_widget = QLineEdit ( str(item) )
+                  item_widget.setAlignment(Qt.AlignHCenter)
+                  row_box_layout.addWidget ( item_widget )
+              self.control_panel_layout.addWidget ( row_box )
+
+        #self.control_panel_layout.addWidget ( QLabel ( "Control Panel Line 1" ) )
+        #self.control_panel_layout.addWidget ( QLabel ( "Control Panel Line 2" ) )
+
+
+
+
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
@@ -354,13 +391,60 @@ class MainWindow(QMainWindow):
         zpw.draw_border = self.draw_border
         self.panel_list.append ( zpw )
 
+        self.control_model = [
+          # Panes
+          [ # Begin first pane
+            # Rows
+            [ # Begin first row
+              # Items
+              "File Name: junk.txt",  # A string by itself is just a label
+              "Layer: 5"  # A string by itself is just a label
+            ], # End first row
+            [ # Begin second row
+              # Items
+              "X:",  1.1,
+              "      ",
+              "Y: ", 2.2,
+              "      ",
+              "Z: ", 3.3
+            ], # End second row
+            [ # Begin third row
+              # Items
+              "a: ", 1010,
+              "      ",
+              "b: ", 1011,
+              "      ",
+              "c: ", 1100,
+              "      ",
+              "d: ", 1101,
+              "      ",
+              "e: ", 1110,
+              "      ",
+              "f: ", 1111
+            ] # End third row
+          ] # End first pane
+        ]
+
+        self.control_panel = ControlPanelWidget(self.control_model)
+
         self.image_hbox = QWidget()
         self.image_hbox.setStyleSheet("background-color:black;")
         self.image_hbox_layout = QHBoxLayout()
         for p in self.panel_list:
             self.image_hbox_layout.addWidget ( p )
         self.image_hbox.setLayout(self.image_hbox_layout)
-        self.setCentralWidget(self.image_hbox)
+
+        self.main_panel = QWidget()
+        self.main_panel_layout = QVBoxLayout()
+        self.main_panel.setLayout ( self.main_panel_layout )
+
+        self.main_panel_layout.addWidget ( self.image_hbox )
+        self.main_panel_layout.addWidget ( self.control_panel )
+
+
+        self.setCentralWidget(self.main_panel)
+
+
 
     def __init__(self, fname):
 
@@ -399,7 +483,7 @@ class MainWindow(QMainWindow):
                   ],
                   [ '-', None, None, None, None, None ],
                   [ 'Center', None, self.not_yet, None, None, None ],
-                  [ 'Actual Size', None, self.not_yet, None, None, None ],
+                  [ 'Actual Size', None, self.actual_size, None, None, None ],
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
@@ -515,7 +599,7 @@ class MainWindow(QMainWindow):
         # Status Bar
         self.status = self.statusBar()
         if fname == None:
-          self.status.showMessage("")
+          self.status.showMessage("No Status Yet ...")
         else:
           self.status.showMessage("File: "+fname)
 
@@ -525,7 +609,7 @@ class MainWindow(QMainWindow):
         self.setMinimumWidth(1400)
         self.setMinimumHeight(1024)
 
-        self.setCentralWidget(self.image_hbox)
+        # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def build_menu_from_list (self, parent, menu_list):
@@ -581,6 +665,17 @@ class MainWindow(QMainWindow):
             debug_level = value
         except:
             print ( "Invalid debug value in: \"" + str(action_text) )
+
+
+    @Slot()
+    def actual_size(self, checked):
+        print_debug ( 90, "Setting images to actual size" )
+        for p in self.panel_list:
+            p.dx = p.mdx = p.ldx = 0
+            p.dy = p.mdy = p.ldy = 0
+            p.wheel_index = 0
+            p.zoom_scale = 1.0
+            p.update()
 
 
     @Slot()
