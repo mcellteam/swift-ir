@@ -324,11 +324,7 @@ class ZoomPanWidget(QWidget):
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
-    def __init__(self, fname):
-
-        QMainWindow.__init__(self)
-        self.setWindowTitle("PySide2 Image Viewer")
-
+    def init_panels (self):
         self.panel_list = []
         self.panel_list.append ( ZoomPanWidget(role='1', parent=self, fname=fname) )
 
@@ -337,6 +333,25 @@ class MainWindow(QMainWindow):
         for p in self.panel_list:
             self.image_hbox_layout.addWidget ( p )
         self.image_hbox.setLayout(self.image_hbox_layout)
+        self.setCentralWidget(self.image_hbox)
+
+    def __init__(self, fname):
+
+        QMainWindow.__init__(self)
+        self.setWindowTitle("PySide2 Image Viewer")
+
+        self.init_panels()
+
+        '''
+        self.panel_list = []
+        self.panel_list.append ( ZoomPanWidget(role='1', parent=self, fname=fname) )
+
+        self.image_hbox = QWidget()
+        self.image_hbox_layout = QHBoxLayout()
+        for p in self.panel_list:
+            self.image_hbox_layout.addWidget ( p )
+        self.image_hbox.setLayout(self.image_hbox_layout)
+        '''
 
         # Menu Bar
         self.action_groups = {}
@@ -364,7 +379,8 @@ class MainWindow(QMainWindow):
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
-                  [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ]
+                  # [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
+                  [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
                 ]
               ],
               [ '&Set',
@@ -641,8 +657,25 @@ class MainWindow(QMainWindow):
         alignment_layer_list = []
         for w in main_window.panel_list:
             main_window.image_hbox_layout.removeWidget(w)
+            w.destroy()
         main_window.panel_list = []
         import_role_number = 1
+        self.update()
+
+    @Slot()
+    def remove_all_panels(self, checked):
+        global alignment_layer_list
+        global alignment_layer_index
+        global main_window
+        global import_role_number
+        alignment_layer_index = 0
+        alignment_layer_list = []
+        for w in main_window.panel_list:
+            main_window.image_hbox_layout.removeWidget(w)
+            w.destroy()
+        main_window.panel_list = []
+        import_role_number = 1
+        self.init_panels()
         self.update()
 
 
