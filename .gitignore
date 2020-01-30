@@ -10,6 +10,7 @@ source/*.txt
 source/*.json
 source/*.sh
 tests/*
+data/*
 *.tar
 *.class
 iavg
