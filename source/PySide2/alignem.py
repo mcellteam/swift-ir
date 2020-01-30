@@ -257,7 +257,7 @@ class ZoomPanWidget(QWidget):
         kmods = event.modifiers()
         if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
             # Unshifted Scroll Wheel moves through layers
-            layer_delta = event.delta()/120
+            layer_delta = int(event.delta()/120)
 
             print_debug ( 50, "Wheel Event: Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
             if len(alignment_layer_list) <= 0:
@@ -735,7 +735,7 @@ class MainWindow(QMainWindow):
 #    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
 if __name__ == "__main__":
-    global app
+    # global app  # global isn't needed here ... because the "if" doesn't create a new scope (unlike many other languages)
 
     options = argparse.ArgumentParser()
     options.add_argument("-f", "--file", type=str, required=False)
