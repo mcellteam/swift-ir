@@ -325,6 +325,7 @@ class ZoomPanWidget(QWidget):
                     painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
                     if self.draw_border:
                         # Draw an optional border around the image
+                        painter.setPen(QPen(QColor(255, 255, 255, 255),1))
                         painter.drawRect ( QRectF ( self.ldx+self.dx-1, self.ldy+self.dy-1, pixmap.width()+2, pixmap.height()+2 ) )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
@@ -350,6 +351,7 @@ class MainWindow(QMainWindow):
         self.panel_list.append ( ZoomPanWidget(role='1', parent=self, fname=fname) )
 
         self.image_hbox = QWidget()
+        self.image_hbox.setStyleSheet("background-color:black;")
         self.image_hbox_layout = QHBoxLayout()
         for p in self.panel_list:
             self.image_hbox_layout.addWidget ( p )
@@ -362,17 +364,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("PySide2 Image Viewer")
 
         self.init_panels()
-
-        '''
-        self.panel_list = []
-        self.panel_list.append ( ZoomPanWidget(role='1', parent=self, fname=fname) )
-
-        self.image_hbox = QWidget()
-        self.image_hbox_layout = QHBoxLayout()
-        for p in self.panel_list:
-            self.image_hbox_layout.addWidget ( p )
-        self.image_hbox.setLayout(self.image_hbox_layout)
-        '''
 
         # Menu Bar
         self.action_groups = {}
