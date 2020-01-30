@@ -324,20 +324,27 @@ def extractTransformedWindow(img, xy=None, tfm=None, siz=512):
     return cv2.warpAffine(img, afm, siz,
                           flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR)
 
-def affineImage(afm, img, rect=None):
+def affineImage(afm, img, rect=None, grayBorder=False ):
     '''AFFINEIMAGE - Apply an affine transformation to an image
     res = AFFINEIMAGE(afm, img) returns an image the same size of IMG
     looking up pixels in the original using affine transformation.
     res = AFFINEIMAGE(afm, img, rect), where rect is an (x0,y0,w,h)-tuple
-    as from MODELBOUNDS, returns the given rectangle of model space.'''
+    as from MODELBOUNDS, returns the given rectangle of model space.
+    If grayBorder is True, set the image border color to the mean image value'''
+    if grayBorder:
+      border = img.mean()
+    else:
+      border = 0
     if rect is None:
         return cv2.warpAffine(img, afm, (img.shape[1],img.shape[0]),
-                              flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR)
+                              flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR,
+                              borderValue=border)
     else:
         p1 = applyAffine(afm, (0,0))
         p2 = applyAffine(afm, (rect[0], rect[1]))
         return cv2.warpAffine(img, shiftAffine(afm, p2-p1), (rect[2], rect[3]),
-                              flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR)
+                              flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR,
+                              borderValue=border)
     
 def modelBounds(afm, img):
     '''MODELBOUNDS - Returns image bounding rectangle in model space
@@ -348,6 +355,21 @@ def modelBounds(afm, img):
     p0 = np.floor(applyAffine(inv, [0,0])).astype('int32')
     p1 = np.ceil(applyAffine(inv, img.shape)).astype('int32')
     return (p0[0], p0[1], p1[0], p1[1])
+
+def modelBounds2(afm, siz):
+    '''MODELBOUNDS - Returns a bounding rectangle in model space
+    (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
+    of an input rectangle (siz) in model space if pixel lookup is through affine
+    transform AFM.'''
+    inv = invertAffine(afm)
+    w, h = si_unpackSize(siz)
+    c = [applyAffine(inv, [0, 0])]
+    c = np.append(c,[applyAffine(inv, [w, 0])],axis=0)
+    c = np.append(c,[applyAffine(inv, [0, h])],axis=0)
+    c = np.append(c,[applyAffine(inv, [w, h])],axis=0)
+    c_min = [np.floor(c[:,0].min()).astype('int32'), np.floor(c[:,1].min()).astype('int32')]
+    c_max = [np.ceil(c[:,0].max()).astype('int32'), np.ceil(c[:,1].max()).astype('int32')]
+    return np.array([c_min, c_max])
 
 def apodize(img):
     '''APODIZE - Multiplies a windowing function into an image
@@ -377,6 +399,33 @@ def apodize(img):
         apo = ww.reshape(ny, 1) * vv.reshape(1, nx)
         apo0 = 1 - apo
     return apo * img + apo0 * gray
+
+def apodize2(img, wfrac=0.25):
+    '''APODIZE - Multiplies a windowing function into an image
+    APODIZE(img) multiplies the outer 1/3 of the image with a cosine
+    fadeout to gray. Alignment improves drastically if at least one
+    of the images is apodized. Often it is not necessary to do both.'''
+    global apo_2
+    global apo0_2
+    gray = np.mean(img)
+    if type(apo_2)==np.ndarray and np.all(img.shape==apo_2.shape):
+        # Use old apodization window
+        pass
+    else:
+        nx = img.shape[1]
+        ny = img.shape[0]
+        bx = int(nx*wfrac)
+        fadex = 0.5 - 0.5*(np.cos(np.linspace(0, np.pi, bx)))
+        vv = np.append(np.append(fadex,np.ones((nx-2*bx),dtype='float32')),np.flip(fadex))
+        if ny==nx:
+            ww = vv
+        else:
+            by = int(ny*wfrac)
+            fadey = 0.5 - 0.5*(np.cos(np.linspace(0, np.pi, by)))
+            ww = np.append(np.append(fadey,np.ones((ny-2*by),dtype='float32')),np.flip(fadey))
+        apo_2 = ww.reshape(ny, 1) * vv.reshape(1, nx)
+        apo0_2 = 1 - apo_2
+    return apo_2 * img + apo0_2 * gray
 
 def fft(img):
     '''FFT - Discrete Fourier Transform
