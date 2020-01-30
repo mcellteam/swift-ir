@@ -1,4 +1,5 @@
-source/META-INF
+Cross_Platform/*
+Image_Libs/*
 source/*.jpg
 source/*.JPG
 source/*.tif
@@ -9,6 +10,7 @@ source/*.mir
 source/*.txt
 source/*.json
 source/*.sh
+versions/*
 tests/*
 data/*
 *.tar
