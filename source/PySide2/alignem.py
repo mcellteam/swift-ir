@@ -5,6 +5,7 @@ import cv2
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
+from PySide2.QtWidgets import QMenu
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -112,13 +113,14 @@ class AnnotatedImage:
         if not found:
           image_library.remove_image_reference ( self.image_file_name )
 
-import_role_number = 1
+import_role_name = "src"
+global_panel_roles=['ref','src','aligned']
 
 class DisplayLayer:
     def __init__ ( self, file_name, load_now=False ):
-        global import_role_number
+        global import_role_name
         self.image_list = []
-        self.image_list.append ( AnnotatedImage ( str(import_role_number), file_name, load_now ) )
+        self.image_list.append ( AnnotatedImage ( str(import_role_name), file_name, load_now ) )
 
     def isLoaded ( self ):
         for im in self.image_list:
@@ -439,15 +441,18 @@ def align_forward():
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
+    def __init__(self, fname=None, panel_roles=None, control_model=None):
 
-    def __init__(self, fname=None, control_model=None):
-
+        global global_panel_roles
         global app
         if app == None:
                 app = QApplication()
 
         QMainWindow.__init__(self)
         self.setWindowTitle("Align EM")
+
+        if panel_roles != None:
+            global_panel_roles = panel_roles
 
         self.draw_border = False
 
@@ -472,7 +477,8 @@ class MainWindow(QMainWindow):
               ],
               [ '&Images',
                 [
-                  [ '&Import...', None, self.import_images, None, None, None ],
+                  #[ '&Import...', None, self.import_images, None, None, None ],
+                  [ 'Define Roles', None, self.define_roles, None, None, None ],
                   [ '&Import into',
                     [
                       [ 'New Role',  None, self.import_images_new_role, None, None, None ],
@@ -616,9 +622,12 @@ class MainWindow(QMainWindow):
 
     def init_panels (self, cm=None, fname=None):
         self.panel_list = []
-        zpw = ZoomPanWidget(role='1', parent=self, fname=fname)
-        zpw.draw_border = self.draw_border
-        self.panel_list.append ( zpw )
+        global global_panel_roles
+        if global_panel_roles != None:
+          for r in global_panel_roles:
+            zpw = ZoomPanWidget(role=r, parent=self, fname=fname)
+            zpw.draw_border = self.draw_border
+            self.panel_list.append ( zpw )
 
         self.control_model = cm
 
@@ -778,9 +787,9 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         global preloading_range
 
-        global import_role_number
+        global import_role_name
 
-        print_debug ( 5, "  Importing images for role: " + str(import_role_number) )
+        print_debug ( 5, "  Importing images for role: " + str(import_role_name) )
 
         options = QFileDialog.Options()
         if False:  # self.native.isChecked():
@@ -801,16 +810,16 @@ class MainWindow(QMainWindow):
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
             print_debug ( 20, "" )
             for f in file_name_list:
-              # Find next layer with an empty role matching the requested import_role_number
-              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(import_role_number) )
+              # Find next layer with an empty role matching the requested import_role_name
+              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(import_role_name) )
               found_layer = None
               this_layer_index = 0
               for alignment_layer in alignment_layer_list:
                 role_taken = False
                 for image in alignment_layer.image_list:
-                  print_debug ( 10, "Checking image role of " + image.role + " against import_role_number of " + str(import_role_number) )
+                  print_debug ( 10, "Checking image role of " + image.role + " against import_role_name of " + str(import_role_name) )
                   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                  if image.role == str(import_role_number):
+                  if image.role == str(import_role_name):
                     role_taken = True
                     break
                 print_debug ( 10, "Searched layer and role_taken = " + str(role_taken) )
@@ -822,7 +831,7 @@ class MainWindow(QMainWindow):
               if found_layer:
                 # Add the image/role to the found layer
                 print_debug ( 10, "Adding to layer " + str(this_layer_index) )
-                found_layer.image_list.append ( AnnotatedImage ( str(import_role_number), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+                found_layer.image_list.append ( AnnotatedImage ( str(import_role_name), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
               else:
                 # Add a new layer for the image
                 print_debug ( 10, "Creating a new layer at " + str(this_layer_index) )
@@ -840,21 +849,80 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
+    def define_roles(self, checked):
+        global global_panel_roles
+        input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
+        input_val = input_val.strip()
+        if len(input_val) > 0:
+          roles = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
+          if len(roles) > 0:
+            # Save these roles
+            global_panel_roles = roles
+            # Remove all the image panels (to be replaced)
+            self.remove_all_panels(None)
+            # Create the new panels
+            for role in roles:
+              zpw = ZoomPanWidget(role=role, parent=self, fname=None)
+              zpw.draw_border = self.draw_border
+              self.panel_list.append ( zpw )
+              self.image_hbox_layout.addWidget ( self.panel_list[-1] )
+            # Set the Roles menu with these newly defined roles
+            roles_menu = None
+            mb = self.menuBar()
+            if not (mb is None):
+              for m in mb.children():
+                if type(m) == QMenu:
+                  text_label = ''.join(m.title().split('&'))
+                  if 'Images' in text_label:
+                    print ( "Found Images Menu" )
+                    for mm in m.children():
+                      if type(mm) == QMenu:
+                        text_label = ''.join(mm.title().split('&'))
+                        if 'Import into' in text_label:
+                          print ( "Found Import Into Menu" )
+                          # Remove all the old actions:
+                          while len(mm.actions()) > 0:
+                            mm.removeAction(mm.actions()[-1])
+                          # Add the new actions
+                          first = True
+                          for role in roles:
+                            item = QAction ( role, self )
+                            item.setCheckable(True)
+                            item.setChecked(first)
+                            mm.addAction(item)
+                            first = False
+
+                          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    @Slot()
     def import_images_new_role(self, checked):
-        global import_role_number
-        import_role_number += 1
+        print ( "Roles must be defined first" )
+
+    '''
+        global import_role_name
+        import_role_name += 1
         self.import_images ( checked )
-        zpw = ZoomPanWidget(role=str(import_role_number), parent=self, fname=fname)
+        zpw = ZoomPanWidget(role=str(import_role_name), parent=self, fname=fname)
         zpw.draw_border = self.draw_border
         self.panel_list.append ( zpw )
         self.image_hbox_layout.addWidget ( self.panel_list[-1] )
 
     @Slot()
+    def import_images_new_role(self, checked):
+        global import_role_name
+        import_role_name += 1
+        self.import_images ( checked )
+        zpw = ZoomPanWidget(role=str(import_role_name), parent=self, fname=fname)
+        zpw.draw_border = self.draw_border
+        self.panel_list.append ( zpw )
+        self.image_hbox_layout.addWidget ( self.panel_list[-1] )
+    '''
+
+    @Slot()
     def import_images_selected_role(self, checked):
-        global import_role_number
-        input_val, ok = QInputDialog().getInt ( None, "Enter Role Number", "Role Number:", import_role_number )
+        global import_role_name
+        input_val, ok = QInputDialog().getText ( None, "Select Role", "Choose: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
         if ok:
-          import_role_number = input_val
+          import_role_name = input_val
           self.import_images ( checked )
 
     @Slot()
@@ -872,14 +940,14 @@ class MainWindow(QMainWindow):
         global alignment_layer_list
         global alignment_layer_index
         global main_window
-        global import_role_number
+        global import_role_name
         alignment_layer_index = 0
         alignment_layer_list = []
         for w in main_window.panel_list:
             main_window.image_hbox_layout.removeWidget(w)
             w.destroy()
         main_window.panel_list = []
-        import_role_number = 1
+        import_role_name = 1
         self.update()
 
     @Slot()
@@ -887,14 +955,14 @@ class MainWindow(QMainWindow):
         global alignment_layer_list
         global alignment_layer_index
         global main_window
-        global import_role_number
+        global import_role_name
         alignment_layer_index = 0
         alignment_layer_list = []
         for w in main_window.panel_list:
             main_window.image_hbox_layout.removeWidget(w)
             w.destroy()
         main_window.panel_list = []
-        import_role_number = 1
+        import_role_name = 1
         self.init_panels()
         self.update()
 
