@@ -176,8 +176,11 @@ class ZoomPanWidget(QWidget):
         # Call the super "update" function for this panel's QWidget (this "self")
         super(ZoomPanWidget, self).update()
         # Call the super "update" functions for the other panels' QWidgets (their "panel")
+        print ( "Update called, calling siblings" )
         if self.parent.panel_list != None:
+            print ( "  Hava a parent list" )
             for panel in self.parent.panel_list:
+                print ( "    Hava a sibling" )
                 if panel != self:
                     super(ZoomPanWidget, panel).update()
 
@@ -624,6 +627,7 @@ class MainWindow(QMainWindow):
         self.panel_list = []
         global global_panel_roles
         if global_panel_roles != None:
+          self.remove_all_panels(None)
           for r in global_panel_roles:
             zpw = ZoomPanWidget(role=r, parent=self, fname=fname)
             zpw.draw_border = self.draw_border
@@ -848,51 +852,61 @@ class MainWindow(QMainWindow):
         #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
 
+    def set_roles (self, roles_list):
+      global global_panel_roles
+      if len(roles_list) > 0:
+        # Save these roles
+        global_panel_roles = roles_list
+        # Remove all the image panels (to be replaced)
+        self.remove_all_panels(None)
+        # Create the new panels
+        for role in roles_list:
+          zpw = ZoomPanWidget(role=role, parent=self, fname=None)
+          zpw.draw_border = self.draw_border
+          self.panel_list.append ( zpw )
+          self.image_hbox_layout.addWidget ( self.panel_list[-1] )
+        # Set the Roles menu with these newly defined roles
+        roles_menu = None
+        mb = self.menuBar()
+        if not (mb is None):
+          for m in mb.children():
+            if type(m) == QMenu:
+              text_label = ''.join(m.title().split('&'))
+              if 'Images' in text_label:
+                print ( "Found Images Menu" )
+                for mm in m.children():
+                  if type(mm) == QMenu:
+                    text_label = ''.join(mm.title().split('&'))
+                    if 'Import into' in text_label:
+                      print ( "Found Import Into Menu" )
+                      # Remove all the old actions:
+                      while len(mm.actions()) > 0:
+                        mm.removeAction(mm.actions()[-1])
+                      # Add the new actions
+                      first = True
+                      for role in roles_list:
+                        item = QAction ( role, self )
+                        #item.setCheckable(True)
+                        #item.setChecked(first)
+                        item.triggered.connect ( self.import_into_role )
+                        mm.addAction(item)
+                        first = False
+
     @Slot()
     def define_roles(self, checked):
         global global_panel_roles
         input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
         input_val = input_val.strip()
         if len(input_val) > 0:
-          roles = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          if len(roles) > 0:
-            # Save these roles
-            global_panel_roles = roles
-            # Remove all the image panels (to be replaced)
-            self.remove_all_panels(None)
-            # Create the new panels
-            for role in roles:
-              zpw = ZoomPanWidget(role=role, parent=self, fname=None)
-              zpw.draw_border = self.draw_border
-              self.panel_list.append ( zpw )
-              self.image_hbox_layout.addWidget ( self.panel_list[-1] )
-            # Set the Roles menu with these newly defined roles
-            roles_menu = None
-            mb = self.menuBar()
-            if not (mb is None):
-              for m in mb.children():
-                if type(m) == QMenu:
-                  text_label = ''.join(m.title().split('&'))
-                  if 'Images' in text_label:
-                    print ( "Found Images Menu" )
-                    for mm in m.children():
-                      if type(mm) == QMenu:
-                        text_label = ''.join(mm.title().split('&'))
-                        if 'Import into' in text_label:
-                          print ( "Found Import Into Menu" )
-                          # Remove all the old actions:
-                          while len(mm.actions()) > 0:
-                            mm.removeAction(mm.actions()[-1])
-                          # Add the new actions
-                          first = True
-                          for role in roles:
-                            item = QAction ( role, self )
-                            item.setCheckable(True)
-                            item.setChecked(first)
-                            mm.addAction(item)
-                            first = False
+          roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
+          self.set_roles ( roles_list )
 
-                          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    @Slot()
+    def import_into_role(self, checked):
+        global import_role_name
+        import_role_name = str ( self.sender().text() )
+        self.import_images ( checked )
+
     @Slot()
     def import_images_new_role(self, checked):
         print ( "Roles must be defined first" )
@@ -958,12 +972,13 @@ class MainWindow(QMainWindow):
         global import_role_name
         alignment_layer_index = 0
         alignment_layer_list = []
-        for w in main_window.panel_list:
-            main_window.image_hbox_layout.removeWidget(w)
-            w.destroy()
-        main_window.panel_list = []
+        if main_window != None:
+          for w in main_window.panel_list:
+              main_window.image_hbox_layout.removeWidget(w)
+              w.destroy()
+          main_window.panel_list = []
         import_role_name = 1
-        self.init_panels()
+        #self.init_panels()
         self.update()
 
 
