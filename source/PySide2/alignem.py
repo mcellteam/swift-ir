@@ -398,83 +398,19 @@ def align_forward():
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
-    def init_panels (self):
-        self.panel_list = []
-        zpw = ZoomPanWidget(role='1', parent=self, fname=fname)
-        zpw.draw_border = self.draw_border
-        self.panel_list.append ( zpw )
 
-        self.control_model = [
-          # Panes
-          [ # Begin first pane
-            # Rows
-            [ # Begin first row
-              # Items
-              "File Name: junk.txt",  # A string by itself is just a label
-              "Layer: 5"  # A string by itself is just a label
-            ], # End first row
-            [ # Begin second row
-              # Items
-              "X:",  1.1,
-              "      ",
-              "Y: ", 2.2,
-              "      ",
-              "Z: ", 3.3
-            ], # End second row
-            [ # Begin third row
-              # Items
-              "a: ", 1010,
-              "      ",
-              "b: ", 1011,
-              "      ",
-              "c: ", 1100,
-              "      ",
-              "d: ", 1101,
-              "      ",
-              "e: ", 1110,
-              "      ",
-              "f: ", 1111
-            ], # End third row
-            [ # Begin fourth row
-              # Items
-              ['Align All'],
-              "      ",
-              CallbackButton('Align Forward', align_forward),
-              "      ",
-              "# Forward", 1
-            ] # End fourth row
-          ] # End first pane
-        ]
+    def __init__(self, fname=None, control_model=None):
 
-        self.control_panel = ControlPanelWidget(self.control_model)
-
-        self.image_hbox = QWidget()
-        self.image_hbox.setStyleSheet("background-color:black;")
-        self.image_hbox_layout = QHBoxLayout()
-        for p in self.panel_list:
-            self.image_hbox_layout.addWidget ( p )
-        self.image_hbox.setLayout(self.image_hbox_layout)
-
-        self.main_panel = QWidget()
-        self.main_panel_layout = QVBoxLayout()
-        self.main_panel.setLayout ( self.main_panel_layout )
-
-        self.main_panel_layout.addWidget ( self.image_hbox )
-        self.main_panel_layout.addWidget ( self.control_panel )
-
-
-        self.setCentralWidget(self.main_panel)
-
-
-
-    def __init__(self, fname):
+        global app
+        if app == None:
+                app = QApplication()
 
         QMainWindow.__init__(self)
         self.setWindowTitle("Align EM")
 
         self.draw_border = False
 
-        self.init_panels()
+        self.init_panels(cm=control_model)
 
         # Menu Bar
         self.action_groups = {}
@@ -622,7 +558,8 @@ class MainWindow(QMainWindow):
         if fname == None:
           self.status.showMessage("No Status Yet ...")
         else:
-          self.status.showMessage("File: "+fname)
+          # self.status.showMessage("File: "+fname)
+          self.status.showMessage("File: unknown")
 
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
@@ -632,6 +569,82 @@ class MainWindow(QMainWindow):
 
         # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+
+
+    def init_panels (self, cm=None, fname=None):
+        self.panel_list = []
+        zpw = ZoomPanWidget(role='1', parent=self, fname=fname)
+        zpw.draw_border = self.draw_border
+        self.panel_list.append ( zpw )
+
+        self.control_model = cm
+
+        if self.control_model == None:
+          # Use the default control model
+          self.control_model = [
+            # Panes
+            [ # Begin first pane
+              # Rows
+              [ # Begin first row
+                # Items
+                "File Name: junk.txt",  # A string by itself is just a label
+                "Layer: 5"  # A string by itself is just a label
+              ], # End first row
+              [ # Begin second row
+                # Items
+                "X:",  1.1,
+                "      ",
+                "Y: ", 2.2,
+                "      ",
+                "Z: ", 3.3
+              ], # End second row
+              [ # Begin third row
+                # Items
+                "a: ", 1010,
+                "      ",
+                "b: ", 1011,
+                "      ",
+                "c: ", 1100,
+                "      ",
+                "d: ", 1101,
+                "      ",
+                "e: ", 1110,
+                "      ",
+                "f: ", 1111
+              ], # End third row
+              [ # Begin fourth row
+                # Items
+                ['Align All'],
+                "      ",
+                CallbackButton('Align Forward', align_forward),
+                "      ",
+                "# Forward", 1
+              ] # End fourth row
+            ] # End first pane
+          ]
+
+        self.control_panel = ControlPanelWidget(self.control_model)
+
+        self.image_hbox = QWidget()
+        self.image_hbox.setStyleSheet("background-color:black;")
+        self.image_hbox_layout = QHBoxLayout()
+        for p in self.panel_list:
+            self.image_hbox_layout.addWidget ( p )
+        self.image_hbox.setLayout(self.image_hbox_layout)
+
+        self.main_panel = QWidget()
+        self.main_panel_layout = QVBoxLayout()
+        self.main_panel.setLayout ( self.main_panel_layout )
+
+        self.main_panel_layout.addWidget ( self.image_hbox )
+        self.main_panel_layout.addWidget ( self.control_panel )
+
+
+        self.setCentralWidget(self.main_panel)
+
+
 
     def build_menu_from_list (self, parent, menu_list):
         # Get the group names first
@@ -875,17 +888,21 @@ class MainWindow(QMainWindow):
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-def run_app(file_name=None):
-    global fname
+def run_app(main_win=None, file_name=None):
     global app
+    global fname
     global main_window
 
     fname = file_name
 
     # Qt Application
-    app = QApplication(sys.argv)
+    # app = QApplication(sys.argv)
 
-    main_window = MainWindow(fname)
+    if main_win == None:
+        main_window = MainWindow(fname)
+    else:
+        main_window = main_win
+
     # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
 
     main_window.show()
