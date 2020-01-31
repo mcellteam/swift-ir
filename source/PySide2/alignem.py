@@ -4,7 +4,7 @@ import argparse
 import cv2
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
-from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton
+from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -367,29 +367,70 @@ class ControlPanelWidget(QWidget):
               print ( "Row contains " + str(len(row)) + " items" )
               for item in row:
                   print ( "  Item is " + str(item) )
-                  item_widget = None
                   if type(item) == type('a'):
                       item_widget = QLabel ( str(item) )
                       item_widget.setAlignment(Qt.AlignHCenter)
+                      row_box_layout.addWidget ( item_widget )
                   elif type(item) == type([]):
                       item_widget = QPushButton ( str(item[0]) )
+                      row_box_layout.addWidget ( item_widget )
+
+                  elif isinstance(item, BoolField):
+                      val_widget = ( QCheckBox ( str(item.text) ) )
+                      row_box_layout.addWidget ( val_widget )
+                  elif isinstance(item, IntField):
+                      if item.text != None:
+                          row_box_layout.addWidget ( QLabel ( str(item.text) ) )
+                      val_widget = ( QLineEdit ( str(item.value) ) )
+                      val_widget.setAlignment(Qt.AlignHCenter)
+                      row_box_layout.addWidget ( val_widget )
+                  elif isinstance(item, FloatField):
+                      if item.text != None:
+                          row_box_layout.addWidget ( QLabel ( str(item.text) ) )
+                      val_widget = ( QLineEdit ( str(item.value) ) )
+                      val_widget.setAlignment(Qt.AlignHCenter)
+                      row_box_layout.addWidget ( val_widget )
                   elif isinstance(item, CallbackButton):
-                      item_widget = QPushButton ( str(item.button_text) )
-                      item_widget.clicked.connect ( item.button_callback )
+                      item_widget = QPushButton ( str(item.text) )
+                      item_widget.clicked.connect ( item.callback )
+                      row_box_layout.addWidget ( item_widget )
                   else:
                       item_widget = QLineEdit ( str(item) )
                       item_widget.setAlignment(Qt.AlignHCenter)
-                  row_box_layout.addWidget ( item_widget )
+                      row_box_layout.addWidget ( item_widget )
               self.control_panel_layout.addWidget ( row_box )
 
         #self.control_panel_layout.addWidget ( QLabel ( "Control Panel Line 1" ) )
         #self.control_panel_layout.addWidget ( QLabel ( "Control Panel Line 2" ) )
 
+class GenericWidget:
+    def __init__ ( self, text ):
+        self.text = text
 
-class CallbackButton:
-    def __init__ ( self, button_text, button_callback ):
-        self.button_text = button_text
-        self.button_callback = button_callback
+class GenericField(GenericWidget):
+    def __init__ ( self, text, value ):
+        #super(None,self).__init__(text)
+        #super(GenericField,self).__init__(text)
+        self.text = text  # Should be handled by super, but fails in Python2
+        self.value = value
+
+class TextField(GenericField):
+    pass
+
+class BoolField(GenericField):
+    pass
+
+class IntField(GenericField):
+    pass
+
+class FloatField(GenericField):
+    pass
+
+class CallbackButton(GenericWidget):
+    def __init__ ( self, text, callback ):
+        #super(CallbackButton,self).__init__(text)
+        self.text = text  # Should be handled by super, but fails in Python2
+        self.callback = callback
 
 def align_forward():
     print ( "Aligning Forward ..." )

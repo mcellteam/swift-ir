@@ -4,49 +4,30 @@ import argparse
 import cv2
 
 import alignem
+from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
+
+def align_all():
+    print ( "Aligning All with SWiFT-IR ..." )
 
 def align_forward():
     print ( "Aligning Forward with SWiFT-IR ..." )
+    print ( "Control Model = " + str(control_model) )
+
+def notyet():
+    print ( "Function not implemented yet." )
+
+skip = BoolField("Skip",False)
 
 control_model = [
   # Panes
-  [ # Begin first pane
-    # Rows
-    [ # Begin first row
-      # Items
-      "File Name: junk.txt",  # A string by itself is just a label
-      "Layer: 5"  # A string by itself is just a label
-    ], # End first row
-    [ # Begin second row
-      # Items
-      "X:",  1.1,
-      "      ",
-      "Y: ", 2.2,
-      "      ",
-      "Z: ", 3.3
-    ], # End second row
-    [ # Begin third row
-      # Items
-      "a: ", 1010,
-      "      ",
-      "b: ", 1011,
-      "      ",
-      "c: ", 1100,
-      "      ",
-      "d: ", 1101,
-      "      ",
-      "e: ", 1110,
-      "      ",
-      "f: ", 1111
-    ], # End third row
-    [ # Begin fourth row
-      # Items
-      ['Align All'],
-      "      ",
-      alignem.CallbackButton('Align Forward SWiFT', align_forward),
-      "      ",
-      "# Forward", 1
-    ] # End fourth row
+  [ # Begin first pane of rows
+    [ "Project File:" ],
+    [ "Destination:" ],
+    [ CallbackButton("Jump To:",notyet), IntField(None,1), 6*" ", skip, CallbackButton("Clear All Skips",notyet), CallbackButton("Auto Swim Align",notyet) ],
+    [ FloatField("X:",1.1), 6*" ", FloatField("Y:",2.2), 6*" ", FloatField("Z:",3.3) ],
+    [ FloatField("a:",1010), "   ", FloatField("b:",1011), "   ", FloatField("c:",1100), "   ",
+      FloatField("d:",1101), "   ", FloatField("e:",1110), "   ", FloatField("f:",1111), "   " ],
+    [ CallbackButton('Align All SWiFT', align_all), 6*" ", CallbackButton('Align Forward SWiFT',align_forward), 60*" ", IntField("# Forward",1) ]
   ] # End first pane
 ]
 
