@@ -896,10 +896,16 @@ class MainWindow(QMainWindow):
     def define_roles(self, checked):
         global global_panel_roles
         input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
-        input_val = input_val.strip()
-        if len(input_val) > 0:
-          roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          self.set_roles ( roles_list )
+        if ok:
+          input_val = input_val.strip()
+          if len(input_val) > 0:
+            roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
+            self.set_roles ( roles_list )
+          else:
+            self.set_roles ( global_panel_roles )
+        else:
+          print ( "Cancel: Roles not changed" )
+
 
     @Slot()
     def import_into_role(self, checked):
