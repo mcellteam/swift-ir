@@ -188,24 +188,25 @@ class ZoomPanWidget(QWidget):
 
         self.draw_border = False
 
-        # self.setBackgroundRole(QPalette.Base)
+        self.setStyleSheet("background-color:black;")
+        self.setAutoFillBackground(True)
+        self.setContentsMargins(0,0,0,0)
+
+        self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
     def set_parent ( self, parent ):
         self.parent = parent
 
     def update_siblings ( self ):
-        # The update will be called on a particular ZoomPanWidget (this "self")
-        # Call the super "update" function for this panel's QWidget (this "self")
-        # This will cause the normal "update" function to be called on each sibling
-        print ( "Update_siblings called, calling siblings.update" )
+        # This will cause the normal "update_self" function to be called on each sibling
+        print ( "Update_siblings called, calling siblings.update_self" )
         if type(self.parent) == MultiImagePanel:
             print ( "Child of MultiImagePanel" )
-            self.parent.update(exclude=[self])
+            self.parent.update_self(exclude=[self])
 
 
-    def update ( self ):
-        # The update will be called on a particular ZoomPanWidget (this "self")
+    def update_self ( self ):
         # Call the super "update" function for this panel's QWidget (this "self")
         super(ZoomPanWidget, self).update()
 
@@ -230,11 +231,11 @@ class ZoomPanWidget(QWidget):
 
     def setFloatBased(self, floatBased):
         self.floatBased = floatBased
-        self.update()
+        self.update_self()
 
     def setAntialiased(self, antialiased):
         self.antialiased = antialiased
-        self.update()
+        self.update_self()
 
     def minimumSizeHint(self):
         return QSize(50, 50)
@@ -259,13 +260,13 @@ class ZoomPanWidget(QWidget):
             # Set the Mouse Down position to be the screen location of the mouse
             self.mdx = ex
             self.mdy = ey
-        self.update()
+        self.update_self()
 
     def mouseMoveEvent(self, event):
         if self.last_button == Qt.MouseButton.LeftButton:
             self.dx = (event.x() - self.mdx) / self.zoom_scale
             self.dy = (event.y() - self.mdy) / self.zoom_scale
-            self.update()
+            self.update_self()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -273,11 +274,11 @@ class ZoomPanWidget(QWidget):
             self.ldy = self.ldy + self.dy
             self.dx = 0
             self.dy = 0
-            self.update()
+            self.update_self()
 
     def mouseDoubleClickEvent(self, event):
         print_debug ( 50, "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
-        self.update()
+        self.update_self()
 
     def wheelEvent(self, event):
 
@@ -331,7 +332,7 @@ class ZoomPanWidget(QWidget):
             self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
             self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
 
-        self.update()
+        self.update_self()
 
 
     def paintEvent(self, event):
@@ -382,15 +383,18 @@ class MultiImagePanel(QWidget):
     def __init__(self):
         super(MultiImagePanel, self).__init__()
         self.setStyleSheet("background-color:black;")
+        self.setAutoFillBackground(True)
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
         self.actual_children = []
         self.draw_border = False
+        self.setContentsMargins(0,0,0,0)
 
-    def update ( self, exclude=None ):
+
+    def update_self ( self, exclude=None ):
         panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude)) ]
         for p in panels_to_update:
-            p.update()
+            p.update_self()
 
     def add_panel ( self, panel ):
         if not panel in self.actual_children:
@@ -426,6 +430,7 @@ class MultiImagePanel(QWidget):
                 print ( "call removeWidget and destroy with " + str(child) )
                 self.layout.removeWidget(child)
                 child.destroy()
+                del child
 
         alignment_layer_list = []
         alignment_layer_index = 0
@@ -737,7 +742,8 @@ class MainWindow(QMainWindow):
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-
+    def update_self ( self ):
+        self.update()
 
 
 
@@ -804,7 +810,7 @@ class MainWindow(QMainWindow):
             p.dy = p.mdy = p.ldy = 0
             p.wheel_index = 0
             p.zoom_scale = 1.0
-            p.update()
+            p.update_self()
 
 
     @Slot()
@@ -813,7 +819,7 @@ class MainWindow(QMainWindow):
         self.draw_border = checked
         for p in self.panel_list:
             p.draw_border = self.draw_border
-            p.update()
+            p.update_self()
 
 
     @Slot()
@@ -850,7 +856,7 @@ class MainWindow(QMainWindow):
 
             # Attempt to hide the file dialog before opening ...
             for p in self.panel_list:
-                p.update()
+                p.update_self()
 
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
             print_debug ( 20, "" )
@@ -885,9 +891,9 @@ class MainWindow(QMainWindow):
             # Draw the panels ("windows")
             for p in self.panel_list:
                 p.force_center = True
-                p.update()
+                p.update_self()
 
-        self.update()
+        self.update_self()
 
         #if len(alignment_layer_list) > 0:
         #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
@@ -980,7 +986,7 @@ class MainWindow(QMainWindow):
         if alignment_layer_index > 0:
           alignment_layer_index += -1
         for p in self.panel_list:
-            p.update()
+            p.update_self()
 
     @Slot()
     def remove_all_layers(self, checked):
@@ -998,7 +1004,7 @@ class MainWindow(QMainWindow):
         main_window.panel_list = []
         import_role_name = 1
         '''
-        self.update()
+        self.update_self()
 
     @Slot()
     def remove_all_panels(self, checked):
@@ -1024,7 +1030,7 @@ class MainWindow(QMainWindow):
         import_role_name = 1
         #self.init_panels()
         '''
-        self.update()
+        self.update_self()
 
 
     @Slot()
