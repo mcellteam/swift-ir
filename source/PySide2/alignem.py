@@ -421,6 +421,7 @@ class MultiImagePanel(QWidget):
             print ( "Try to remove " + str(child) )
             print ( "call removeWidget and destroy with " + str(child) )
             self.layout.removeWidget(child)
+            child.deleteLater()
             child.destroy()
             del child
 
@@ -429,6 +430,7 @@ class MultiImagePanel(QWidget):
             if type(child) == ZoomPanWidget:
                 print ( "call removeWidget and destroy with " + str(child) )
                 self.layout.removeWidget(child)
+                child.deleteLater()
                 child.destroy()
                 del child
 
