@@ -197,7 +197,8 @@ class ZoomPanWidget(QWidget):
     def update_siblings ( self ):
         # The update will be called on a particular ZoomPanWidget (this "self")
         # Call the super "update" function for this panel's QWidget (this "self")
-        print ( "Update called, calling siblings" )
+        # This will cause the normal "update" function to be called on each sibling
+        print ( "Update_siblings called, calling siblings.update" )
         if type(self.parent) == MultiImagePanel:
             print ( "Child of MultiImagePanel" )
             self.parent.update(exclude=[self])
@@ -207,17 +208,6 @@ class ZoomPanWidget(QWidget):
         # The update will be called on a particular ZoomPanWidget (this "self")
         # Call the super "update" function for this panel's QWidget (this "self")
         super(ZoomPanWidget, self).update()
-        # Call the super "update" functions for the other panels' QWidgets (their "panel")
-        print ( "Update called, calling siblings" )
-        if type(self.parent) == MultiImagePanel:
-            print ( "Child of MultiImagePanel" )
-            #self.parent.update(exclude=[self])
-        elif self.parent.panel_list != None:
-            print ( "  Hava a parent list" )
-            for panel in self.parent.panel_list:
-                print ( "    Hava a sibling" )
-                if panel != self:
-                    super(ZoomPanWidget, panel).update()
 
 
     def image_x ( self, win_x ):
@@ -368,6 +358,7 @@ class ZoomPanWidget(QWidget):
                         # Draw an optional border around the image
                         painter.setPen(QPen(QColor(255, 255, 255, 255),4))
                         painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                    print ( "Drawing pixmap for layer " + str(alignment_layer_index) + ", role " + str(self.role) )
                     painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
@@ -394,9 +385,9 @@ class MultiImagePanel(QWidget):
         self.layout = QHBoxLayout()
         self.setLayout(self.layout)
         self.actual_children = []
+        self.draw_border = False
 
     def update ( self, exclude=None ):
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude)) ]
         for p in panels_to_update:
             p.update()
@@ -407,9 +398,37 @@ class MultiImagePanel(QWidget):
         self.layout.addWidget ( panel )
         panel.set_parent ( self )
 
-    def remove_all_panels ( self ):
-        pass
+    def set_roles (self, roles_list):
+      global global_panel_roles
+      if len(roles_list) > 0:
+        # Save these roles
+        global_panel_roles = roles_list
+        # Remove all the image panels (to be replaced)
+        self.remove_all_panels(None)
+        # Create the new panels
+        for role in roles_list:
+          zpw = ZoomPanWidget(role=role, parent=self, fname=None)
+          zpw.draw_border = self.draw_border
+          self.add_panel ( zpw )
 
+    def remove_all_panels ( self, unused_checked ):
+        print ( "In remove_all_panels" )
+        for child in self.actual_children:
+            print ( "Try to remove " + str(child) )
+            print ( "call removeWidget and destroy with " + str(child) )
+            self.layout.removeWidget(child)
+            child.destroy()
+            del child
+
+        for child in self.children():
+            print ( "Try to remove " + str(child) )
+            if type(child) == ZoomPanWidget:
+                print ( "call removeWidget and destroy with " + str(child) )
+                self.layout.removeWidget(child)
+                child.destroy()
+
+        alignment_layer_list = []
+        alignment_layer_index = 0
 
 
 class ControlPanelWidget(QWidget):
@@ -466,8 +485,6 @@ class ControlPanelWidget(QWidget):
                       row_box_layout.addWidget ( item_widget )
               self.control_panel_layout.addWidget ( row_box )
 
-        #self.control_panel_layout.addWidget ( QLabel ( "Control Panel Line 1" ) )
-        #self.control_panel_layout.addWidget ( QLabel ( "Control Panel Line 2" ) )
 
 class GenericWidget:
     def __init__ ( self, text ):
@@ -506,7 +523,7 @@ def align_forward():
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
-    def __init__(self, fname=None, panel_roles=None, control_model=None):
+    def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM"):
 
         global global_panel_roles
         global app
@@ -514,14 +531,51 @@ class MainWindow(QMainWindow):
                 app = QApplication()
 
         QMainWindow.__init__(self)
-        self.setWindowTitle("Align EM")
+        self.setWindowTitle(title)
 
         if panel_roles != None:
             global_panel_roles = panel_roles
 
         self.draw_border = False
 
-        self.init_panels(cm=control_model)
+        self.panel_list = []
+        if global_panel_roles != None:
+          self.remove_all_panels(None)
+
+        self.control_model = control_model
+
+        if self.control_model == None:
+          # Use the default control model
+          self.control_model = [
+            # Panes
+            [ # Begin first pane
+              [ "Project:" ],
+              [ "Destination:" ],
+              [ "File Name: junk.txt", "Layer: 5" ],
+              [ "X:",  1.1, "      ", "Y: ", 2.2, "      ", "Z: ", 3.3 ],
+              [ "a: ", 1010, "      ", "b: ", 1011, "      ", "c: ", 1100, "      ", "d: ", 1101, "      ", "e: ", 1110, "      ", "f: ", 1111 ],
+              [ ['Align All'], "      ", CallbackButton('Align Forward', align_forward), "      ", "# Forward", 1 ]
+            ] # End first pane
+          ]
+
+        self.control_panel = ControlPanelWidget(self.control_model)
+
+        self.main_panel = QWidget()
+        self.main_panel_layout = QVBoxLayout()
+        self.main_panel.setLayout ( self.main_panel_layout )
+
+        self.image_panel = MultiImagePanel()
+        self.image_panel.draw_border = self.draw_border
+        self.image_panel.setStyleSheet("background-color:green;")
+        #for p in self.panel_list:
+        #    self.image_panel.add_panel ( p )
+
+        self.main_panel_layout.addWidget ( self.image_panel )
+        self.main_panel_layout.addWidget ( self.control_panel )
+
+
+        self.setCentralWidget(self.main_panel)
+
 
         # Menu Bar
         self.action_groups = {}
@@ -546,8 +600,8 @@ class MainWindow(QMainWindow):
                   [ 'Define Roles', None, self.define_roles, None, None, None ],
                   [ '&Import into',
                     [
-                      [ 'New Role',  None, self.import_images_new_role, None, None, None ],
-                      [ 'Selected Role',  None, self.import_images_selected_role, None, None, None ]
+                      #[ 'New Role',  None, self.import_images_new_role, None, None, None ],
+                      #[ 'Selected Role',  None, self.import_images_selected_role, None, None, None ]
                     ]
                   ],
                   [ '-', None, None, None, None, None ],
@@ -684,87 +738,6 @@ class MainWindow(QMainWindow):
 
 
 
-
-    def init_panels (self, cm=None, fname=None):
-        self.panel_list = []
-        global global_panel_roles
-        if global_panel_roles != None:
-          self.remove_all_panels(None)
-          for r in global_panel_roles:
-            zpw = ZoomPanWidget(role=r, parent=self, fname=fname)
-            zpw.draw_border = self.draw_border
-            self.panel_list.append ( zpw )
-
-        self.control_model = cm
-
-        if self.control_model == None:
-          # Use the default control model
-          self.control_model = [
-            # Panes
-            [ # Begin first pane
-              # Rows
-              [ # Begin first row
-                # Items
-                "File Name: junk.txt",  # A string by itself is just a label
-                "Layer: 5"  # A string by itself is just a label
-              ], # End first row
-              [ # Begin second row
-                # Items
-                "X:",  1.1,
-                "      ",
-                "Y: ", 2.2,
-                "      ",
-                "Z: ", 3.3
-              ], # End second row
-              [ # Begin third row
-                # Items
-                "a: ", 1010,
-                "      ",
-                "b: ", 1011,
-                "      ",
-                "c: ", 1100,
-                "      ",
-                "d: ", 1101,
-                "      ",
-                "e: ", 1110,
-                "      ",
-                "f: ", 1111
-              ], # End third row
-              [ # Begin fourth row
-                # Items
-                ['Align All'],
-                "      ",
-                CallbackButton('Align Forward', align_forward),
-                "      ",
-                "# Forward", 1
-              ] # End fourth row
-            ] # End first pane
-          ]
-
-        self.control_panel = ControlPanelWidget(self.control_model)
-
-        self.image_hbox = QWidget()
-        self.image_hbox_layout = QHBoxLayout()
-        self.image_hbox.setStyleSheet("background-color:blue;")
-        for p in self.panel_list:
-            self.image_hbox_layout.addWidget ( p )
-        self.image_hbox.setLayout(self.image_hbox_layout)
-
-        self.main_panel = QWidget()
-        self.main_panel_layout = QVBoxLayout()
-        self.main_panel.setLayout ( self.main_panel_layout )
-
-        self.image_panel = MultiImagePanel()
-        self.image_panel.setStyleSheet("background-color:green;")
-        for p in self.panel_list:
-            self.image_panel.add_panel ( p )
-        self.main_panel_layout.addWidget ( self.image_panel )
-
-        self.main_panel_layout.addWidget ( self.image_hbox )
-        self.main_panel_layout.addWidget ( self.control_panel )
-
-
-        self.setCentralWidget(self.main_panel)
 
 
 
@@ -920,57 +893,43 @@ class MainWindow(QMainWindow):
         #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
 
-    def set_roles (self, roles_list):
-      global global_panel_roles
-      if len(roles_list) > 0:
-        # Save these roles
-        global_panel_roles = roles_list
-        # Remove all the image panels (to be replaced)
-        self.remove_all_panels(None)
-        # Create the new panels
-        for role in roles_list:
-          zpw = ZoomPanWidget(role=role, parent=self, fname=None)
-          zpw.draw_border = self.draw_border
-          self.panel_list.append ( zpw )
-          self.image_hbox_layout.addWidget ( self.panel_list[-1] )
-        # Set the Roles menu with these newly defined roles
-        roles_menu = None
-        mb = self.menuBar()
-        if not (mb is None):
-          for m in mb.children():
-            if type(m) == QMenu:
-              text_label = ''.join(m.title().split('&'))
-              if 'Images' in text_label:
-                print ( "Found Images Menu" )
-                for mm in m.children():
-                  if type(mm) == QMenu:
-                    text_label = ''.join(mm.title().split('&'))
-                    if 'Import into' in text_label:
-                      print ( "Found Import Into Menu" )
-                      # Remove all the old actions:
-                      while len(mm.actions()) > 0:
-                        mm.removeAction(mm.actions()[-1])
-                      # Add the new actions
-                      first = True
-                      for role in roles_list:
-                        item = QAction ( role, self )
-                        #item.setCheckable(True)
-                        #item.setChecked(first)
-                        item.triggered.connect ( self.import_into_role )
-                        mm.addAction(item)
-                        first = False
-
     @Slot()
     def define_roles(self, checked):
         global global_panel_roles
         input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
         if ok:
           input_val = input_val.strip()
+          roles_list = global_panel_roles
           if len(input_val) > 0:
             roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-            self.set_roles ( roles_list )
-          else:
-            self.set_roles ( global_panel_roles )
+          self.image_panel.set_roles ( roles_list )
+
+          # Set the Roles menu with these newly defined roles
+          roles_menu = None
+          mb = self.menuBar()
+          if not (mb is None):
+            for m in mb.children():
+              if type(m) == QMenu:
+                text_label = ''.join(m.title().split('&'))
+                if 'Images' in text_label:
+                  print ( "Found Images Menu" )
+                  for mm in m.children():
+                    if type(mm) == QMenu:
+                      text_label = ''.join(mm.title().split('&'))
+                      if 'Import into' in text_label:
+                        print ( "Found Import Into Menu" )
+                        # Remove all the old actions:
+                        while len(mm.actions()) > 0:
+                          mm.removeAction(mm.actions()[-1])
+                        # Add the new actions
+                        first = True
+                        for role in roles_list:
+                          item = QAction ( role, self )
+                          #item.setCheckable(True)
+                          #item.setChecked(first)
+                          item.triggered.connect ( self.import_into_role )
+                          mm.addAction(item)
+                          first = False
         else:
           print ( "Cancel: Roles not changed" )
 
@@ -981,11 +940,11 @@ class MainWindow(QMainWindow):
         import_role_name = str ( self.sender().text() )
         self.import_images ( checked )
 
+    '''
     @Slot()
     def import_images_new_role(self, checked):
         print ( "Roles must be defined first" )
 
-    '''
         global import_role_name
         import_role_name += 1
         self.import_images ( checked )
@@ -1029,6 +988,8 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         global main_window
         global import_role_name
+        print ( "Not working yet" )
+        '''
         alignment_layer_index = 0
         alignment_layer_list = []
         for w in main_window.panel_list:
@@ -1036,6 +997,7 @@ class MainWindow(QMainWindow):
             w.destroy()
         main_window.panel_list = []
         import_role_name = 1
+        '''
         self.update()
 
     @Slot()
@@ -1044,6 +1006,14 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         global main_window
         global import_role_name
+        print ( "Removing all panels" )
+        if 'image_panel' in dir(self):
+            print ( "image_panel exists" )
+            self.image_panel.remove_all_panels(None)
+        else:
+            print ( "image_panel does not exit!!" )
+
+        '''
         alignment_layer_index = 0
         alignment_layer_list = []
         if main_window != None:
@@ -1053,6 +1023,7 @@ class MainWindow(QMainWindow):
           main_window.panel_list = []
         import_role_name = 1
         #self.init_panels()
+        '''
         self.update()
 
 

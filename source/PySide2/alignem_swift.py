@@ -40,6 +40,6 @@ if __name__ == "__main__":
     args = options.parse_args()
     fname = args.file
 
-    main_win = alignem.MainWindow(control_model=control_model)
+    main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     alignem.run_app(main_win)
 
