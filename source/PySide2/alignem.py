@@ -1,3 +1,10 @@
+'''AlignEm - Alignment Framework for multiple images
+
+AlignEm is intended to provide a tool for supporting image alignment
+using any number of technologies.
+'''
+
+
 import sys
 import os
 import argparse
@@ -45,7 +52,10 @@ alignment_layer_index = 0
 
 main_window = None
 
+
+
 class ImageLibrary:
+    '''A class containing multiple images keyed by their file name.'''
     def __init__ ( self ):
         self.images = {}
 
@@ -68,9 +78,13 @@ class ImageLibrary:
             image_ref = self.images.pop(real_norm_path)
         return ( image_ref )
 
+
 image_library = ImageLibrary()
 
+
+
 class AnnotatedImage:
+    '''A class containing an image and other information to be displayed.'''
     def __init__ ( self, role, file_name, load_now=False ):
         self.role = role
         self.image_file_name = os.path.realpath(os.path.normpath(file_name))
@@ -113,10 +127,14 @@ class AnnotatedImage:
         if not found:
           image_library.remove_image_reference ( self.image_file_name )
 
+
 import_role_name = "src"
-global_panel_roles=['ref','src','aligned']
+global_panel_roles = ['ref','src','aligned']
+
+
 
 class DisplayLayer:
+    '''A class representing the data at one "layer" of an image stack.'''
     def __init__ ( self, file_name, load_now=False ):
         global import_role_name
         self.image_list = []
@@ -137,7 +155,9 @@ class DisplayLayer:
             im.unload()
 
 
+
 class ZoomPanWidget(QWidget):
+    '''A widget to display a single annotated image with zooming and panning.'''
     def __init__(self, role, parent=None, fname=None):
         super(ZoomPanWidget, self).__init__(parent)
         self.role = role
@@ -171,13 +191,28 @@ class ZoomPanWidget(QWidget):
         # self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+    def set_parent ( self, parent ):
+        self.parent = parent
+
+    def update_siblings ( self ):
+        # The update will be called on a particular ZoomPanWidget (this "self")
+        # Call the super "update" function for this panel's QWidget (this "self")
+        print ( "Update called, calling siblings" )
+        if type(self.parent) == MultiImagePanel:
+            print ( "Child of MultiImagePanel" )
+            self.parent.update(exclude=[self])
+
+
     def update ( self ):
         # The update will be called on a particular ZoomPanWidget (this "self")
         # Call the super "update" function for this panel's QWidget (this "self")
         super(ZoomPanWidget, self).update()
         # Call the super "update" functions for the other panels' QWidgets (their "panel")
         print ( "Update called, calling siblings" )
-        if self.parent.panel_list != None:
+        if type(self.parent) == MultiImagePanel:
+            print ( "Child of MultiImagePanel" )
+            #self.parent.update(exclude=[self])
+        elif self.parent.panel_list != None:
             print ( "  Hava a parent list" )
             for panel in self.parent.panel_list:
                 print ( "    Hava a sibling" )
@@ -290,7 +325,7 @@ class ZoomPanWidget(QWidget):
               if not alignment_layer_list[alignment_layer_index].isLoaded():
                 alignment_layer_list[alignment_layer_index].load()
 
-            self.update()
+            self.update_siblings()
 
 
         else:
@@ -351,8 +386,34 @@ class ZoomPanWidget(QWidget):
 
 
 
-class ControlPanelWidget(QWidget):
+class MultiImagePanel(QWidget):
 
+    def __init__(self):
+        super(MultiImagePanel, self).__init__()
+        self.setStyleSheet("background-color:black;")
+        self.layout = QHBoxLayout()
+        self.setLayout(self.layout)
+        self.actual_children = []
+
+    def update ( self, exclude=None ):
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude)) ]
+        for p in panels_to_update:
+            p.update()
+
+    def add_panel ( self, panel ):
+        if not panel in self.actual_children:
+            self.actual_children.append ( panel )
+        self.layout.addWidget ( panel )
+        panel.set_parent ( self )
+
+    def remove_all_panels ( self ):
+        pass
+
+
+
+class ControlPanelWidget(QWidget):
+    '''A widget to hold all of the application data for an alignment method.'''
     def __init__(self, control_model=None):
         super(ControlPanelWidget, self).__init__()
         self.cm = control_model
@@ -439,6 +500,7 @@ class CallbackButton(GenericWidget):
 
 def align_forward():
     print ( "Aligning Forward ..." )
+
 
 
 # MainWindow contains the Menu Bar and the Status Bar
@@ -682,8 +744,8 @@ class MainWindow(QMainWindow):
         self.control_panel = ControlPanelWidget(self.control_model)
 
         self.image_hbox = QWidget()
-        self.image_hbox.setStyleSheet("background-color:black;")
         self.image_hbox_layout = QHBoxLayout()
+        self.image_hbox.setStyleSheet("background-color:blue;")
         for p in self.panel_list:
             self.image_hbox_layout.addWidget ( p )
         self.image_hbox.setLayout(self.image_hbox_layout)
@@ -691,6 +753,12 @@ class MainWindow(QMainWindow):
         self.main_panel = QWidget()
         self.main_panel_layout = QVBoxLayout()
         self.main_panel.setLayout ( self.main_panel_layout )
+
+        self.image_panel = MultiImagePanel()
+        self.image_panel.setStyleSheet("background-color:green;")
+        for p in self.panel_list:
+            self.image_panel.add_panel ( p )
+        self.main_panel_layout.addWidget ( self.image_panel )
 
         self.main_panel_layout.addWidget ( self.image_hbox )
         self.main_panel_layout.addWidget ( self.control_panel )
