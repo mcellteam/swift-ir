@@ -399,13 +399,29 @@ class MultiImagePanel(QWidget):
         #self.setPalette(p)
         #self.setAutoFillBackground(True)
 
-        self.current_margin = 10
+        self.current_margin = 3
 
         self.hb_layout = QHBoxLayout()
+        self.update_spacing()
         self.setLayout(self.hb_layout)
         self.actual_children = []
         self.setContentsMargins(0,0,0,0)
         self.draw_border = False
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        #painter.setBackgroundMode(Qt.OpaqueMode)
+        #painter.setBackground(QBrush(Qt.black))
+        if len(self.actual_children) <= 0:
+            # Draw background for no panels
+            painter.fillRect(0,0,self.width(),self.height(),QColor(0,100,100,255))
+            painter.setPen(QPen(QColor(0,255,0,255), 5))
+            painter.drawEllipse(QRectF(0, 0, self.width(), self.height()))
+            painter.drawText((self.width()/2)-140, self.height()/2, "No Image Panels Defined")
+        else:
+            # Draw background for panels
+            painter.fillRect(0,0,self.width(),self.height(),QColor(0,100,100,255))
+        painter.end()
 
     def update_spacing ( self ):
         print ( "Setting Spacing to " + str(self.current_margin) )
@@ -422,8 +438,9 @@ class MultiImagePanel(QWidget):
     def add_panel ( self, panel ):
         if not panel in self.actual_children:
             self.actual_children.append ( panel )
-        self.hb_layout.addWidget ( panel )
-        panel.set_parent ( self )
+            self.hb_layout.addWidget ( panel )
+            panel.set_parent ( self )
+            self.repaint()
 
     def set_roles (self, roles_list):
       global global_panel_roles
@@ -443,36 +460,13 @@ class MultiImagePanel(QWidget):
 
     def remove_all_panels ( self, unused_checked ):
         print ( "In remove_all_panels" )
-        for child in self.actual_children:
-            try:
-                print ( "Try to remove " + str(child) )
-                print ( "call removeWidget and destroy with " + str(child) )
-            except:
-                pass
-            try:
-                self.hb_layout.removeWidget(child)
-            except:
-                pass
-            try:
-                child.deleteLater()
-            except:
-                pass
-            #child.destroy()
-            #del child
-
-        '''
-        for child in self.children():
-            print ( "Try to remove " + str(child) )
-            if type(child) == ZoomPanWidget:
-                print ( "call removeWidget and destroy with " + str(child) )
-                self.hb_layout.removeWidget(child)
-                child.deleteLater()
-                child.destroy()
-                del child
-
+        while len(self.actual_children) > 0:
+            self.hb_layout.removeWidget ( self.actual_children[-1] )
+            self.actual_children[-1].deleteLater()
+            self.actual_children = self.actual_children[0:-1]
         alignment_layer_list = []
         alignment_layer_index = 0
-        '''
+        self.repaint()
 
 
 class ControlPanelWidget(QWidget):
@@ -483,6 +477,8 @@ class ControlPanelWidget(QWidget):
         #self.control_panel = QWidget()
         self.control_panel_layout = QVBoxLayout()
         self.setLayout(self.control_panel_layout)
+        self.control_panel_layout.setMargin(0)
+        self.control_panel_layout.setSpacing(0)
 
         if self.cm != None:
             # Only show the first pane for now
@@ -492,6 +488,8 @@ class ControlPanelWidget(QWidget):
             for row in rows:
               row_box = QWidget()
               row_box_layout = QHBoxLayout()
+              row_box_layout.setMargin(0)
+              row_box_layout.setSpacing(0)
               row_box.setLayout ( row_box_layout )
               print ( "Row contains " + str(len(row)) + " items" )
               for item in row:
