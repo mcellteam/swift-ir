@@ -360,16 +360,26 @@ class ZoomPanWidget(QWidget):
                   if layer_image.role == self.role:
                     pixmap = layer_image.pixmap
 
+                # Scale the painter to draw the image as the background
+                painter.scale ( self.zoom_scale, self.zoom_scale )
 
-                # pixmap = alignment_layer_list[alignment_layer_index].pixmap
                 if pixmap != None:
-                    painter.scale ( self.zoom_scale, self.zoom_scale )
                     if self.draw_border:
                         # Draw an optional border around the image
                         painter.setPen(QPen(QColor(255, 255, 255, 255),4))
                         painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                    print ( "Drawing pixmap for layer " + str(alignment_layer_index) + ", role " + str(self.role) )
+                    # Draw the pixmap itself on top of the border to ensure every pixel is shown
                     painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+
+                    # Draw any items that should scale with the image
+
+                # Rescale the painter to draw items at screen resolution
+                painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+
+                # Draw the borders of the viewport for each panel to separate panels
+                painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                painter.drawRect(painter.viewport())
+
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
@@ -399,7 +409,7 @@ class MultiImagePanel(QWidget):
         #self.setPalette(p)
         #self.setAutoFillBackground(True)
 
-        self.current_margin = 3
+        self.current_margin = 0
 
         self.hb_layout = QHBoxLayout()
         self.update_spacing()
@@ -488,8 +498,8 @@ class ControlPanelWidget(QWidget):
             for row in rows:
               row_box = QWidget()
               row_box_layout = QHBoxLayout()
-              row_box_layout.setMargin(0)
-              row_box_layout.setSpacing(0)
+              row_box_layout.setMargin(2)
+              row_box_layout.setSpacing(2)
               row_box.setLayout ( row_box_layout )
               print ( "Row contains " + str(len(row)) + " items" )
               for item in row:
@@ -780,8 +790,9 @@ class MainWindow(QMainWindow):
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumWidth(1400)
-        self.setMinimumHeight(1024)
+        self.setMinimumWidth(800)
+        self.setMinimumHeight(600)
+        self.resize(2000,1000)
 
         # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
