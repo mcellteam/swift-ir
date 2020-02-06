@@ -12,7 +12,7 @@ import cv2
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
-from PySide2.QtWidgets import QMenu
+from PySide2.QtWidgets import QMenu, QColorDialog
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -199,6 +199,8 @@ class ZoomPanWidget(QWidget):
         self.setPalette(QPalette(QColor(250, 250, 200)))
         self.setAutoFillBackground(True)
 
+        self.border_color = QColor(100,100,100,255)
+
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
@@ -289,6 +291,15 @@ class ZoomPanWidget(QWidget):
         print_debug ( 50, "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
         self.update_zpa_self()
 
+
+    def zoom_to_wheel_at ( self, mouse_win_x, mouse_win_y ):
+        old_scale = self.zoom_scale
+        new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+
+        self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+        self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+
+
     def wheelEvent(self, event):
 
         global alignment_layer_list
@@ -327,19 +338,11 @@ class ZoomPanWidget(QWidget):
 
             self.update_siblings()
 
-
         else:
             # Shifted Scroll Wheel zooms
+
             self.wheel_index += event.delta()/120
-
-            mouse_win_x = event.x()
-            mouse_win_y = event.y()
-
-            old_scale = self.zoom_scale
-            new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
-
-            self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
-            self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+            self.zoom_to_wheel_at(event.x(), event.y())
 
         self.update_zpa_self()
 
@@ -377,7 +380,7 @@ class ZoomPanWidget(QWidget):
                 painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
 
                 # Draw the borders of the viewport for each panel to separate panels
-                painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                painter.setPen(QPen(self.border_color,4))
                 painter.drawRect(painter.viewport())
 
         else:
@@ -417,6 +420,8 @@ class MultiImagePanel(QWidget):
         self.actual_children = []
         self.setContentsMargins(0,0,0,0)
         self.draw_border = False
+        self.bg_color = QColor(40,50,50,255)
+        self.border_color = QColor(0,0,0,255)
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -424,13 +429,13 @@ class MultiImagePanel(QWidget):
         #painter.setBackground(QBrush(Qt.black))
         if len(self.actual_children) <= 0:
             # Draw background for no panels
-            painter.fillRect(0,0,self.width(),self.height(),QColor(0,100,100,255))
-            painter.setPen(QPen(QColor(0,255,0,255), 5))
+            painter.fillRect(0,0,self.width(),self.height(),self.bg_color)
+            painter.setPen(QPen(QColor(200,200,200,255), 5))
             painter.drawEllipse(QRectF(0, 0, self.width(), self.height()))
-            painter.drawText((self.width()/2)-140, self.height()/2, "No Image Panels Defined")
+            painter.drawText((self.width()/2)-140, self.height()/2, " No Image Roles Defined ")
         else:
             # Draw background for panels
-            painter.fillRect(0,0,self.width(),self.height(),QColor(0,100,100,255))
+            painter.fillRect(0,0,self.width(),self.height(),self.bg_color)
         painter.end()
 
     def update_spacing ( self ):
@@ -443,7 +448,9 @@ class MultiImagePanel(QWidget):
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude)) ]
             for p in panels_to_update:
+                p.border_color = self.border_color
                 p.update_zpa_self()
+                p.repaint()
 
     def add_panel ( self, panel ):
         if not panel in self.actual_children:
@@ -476,6 +483,16 @@ class MultiImagePanel(QWidget):
             self.actual_children = self.actual_children[0:-1]
         alignment_layer_list = []
         alignment_layer_index = 0
+        self.repaint()
+
+    def center_all_images ( self ):
+        print ( "In center_all_images" )
+        for child in self.actual_children:
+            pass # Not sure how to do this yet
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            #self.hb_layout.removeWidget ( self.actual_children[-1] )
+            #self.actual_children[-1].deleteLater()
+            #self.actual_children = self.actual_children[0:-1]
         self.repaint()
 
 
@@ -665,7 +682,7 @@ class MainWindow(QMainWindow):
                     ]
                   ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Center', None, self.not_yet, None, None, None ],
+                  [ 'Center', None, self.center_all_images, None, None, None ],
                   [ 'Actual Size', None, self.actual_size, None, None, None ],
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -713,6 +730,9 @@ class MainWindow(QMainWindow):
                   [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Show Border', None, self.toggle_border, False, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Background Color', None, self.set_bg_color, None, None, None ],
+                  [ 'Border Color', None, self.set_border_color, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Perform Swims', None, self.not_yet, True, None, None ],
                   [ 'Update CFMs', None, self.not_yet, True, None, None ],
@@ -1097,6 +1117,33 @@ class MainWindow(QMainWindow):
         input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image Size:", max_image_file_size )
         if ok:
           max_image_file_size = input_val
+
+    @Slot()
+    def set_bg_color(self, checked):
+        c = QColorDialog.getColor()
+        # print ( " Color = " + str(c) )
+        self.image_panel.bg_color = c
+        self.image_panel.update_multi_self()
+        self.image_panel.repaint()
+        for p in self.panel_list:
+            p.update_zpa_self()
+            p.repaint()
+
+    @Slot()
+    def set_border_color(self, checked):
+        c = QColorDialog.getColor()
+        self.image_panel.border_color = c
+        self.image_panel.update_multi_self()
+        self.image_panel.repaint()
+        for p in self.panel_list:
+            p.border_color = c
+            p.update_zpa_self()
+            p.repaint()
+
+    @Slot()
+    def center_all_images(self, checked):
+        self.image_panel.center_all_images()
+
 
     @Slot()
     def set_preloading_range(self, checked):
