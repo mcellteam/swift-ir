@@ -65,7 +65,7 @@ class ImageLibrary:
         if real_norm_path in self.images:
             image_ref = self.images[real_norm_path]
         else:
-            print_debug ( 10, "Loading image: \"" + real_norm_path + "\"" )
+            print_debug ( 10, "  Loading image: \"" + real_norm_path + "\"" )
             self.images[real_norm_path] = QPixmap(real_norm_path)
             image_ref = self.images[real_norm_path]
         return ( image_ref )
@@ -911,31 +911,31 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         global preloading_range
 
-        print_debug ( 30, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
+        print_debug ( 60, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
 
-        print_debug ( 30, "  Importing images for role: " + str(role_to_import) )
+        print_debug ( 30, "Importing images for role: " + str(role_to_import) )
         for f in file_name_list:
           print_debug ( 30, "   " + str(f) )
-        print_debug ( 5, "  Importing images for role: " + str(role_to_import) )
+        print_debug ( 10, "Importing images for role: " + str(role_to_import) )
 
         if file_name_list != None:
           if len(file_name_list) > 0:
-            print_debug ( 20, "Selected Files: " + str(file_name_list) )
-            print_debug ( 20, "" )
+            print_debug ( 40, "Selected Files: " + str(file_name_list) )
+            print_debug ( 40, "" )
             for f in file_name_list:
               # Find next layer with an empty role matching the requested role_to_import
-              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(role_to_import) )
+              print_debug ( 60, "Trying to place file " + str(f) + " in role " + str(role_to_import) )
               found_layer = None
               this_layer_index = 0
               for alignment_layer in alignment_layer_list:
                 role_taken = False
                 for image in alignment_layer.image_list:
-                  print_debug ( 10, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
+                  print_debug ( 80, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
                   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
                   if image.role == str(role_to_import):
                     role_taken = True
                     break
-                print_debug ( 10, "Searched layer and role_taken = " + str(role_taken) )
+                print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
                 if not role_taken:
                   # Add the image here at this layer
                   found_layer = alignment_layer
@@ -943,11 +943,11 @@ class MainWindow(QMainWindow):
                 this_layer_index += 1
               if found_layer:
                 # Add the image/role to the found layer
-                print_debug ( 10, "Adding to layer " + str(this_layer_index) )
+                print_debug ( 40, "Adding to layer " + str(this_layer_index) )
                 found_layer.image_list.append ( AnnotatedImage ( str(role_to_import), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
               else:
                 # Add a new layer for the image
-                print_debug ( 10, "Creating a new layer at " + str(this_layer_index) )
+                print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
                 alignment_layer_list.append ( DisplayLayer ( role_to_import, f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
 
             # Draw the panels ("windows")
@@ -964,7 +964,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def import_images_dialog(self, import_role_name):
 
-        print_debug ( 5, "  Importing images for role: " + str(import_role_name) )
+        print_debug ( 5, "Importing images for role: " + str(import_role_name) )
 
         options = QFileDialog.Options()
         if False:  # self.native.isChecked():
@@ -976,7 +976,7 @@ class MainWindow(QMainWindow):
                                                                "Select Images",
                                                                "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
 
-        print_debug ( 30, "import_images_dialog ( " + str(import_role_name) + ", " + str(file_name_list) + ")" )
+        print_debug ( 60, "import_images_dialog ( " + str(import_role_name) + ", " + str(file_name_list) + ")" )
 
         # Attempt to hide the file dialog before opening ...
         for p in self.panel_list:
@@ -988,7 +988,7 @@ class MainWindow(QMainWindow):
 
 
     def load_images_in_role ( self, role, file_names ):
-        print_debug ( 30, "load_images_in_role ( " + str(role) + ", " + str(file_names) + ")" )
+        print_debug ( 60, "load_images_in_role ( " + str(role) + ", " + str(file_names) + ")" )
         self.import_images ( role, file_names )
 
 

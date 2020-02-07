@@ -9,14 +9,14 @@ from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 main_win = None
 
 def align_all():
-    print ( "Aligning All with SWiFT-IR ..." )
+    alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
 
 def align_forward():
-    print ( "Aligning Forward with SWiFT-IR ..." )
-    print ( "Control Model = " + str(control_model) )
+    alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
+    alignem.print_debug ( 70, "Control Model = " + str(control_model) )
 
 def notyet():
-    print ( "Function not implemented yet." )
+    alignem.print_debug ( 0, "Function not implemented yet." )
 
 skip = BoolField("Skip",False)
 
@@ -40,16 +40,14 @@ if __name__ == "__main__":
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False)
     args = options.parse_args()
-    debug = args.debug
+    alignem.debug_level = args.debug
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
-    main_win.remove_all_layers(None)
-    main_win.remove_all_panels(None)
 
-    print ( "================= Defining Roles =================" )
+    alignem.print_debug ( 30, "================= Defining Roles =================" )
     main_win.define_roles ( ['ref','src','align'] )
 
-    print ( "================= Importing Images =================" )
+    alignem.print_debug ( 30, "================= Importing Images =================" )
     ref_image_names = [ None,
                         "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
