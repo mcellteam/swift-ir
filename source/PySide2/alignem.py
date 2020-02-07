@@ -9,6 +9,7 @@ import sys
 import os
 import argparse
 import cv2
+import json
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
@@ -140,6 +141,7 @@ class DisplayLayer:
     def __init__ ( self, role_name, file_name, load_now=False ):
         self.image_list = []
         self.image_list.append ( AnnotatedImage ( str(role_name), file_name, load_now ) )
+        self.control_panel_data = None
 
     def isLoaded ( self ):
         for im in self.image_list:
@@ -155,6 +157,17 @@ class DisplayLayer:
         for im in self.image_list:
             im.unload()
 
+    def to_data ( self ):
+        data = {}
+        data['control_panel_data'] = self.control_panel_data
+        data['image_list'] = []
+        for im in self.image_list:
+            im_data = {}
+            im_data['role'] = im.role
+            im_data['image_file_name'] = im.image_file_name
+            im_data['image_size'] = im.image_size
+            data['image_list'].append ( im_data )
+        return data
 
 
 class ZoomPanWidget(QWidget):
@@ -162,16 +175,6 @@ class ZoomPanWidget(QWidget):
     def __init__(self, role, parent=None, fname=None):
         super(ZoomPanWidget, self).__init__(parent)
         self.role = role
-
-        # This seems to be ignored here: self.setStyleSheet("background-color:green;")
-
-        global alignment_layer_list
-        global alignment_layer_index
-
-        self.parent = parent
-
-        #if fname != None:
-        #  alignment_layer_list.append ( DisplayLayer ( fname, load_now=True ) )
 
         self.floatBased = False
         self.antialiased = False
@@ -194,9 +197,7 @@ class ZoomPanWidget(QWidget):
         self.setContentsMargins(0,0,0,0)
 
         self.setStyleSheet("background-color:black;")
-        #p = self.palette()
-        #p.setColor(self.backgroundRole(), Qt.black)
-        #self.setPalette(p)
+
         self.setPalette(QPalette(QColor(250, 250, 200)))
         self.setAutoFillBackground(True)
 
@@ -318,6 +319,7 @@ class ZoomPanWidget(QWidget):
               alignment_layer_index = 0
               print_debug ( 60, " Index = " + str(alignment_layer_index) )
             else:
+              alignment_layer_list[alignment_layer_index].control_panel_data = main_window.control_panel.copy_self_to_data()
               alignment_layer_index += layer_delta
               if layer_delta > 0:
                 if alignment_layer_index >= len(alignment_layer_list):
@@ -325,6 +327,9 @@ class ZoomPanWidget(QWidget):
               elif layer_delta < 0:
                 if alignment_layer_index < 0:
                   alignment_layer_index = 0
+
+              if alignment_layer_list[alignment_layer_index].control_panel_data != None:
+                main_window.control_panel.copy_data_to_self(alignment_layer_list[alignment_layer_index].control_panel_data)
               ##main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
             # Unload images no longer needed
@@ -534,25 +539,35 @@ class ControlPanelWidget(QWidget):
                   elif type(item) == type([]):
                       item_widget = QPushButton ( str(item[0]) )
                       row_box_layout.addWidget ( item_widget )
-
                   elif isinstance(item, BoolField):
                       val_widget = ( QCheckBox ( str(item.text) ) )
+                      row_box_layout.addWidget ( val_widget )
+                      item.widget = val_widget
+                  elif isinstance(item, TextField):
+                      if item.text != None:
+                          row_box_layout.addWidget ( QLabel ( str(item.text) ) )
+                      val_widget = ( QLineEdit ( str(item.value) ) )
+                      val_widget.setAlignment(Qt.AlignHCenter)
+                      item.widget = val_widget
                       row_box_layout.addWidget ( val_widget )
                   elif isinstance(item, IntField):
                       if item.text != None:
                           row_box_layout.addWidget ( QLabel ( str(item.text) ) )
                       val_widget = ( QLineEdit ( str(item.value) ) )
                       val_widget.setAlignment(Qt.AlignHCenter)
+                      item.widget = val_widget
                       row_box_layout.addWidget ( val_widget )
                   elif isinstance(item, FloatField):
                       if item.text != None:
                           row_box_layout.addWidget ( QLabel ( str(item.text) ) )
                       val_widget = ( QLineEdit ( str(item.value) ) )
                       val_widget.setAlignment(Qt.AlignHCenter)
+                      item.widget = val_widget
                       row_box_layout.addWidget ( val_widget )
                   elif isinstance(item, CallbackButton):
                       item_widget = QPushButton ( str(item.text) )
                       item_widget.clicked.connect ( item.callback )
+                      item.widget = item_widget
                       row_box_layout.addWidget ( item_widget )
                   else:
                       item_widget = QLineEdit ( str(item) )
@@ -560,38 +575,157 @@ class ControlPanelWidget(QWidget):
                       row_box_layout.addWidget ( item_widget )
               self.control_panel_layout.addWidget ( row_box )
 
+    def dump ( self ):
+        print ( "Control Panel:" )
+        for p in self.cm:
+          print ( "  Panel:" )
+          for r in p:
+            print ( "    Row:" )
+            for i in r:
+              print ( "      Item: " + str(i) )
+              print ( "          Subclass of GenericWidget: " + str(isinstance(i,GenericWidget)) )
+
+    def copy_self_to_data ( self ):
+        data = []
+        for p in self.cm:
+          new_panel = []
+          for r in p:
+            new_row = []
+            for i in r:
+              if isinstance(i,GenericWidget):
+                # Store as a list to identify as a widget
+                new_row.append ( [ i.get_value() ] )
+              else:
+                # Store as static raw data
+                # new_row.append ( i )  # This data is useless since it's set by the application
+                new_row.append ( '' )   # Save an empty string as a place holder for static data
+            new_panel.append ( new_row )
+          data.append ( new_panel )
+        return ( data )
+
+    def copy_data_to_self ( self, data ):
+        ip = 0
+        for p in self.cm:
+          panel = data[ip]
+          ip += 1
+          ir = 0
+          for r in p:
+            row = panel[ir]
+            ir += 1
+            ii = 0
+            for i in r:
+              item = row[ii]
+              ii += 1
+              if type(item) == type([]):
+                # This was a widget
+                i.set_value ( item[0] )
+              else:
+                # Ignore static raw data
+                pass
+
 
 class GenericWidget:
     def __init__ ( self, text ):
         self.text = text
+        self.widget = None
+    def get_value ( self ):
+        return None
+    def set_value ( self, value ):
+        pass
 
 class GenericField(GenericWidget):
-    def __init__ ( self, text, value ):
+    def __init__ ( self, text, value, all_layers=0 ):
         #super(None,self).__init__(text)
         #super(GenericField,self).__init__(text)
         self.text = text  # Should be handled by super, but fails in Python2
+        self.widget = None
         self.value = value
+        self.all_layers = all_layers
+    def get_value ( self ):
+        return None
+    def set_value ( self, value ):
+        pass
 
 class TextField(GenericField):
-    pass
+    def get_value ( self ):
+      if 'widget' in dir(self):
+        try:
+          return str(self.widget.text())
+        except:
+          return None
+      else:
+        return None
+    def set_value ( self, value ):
+      if 'widget' in dir(self):
+        try:
+          self.widget.setText(str(value))
+        except:
+          pass
 
 class BoolField(GenericField):
-    pass
+    def get_value ( self ):
+      if 'widget' in dir(self):
+        try:
+          return bool(self.widget.isChecked())
+        except:
+          return None
+      else:
+        return None
+    def set_value ( self, value ):
+      if 'widget' in dir(self):
+        try:
+          self.widget.setChecked(value)
+        except:
+          pass
 
 class IntField(GenericField):
-    pass
+    def get_value ( self ):
+      if 'widget' in dir(self):
+        try:
+          return int(self.widget.text())
+        except:
+          return None
+      else:
+        return None
+    def set_value ( self, value ):
+      if 'widget' in dir(self):
+        try:
+          self.widget.setText(str(value))
+        except:
+          pass
 
 class FloatField(GenericField):
-    pass
+    def get_value ( self ):
+      if 'widget' in dir(self):
+        try:
+          return float(self.widget.text())
+        except:
+          return None
+      else:
+        return None
+    def set_value ( self, value ):
+      if 'widget' in dir(self):
+        try:
+          self.widget.setText(str(value))
+        except:
+          pass
 
 class CallbackButton(GenericWidget):
     def __init__ ( self, text, callback ):
         #super(CallbackButton,self).__init__(text)
         self.text = text  # Should be handled by super, but fails in Python2
         self.callback = callback
+    def get_value ( self ):
+        return None
+    def set_value ( self, value ):
+        pass
 
 def align_forward():
     print_debug ( 30, "Aligning Forward ..." )
+
+def console():
+    print_debug ( 0, "\n\n\nPython Console:\n" )
+    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 
@@ -614,8 +748,8 @@ class MainWindow(QMainWindow):
         self.draw_border = False
 
         self.panel_list = []
-        if global_panel_roles != None:
-          self.remove_all_panels(None)
+        #if global_panel_roles != None:
+        #  self.remove_all_panels(None)
 
         self.control_model = control_model
 
@@ -624,12 +758,9 @@ class MainWindow(QMainWindow):
           self.control_model = [
             # Panes
             [ # Begin first pane
-              [ "Project:" ],
-              [ "Destination:" ],
-              [ "File Name: junk.txt", "Layer: 5" ],
-              [ "X:",  1.1, "      ", "Y: ", 2.2, "      ", "Z: ", 3.3 ],
-              [ "a: ", 1010, "      ", "b: ", 1011, "      ", "c: ", 1100, "      ", "d: ", 1101, "      ", "e: ", 1110, "      ", "f: ", 1111 ],
-              [ ['Align All'], "      ", CallbackButton('Align Forward', align_forward), "      ", "# Forward", 1 ]
+              [ "Program:", 6*" ", __file__ ],
+              [ IntField("Integer:",55), 6*" ", FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
+              [ TextField("String:","Default text"), 20*" ", CallbackButton('Align Forward', align_forward), 5*" ", "# Forward", 1, 20*" ", CallbackButton('Console', console) ]
             ] # End first pane
           ]
 
@@ -662,7 +793,7 @@ class MainWindow(QMainWindow):
                 [
                   [ '&New Project', 'Ctrl+N', self.not_yet, None, None, None ],
                   [ '&Open Project', 'Ctrl+O', self.not_yet, None, None, None ],
-                  [ '&Save Project', 'Ctrl+S', self.not_yet, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ 'Save Project &As', 'Ctrl+A', self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Set Destination...', None, self.not_yet, None, None, None ],
@@ -874,6 +1005,16 @@ class MainWindow(QMainWindow):
         except:
             print_debug ( 30, "Invalid debug value in: \"" + str(action_text) )
 
+    @Slot()
+    def save_project(self, checked):
+        print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
+        project_data = [ l.to_data() for l in alignment_layer_list ]
+        project_json = json.dumps ( project_data, indent=2, sort_keys=True )
+        print ( "Saving to alignem_json.txt" )
+        f = open ( "alignem_json.txt", 'w' )
+        f.write ( project_json )
+        f.close()
+
 
     @Slot()
     def actual_size(self, checked):
@@ -1065,15 +1206,13 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def remove_all_panels(self, checked):
-        global alignment_layer_list
-        global alignment_layer_index
-        global main_window
         print_debug ( 30, "Removing all panels" )
         if 'image_panel' in dir(self):
             print_debug ( 30, "image_panel exists" )
             self.image_panel.remove_all_panels(None)
         else:
             print_debug ( 30, "image_panel does not exit!!" )
+        self.define_roles ( [] )
         self.update_win_self()
 
 
