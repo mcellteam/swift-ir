@@ -1041,7 +1041,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def define_roles_callback(self, checked):
         global global_panel_roles
-        input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
+        input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(' '.join(global_panel_roles)), echo=QLineEdit.Normal, text="" )
         if ok:
           input_val = input_val.strip()
           roles_list = global_panel_roles
