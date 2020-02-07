@@ -11,6 +11,13 @@ main_win = None
 def align_all():
     alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
 
+    for index in range(len(alignem.alignment_layer_list)):
+      print ( "Aligning layer " + str(index) )
+      al = alignem.alignment_layer_list[index]
+      for im in al.image_list:
+        if im.image_file_name != None:
+          print ( "   " + im.role + ":  " + im.image_file_name )
+
 def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
@@ -48,9 +55,11 @@ if __name__ == "__main__":
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
 
     alignem.print_debug ( 30, "================= Defining Roles =================" )
+
     main_win.define_roles ( ['ref','src','align'] )
 
     alignem.print_debug ( 30, "================= Importing Images =================" )
+
     ref_image_stack = [ None,
                         "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
