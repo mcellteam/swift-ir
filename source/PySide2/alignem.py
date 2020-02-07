@@ -128,7 +128,6 @@ class AnnotatedImage:
           image_library.remove_image_reference ( self.image_file_name )
 
 
-import_role_name = "ref"
 global_panel_roles = ['ref','src','aligned']
 
 
@@ -634,21 +633,14 @@ class MainWindow(QMainWindow):
 
         self.main_panel = QWidget()
 
-        '''
-        # This makes everything red!!
-        self.main_panel.setStyleSheet("background-color:red;")
-        '''
-
         self.main_panel_layout = QVBoxLayout()
         self.main_panel.setLayout ( self.main_panel_layout )
         self.main_panel.setAutoFillBackground(False)
 
         self.image_panel = MultiImagePanel()
         self.image_panel.draw_border = self.draw_border
-        self.image_panel.setStyleSheet("background-color:green;")
+        self.image_panel.setStyleSheet("background-color:black;")
         self.image_panel.setAutoFillBackground(True)
-        #for p in self.panel_list:
-        #    self.image_panel.add_panel ( p )
 
         self.main_panel_layout.addWidget ( self.image_panel )
         self.main_panel_layout.addWidget ( self.control_panel )
@@ -726,8 +718,6 @@ class MainWindow(QMainWindow):
                 [
                   [ '&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  #[ 'Unlimited Zoom', None, self.not_yet, None, None, None ],
-                  #[ '-', None, None, None, None, None ],
                   [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Show Border', None, self.toggle_border, False, None, None ],
@@ -926,11 +916,6 @@ class MainWindow(QMainWindow):
 
         if file_name_list != None:
           if len(file_name_list) > 0:
-
-            # Attempt to hide the file dialog before opening ...
-            for p in self.panel_list:
-                p.update_zpa_self()
-
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
             print_debug ( 20, "" )
             for f in file_name_list:
@@ -973,12 +958,7 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def import_images_dialog(self, checked):
-        global alignment_layer_list
-        global alignment_layer_index
-        global preloading_range
-
-        global import_role_name
+    def import_images_dialog(self, import_role_name):
 
         print_debug ( 5, "  Importing images for role: " + str(import_role_name) )
 
@@ -993,12 +973,14 @@ class MainWindow(QMainWindow):
                                                                "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
 
         print_debug ( 30, "import_images_dialog ( " + str(import_role_name) + ", " + str(file_name_list) + ")" )
-        self.import_images( import_role_name, file_name_list )
+
+        # Attempt to hide the file dialog before opening ...
+        for p in self.panel_list:
+            p.update_zpa_self()
 
         # self.update_win_self()
 
-        #if len(alignment_layer_list) > 0:
-        #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+        self.import_images( import_role_name, file_name_list )
 
 
     def load_images_in_role ( self, role, file_names ):
@@ -1054,9 +1036,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def import_into_role(self, checked):
-        global import_role_name
         import_role_name = str ( self.sender().text() )
-        self.import_images_dialog ( checked )
+        self.import_images_dialog ( import_role_name )
 
     @Slot()
     def remove_this_layer(self, checked):
