@@ -26,6 +26,187 @@ def lin_fit(x,y):
 
   return(m,b,r,p,stderr)
 
+align_swiftir.global_swiftir_mode = 'c'
+#align_swiftir.global_swiftir_mode = 'python'
+
+
+def BiasFuncs(align_list,bias_funcs=None):
+
+  if type(bias_funcs) == type(None):
+    init_scalars = True
+    bias_funcs = {}
+    bias_funcs['skew_x'] = np.zeros((5))
+    bias_funcs['scale_x'] = np.zeros((5))
+    bias_funcs['scale_y'] = np.zeros((5))
+    bias_funcs['rot'] = np.zeros((5))
+    bias_funcs['x'] = np.zeros((5))
+    bias_funcs['y'] = np.zeros((5))
+  else:
+    init_scalars = False
+
+  skew_x_array = np.zeros((len(align_list),2))
+  scale_x_array = np.zeros((len(align_list),2))
+  scale_y_array = np.zeros((len(align_list),2))
+  rot_array = np.zeros((len(align_list),2))
+  x_array = np.zeros((len(align_list),2))
+  y_array = np.zeros((len(align_list),2))
+
+  i=0
+  for item in align_list:
+    align_idx = item[0]
+    align_item = item[1]
+
+    c_afm = align_item.cumulative_afm
+
+    rot = np.arctan(c_afm[1,0]/c_afm[0,0])
+    scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
+    scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
+    skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
+    det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
+
+    skew_x_array[i] = [align_idx,skew_x]
+    scale_x_array[i] = [align_idx,scale_x]
+    scale_y_array[i] = [align_idx,scale_y]
+    rot_array[i] = [align_idx,rot]
+    x_array[i] = [align_idx,c_afm[0,2]]
+    y_array[i] = [align_idx,c_afm[1,2]]
+    i+=1
+
+  p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
+  bias_funcs['skew_x'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['skew_x'][4] = p[4]
+
+  p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
+  bias_funcs['scale_x'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['scale_x'][4] = p[4]
+
+  p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
+  bias_funcs['scale_y'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['scale_y'][4] = p[4]
+
+  p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
+  bias_funcs['rot'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['rot'][4] = p[4]
+
+  p = np.polyfit(x_array[:,0],x_array[:,1],4)
+  bias_funcs['x'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['x'][4] = p[4]
+
+  p = np.polyfit(y_array[:,0],y_array[:,1],4)
+  bias_funcs['y'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['y'][4] = p[4]
+
+  print("\nBias Funcs: \n%s\n" % (str(bias_funcs)))
+
+  return bias_funcs
+
+
+
+def BiasMat(x,bias_funcs):
+
+  xdot = np.array([4.0,3.0,2.0,1.0])
+
+  p = bias_funcs['skew_x']
+  dp = p[:-1]*xdot
+  fdp = np.poly1d(dp)
+  skew_x_bias = -fdp(x)
+
+  p = bias_funcs['scale_x']
+  dp = p[:-1]*xdot
+  fdp = np.poly1d(dp)
+  scale_x_bias = 1-fdp(x)
+
+  p = bias_funcs['scale_y']
+  dp = p[:-1]*xdot
+  fdp = np.poly1d(dp)
+  scale_y_bias = 1-fdp(x)
+
+  p = bias_funcs['rot']
+  dp = p[:-1]*xdot
+  fdp = np.poly1d(dp)
+  rot_bias = -fdp(x)
+
+  p = bias_funcs['x']
+  dp = p[:-1]*xdot
+  fdp = np.poly1d(dp)
+  x_bias = -fdp(x)
+
+  p = bias_funcs['y']
+  dp = p[:-1]*xdot
+  fdp = np.poly1d(dp)
+  y_bias = -fdp(x)
+
+  # Create skew, scale, rot, and tranlation matrices
+  skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0],[0.0, 1.0, 0.0]])
+  scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0],[0.0, scale_y_bias, 0.0]])
+  rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0],[np.sin(rot_bias), np.cos(rot_bias), 0.0]])
+  trans_bias_mat = np.array([[1.0, 0.0, x_bias],[0.0, 1.0, y_bias]])
+
+  bias_mat = swiftir.identityAffine()
+
+  # Compose bias matrix as skew*scale*rot*trans
+  bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
+  bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
+  bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
+  bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
+
+  return bias_mat
+
+
+
+def InitCafm(bias_funcs):
+
+  init_skew_x = -bias_funcs['skew_x'][4]
+  init_scale_x = 1.0/bias_funcs['scale_x'][4]
+  init_scale_y = 1.0/bias_funcs['scale_y'][4]
+  init_rot = -bias_funcs['rot'][4]
+  init_x = -bias_funcs['x'][4]
+  init_y = -bias_funcs['y'][4]
+
+  # Create skew, scale, rot, and tranlation matrices
+  init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0],[0.0, 1.0, 0.0]])
+  init_scale_mat = np.array([[init_scale_x, 0.0, 0.0],[0.0, init_scale_y, 0.0]])
+  init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0],[np.sin(init_rot), np.cos(init_rot), 0.0]])
+  init_trans_mat = np.array([[1.0, 0.0, init_x],[0.0, 1.0, init_y]])
+
+  c_afm_init = swiftir.identityAffine()
+
+  # Compose bias matrix as skew*scale*rot*trans
+  c_afm_init = swiftir.composeAffine(init_skew_x_mat,c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_scale_mat,c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_rot_mat,c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_trans_mat,c_afm_init)
+
+  return c_afm_init
+
+
+
+def BoundingRect(align_list,siz):
+
+  model_bounds = None
+
+  for item in align_list:
+    align_item = item[1]
+
+    if type(model_bounds) == type(None):
+      model_bounds = swiftir.modelBounds2(align_item.cumulative_afm, siz)
+    else:
+      model_bounds = np.append(model_bounds, swiftir.modelBounds2(align_item.cumulative_afm, siz), axis=0)
+
+  border_width = max(0 - model_bounds[:,0].min(), 0 - model_bounds[:,1].min(), model_bounds[:,0].max() - siz[0], model_bounds[:,1].max() - siz[0])
+
+  rect = [-border_width, -border_width, siz[0]+2*border_width, siz[0]+2*border_width]
+
+  return rect
+
+
+
 if (__name__ == '__main__'):
 
   if (len(sys.argv)<3):
@@ -111,7 +292,7 @@ if (__name__ == '__main__'):
         ref_fn = os.path.basename(s_tbd[i]['images']['ref']['filename'])
         s_tbd[i]['images']['ref']['filename'] = os.path.join(scale_tbd_dir,'img_src',ref_fn)
 
-      
+
       atrm = s_tbd[i]['align_to_ref_method']
 
       # Initialize method_results for skipped or missing method_results
@@ -211,8 +392,8 @@ if (__name__ == '__main__'):
 
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:
-        im_sta_fn = s_tbd[i]['images']['ref']['filename']  
-        im_mov_fn = s_tbd[i]['images']['base']['filename']  
+        im_sta_fn = s_tbd[i]['images']['ref']['filename']
+        im_mov_fn = s_tbd[i]['images']['base']['filename']
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
           atrm = s_tbd[i]['align_to_ref_method']
           x_bias = atrm['method_data']['bias_x_per_image']
@@ -240,18 +421,46 @@ if (__name__ == '__main__'):
           align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
         align_list.append([i,align_proc])
 
+    # Initialize c_afm to identity matrix
+    c_afm = swiftir.identityAffine()
+
+    '''
+    # Initialize c_afm with initial offsets
+    # Initial offsets for c_afm
+    init_skew_x = 0.037
+    init_scale_x = 1/1.05
+    init_scale_y = 1/1.15
+    init_rot= 0.05
+    init_x = -20.0
+    init_y = 16.0
+
+    # Create skew, scale, rot, and tranlation matrices
+    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0],[0.0, 1.0, 0.0]])
+    init_scale_mat = np.array([[init_scale_x, 0.0, 0.0],[0.0, init_scale_y, 0.0]])
+    init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0],[np.sin(init_rot), np.cos(init_rot), 0.0]])
+    init_trans_mat = np.array([[1.0, 0.0, init_x],[0.0, 1.0, init_y]])
+
+    c_afm = swiftir.identityAffine()
+
+    # Compose bias matrix as skew*scale*rot*trans
+    c_afm = swiftir.composeAffine(init_skew_x_mat,c_afm)
+    c_afm = swiftir.composeAffine(init_scale_mat,c_afm)
+    c_afm = swiftir.composeAffine(init_rot_mat,c_afm)
+    c_afm = swiftir.composeAffine(init_trans_mat,c_afm)
+
+
     # Save unmodified first image into align_dir
-    im_sta_fn = s_tbd[0]['images']['base']['filename']  
+    im_sta_fn = s_tbd[0]['images']['base']['filename']
     base_fn = os.path.basename(im_sta_fn)
     al_fn = os.path.join(align_dir,base_fn)
     print("Saving first image in align dir: ", al_fn)
     im_sta = swiftir.loadImage(im_sta_fn)
-    swiftir.saveImage(im_sta,al_fn)
+    im_aligned = swiftir.affineImage(c_afm,im_sta)
+    swiftir.saveImage(im_aligned,al_fn)
     if not 'aligned' in s_tbd[0]['images']:
       s_tbd[0]['images']['aligned'] = {}
     s_tbd[0]['images']['aligned']['filename'] = al_fn
-
-    c_afm = swiftir.identityAffine()
+    '''
 
 
     # Setup custom bias values for this alignment run
@@ -305,6 +514,7 @@ if (__name__ == '__main__'):
     y_bias = -(110/266.)
     '''
 
+    '''
     # LM9R5CA1 scale 8 biases, scaled up from scale 24
     rot_bias = -(-0.02/266.)
     scale_x_bias = 1.02**(-1.0/266.)
@@ -312,18 +522,30 @@ if (__name__ == '__main__'):
     skew_x_bias = -(-0.02/266.)
     x_bias = -(-165*3/266.)
     y_bias = -(110*3/266.)
+    '''
 
+    # R34 scale 4 biases
+    '''
+    rot_bias = -(-0.7/193.)
+    scale_x_bias = 1.11**(-1.0/193.)
+    scale_y_bias = 1.17**(-1.0/193.)
+    skew_x_bias = -(-0.2/193.)
+    x_bias = -(-700/193.)
+    y_bias = -(40/193.)
+    '''
 
     '''
+    '''
+    # Setup for no bias
     rot_bias = 0.0
     scale_x_bias = 1.0
     scale_y_bias = 1.0
     skew_x_bias = 0.0
     x_bias = 0.0
     y_bias = 0.0
+
+
     '''
-
-
     rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0],[np.sin(rot_bias), np.cos(rot_bias), 0.0]])
     scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0],[0.0, scale_y_bias, 0.0]])
     skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0],[0.0, 1.0, 0.0]])
@@ -335,24 +557,78 @@ if (__name__ == '__main__'):
     bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
     bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
     bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
-    
-    i = 0
+    '''
+
+
+    # Align the images
     for item in align_list:
 
-      align_idx = item[0]
       align_item = item[1]
       print('\n\nAligning: %s %s\n' % (align_item.im_sta_fn, align_item.im_mov_fn))
 
-      align_item.cumulative_afm = c_afm
-      (c_afm, recipe) = align_item.align()
+#      align_item.cumulative_afm = c_afm
+      c_afm = align_item.align(c_afm,save=False)
 
-      c_afm = swiftir.composeAffine(bias_mat,c_afm)
 
-#      c_afm[0,2]-=x_bias
-#      c_afm[1,2]-=y_bias
+    # Iteratively determine and null out bias in c_afm
+    print("\nComputing and Nulling Biases...\n")
+    bias_funcs = BiasFuncs(align_list)
+    c_afm_init = InitCafm(bias_funcs)
+#    c_afm_init = swiftir.identityAffine()
+    bias_iters = 2
+    for bi in range(bias_iters):
+      c_afm = c_afm_init
+      for item in align_list:
+        align_idx = item[0]
+        align_item = item[1]
+        bias_mat = BiasMat(align_idx,bias_funcs)
+        c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
+      if bi < bias_iters-1:
+        bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
+
+
+    # Save all final aligned images:
+    print("\nSaving all aligned images...\n")
+
+    # Save possibly unmodified first image into align_dir
+    im_sta_fn = s_tbd[0]['images']['base']['filename']
+    base_fn = os.path.basename(im_sta_fn)
+    al_fn = os.path.join(align_dir,base_fn)
+    print("Saving first image in align dir: ", al_fn)
+    im_sta = swiftir.loadImage(im_sta_fn)
+
+    siz = im_sta.shape
+
+    rect = BoundingRect(align_list,siz)
+
+#    im_aligned = swiftir.affineImage(c_afm_init,im_sta)
+    im_aligned = swiftir.affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
+    swiftir.saveImage(im_aligned,al_fn)
+    if not 'aligned' in s_tbd[0]['images']:
+      s_tbd[0]['images']['aligned'] = {}
+    s_tbd[0]['images']['aligned']['filename'] = al_fn
+
+    skew_x_array = np.zeros((len(align_list),2))
+    scale_x_array = np.zeros((len(align_list),2))
+    scale_y_array = np.zeros((len(align_list),2))
+    rot_array = np.zeros((len(align_list),2))
+    x_array = np.zeros((len(align_list),2))
+    y_array = np.zeros((len(align_list),2))
+
+    i = 0
+    for item in align_list:
+      align_idx = item[0]
+      align_item = item[1]
+      # Save the image:
+#      align_item.saveAligned()
+      align_item.saveAligned(rect=rect, grayBorder=True)
+
+      # Retrieve alignment result
+      recipe = align_item.recipe
       snr = recipe.ingredients[-1].snr
       afm = recipe.ingredients[-1].afm
-    
+      c_afm = align_item.cumulative_afm
+
       # Store custom bias values in the dictionary for this stack item
       atrm = s_tbd[align_idx]['align_to_ref_method']
       atrm['method_data']['bias_x_per_image'] = x_bias
@@ -375,13 +651,21 @@ if (__name__ == '__main__'):
       method_results['affine_matrix'] = afm.tolist()
       method_results['cumulative_afm'] = c_afm.tolist()
 
+      # Compute and save final biases
       rot = np.arctan(c_afm[1,0]/c_afm[0,0])
       scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
       scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
       skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
       det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
 
-      snr_file.write('%d %.6g\n' % (i, snr))
+      skew_x_array[i] = [align_idx,skew_x]
+      scale_x_array[i] = [align_idx,scale_x]
+      scale_y_array[i] = [align_idx,scale_y]
+      rot_array[i] = [align_idx,rot]
+      x_array[i] = [align_idx,c_afm[0,2]]
+      y_array[i] = [align_idx,c_afm[1,2]]
+
+      snr_file.write('%d %.6g\n' % (i, snr[0]))
       bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
       bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
       bias_rot_file.write('%d %.6g\n' % (i, rot))
@@ -399,27 +683,40 @@ if (__name__ == '__main__'):
     ofp = open(proj_ofn,'w')
     json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
 
+    snr_file.close()
+    bias_x_file.close()
+    bias_y_file.close()
+    bias_rot_file.close()
+    bias_scale_x_file.close()
+    bias_scale_y_file.close()
+    bias_skew_x_file.close()
+    bias_det_file.close()
+    afm_file.close()
+    c_afm_file.close()
+
     '''
-    for align_item in align_list:
-      align_item.saveAligned(rect=rect, grayBorder=True)
+    p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
+    print("\n4th degree of Skew_X bias: \n", p)
+
+    p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
+    print("\n4th degree of Scale_X bias: \n", p)
+
+    p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
+    print("\n4th degree of Scale_Y bias: \n", p)
+
+    p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
+    print("\n4th degree of Rot bias: \n", p)
+
+    p = np.polyfit(x_array[:,0],x_array[:,1],4)
+    print("\n4th degree of X bias: \n", p)
+
+    p = np.polyfit(y_array[:,0],y_array[:,1],4)
+    print("\n4th degree of Y bias: \n", p)
     '''
 
 
-  snr_file.close()
-  bias_x_file.close()
-  bias_y_file.close()
-  bias_rot_file.close()
-  bias_scale_x_file.close()
-  bias_scale_y_file.close()
-  bias_skew_x_file.close()
-  bias_det_file.close()
-  afm_file.close()
-  c_afm_file.close()
 
-
-  exit(0)
-
-
+  '''
   cafm = np.array([ i['align_to_ref_method']['method_results']['cumulative_afm'] for i in sn if i['align_to_ref_method']['method_results'].get('cumulative_afm') ])
 
   cx = cafm[:,:,2][:,0]
@@ -440,5 +737,6 @@ if (__name__ == '__main__'):
   p = plt.scatter(np.arange(len(cx)),xl)
   p = plt.scatter(np.arange(len(cy)),yl)
   plt.show()
+  '''
 
 
