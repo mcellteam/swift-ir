@@ -72,10 +72,11 @@ class ImageLibrary:
 
     def remove_image_reference ( self, file_path ):
         image_ref = None
-        real_norm_path = os.path.realpath(os.path.normpath(file_path))
-        if real_norm_path in self.images:
-            print_debug ( 10, "Unloading image: \"" + real_norm_path + "\"" )
-            image_ref = self.images.pop(real_norm_path)
+        if not (file_path is None):
+            real_norm_path = os.path.realpath(os.path.normpath(file_path))
+            if real_norm_path in self.images:
+                print_debug ( 10, "Unloading image: \"" + real_norm_path + "\"" )
+                image_ref = self.images.pop(real_norm_path)
         return ( image_ref )
 
 
@@ -87,7 +88,10 @@ class AnnotatedImage:
     '''A class containing an image and other information to be displayed.'''
     def __init__ ( self, role, file_name, load_now=False ):
         self.role = role
-        self.image_file_name = os.path.realpath(os.path.normpath(file_name))
+        if file_name is None:
+          self.image_file_name = None
+        else:
+          self.image_file_name = os.path.realpath(os.path.normpath(file_name))
         self.image_size = None
         self.pixmap = None
         if load_now:
