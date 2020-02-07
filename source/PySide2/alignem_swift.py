@@ -16,7 +16,7 @@ def align_forward():
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
 
 def notyet():
-    alignem.print_debug ( 0, "Function not implemented yet." )
+    alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
 skip = BoolField("Skip",False)
 
@@ -25,7 +25,7 @@ control_model = [
   [ # Begin first pane of rows
     [ "Project File:" ],
     [ "Destination:" ],
-    [ CallbackButton("Jump To:",notyet), IntField(None,1), 6*" ", skip, CallbackButton("Clear All Skips",notyet), CallbackButton("Auto Swim Align",notyet) ],
+    [ CallbackButton("Jump To:",notyet), IntField(None,1,1), 6*" ", skip, CallbackButton("Clear All Skips",notyet), CallbackButton("Auto Swim Align",notyet) ],
     [ FloatField("X:",1.1), 6*" ", FloatField("Y:",2.2), 6*" ", FloatField("Z:",3.3) ],
     [ FloatField("a:",1010), "   ", FloatField("b:",1011), "   ", FloatField("c:",1100), "   ",
       FloatField("d:",1101), "   ", FloatField("e:",1110), "   ", FloatField("f:",1111), "   " ],
@@ -37,10 +37,13 @@ control_model = [
 if __name__ == "__main__":
     global main_win
 
+    alignem.debug_level = 20
+
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False)
     args = options.parse_args()
-    alignem.debug_level = args.debug
+    if args.debug != None:
+      alignem.debug_level = args.debug
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
 
@@ -48,7 +51,7 @@ if __name__ == "__main__":
     main_win.define_roles ( ['ref','src','align'] )
 
     alignem.print_debug ( 30, "================= Importing Images =================" )
-    ref_image_names = [ None,
+    ref_image_stack = [ None,
                         "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
@@ -56,7 +59,7 @@ if __name__ == "__main__":
                         "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
 
-    src_image_names = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+    src_image_stack = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
@@ -64,7 +67,7 @@ if __name__ == "__main__":
                         "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
 
-    aln_image_names = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1a.jpg",
+    aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1a.jpg",
                         "aligned/vj_097_shift_rot_skew_crop_1k1k_2a.jpg",
                         "aligned/vj_097_shift_rot_skew_crop_1k1k_3a.jpg",
                         "aligned/vj_097_shift_rot_skew_crop_1k1k_4a.jpg",
@@ -74,9 +77,9 @@ if __name__ == "__main__":
 
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    main_win.load_images_in_role ( 'ref', ref_image_names )
-    main_win.load_images_in_role ( 'src', src_image_names )
-    main_win.load_images_in_role ( 'align', aln_image_names )
+    main_win.load_images_in_role ( 'ref', ref_image_stack )
+    main_win.load_images_in_role ( 'src', src_image_stack )
+    main_win.load_images_in_role ( 'align', aln_image_stack )
 
     alignem.run_app(main_win)
 
