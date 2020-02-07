@@ -38,9 +38,9 @@ if __name__ == "__main__":
     global main_win
 
     options = argparse.ArgumentParser()
-    options.add_argument("-f", "--file", type=str, required=False)
+    options.add_argument("-d", "--debug", type=int, required=False)
     args = options.parse_args()
-    fname = args.file
+    debug = args.debug
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.remove_all_layers(None)
@@ -73,6 +73,8 @@ if __name__ == "__main__":
                         "aligned/vj_097_shift_rot_skew_crop_1k1k_5a.jpg",
                         "aligned/vj_097_shift_rot_skew_crop_1k1k_6a.jpg",
                         "aligned/vj_097_shift_rot_skew_crop_1k1k_7a.jpg" ]
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     main_win.load_images_in_role ( 'ref', ref_image_names )
     main_win.load_images_in_role ( 'src', src_image_names )
