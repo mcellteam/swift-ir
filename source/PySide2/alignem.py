@@ -32,7 +32,7 @@ else:
 
 # Import project and alignment support from SWiFT-IR:
 
-import swift_project
+# import swift_project
 
 
 debug_level = 10
@@ -674,7 +674,7 @@ class MainWindow(QMainWindow):
               [ '&Images',
                 [
                   #[ '&Import...', None, self.import_images, None, None, None ],
-                  [ 'Define Roles', None, self.define_roles, None, None, None ],
+                  [ 'Define Roles', None, self.define_roles_callback, None, None, None ],
                   [ '&Import into',
                     [
                       #[ 'New Role',  None, self.import_images_new_role, None, None, None ],
@@ -687,7 +687,7 @@ class MainWindow(QMainWindow):
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
-                  # [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
+                  [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
                   [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
                 ]
               ],
@@ -862,6 +862,8 @@ class MainWindow(QMainWindow):
 
               parent.addAction ( action )
 
+
+
     @Slot()
     def not_yet(self, checked):
         print ( "Function is not implemented yet" )
@@ -909,26 +911,14 @@ class MainWindow(QMainWindow):
         print_debug ( 50, "  Action: " + str(option_action) )
 
 
-
-    @Slot()
-    def import_images(self, checked):
+    def import_images(self, role_to_import, file_name_list ):
         global alignment_layer_list
         global alignment_layer_index
         global preloading_range
 
-        global import_role_name
+        print ( "  Importing images for role: " + str(role_to_import) )
+        print_debug ( 5, "  Importing images for role: " + str(role_to_import) )
 
-        print_debug ( 5, "  Importing images for role: " + str(import_role_name) )
-
-        options = QFileDialog.Options()
-        if False:  # self.native.isChecked():
-            options |= QFileDialog.DontUseNativeDialog
-
-        file_name_list, filtr = QFileDialog.getOpenFileNames ( None,  # None was self
-                                                               "Select Images to Import",
-                                                               #self.openFileNameLabel.text(),
-                                                               "Select Images",
-                                                               "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
         if file_name_list != None:
           if len(file_name_list) > 0:
 
@@ -939,16 +929,16 @@ class MainWindow(QMainWindow):
             print_debug ( 20, "Selected Files: " + str(file_name_list) )
             print_debug ( 20, "" )
             for f in file_name_list:
-              # Find next layer with an empty role matching the requested import_role_name
-              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(import_role_name) )
+              # Find next layer with an empty role matching the requested role_to_import
+              print_debug ( 10, "Trying to place file " + str(f) + " in role " + str(role_to_import) )
               found_layer = None
               this_layer_index = 0
               for alignment_layer in alignment_layer_list:
                 role_taken = False
                 for image in alignment_layer.image_list:
-                  print_debug ( 10, "Checking image role of " + image.role + " against import_role_name of " + str(import_role_name) )
+                  print_debug ( 10, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
                   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                  if image.role == str(import_role_name):
+                  if image.role == str(role_to_import):
                     role_taken = True
                     break
                 print_debug ( 10, "Searched layer and role_taken = " + str(role_taken) )
@@ -960,7 +950,7 @@ class MainWindow(QMainWindow):
               if found_layer:
                 # Add the image/role to the found layer
                 print_debug ( 10, "Adding to layer " + str(this_layer_index) )
-                found_layer.image_list.append ( AnnotatedImage ( str(import_role_name), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+                found_layer.image_list.append ( AnnotatedImage ( str(role_to_import), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
               else:
                 # Add a new layer for the image
                 print_debug ( 10, "Creating a new layer at " + str(this_layer_index) )
@@ -978,7 +968,69 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def define_roles(self, checked):
+    def import_images_dialog(self, checked):
+        global alignment_layer_list
+        global alignment_layer_index
+        global preloading_range
+
+        global import_role_name
+
+        print_debug ( 5, "  Importing images for role: " + str(import_role_name) )
+
+        options = QFileDialog.Options()
+        if False:  # self.native.isChecked():
+            options |= QFileDialog.DontUseNativeDialog
+
+        file_name_list, filtr = QFileDialog.getOpenFileNames ( None,  # None was self
+                                                               "Select Images to Import",
+                                                               #self.openFileNameLabel.text(),
+                                                               "Select Images",
+                                                               "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
+
+        self.import_images( import_role_name, file_name_list )
+
+        # self.update_win_self()
+
+        #if len(alignment_layer_list) > 0:
+        #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+
+    def load_images_in_role ( self, role, file_names ):
+        self.import_images ( role, file_names )
+
+    def define_roles ( self, roles_list ):
+
+        # Set the image panels according to the roles
+        self.image_panel.set_roles ( roles_list )
+
+        # Set the Roles menu from this roles_list
+        roles_menu = None
+        mb = self.menuBar()
+        if not (mb is None):
+          for m in mb.children():
+            if type(m) == QMenu:
+              text_label = ''.join(m.title().split('&'))
+              if 'Images' in text_label:
+                print ( "Found Images Menu" )
+                for mm in m.children():
+                  if type(mm) == QMenu:
+                    text_label = ''.join(mm.title().split('&'))
+                    if 'Import into' in text_label:
+                      print ( "Found Import Into Menu" )
+                      # Remove all the old actions:
+                      while len(mm.actions()) > 0:
+                        mm.removeAction(mm.actions()[-1])
+                      # Add the new actions
+                      first = True
+                      for role in roles_list:
+                        item = QAction ( role, self )
+                        #item.setCheckable(True)
+                        #item.setChecked(first)
+                        item.triggered.connect ( self.import_into_role )
+                        mm.addAction(item)
+                        first = False
+
+    @Slot()
+    def define_roles_callback(self, checked):
         global global_panel_roles
         input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
         if ok:
@@ -986,34 +1038,7 @@ class MainWindow(QMainWindow):
           roles_list = global_panel_roles
           if len(input_val) > 0:
             roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          self.image_panel.set_roles ( roles_list )
-
-          # Set the Roles menu with these newly defined roles
-          roles_menu = None
-          mb = self.menuBar()
-          if not (mb is None):
-            for m in mb.children():
-              if type(m) == QMenu:
-                text_label = ''.join(m.title().split('&'))
-                if 'Images' in text_label:
-                  print ( "Found Images Menu" )
-                  for mm in m.children():
-                    if type(mm) == QMenu:
-                      text_label = ''.join(mm.title().split('&'))
-                      if 'Import into' in text_label:
-                        print ( "Found Import Into Menu" )
-                        # Remove all the old actions:
-                        while len(mm.actions()) > 0:
-                          mm.removeAction(mm.actions()[-1])
-                        # Add the new actions
-                        first = True
-                        for role in roles_list:
-                          item = QAction ( role, self )
-                          #item.setCheckable(True)
-                          #item.setChecked(first)
-                          item.triggered.connect ( self.import_into_role )
-                          mm.addAction(item)
-                          first = False
+          self.define_roles (roles_list)
         else:
           print ( "Cancel: Roles not changed" )
 
@@ -1022,7 +1047,7 @@ class MainWindow(QMainWindow):
     def import_into_role(self, checked):
         global import_role_name
         import_role_name = str ( self.sender().text() )
-        self.import_images ( checked )
+        self.import_images_dialog ( checked )
 
     '''
     @Slot()
@@ -1054,7 +1079,7 @@ class MainWindow(QMainWindow):
         input_val, ok = QInputDialog().getText ( None, "Select Role", "Choose: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
         if ok:
           import_role_name = input_val
-          self.import_images ( checked )
+          self.import_images_dialog ( checked )
 
     @Slot()
     def remove_this_layer(self, checked):
@@ -1065,23 +1090,15 @@ class MainWindow(QMainWindow):
           alignment_layer_index += -1
         for p in self.panel_list:
             p.update_zpa_self()
+        self.update_win_self()
 
     @Slot()
     def remove_all_layers(self, checked):
         global alignment_layer_list
         global alignment_layer_index
-        global main_window
-        global import_role_name
-        print ( "Not working yet" )
-        '''
         alignment_layer_index = 0
-        alignment_layer_list = []
-        for w in main_window.panel_list:
-            main_window.image_hbox_layout.removeWidget(w)
-            w.destroy()
-        main_window.panel_list = []
-        import_role_name = 1
-        '''
+        while len(alignment_layer_list) > 0:
+          self.remove_this_layer(checked)
         self.update_win_self()
 
     @Slot()
