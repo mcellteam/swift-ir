@@ -18,24 +18,24 @@ from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 
 # Get the path of ../../python
-#alignem_file = os.path.abspath(__file__)
-#alignem_p    = os.path.dirname( alignem_file )
-#alignem_pp   = os.path.dirname( alignem_p )
-#alignem_shared_path = os.path.join ( alignem_pp, 'python' )
+alignem_file = os.path.abspath(__file__)
+alignem_p    = os.path.dirname( alignem_file )
+alignem_pp   = os.path.dirname( alignem_p )
+alignem_shared_path = os.path.join ( alignem_pp, 'python' )
 
-#if len(sys.path) <= 0:
-#  # Add the path to the currently empty path (this would be an unusual case)
-#  sys.path.append ( swift_shared_path )
-#else:
-#  # Add the path in the second position (after the default current directory of "")
-#  sys.path.insert ( 1, alignem_shared_path )
+if len(sys.path) <= 0:
+  # Add the path to the currently empty path (this would be an unusual case)
+  sys.path.append ( swift_shared_path )
+else:
+  # Add the path in the second position (after the default current directory of "")
+  sys.path.insert ( 1, alignem_shared_path )
 
 # Import project and alignment support from SWiFT-IR:
 
 import swift_project
 
 
-debug_level = 10
+debug_level = 0
 def print_debug ( level, str ):
   global debug_level
   if level <= debug_level:
@@ -128,17 +128,15 @@ class AnnotatedImage:
           image_library.remove_image_reference ( self.image_file_name )
 
 
-import_role_name = "src"
+import_role_name = "ref"
 global_panel_roles = ['ref','src','aligned']
-
 
 
 class DisplayLayer:
     '''A class representing the data at one "layer" of an image stack.'''
-    def __init__ ( self, file_name, load_now=False ):
-        global import_role_name
+    def __init__ ( self, role_name, file_name, load_now=False ):
         self.image_list = []
-        self.image_list.append ( AnnotatedImage ( str(import_role_name), file_name, load_now ) )
+        self.image_list.append ( AnnotatedImage ( str(role_name), file_name, load_now ) )
 
     def isLoaded ( self ):
         for im in self.image_list:
@@ -169,8 +167,8 @@ class ZoomPanWidget(QWidget):
 
         self.parent = parent
 
-        if fname != None:
-          alignment_layer_list.append ( DisplayLayer ( fname, load_now=True ) )
+        #if fname != None:
+        #  alignment_layer_list.append ( DisplayLayer ( fname, load_now=True ) )
 
         self.floatBased = False
         self.antialiased = False
@@ -209,9 +207,9 @@ class ZoomPanWidget(QWidget):
 
     def update_siblings ( self ):
         # This will cause the normal "update_self" function to be called on each sibling
-        print ( "Update_siblings called, calling siblings.update_self" )
+        print_debug ( 30, "Update_siblings called, calling siblings.update_self" )
         if type(self.parent) == MultiImagePanel:
-            print ( "Child of MultiImagePanel" )
+            print_debug ( 30, "Child of MultiImagePanel" )
             self.parent.update_multi_self(exclude=[self])
 
 
@@ -231,14 +229,14 @@ class ZoomPanWidget(QWidget):
         return ( img_y )
 
     def dump(self):
-        print ( "wheel = " + str(self.wheel_index) )
-        print ( "zoom = " + str(self.zoom_scale) )
-        print ( "ldx  = " + str(self.ldx) )
-        print ( "ldy  = " + str(self.ldy) )
-        print ( "mdx  = " + str(self.mdx) )
-        print ( "mdy  = " + str(self.mdy) )
-        print ( " dx  = " + str(self.dx) )
-        print ( " dy  = " + str(self.dy) )
+        print_debug ( 30, "wheel = " + str(self.wheel_index) )
+        print_debug ( 30, "zoom = " + str(self.zoom_scale) )
+        print_debug ( 30, "ldx  = " + str(self.ldx) )
+        print_debug ( 30, "ldy  = " + str(self.ldy) )
+        print_debug ( 30, "mdx  = " + str(self.mdx) )
+        print_debug ( 30, "mdy  = " + str(self.mdy) )
+        print_debug ( 30, " dx  = " + str(self.dx) )
+        print_debug ( 30, " dy  = " + str(self.dy) )
 
     def setFloatBased(self, floatBased):
         self.floatBased = floatBased
@@ -444,7 +442,7 @@ class MultiImagePanel(QWidget):
         painter.end()
 
     def update_spacing ( self ):
-        print ( "Setting Spacing to " + str(self.current_margin) )
+        print_debug ( 30, "Setting Spacing to " + str(self.current_margin) )
         self.hb_layout.setMargin(self.current_margin)    # This sets margins around the outer edge of all panels
         self.hb_layout.setSpacing(self.current_margin)    # This sets margins around the outer edge of all panels
         self.repaint()
@@ -481,7 +479,7 @@ class MultiImagePanel(QWidget):
           self.add_panel ( zpw )
 
     def remove_all_panels ( self, unused_checked ):
-        print ( "In remove_all_panels" )
+        print_debug ( 30, "In remove_all_panels" )
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget ( self.actual_children[-1] )
             self.actual_children[-1].deleteLater()
@@ -491,7 +489,7 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def center_all_images ( self ):
-        print ( "In center_all_images" )
+        print_debug ( 30, "In center_all_images" )
         for child in self.actual_children:
             pass # Not sure how to do this yet
             #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -515,7 +513,7 @@ class ControlPanelWidget(QWidget):
         if self.cm != None:
             # Only show the first pane for now
             rows = control_model[0]
-            print ( "Pane contains " + str(len(rows)) + " rows" )
+            print_debug ( 30, "Pane contains " + str(len(rows)) + " rows" )
 
             for row in rows:
               row_box = QWidget()
@@ -523,9 +521,9 @@ class ControlPanelWidget(QWidget):
               row_box_layout.setMargin(2)
               row_box_layout.setSpacing(2)
               row_box.setLayout ( row_box_layout )
-              print ( "Row contains " + str(len(row)) + " items" )
+              print_debug ( 30, "Row contains " + str(len(row)) + " items" )
               for item in row:
-                  print ( "  Item is " + str(item) )
+                  print_debug ( 30, "  Item is " + str(item) )
                   if type(item) == type('a'):
                       item_widget = QLabel ( str(item) )
                       item_widget.setAlignment(Qt.AlignHCenter)
@@ -590,7 +588,7 @@ class CallbackButton(GenericWidget):
         self.callback = callback
 
 def align_forward():
-    print ( "Aligning Forward ..." )
+    print_debug ( 30, "Aligning Forward ..." )
 
 
 
@@ -678,12 +676,10 @@ class MainWindow(QMainWindow):
               ],
               [ '&Images',
                 [
-                  #[ '&Import...', None, self.import_images, None, None, None ],
                   [ 'Define Roles', None, self.define_roles_callback, None, None, None ],
                   [ '&Import into',
                     [
-                      #[ 'New Role',  None, self.import_images_new_role, None, None, None ],
-                      #[ 'Selected Role',  None, self.import_images_selected_role, None, None, None ]
+                      # Empty list to hold the dynamic roles as defined above
                     ]
                   ],
                   [ '-', None, None, None, None, None ],
@@ -871,7 +867,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def not_yet(self, checked):
-        print ( "Function is not implemented yet" )
+        print_debug ( 30, "Function is not implemented yet" )
 
     @Slot()
     def set_debug_level(self, checked):
@@ -879,10 +875,10 @@ class MainWindow(QMainWindow):
         action_text = self.sender().text()
         try:
             value = int(action_text.split(' ')[1])
-            print ( "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
+            print_debug ( 30, "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
             debug_level = value
         except:
-            print ( "Invalid debug value in: \"" + str(action_text) )
+            print_debug ( 30, "Invalid debug value in: \"" + str(action_text) )
 
 
     @Slot()
@@ -921,9 +917,11 @@ class MainWindow(QMainWindow):
         global alignment_layer_index
         global preloading_range
 
-        print ( "  Importing images for role: " + str(role_to_import) )
+        print_debug ( 30, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
+
+        print_debug ( 30, "  Importing images for role: " + str(role_to_import) )
         for f in file_name_list:
-          print ( "   " + str(f) )
+          print_debug ( 30, "   " + str(f) )
         print_debug ( 5, "  Importing images for role: " + str(role_to_import) )
 
         if file_name_list != None:
@@ -961,7 +959,7 @@ class MainWindow(QMainWindow):
               else:
                 # Add a new layer for the image
                 print_debug ( 10, "Creating a new layer at " + str(this_layer_index) )
-                alignment_layer_list.append ( DisplayLayer ( f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+                alignment_layer_list.append ( DisplayLayer ( role_to_import, f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
 
             # Draw the panels ("windows")
             for p in self.panel_list:
@@ -994,6 +992,7 @@ class MainWindow(QMainWindow):
                                                                "Select Images",
                                                                "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
 
+        print_debug ( 30, "import_images_dialog ( " + str(import_role_name) + ", " + str(file_name_list) + ")" )
         self.import_images( import_role_name, file_name_list )
 
         # self.update_win_self()
@@ -1003,6 +1002,7 @@ class MainWindow(QMainWindow):
 
 
     def load_images_in_role ( self, role, file_names ):
+        print_debug ( 30, "load_images_in_role ( " + str(role) + ", " + str(file_names) + ")" )
         self.import_images ( role, file_names )
 
 
@@ -1019,12 +1019,12 @@ class MainWindow(QMainWindow):
             if type(m) == QMenu:
               text_label = ''.join(m.title().split('&'))
               if 'Images' in text_label:
-                print ( "Found Images Menu" )
+                print_debug ( 30, "Found Images Menu" )
                 for mm in m.children():
                   if type(mm) == QMenu:
                     text_label = ''.join(mm.title().split('&'))
                     if 'Import into' in text_label:
-                      print ( "Found Import Into Menu" )
+                      print_debug ( 30, "Found Import Into Menu" )
                       # Remove all the old actions:
                       while len(mm.actions()) > 0:
                         mm.removeAction(mm.actions()[-1])
@@ -1049,7 +1049,7 @@ class MainWindow(QMainWindow):
             roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
           self.define_roles (roles_list)
         else:
-          print ( "Cancel: Roles not changed" )
+          print_debug ( 30, "Cancel: Roles not changed" )
 
 
     @Slot()
@@ -1057,38 +1057,6 @@ class MainWindow(QMainWindow):
         global import_role_name
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( checked )
-
-    '''
-    @Slot()
-    def import_images_new_role(self, checked):
-        print ( "Roles must be defined first" )
-
-        global import_role_name
-        import_role_name += 1
-        self.import_images ( checked )
-        zpw = ZoomPanWidget(role=str(import_role_name), parent=self, fname=fname)
-        zpw.draw_border = self.draw_border
-        self.panel_list.append ( zpw )
-        self.image_hbox_layout.addWidget ( self.panel_list[-1] )
-
-    @Slot()
-    def import_images_new_role(self, checked):
-        global import_role_name
-        import_role_name += 1
-        self.import_images ( checked )
-        zpw = ZoomPanWidget(role=str(import_role_name), parent=self, fname=fname)
-        zpw.draw_border = self.draw_border
-        self.panel_list.append ( zpw )
-        self.image_hbox_layout.addWidget ( self.panel_list[-1] )
-    '''
-
-    @Slot()
-    def import_images_selected_role(self, checked):
-        global import_role_name
-        input_val, ok = QInputDialog().getText ( None, "Select Role", "Choose: "+str(global_panel_roles), echo=QLineEdit.Normal, text="" )
-        if ok:
-          import_role_name = input_val
-          self.import_images_dialog ( checked )
 
     @Slot()
     def remove_this_layer(self, checked):
@@ -1115,25 +1083,12 @@ class MainWindow(QMainWindow):
         global alignment_layer_list
         global alignment_layer_index
         global main_window
-        global import_role_name
-        print ( "Removing all panels" )
+        print_debug ( 30, "Removing all panels" )
         if 'image_panel' in dir(self):
-            print ( "image_panel exists" )
+            print_debug ( 30, "image_panel exists" )
             self.image_panel.remove_all_panels(None)
         else:
-            print ( "image_panel does not exit!!" )
-
-        '''
-        alignment_layer_index = 0
-        alignment_layer_list = []
-        if main_window != None:
-          for w in main_window.panel_list:
-              main_window.image_hbox_layout.removeWidget(w)
-              w.destroy()
-          main_window.panel_list = []
-        import_role_name = 1
-        #self.init_panels()
-        '''
+            print_debug ( 30, "image_panel does not exit!!" )
         self.update_win_self()
 
 
@@ -1147,7 +1102,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def set_bg_color(self, checked):
         c = QColorDialog.getColor()
-        # print ( " Color = " + str(c) )
+        # print_debug ( 30, " Color = " + str(c) )
         self.image_panel.bg_color = c
         self.image_panel.update_multi_self()
         self.image_panel.repaint()
@@ -1190,22 +1145,16 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def py_console(self, checked):
-        print ( "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
+        print_debug ( 1, "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-def run_app(main_win=None, file_name=None):
+def run_app(main_win=None):
     global app
-    global fname
     global main_window
 
-    fname = file_name
-
-    # Qt Application
-    # app = QApplication(sys.argv)
-
     if main_win == None:
-        main_window = MainWindow(fname)
+        main_window = MainWindow()
     else:
         main_window = main_win
 
@@ -1220,17 +1169,21 @@ def run_app(main_win=None, file_name=None):
 #    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
 if __name__ == "__main__":
-    # global app  # global isn't needed here ... because the "if" doesn't create a new scope (unlike many other languages)
-
     options = argparse.ArgumentParser()
-    options.add_argument("-f", "--file", type=str, required=False)
+    options.add_argument("-d", "--debug", type=int, required=False)
     args = options.parse_args()
-    fname = args.file
+    try:
+      debug_level = int(args.debug)
+    except:
+      pass
+
+    # Note that the MainWindow constructor currently creates a global "app"
+    # This is convenient for other applications creating a MainWindow without importing any Qt or PySide2 modules
 
     # Qt Application
-    app = QApplication(sys.argv)
+    # app = QApplication(sys.argv)
 
-    main_window = MainWindow(fname)
+    main_window = MainWindow()
     # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
 
     main_window.show()
