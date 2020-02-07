@@ -6,6 +6,8 @@ import cv2
 import alignem
 from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 
+main_win = None
+
 def align_all():
     print ( "Aligning All with SWiFT-IR ..." )
 
@@ -33,7 +35,7 @@ control_model = [
 
 
 if __name__ == "__main__":
-    # global app  # global isn't needed here ... because the "if" doesn't create a new scope (unlike many other languages)
+    global main_win
 
     options = argparse.ArgumentParser()
     options.add_argument("-f", "--file", type=str, required=False)
@@ -41,5 +43,38 @@ if __name__ == "__main__":
     fname = args.file
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
+
+    print ( "================= Defining Roles =================" )
+    main_win.define_roles ( ['ref','src','align'] )
+
+    print ( "================= Importing Images =================" )
+    ref_image_names = [ "vj_097_shift_rot_skew_crop_1k1k_0.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
+
+    src_image_names = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                        "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+
+    aln_image_names = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_2a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_3a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_4a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_5a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_6a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_7a.jpg" ]
+
+    main_win.load_images_in_role ( 'ref', ref_image_names )
+    main_win.load_images_in_role ( 'src', src_image_names )
+    main_win.load_images_in_role ( 'align', aln_image_names )
+
     alignem.run_app(main_win)
 
