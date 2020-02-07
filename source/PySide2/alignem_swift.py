@@ -50,7 +50,7 @@ if __name__ == "__main__":
     main_win.define_roles ( ['ref','src','align'] )
 
     print ( "================= Importing Images =================" )
-    ref_image_names = [ "vj_097_shift_rot_skew_crop_1k1k_0.jpg",
+    ref_image_names = [ None,
                         "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
