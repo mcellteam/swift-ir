@@ -18,21 +18,21 @@ from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 
 # Get the path of ../../python
-alignem_file = os.path.abspath(__file__)
-alignem_p    = os.path.dirname( alignem_file )
-alignem_pp   = os.path.dirname( alignem_p )
-alignem_shared_path = os.path.join ( alignem_pp, 'python' )
+#alignem_file = os.path.abspath(__file__)
+#alignem_p    = os.path.dirname( alignem_file )
+#alignem_pp   = os.path.dirname( alignem_p )
+#alignem_shared_path = os.path.join ( alignem_pp, 'python' )
 
-if len(sys.path) <= 0:
-  # Add the path to the currently empty path (this would be an unusual case)
-  sys.path.append ( swift_shared_path )
-else:
-  # Add the path in the second position (after the default current directory of "")
-  sys.path.insert ( 1, alignem_shared_path )
+#if len(sys.path) <= 0:
+#  # Add the path to the currently empty path (this would be an unusual case)
+#  sys.path.append ( swift_shared_path )
+#else:
+#  # Add the path in the second position (after the default current directory of "")
+#  sys.path.insert ( 1, alignem_shared_path )
 
 # Import project and alignment support from SWiFT-IR:
 
-# import swift_project
+import swift_project
 
 
 debug_level = 10
