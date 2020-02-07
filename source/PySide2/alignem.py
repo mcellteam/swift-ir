@@ -383,6 +383,11 @@ class ZoomPanWidget(QWidget):
                 painter.setPen(QPen(self.border_color,4))
                 painter.drawRect(painter.viewport())
 
+            # Draw the role
+            painter.setPen(QPen(QColor(255,100,100,255), 5))
+            painter.drawText(20, 30, self.role)
+
+
         else:
             painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
             painter.translate(self.width() / 2, self.height() / 2)
@@ -917,6 +922,8 @@ class MainWindow(QMainWindow):
         global preloading_range
 
         print ( "  Importing images for role: " + str(role_to_import) )
+        for f in file_name_list:
+          print ( "   " + str(f) )
         print_debug ( 5, "  Importing images for role: " + str(role_to_import) )
 
         if file_name_list != None:
@@ -994,8 +1001,10 @@ class MainWindow(QMainWindow):
         #if len(alignment_layer_list) > 0:
         #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
+
     def load_images_in_role ( self, role, file_names ):
         self.import_images ( role, file_names )
+
 
     def define_roles ( self, roles_list ):
 
