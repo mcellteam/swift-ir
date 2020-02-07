@@ -43,6 +43,8 @@ if __name__ == "__main__":
     fname = args.file
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
+    main_win.remove_all_layers(None)
+    main_win.remove_all_panels(None)
 
     print ( "================= Defining Roles =================" )
     main_win.define_roles ( ['ref','src','align'] )
