@@ -97,7 +97,11 @@ def write_json_project ( project_file_name="alignem_out.json",
             jdsnsam['bias_skew_x_per_image'] = 0.0
             jdsnsam['bias_rot_per_image'] = 0.0
             jdsnsam['output_level'] = 0
-            jdsnsa['method_results'] = {}
+            jdsnsa['method_results'] = {
+              'affine_matrix': [ [1.0, 0.0, 0,0], [0.0, 1.0, 0.0] ],
+              'cumulative_afm': [ [1.0, 0.0, 0,0], [0.0, 1.0, 0.0] ],
+              'snr': 12.345
+            }
             jdsn['alignment_stack'].append ( jdsns )
 
     jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
@@ -259,6 +263,11 @@ def write_json_project ( project_file_name="alignem_out.json",
       f.write ( '}\n' ) # End of entire dictionary
     """
 
+class StringBufferFile:
+  def __init__ ( self ):
+    self.fs = ""
+  def write ( self, s ):
+    self.fs = self.fs + s
 
 def align_all():
     alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
@@ -295,11 +304,26 @@ def align_all():
         if im.image_file_name != None:
           print ( "   " + im.role + ":  " + im.image_file_name )
 
+    # Generate the JSON on the fly
+    fb = StringBufferFile()
+    write_json_project ( "alignem_out.json", fb=fb )
+    if len(fb.fs.strip()) > 0:
+      d = None
+      try:
+        d = json.loads ( fb.fs )
+        print ( "Running pyswift_tui.run_json_project" )
+        pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
+      except:
+        alignem.print_debug ( 1, "Error when running" )
+        alignem.print_debug ( 1, "JSON:" )
+        alignem.print_debug ( 1, str(d) )
+
+
     # Use a dummy project for now just to verify that the pyswift_tui interface works
-    fp = open("pyswift_gui_gtk.json",'r')
-    d = json.load(fp)
-    print ( "Running pyswift_tui.run_json_project" )
-    pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
+    #fp = open("pyswift_gui_gtk.json",'r')
+    #d = json.load(fp)
+    #print ( "Running pyswift_tui.run_json_project" )
+    #pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
 
 
 
@@ -341,7 +365,8 @@ if __name__ == "__main__":
 
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 
-    main_win.define_roles ( ['ref','src','align'] )
+    #main_win.define_roles ( ['ref','src','align'] )
+    main_win.define_roles ( ['ref','base','align'] )
 
     alignem.print_debug ( 30, "================= Importing Images =================" )
 
@@ -372,7 +397,7 @@ if __name__ == "__main__":
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     main_win.load_images_in_role ( 'ref', ref_image_stack )
-    main_win.load_images_in_role ( 'src', src_image_stack )
+    main_win.load_images_in_role ( 'base', src_image_stack )
     main_win.load_images_in_role ( 'align', aln_image_stack )
 
     alignem.run_app(main_win)
