@@ -26,8 +26,8 @@ def lin_fit(x,y):
 
   return(m,b,r,p,stderr)
 
-align_swiftir.global_swiftir_mode = 'c'
-#align_swiftir.global_swiftir_mode = 'python'
+#align_swiftir.global_swiftir_mode = 'c'
+align_swiftir.global_swiftir_mode = 'python'
 
 
 def BiasFuncs(align_list,bias_funcs=None):
@@ -292,7 +292,7 @@ if (__name__ == '__main__'):
         ref_fn = os.path.basename(s_tbd[i]['images']['ref']['filename'])
         s_tbd[i]['images']['ref']['filename'] = os.path.join(scale_tbd_dir,'img_src',ref_fn)
 
-      
+
       atrm = s_tbd[i]['align_to_ref_method']
 
       # Initialize method_results for skipped or missing method_results
@@ -392,8 +392,8 @@ if (__name__ == '__main__'):
 
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:
-        im_sta_fn = s_tbd[i]['images']['ref']['filename']  
-        im_mov_fn = s_tbd[i]['images']['base']['filename']  
+        im_sta_fn = s_tbd[i]['images']['ref']['filename']
+        im_mov_fn = s_tbd[i]['images']['base']['filename']
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
           atrm = s_tbd[i]['align_to_ref_method']
           x_bias = atrm['method_data']['bias_x_per_image']
@@ -428,8 +428,8 @@ if (__name__ == '__main__'):
     # Initialize c_afm with initial offsets
     # Initial offsets for c_afm
     init_skew_x = 0.037
-    init_scale_x = 1/1.05 
-    init_scale_y = 1/1.15 
+    init_scale_x = 1/1.05
+    init_scale_y = 1/1.15
     init_rot= 0.05
     init_x = -20.0
     init_y = 16.0
@@ -450,7 +450,7 @@ if (__name__ == '__main__'):
 
 
     # Save unmodified first image into align_dir
-    im_sta_fn = s_tbd[0]['images']['base']['filename']  
+    im_sta_fn = s_tbd[0]['images']['base']['filename']
     base_fn = os.path.basename(im_sta_fn)
     al_fn = os.path.join(align_dir,base_fn)
     print("Saving first image in align dir: ", al_fn)
@@ -558,7 +558,7 @@ if (__name__ == '__main__'):
     bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
     bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
     '''
-    
+
 
     # Align the images
     for item in align_list:
@@ -591,7 +591,7 @@ if (__name__ == '__main__'):
     print("\nSaving all aligned images...\n")
 
     # Save possibly unmodified first image into align_dir
-    im_sta_fn = s_tbd[0]['images']['base']['filename']  
+    im_sta_fn = s_tbd[0]['images']['base']['filename']
     base_fn = os.path.basename(im_sta_fn)
     al_fn = os.path.join(align_dir,base_fn)
     print("Saving first image in align dir: ", al_fn)
@@ -628,7 +628,7 @@ if (__name__ == '__main__'):
       snr = recipe.ingredients[-1].snr
       afm = recipe.ingredients[-1].afm
       c_afm = align_item.cumulative_afm
-    
+
       # Store custom bias values in the dictionary for this stack item
       atrm = s_tbd[align_idx]['align_to_ref_method']
       atrm['method_data']['bias_x_per_image'] = x_bias
@@ -697,19 +697,19 @@ if (__name__ == '__main__'):
     '''
     p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
     print("\n4th degree of Skew_X bias: \n", p)
-  
+
     p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
     print("\n4th degree of Scale_X bias: \n", p)
-  
+
     p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
     print("\n4th degree of Scale_Y bias: \n", p)
-  
+
     p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
     print("\n4th degree of Rot bias: \n", p)
-  
+
     p = np.polyfit(x_array[:,0],x_array[:,1],4)
     print("\n4th degree of X bias: \n", p)
-  
+
     p = np.polyfit(y_array[:,0],y_array[:,1],4)
     print("\n4th degree of Y bias: \n", p)
     '''
