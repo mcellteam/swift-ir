@@ -34,6 +34,87 @@ def write_json_project ( project_file_name="alignem_out.json",
     # Actually write the file
     # gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
 
+    j = {}
+    j['version'] = 0.2
+    j['method'] = "SWiFT-IR"
+    j['user_settings'] = { "max_image_file_size": 100000000 }
+    j['data'] = {}
+    jd = j['data']
+    jd['source_path'] = ""
+    jd['destination_path'] = "test"
+    jd['pairwise_alignment'] = True
+    jd['defaults'] = {}
+    jdd = jd['defaults']
+    jdd['align_to_next_pars'] = {}
+    jdda = jdd['align_to_next_pars']
+    jdda['window_size'] = 1024
+    jdda['addx'] = 800
+    jdda['addy'] = 800
+    jdda['bias_x_per_image'] = 0.0
+    jdda['bias_y_per_image'] = 0.0
+    jdda['output_level'] = 0
+    jd['current_scale'] = 1
+    jd['current_layer'] = 2
+    jd['scales'] = {}
+    jds = jd['scales']
+    for scale in [ 1 ]:
+      align_layer_list_for_scale = alignem.alignment_layer_list # This should be indexed by scale
+      jds[str(scale)] = {}
+      jdsn = jds[str(scale)]
+      if align_layer_list_for_scale != None:
+        if len(align_layer_list_for_scale) > 0:
+          jdsn['alignment_stack'] = []
+          for a in align_layer_list_for_scale:
+            jdsns = {}
+            jdsns['skip'] = str(control_panel_data[0][2][3]).lower()
+            jdsns['images'] = {}
+            for im in a.image_list:
+              jdsns['images'][im.role] = {}
+              jdsnsr = jdsns['images'][im.role]
+              rel_file_name = ""
+              if type(im.image_file_name) != type(None):
+                rel_file_name = os.path.relpath(im.image_file_name,start=project_path)
+              jdsnsr['filename'] = rel_file_name
+              jdsnsr['metadata'] = {}
+              jdsnsrm = jdsnsr['metadata']
+              jdsnsrm['match_points'] = []
+              jdsnsrm['annotations'] = []
+            jdsns['align_to_ref_method'] = {}
+            jdsnsa = jdsns['align_to_ref_method']
+            jdsnsa['selected_method'] = "Auto Swim Align"
+            jdsnsa['method_options'] = ["Auto Swim Align", "Match Point Align"]
+            jdsnsa['method_data'] = {}
+            jdsnsam = jdsnsa['method_data']
+            jdsnsam['alignment_options'] = ["Init Affine", "Refine Affine", "Apply Affine"]
+            jdsnsam['alignment_option'] = "Init Affine"
+            jdsnsam['window_size'] = 256
+            jdsnsam['addx'] = 256
+            jdsnsam['addy'] = 256
+            jdsnsam['bias_x_per_image'] = 0.0
+            jdsnsam['bias_y_per_image'] = 0.0
+            jdsnsam['bias_scale_x_per_image'] = 0.0
+            jdsnsam['bias_scale_y_per_image'] = 0.0
+            jdsnsam['bias_skew_x_per_image'] = 0.0
+            jdsnsam['bias_rot_per_image'] = 0.0
+            jdsnsam['output_level'] = 0
+            jdsnsa['method_results'] = {}
+            jdsn['alignment_stack'].append ( jdsns )
+
+    jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
+    proj_json = jde.encode ( j )
+
+    f = None
+    if fb is None:
+      # This is the default to write to a file
+      alignem.print_debug ( 50, "Saving destination path = " + str(destination_path) )
+      f = open ( project_file_name, 'w' )
+    else:
+      # Since a file buffer (fb) was provided, write to it rather than a file
+      alignem.print_debug ( 50, "Writing to string" )
+      f = fb
+    f.write ( proj_json )
+
+    """
     rel_dest_path = ""
     if len(destination_path) > 0:
       rel_dest_path = os.path.relpath(destination_path,start=project_path)
@@ -176,6 +257,7 @@ def write_json_project ( project_file_name="alignem_out.json",
       f.write ( '  }\n' ) # "data": {
 
       f.write ( '}\n' ) # End of entire dictionary
+    """
 
 
 def align_all():
