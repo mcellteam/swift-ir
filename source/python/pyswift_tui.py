@@ -206,48 +206,7 @@ def BoundingRect(align_list,siz):
   return rect
 
 
-
-if (__name__ == '__main__'):
-
-  if (len(sys.argv)<3):
-    print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-    print('         Open swiftir project file and perform alignment operations\n\n')
-    print('         Result is written to output project file\n\n')
-    exit(1)
-
-
-  proj_ifn = sys.argv[-2]
-  proj_ofn = sys.argv[-1]
-
-  l = len(sys.argv)-3
-
-  use_scale = 0
-  alignment_option = 'refine_affine'
-  scale_tbd = 0
-  scale_done = 0
-
-  # check for an even number of additional args
-  if (l > 0) and (int(l/2.) == l/2.):
-    i = 1
-    while (i < len(sys.argv)-2):
-      if sys.argv[i] == '-scale':
-        use_scale = int(sys.argv[i+1])
-      elif sys.argv[i] == '-alignment_option':
-        alignment_option = sys.argv[i+1]
-      else:
-        print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-        print('         Open swiftir project file and perform alignment operations\n\n')
-        print('         Result is written to output project file\n\n')
-        exit(1)
-      i+=2
-
-  #fp = open('/m2scratch/bartol/swift-ir_tests/LM9R5CA1_project.json','r')
-  fp = open(proj_ifn,'r')
-
-  d = json.load(fp)
-
-
-
+def run_json_project ( d, scale_done ):
 
   scales = sorted([ int(s) for s in d['data']['scales'].keys() ])
   destination_path = d['data']['destination_path']
@@ -682,7 +641,6 @@ if (__name__ == '__main__'):
       c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
       i+=1
 
-
     snr_file.close()
     bias_x_file.close()
     bias_y_file.close()
@@ -694,6 +652,57 @@ if (__name__ == '__main__'):
     afm_file.close()
     c_afm_file.close()
 
+    return (d,True)
+
+  else:  # if scale_tbd:
+
+    return (d,False)
+
+
+if (__name__ == '__main__'):
+
+  if (len(sys.argv)<3):
+    print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+    print('         Open swiftir project file and perform alignment operations\n\n')
+    print('         Result is written to output project file\n\n')
+    exit(1)
+
+
+  proj_ifn = sys.argv[-2]
+  proj_ofn = sys.argv[-1]
+
+  l = len(sys.argv)-3
+
+  use_scale = 0
+  alignment_option = 'refine_affine'
+  scale_tbd = 0
+  scale_done = 0
+
+  # check for an even number of additional args
+  if (l > 0) and (int(l/2.) == l/2.):
+    i = 1
+    while (i < len(sys.argv)-2):
+      if sys.argv[i] == '-scale':
+        use_scale = int(sys.argv[i+1])
+      elif sys.argv[i] == '-alignment_option':
+        alignment_option = sys.argv[i+1]
+      else:
+        print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+        print('         Open swiftir project file and perform alignment operations\n\n')
+        print('         Result is written to output project file\n\n')
+        exit(1)
+      i+=2
+
+  #fp = open('/m2scratch/bartol/swift-ir_tests/LM9R5CA1_project.json','r')
+  fp = open(proj_ifn,'r')
+
+  d = json.load(fp)
+
+
+  d, need_to_write_json = run_json_project ( d, scale_done )
+
+
+  if need_to_write_json:
 
     # Write out updated json project file
     print("Writing project to file: ", proj_ofn)
