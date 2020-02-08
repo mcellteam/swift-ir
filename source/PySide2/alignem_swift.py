@@ -8,6 +8,8 @@ import json
 import alignem
 from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 
+from PySide2.QtWidgets import QInputDialog
+
 import pyswift_tui
 
 main_win = None
@@ -304,26 +306,32 @@ def align_all():
         if im.image_file_name != None:
           print ( "   " + im.role + ":  " + im.image_file_name )
 
-    # Generate the JSON on the fly
-    fb = StringBufferFile()
-    write_json_project ( "alignem_out.json", fb=fb )
-    if len(fb.fs.strip()) > 0:
-      d = None
-      try:
-        d = json.loads ( fb.fs )
-        print ( "Running pyswift_tui.run_json_project" )
-        pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
-      except:
-        alignem.print_debug ( 1, "Error when running" )
-        alignem.print_debug ( 1, "JSON:" )
-        alignem.print_debug ( 1, str(d) )
+    input_val, ok = QInputDialog().getText ( None, "OK for Dynamic", "OK=Dynamic, Cancel=Canned" )
+    if ok:
 
+      # Generate the JSON on the fly
+      fb = StringBufferFile()
+      write_json_project ( "alignem_out.json", fb=fb )
+      if len(fb.fs.strip()) > 0:
+        d = None
+        try:
+          d = json.loads ( fb.fs )
+          print ( "Running pyswift_tui.run_json_project" )
+          pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
+        except:
+          alignem.print_debug ( 1, "Error when running" )
+          alignem.print_debug ( 1, "JSON:" )
+          alignem.print_debug ( 1, str(d) )
 
-    # Use a dummy project for now just to verify that the pyswift_tui interface works
-    #fp = open("pyswift_gui_gtk.json",'r')
-    #d = json.load(fp)
-    #print ( "Running pyswift_tui.run_json_project" )
-    #pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
+      input_val = input_val.strip()
+
+    else:
+
+      # Use a dummy project for now just to verify that the pyswift_tui interface works
+      fp = open("pyswift_gui_gtk.json",'r')
+      d = json.load(fp)
+      print ( "Running pyswift_tui.run_json_project" )
+      pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
 
 
 
