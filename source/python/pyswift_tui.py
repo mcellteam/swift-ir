@@ -206,19 +206,19 @@ def BoundingRect(align_list,siz):
   return rect
 
 
-def run_json_project ( d, scale_done, swiftir_code_mode='python' ):
+def run_json_project ( project, scale_done, swiftir_code_mode='python' ):
 
   align_swiftir.global_swiftir_mode = swiftir_code_mode
 
-  scales = sorted([ int(s) for s in d['data']['scales'].keys() ])
-  destination_path = d['data']['destination_path']
+  scales = sorted([ int(s) for s in project['data']['scales'].keys() ])
+  destination_path = project['data']['destination_path']
 
   if use_scale==0:
     # Iterate over scales from finest to coarsest
     # Identify coarsest scale lacking affine matrices in method_results
     #   and the finest scale which has affine matrices
     for scale in scales:
-      sn = d['data']['scales'][str(scale)]['alignment_stack']
+      sn = project['data']['scales'][str(scale)]['alignment_stack']
       afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in sn if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
       if not len(afm):
         scale_tbd = scale
@@ -245,9 +245,9 @@ def run_json_project ( d, scale_done, swiftir_code_mode='python' ):
 
     if scale_done:
       # Copy settings from finest completed scale to tbd:
-      s_done = d['data']['scales'][str(scale_done)]['alignment_stack']
-      d['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
-    s_tbd = d['data']['scales'][str(scale_tbd)]['alignment_stack']
+      s_done = project['data']['scales'][str(scale_done)]['alignment_stack']
+      project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+    s_tbd = project['data']['scales'][str(scale_tbd)]['alignment_stack']
     #   Copy skip, swim, and match point settings
     for i in range(len(s_tbd)):
       # fix path for base and ref filenames for scale_tbd
@@ -654,11 +654,11 @@ def run_json_project ( d, scale_done, swiftir_code_mode='python' ):
     afm_file.close()
     c_afm_file.close()
 
-    return (d,True)
+    return (project,True)
 
   else:  # if scale_tbd:
 
-    return (d,False)
+    return (project,False)
 
 
 if (__name__ == '__main__'):
