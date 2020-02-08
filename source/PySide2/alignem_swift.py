@@ -3,8 +3,12 @@ import os
 import argparse
 import cv2
 
+import json
+
 import alignem
 from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
+
+import pyswift_tui
 
 main_win = None
 
@@ -194,6 +198,13 @@ def align_all():
       for im in al.image_list:
         if im.image_file_name != None:
           print ( "   " + im.role + ":  " + im.image_file_name )
+
+    fp = open("pyswift_gui_gtk.json",'r')
+    d = json.load(fp)
+    print ( "Running pyswift_tui.run_json_project" )
+    pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, 'python' )
+
+
 
 def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
