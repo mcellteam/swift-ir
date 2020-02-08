@@ -245,6 +245,10 @@ if (__name__ == '__main__'):
   fp = open(proj_ifn,'r')
 
   d = json.load(fp)
+
+
+
+
   scales = sorted([ int(s) for s in d['data']['scales'].keys() ])
   destination_path = d['data']['destination_path']
 
@@ -678,10 +682,6 @@ if (__name__ == '__main__'):
       c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
       i+=1
 
-    # Write out updated json project file
-    print("Writing project to file: ", proj_ofn)
-    ofp = open(proj_ofn,'w')
-    json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
 
     snr_file.close()
     bias_x_file.close()
@@ -693,6 +693,12 @@ if (__name__ == '__main__'):
     bias_det_file.close()
     afm_file.close()
     c_afm_file.close()
+
+
+    # Write out updated json project file
+    print("Writing project to file: ", proj_ofn)
+    ofp = open(proj_ofn,'w')
+    json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
 
     '''
     p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
