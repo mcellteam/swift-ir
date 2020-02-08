@@ -206,7 +206,9 @@ def BoundingRect(align_list,siz):
   return rect
 
 
-def run_json_project ( d, scale_done ):
+def run_json_project ( d, scale_done, swiftir_code_mode='python' ):
+
+  align_swiftir.global_swiftir_mode = swiftir_code_mode
 
   scales = sorted([ int(s) for s in d['data']['scales'].keys() ])
   destination_path = d['data']['destination_path']
@@ -662,7 +664,7 @@ def run_json_project ( d, scale_done ):
 if (__name__ == '__main__'):
 
   if (len(sys.argv)<3):
-    print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+    print('\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
     print('         Open swiftir project file and perform alignment operations\n\n')
     print('         Result is written to output project file\n\n')
     exit(1)
@@ -677,6 +679,7 @@ if (__name__ == '__main__'):
   alignment_option = 'refine_affine'
   scale_tbd = 0
   scale_done = 0
+  swiftir_code_mode = 'python'
 
   # check for an even number of additional args
   if (l > 0) and (int(l/2.) == l/2.):
@@ -684,10 +687,13 @@ if (__name__ == '__main__'):
     while (i < len(sys.argv)-2):
       if sys.argv[i] == '-scale':
         use_scale = int(sys.argv[i+1])
+      elif sys.argv[i] == '-code':
+        # align_swiftir.global_swiftir_mode = str(sys.argv[i+1])
+        swiftir_code_mode = str(sys.argv[i+1])
       elif sys.argv[i] == '-alignment_option':
         alignment_option = sys.argv[i+1]
       else:
-        print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+        print('\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
         print('         Open swiftir project file and perform alignment operations\n\n')
         print('         Result is written to output project file\n\n')
         exit(1)
@@ -699,7 +705,7 @@ if (__name__ == '__main__'):
   d = json.load(fp)
 
 
-  d, need_to_write_json = run_json_project ( d, scale_done )
+  d, need_to_write_json = run_json_project ( d, scale_done, swiftir_code_mode )
 
 
   if need_to_write_json:
