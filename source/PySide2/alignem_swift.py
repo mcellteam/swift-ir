@@ -192,6 +192,21 @@ def write_json_project ( project_file_name="alignem_out.json",
 def align_all():
     alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
 
+    code_mode = 'python'
+
+    from PySide2.QtWidgets import QInputDialog, QLineEdit
+
+    input_val, ok = QInputDialog().getText ( None, "Choose Alignment Code", "python or c: ", echo=QLineEdit.Normal, text=code_mode )
+    if ok:
+      input_val = input_val.strip()
+      if input_val in ['c', 'python']:
+        code_mode = input_val
+      else:
+        print_debug ( 0, "Must be c or python" )
+    else:
+      print_debug ( 30, "Cancel: Roles not changed" )
+
+
     for index in range(len(alignem.alignment_layer_list)):
       print ( "Aligning layer " + str(index) )
       al = alignem.alignment_layer_list[index]
@@ -202,7 +217,7 @@ def align_all():
     fp = open("pyswift_gui_gtk.json",'r')
     d = json.load(fp)
     print ( "Running pyswift_tui.run_json_project" )
-    pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, 'python' )
+    pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
 
 
 
