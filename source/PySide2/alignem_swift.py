@@ -22,14 +22,18 @@ def write_json_project ( project_file_name="alignem_out.json",
   print ( "write_json_project called" )
 
   # Update the data layer(s) from the current fields before writing!
+  print ( "WARNING: current fields may not be taken into account yet." )
   #store_fields_into_current_layer()
 
   alignment_layer_list = alignem.alignment_layer_list
   alignment_layer_index = alignem.alignment_layer_index
 
+  control_panel_data = main_win.control_panel.copy_self_to_data()
+
   if len(project_file_name) > 0:
     # Actually write the file
     # gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+
     rel_dest_path = ""
     if len(destination_path) > 0:
       rel_dest_path = os.path.relpath(destination_path,start=project_path)
@@ -97,68 +101,52 @@ def write_json_project ( project_file_name="alignem_out.json",
           f.write ( '        "alignment_stack": [\n' )
           for a in align_layer_list_for_scale:
             f.write ( '          {\n' )
-            f.write ( '            "skip": ' + str(a.skip).lower() + ',\n' )
+            f.write ( '            "skip": ' + str(control_panel_data[0][2][3]).lower() + ',\n' )
             if a != align_layer_list_for_scale[-1]:
               # Not sure what to leave out for last image ... keep all for now
               pass
             f.write ( '            "images": {\n' )
-
-            img_keys = sorted(a.image_dict.keys(), reverse=True)
-            for k in img_keys:
-              im = a.image_dict[k]
-              #alignem.print_debug ( 90, "    " + str(k) + " alignment points: " + str(im.get_marker_points()) )
-              f.write ( '              "' + k + '": {\n' )  # "base": {
-              # rel_file_name = os.path.relpath(a.base_image_name,start=project_path)
-              alignem.print_debug ( 90, "Try to get relpath for " + str(im.file_name) + " starting at " + str(project_path) )
-              rel_file_name = ""
-              if type(im.file_name) != type(None):
-                rel_file_name = os.path.relpath(im.file_name,start=project_path)
-              f.write ( '                "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
-              f.write ( '                "metadata": {\n' )
-              f.write ( '                  "match_points": ' + str(im.get_marker_points()) + ',\n' )
-              if len(im.graphics_items) <= 0:
-                f.write ( '                  "annotations": []\n' )
-              else:
-                f.write ( '                  "annotations": [\n' )
-                # Filter out the markers which are handled in other code
-                non_marker_list = [ gi for gi in im.graphics_items if not gi.marker ]
-                # Filter out any temporary annotations
-                non_marker_list = [ gi for gi in non_marker_list if not gi.temp ]
-                # Only output the non-markers being careful not to add a trailing comma
-                for gi_index in range(len(non_marker_list)):
-                  gi = non_marker_list[gi_index]
-                  f.write ( "                    " + gi.to_json_string().replace('\\','/') )
-                  if gi_index < (len(non_marker_list)-1):
-                    f.write ( ',\n' )
+            for im in a.image_list:
+              if im.image_file_name != None:
+                if len(im.image_file_name) > 0:
+                  f.write ( '              "' + im.role + '": {\n' )
+                  alignem.print_debug ( 90, "Try to get relpath for " + str(im.image_file_name) + " starting at " + str(project_path) )
+                  rel_file_name = ""
+                  if type(im.image_file_name) != type(None):
+                    rel_file_name = os.path.relpath(im.image_file_name,start=project_path)
+                  f.write ( '                "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
+                  f.write ( '                "metadata": {\n' )
+                  f.write ( '                  "match_points": [],\n' )
+                  f.write ( '                  "annotations": []\n' )
+                  f.write ( '                }\n' )
+                  if im != a.image_list[-1]:
+                    f.write ( '              },\n' )
                   else:
-                    f.write ( '\n' )
-                f.write ( '                  ]\n' )
-              f.write ( '                }\n' )
-              if k != img_keys[-1]:
-                f.write ( '              },\n' )
-              else:
-                f.write ( '              }\n' )
+                    f.write ( '              }\n' )
+
             f.write ( '            },\n' )
             f.write ( '            "align_to_ref_method": {\n' )
-            f.write ( '              "selected_method": "' + str(a.align_method_text) + '",\n' )
+            f.write ( '              "selected_method": "' + str("Auto Swim Align") + '",\n' )
             f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
             f.write ( '              "method_data": {\n' )
-            f.write ( '                "alignment_options": [' + ', '.join ( ['"'+o+'"' for o in alignment_opts] ) + '],\n' )
-            f.write ( '                "alignment_option": "' + str(a.init_refine_apply) + '",\n' )
-            f.write ( '                "window_size": ' + str(a.trans_ww) + ',\n' )
-            f.write ( '                "addx": ' + str(a.trans_addx) + ',\n' )
-            f.write ( '                "addy": ' + str(a.trans_addy) + ',\n' )
-            f.write ( '                "bias_x_per_image": ' + fstring(a.bias_dx) + ',\n' )
-            f.write ( '                "bias_y_per_image": ' + fstring(a.bias_dy) + ',\n' )
-            f.write ( '                "bias_scale_x_per_image": ' + fstring(a.bias_scale_x) + ',\n' )
-            f.write ( '                "bias_scale_y_per_image": ' + fstring(a.bias_scale_y) + ',\n' )
-            f.write ( '                "bias_skew_x_per_image": ' + fstring(a.bias_skew_x) + ',\n' )
-            f.write ( '                "bias_rot_per_image": ' + fstring(a.bias_rotation) + ',\n' )
+            f.write ( '                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],\n' )
+            f.write ( '                "alignment_option": "Init Affine",\n' )
+            f.write ( '                "window_size": 256,\n' )
+            f.write ( '                "addx": 256,\n' )
+            f.write ( '                "addy": 256,\n' )
+            f.write ( '                "bias_x_per_image": 0.0,\n' )
+            f.write ( '                "bias_y_per_image": 0.0,\n' )
+            f.write ( '                "bias_scale_x_per_image": 0.0,\n' )
+            f.write ( '                "bias_scale_y_per_image": 0.0,\n' )
+            f.write ( '                "bias_skew_x_per_image": 0.0,\n' )
+            f.write ( '                "bias_rot_per_image": 0.0,\n' )
             f.write ( '                "output_level": 0\n' )
             f.write ( '              },\n' )
             f.write ( '              "method_results": {\n' )
             #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+            '''
             if type(a.results_dict) != type(None):
               if 'affine' in a.results_dict:
                 smat = str(a.results_dict['affine'])
@@ -170,6 +158,7 @@ def write_json_project ( project_file_name="alignem_out.json",
                 f.write ( '                "cumulative_afm": ' + smat + ',\n' )
               if 'snr' in a.results_dict:
                 f.write ( '                "snr": ' + fstring(a.results_dict['snr']) + '\n' )
+            '''
             f.write ( '              }\n' )
             f.write ( '            }\n' )
             if a != align_layer_list_for_scale[-1]:
@@ -182,11 +171,11 @@ def write_json_project ( project_file_name="alignem_out.json",
           else:
             f.write ( '      }\n' )
 
-    f.write ( '    }\n' ) # "scales": {
+      f.write ( '    }\n' ) # "scales": {
 
-    f.write ( '  }\n' ) # "data": {
+      f.write ( '  }\n' ) # "data": {
 
-    f.write ( '}\n' ) # End of entire dictionary
+      f.write ( '}\n' ) # End of entire dictionary
 
 
 def align_all():
