@@ -194,19 +194,29 @@ def align_all():
 
     code_mode = 'python'
 
-    from PySide2.QtWidgets import QInputDialog, QLineEdit
+    ### All of this code is just trying to find the right menu item for the Use C Version check box:
+    menubar = alignem.main_window.menu
+    menubar_items = [ menubar.children()[x].title() for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
+    submenus = [ menubar.children()[x] for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
+    print ( "Menubar contains: " + str(menubar_items) )
+    setmenu_index = -1
+    for m in menubar_items:
+      if "Set" in m:
+        setmenu_index = menubar_items.index(m)
+    print ( "Set menu is item " + str(setmenu_index) )
+    if setmenu_index >= 0:
+      set_menu = submenus[setmenu_index]
+      set_menu_actions = set_menu.actions()
+      use_c_version = None
+      for action in set_menu_actions:
+        if "Use C Version" in action.text():
+          use_c_version = action
+          break
+      if use_c_version != None:
+        if use_c_version.isChecked():
+          code_mode = "c"
 
-    input_val, ok = QInputDialog().getText ( None, "Choose Alignment Code", "python or c: ", echo=QLineEdit.Normal, text=code_mode )
-    if ok:
-      input_val = input_val.strip()
-      if input_val in ['c', 'python']:
-        code_mode = input_val
-      else:
-        print_debug ( 0, "Must be c or python" )
-    else:
-      print_debug ( 30, "Cancel: Roles not changed" )
-
-
+    # Print out what might be done to produce the JSON for this project
     for index in range(len(alignem.alignment_layer_list)):
       print ( "Aligning layer " + str(index) )
       al = alignem.alignment_layer_list[index]
@@ -214,6 +224,7 @@ def align_all():
         if im.image_file_name != None:
           print ( "   " + im.role + ":  " + im.image_file_name )
 
+    # Use a dummy project for now just to verify that the pyswift_tui interface works
     fp = open("pyswift_gui_gtk.json",'r')
     d = json.load(fp)
     print ( "Running pyswift_tui.run_json_project" )
