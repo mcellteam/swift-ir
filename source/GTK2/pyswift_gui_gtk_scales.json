@@ -1,0 +1,844 @@
+{
+  "version": 0.2,
+  "method": "SWiFT-IR",
+  "user_settings": {
+    "max_image_file_size": 100000000
+  },
+  "data": {
+    "source_path": "",
+    "destination_path": "pyswift_gui_gtk_scales",
+    "pairwise_alignment": true,
+    "defaults": {
+      "align_to_next_pars": {
+        "window_size": 1024,
+        "addx": 800,
+        "addy": 800,
+        "bias_x_per_image": 0.0,
+        "bias_y_per_image": 0.0,
+        "output_level": 0
+      }
+    },
+    "current_scale": 2,
+    "current_layer": 1,
+    "scales": {
+      "1": {
+        "alignment_stack": [
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": []
+                }
+              },
+              "base": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: inf", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 1.000 0.000 0.000 ] [ 0.000 1.000 0.000 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 0.000 0.000 ] [ 0.000 1.000 0.000 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[1, 0, 0], [0, 1, 0]],
+                "cumulative_afm": [[1, 0, 0], [0, 1, 0]],
+                "snr": 1.79769313486e+308
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_2.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_2.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 370.6", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 1.000 0.035 80.202 ] [ -0.035 0.999 -92.998 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 0.035 80.202 ] [ -0.035 0.999 -92.998 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.99950701, 0.034698501, 80.202103], [-0.034875099, 0.99919403, -92.997704]],
+                "cumulative_afm": [[0.99950700998306274, 0.034698501229286194, 80.202102661132812], [-0.034875098615884781, 0.99919402599334717, -92.997703552246094]],
+                "snr": 370.57
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_2.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_3.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_3.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 361.8", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 0.999 0.035 -36.044 ] [ -0.035 0.999 116.045 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 0.998 0.069 40.878 ] [ -0.070 0.997 20.316 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.99944001, 0.034790002, -36.044102], [-0.0348638, 0.9993, 116.045]],
+                "cumulative_afm": [[0.99773399566877041, 0.069441032539396375, 40.877698645573162], [-0.069697298458434531, 0.99728487162387092, 20.316242673827674]],
+                "snr": 361.798
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_3.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_4.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_4.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 357.4", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 0.998 -0.069 31.552 ] [ 0.052 0.999 -141.892 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 0.000 70.921 ] [ -0.017 1.000 -119.450 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.99760002, -0.069414496, 31.552], [0.052445099, 0.99913102, -141.892]],
+                "cumulative_afm": [[1.0001774558887329, 4.8348226297605592e-05, 70.921351235994862], [-0.017310475233904832, 1.0000600966987701, -119.44957500438565]],
+                "snr": 357.391
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_4.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_5.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_5.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 367.8", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 1.000 0.035 23.750 ] [ -0.017 0.999 77.950 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 0.035 90.520 ] [ -0.035 1.000 -42.674 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[1.0000499, 0.0347782, 23.749701], [-0.0174467, 0.99947202, 77.949799]],
+                "cumulative_afm": [[0.99962538627340769, 0.034828640786174342, 90.520352990851634], [-0.034751132188091532, 0.99953124350859512, -42.674053252351811]],
+                "snr": 367.806
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_5.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_6.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_6.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 357.4", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 0.999 -0.052 -6.909 ] [ 0.052 0.999 7.780 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 -0.017 85.713 ] [ 0.018 1.000 -30.101 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.998586, -0.0522606, -6.9093699], [0.052328799, 0.99868798, 7.7804198]],
+                "cumulative_afm": [[1.0000280300094668, -0.01745670948122147, 85.713158805459841], [0.017603657736971316, 1.0000423820248452, -30.100822973889599]],
+                "snr": 357.411
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_6.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "../PySide2/vj_097_shift_rot_skew_crop_1k1k_7.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_7.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_7.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 359.9", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 1.000 0.000 -13.068 ] [ -0.018 1.000 -103.485 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 -0.017 72.663 ] [ -0.000 1.000 -135.101 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[1.00021, 8.4574198e-10, -13.0677], [-0.0177035, 0.99994099, -103.485]],
+                "cumulative_afm": [[1.0002380826801562, -0.017460375360853386, 72.663462165953263], [-0.00010137690445456449, 1.0002924157757171, -135.1014702533528]],
+                "snr": 359.946
+              }
+            }
+          }
+        ]
+      },
+      "2": {
+        "alignment_stack": [
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": []
+                }
+              },
+              "base": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: inf", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 1.000 0.000 0.000 ] [ 0.000 1.000 0.000 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 0.000 0.000 ] [ 0.000 1.000 0.000 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[1, 0, 0], [0, 1, 0]],
+                "cumulative_afm": [[1, 0, 0], [0, 1, 0]],
+                "snr": 1.79769313486e+308
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_1.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_2.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_2.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 220.6", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 1.000 0.035 40.039 ] [ -0.035 0.999 -46.550 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 0.035 40.039 ] [ -0.035 0.999 -46.550 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.99957001, 0.034751099, 40.0387], [-0.034555599, 0.99893498, -46.550098]],
+                "cumulative_afm": [[0.99957001209259033, 0.034751098603010178, 40.038700103759766], [-0.034555599093437195, 0.99893498420715332, -46.550098419189453]],
+                "snr": 220.552
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_2.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_3.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_3.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 206.9", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 0.999 0.035 -17.954 ] [ -0.035 0.999 58.058 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 0.998 0.069 20.448 ] [ -0.069 0.997 10.168 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.999394, 0.0346401, -17.954399], [-0.0347008, 0.99893999, 58.0583]],
+                "cumulative_afm": [[0.99776726283892647, 0.069333247022409727, 20.447537468235922], [-0.069204848656442497, 0.99667021321765747, 10.16817020863509]],
+                "snr": 206.892
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_3.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_4.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_4.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 253.7", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 0.998 -0.069 15.790 ] [ 0.052 0.999 -70.902 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 -0.000 35.481 ] [ -0.017 0.999 -59.671 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.99755698, -0.069446601, 15.7896], [0.052462701, 0.99900699, -70.9021]],
+                "cumulative_afm": [[1.0001357433852607, -5.1493779565275441e-05, 35.481039328925931], [-0.016790561982770839, 0.99931791574940121, -59.671293490466581]],
+                "snr": 253.729
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_4.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_5.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_5.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 254.9", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 0.999 0.035 12.100 ] [ -0.017 0.999 39.201 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 0.999 0.035 45.494 ] [ -0.034 0.999 -21.042 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.99939102, 0.034614202, 12.1003], [-0.0173997, 0.999237, 39.201199]],
+                "cumulative_afm": [[0.99894548816645612, 0.034539129412490301, 45.494257712829054], [-0.034179813052537762, 0.99855633309760672, -21.041925224608413]],
+                "snr": 254.938
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_5.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_6.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_6.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 231.4", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 0.999 -0.052 -3.379 ] [ 0.052 0.999 3.918 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 0.999 -0.018 43.148 ] [ 0.018 0.999 -14.723 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[0.998501, -0.052341498, -3.37925], [0.052198101, 0.99873, 3.91783]],
+                "cumulative_afm": [[0.99923709429668006, -0.01777857939181714, 43.148177793992808], [0.018006652499067192, 0.99909104734263798, -14.722658218344524]],
+                "snr": 231.358
+              }
+            }
+          },
+          {
+            "skip": false,
+            "images": {
+              "ref": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_6.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "base": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_src/vj_097_shift_rot_skew_crop_1k1k_7.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_7.jpg", "coordsys":"p", "color":[1, 1, 1] }
+                  ]
+                }
+              },
+              "aligned": {
+                "filename": "pyswift_gui_gtk_scales/scale_2/img_aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg",
+                "metadata": {
+                  "match_points": [],
+                  "annotations": [
+                    { "type":"text", "group":"default", "x":100, "y":2, "s":"vj_097_shift_rot_skew_crop_1k1k_7.jpg", "coordsys":"p", "color":[1, 1, 1] },
+                    { "type":"text", "group":"default", "x":2, "y":26, "s":"SNR: 240.6", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":46, "s":"Affine: [ [ 1.000 0.000 -6.553 ] [ -0.017 1.000 -51.700 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] },
+                    { "type":"text", "group":"Affines", "x":2, "y":66, "s":"CumAff: [ [ 1.000 -0.017 36.607 ] [ 0.001 0.999 -67.175 ] ]", "coordsys":"p", "color":[1, 0.5, 0.5] }
+                  ]
+                }
+              }
+            },
+            "align_to_ref_method": {
+              "selected_method": "Auto Swim Align",
+              "method_options": ["Auto Swim Align", "Match Point Align"],
+              "method_data": {
+                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],
+                "alignment_option": "Init Affine",
+                "window_size": 256,
+                "addx": 256,
+                "addy": 256,
+                "bias_x_per_image": 0.0,
+                "bias_y_per_image": 0.0,
+                "bias_scale_x_per_image": 0.0,
+                "bias_scale_y_per_image": 0.0,
+                "bias_skew_x_per_image": 0.0,
+                "bias_rot_per_image": 0.0,
+                "output_level": 0
+              },
+              "method_results": {
+                "affine_matrix": [[1.00037, 0.000304413, -6.5525699], [-0.017479001, 0.99992198, -51.699799]],
+                "cumulative_afm": [[0.99961231909586701, -0.017481021619988605, 36.607092091148722], [0.00053958179154520234, 0.99932384758145709, -67.175495130137406]],
+                "snr": 240.57
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}
