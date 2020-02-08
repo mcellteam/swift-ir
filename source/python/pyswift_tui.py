@@ -206,7 +206,7 @@ def BoundingRect(align_list,siz):
   return rect
 
 
-def run_json_project ( project, scale_done, swiftir_code_mode='python' ):
+def run_json_project ( project, alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode='python' ):
 
   align_swiftir.global_swiftir_mode = swiftir_code_mode
 
@@ -705,7 +705,7 @@ if (__name__ == '__main__'):
   d = json.load(fp)
 
 
-  d, need_to_write_json = run_json_project ( d, scale_done, swiftir_code_mode )
+  d, need_to_write_json = run_json_project ( d, alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode )
 
 
   if need_to_write_json:
@@ -759,5 +759,4 @@ if (__name__ == '__main__'):
   p = plt.scatter(np.arange(len(cy)),yl)
   plt.show()
   '''
-
 
