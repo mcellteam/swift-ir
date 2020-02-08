@@ -208,6 +208,8 @@ def BoundingRect(align_list,siz):
 
 def run_json_project ( project, alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode='python' ):
 
+  print ( 80*"!" )
+  print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode]) )
   align_swiftir.global_swiftir_mode = swiftir_code_mode
 
   scales = sorted([ int(s) for s in project['data']['scales'].keys() ])
