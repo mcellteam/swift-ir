@@ -133,7 +133,7 @@ class AnnotatedImage:
           image_library.remove_image_reference ( self.image_file_name )
 
 
-global_panel_roles = ['ref','src','aligned']
+global_panel_roles = []
 
 
 class DisplayLayer:
@@ -205,6 +205,16 @@ class ZoomPanWidget(QWidget):
 
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+
+    def get_settings ( self ):
+        settings_dict = {}
+        for key in [ "floatBased", "antialiased", "wheel_index", "scroll_factor", "zoom_scale", "last_button", "mdx", "mdy", "ldx", "ldy", "dx", "dy", "draw_border" ]:
+            settings_dict[key] = self.__dict__[key]
+        return ( settings_dict )
+
+    def set_settings ( self, settings_dict ):
+        for key in settings_dict.keys():
+            self.__dict__[key] = settings_dict[key]
 
     def set_parent ( self, parent ):
         self.parent = parent
@@ -474,6 +484,11 @@ class MultiImagePanel(QWidget):
       global global_panel_roles
       if len(roles_list) > 0:
         # Save these roles
+        role_settings = {}
+        for w in self.actual_children:
+          if type(w) == ZoomPanWidget:
+            role_settings[w.role] = w.get_settings()
+
         global_panel_roles = roles_list
         # Remove all the image panels (to be replaced)
         try:
@@ -483,6 +498,9 @@ class MultiImagePanel(QWidget):
         # Create the new panels
         for role in roles_list:
           zpw = ZoomPanWidget(role=role, parent=self, fname=None)
+          # Restore the settings from the previous zpw
+          if role in role_settings:
+            zpw.set_settings ( role_settings[role] )
           zpw.draw_border = self.draw_border
           self.add_panel ( zpw )
 
@@ -1166,7 +1184,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def define_roles_callback(self, checked):
         global global_panel_roles
-        input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(' '.join(global_panel_roles)), echo=QLineEdit.Normal, text=' '.join(global_panel_roles) )
+        default_roles = ['ref','src','aligned']
+        if len(global_panel_roles) > 0:
+          default_roles = global_panel_roles
+        input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(' '.join(default_roles)), echo=QLineEdit.Normal, text=' '.join(default_roles) )
         if ok:
           input_val = input_val.strip()
           roles_list = global_panel_roles
