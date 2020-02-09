@@ -473,39 +473,25 @@ class MultiImagePanel(QWidget):
     def set_roles (self, roles_list):
       global global_panel_roles
       if len(roles_list) > 0:
-        # Save the ZoomPanWidgets for all current roles
-        panels_to_save = []
-        if self.actual_children != None:
-            panels_to_save = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (w.role in roles_list) ]
-
         # Save these roles
         global_panel_roles = roles_list
         # Remove all the image panels (to be replaced)
         try:
-            self.remove_all_panels(None, save=panels_to_save)
+            self.remove_all_panels(None)
         except:
             pass
         # Create the new panels
         for role in roles_list:
-          if role in [ w.role for w in self.actual_children if (type(w) == ZoomPanWidget) ]:
-            zpw = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (w.role == role) ][0]
-          else:
-            zpw = ZoomPanWidget(role=role, parent=self, fname=None)
-            zpw.draw_border = self.draw_border
+          zpw = ZoomPanWidget(role=role, parent=self, fname=None)
+          zpw.draw_border = self.draw_border
           self.add_panel ( zpw )
 
-    def remove_all_panels ( self, unused_checked, save=[] ):
+    def remove_all_panels ( self, unused_checked ):
         print_debug ( 30, "In remove_all_panels" )
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget ( self.actual_children[-1] )
-            if (not (self.actual_children[-1] in save)):
-              print ( "Removing panel " + str(self.actual_children[-1]) )
-              self.actual_children[-1].deleteLater()
-            else:
-              print ( "Saving panel " + str(self.actual_children[-1]) )
+            self.actual_children[-1].deleteLater()
             self.actual_children = self.actual_children[0:-1]
-        #alignment_layer_list = []
-        #alignment_layer_index = 0
         self.repaint()
 
     def center_all_images ( self ):
