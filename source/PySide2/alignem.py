@@ -1174,7 +1174,8 @@ class MainWindow(QMainWindow):
           roles_list = global_panel_roles
           if len(input_val) > 0:
             roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          self.define_roles (roles_list)
+          if not (roles_list == global_panel_roles):
+            self.define_roles (roles_list)
         else:
           print_debug ( 30, "Cancel: Roles not changed" )
 
