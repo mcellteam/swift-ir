@@ -492,8 +492,8 @@ class MultiImagePanel(QWidget):
             self.hb_layout.removeWidget ( self.actual_children[-1] )
             self.actual_children[-1].deleteLater()
             self.actual_children = self.actual_children[0:-1]
-        alignment_layer_list = []
-        alignment_layer_index = 0
+        #alignment_layer_list = []
+        #alignment_layer_index = 0
         self.repaint()
 
     def center_all_images ( self ):
