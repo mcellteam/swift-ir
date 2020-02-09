@@ -1308,27 +1308,79 @@ def run_app(main_win=None):
     sys.exit(app.exec_())
 
 
+def align_all():
+    print_debug ( 0, "Aligning All with AlignEM..." )
+    print_debug ( 70, "Control Model = " + str(control_model) )
+
+    aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_2a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_3a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_4a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_5a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_6a.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_7a.jpg" ]
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    main_window.load_images_in_role ( 'align', aln_image_stack )
+
+
+control_model = [
+  # Panes
+  [ # Begin first pane
+    [ "Program:", 6*" ", __file__ ],
+    [ IntField("Integer:",55), 6*" ", FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
+    [ TextField("String:","Default text"), 20*" ", CallbackButton('Align All', align_all) ]
+  ] # End first pane
+]
+
+
 # This provides default command line parameters if none are given (as with "Idle")
 #if len(sys.argv) <= 1:
 #    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
 if __name__ == "__main__":
+    test_option = None
+
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False)
+    options.add_argument("-t", "--test", type=int, required=False)
     args = options.parse_args()
     try:
-      debug_level = int(args.debug)
+        debug_level = int(args.debug)
     except:
-      pass
+        pass
+    try:
+        test_option = int(args.test)
+    except:
+        pass
 
-    # Note that the MainWindow constructor currently creates a global "app"
-    # This is convenient for other applications creating a MainWindow without importing any Qt or PySide2 modules
+    main_window = MainWindow ( control_model=control_model )
+    main_window.resize(2400,1000)
 
-    # Qt Application
-    # app = QApplication(sys.argv)
+    main_window.define_roles ( ['ref','base','align'] )
 
-    main_window = MainWindow()
-    # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
+    if test_option != None:
+        ref_image_stack = [ None,
+                            "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
+
+        src_image_stack = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+        main_window.load_images_in_role ( 'ref', ref_image_stack )
+        main_window.load_images_in_role ( 'base', src_image_stack )
 
     main_window.show()
     sys.exit(app.exec_())
