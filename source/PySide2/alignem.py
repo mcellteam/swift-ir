@@ -1063,7 +1063,7 @@ class MainWindow(QMainWindow):
         print_debug ( 50, "  Action: " + str(option_action) )
 
 
-    def import_images(self, role_to_import, file_name_list ):
+    def import_images(self, role_to_import, file_name_list, clear_role=False ):
         global alignment_layer_list
         global alignment_layer_index
         global preloading_range
@@ -1074,6 +1074,10 @@ class MainWindow(QMainWindow):
         for f in file_name_list:
           print_debug ( 30, "   " + str(f) )
         print_debug ( 10, "Importing images for role: " + str(role_to_import) )
+
+        if clear_role:
+          for alignment_layer in alignment_layer_list:
+            alignment_layer.image_list = [ i for i in alignment_layer.image_list if i.role != role_to_import ]
 
         if file_name_list != None:
           if len(file_name_list) > 0:
@@ -1146,7 +1150,7 @@ class MainWindow(QMainWindow):
 
     def load_images_in_role ( self, role, file_names ):
         print_debug ( 60, "load_images_in_role ( " + str(role) + ", " + str(file_names) + ")" )
-        self.import_images ( role, file_names )
+        self.import_images ( role, file_names, clear_role=True )
 
 
     def define_roles ( self, roles_list ):
@@ -1308,21 +1312,62 @@ def run_app(main_win=None):
     sys.exit(app.exec_())
 
 
+
+test_option = None
+
 def align_all():
     print_debug ( 0, "Aligning All with AlignEM..." )
     print_debug ( 70, "Control Model = " + str(control_model) )
 
-    aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_2a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_3a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_4a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_5a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_6a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_7a.jpg" ]
+    if test_option == 1:
 
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        aln_image_stack = []
+        for layer in alignment_layer_list:
+            basename = None
+            baseimage = None
+            basedata = None
 
-    main_window.load_images_in_role ( 'align', aln_image_stack )
+            refname = None
+            refimage = None
+            refdata = None
+
+            baselist = [ im for im in layer.image_list if im.role == 'base' ]
+            if len(baselist) > 0:
+                basename = baselist[0].image_file_name
+                baseimage = baselist[0].pixmap # Not used yet
+                basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+
+            reflist = [ im for im in layer.image_list if im.role == 'ref' ]
+            if len(reflist) > 0:
+                refname = reflist[0].image_file_name
+                refimage = reflist[0].pixmap # Not used yet
+                refdata = cv2.imread(refname, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+
+            aligndata = None
+            if basedata != None:
+                # There is an image to be aligned
+                if refdata == None:
+                    # There is no reference, so use the base data
+                    aligndata = basedata
+                else:
+                    # There is a reference, so align the base to the ref
+                    print ( "Aligning " + basename )
+                    print ( "    with " + refname )
+                    aligndata = basedata # Just use the same data for now
+
+                # Write out the aligned data using the base name in the "aligned" directory
+                path_parts = os.path.split(basename)
+                aligned_name = os.path.join ( path_parts[0], 'aligned', path_parts[1] )
+
+                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                print ( "Saving aligned file: " + str(aligned_name) )
+                cv2.imwrite(aligned_name, aligndata)
+
+                # Put the new image in the list to go into the aligned role
+                aln_image_stack.append ( aligned_name )
+
+        # Actually load the images into the stack
+        main_window.load_images_in_role ( 'align', aln_image_stack )
 
 
 control_model = [
@@ -1340,11 +1385,10 @@ control_model = [
 #    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
 if __name__ == "__main__":
-    test_option = None
 
     options = argparse.ArgumentParser()
-    options.add_argument("-d", "--debug", type=int, required=False)
-    options.add_argument("-t", "--test", type=int, required=False)
+    options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
+    options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST")
     args = options.parse_args()
     try:
         debug_level = int(args.debug)
@@ -1360,7 +1404,7 @@ if __name__ == "__main__":
 
     main_window.define_roles ( ['ref','base','align'] )
 
-    if test_option != None:
+    if test_option == 1:
         ref_image_stack = [ None,
                             "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
