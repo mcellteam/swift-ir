@@ -329,6 +329,7 @@ class ZoomPanWidget(QWidget):
               alignment_layer_index = 0
               print_debug ( 60, " Index = " + str(alignment_layer_index) )
             else:
+              main_window.control_panel.distribute_all_layer_data ( [ al.control_panel_data for al in alignment_layer_list ] )
               alignment_layer_list[alignment_layer_index].control_panel_data = main_window.control_panel.copy_self_to_data()
               alignment_layer_index += layer_delta
               if layer_delta > 0:
@@ -638,6 +639,37 @@ class ControlPanelWidget(QWidget):
               else:
                 # Ignore static raw data
                 pass
+
+    def distribute_all_layer_data ( self, control_panel_layer_list ):
+        # First make a copy of this widget's data
+        this_layers_data = self.copy_self_to_data()
+
+        # Search the widgets for those that should be identical across all layers
+        page_index = 0
+        for p in self.cm:
+          row_index = 0
+          for r in p:
+            item_index = 0
+            for i in r:
+              if isinstance(i,GenericWidget):
+                if 'all_layers' in dir(i):
+                  if i.all_layers:
+                    # Store this value in all layers
+                    for l in control_panel_layer_list:
+                      if l is None:
+                        # There is no data stored for this layer yet.
+                        # Maybe copy the entire nested list to a new layer?
+                        # But the Widget fields might take care of this anyway.
+                        # Pass for now.
+                        pass
+                      else:
+                        # Just set the values that should be identical
+                        l[page_index][row_index][item_index] = this_layers_data[page_index][row_index][item_index]
+              else:
+                pass
+              item_index += 1
+            row_index += 1
+          page_index += 1
 
 
 class GenericWidget:
@@ -1348,15 +1380,17 @@ def align_all():
                 # There is an image to be aligned
                 if refdata == None:
                     # There is no reference, so use the base data
-                    aligndata = basedata
+                    # aligndata = basedata
+                    aligndata = cv2.resize ( basedata, tuple([ x/int(scale_down_factor.get_value()) for x in basedata.shape ]), interpolation=cv2.INTER_AREA )
                 else:
                     # There is a reference, so align the base to the ref
                     print ( "Aligning " + basename )
                     print ( "    with " + refname )
 
+                    # Resize to show that it's actually working. Eventually use cv2.matchTemplate ?
                     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                    aligndata = cv2.resize ( basedata, tuple([ x/2 for x in basedata.shape ]) )
 
+                    aligndata = cv2.resize ( basedata, tuple([ x/int(scale_down_factor.get_value()) for x in basedata.shape ]), interpolation=cv2.INTER_AREA )
 
                 # Write out the aligned data using the base name in the "aligned" directory
                 path_parts = os.path.split(basename)
@@ -1368,16 +1402,26 @@ def align_all():
                 # Put the new image in the list to go into the aligned role
                 aln_image_stack.append ( aligned_name )
 
-        # Actually load the images into the stack
+        # Purge the old images from the library
+        for name in aln_image_stack:
+            image_library.remove_image_reference ( name )
+
+        # Load the updated images into the stack
         main_window.load_images_in_role ( 'align', aln_image_stack )
 
+def local_debug():
+  print ( "In alignem" )
+  __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+scale_down_factor = IntField("Scale Down Factor:",1,all_layers=1)
 
 control_model = [
   # Panes
   [ # Begin first pane
     [ "Program:", 6*" ", __file__ ],
-    [ IntField("Integer:",55), 6*" ", FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
-    [ TextField("String:","Default text"), 20*" ", CallbackButton('Align All', align_all) ]
+    [ scale_down_factor, 6*" ", FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
+    [ TextField("String:","Default text"), 20*" ", CallbackButton('Align All', align_all), CallbackButton('Debug', local_debug) ]
   ] # End first pane
 ]
 
