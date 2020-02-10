@@ -394,13 +394,13 @@ if __name__ == "__main__":
                         "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
                         "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
 
-    aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_2a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_3a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_4a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_5a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_6a.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_7a.jpg" ]
+    aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                        "aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
 
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
