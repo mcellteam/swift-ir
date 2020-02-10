@@ -1353,13 +1353,15 @@ def align_all():
                     # There is a reference, so align the base to the ref
                     print ( "Aligning " + basename )
                     print ( "    with " + refname )
-                    aligndata = basedata # Just use the same data for now
+
+                    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                    aligndata = cv2.resize ( basedata, tuple([ x/2 for x in basedata.shape ]) )
+
 
                 # Write out the aligned data using the base name in the "aligned" directory
                 path_parts = os.path.split(basename)
                 aligned_name = os.path.join ( path_parts[0], 'aligned', path_parts[1] )
 
-                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
                 print ( "Saving aligned file: " + str(aligned_name) )
                 cv2.imwrite(aligned_name, aligndata)
 
