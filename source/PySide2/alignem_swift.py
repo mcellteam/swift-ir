@@ -43,7 +43,7 @@ def write_json_project ( project_file_name="alignem_out.json",
     j['data'] = {}
     jd = j['data']
     jd['source_path'] = ""
-    jd['destination_path'] = "test"
+    jd['destination_path'] = "output"
     jd['pairwise_alignment'] = True
     jd['defaults'] = {}
     jdd = jd['defaults']
@@ -68,7 +68,7 @@ def write_json_project ( project_file_name="alignem_out.json",
           jdsn['alignment_stack'] = []
           for a in align_layer_list_for_scale:
             jdsns = {}
-            jdsns['skip'] = str(control_panel_data[0][2][3]).lower()
+            jdsns['skip'] = control_panel_data[0][2][3][0]
             jdsns['images'] = {}
             for im in a.image_list:
               jdsns['images'][im.role] = {}
@@ -333,17 +333,18 @@ def align_all():
       print ( "Running pyswift_tui.run_json_project" )
       pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
 
-      aln_image_stack = [ "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
-                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
-      try:
-        main_win.load_images_in_role ( 'align', aln_image_stack )
-      except:
-        pass
+    # Reload the alignment stack after the alignment (hard-coded for now)
+    aln_image_stack = [ "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+    try:
+      main_win.load_images_in_role ( 'aligned', aln_image_stack )
+    except:
+      pass
 
 
 def align_forward():
@@ -370,7 +371,7 @@ control_model = [
 
 
 if __name__ == "__main__":
-    global main_win
+    # global main_win
 
     alignem.debug_level = 20
 
@@ -385,7 +386,7 @@ if __name__ == "__main__":
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 
     #main_win.define_roles ( ['ref','src','align'] )
-    main_win.define_roles ( ['ref','base','align'] )
+    main_win.define_roles ( ['ref','base','aligned'] )
 
     alignem.print_debug ( 30, "================= Importing Images =================" )
 
@@ -424,7 +425,7 @@ if __name__ == "__main__":
     except:
       pass
     try:
-      main_win.load_images_in_role ( 'align', aln_image_stack )
+      main_win.load_images_in_role ( 'aligned', aln_image_stack )
     except:
       pass
 
