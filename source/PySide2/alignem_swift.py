@@ -14,6 +14,7 @@ import pyswift_tui
 
 main_win = None
 
+
 def write_json_project ( project_file_name="alignem_out.json",
                          fb=None, project_path="",
                          destination_path="",
@@ -100,8 +101,8 @@ def write_json_project ( project_file_name="alignem_out.json",
             jdsnsam['bias_rot_per_image'] = 0.0
             jdsnsam['output_level'] = 0
             jdsnsa['method_results'] = {
-              'affine_matrix': [ [1.0, 0.0, 0,0], [0.0, 1.0, 0.0] ],
-              'cumulative_afm': [ [1.0, 0.0, 0,0], [0.0, 1.0, 0.0] ],
+              'affine_matrix': [ [1.0, 0.0, 0.0], [0.0, 1.0, 0.0] ],
+              'cumulative_afm': [ [1.0, 0.0, 0.0], [0.0, 1.0, 0.0] ],
               'snr': 12.345
             }
             jdsn['alignment_stack'].append ( jdsns )
@@ -120,150 +121,6 @@ def write_json_project ( project_file_name="alignem_out.json",
       f = fb
     f.write ( proj_json )
 
-    """
-    rel_dest_path = ""
-    if len(destination_path) > 0:
-      rel_dest_path = os.path.relpath(destination_path,start=project_path)
-
-    f = None
-    if fb is None:
-      # This is the default to write to a file
-      alignem.print_debug ( 50, "Saving destination path = " + str(destination_path) )
-      f = open ( project_file_name, 'w' )
-    else:
-      # Since a file buffer (fb) was provided, write to it rather than a file
-      alignem.print_debug ( 50, "Writing to string" )
-      f = fb
-
-    f.write ( '{\n' )
-    f.write ( '  "version": 0.2,\n' )
-    f.write ( '  "method": "SWiFT-IR",\n' )
-
-    f.write ( '  "user_settings": {\n' )
-    f.write ( '    "max_image_file_size": ' + str(max_image_file_size) + '\n' )
-    f.write ( '  },\n' )
-
-    if len(current_plot_code.strip()) > 0:
-      alignem.print_debug ( 1, "Saving custom plot code" )
-      code_p = pickle.dumps ( current_plot_code, protocol=0 )
-      code_e = base64.b64encode ( code_p )
-      sl = 40
-      code_l = [ code_e[sl*s:(sl*s)+sl] for s in range(1+(len(code_e)/sl)) ]
-      f.write ( '  "plot_code": [\n' )
-      for s in code_l:
-        f.write ( '    "' + s + '",\n' )
-      f.write ( '    ""\n' )
-      f.write ( '  ],\n' )
-
-    f.write ( '  "data": {\n' )
-    f.write ( '    "source_path": "",\n' )
-    f.write ( '    "destination_path": "' + str(rel_dest_path).replace('\\','/') + '",\n' )
-    f.write ( '    "pairwise_alignment": true,\n' )
-    f.write ( '    "defaults": {\n' )
-    f.write ( '      "align_to_next_pars": {\n' )
-    f.write ( '        "window_size": 1024,\n' )
-    f.write ( '        "addx": 800,\n' )
-    f.write ( '        "addy": 800,\n' )
-    f.write ( '        "bias_x_per_image": 0.0,\n' )
-    f.write ( '        "bias_y_per_image": 0.0,\n' )
-    f.write ( '        "output_level": 0\n' )
-    f.write ( '      }\n' )
-    f.write ( '    },\n' )
-    f.write ( '    "current_scale": ' + str(current_scale) + ',\n' )
-    f.write ( '    "current_layer": ' + str(alignment_layer_index) + ',\n' )
-
-    f.write ( '    "scales": {\n' )
-
-    last_scale_key = 1
-    #if len(scales_dict.keys()) > 0:
-    #  last_scale_key = sorted(scales_dict.keys())[-1]
-
-    for scale_key in sorted([1]):
-
-      align_layer_list_for_scale = alignem.alignment_layer_list # scales_dict[scale_key]
-
-      f.write ( '      "' + str(scale_key) + '": {\n' )
-      if align_layer_list_for_scale != None:
-        if len(align_layer_list_for_scale) > 0:
-          f.write ( '        "alignment_stack": [\n' )
-          for a in align_layer_list_for_scale:
-            f.write ( '          {\n' )
-            f.write ( '            "skip": ' + str(control_panel_data[0][2][3]).lower() + ',\n' )
-            if a != align_layer_list_for_scale[-1]:
-              # Not sure what to leave out for last image ... keep all for now
-              pass
-            f.write ( '            "images": {\n' )
-            for im in a.image_list:
-              if im.image_file_name != None:
-                if len(im.image_file_name) > 0:
-                  f.write ( '              "' + im.role + '": {\n' )
-                  alignem.print_debug ( 90, "Try to get relpath for " + str(im.image_file_name) + " starting at " + str(project_path) )
-                  rel_file_name = ""
-                  if type(im.image_file_name) != type(None):
-                    rel_file_name = os.path.relpath(im.image_file_name,start=project_path)
-                  f.write ( '                "filename": "' + rel_file_name.replace('\\','/') + '",\n' )
-                  f.write ( '                "metadata": {\n' )
-                  f.write ( '                  "match_points": [],\n' )
-                  f.write ( '                  "annotations": []\n' )
-                  f.write ( '                }\n' )
-                  if im != a.image_list[-1]:
-                    f.write ( '              },\n' )
-                  else:
-                    f.write ( '              }\n' )
-
-            f.write ( '            },\n' )
-            f.write ( '            "align_to_ref_method": {\n' )
-            f.write ( '              "selected_method": "' + str("Auto Swim Align") + '",\n' )
-            f.write ( '              "method_options": ["Auto Swim Align", "Match Point Align"],\n' )
-            f.write ( '              "method_data": {\n' )
-            f.write ( '                "alignment_options": ["Init Affine", "Refine Affine", "Apply Affine"],\n' )
-            f.write ( '                "alignment_option": "Init Affine",\n' )
-            f.write ( '                "window_size": 256,\n' )
-            f.write ( '                "addx": 256,\n' )
-            f.write ( '                "addy": 256,\n' )
-            f.write ( '                "bias_x_per_image": 0.0,\n' )
-            f.write ( '                "bias_y_per_image": 0.0,\n' )
-            f.write ( '                "bias_scale_x_per_image": 0.0,\n' )
-            f.write ( '                "bias_scale_y_per_image": 0.0,\n' )
-            f.write ( '                "bias_skew_x_per_image": 0.0,\n' )
-            f.write ( '                "bias_rot_per_image": 0.0,\n' )
-            f.write ( '                "output_level": 0\n' )
-            f.write ( '              },\n' )
-            f.write ( '              "method_results": {\n' )
-            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-            '''
-            if type(a.results_dict) != type(None):
-              if 'affine' in a.results_dict:
-                smat = str(a.results_dict['affine'])
-                smat = smat.replace ( 'nan', 'NaN' )
-                f.write ( '                "affine_matrix": ' + smat + ',\n' )
-              if 'cumulative_afm' in a.results_dict:
-                smat = str(a.results_dict['cumulative_afm'])
-                smat = smat.replace ( 'nan', 'NaN' )
-                f.write ( '                "cumulative_afm": ' + smat + ',\n' )
-              if 'snr' in a.results_dict:
-                f.write ( '                "snr": ' + fstring(a.results_dict['snr']) + '\n' )
-            '''
-            f.write ( '              }\n' )
-            f.write ( '            }\n' )
-            if a != align_layer_list_for_scale[-1]:
-              f.write ( '          },\n' )
-            else:
-              f.write ( '          }\n' )
-          f.write ( '        ]\n' )
-          if scale_key != last_scale_key:
-            f.write ( '      },\n' )
-          else:
-            f.write ( '      }\n' )
-
-      f.write ( '    }\n' ) # "scales": {
-
-      f.write ( '  }\n' ) # "data": {
-
-      f.write ( '}\n' ) # End of entire dictionary
-    """
 
 class StringBufferFile:
   def __init__ ( self ):
@@ -277,6 +134,7 @@ def align_all():
     code_mode = 'python'
 
     ### All of this code is just trying to find the right menu item for the Use C Version check box:
+    ###   It would be better if such options were created in the menu bar by this subclass of alignem.
     menubar = alignem.main_window.menu
     menubar_items = [ menubar.children()[x].title() for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
     submenus = [ menubar.children()[x] for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
@@ -306,32 +164,22 @@ def align_all():
         if im.image_file_name != None:
           print ( "   " + im.role + ":  " + im.image_file_name )
 
-    input_val, ok = QInputDialog().getText ( None, "OK for Dynamic", "OK=Dynamic, Cancel=Canned" )
-    if ok:
+    # Generate the JSON on the fly by writing to a string buffer "file"
+    fb = StringBufferFile()
+    write_json_project ( "alignem_out.json", fb=fb )
+    if len(fb.fs.strip()) > 0:
+      # Read the JSON from the string buffer to create a regular Python representation
+      dm = None
+      try:
+        dm = json.loads ( fb.fs )
+        print ( "Running pyswift_tui.run_json_project" )
+        pyswift_tui.run_json_project ( dm, 'init_affine', 0, 1, 0, code_mode )
+      except:
+        alignem.print_debug ( 1, "Error when running" )
+        alignem.print_debug ( 1, "JSON:" )
+        alignem.print_debug ( 1, str(dm) )
 
-      # Generate the JSON on the fly
-      fb = StringBufferFile()
-      write_json_project ( "alignem_out.json", fb=fb )
-      if len(fb.fs.strip()) > 0:
-        d = None
-        try:
-          d = json.loads ( fb.fs )
-          print ( "Running pyswift_tui.run_json_project" )
-          pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
-        except:
-          alignem.print_debug ( 1, "Error when running" )
-          alignem.print_debug ( 1, "JSON:" )
-          alignem.print_debug ( 1, str(d) )
-
-      input_val = input_val.strip()
-
-    else:
-
-      # Use a dummy project for now just to verify that the pyswift_tui interface works
-      fp = open("pyswift_gui_gtk.json",'r')
-      d = json.load(fp)
-      print ( "Running pyswift_tui.run_json_project" )
-      pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     # Reload the alignment stack after the alignment (hard-coded for now)
     aln_image_stack = [ "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
