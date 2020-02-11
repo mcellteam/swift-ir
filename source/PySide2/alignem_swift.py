@@ -333,6 +333,17 @@ def align_all():
       print ( "Running pyswift_tui.run_json_project" )
       pyswift_tui.run_json_project ( d, 'init_affine', 0, 1, 0, code_mode )
 
+      aln_image_stack = [ "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                          "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+      try:
+        main_win.load_images_in_role ( 'align', aln_image_stack )
+      except:
+        pass
 
 
 def align_forward():
@@ -404,9 +415,18 @@ if __name__ == "__main__":
 
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    main_win.load_images_in_role ( 'ref', ref_image_stack )
-    main_win.load_images_in_role ( 'base', src_image_stack )
-    main_win.load_images_in_role ( 'align', aln_image_stack )
+    try:
+      main_win.load_images_in_role ( 'ref', ref_image_stack )
+    except:
+      pass
+    try:
+      main_win.load_images_in_role ( 'base', src_image_stack )
+    except:
+      pass
+    try:
+      main_win.load_images_in_role ( 'align', aln_image_stack )
+    except:
+      pass
 
     alignem.run_app(main_win)
 

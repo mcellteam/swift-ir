@@ -545,6 +545,11 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 #      align_item.cumulative_afm = c_afm
       c_afm = align_item.align(c_afm,save=False)
 
+    ############ Moved here temporarily to get it to work with AlignEM_SWiFT.py
+    bias_funcs = BiasFuncs(align_list)
+    c_afm_init = InitCafm(bias_funcs)
+    ############
+
     # TODO
     print ( 50*'!' )
     print ( " Computing and Nulling Biases is disabled due to errors. Check on this!!" )
