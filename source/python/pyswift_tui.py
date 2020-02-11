@@ -545,37 +545,37 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 #      align_item.cumulative_afm = c_afm
       c_afm = align_item.align(c_afm,save=False)
 
-    ############ Need to initialize the cumulative AFM until commented code below is working
     c_afm_init = swiftir.identityAffine()
-    ############
 
-    # TODO
-    print ( 50*'!' )
-    print ( " Computing and Nulling Biases is disabled due to errors. Check on this!!" )
-    print ( 50*'!' )
-    '''
-    # Iteratively determine and null out bias in c_afm
-    print("\nComputing and Nulling Biases...\n")
-    print(50*'0')
-    bias_funcs = BiasFuncs(align_list)
-    print(50*'1')
-    c_afm_init = InitCafm(bias_funcs)
-#    c_afm_init = swiftir.identityAffine()
-    bias_iters = 2
-    print(50*'2')
-    for bi in range(bias_iters):
-      c_afm = c_afm_init
-      print(50*'3')
-      for item in align_list:
-        align_idx = item[0]
-        align_item = item[1]
-        print(50*'4')
-        bias_mat = BiasMat(align_idx,bias_funcs)
-        c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
-      print(50*'5')
-      if bi < bias_iters-1:
-        bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
-    '''
+    null_bias = False
+    if null_bias:
+
+      # TODO
+      print ( 50*'!' )
+      print ( " Computing and Nulling Biases is disabled due to errors. Check on this!!" )
+      print ( 50*'!' )
+
+      # Iteratively determine and null out bias in c_afm
+      print("\nComputing and Nulling Biases...\n")
+      print(50*'0')
+      bias_funcs = BiasFuncs(align_list)
+      print(50*'1')
+      c_afm_init = InitCafm(bias_funcs)
+      #    c_afm_init = swiftir.identityAffine()
+      bias_iters = 2
+      print(50*'2')
+      for bi in range(bias_iters):
+        c_afm = c_afm_init
+        print(50*'3')
+        for item in align_list:
+          align_idx = item[0]
+          align_item = item[1]
+          print(50*'4')
+          bias_mat = BiasMat(align_idx,bias_funcs)
+          c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
+        print(50*'5')
+        if bi < bias_iters-1:
+          bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
 
     # Save all final aligned images:
     print("\nSaving all aligned images...\n")

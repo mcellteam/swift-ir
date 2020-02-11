@@ -22,15 +22,15 @@ from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 
-# Get the path of ../../python
-alignem_file = os.path.abspath(__file__)
-alignem_p    = os.path.dirname( alignem_file )
-alignem_pp   = os.path.dirname( alignem_p )
-alignem_shared_path = os.path.join ( alignem_pp, 'python' )
+# Get the path of ../python
+alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
+alignem_p    = os.path.dirname( alignem_file )               # path/PySide2
+alignem_pp   = os.path.dirname( alignem_p )                  # path
+alignem_shared_path = os.path.join ( alignem_pp, 'python' )  # path/python
 
 if len(sys.path) <= 0:
   # Add the path to the currently empty path (this would be an unusual case)
-  sys.path.append ( swift_shared_path )
+  sys.path.append ( alignem_shared_path )
 else:
   # Add the path in the second position (after the default current directory of "")
   sys.path.insert ( 1, alignem_shared_path )
