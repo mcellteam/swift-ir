@@ -545,9 +545,8 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 #      align_item.cumulative_afm = c_afm
       c_afm = align_item.align(c_afm,save=False)
 
-    ############ Moved here temporarily to get it to work with AlignEM_SWiFT.py
-    bias_funcs = BiasFuncs(align_list)
-    c_afm_init = InitCafm(bias_funcs)
+    ############ Need to initialize the cumulative AFM until commented code below is working
+    c_afm_init = swiftir.identityAffine()
     ############
 
     # TODO
