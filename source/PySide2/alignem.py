@@ -876,7 +876,8 @@ class MainWindow(QMainWindow):
                   [ '-', None, None, None, None, None ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
                   [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
-                  [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
+                  # [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
+                  [ 'Remove ALL Panels', None, self.not_yet, None, None, None ]
                 ]
               ],
               [ '&Scaling',
@@ -924,7 +925,7 @@ class MainWindow(QMainWindow):
                   [ 'Update CFMs', None, self.not_yet, True, None, None ],
                   [ 'Generate Images', None, self.not_yet, True, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Use C Version', None, self.not_yet, False, None, None ],
+                  [ 'Use C Version', None, self.do_nothing, False, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1051,6 +1052,10 @@ class MainWindow(QMainWindow):
               parent.addAction ( action )
 
 
+
+    @Slot()
+    def do_nothing(self, checked):
+        pass
 
     @Slot()
     def not_yet(self, checked):

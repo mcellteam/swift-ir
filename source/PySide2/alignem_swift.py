@@ -69,7 +69,7 @@ def write_json_project ( project_file_name="alignem_out.json",
           jdsn['alignment_stack'] = []
           for a in align_layer_list_for_scale:
             jdsns = {}
-            jdsns['skip'] = control_panel_data[0][2][3][0]
+            jdsns['skip'] = control_panel_data[0][0][3][0]
             jdsns['images'] = {}
             for im in a.image_list:
               jdsns['images'][im.role] = {}
@@ -207,11 +207,24 @@ def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
 
+def remove_aligned():
+    alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
+
+    # Load the alignment stack after the alignment (hard-coded for now)
+    aln_image_stack = []
+    for layer in alignem.alignment_layer_list:
+      aln_image_stack.append ( None )
+    try:
+      main_win.load_images_in_role ( 'aligned', aln_image_stack )
+    except:
+      pass
+
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
 skip = BoolField("Skip",False)
 
+'''
 control_model = [
   # Panes
   [ # Begin first pane of rows
@@ -222,6 +235,14 @@ control_model = [
     [ FloatField("a:",1010), "   ", FloatField("b:",1011), "   ", FloatField("c:",1100), "   ",
       FloatField("d:",1101), "   ", FloatField("e:",1110), "   ", FloatField("f:",1111), "   " ],
     [ CallbackButton('Align All SWiFT', align_all), 6*" ", CallbackButton('Align Forward SWiFT',align_forward), 60*" ", IntField("# Forward",1) ]
+  ] # End first pane
+]
+'''
+
+control_model = [
+  # Panes
+  [ # Begin first pane of rows
+    [ CallbackButton('Align All SWiFT', align_all), CallbackButton('Remove Aligned', remove_aligned), "         ", skip ]
   ] # End first pane
 ]
 
