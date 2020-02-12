@@ -179,9 +179,17 @@ def align_all():
         alignem.print_debug ( 1, "JSON:" )
         alignem.print_debug ( 1, str(dm) )
 
-    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-    # Reload the alignment stack after the alignment (hard-coded for now)
+    # Load the alignment stack after the alignment (hard-coded for now)
+    aln_image_stack = []
+    for layer in alignem.alignment_layer_list:
+      image_name = None
+      for image in layer.image_list:
+        if image.role == 'base':
+          image_name = image.image_file_name
+      aln_image_stack.append ( os.path.join ( "output/scale_1/img_aligned", image_name ) )
+
     aln_image_stack = [ "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                         "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
                         "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
@@ -224,10 +232,23 @@ if __name__ == "__main__":
     alignem.debug_level = 20
 
     options = argparse.ArgumentParser()
-    options.add_argument("-d", "--debug", type=int, required=False)
+    options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
+    options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST")
     args = options.parse_args()
+
+    test_option = 0
     if args.debug != None:
       alignem.debug_level = args.debug
+    try:
+      if args.debug != None:
+        alignem.debug_level = int(args.debug)
+    except:
+        pass
+    try:
+      if args.test != None:
+        test_option = int(args.test)
+    except:
+        pass
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
 
@@ -236,46 +257,49 @@ if __name__ == "__main__":
     #main_win.define_roles ( ['ref','src','align'] )
     main_win.define_roles ( ['ref','base','aligned'] )
 
-    alignem.print_debug ( 30, "================= Importing Images =================" )
+    if test_option == 1:
+        # Import test images
 
-    ref_image_stack = [ None,
-                        "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
+        alignem.print_debug ( 30, "================= Importing Images =================" )
 
-    src_image_stack = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
-                        "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+        ref_image_stack = [ None,
+                            "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
 
-    aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
-                        "aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+        src_image_stack = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
 
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                            "aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                            "aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                            "aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                            "aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                            "aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                            "aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
 
-    try:
-      main_win.load_images_in_role ( 'ref', ref_image_stack )
-    except:
-      pass
-    try:
-      main_win.load_images_in_role ( 'base', src_image_stack )
-    except:
-      pass
-    try:
-      main_win.load_images_in_role ( 'aligned', aln_image_stack )
-    except:
-      pass
+        # Load these with try/except since they may not exist
+
+        try:
+          main_win.load_images_in_role ( 'ref', ref_image_stack )
+        except:
+          pass
+        try:
+          main_win.load_images_in_role ( 'base', src_image_stack )
+        except:
+          pass
+        try:
+          main_win.load_images_in_role ( 'aligned', aln_image_stack )
+        except:
+          pass
 
     alignem.run_app(main_win)
 
