@@ -861,6 +861,11 @@ class MainWindow(QMainWindow):
                       # Empty list to hold the dynamic roles as defined above
                     ]
                   ],
+                  [ '&Empty into',
+                    [
+                      # Empty list to hold the dynamic roles as defined above
+                    ]
+                  ],
                   [ '-', None, None, None, None, None ],
                   [ 'Center', None, self.center_all_images, None, None, None ],
                   [ 'Actual Size', None, self.actual_size, None, None, None ],
@@ -1220,6 +1225,20 @@ class MainWindow(QMainWindow):
                         item.triggered.connect ( self.import_into_role )
                         mm.addAction(item)
                         first = False
+                    if 'Empty into' in text_label:
+                      print_debug ( 30, "Found Empty Into Menu" )
+                      # Remove all the old actions:
+                      while len(mm.actions()) > 0:
+                        mm.removeAction(mm.actions()[-1])
+                      # Add the new actions
+                      first = True
+                      for role in roles_list:
+                        item = QAction ( role, self )
+                        #item.setCheckable(True)
+                        #item.setChecked(first)
+                        item.triggered.connect ( self.empty_into_role )
+                        mm.addAction(item)
+                        first = False
 
     @Slot()
     def define_roles_callback(self, checked):
@@ -1243,6 +1262,51 @@ class MainWindow(QMainWindow):
     def import_into_role(self, checked):
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( import_role_name )
+
+    @Slot()
+    def empty_into_role(self, checked):
+        global alignment_layer_list
+        global alignment_layer_index
+
+        role_to_import = str ( self.sender().text() )
+
+        print_debug ( 30, "Adding empty for role: " + str(role_to_import) )
+
+        # Find next layer with an empty role matching the requested role_to_import
+        print_debug ( 60, "Trying to place file <empty> in role " + str(role_to_import) )
+        found_layer = None
+        this_layer_index = 0
+        for alignment_layer in alignment_layer_list:
+          role_taken = False
+          for image in alignment_layer.image_list:
+            print_debug ( 80, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
+            if image.role == str(role_to_import):
+              role_taken = True
+              break
+          print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
+          if not role_taken:
+            # Add the image here at this layer
+            found_layer = alignment_layer
+            break
+          this_layer_index += 1
+        if found_layer:
+          # Add the image/role to the found layer
+          print_debug ( 40, "Adding <empty> to layer " + str(this_layer_index) )
+          found_layer.image_list.append ( AnnotatedImage ( str(role_to_import), None, load_now=0 ) )
+        else:
+          # Add a new layer for the image
+          print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
+          alignment_layer_list.append ( DisplayLayer ( role_to_import, None, load_now=0 ) )
+
+        # Draw the panels ("windows")
+        for p in self.panel_list:
+            p.force_center = True
+            p.update_zpa_self()
+
+        self.update_win_self()
+
+
+
 
     @Slot()
     def remove_this_layer(self, checked):
