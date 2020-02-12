@@ -84,6 +84,10 @@ class ImageLibrary:
                 image_ref = self.images.pop(real_norm_path)
         return ( image_ref )
 
+    def remove_all_images ( self ):
+        for k in self.images.keys():
+          self.remove_image_reference ( k )
+        self.images = {}
 
 image_library = ImageLibrary()
 
@@ -346,6 +350,10 @@ class ZoomPanWidget(QWidget):
               if alignment_layer_list[alignment_layer_index].control_panel_data != None:
                 main_window.control_panel.copy_data_to_self(alignment_layer_list[alignment_layer_index].control_panel_data)
               ##main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+
+              print_debug ( 80, "Images at layer " + str(alignment_layer_index) + " are:" )
+              for im in alignment_layer_list[alignment_layer_index].image_list:
+                print_debug ( 80, "   " + str(im.role) + ":   " + str(im.image_file_name) )
 
             # Unload images no longer needed
             for i in range(len(alignment_layer_list)):
@@ -1171,6 +1179,12 @@ class MainWindow(QMainWindow):
 
         #if len(alignment_layer_list) > 0:
         #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+
+
+    def update_panels(self):
+        for p in self.panel_list:
+            p.update_zpa_self()
+        self.update_win_self()
 
 
     @Slot()

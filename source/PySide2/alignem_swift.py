@@ -179,24 +179,21 @@ def align_all():
         alignem.print_debug ( 1, "JSON:" )
         alignem.print_debug ( 1, str(dm) )
 
-    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    # Load the alignment stack after the alignment (hard-coded for now)
+    # Load the alignment stack after the alignment
     aln_image_stack = []
     for layer in alignem.alignment_layer_list:
       image_name = None
       for image in layer.image_list:
         if image.role == 'base':
           image_name = image.image_file_name
-      aln_image_stack.append ( os.path.join ( "output/scale_1/img_aligned", image_name ) )
 
-    aln_image_stack = [ "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
-                        "output/scale_1/img_aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+      # Convert from the base name to the standard aligned name:
+      aligned_name = None
+      if image_name != None:
+        name_parts = os.path.split(image_name)
+        if len(name_parts) == 2:
+          aligned_name = os.path.join ( name_parts[0], "output/scale_1/img_aligned", name_parts[1] )
+      aln_image_stack.append ( aligned_name )
     try:
       main_win.load_images_in_role ( 'aligned', aln_image_stack )
     except:
@@ -208,16 +205,27 @@ def align_forward():
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
 
 def remove_aligned():
-    alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
-
-    # Load the alignment stack after the alignment (hard-coded for now)
-    aln_image_stack = []
+    alignem.print_debug ( 30, "Removing aligned images ..." )
+    delete_list = []
     for layer in alignem.alignment_layer_list:
-      aln_image_stack.append ( None )
-    try:
-      main_win.load_images_in_role ( 'aligned', aln_image_stack )
-    except:
-      pass
+      for image in layer.image_list:
+        if image.role == 'aligned':
+          delete_list.append ( image.image_file_name )
+          image.unload()
+          image.pixmap = None
+          image.image_file_name = None
+
+    alignem.image_library.remove_all_images()
+
+    for fname in delete_list:
+      if fname != None:
+        if os.path.exists(fname):
+          os.remove(fname)
+          alignem.image_library.remove_image_reference ( fname )
+
+    alignem.image_library.remove_all_images()
+    main_win.update_panels()
+
 
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
