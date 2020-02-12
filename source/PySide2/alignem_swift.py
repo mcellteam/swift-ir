@@ -192,7 +192,7 @@ def align_all():
       if image_name != None:
         name_parts = os.path.split(image_name)
         if len(name_parts) == 2:
-          aligned_name = os.path.join ( name_parts[0], "output/scale_1/img_aligned", name_parts[1] )
+          aligned_name = os.path.join ( name_parts[0], os.path.join("output","scale_1","img_aligned"), name_parts[1] )
       aln_image_stack.append ( aligned_name )
     try:
       main_win.load_images_in_role ( 'aligned', aln_image_stack )
@@ -307,13 +307,13 @@ if __name__ == "__main__":
                             "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
 
-        aln_image_stack = [ "aligned/vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                            "aligned/vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                            "aligned/vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                            "aligned/vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                            "aligned/vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                            "aligned/vj_097_shift_rot_skew_crop_1k1k_6.jpg",
-                            "aligned/vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+        aln_image_stack = [ os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_1.jpg"),
+                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_2.jpg"),
+                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_3.jpg"),
+                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_4.jpg"),
+                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_5.jpg"),
+                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_6.jpg"),
+                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_7.jpg") ]
 
         # Load these with try/except since they may not exist
 
