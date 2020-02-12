@@ -845,7 +845,8 @@ class MainWindow(QMainWindow):
                 [
                   [ '&New Project', 'Ctrl+N', self.not_yet, None, None, None ],
                   [ '&Open Project', 'Ctrl+O', self.not_yet, None, None, None ],
-                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.not_yet, None, None, None ],
                   [ 'Save Project &As', 'Ctrl+A', self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Set Destination...', None, self.not_yet, None, None, None ],
@@ -867,8 +868,10 @@ class MainWindow(QMainWindow):
                     ]
                   ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Center', None, self.center_all_images, None, None, None ],
-                  [ 'Actual Size', None, self.actual_size, None, None, None ],
+                  # [ 'Center', None, self.center_all_images, None, None, None ],
+                  [ 'Center', None, self.not_yet, None, None, None ],
+                  # [ 'Actual Size', None, self.actual_size, None, None, None ],
+                  [ 'Actual Size', None, self.not_yet, None, None, None ],
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
@@ -1037,6 +1040,8 @@ class MainWindow(QMainWindow):
                 action.setShortcut ( item[1] )
               if item[2] != None:
                 action.triggered.connect ( item[2] )
+                if item[2] == self.not_yet:
+                  action.setDisabled(True)
               if item[3] != None:
                 action.setCheckable(True)
                 action.setChecked(item[3])
