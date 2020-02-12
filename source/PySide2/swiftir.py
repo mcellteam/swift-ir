@@ -66,7 +66,7 @@ def reptoshape(mat, pattern):
 
 def shiftAffine(afm, dx):
     return afm + np.array([[0,0,dx[0]],[0,0,dx[1]]])
-            
+
 def invertAffine(afm):
     '''INVERTAFFINE - Invert affine transform
     INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
@@ -123,7 +123,7 @@ def mirAffine(pa, pb):
     N = pa.shape[1]
 
     if N==0:
-        return (np.array([[1., 0, 0], [0, 1, 0]]), 0, None)    
+        return (np.array([[1., 0, 0], [0, 1, 0]]), 0, None)
     elif N==1:
         return (np.array([[1., 0, (pb[0]-pa[0])[0]], [0, 1, (pb[1]-pa[1])[0]]]), 0, 0)
     elif N==2:
@@ -139,7 +139,7 @@ def mirAffine(pa, pb):
         afm = cv2.getAffineTransform(pa.astype('float32').transpose(),
                                      pb.astype('float32').transpose())
         return (afm, 0, 0)
-    
+
     # Add row of ones so we can treat the affine as a 3x3 matrix
     # multiplying against [x, y, 1]'.
     pa = np.vstack((pa, np.ones((1,N))))
@@ -149,19 +149,19 @@ def mirAffine(pa, pb):
     afm = np.linalg.lstsq(pa.transpose(), pb.transpose(), rcond=-1)[0].transpose()
     afm[2,:] = [0, 0, 1] # This should already be more or less true
 
-    # lstsq doesn't return individual residuals, so must recalculate    
+    # lstsq doesn't return individual residuals, so must recalculate
     resi = np.matmul(afm, pa) - pb
     err = np.sum(resi*resi, 0)
     rms = np.sqrt(np.mean(err))
     iworst = np.argmax(err)
-    
+
     afm = afm[0:2,:] # Drop the trivial bottom row
     return (afm, rms, iworst)
 
 def mirRotate(pa, pb):
     '''MIRROTATE - Return optimal pure rotation
     afm = MIRROTATE(pa, pb), where PA and PB both contain exactly 2 points,
-    is like MIRAFFINE, except that the result is a pure rotation plus 
+    is like MIRAFFINE, except that the result is a pure rotation plus
     translation.'''
     ca = np.mean(pa, 1)
     cb = np.mean(pb, 1)
@@ -218,16 +218,16 @@ def toLocal(afm, topleft):
     '''TOLOCAL - Modify affine transform for use with local coordinates
     lafm = TOLOCAL(afm, topleft) takes an affine that transforms global
     model coordinates to coordinates in a moving image and returns an
-    affine that for use on a stationary image located at the given 
-    position. That is, if AFM acts by p_moving = AFM p_model, then LAFM 
+    affine that for use on a stationary image located at the given
+    position. That is, if AFM acts by p_moving = AFM p_model, then LAFM
     acts by p_moving = LAFM p_stationary = AFM (p_stationary + topleft).'''
     dp = applyAffine(afm, topleft) - applyAffine(afm, [0,0])
     return shiftAffine(afm, dp)
 
 def toGlobal(afm, topleft):
     '''TOGLOBAL - Modify affine transform for use with global coordinates
-    afm = TOGLOBAL(lafm, topleft) takes an affine that transforms 
-    coordinates in a stationary image to coordinates in a moving image 
+    afm = TOGLOBAL(lafm, topleft) takes an affine that transforms
+    coordinates in a stationary image to coordinates in a moving image
     and returns an affine that for use on global model coordinates, given
     that the stationary image is located at the provided TOPLEFT position.
     That is, if LAFM acts by p_moving = LAFM p_stationary, then AFM acts by
@@ -239,7 +239,7 @@ def loadImage(ifn, stretch=False):
     '''LOADIMAGE - Load an image for alignment work
     img = LOADIMAGE(ifn) loads the named image, which can then serve as
     either the “stationary” or the “moving” image.
-    Images are always converted to 8 bits. Optional second argument STRETCH 
+    Images are always converted to 8 bits. Optional second argument STRETCH
     enables contrast stretching. STRETCH may be given as a percentage,
     or simply as True, which implies 0.1%.
     The current implementation can only read from the local file system.
@@ -281,7 +281,7 @@ def extractStraightWindow(img, xy=None, siz=512):
     win = EXTRACTSTRAIGHTWINDOW(img, xy, siz) extracts a window of size SIZ,
     centered on XY, from the given image.
     SIZ may be a scalar or a pair of numbers. SIZ defaults to 512.
-    If XY is not given, the window is taken from the center of the image.'''    
+    If XY is not given, the window is taken from the center of the image.'''
     siz = si_unpackSize(siz)
     if xy is None:
         xy = [img.shape[1]/2, img.shape[0]/2]
@@ -302,7 +302,7 @@ def extractTransformedWindow(img, xy=None, tfm=None, siz=512):
     win = EXTRACTTRANSFORMEDWINDOW(img, xy, tfm, siz) extracts a window of
     size SIZ, centered on XY, from the given image.
     TFM must be a 2x2 transformation matrix. It is internally modified with
-    a translation T such that the center point XY is not moved by the 
+    a translation T such that the center point XY is not moved by the
     combination of translation and transformation.
     SIZ may be a scalar or a pair of numbers. SIZ defaults to 512.
     If TFM is not given, an identity matrix is used.
@@ -345,7 +345,7 @@ def affineImage(afm, img, rect=None, grayBorder=False ):
         return cv2.warpAffine(img, shiftAffine(afm, p2-p1), (rect[2], rect[3]),
                               flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR,
                               borderValue=border)
-    
+
 def modelBounds(afm, img):
     '''MODELBOUNDS - Returns image bounding rectangle in model space
     (x0, y0, w, h) = MODELBOUNDS(afm, img) returns the bounding rectangle
@@ -373,8 +373,8 @@ def modelBounds2(afm, siz):
 
 def apodize(img):
     '''APODIZE - Multiplies a windowing function into an image
-    APODIZE(img) multiplies the outer 1/4 of the image with a cosine 
-    fadeout to gray. Alignment improves drastically if at least one 
+    APODIZE(img) multiplies the outer 1/4 of the image with a cosine
+    fadeout to gray. Alignment improves drastically if at least one
     of the images is apodized. Often it is not necessary to do both.'''
     global apo
     global apo0
@@ -443,13 +443,13 @@ def ifft(img):
 def alignmentImage(sta, mov, wht=-.65):
     '''ALIGNMENTIMAGE - Calculate SWIM correlogram between two image tiles
     img = ALIGNMENTIMAGE(sta, mov) calculates the SWIM correlogram
-    pair of image tiles. Tiles are typically cut from a larger image 
-    using EXTRACTSTRAIGHTWINDOW or EXTRACTTRANSFORMEDWINDOW and one of 
+    pair of image tiles. Tiles are typically cut from a larger image
+    using EXTRACTSTRAIGHTWINDOW or EXTRACTTRANSFORMEDWINDOW and one of
     them should be apodized first.
-    This function will apply Fourier transforms to both of the images. 
-    If you are going to use it on the same image more than once, you can 
+    This function will apply Fourier transforms to both of the images.
+    If you are going to use it on the same image more than once, you can
     precompute the transform using SWIFTIR's FFT function. This function
-    automatically recognizes that the Fourier transform has already 
+    automatically recognizes that the Fourier transform has already
     been applied.
     Optional third argument WHT can specify whitening exponent. It
     defaults to -0.65.'''
@@ -484,7 +484,7 @@ def findPeak(img):
 
 def extractFoldedAroundPoint(img, xy, rad=5):
     '''EXTRACTFOLDEDAROUNDPOINT - Extracts area around a point
-    win = EXTRACTFOLDEDAROUNDPOINT(img, xy) extracts a small area from 
+    win = EXTRACTFOLDEDAROUNDPOINT(img, xy) extracts a small area from
     image IMG around the point XY. The image is treated as a torus, i.e.,
     for a 100x100 image, position x = -5, 95, and 195 are all the same.
     Optional third argument RAD specifies radius of the extracted area.
@@ -526,9 +526,9 @@ def swim(sta, mov, wht=-.65):
     cut from a larger image using EXTRACTSTRAIGHTWINDOW or
     EXTRACTTRANSFORMEDWINDOW and one of them should be apodized first.
     SWIM will apply Fourier transforms to both of the images. If you
-    are going to run SWIM on the same image more than once, you can 
-    precompute the transform using SWIFTIR's FFT function. SWIM 
-    automatically recognizes that the Fourier transform has already 
+    are going to run SWIM on the same image more than once, you can
+    precompute the transform using SWIFTIR's FFT function. SWIM
+    automatically recognizes that the Fourier transform has already
     been applied.
     Optional third argument WHT can specify whitening exponent. It
     defaults to -0.65.
@@ -569,12 +569,12 @@ def movingPatches(img, pp, afm, siz=512):
     '''MOVINGPATCHES - Extract several patches from a moving image
     fff = MOVINGPATCHES(img, pp, afm, siz) extracts several patches
     from a moving image IMG. Coordinates PP are specified as a 2xN array
-    and specify the centers of the patches in image coordinates. That is, 
+    and specify the centers of the patches in image coordinates. That is,
     AFM is _not_ applied to PP.
     Patch size SIZ is given as (W,H) or simply W and defaults to 512.
     AFM is an affine transform that is applied to the points PP.
     The result is a list of arrays that are Fourier transformed so
-    they can be fed directly to MULTISWIM. Note that moving patches 
+    they can be fed directly to MULTISWIM. Note that moving patches
     are _not_ apodized.
     MOVINGPATCHES also returns the locations of the points after
     affine transformation.'''
@@ -594,7 +594,7 @@ def multiSwim(stas, movs, wht=-.65, pp=None, afm=None):
     MOVINGPATCHES respectively.
     Optional third argument WHT specifies whitening exponent; default
     is -0.65.
-    Result DP is to be subtracted from the points in the stationary image 
+    Result DP is to be subtracted from the points in the stationary image
     if the points in the moving image are to be kept.
     MULTISWIM also returns SX and SY from SWIM in a 2xN array SS and
     the SNR values from SWIM in a vector.
@@ -602,7 +602,7 @@ def multiSwim(stas, movs, wht=-.65, pp=None, afm=None):
     MOVINGPATCHES), MULTISWIM will _instead_ calculalate DP as the
     shift to be _added_ to the points in the moving image if the
     points in the stationary image are to be kept.'''
-    
+
     n = len(stas)
     dp = np.zeros((2,n))
     ss = np.zeros((2,n))
@@ -630,7 +630,7 @@ def multiSwim(stas, movs, wht=-.65, pp=None, afm=None):
 def scaleImage(img, fac=2):
     '''SCALEIMAGE - Rescale an image
     im1 = SCALEIMAGE(img, fac) returns a version of the image IMG scaled
-    down by the given factor in both dimensions. FAC is optional and 
+    down by the given factor in both dimensions. FAC is optional and
     defaults to 2. FAC must be integer.
     Before scaling, the image is trimmed on the right and bottom so
     that the width and height are a multiple of FAC.
@@ -641,10 +641,10 @@ def scaleImage(img, fac=2):
     if fac*K[0] < S[0] or fac*K[1] < S[1]:
         img = img[0:fac*K[0],0:fac*K[1]]
     return cv2.resize(img, None, None, 1.0/fac, 1.0/fac, cv2.INTER_AREA)
-    
+
 def meanImage(ifns, stretch=False):
     '''MEANIMAGE - Calculate average image from multiple files
-    img = MEANIMAGE(ifns) loads, one by one, all the images from the files 
+    img = MEANIMAGE(ifns) loads, one by one, all the images from the files
     in IFNS, and returns an averaged image (as float32).
     Optional second argument STRETCH enables contrast stretching for
     the individual images; see LOADIMAGE.'''
@@ -675,7 +675,7 @@ def meanImageNoBlack(ifns, stretch=False, minvalid=1):
     if minvalid>1:
         sumimg[nimg<minvalid] = 0
     return sumimg / nimg
-    
+
 #def remod(ifns, ofnbase, halfwidth=10, halfexclwidth=0, topbot=False,
 def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
           TEST=False):
@@ -740,7 +740,7 @@ def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
         print('remod writing image: %s' % (ofn))
         saver(img.astype('uint8'), ofn)
 
-        
+
     for k in range(N):
         if nbelow >= keepin:
             belowsum -= stack[idx(k - keepin)]
@@ -767,7 +767,7 @@ def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
             else:
                 abovesum += stack[idx(k - halfwidth - halfexclwidth)]
             nabove += 1
-   
+
         if k<Z:
             stack.append(nwimg)
         else:
@@ -789,7 +789,7 @@ def copyTriangle(dst, src, tria, afm):
     in the SRC image is through affine transform AFM: p_src = AFM(p_dst).
     TRIA must be a 2x3 array of integer pixel coordinates in the DST
     image. AFM must be a 2x3 array defining an affine transform.'''
-    
+
     p_topleft = np.min(tria, 1)
     p_bottomright = np.max(tria, 1) + 1
     box_size = (p_bottomright - p_topleft)
@@ -803,7 +803,7 @@ def copyTriangle(dst, src, tria, afm):
     cv2.bitwise_and(clip, mask, clip)
     cv2.bitwise_or(dst, clip, dst)
     return dst
-    
+
 
 ######################################################################
 
@@ -811,7 +811,7 @@ if __name__=='__main__':
 
     import time
     import matplotlib.pyplot as plt
-    
+
     def simpleTest(img, im2):
         cut1 = extractStraightWindow(img)
         cut2 = extractStraightWindow(im2)
@@ -825,23 +825,23 @@ if __name__=='__main__':
         plt.imshow(alignmentImage(apo1, cut2))
         dxy = swim(ff1, cut2)
         print('Point in center:', dxy)
-        
+
     def multiTest(img, im2):
         pa = np.array([[3000, 7000, 3000, 7000],
                        [3000, 3000, 7000, 7000]])
         stas = stationaryPatches(img, pa)
         (movs, pb) = movingPatches(img, pa, identityAffine())
         (dp, ss, snr) = multiSwim(stas, movs)
-    
+
         print('original points', pb)
         pb = pb + dp
         print('after first swim', pb)
         print('peak width', ss)
         print('snr', snr)
-    
+
         (afm, rms, iworst) = mirAffine(pa, pb)
         print('affine matrix from mir', afm, rms, iworst)
-        
+
         (movs, pb) = movingPatches(img, pa, afm)
         print('affine places points at', pb)
         (dp, ss, snr) = multiSwim(stas, movs)
@@ -849,10 +849,10 @@ if __name__=='__main__':
         print('after second swim', pb)
         print('peak width', ss)
         print('snr', snr)
-    
+
         (afm, rms, iworst) = mirAffine(pa, pb)
         print('affine matrix from mir', afm, rms, iworst)
-        
+
         (movs, pb) = movingPatches(img, pa, afm)
         print('affine places points at', pb)
         (dp, ss, snr) = multiSwim(stas, movs)
@@ -869,15 +869,15 @@ if __name__=='__main__':
         ofnbase = 'out-%i-'
         remod(ifns, ofnbase, 3, 0, True, True)
 
-        
+
     t = time.time()
     print('Loading image 1')
-    img = loadImage('eric-sbem-test-190519/3-day_Ganglion2/Image1.tif',.1)
+    img = loadImage(os.path.join('eric-sbem-test-190519','3-day_Ganglion2','Image1.tif'),.1)
     print('dt = ', time.time() - t)
-          
+
     t = time.time()
     print('Loading image 2')
-    im2 = loadImage('eric-sbem-test-190519/3-day_Ganglion2/Image2.tif',.1)
+    im2 = loadImage(os.path.join('eric-sbem-test-190519','3-day_Ganglion2','Image2.tif'),.1)
     print('dt = ', time.time() - t)
 
     t = time.time()
@@ -890,4 +890,4 @@ if __name__=='__main__':
     multiTest(img, im2)
     print('dt = ', time.time() - t)
 
-    
+

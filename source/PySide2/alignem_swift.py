@@ -250,7 +250,7 @@ control_model = [
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ CallbackButton('Align All SWiFT', align_all), CallbackButton('Remove Aligned', remove_aligned), "         ", skip ]
+    [ CallbackButton('Align All SWiFT', align_all), CallbackButton('Align Forward SWiFT', align_all), IntField("#",1,1), CallbackButton('Remove Aligned', remove_aligned), "         ", skip ]
   ] # End first pane
 ]
 

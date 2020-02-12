@@ -117,7 +117,7 @@ class alignment_process:
 
     return result
 
-  
+
   def auto_swim_align(self,c_afm,save=True):
 
     print_debug ( 50, "\n\n\n" )
@@ -300,7 +300,7 @@ class align_recipe:
 
 # Universal class for alignment ingredients of recipes
 class align_ingredient:
- 
+
   # Constructor for ingredient of a recipe
   # Ingredients come in 3 main types where the type is determined by value of align_mode
   #   1) If align_mode is 'match_point_align' then this is a Matching Point ingredient
@@ -310,7 +310,7 @@ class align_ingredient:
   #        and corresponding windows (pmov) are contructed from psta and projected onto im_mov
   #        from which image matching is performed to estimate or refine the afm.
   #        If psta contains only one point then the estimated afm will be a translation matrix
-  #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the 
+  #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
   #        supplied afm matrix but do not refine the afm matrix
   def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
 
@@ -681,7 +681,7 @@ if __name__=='__main__':
   # These are the defaults
   f1 = "vj_097_shift_rot_skew_crop_1.jpg"
   f2 = "vj_097_shift_rot_skew_crop_2.jpg"
-  out = "./aligned"
+  out = os.path.join ( ".", "aligned" )
 
   # Process and remove the fixed positional arguments
   args = sys.argv
