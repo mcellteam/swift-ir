@@ -5,6 +5,8 @@ import cv2
 
 import json
 
+import shutil
+
 import alignem
 from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 
@@ -17,7 +19,7 @@ main_win = None
 
 def write_json_project ( project_file_name="alignem_out.json",
                          fb=None, project_path="",
-                         destination_path="",
+                         destination_path="output",
                          max_image_file_size = 100000000,
                          current_plot_code = "",
                          current_scale = 1 ):
@@ -44,7 +46,7 @@ def write_json_project ( project_file_name="alignem_out.json",
     j['data'] = {}
     jd = j['data']
     jd['source_path'] = ""
-    jd['destination_path'] = "output"
+    jd['destination_path'] = destination_path
     jd['pairwise_alignment'] = True
     jd['defaults'] = {}
     jdd = jd['defaults']
@@ -156,57 +158,84 @@ def align_all():
         if use_c_version.isChecked():
           code_mode = "c"
 
-    # Print out what might be done to produce the JSON for this project
-    for index in range(len(alignem.alignment_layer_list)):
-      print ( "Aligning layer " + str(index) )
-      al = alignem.alignment_layer_list[index]
-      for im in al.image_list:
-        if im.image_file_name != None:
-          print ( "   " + im.role + ":  " + im.image_file_name )
+    if (main_win.destination_directory == None) or len(main_win.destination_directory) <= 0:
 
-    # Generate the JSON on the fly by writing to a string buffer "file"
-    fb = StringBufferFile()
-    write_json_project ( "alignem_out.json", fb=fb )
-    if len(fb.fs.strip()) > 0:
-      # Read the JSON from the string buffer to create a regular Python representation
-      dm = None
+      alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
+
+    else:
+
+      alignem.print_debug ( 10, "Aligning with output in " + main_win.destination_directory )
+
+      # Create the expected directory structure for pyswift_tui.py
+      source_dir = os.path.join ( main_win.destination_directory, "scale_1", "img_src" )
+      os.makedirs ( source_dir, exist_ok=True )
+      target_dir = os.path.join ( main_win.destination_directory, "scale_1", "img_aligned" )
+      os.makedirs ( target_dir, exist_ok=True )
+
+      # Create links or copy files in the expected directory structure
+      # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
+      for layer in alignem.alignment_layer_list:
+        image_name = None
+        for image in layer.image_list:
+          if image.role == 'base':
+            try:
+              image_name = os.path.basename(image.image_file_name)
+              destination_image_name = os.path.join(source_dir,image_name)
+              shutil.copyfile(image.image_file_name, destination_image_name)
+            except:
+              pass
+
+      # Print out what might be done to produce the JSON for this project
+      for index in range(len(alignem.alignment_layer_list)):
+        print ( "Aligning layer " + str(index) )
+        al = alignem.alignment_layer_list[index]
+        for im in al.image_list:
+          if im.image_file_name != None:
+            print ( "   " + im.role + ":  " + im.image_file_name )
+
+      # Generate the JSON on the fly by writing to a string buffer "file"
+      fb = StringBufferFile()
+      write_json_project ( "alignem_out.json", fb=fb, destination_path=main_win.destination_directory )
+      if len(fb.fs.strip()) > 0:
+        # Read the JSON from the string buffer to create a regular Python representation
+        dm = None
+        try:
+          dm = json.loads ( fb.fs )
+          print ( "Running pyswift_tui.run_json_project" )
+          pyswift_tui.run_json_project ( dm, 'init_affine', 0, 1, 0, code_mode )
+        except Exception as e:
+
+          alignem.print_debug ( 1, 100*"%" )
+          alignem.print_debug ( 1, "JSON:" )
+          alignem.print_debug ( 1, str(dm) )
+          alignem.print_debug ( 1, 100*"%" )
+          alignem.print_debug ( 1, "Exception of type (" + str(type(e)) + " while running TUI" )
+          alignem.print_debug ( 1, "  Ex: " + str(e) )
+          alignem.print_debug ( 1, 100*"%" )
+          traceback.print_exc ( file=sys.stdout )
+          alignem.print_debug ( 1, 100*"%" )
+          #print ( "Inside align_swiftir.align_all()" )
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+      # Load the alignment stack after the alignment
+      aln_image_stack = []
+      for layer in alignem.alignment_layer_list:
+        image_name = None
+        for image in layer.image_list:
+          if image.role == 'base':
+            image_name = image.image_file_name
+
+        # Convert from the base name to the standard aligned name:
+        aligned_name = None
+        if image_name != None:
+          name_parts = os.path.split(image_name)
+          if len(name_parts) == 2:
+            aligned_name = os.path.join ( name_parts[0], os.path.join(target_dir, name_parts[1]) )
+        aln_image_stack.append ( aligned_name )
       try:
-        dm = json.loads ( fb.fs )
-        print ( "Running pyswift_tui.run_json_project" )
-        pyswift_tui.run_json_project ( dm, 'init_affine', 0, 1, 0, code_mode )
-      except Exception as e:
-
-        alignem.print_debug ( 1, 100*"%" )
-        alignem.print_debug ( 1, "JSON:" )
-        alignem.print_debug ( 1, str(dm) )
-        alignem.print_debug ( 1, 100*"%" )
-        alignem.print_debug ( 1, "Exception of type (" + str(type(e)) + " while running TUI" )
-        alignem.print_debug ( 1, "  Ex: " + str(e) )
-        alignem.print_debug ( 1, 100*"%" )
-        traceback.print_exc ( file=sys.stdout )
-        alignem.print_debug ( 1, 100*"%" )
-        print ( "Inside align_swiftir.align_all()" )
-        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    # Load the alignment stack after the alignment
-    aln_image_stack = []
-    for layer in alignem.alignment_layer_list:
-      image_name = None
-      for image in layer.image_list:
-        if image.role == 'base':
-          image_name = image.image_file_name
-
-      # Convert from the base name to the standard aligned name:
-      aligned_name = None
-      if image_name != None:
-        name_parts = os.path.split(image_name)
-        if len(name_parts) == 2:
-          aligned_name = os.path.join ( name_parts[0], os.path.join("output","scale_1","img_aligned"), name_parts[1] )
-      aln_image_stack.append ( aligned_name )
-    try:
-      main_win.load_images_in_role ( 'aligned', aln_image_stack )
-    except:
-      pass
+        main_win.load_images_in_role ( 'aligned', aln_image_stack )
+      except:
+        pass
 
 
 def align_forward():
