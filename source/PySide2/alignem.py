@@ -85,7 +85,8 @@ class ImageLibrary:
         return ( image_ref )
 
     def remove_all_images ( self ):
-        for k in self.images.keys():
+        keys = self.images.keys()
+        for k in keys:
           self.remove_image_reference ( k )
         self.images = {}
 
@@ -840,6 +841,8 @@ class MainWindow(QMainWindow):
         self.main_panel_layout.addWidget ( self.image_panel )
         self.main_panel_layout.addWidget ( self.control_panel )
 
+        self.destination_directory = None
+
 
         self.setCentralWidget(self.main_panel)
 
@@ -1222,12 +1225,9 @@ class MainWindow(QMainWindow):
         if False:  # self.native.isChecked():
             options |= QFileDialog.DontUseNativeDialog
 
-        dest_dir = QFileDialog.getExistingDirectory ( None,  # None was self
-                                                               "Select Destination Directory",
-                                                               None,
-                                                               options)
+        self.destination_directory = QFileDialog.getExistingDirectory ( None, "Select Destination Directory", None, options)
 
-        print_debug ( 1, "Destination is: " + str(dest_dir) )
+        print_debug ( 1, "Destination is: " + str(self.destination_directory) )
 
 
 
