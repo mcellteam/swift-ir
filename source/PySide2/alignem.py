@@ -17,7 +17,7 @@ import scipy.ndimage
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
-from PySide2.QtWidgets import QMenu, QColorDialog
+from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -79,6 +79,8 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       if not os.path.exists(full):
         os.makedirs ( full )
 
+def show_warning ( title, text ):
+    wbox = QMessageBox.warning ( None, title, text )
 
 class ImageLibrary:
     '''A class containing multiple images keyed by their file name.'''

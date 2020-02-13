@@ -161,6 +161,7 @@ def align_all():
     if (main_win.destination_directory == None) or len(main_win.destination_directory) <= 0:
 
       alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
+      alignem.show_warning ( "Note", "Projects can not be aligned without a destination (use File/Set Destination)" )
 
     else:
 
