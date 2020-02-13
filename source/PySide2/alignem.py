@@ -1207,6 +1207,34 @@ class MainWindow(QMainWindow):
         print_debug ( 50, "  Action: " + str(option_action) )
 
 
+    def add_image_to_role ( self, image_file_name, role_name ):
+        print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
+        found_layer = None
+        this_layer_index = 0
+        for alignment_layer in alignment_layer_list:
+          role_taken = False
+          for image in alignment_layer.image_list:
+            print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            if image.role == str(role_name):
+              role_taken = True
+              break
+          print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
+          if not role_taken:
+            # Add the image here at this layer
+            found_layer = alignment_layer
+            break
+          this_layer_index += 1
+        if found_layer:
+          # Add the image/role to the found layer
+          print_debug ( 40, "Adding to layer " + str(this_layer_index) )
+          found_layer.image_list.append ( AnnotatedImage ( str(role_name), image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+        else:
+          # Add a new layer for the image
+          print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
+          alignment_layer_list.append ( DisplayLayer ( role_name, image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+
+
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
         global alignment_layer_list
         global alignment_layer_index
@@ -1229,33 +1257,9 @@ class MainWindow(QMainWindow):
             print_debug ( 40, "" )
             for f in file_name_list:
               # Find next layer with an empty role matching the requested role_to_import
-              print_debug ( 60, "Trying to place file " + str(f) + " in role " + str(role_to_import) )
-              found_layer = None
-              this_layer_index = 0
-              for alignment_layer in alignment_layer_list:
-                role_taken = False
-                for image in alignment_layer.image_list:
-                  print_debug ( 80, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
-                  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                  if image.role == str(role_to_import):
-                    role_taken = True
-                    break
-                print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
-                if not role_taken:
-                  # Add the image here at this layer
-                  found_layer = alignment_layer
-                  break
-                this_layer_index += 1
-              if found_layer:
-                # Add the image/role to the found layer
-                print_debug ( 40, "Adding to layer " + str(this_layer_index) )
-                found_layer.image_list.append ( AnnotatedImage ( str(role_to_import), f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
-              else:
-                # Add a new layer for the image
-                print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
-                alignment_layer_list.append ( DisplayLayer ( role_to_import, f, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+              self.add_image_to_role ( f, role_to_import )
 
-            # Draw the panels ("windows")
+            # Draw the panel's ("windows")
             for p in self.panel_list:
                 p.force_center = True
                 p.update_zpa_self()
