@@ -136,6 +136,7 @@ class alignment_process:
 
     # Set up 1x1 point and window
     pa = np.zeros((2,1))                # Point Array for one point
+
     wwx_f = int(im_sta.shape[0])        # Window Width in x (Full Size)
     wwy_f = int(im_sta.shape[1])        # Window Width in y (Full Size)
     wwx = int(wsf*im_sta.shape[0])      # Window Width in x Scaled

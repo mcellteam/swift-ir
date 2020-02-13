@@ -1,4 +1,4 @@
-import sys
+import sys, traceback
 import os
 import argparse
 import cv2
@@ -174,10 +174,19 @@ def align_all():
         dm = json.loads ( fb.fs )
         print ( "Running pyswift_tui.run_json_project" )
         pyswift_tui.run_json_project ( dm, 'init_affine', 0, 1, 0, code_mode )
-      except:
-        alignem.print_debug ( 1, "Error when running" )
+      except Exception as e:
+
+        alignem.print_debug ( 1, 100*"%" )
         alignem.print_debug ( 1, "JSON:" )
         alignem.print_debug ( 1, str(dm) )
+        alignem.print_debug ( 1, 100*"%" )
+        alignem.print_debug ( 1, "Exception of type (" + str(type(e)) + " while running TUI" )
+        alignem.print_debug ( 1, "  Ex: " + str(e) )
+        alignem.print_debug ( 1, 100*"%" )
+        traceback.print_exc ( file=sys.stdout )
+        alignem.print_debug ( 1, 100*"%" )
+        print ( "Inside align_swiftir.align_all()" )
+        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     # Load the alignment stack after the alignment
     aln_image_stack = []
@@ -286,7 +295,7 @@ if __name__ == "__main__":
     #main_win.define_roles ( ['ref','src','align'] )
     main_win.define_roles ( ['ref','base','aligned'] )
 
-    if test_option == 1:
+    if test_option in [ 1, 2 ]:
         # Import test images
 
         alignem.print_debug ( 30, "================= Importing Images =================" )
@@ -298,6 +307,10 @@ if __name__ == "__main__":
                             "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
+        try:
+          main_win.load_images_in_role ( 'ref', ref_image_stack )
+        except:
+          pass
 
         src_image_stack = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
@@ -306,29 +319,24 @@ if __name__ == "__main__":
                             "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
-
-        aln_image_stack = [ os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_1.jpg"),
-                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_2.jpg"),
-                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_3.jpg"),
-                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_4.jpg"),
-                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_5.jpg"),
-                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_6.jpg"),
-                            os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_7.jpg") ]
-
-        # Load these with try/except since they may not exist
-
-        try:
-          main_win.load_images_in_role ( 'ref', ref_image_stack )
-        except:
-          pass
         try:
           main_win.load_images_in_role ( 'base', src_image_stack )
         except:
           pass
-        try:
-          main_win.load_images_in_role ( 'aligned', aln_image_stack )
-        except:
-          pass
+
+        if test_option == 2:
+            aln_image_stack = [ os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_1.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_2.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_3.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_4.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_5.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_6.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_7.jpg") ]
+            try:
+              main_win.load_images_in_role ( 'aligned', aln_image_stack )
+            except:
+              pass
+
 
     alignem.run_app(main_win)
 
