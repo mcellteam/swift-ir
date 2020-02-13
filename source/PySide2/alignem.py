@@ -857,7 +857,7 @@ class MainWindow(QMainWindow):
                   [ '&Save Project', 'Ctrl+S', self.not_yet, None, None, None ],
                   [ 'Save Project &As', 'Ctrl+A', self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Set Destination...', None, self.not_yet, None, None, None ],
+                  [ 'Set Destination...', None, self.set_destination, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
                 ]
@@ -1211,6 +1211,25 @@ class MainWindow(QMainWindow):
         # self.update_win_self()
 
         self.import_images( import_role_name, file_name_list )
+
+
+    @Slot()
+    def set_destination ( self ):
+        print_debug ( 1, "Set Destination" )
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.Directory
+        if False:  # self.native.isChecked():
+            options |= QFileDialog.DontUseNativeDialog
+
+        dest_dir = QFileDialog.getExistingDirectory ( None,  # None was self
+                                                               "Select Destination Directory",
+                                                               None,
+                                                               options)
+
+        print_debug ( 1, "Destination is: " + str(dest_dir) )
+
+
 
 
     def load_images_in_role ( self, role, file_names ):
