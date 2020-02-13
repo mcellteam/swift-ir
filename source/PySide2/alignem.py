@@ -826,6 +826,10 @@ class MainWindow(QMainWindow):
         QMainWindow.__init__(self)
         self.setWindowTitle(title)
 
+        self.current_project_file_name = None
+        self.project_open = None
+        self.project_save = None
+
         if panel_roles != None:
             global_panel_roles = panel_roles
 
@@ -877,11 +881,11 @@ class MainWindow(QMainWindow):
         ml = [
               [ '&File',
                 [
-                  [ '&New Project', 'Ctrl+N', self.not_yet, None, None, None ],
-                  [ '&Open Project', 'Ctrl+O', self.not_yet, None, None, None ],
+                  #[ '&New Project', 'Ctrl+N', self.not_yet, None, None, None ],
+                  [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
                   #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
-                  [ '&Save Project', 'Ctrl+S', self.not_yet, None, None, None ],
-                  [ 'Save Project &As', 'Ctrl+A', self.not_yet, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  [ 'Save Project &As', 'Ctrl+A', self.save_project_as, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Set Destination...', None, self.set_destination, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1042,7 +1046,11 @@ class MainWindow(QMainWindow):
     def update_win_self ( self ):
         self.update()
 
+    def register_project_open ( self, function ):
+        self.project_open = function
 
+    def register_project_save ( self, function ):
+        self.project_save = function
 
     def build_menu_from_list (self, parent, menu_list):
         # Get the group names first
@@ -1107,14 +1115,65 @@ class MainWindow(QMainWindow):
             print_debug ( 30, "Invalid debug value in: \"" + str(action_text) )
 
     @Slot()
+    def open_project(self, checked):
+        if self.project_open == None:
+            print_debug ( 1, "\n\nOpening Projects is unsupported\n\n" )
+        else:
+            print_debug ( 1, "\n\nOpening Project\n\n" )
+
+            options = QFileDialog.Options()
+            file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
+                                                              caption="Open Project",
+                                                              filter="Projects (*.json);;All Files (*)",
+                                                              selectedFilter="",
+                                                              options=options)
+            print_debug ( 60, "open_project ( " + str(file_name) + ")" )
+
+            if file_name != None:
+                if len(file_name) > 0:
+                    self.current_project_file_name = file_name
+
+                    # Attempt to hide the file dialog before opening ...
+                    for p in self.panel_list:
+                        p.update_zpa_self()
+                    # self.update_win_self()
+
+                    self.project_open ( file_name )
+
+    @Slot()
     def save_project(self, checked):
-        print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
-        project_data = [ l.to_data() for l in alignment_layer_list ]
-        project_json = json.dumps ( project_data, indent=2, sort_keys=True )
-        print ( "Saving to alignem_json.txt" )
-        f = open ( "alignem_json.txt", 'w' )
-        f.write ( project_json )
-        f.close()
+        if self.project_save == None:
+            print_debug ( 1, "\n\nSaving Projects is unsupported\n\n" )
+        elif self.current_project_file_name is None:
+            self.project_save_as ( None )
+        else:
+            print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
+            self.project_save ( self.current_project_file_name )
+
+    @Slot()
+    def save_project_as(self, checked):
+        if self.project_save == None:
+            print_debug ( 1, "\n\nSaving Projects is unsupported\n\n" )
+        else:
+            print_debug ( 1, "\n\nSaving Project\n\n" )
+
+            options = QFileDialog.Options()
+            file_name, filter = QFileDialog.getSaveFileName ( parent=None,  # None was self
+                                                              caption="Save Project",
+                                                              filter="Projects (*.json);;All Files (*)",
+                                                              selectedFilter="",
+                                                              options=options)
+            print_debug ( 60, "save_project_dialog ( " + str(file_name) + ")" )
+
+            if file_name != None:
+                if len(file_name) > 0:
+                    self.current_project_file_name = file_name
+
+                    # Attempt to hide the file dialog before opening ...
+                    for p in self.panel_list:
+                        p.update_zpa_self()
+                    # self.update_win_self()
+                    self.project_save ( file_name )
 
 
     @Slot()

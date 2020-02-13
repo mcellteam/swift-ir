@@ -16,6 +16,7 @@ import pyswift_tui
 
 main_win = None
 
+project_data = None
 
 def write_json_project ( project_file_name="alignem_out.json",
                          fb=None, project_path="",
@@ -123,6 +124,46 @@ def write_json_project ( project_file_name="alignem_out.json",
       f = fb
     f.write ( proj_json )
 
+def open_json_project ( project_file_name ):
+    global project_data
+    print ( "SWiFT opening project " + str(project_file_name) )
+
+    f = open ( project_file_name, 'r' )
+    text = f.read()
+    f.close()
+
+    project_data = json.loads ( text )
+    all_roles = set()
+    for scale_key in sorted(project_data['data']['scales'].keys()):
+        print ( "Checking data for scale " + str(scale_key) )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
+            for role_key in layer['images'].keys():
+                all_roles.add ( role_key )
+    main_win.define_roles ( all_roles )
+
+def save_json_project ( project_file_name ):
+    global project_data
+    print ( "SWiFT saving project to " + str(project_file_name) )
+    if project_file_name != None:
+        if len(project_file_name) > 0:
+            if project_data is None:
+                # Generate the JSON on the fly by writing to a string buffer "file"
+                fb = StringBufferFile()
+                write_json_project ( "junk.json", fb=fb, destination_path=main_win.destination_directory )
+                if len(fb.fs.strip()) > 0:
+                  # Read the JSON from the string buffer to create a regular Python representation
+                  dm = None
+                  try:
+                    project_data = json.loads ( fb.fs )
+                  except:
+                    pass
+            # Write out the project
+            jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
+            proj_json = jde.encode ( project_data )
+            f = open ( project_file_name, 'w' )
+            f.write ( proj_json )
+            f.close()
 
 class StringBufferFile:
   def __init__ ( self ):
@@ -319,6 +360,8 @@ if __name__ == "__main__":
         pass
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
+    main_win.register_project_open ( open_json_project )
+    main_win.register_project_save ( save_json_project )
 
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 
