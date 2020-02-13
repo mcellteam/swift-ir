@@ -168,9 +168,9 @@ def align_all():
 
       # Create the expected directory structure for pyswift_tui.py
       source_dir = os.path.join ( main_win.destination_directory, "scale_1", "img_src" )
-      os.makedirs ( source_dir, exist_ok=True )
+      alignem.makedirs_exist_ok ( source_dir, exist_ok=True )
       target_dir = os.path.join ( main_win.destination_directory, "scale_1", "img_aligned" )
-      os.makedirs ( target_dir, exist_ok=True )
+      alignem.makedirs_exist_ok ( target_dir, exist_ok=True )
 
       # Create links or copy files in the expected directory structure
       # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)

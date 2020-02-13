@@ -58,6 +58,27 @@ alignment_layer_index = 0
 main_window = None
 
 
+def makedirs_exist_ok ( path_to_build, exist_ok=False ):
+    # Needed for old python which doesn't have the exist_ok option!!!
+    print ( " Make dirs for " + path_to_build )
+    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
+    full = ""
+    if len(parts[0]) == 0:
+      # This happens with an absolute PosixPath
+      full = os.sep
+    else:
+      # This may be a Windows drive or the start of a non-absolute path
+      if ":" in parts[0]:
+        # Assume a Windows drive
+        full = parts[0] + os.sep
+      else:
+        # This is a non-absolute path which will be handled naturally with full=""
+        pass
+    for p in parts:
+      full = os.path.join(full,p)
+      if not os.path.exists(full):
+        os.makedirs ( full )
+
 
 class ImageLibrary:
     '''A class containing multiple images keyed by their file name.'''
