@@ -18,27 +18,13 @@ main_win = None
 
 project_data = None
 
-def write_json_project ( project_file_name="alignem_out.json",
-                         fb=None, project_path="",
-                         destination_path="output",
-                         max_image_file_size = 100000000,
-                         current_plot_code = "",
-                         current_scale = 1 ):
+def build_current_data_model():
 
-  print ( "write_json_project called" )
+    alignment_layer_list = alignem.alignment_layer_list
+    alignment_layer_index = alignem.alignment_layer_index
 
-  # Update the data layer(s) from the current fields before writing!
-  print ( "WARNING: current fields may not be taken into account yet." )
-  #store_fields_into_current_layer()
+    control_panel_data = main_win.control_panel.copy_self_to_data()
 
-  alignment_layer_list = alignem.alignment_layer_list
-  alignment_layer_index = alignem.alignment_layer_index
-
-  control_panel_data = main_win.control_panel.copy_self_to_data()
-
-  if len(project_file_name) > 0:
-    # Actually write the file
-    # gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
 
     j = {}
     j['version'] = 0.2
@@ -47,7 +33,7 @@ def write_json_project ( project_file_name="alignem_out.json",
     j['data'] = {}
     jd = j['data']
     jd['source_path'] = ""
-    jd['destination_path'] = destination_path
+    jd['destination_path'] = main_win.destination_path
     jd['pairwise_alignment'] = True
     jd['defaults'] = {}
     jdd = jd['defaults']
@@ -59,12 +45,20 @@ def write_json_project ( project_file_name="alignem_out.json",
     jdda['bias_x_per_image'] = 0.0
     jdda['bias_y_per_image'] = 0.0
     jdda['output_level'] = 0
-    jd['current_scale'] = 1
-    jd['current_layer'] = 2
+    jd['current_scale'] = alignem.current_scale
+    jd['current_layer'] = alignem.alignment_layer_index
+
+    print ( "\n\n\n" + (100*"%") )
+    print ( "alignem.current_scale = " + str(alignem.current_scale) )
+    print ( "alignem.alignment_layer_index = " + str(alignem.alignment_layer_index) )
+    print ( "\n\n\n" + (100*"%") )
+
+
     jd['scales'] = {}
     jds = jd['scales']
-    for scale in [ 1 ]:
-      align_layer_list_for_scale = alignem.alignment_layer_list # This should be indexed by scale
+    print ( "Saving scales for: " + str(alignem.global_image_scales) )
+    for scale in [ str(s) for s in alignem.global_image_scales ]:
+      align_layer_list_for_scale = alignem.alignment_layer_list # This should be indexed by scale but there's only one at this time
       jds[str(scale)] = {}
       jdsn = jds[str(scale)]
       if align_layer_list_for_scale != None:
@@ -79,7 +73,7 @@ def write_json_project ( project_file_name="alignem_out.json",
               jdsnsr = jdsns['images'][im.role]
               rel_file_name = ""
               if type(im.image_file_name) != type(None):
-                rel_file_name = os.path.relpath(im.image_file_name,start=project_path)
+                rel_file_name = os.path.relpath(im.image_file_name,start=main_win.destination_path)
               jdsnsr['filename'] = rel_file_name
               jdsnsr['metadata'] = {}
               jdsnsrm = jdsnsr['metadata']
@@ -110,6 +104,35 @@ def write_json_project ( project_file_name="alignem_out.json",
             }
             jdsn['alignment_stack'].append ( jdsns )
 
+    return ( j )
+
+
+
+
+def write_json_project ( project_file_name="alignem_out.json",
+                         fb=None, project_path="",
+                         destination_path="output",
+                         max_image_file_size = 100000000,
+                         current_plot_code = "",
+                         current_scale = 1 ):
+
+  print ( "write_json_project called" )
+
+  # Update the data layer(s) from the current fields before writing!
+  print ( "WARNING: current fields may not be taken into account yet." )
+  #store_fields_into_current_layer()
+
+  alignment_layer_list = alignem.alignment_layer_list
+  alignment_layer_index = alignem.alignment_layer_index
+
+  control_panel_data = main_win.control_panel.copy_self_to_data()
+
+  if len(project_file_name) > 0:
+    # Actually write the file
+    # gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
+
+    j = build_current_data_model()
+
     jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
     proj_json = jde.encode ( j )
 
@@ -123,6 +146,7 @@ def write_json_project ( project_file_name="alignem_out.json",
       alignem.print_debug ( 50, "Writing to string" )
       f = fb
     f.write ( proj_json )
+
 
 def open_json_project ( project_file_name ):
     global project_data
@@ -147,8 +171,8 @@ def open_json_project ( project_file_name ):
     # Define all of the roles found as panels
     main_win.define_roles ( all_roles )
 
-    # Add the images to only the last (smallest) scale  for now
-    scale_keys = sorted(project_data['data']['scales'].keys())[-1]
+    # Add the images to the scales
+    scale_keys = sorted(project_data['data']['scales'].keys())
 
     for scale_key in scale_keys:
         print ( "Importing images for scale " + str(scale_key) )
@@ -163,10 +187,11 @@ def save_json_project ( project_file_name ):
     print ( "SWiFT saving project to " + str(project_file_name) )
     if project_file_name != None:
         if len(project_file_name) > 0:
+            '''
             if project_data is None:
                 # Generate the JSON on the fly by writing to a string buffer "file"
                 fb = StringBufferFile()
-                write_json_project ( "junk.json", fb=fb, destination_path=main_win.destination_directory )
+                write_json_project ( "junk.json", fb=fb, destination_path=main_win.destination_path )
                 if len(fb.fs.strip()) > 0:
                   # Read the JSON from the string buffer to create a regular Python representation
                   dm = None
@@ -174,10 +199,11 @@ def save_json_project ( project_file_name ):
                     project_data = json.loads ( fb.fs )
                   except:
                     pass
+            '''
             # Write out the project
-            jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
-            proj_json = jde.encode ( project_data )
             f = open ( project_file_name, 'w' )
+            jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
+            proj_json = jde.encode ( build_current_data_model() )
             f.write ( proj_json )
             f.close()
 
@@ -215,19 +241,19 @@ def align_all():
         if use_c_version.isChecked():
           code_mode = "c"
 
-    if (main_win.destination_directory == None) or len(main_win.destination_directory) <= 0:
+    if (main_win.destination_path == None) or len(main_win.destination_path) <= 0:
 
       alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
       alignem.show_warning ( "Note", "Projects can not be aligned without a destination (use File/Set Destination)" )
 
     else:
 
-      alignem.print_debug ( 10, "Aligning with output in " + main_win.destination_directory )
+      alignem.print_debug ( 10, "Aligning with output in " + main_win.destination_path )
 
       # Create the expected directory structure for pyswift_tui.py
-      source_dir = os.path.join ( main_win.destination_directory, "scale_1", "img_src" )
+      source_dir = os.path.join ( main_win.destination_path, "scale_1", "img_src" )
       alignem.makedirs_exist_ok ( source_dir, exist_ok=True )
-      target_dir = os.path.join ( main_win.destination_directory, "scale_1", "img_aligned" )
+      target_dir = os.path.join ( main_win.destination_path, "scale_1", "img_aligned" )
       alignem.makedirs_exist_ok ( target_dir, exist_ok=True )
 
       # Create links or copy files in the expected directory structure
@@ -253,14 +279,18 @@ def align_all():
 
       # Generate the JSON on the fly by writing to a string buffer "file"
       fb = StringBufferFile()
-      write_json_project ( "alignem_out.json", fb=fb, destination_path=main_win.destination_directory )
+
+      write_json_project ( "alignem_out.json", fb=fb, destination_path=main_win.destination_path )
+
+
       if len(fb.fs.strip()) > 0:
         # Read the JSON from the string buffer to create a regular Python representation
         dm = None
         try:
           dm = json.loads ( fb.fs )
           print ( "Running pyswift_tui.run_json_project" )
-          pyswift_tui.run_json_project ( dm, 'init_affine', 0, 1, 0, code_mode )
+          #                              dm,   align_opt, scale_done,      use_scale,        scale_tbd, swiftir_code_mode
+          pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(alignem.current_scale),      0,        code_mode )
         except Exception as e:
 
           alignem.print_debug ( 1, 100*"%" )
