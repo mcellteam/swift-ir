@@ -55,6 +55,8 @@ max_image_file_size = 1000000000
 alignment_layer_list = []
 alignment_layer_index = 0
 
+current_scale = 1
+
 main_window = None
 
 
@@ -166,6 +168,8 @@ class AnnotatedImage:
 
 
 global_panel_roles = []
+
+global_image_scales = []
 
 
 class DisplayLayer:
@@ -918,10 +922,10 @@ class MainWindow(QMainWindow):
                   [ 'Remove ALL Panels', None, self.not_yet, None, None, None ]
                 ]
               ],
-              [ '&Scaling',
+              [ '&Scaling',  # Note that this can NOT contain the string "Scale". "Scaling" is OK.
                 [
-                  [ '&Define Scales', None, self.not_yet, None, None, None ],
-                  [ '&Generate All Scales', None, self.not_yet, None, None, None ],
+                  [ '&Define Scales', None, self.define_scales_callback, None, None, None ],
+                  [ '&Generate Scales', None, self.generate_scales_callback, None, None, None ],
                   [ '&Import All Scales', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ '&Generate Tiled', None, self.not_yet, False, None, None ],
@@ -929,9 +933,9 @@ class MainWindow(QMainWindow):
                   [ '&Show Tiled', None, self.not_yet, False, None, None ]
                 ]
               ],
-              [ '&Scales',
+              [ '&Scale',
                 [
-                  [ '&Scale 1', None, self.not_yet, True, "Scales", None ]
+                  [ '&Scale 1', None, self.do_nothing, True, "Scales", None ]
                 ]
               ],
               [ '&Points',
@@ -1209,30 +1213,32 @@ class MainWindow(QMainWindow):
 
     def add_image_to_role ( self, image_file_name, role_name ):
         print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
-        found_layer = None
-        this_layer_index = 0
-        for alignment_layer in alignment_layer_list:
-          role_taken = False
-          for image in alignment_layer.image_list:
-            print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
-            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            if image.role == str(role_name):
-              role_taken = True
-              break
-          print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
-          if not role_taken:
-            # Add the image here at this layer
-            found_layer = alignment_layer
-            break
-          this_layer_index += 1
-        if found_layer:
-          # Add the image/role to the found layer
-          print_debug ( 40, "Adding to layer " + str(this_layer_index) )
-          found_layer.image_list.append ( AnnotatedImage ( str(role_name), image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
-        else:
-          # Add a new layer for the image
-          print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
-          alignment_layer_list.append ( DisplayLayer ( role_name, image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+        if image_file_name != None:
+          if len(image_file_name) > 0:
+            found_layer = None
+            this_layer_index = 0
+            for alignment_layer in alignment_layer_list:
+              role_taken = False
+              for image in alignment_layer.image_list:
+                print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
+                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                if image.role == str(role_name):
+                  role_taken = True
+                  break
+              print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
+              if not role_taken:
+                # Add the image here at this layer
+                found_layer = alignment_layer
+                break
+              this_layer_index += 1
+            if found_layer != None:
+              # Add the image/role to the found layer
+              print_debug ( 40, "Adding \"" + str(image_file_name) + "\" to layer " + str(this_layer_index) )
+              found_layer.image_list.append ( AnnotatedImage ( str(role_name), image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+            else:
+              # Add a new layer for the image
+              print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
+              alignment_layer_list.append ( DisplayLayer ( role_name, image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
 
 
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
@@ -1435,6 +1441,59 @@ class MainWindow(QMainWindow):
         self.update_win_self()
 
 
+
+    def define_scales ( self, scales_list ):
+
+        # Set the Scales menu from this scales_list
+        scales_menu = None
+        mb = self.menuBar()
+        if not (mb is None):
+          for m in mb.children():
+            if type(m) == QMenu:
+              text_label = ''.join(m.title().split('&'))
+              if 'Scale' in text_label:
+                print_debug ( 30, "Found Scale Menu" )
+                # Remove all the old actions:
+                while len(m.actions()) > 0:
+                  m.removeAction(m.actions()[-1])
+                # Add the new actions
+                first = True
+                for scale in scales_list:
+                  item = QAction ( str(scale), self )
+                  item.setCheckable(True)
+                  item.setChecked(first)
+                  self.action_groups['Scales'].addAction(item)
+                  item.triggered.connect ( self.set_current_scale )
+                  m.addAction(item)
+                  first = False
+
+
+    @Slot()
+    def define_scales_callback(self, checked):
+        global global_image_scales
+        default_scales = ['1']
+        if len(global_image_scales) > 0:
+          default_scales = global_image_scales
+        input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(default_scales)), echo=QLineEdit.Normal, text=' '.join(default_scales) )
+        if ok:
+          input_val = input_val.strip()
+          scales_list = global_image_scales
+          if len(input_val) > 0:
+            scales_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
+          if not (scales_list == global_image_scales):
+            self.define_scales (scales_list)
+            global_image_scales = scales_list
+        else:
+          print_debug ( 30, "Cancel: Scales not changed" )
+
+    @Slot()
+    def set_current_scale(self, checked):
+        print ( "Set current Scale to " + str(self.sender().text()) )
+        current_scale = int ( self.sender().text() )
+
+    @Slot()
+    def generate_scales_callback(self, checked):
+        print ( "Generate the scales now" )
 
 
     @Slot()
