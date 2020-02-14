@@ -55,7 +55,7 @@ max_image_file_size = 1000000000
 alignment_layer_list = []
 alignment_layer_index = 0
 
-current_scale = 1
+current_scale = '1'
 
 main_window = None
 
@@ -169,7 +169,7 @@ class AnnotatedImage:
 
 global_panel_roles = []
 
-global_image_scales = []
+global_image_scales = [ '1' ]
 
 
 class DisplayLayer:
@@ -872,7 +872,7 @@ class MainWindow(QMainWindow):
         self.main_panel_layout.addWidget ( self.image_panel )
         self.main_panel_layout.addWidget ( self.control_panel )
 
-        self.destination_directory = None
+        self.destination_path = None
 
 
         self.setCentralWidget(self.main_panel)
@@ -1147,9 +1147,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def save_project(self, checked):
         if self.project_save == None:
-            print_debug ( 1, "\n\nSaving Projects is unsupported\n\n" )
+            print_debug ( 1, "\n\nSaving Projects is unsupported (project_save not registered)\n\n" )
         elif self.current_project_file_name is None:
-            self.project_save_as ( None )
+            self.save_project_as ( None )
         else:
             print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
             self.project_save ( self.current_project_file_name )
@@ -1157,7 +1157,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def save_project_as(self, checked):
         if self.project_save == None:
-            print_debug ( 1, "\n\nSaving Projects is unsupported\n\n" )
+            print_debug ( 1, "\n\nSaving Projects is unsupported (project_save not registered)\n\n" )
         else:
             print_debug ( 1, "\n\nSaving Project\n\n" )
 
@@ -1212,6 +1212,8 @@ class MainWindow(QMainWindow):
 
 
     def add_image_to_role ( self, image_file_name, role_name ):
+        global alignment_layer_list
+        global alignment_layer_index
         print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
         if image_file_name != None:
           if len(image_file_name) > 0:
@@ -1317,9 +1319,9 @@ class MainWindow(QMainWindow):
         if False:  # self.native.isChecked():
             options |= QFileDialog.DontUseNativeDialog
 
-        self.destination_directory = QFileDialog.getExistingDirectory ( None, "Select Destination Directory", None, options)
+        self.destination_path = QFileDialog.getExistingDirectory ( None, "Select Destination Directory", None, options)
 
-        print_debug ( 1, "Destination is: " + str(self.destination_directory) )
+        print_debug ( 1, "Destination is: " + str(self.destination_path) )
 
 
 
@@ -1489,7 +1491,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def set_current_scale(self, checked):
         print ( "Set current Scale to " + str(self.sender().text()) )
-        current_scale = int ( self.sender().text() )
+        global current_scale
+        current_scale = str ( self.sender().text() )
 
     @Slot()
     def generate_scales_callback(self, checked):
