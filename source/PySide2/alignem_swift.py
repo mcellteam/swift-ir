@@ -132,15 +132,31 @@ def open_json_project ( project_file_name ):
     text = f.read()
     f.close()
 
+    # Read the JSON file from the text
     project_data = json.loads ( text )
+
+    # Find all of the image roles in the file
     all_roles = set()
     for scale_key in sorted(project_data['data']['scales'].keys()):
-        print ( "Checking data for scale " + str(scale_key) )
+        print ( "Finding roles in scale " + str(scale_key) )
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
             for role_key in layer['images'].keys():
                 all_roles.add ( role_key )
+
+    # Define all of the roles found as panels
     main_win.define_roles ( all_roles )
+
+    # Add the images to only the last (smallest) scale  for now
+    scale_keys = sorted(project_data['data']['scales'].keys())[-1]
+
+    for scale_key in scale_keys:
+        print ( "Importing images for scale " + str(scale_key) )
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
+            for role_key in layer['images'].keys():
+                main_win.add_image_to_role ( layer['images'][role_key]['filename'], role_key )
+
 
 def save_json_project ( project_file_name ):
     global project_data
@@ -307,8 +323,13 @@ def remove_aligned():
     main_win.update_panels()
 
 
+def method_debug():
+    print ( "In Method debug for " + str(__name__) )
+    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
+
 
 skip = BoolField("Skip",False)
 
@@ -330,7 +351,7 @@ control_model = [
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ CallbackButton('Align All SWiFT', align_all), CallbackButton('Align Forward SWiFT', align_all), IntField("#",1,1), CallbackButton('Remove Aligned', remove_aligned), "         ", skip ]
+    [ CallbackButton('Align All SWiFT', align_all), CallbackButton('Align Forward SWiFT', align_all), IntField("#",1,1), CallbackButton('Remove Aligned', remove_aligned), "         ", skip, CallbackButton('SWIFT Debug', method_debug) ]
   ] # End first pane
 ]
 
