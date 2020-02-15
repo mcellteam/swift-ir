@@ -18,13 +18,18 @@ main_win = None
 
 project_data = None
 
-def build_current_data_model():
+def build_current_data_model ( destination_path=None, project_file_name=None ):
+
+    reference_path = ""
+    if destination_path != None:
+      reference_path = destination_path
+    if project_file_name != None:
+      reference_path = os.path.split(os.path.abspath(project_file_name))[0]
 
     alignment_layer_list = alignem.alignment_layer_list
     alignment_layer_index = alignem.alignment_layer_index
 
     control_panel_data = main_win.control_panel.copy_self_to_data()
-
 
     j = {}
     j['version'] = 0.2
@@ -32,6 +37,7 @@ def build_current_data_model():
     j['user_settings'] = { "max_image_file_size": 100000000 }
     j['data'] = {}
     jd = j['data']
+    jd['panel_roles'] = alignem.global_panel_roles
     jd['source_path'] = ""
     jd['destination_path'] = main_win.destination_path
     jd['pairwise_alignment'] = True
@@ -73,7 +79,7 @@ def build_current_data_model():
               jdsnsr = jdsns['images'][im.role]
               rel_file_name = ""
               if type(im.image_file_name) != type(None):
-                rel_file_name = os.path.relpath(im.image_file_name,start=main_win.destination_path)
+                rel_file_name = os.path.relpath(im.image_file_name,start=reference_path)
               jdsnsr['filename'] = rel_file_name
               jdsnsr['metadata'] = {}
               jdsnsrm = jdsnsr['metadata']
@@ -107,47 +113,6 @@ def build_current_data_model():
     return ( j )
 
 
-
-
-def write_json_project ( project_file_name="alignem_out.json",
-                         fb=None, project_path="",
-                         destination_path="output",
-                         max_image_file_size = 100000000,
-                         current_plot_code = "",
-                         current_scale = 1 ):
-
-  print ( "write_json_project called" )
-
-  # Update the data layer(s) from the current fields before writing!
-  print ( "WARNING: current fields may not be taken into account yet." )
-  #store_fields_into_current_layer()
-
-  alignment_layer_list = alignem.alignment_layer_list
-  alignment_layer_index = alignem.alignment_layer_index
-
-  control_panel_data = main_win.control_panel.copy_self_to_data()
-
-  if len(project_file_name) > 0:
-    # Actually write the file
-    # gui_fields.proj_label.set_text ( "Project File: " + str(project_file_name) )
-
-    j = build_current_data_model()
-
-    jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
-    proj_json = jde.encode ( j )
-
-    f = None
-    if fb is None:
-      # This is the default to write to a file
-      alignem.print_debug ( 50, "Saving destination path = " + str(destination_path) )
-      f = open ( project_file_name, 'w' )
-    else:
-      # Since a file buffer (fb) was provided, write to it rather than a file
-      alignem.print_debug ( 50, "Writing to string" )
-      f = fb
-    f.write ( proj_json )
-
-
 def open_json_project ( project_file_name ):
     global project_data
     print ( "SWiFT opening project " + str(project_file_name) )
@@ -156,17 +121,27 @@ def open_json_project ( project_file_name ):
     text = f.read()
     f.close()
 
+    main_win.remove_all_layers(None)
+    main_win.remove_all_panels(None)
+
     # Read the JSON file from the text
     project_data = json.loads ( text )
 
-    # Find all of the image roles in the file
-    all_roles = set()
-    for scale_key in sorted(project_data['data']['scales'].keys()):
-        print ( "Finding roles in scale " + str(scale_key) )
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
-            for role_key in layer['images'].keys():
-                all_roles.add ( role_key )
+    all_roles = None
+    if 'panel_roles' in project_data['data'].keys():
+        all_roles = project_data['data']['panel_roles']
+        print ( "Using panel roles from JSON: " + str(all_roles) )
+    else:
+        # Find all of the image roles in the file
+        set_of_roles = set()
+        empty_roles = None
+        for scale_key in sorted(project_data['data']['scales'].keys()):
+            print ( "Finding roles in scale " + str(scale_key) )
+            for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
+                # Add images to this layer by role
+                for role_key in layer['images'].keys():
+                    set_of_roles.add ( role_key )
+        all_roles = [ k for k in set_of_roles ]
 
     # Define all of the roles found as panels
     main_win.define_roles ( all_roles )
@@ -176,10 +151,20 @@ def open_json_project ( project_file_name ):
 
     for scale_key in scale_keys:
         print ( "Importing images for scale " + str(scale_key) )
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
+            print ( "  Importing images for a layer" )
+            added_roles = set()
             for role_key in layer['images'].keys():
-                main_win.add_image_to_role ( layer['images'][role_key]['filename'], role_key )
+                if len(layer['images'][role_key]['filename']) > 0:
+                    added_roles.add ( role_key )
+                    print ( "      Adding image to role " + role_key )
+                    main_win.add_image_to_role ( layer['images'][role_key]['filename'], role_key )
+            # Any roles that didn't have images at this layer need to be given an "empty" in this layer
+            empty_roles = set(all_roles) - added_roles
+            print ( "    Empty Roles for layer: " + str(empty_roles) )
+            for empty_role in empty_roles:
+                print ( "      Adding empty to role " + empty_role )
+                main_win.add_empty_to_role ( empty_role )
 
 
 def save_json_project ( project_file_name ):
@@ -187,31 +172,13 @@ def save_json_project ( project_file_name ):
     print ( "SWiFT saving project to " + str(project_file_name) )
     if project_file_name != None:
         if len(project_file_name) > 0:
-            '''
-            if project_data is None:
-                # Generate the JSON on the fly by writing to a string buffer "file"
-                fb = StringBufferFile()
-                write_json_project ( "junk.json", fb=fb, destination_path=main_win.destination_path )
-                if len(fb.fs.strip()) > 0:
-                  # Read the JSON from the string buffer to create a regular Python representation
-                  dm = None
-                  try:
-                    project_data = json.loads ( fb.fs )
-                  except:
-                    pass
-            '''
             # Write out the project
             f = open ( project_file_name, 'w' )
             jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
-            proj_json = jde.encode ( build_current_data_model() )
+            proj_json = jde.encode ( build_current_data_model ( destination_path=main_win.destination_path, project_file_name=project_file_name ) )
             f.write ( proj_json )
             f.close()
 
-class StringBufferFile:
-  def __init__ ( self ):
-    self.fs = ""
-  def write ( self, s ):
-    self.fs = self.fs + s
 
 def align_all():
     alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
@@ -277,33 +244,11 @@ def align_all():
           if im.image_file_name != None:
             print ( "   " + im.role + ":  " + im.image_file_name )
 
-      # Generate the JSON on the fly by writing to a string buffer "file"
-      fb = StringBufferFile()
-
-      write_json_project ( "alignem_out.json", fb=fb, destination_path=main_win.destination_path )
-
-
-      if len(fb.fs.strip()) > 0:
-        # Read the JSON from the string buffer to create a regular Python representation
-        dm = None
-        try:
-          dm = json.loads ( fb.fs )
-          print ( "Running pyswift_tui.run_json_project" )
-          #                              dm,   align_opt, scale_done,      use_scale,        scale_tbd, swiftir_code_mode
-          pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(alignem.current_scale),      0,        code_mode )
-        except Exception as e:
-
-          alignem.print_debug ( 1, 100*"%" )
-          alignem.print_debug ( 1, "JSON:" )
-          alignem.print_debug ( 1, str(dm) )
-          alignem.print_debug ( 1, 100*"%" )
-          alignem.print_debug ( 1, "Exception of type (" + str(type(e)) + " while running TUI" )
-          alignem.print_debug ( 1, "  Ex: " + str(e) )
-          alignem.print_debug ( 1, 100*"%" )
-          traceback.print_exc ( file=sys.stdout )
-          alignem.print_debug ( 1, 100*"%" )
-          #print ( "Inside align_swiftir.align_all()" )
-          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      # Build a data model for this project
+      dm = build_current_data_model ( destination_path=main_win.destination_path, project_file_name=None )
+      # Run the project via pyswift_tui
+      #                              dm,   align_opt, scale_done,      use_scale,        scale_tbd, swiftir_code_mode
+      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(alignem.current_scale),      0,        code_mode )
 
       # Load the alignment stack after the alignment
       aln_image_stack = []
@@ -363,21 +308,6 @@ def notyet():
 
 skip = BoolField("Skip",False)
 
-'''
-control_model = [
-  # Panes
-  [ # Begin first pane of rows
-    [ "Project File:", CallbackButton('Write JSON', write_json_project) ],
-    [ "Destination:", write_json_project ],
-    [ CallbackButton("Jump To:",notyet), IntField(None,1,1), 6*" ", skip, CallbackButton("Clear All Skips",notyet), CallbackButton("Auto Swim Align",notyet) ],
-    [ FloatField("X:",1.1), 6*" ", FloatField("Y:",2.2), 6*" ", FloatField("Z:",3.3) ],
-    [ FloatField("a:",1010), "   ", FloatField("b:",1011), "   ", FloatField("c:",1100), "   ",
-      FloatField("d:",1101), "   ", FloatField("e:",1110), "   ", FloatField("f:",1111), "   " ],
-    [ CallbackButton('Align All SWiFT', align_all), 6*" ", CallbackButton('Align Forward SWiFT',align_forward), 60*" ", IntField("# Forward",1) ]
-  ] # End first pane
-]
-'''
-
 control_model = [
   # Panes
   [ # Begin first pane of rows
@@ -387,7 +317,6 @@ control_model = [
 
 
 if __name__ == "__main__":
-    # global main_win
 
     alignem.debug_level = 20
 
@@ -416,7 +345,6 @@ if __name__ == "__main__":
 
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 
-    #main_win.define_roles ( ['ref','src','align'] )
     main_win.define_roles ( ['ref','base','aligned'] )
 
     if test_option in [ 1, 2 ]:
