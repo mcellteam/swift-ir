@@ -137,20 +137,24 @@ class AnnotatedImage:
         global image_library
         if self.image_file_name != None:
           if len(self.image_file_name) > 0:
-            if self.image_size == None:
-              # Get the size if needed
-              f = open ( self.image_file_name )
-              f.seek (0, 2)  # Seek to the end
-              self.image_size = f.tell()
-              f.close()
-            if self.image_size <= max_image_file_size:
-              app.setOverrideCursor(Qt.WaitCursor)
-              ##print_debug ( 10, "Loading image: \"" + self.image_file_name + "\"" )
-              ##self.pixmap = QPixmap(self.image_file_name)
-              self.pixmap = image_library.get_image_reference(self.image_file_name)
-              app.restoreOverrideCursor()
-            else:
-              print_debug ( 10, "Skipping image: \"" + self.image_file_name + "\" (" + str(self.image_size) + " > " + str(max_image_file_size) + ")" )
+            try:
+              if self.image_size == None:
+                # Get the size if needed
+                f = open ( self.image_file_name )
+                f.seek (0, 2)  # Seek to the end
+                self.image_size = f.tell()
+                f.close()
+              if self.image_size <= max_image_file_size:
+                app.setOverrideCursor(Qt.WaitCursor)
+                ##print_debug ( 10, "Loading image: \"" + self.image_file_name + "\"" )
+                ##self.pixmap = QPixmap(self.image_file_name)
+                self.pixmap = image_library.get_image_reference(self.image_file_name)
+                app.restoreOverrideCursor()
+              else:
+                print_debug ( 10, "Skipping image: \"" + self.image_file_name + "\" (" + str(self.image_size) + " > " + str(max_image_file_size) + ")" )
+            except:
+                print_debug ( 1, "Error opening image: \"" + str(self.image_file_name) )
+
 
     def unload ( self ):
         global alignment_layer_list
