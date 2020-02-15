@@ -1243,6 +1243,36 @@ class MainWindow(QMainWindow):
               alignment_layer_list.append ( DisplayLayer ( role_name, image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
 
 
+    def add_empty_to_role ( self, role_name ):
+        global alignment_layer_list
+        global alignment_layer_index
+        print_debug ( 60, "Trying to place empty in role " + str(role_name) )
+        found_layer = None
+        this_layer_index = 0
+        for alignment_layer in alignment_layer_list:
+          role_taken = False
+          for image in alignment_layer.image_list:
+            print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            if image.role == str(role_name):
+              role_taken = True
+              break
+          print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
+          if not role_taken:
+            # Add the image here at this layer
+            found_layer = alignment_layer
+            break
+          this_layer_index += 1
+        if found_layer != None:
+          # Add the image/role to the found layer
+          print_debug ( 40, "Adding empty to layer " + str(this_layer_index) )
+          found_layer.image_list.append ( AnnotatedImage(str(role_name), None, load_now=0) )
+        else:
+          # Add a new layer for the image
+          print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
+          alignment_layer_list.append ( DisplayLayer ( role_name, None, load_now=0 ) )
+
+
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
         global alignment_layer_list
         global alignment_layer_index
