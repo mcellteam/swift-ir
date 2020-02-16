@@ -10,7 +10,7 @@ import os
 import argparse
 import cv2
 import json
-
+import numpy
 import scipy
 import scipy.ndimage
 
@@ -1640,170 +1640,251 @@ def run_app(main_win=None):
 
 test_option = None
 
-defined_roles = ['ref','base','sref', 'sbase', 'scorr']
 
-def align_all():
+def resize_images():
+
+    print_debug ( 0, "Resizing Images with Test Option 1 ..." )
+
+    adjusted_stack = []
+
+    for layer in alignment_layer_list:
+
+        baselist = [ im for im in layer.image_list if im.role == 'Original' ]
+        if len(baselist) > 0:
+            basename = baselist[0].image_file_name
+            basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+
+            if basedata != None:
+
+                scale_value = float(control_model[0][1][0].get_value())
+                scaled_image = cv2.resize ( basedata, tuple([ int(x*scale_value) for x in basedata.shape ]), interpolation=cv2.INTER_AREA )
+
+                # Write the adjusted data using to the proper directory
+                path_parts = os.path.split(basename)
+                if not os.path.exists ( os.path.join ( path_parts[0], 'adjusted' ) ):
+                    # Create the scaled base subdirectory
+                    os.mkdir ( os.path.join ( path_parts[0], 'adjusted' ) )
+                adjusted_name = os.path.join ( path_parts[0], 'adjusted', path_parts[1] )
+
+                print ( "Saving file: " + str(adjusted_name) )
+                cv2.imwrite(adjusted_name, scaled_image)
+
+                # Put the new image in the list to go into the aligned role
+                adjusted_stack.append ( adjusted_name )
+
+    # Remove the old images from the library
+    for name in adjusted_stack:
+        image_library.remove_image_reference ( name )
+
+    # Load the updated images into the stack
+    main_window.load_images_in_role ( 'Adjusted', adjusted_stack )
+
+
+def adjust_brightness():
+
+    print_debug ( 0, "Adjusting brightness with Test Option 2 ..." )
+
+    adjusted_stack = []
+
+    for layer in alignment_layer_list:
+
+        baselist = [ im for im in layer.image_list if im.role == 'Original' ]
+        if len(baselist) > 0:
+            basename = baselist[0].image_file_name
+            basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+
+            if basedata != None:
+
+                scale_value = float(control_model[0][1][0].get_value())
+                offset_value = float(control_model[0][1][2].get_value())
+
+                f = numpy.array ( basedata, dtype=float )
+
+                f = (scale_value * f) + offset_value
+
+                # Write the adjusted data using to the proper directory
+                path_parts = os.path.split(basename)
+                if not os.path.exists ( os.path.join ( path_parts[0], 'adjusted' ) ):
+                    # Create the scaled base subdirectory
+                    os.mkdir ( os.path.join ( path_parts[0], 'adjusted' ) )
+                adjusted_name = os.path.join ( path_parts[0], 'adjusted', path_parts[1] )
+
+                print ( "Saving file: " + str(adjusted_name) )
+                cv2.imwrite ( adjusted_name, numpy.array(f, dtype='uint8') )
+
+                # Put the new image in the list to go into the aligned role
+                adjusted_stack.append ( adjusted_name )
+
+    # Remove the old images from the library
+    for name in adjusted_stack:
+        image_library.remove_image_reference ( name )
+
+    # Load the updated images into the stack
+    main_window.load_images_in_role ( 'Adjusted', adjusted_stack )
+
+
+def align_all_2():
+
     print_debug ( 0, "Aligning All with AlignEM..." )
     print_debug ( 70, "Control Model = " + str(control_model) )
 
-    if test_option == 1:
+    scaled_base_stack = []
+    scaled_ref_stack = []
+    scaled_corr_stack = []
+    aln_image_stack = []
 
-        scaled_base_stack = []
-        scaled_ref_stack = []
-        scaled_corr_stack = []
-        aln_image_stack = []
+    for layer in alignment_layer_list:
+        basename = None
+        baseimage = None
+        basedata = None
 
-        for layer in alignment_layer_list:
-            basename = None
-            baseimage = None
-            basedata = None
+        refname = None
+        refimage = None
+        refdata = None
 
-            refname = None
-            refimage = None
-            refdata = None
+        baselist = [ im for im in layer.image_list if im.role == 'base' ]
+        if len(baselist) > 0:
+            basename = baselist[0].image_file_name
+            baseimage = baselist[0].pixmap # Not used yet
+            basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
 
-            baselist = [ im for im in layer.image_list if im.role == 'base' ]
-            if len(baselist) > 0:
-                basename = baselist[0].image_file_name
-                baseimage = baselist[0].pixmap # Not used yet
-                basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+        reflist = [ im for im in layer.image_list if im.role == 'ref' ]
+        if len(reflist) > 0:
+            refname = reflist[0].image_file_name
+            refimage = reflist[0].pixmap # Not used yet
+            refdata = cv2.imread(refname, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
 
-            reflist = [ im for im in layer.image_list if im.role == 'ref' ]
-            if len(reflist) > 0:
-                refname = reflist[0].image_file_name
-                refimage = reflist[0].pixmap # Not used yet
-                refdata = cv2.imread(refname, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+        sbasedata = None
+        srefdata = None
 
-            sbasedata = None
-            srefdata = None
+        if basedata != None:
+            # There is an image to be aligned
 
-            if basedata != None:
-                # There is an image to be aligned
+            sbasedata = cv2.resize ( basedata, tuple([ x/int(scale_down_factor.get_value()) for x in basedata.shape ]), interpolation=cv2.INTER_AREA )
 
-                sbasedata = cv2.resize ( basedata, tuple([ x/int(scale_down_factor.get_value()) for x in basedata.shape ]), interpolation=cv2.INTER_AREA )
+            if refdata == None:
+                # Put an empty image on the stack
+                scaled_ref_stack.append ( None )
+                scaled_corr_stack.append ( None )
+            else:
+                # There is a reference, so align the base to the ref
+                print ( "Aligning " + basename )
+                print ( "    with " + refname )
 
-                if refdata == None:
-                    # Put an empty image on the stack
-                    scaled_ref_stack.append ( None )
-                    scaled_corr_stack.append ( None )
-                else:
-                    # There is a reference, so align the base to the ref
-                    print ( "Aligning " + basename )
-                    print ( "    with " + refname )
-
-                    # Resize to show that it's actually working. Eventually use cv2.matchTemplate ?
+                # Resize to show that it's actually working. Eventually use cv2.matchTemplate ?
 
 
-                    srefdata = cv2.resize ( refdata, tuple([ x/int(scale_down_factor.get_value()) for x in refdata.shape ]), interpolation=cv2.INTER_AREA )
-
-                    # Write out the aligned data using to the proper directory
-                    path_parts = os.path.split(refname)
-                    if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_ref' ) ):
-                        # Create the scaled base subdirectory
-                        os.mkdir ( os.path.join ( path_parts[0], 'scaled_ref' ) )
-                    aligned_name = os.path.join ( path_parts[0], 'scaled_ref', path_parts[1] )
-
-                    print ( "Saving file: " + str(aligned_name) )
-                    cv2.imwrite(aligned_name, srefdata)
-
-                    # Put the new image in the list to go into the aligned role
-                    scaled_ref_stack.append ( aligned_name )
-
-                    #scorrdata = scipy.ndimage.correlate(srefdata, sbasedata)
-                    #scorrdata = scipy.ndimage.convolve(srefdata, sbasedata)
-                    # scorrdata = 255 + (sbasedata - srefdata)
-
-                    D = search_radius.get_value()
-                    results = []
-                    rows,cols = sbasedata.shape
-
-                    for drow in range(-D,D+1):
-                        ref_start_row = 0
-                        ref_end_row = rows
-                        src_start_row = 0
-                        src_end_row = rows
-                        if drow > 0:
-                            ref_start_row = drow
-                            src_end_row = rows-drow
-                        if drow < 0:
-                            ref_end_row = rows+drow
-                            src_start_row = -drow
-
-                        row_res = []
-
-                        for dcol in range(-D,D+1):
-                            ref_start_col = 0
-                            ref_end_col = cols
-                            src_start_col = 0
-                            src_end_col = cols
-                            if dcol > 0:
-                                ref_start_col = dcol
-                                src_end_col = cols-dcol
-                            if dcol < 0:
-                                ref_end_col = cols+dcol
-                                src_start_col = -dcol
-                            subref = srefdata [ref_start_row:ref_end_row, ref_start_col:ref_end_col]
-                            subsrc = sbasedata[src_start_row:src_end_row, src_start_col:src_end_col]
-
-                            scorrdata = abs(((1.0*subref) - subsrc)/2) + 128
-
-                            row_res.append ( int ( 1000 * scorrdata.min() / ( (ref_end_row-ref_start_row) * (ref_end_col-ref_start_col) ) ) )
-
-                            #print ( "drow = " + str(drow) + "   dcol = " + str(dcol) )
-                            #print ( "  Ref rows: " + str(ref_start_row) + " to " + str(ref_end_row) + "     Ref cols: " + str(ref_start_col) + " to " + str(ref_end_col) )
-                            #print ( "  Src rows: " + str(src_start_row) + " to " + str(src_end_row) + "     Src cols: " + str(src_start_col) + " to " + str(src_end_col) )
-
-                        results.append ( row_res )
-
-                    print ( 100*'*' )
-                    for r in results:
-                      print ( "  " + str(r) )
-                    print ( 100*'*' )
-
-                    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-                    # Write out the aligned data using to the proper directory
-                    path_parts = os.path.split(refname)
-                    if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_corr' ) ):
-                        # Create the scaled base subdirectory
-                        os.mkdir ( os.path.join ( path_parts[0], 'scaled_corr' ) )
-                    aligned_name = os.path.join ( path_parts[0], 'scaled_corr', path_parts[1] )
-
-                    print ( "Saving file: " + str(aligned_name) )
-                    cv2.imwrite(aligned_name, scorrdata)
-
-                    # Put the new image in the list to go into the aligned role
-                    scaled_corr_stack.append ( aligned_name )
-
+                srefdata = cv2.resize ( refdata, tuple([ x/int(scale_down_factor.get_value()) for x in refdata.shape ]), interpolation=cv2.INTER_AREA )
 
                 # Write out the aligned data using to the proper directory
-                path_parts = os.path.split(basename)
-                if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_base' ) ):
+                path_parts = os.path.split(refname)
+                if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_ref' ) ):
                     # Create the scaled base subdirectory
-                    os.mkdir ( os.path.join ( path_parts[0], 'scaled_base' ) )
-                aligned_name = os.path.join ( path_parts[0], 'scaled_base', path_parts[1] )
+                    os.mkdir ( os.path.join ( path_parts[0], 'scaled_ref' ) )
+                aligned_name = os.path.join ( path_parts[0], 'scaled_ref', path_parts[1] )
 
                 print ( "Saving file: " + str(aligned_name) )
-                cv2.imwrite(aligned_name, sbasedata)
-
+                cv2.imwrite(aligned_name, srefdata)
 
                 # Put the new image in the list to go into the aligned role
-                scaled_base_stack.append ( aligned_name )
+                scaled_ref_stack.append ( aligned_name )
 
-        # Purge the old images from the library
-        for name in aln_image_stack:
-            image_library.remove_image_reference ( name )
-        for name in scaled_base_stack:
-            image_library.remove_image_reference ( name )
-        for name in scaled_ref_stack:
-            image_library.remove_image_reference ( name )
-        for name in scaled_corr_stack:
-            image_library.remove_image_reference ( name )
+                #scorrdata = scipy.ndimage.correlate(srefdata, sbasedata)
+                #scorrdata = scipy.ndimage.convolve(srefdata, sbasedata)
+                # scorrdata = 255 + (sbasedata - srefdata)
 
-        # Load the updated images into the stack
-        main_window.load_images_in_role ( 'sref', scaled_ref_stack )
-        main_window.load_images_in_role ( 'sbase', scaled_base_stack )
-        main_window.load_images_in_role ( 'scorr', scaled_corr_stack )
+                D = search_radius.get_value()
+                results = []
+                rows,cols = sbasedata.shape
+
+                for drow in range(-D,D+1):
+                    ref_start_row = 0
+                    ref_end_row = rows
+                    src_start_row = 0
+                    src_end_row = rows
+                    if drow > 0:
+                        ref_start_row = drow
+                        src_end_row = rows-drow
+                    if drow < 0:
+                        ref_end_row = rows+drow
+                        src_start_row = -drow
+
+                    row_res = []
+
+                    for dcol in range(-D,D+1):
+                        ref_start_col = 0
+                        ref_end_col = cols
+                        src_start_col = 0
+                        src_end_col = cols
+                        if dcol > 0:
+                            ref_start_col = dcol
+                            src_end_col = cols-dcol
+                        if dcol < 0:
+                            ref_end_col = cols+dcol
+                            src_start_col = -dcol
+                        subref = srefdata [ref_start_row:ref_end_row, ref_start_col:ref_end_col]
+                        subsrc = sbasedata[src_start_row:src_end_row, src_start_col:src_end_col]
+
+                        scorrdata = abs(((1.0*subref) - subsrc)/2) + 128
+
+                        row_res.append ( int ( 1000 * scorrdata.min() / ( (ref_end_row-ref_start_row) * (ref_end_col-ref_start_col) ) ) )
+
+                        #print ( "drow = " + str(drow) + "   dcol = " + str(dcol) )
+                        #print ( "  Ref rows: " + str(ref_start_row) + " to " + str(ref_end_row) + "     Ref cols: " + str(ref_start_col) + " to " + str(ref_end_col) )
+                        #print ( "  Src rows: " + str(src_start_row) + " to " + str(src_end_row) + "     Src cols: " + str(src_start_col) + " to " + str(src_end_col) )
+
+                    results.append ( row_res )
+
+                print ( 100*'*' )
+                for r in results:
+                  print ( "  " + str(r) )
+                print ( 100*'*' )
+
+                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+                # Write out the aligned data using to the proper directory
+                path_parts = os.path.split(refname)
+                if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_corr' ) ):
+                    # Create the scaled base subdirectory
+                    os.mkdir ( os.path.join ( path_parts[0], 'scaled_corr' ) )
+                aligned_name = os.path.join ( path_parts[0], 'scaled_corr', path_parts[1] )
+
+                print ( "Saving file: " + str(aligned_name) )
+                cv2.imwrite(aligned_name, scorrdata)
+
+                # Put the new image in the list to go into the aligned role
+                scaled_corr_stack.append ( aligned_name )
+
+
+            # Write out the aligned data using to the proper directory
+            path_parts = os.path.split(basename)
+            if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_base' ) ):
+                # Create the scaled base subdirectory
+                os.mkdir ( os.path.join ( path_parts[0], 'scaled_base' ) )
+            aligned_name = os.path.join ( path_parts[0], 'scaled_base', path_parts[1] )
+
+            print ( "Saving file: " + str(aligned_name) )
+            cv2.imwrite(aligned_name, sbasedata)
+
+
+            # Put the new image in the list to go into the aligned role
+            scaled_base_stack.append ( aligned_name )
+
+    # Purge the old images from the library
+    for name in aln_image_stack:
+        image_library.remove_image_reference ( name )
+    for name in scaled_base_stack:
+        image_library.remove_image_reference ( name )
+    for name in scaled_ref_stack:
+        image_library.remove_image_reference ( name )
+    for name in scaled_corr_stack:
+        image_library.remove_image_reference ( name )
+
+    # Load the updated images into the stack
+    main_window.load_images_in_role ( 'sref', scaled_ref_stack )
+    main_window.load_images_in_role ( 'sbase', scaled_base_stack )
+    main_window.load_images_in_role ( 'scorr', scaled_corr_stack )
+
 
 def local_debug():
   print ( "In alignem" )
@@ -1813,16 +1894,7 @@ def local_debug():
 scale_down_factor = IntField ( "Scale Down Factor:", 16, all_layers=1 )
 search_radius = IntField ( "Search Radius (in pixels):", 20, all_layers=1 )
 
-control_model = [
-  # Panes
-  [ # Begin first pane
-    [ "Program:", 6*" ", __file__ ],
-    [ scale_down_factor, 6*" " ], #, FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
-    [ search_radius, 6*" " ], #, FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
-    [ TextField("String:","Default text"), 20*" ", CallbackButton('Align All', align_all), CallbackButton('Debug', local_debug) ]
-  ] # End first pane
-]
-
+control_model = None
 
 # This provides default command line parameters if none are given (as with "Idle")
 #if len(sys.argv) <= 1:
@@ -1832,7 +1904,7 @@ if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
-    options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST")
+    options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST (currently 1 or 2)")
     args = options.parse_args()
     try:
         debug_level = int(args.debug)
@@ -1843,14 +1915,25 @@ if __name__ == "__main__":
     except:
         pass
 
-    main_window = MainWindow ( control_model=control_model )
-    main_window.resize(2400,1000)
+    if test_option is None:
 
-    main_window.define_roles ( ['ref','base','align'] )
+        control_model = [
+          # Panes
+          [ # Begin first pane
+            [ "Program: " + __file__ ],
+            [ "No Control Panel Data Defined." ]
+          ] # End first pane
+        ]
 
-    if test_option == 1:
+        main_window = MainWindow ( control_model=control_model )
+        main_window.resize(2400,1000)
 
-        main_window.define_roles ( defined_roles )
+        main_window.define_roles ( ['Image Stack'] )
+
+
+    elif test_option in [1, 2]:
+
+        # All of these test options share the same original image files
 
         ref_image_stack = [ None,
                             "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
@@ -1868,10 +1951,68 @@ if __name__ == "__main__":
                             "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
                             "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
 
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        if test_option == 1:
 
-        main_window.load_images_in_role ( 'ref', ref_image_stack )
-        main_window.load_images_in_role ( 'base', src_image_stack )
+            control_model = [
+              # Panes
+              [ # Begin first pane
+                [ "Program \"" + __file__ + "\":   Scaling" ],
+                [ FloatField("Scale Image Size by: ", 1.0, all_layers=1), "  ", CallbackButton('Apply', resize_images) ]
+              ] # End first pane
+            ]
+
+            main_window = MainWindow ( control_model=control_model )
+            main_window.resize(2400,1000)
+
+            main_window.define_roles ( ['Original','Adjusted'] )
+
+            main_window.load_images_in_role ( 'Original', src_image_stack )
+
+        if test_option == 2:
+
+            control_model = [
+              # Panes
+              [ # Begin first pane
+                [ "Program \"" + __file__ + "\":   Brightness" ],
+                [ FloatField("Scale Brightness: ", 1.0, all_layers=1), 10*" ", FloatField("Offset Brightness: ", 0.0, all_layers=1), "  ", CallbackButton('Apply', adjust_brightness) ]
+              ] # End first pane
+            ]
+
+            main_window = MainWindow ( control_model=control_model )
+            main_window.resize(2400,1000)
+
+            main_window.define_roles ( ['Original','Adjusted'] )
+
+            main_window.load_images_in_role ( 'Original', src_image_stack )
+
+        elif test_option == 3:
+
+            control_model = [
+              # Panes
+              [ # Begin first pane
+                [ "Program:", 6*" ", __file__ ],
+                [ scale_down_factor, 6*" " ], #, FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
+                [ search_radius, 6*" " ], #, FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
+                [ TextField("String:","Default text"), 20*" ", CallbackButton('Align All', align_all_2), CallbackButton('Debug', local_debug) ]
+              ] # End first pane
+            ]
+
+            main_window = MainWindow ( control_model=control_model )
+            main_window.resize(2400,1000)
+
+            main_window.define_roles ( ['ref','base','align'] )
+
+            main_window.define_roles ( ['ref','base','sref', 'sbase', 'scorr'] )
+
+            main_window.load_images_in_role ( 'ref', ref_image_stack )
+            main_window.load_images_in_role ( 'base', src_image_stack )
+
+
+    else:
+
+      print ( "Undefined test option: " + str(test_option) + ", try --help option." )
+      exit(99)
+
 
     main_window.show()
     sys.exit(app.exec_())
