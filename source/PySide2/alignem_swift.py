@@ -147,9 +147,12 @@ def open_json_project ( project_file_name ):
     main_win.define_roles ( all_roles )
 
     # Add the images to the scales
-    scale_keys = sorted(project_data['data']['scales'].keys())
+    alignem.global_image_scales = sorted(project_data['data']['scales'].keys())
+    main_win.define_scales ( alignem.global_image_scales )
 
-    for scale_key in scale_keys:
+    main_win.destination_path = project_data['data']['destination_path']
+
+    for scale_key in alignem.global_image_scales:
         print ( "Importing images for scale " + str(scale_key) )
         for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
             print ( "  Importing images for a layer" )
@@ -157,7 +160,7 @@ def open_json_project ( project_file_name ):
             for role_key in layer['images'].keys():
                 if len(layer['images'][role_key]['filename']) > 0:
                     added_roles.add ( role_key )
-                    print ( "      Adding image to role " + role_key )
+                    print ( "      Adding image " + str(layer['images'][role_key]['filename']) + " to role " + role_key )
                     main_win.add_image_to_role ( layer['images'][role_key]['filename'], role_key )
             # Any roles that didn't have images at this layer need to be given an "empty" in this layer
             empty_roles = set(all_roles) - added_roles
@@ -178,6 +181,93 @@ def save_json_project ( project_file_name ):
             proj_json = jde.encode ( build_current_data_model ( destination_path=main_win.destination_path, project_file_name=project_file_name ) )
             f.write ( proj_json )
             f.close()
+
+def generate_scales ():
+    print ( "generate_scales inside alignem_swift called" )
+
+    alignem.print_debug ( 40, "Create images at all scales: " + str ( alignem.global_image_scales ) )
+
+    if (main_win.destination_path == None) or (len(main_win.destination_path) <= 0):
+      alignem.show_warning ( "Note", "Scales can not be generated without a destination (use File/Set Destination)" )
+    else:
+      for scale in alignem.global_image_scales:
+        alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
+
+        subdir = 'scale_' + str(scale)
+        subdir_path = os.path.join(main_win.destination_path,subdir)
+        alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
+        try:
+          os.mkdir ( subdir_path )
+        except:
+          # This catches directories that already exist
+          pass
+        src_path = os.path.join(subdir_path,'img_src')
+        alignem.print_debug ( 70, "Creating source subsubdirectory named " + src_path )
+        try:
+          os.mkdir ( src_path )
+        except:
+          # This catches directories that already exist
+          pass
+        aligned_path = os.path.join(subdir_path,'img_aligned')
+        alignem.print_debug ( 70, "Creating aligned subsubdirectory named " + aligned_path )
+        try:
+          os.mkdir ( aligned_path )
+        except:
+          # This catches directories that already exist
+          pass
+
+        for al in alignem.alignment_layer_list:
+          try:
+            for image in al.image_list:
+              if image.role == 'base':
+                # Only scale down images from the base role since the ref role uses the same images
+                alignem.print_debug ( 2, "Scaling image role of " + image.role )
+
+
+            '''
+            #original_name = os.path.join(main_win.destination_path,os.path.basename(al.base_image_name))
+            __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            original_name = al.base_image_name
+            new_name = os.path.join(src_path,os.path.basename(original_name))
+            if False:   # generate_as_tiled:
+              # Generate as tiled images (means duplicating the originals also)
+              tiled_name = os.path.splitext(new_name)[0] + ".ttif"
+              alignem.print_debug ( 70, "Resizing " + original_name + " to " + tiled_name )
+              if False:
+                # Generate internally
+                # Don't know how to do this and make tiles yet
+                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                align_swiftir.swiftir.saveImage ( img, new_name )
+              else:
+                # Scale as before:
+                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                align_swiftir.swiftir.saveImage ( img, new_name )
+                # Use "convert" from ImageMagick to hopefully tile in place
+                import subprocess
+                p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
+                p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+tiled_name] )
+                p.wait() # Allow the subprocess to complete before deleting the input file!!
+                os.remove ( new_name ) # This would be the file name of the resized copy of the original image
+            else:
+              # Generate non-tiled images
+              if scale == 1:
+                if os.name == 'posix':
+                  alignem.print_debug ( 70, "Posix: Linking " + original_name + " to " + new_name )
+                  os.symlink ( original_name, new_name )
+                else:
+                  alignem.print_debug ( 70, "Non-Posix: Copying " + original_name + " to " + new_name )
+                  shutil.copyfile ( original_name, new_name )
+              else:
+                alignem.print_debug ( 70, "Resizing " + original_name + " to " + new_name )
+                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                align_swiftir.swiftir.saveImage ( img, new_name )
+            '''
+          except:
+            alignem.print_debug ( 10, "Error: Failed to copy?" )
+            exi = sys.exc_info()
+            print ( "  Exception type = " + str(exi[0]) )
+            print ( "  Exception value = " + str(exi[1]) )
+            print ( "  Exception trace = " + str(exi[2]) )
 
 
 def align_all():
@@ -342,6 +432,7 @@ if __name__ == "__main__":
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_project_open ( open_json_project )
     main_win.register_project_save ( save_json_project )
+    main_win.register_gen_scales ( generate_scales )
 
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 

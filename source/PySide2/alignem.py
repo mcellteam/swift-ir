@@ -837,6 +837,7 @@ class MainWindow(QMainWindow):
         self.current_project_file_name = None
         self.project_open = None
         self.project_save = None
+        self.generate_scales = None
 
         if panel_roles != None:
             global_panel_roles = panel_roles
@@ -1059,6 +1060,10 @@ class MainWindow(QMainWindow):
 
     def register_project_save ( self, function ):
         self.project_save = function
+
+    def register_gen_scales ( self, function ):
+        self.generate_scales = function
+
 
     def build_menu_from_list (self, parent, menu_list):
         # Get the group names first
@@ -1533,7 +1538,9 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def generate_scales_callback(self, checked):
-        print ( "Generate the scales now" )
+        if self.generate_scales != None:
+            print ( "Generate the scales now" )
+            self.generate_scales()
 
 
     @Slot()
