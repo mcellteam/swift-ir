@@ -1250,14 +1250,14 @@ class MainWindow(QMainWindow):
     def add_empty_to_role ( self, role_name ):
         global alignment_layer_list
         global alignment_layer_index
-        print_debug ( 60, "Trying to place empty in role " + str(role_name) )
+        # Find next layer with an empty role matching the requested role_name
+        print_debug ( 60, "Trying to place file <empty> in role " + str(role_name) )
         found_layer = None
         this_layer_index = 0
         for alignment_layer in alignment_layer_list:
           role_taken = False
           for image in alignment_layer.image_list:
             print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
-            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
             if image.role == str(role_name):
               role_taken = True
               break
@@ -1269,8 +1269,8 @@ class MainWindow(QMainWindow):
           this_layer_index += 1
         if found_layer != None:
           # Add the image/role to the found layer
-          print_debug ( 40, "Adding empty to layer " + str(this_layer_index) )
-          found_layer.image_list.append ( AnnotatedImage(str(role_name), None, load_now=0) )
+          print_debug ( 40, "Adding <empty> to layer " + str(this_layer_index) )
+          found_layer.image_list.append ( AnnotatedImage ( str(role_name), None, load_now=0 ) )
         else:
           # Add a new layer for the image
           print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
@@ -1299,12 +1299,15 @@ class MainWindow(QMainWindow):
             print_debug ( 40, "" )
             for f in file_name_list:
               # Find next layer with an empty role matching the requested role_to_import
-              self.add_image_to_role ( f, role_to_import )
-
+              print_debug ( 50, "Role " + str(role_to_import) + ", Importing file: " + str(f) )
+              if f is None:
+                self.add_empty_to_role ( role_to_import )
+              else:
+                self.add_image_to_role ( f, role_to_import )
             # Draw the panel's ("windows")
             for p in self.panel_list:
-                p.force_center = True
-                p.update_zpa_self()
+              p.force_center = True
+              p.update_zpa_self()
 
         self.update_win_self()
 
