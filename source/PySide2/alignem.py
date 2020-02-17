@@ -1378,7 +1378,7 @@ class MainWindow(QMainWindow):
         if False:  # self.native.isChecked():
             options |= QFileDialog.DontUseNativeDialog
 
-        self.destination_path = QFileDialog.getExistingDirectory ( None, "Select Destination Directory", None, options)
+        self.destination_path = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=self.destination_path, options=options)
 
         print_debug ( 1, "Destination is: " + str(self.destination_path) )
 
