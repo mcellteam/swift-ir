@@ -26,7 +26,7 @@ def build_current_data_model ( destination_path=None, project_file_name=None ):
     if project_file_name != None:
       reference_path = os.path.split(os.path.abspath(project_file_name))[0]
 
-    alignment_layer_list = alignem.scale_list[alignem.scale_index]
+    alignment_layer_list = alignem.scale_dict[alignem.current_scale]
     alignment_layer_index = alignem.alignment_layer_index
 
     control_panel_data = main_win.control_panel.copy_self_to_data()
@@ -64,9 +64,9 @@ def build_current_data_model ( destination_path=None, project_file_name=None ):
     jds = jd['scales']
     print ( "Saving scales for: " + str(alignem.global_image_scales) )
     for scale in [ str(s) for s in alignem.global_image_scales ]:
-      align_layer_list_for_scale = alignem.scale_list[alignem.scale_index] # This should be indexed by scale but there's only one at this time
-      jds[str(scale)] = {}
-      jdsn = jds[str(scale)]
+      align_layer_list_for_scale = alignem.scale_dict[alignem.current_scale] # This should be indexed by scale but there's only one at this time
+      jds['scale_'+str(scale)] = {}
+      jdsn = jds['scale_'+str(scale)]
       if align_layer_list_for_scale != None:
         if len(align_layer_list_for_scale) > 0:
           jdsn['alignment_stack'] = []
@@ -216,7 +216,7 @@ def generate_scales ():
           # This catches directories that already exist
           pass
 
-        for al in alignem.scale_list[alignem.scale_index]:
+        for al in alignem.scale_dict[alignem.current_scale]:
           try:
             for image in al.image_list:
               if image.role == 'base':
@@ -315,7 +315,7 @@ def align_all():
 
       # Create links or copy files in the expected directory structure
       # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
-      for layer in alignem.scale_list[alignem.scale_index]:
+      for layer in alignem.scale_dict[alignem.current_scale]:
         image_name = None
         for image in layer.image_list:
           if image.role == 'base':
@@ -327,9 +327,9 @@ def align_all():
               pass
 
       # Print out what might be done to produce the JSON for this project
-      for index in range(len(alignem.scale_list[alignem.scale_index])):
+      for index in range(len(alignem.scale_dict[alignem.current_scale])):
         print ( "Aligning layer " + str(index) )
-        al = alignem.scale_list[alignem.scale_index][index]
+        al = alignem.scale_dict[alignem.current_scale][index]
         for im in al.image_list:
           if im.image_file_name != None:
             print ( "   " + im.role + ":  " + im.image_file_name )
@@ -338,11 +338,11 @@ def align_all():
       dm = build_current_data_model ( destination_path=main_win.destination_path, project_file_name=None )
       # Run the project via pyswift_tui
       #                              dm,   align_opt, scale_done,      use_scale,        scale_tbd, swiftir_code_mode
-      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(alignem.current_scale),      0,        code_mode )
+      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   alignem.current_scale_as_int(),      0,        code_mode )
 
       # Load the alignment stack after the alignment
       aln_image_stack = []
-      for layer in alignem.scale_list[alignem.scale_index]:
+      for layer in alignem.scale_dict[alignem.current_scale]:
         image_name = None
         for image in layer.image_list:
           if image.role == 'base':
@@ -368,7 +368,7 @@ def align_forward():
 def remove_aligned():
     alignem.print_debug ( 30, "Removing aligned images ..." )
     delete_list = []
-    for layer in alignem.scale_list[alignem.scale_index]:
+    for layer in alignem.scale_dict[alignem.current_scale]:
       for image in layer.image_list:
         if image.role == 'aligned':
           delete_list.append ( image.image_file_name )

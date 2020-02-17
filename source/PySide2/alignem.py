@@ -52,10 +52,13 @@ app = None
 preloading_range = 5
 max_image_file_size = 1000000000
 
-# The scale_list is a list of dictionaries containing an alignment_layer and scale information
-scale_list = [ [] ]
-scale_index = 0
-current_scale = '1'
+# The scale_dict is a list of dictionaries containing an alignment_layer and scale information
+current_scale = 'scale_1'
+scale_dict = { current_scale:[] }
+
+def current_scale_as_int():
+  return int(current_scale[len('scale_'):])
+
 
 # alignment_layer_list = []
 alignment_layer_index = 0
@@ -160,10 +163,10 @@ class AnnotatedImage:
 
 
     def unload ( self ):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global image_library
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
         self.pixmap = None
         found = False
         for alignment_layer in alignment_layer_list:
@@ -359,10 +362,10 @@ class ZoomPanWidget(QWidget):
 
     def wheelEvent(self, event):
 
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
         global main_window
         global preloading_range
 
@@ -416,10 +419,10 @@ class ZoomPanWidget(QWidget):
 
 
     def paintEvent(self, event):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         painter = QPainter(self)
 
@@ -1230,10 +1233,10 @@ class MainWindow(QMainWindow):
 
 
     def add_image_to_role ( self, image_file_name, role_name ):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
         if image_file_name != None:
@@ -1265,10 +1268,10 @@ class MainWindow(QMainWindow):
 
 
     def add_empty_to_role ( self, role_name ):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         # Find next layer with an empty role matching the requested role_name
         print_debug ( 60, "Trying to place file <empty> in role " + str(role_name) )
@@ -1298,11 +1301,11 @@ class MainWindow(QMainWindow):
 
 
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
         global preloading_range
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         print_debug ( 60, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
 
@@ -1461,10 +1464,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def empty_into_role(self, checked):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         role_to_import = str ( self.sender().text() )
 
@@ -1564,11 +1567,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def remove_this_layer(self, checked):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
-        alignment_layer_list = alignment_layer_list[0:alignment_layer_index] + alignment_layer_list[alignment_layer_index+1:]
+        scale_dict[current_scale] = scale_dict[current_scale][0:alignment_layer_index] + scale_dict[current_scale][alignment_layer_index+1:]
         if alignment_layer_index > 0:
           alignment_layer_index += -1
         for p in self.panel_list:
@@ -1577,10 +1579,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def remove_all_layers(self, checked):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         alignment_layer_index = 0
         while len(alignment_layer_list) > 0:
@@ -1613,7 +1615,7 @@ class MainWindow(QMainWindow):
         self.image_panel.bg_color = c
         self.image_panel.update_multi_self()
         self.image_panel.repaint()
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         for p in self.panel_list:
             p.update_zpa_self()
@@ -1637,11 +1639,11 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_preloading_range(self, checked):
-        global scale_list
-        global scale_index
+        global scale_dict
+        global current_scale
         global alignment_layer_index
         global preloading_range
-        alignment_layer_list = scale_list[scale_index]
+        alignment_layer_list = scale_dict[current_scale]
 
         input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
         if ok:
