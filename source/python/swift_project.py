@@ -26,12 +26,12 @@ def lin_fit(x,y):
 
   return(m,b,r,p,stderr)
 
-align_swiftir.global_swiftir_mode = 'c'
-#align_swiftir.global_swiftir_mode = 'python'
+#align_swiftir.global_swiftir_mode = 'c'
+align_swiftir.global_swiftir_mode = 'python'
 
 
 def BiasFuncs(align_list,bias_funcs=None):
-
+  print(50*'B0')
   if type(bias_funcs) == type(None):
     init_scalars = True
     bias_funcs = {}
@@ -51,6 +51,7 @@ def BiasFuncs(align_list,bias_funcs=None):
   x_array = np.zeros((len(align_list),2))
   y_array = np.zeros((len(align_list),2))
 
+  print(50*'B1')
   i=0
   for item in align_list:
     align_idx = item[0]
@@ -72,25 +73,33 @@ def BiasFuncs(align_list,bias_funcs=None):
     y_array[i] = [align_idx,c_afm[1,2]]
     i+=1
 
+  print(20*'B2 ')
   p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
+  print(10*'B2a ')
   bias_funcs['skew_x'][:-1] += p[:-1]
+  print(10*'B2b ')
   if init_scalars:
+    print(10*'B2c ')
     bias_funcs['skew_x'][4] = p[4]
+  print(50*'B3')
 
   p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
   bias_funcs['scale_x'][:-1] += p[:-1]
   if init_scalars:
     bias_funcs['scale_x'][4] = p[4]
+  print(50*'B4')
 
   p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
   bias_funcs['scale_y'][:-1] += p[:-1]
   if init_scalars:
     bias_funcs['scale_y'][4] = p[4]
+  print(50*'B5')
 
   p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
   bias_funcs['rot'][:-1] += p[:-1]
   if init_scalars:
     bias_funcs['rot'][4] = p[4]
+  print(50*'B6')
 
   p = np.polyfit(x_array[:,0],x_array[:,1],4)
   bias_funcs['x'][:-1] += p[:-1]
@@ -206,54 +215,21 @@ def BoundingRect(align_list,siz):
   return rect
 
 
+def run_json_project ( project, alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode='python' ):
 
-if (__name__ == '__main__'):
+  print ( 80*"!" )
+  print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode]) )
+  align_swiftir.global_swiftir_mode = swiftir_code_mode
 
-  if (len(sys.argv)<3):
-    print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-    print('         Open swiftir project file and perform alignment operations\n\n')
-    print('         Result is written to output project file\n\n')
-    exit(1)
-
-
-  proj_ifn = sys.argv[-2]
-  proj_ofn = sys.argv[-1]
-
-  l = len(sys.argv)-3
-
-  use_scale = 0
-  alignment_option = 'refine_affine'
-  scale_tbd = 0
-  scale_done = 0
-
-  # check for an even number of additional args
-  if (l > 0) and (int(l/2.) == l/2.):
-    i = 1
-    while (i < len(sys.argv)-2):
-      if sys.argv[i] == '-scale':
-        use_scale = int(sys.argv[i+1])
-      elif sys.argv[i] == '-alignment_option':
-        alignment_option = sys.argv[i+1]
-      else:
-        print('\nUsage: %s [ -scale n ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-        print('         Open swiftir project file and perform alignment operations\n\n')
-        print('         Result is written to output project file\n\n')
-        exit(1)
-      i+=2
-
-  #fp = open('/m2scratch/bartol/swift-ir_tests/LM9R5CA1_project.json','r')
-  fp = open(proj_ifn,'r')
-
-  d = json.load(fp)
-  scales = sorted([ int(s) for s in d['data']['scales'].keys() ])
-  destination_path = d['data']['destination_path']
+  scales = sorted([ int(s) for s in project['data']['scales'].keys() ])
+  destination_path = project['data']['destination_path']
 
   if use_scale==0:
     # Iterate over scales from finest to coarsest
     # Identify coarsest scale lacking affine matrices in method_results
     #   and the finest scale which has affine matrices
     for scale in scales:
-      sn = d['data']['scales'][str(scale)]['alignment_stack']
+      sn = project['data']['scales'][str(scale)]['alignment_stack']
       afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in sn if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
       if not len(afm):
         scale_tbd = scale
@@ -280,9 +256,9 @@ if (__name__ == '__main__'):
 
     if scale_done:
       # Copy settings from finest completed scale to tbd:
-      s_done = d['data']['scales'][str(scale_done)]['alignment_stack']
-      d['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
-    s_tbd = d['data']['scales'][str(scale_tbd)]['alignment_stack']
+      s_done = project['data']['scales'][str(scale_done)]['alignment_stack']
+      project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+    s_tbd = project['data']['scales'][str(scale_tbd)]['alignment_stack']
     #   Copy skip, swim, and match point settings
     for i in range(len(s_tbd)):
       # fix path for base and ref filenames for scale_tbd
@@ -292,7 +268,7 @@ if (__name__ == '__main__'):
         ref_fn = os.path.basename(s_tbd[i]['images']['ref']['filename'])
         s_tbd[i]['images']['ref']['filename'] = os.path.join(scale_tbd_dir,'img_src',ref_fn)
 
-      
+
       atrm = s_tbd[i]['align_to_ref_method']
 
       # Initialize method_results for skipped or missing method_results
@@ -392,8 +368,8 @@ if (__name__ == '__main__'):
 
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:
-        im_sta_fn = s_tbd[i]['images']['ref']['filename']  
-        im_mov_fn = s_tbd[i]['images']['base']['filename']  
+        im_sta_fn = s_tbd[i]['images']['ref']['filename']
+        im_mov_fn = s_tbd[i]['images']['base']['filename']
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
           atrm = s_tbd[i]['align_to_ref_method']
           x_bias = atrm['method_data']['bias_x_per_image']
@@ -428,8 +404,8 @@ if (__name__ == '__main__'):
     # Initialize c_afm with initial offsets
     # Initial offsets for c_afm
     init_skew_x = 0.037
-    init_scale_x = 1/1.05 
-    init_scale_y = 1/1.15 
+    init_scale_x = 1/1.05
+    init_scale_y = 1/1.15
     init_rot= 0.05
     init_x = -20.0
     init_y = 16.0
@@ -450,7 +426,7 @@ if (__name__ == '__main__'):
 
 
     # Save unmodified first image into align_dir
-    im_sta_fn = s_tbd[0]['images']['base']['filename']  
+    im_sta_fn = s_tbd[0]['images']['base']['filename']
     base_fn = os.path.basename(im_sta_fn)
     al_fn = os.path.join(align_dir,base_fn)
     print("Saving first image in align dir: ", al_fn)
@@ -558,7 +534,7 @@ if (__name__ == '__main__'):
     bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
     bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
     '''
-    
+
 
     # Align the images
     for item in align_list:
@@ -569,29 +545,43 @@ if (__name__ == '__main__'):
 #      align_item.cumulative_afm = c_afm
       c_afm = align_item.align(c_afm,save=False)
 
+    c_afm_init = swiftir.identityAffine()
 
-    # Iteratively determine and null out bias in c_afm
-    print("\nComputing and Nulling Biases...\n")
-    bias_funcs = BiasFuncs(align_list)
-    c_afm_init = InitCafm(bias_funcs)
-#    c_afm_init = swiftir.identityAffine()
-    bias_iters = 2
-    for bi in range(bias_iters):
-      c_afm = c_afm_init
-      for item in align_list:
-        align_idx = item[0]
-        align_item = item[1]
-        bias_mat = BiasMat(align_idx,bias_funcs)
-        c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
-      if bi < bias_iters-1:
-        bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
+    null_bias = False
+    if null_bias:
 
+      # TODO
+      print ( 50*'!' )
+      print ( " Computing and Nulling Biases is disabled due to errors. Check on this!!" )
+      print ( 50*'!' )
+
+      # Iteratively determine and null out bias in c_afm
+      print("\nComputing and Nulling Biases...\n")
+      print(50*'0')
+      bias_funcs = BiasFuncs(align_list)
+      print(50*'1')
+      c_afm_init = InitCafm(bias_funcs)
+      #    c_afm_init = swiftir.identityAffine()
+      bias_iters = 2
+      print(50*'2')
+      for bi in range(bias_iters):
+        c_afm = c_afm_init
+        print(50*'3')
+        for item in align_list:
+          align_idx = item[0]
+          align_item = item[1]
+          print(50*'4')
+          bias_mat = BiasMat(align_idx,bias_funcs)
+          c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
+        print(50*'5')
+        if bi < bias_iters-1:
+          bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
 
     # Save all final aligned images:
     print("\nSaving all aligned images...\n")
 
     # Save possibly unmodified first image into align_dir
-    im_sta_fn = s_tbd[0]['images']['base']['filename']  
+    im_sta_fn = s_tbd[0]['images']['base']['filename']
     base_fn = os.path.basename(im_sta_fn)
     al_fn = os.path.join(align_dir,base_fn)
     print("Saving first image in align dir: ", al_fn)
@@ -628,7 +618,7 @@ if (__name__ == '__main__'):
       snr = recipe.ingredients[-1].snr
       afm = recipe.ingredients[-1].afm
       c_afm = align_item.cumulative_afm
-    
+
       # Store custom bias values in the dictionary for this stack item
       atrm = s_tbd[align_idx]['align_to_ref_method']
       atrm['method_data']['bias_x_per_image'] = x_bias
@@ -678,11 +668,6 @@ if (__name__ == '__main__'):
       c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
       i+=1
 
-    # Write out updated json project file
-    print("Writing project to file: ", proj_ofn)
-    ofp = open(proj_ofn,'w')
-    json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
-
     snr_file.close()
     bias_x_file.close()
     bias_y_file.close()
@@ -694,22 +679,83 @@ if (__name__ == '__main__'):
     afm_file.close()
     c_afm_file.close()
 
+    return (project,True)
+
+  else:  # if scale_tbd:
+
+    return (project,False)
+
+
+if (__name__ == '__main__'):
+
+  if (len(sys.argv)<3):
+    print('\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+    print('         Open swiftir project file and perform alignment operations\n\n')
+    print('         Result is written to output project file\n\n')
+    exit(1)
+
+
+  proj_ifn = sys.argv[-2]
+  proj_ofn = sys.argv[-1]
+
+  l = len(sys.argv)-3
+
+  use_scale = 0
+  alignment_option = 'refine_affine'
+  scale_tbd = 0
+  scale_done = 0
+  swiftir_code_mode = 'python'
+
+  # check for an even number of additional args
+  if (l > 0) and (int(l/2.) == l/2.):
+    i = 1
+    while (i < len(sys.argv)-2):
+      if sys.argv[i] == '-scale':
+        use_scale = int(sys.argv[i+1])
+      elif sys.argv[i] == '-code':
+        # align_swiftir.global_swiftir_mode = str(sys.argv[i+1])
+        swiftir_code_mode = str(sys.argv[i+1])
+      elif sys.argv[i] == '-alignment_option':
+        alignment_option = sys.argv[i+1]
+      else:
+        print('\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+        print('         Open swiftir project file and perform alignment operations\n\n')
+        print('         Result is written to output project file\n\n')
+        exit(1)
+      i+=2
+
+  #fp = open('/m2scratch/bartol/swift-ir_tests/LM9R5CA1_project.json','r')
+  fp = open(proj_ifn,'r')
+
+  d = json.load(fp)
+
+
+  d, need_to_write_json = run_json_project ( d, alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode )
+
+
+  if need_to_write_json:
+
+    # Write out updated json project file
+    print("Writing project to file: ", proj_ofn)
+    ofp = open(proj_ofn,'w')
+    json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
+
     '''
     p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
     print("\n4th degree of Skew_X bias: \n", p)
-  
+
     p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
     print("\n4th degree of Scale_X bias: \n", p)
-  
+
     p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
     print("\n4th degree of Scale_Y bias: \n", p)
-  
+
     p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
     print("\n4th degree of Rot bias: \n", p)
-  
+
     p = np.polyfit(x_array[:,0],x_array[:,1],4)
     print("\n4th degree of X bias: \n", p)
-  
+
     p = np.polyfit(y_array[:,0],y_array[:,1],4)
     print("\n4th degree of Y bias: \n", p)
     '''
@@ -738,5 +784,4 @@ if (__name__ == '__main__'):
   p = plt.scatter(np.arange(len(cy)),yl)
   plt.show()
   '''
-
 
