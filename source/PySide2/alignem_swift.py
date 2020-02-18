@@ -12,7 +12,7 @@ from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 
 from PySide2.QtWidgets import QInputDialog
 
-import pyswift_tui
+import swift_project
 
 main_win = None
 
@@ -307,7 +307,7 @@ def align_all():
 
       alignem.print_debug ( 10, "Aligning with output in " + main_win.destination_path )
 
-      # Create the expected directory structure for pyswift_tui.py
+      # Create the expected directory structure for swift_project.py
       source_dir = os.path.join ( main_win.destination_path, "scale_1", "img_src" )
       alignem.makedirs_exist_ok ( source_dir, exist_ok=True )
       target_dir = os.path.join ( main_win.destination_path, "scale_1", "img_aligned" )
@@ -336,9 +336,9 @@ def align_all():
 
       # Build a data model for this project
       dm = build_current_data_model ( destination_path=main_win.destination_path, project_file_name=None )
-      # Run the project via pyswift_tui
+      # Run the project via swift_project
       #                              dm,   align_opt, scale_done,      use_scale,        scale_tbd, swiftir_code_mode
-      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   alignem.current_scale_as_int(),      0,        code_mode )
+      swift_project.run_json_project ( dm, 'init_affine',    0,   alignem.current_scale_as_int(),      0,        code_mode )
 
       # Load the alignment stack after the alignment
       aln_image_stack = []
