@@ -589,10 +589,14 @@ class ZoomPanWidget(QWidget):
 
             if work_from_dict:
 
+                role_text = self.role
+
                 if project_data != None:
 
                     s = project_data['data']['current_scale']
                     l = project_data['data']['current_layer']
+
+                    role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
 
                     if len(project_data['data']['scales']) > 0:
                         if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
@@ -625,7 +629,7 @@ class ZoomPanWidget(QWidget):
 
                 # Draw the role
                 painter.setPen(QPen(QColor(255,100,100,255), 5))
-                painter.drawText(20, 30, self.role)
+                painter.drawText(20, 30, role_text)
 
             else:
 
