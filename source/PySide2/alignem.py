@@ -37,8 +37,12 @@ else:
 
 # Import project and alignment support from SWiFT-IR:
 
+
 import swift_project
 
+project_data = None
+
+work_from_dict = False
 
 debug_level = 0
 def print_debug ( level, str ):
@@ -49,7 +53,7 @@ def print_debug ( level, str ):
 
 app = None
 
-preloading_range = 5
+preloading_range = 3
 max_image_file_size = 1000000000
 
 # The scale_list is a list of dictionaries containing an alignment_layer and scale information
@@ -112,6 +116,19 @@ class ImageLibrary:
                 image_ref = self.images.pop(real_norm_path)
         return ( image_ref )
 
+    def make_available ( self, requested ):
+        already_loaded = set(self.images.keys())
+        normalized_requested = set( [os.path.realpath(os.path.normpath(f)) for f in requested] )
+        need_to_load = normalized_requested - already_loaded
+        need_to_unload = already_loaded - normalized_requested
+        for f in need_to_unload:
+            self.remove_image_reference ( f )
+        for f in need_to_load:
+            self.get_image_reference ( f )
+
+        print ( "Library has " + str(len(self.images.keys())) + " images" )
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
     def remove_all_images ( self ):
         keys = self.images.keys()
         for k in keys:
@@ -157,6 +174,10 @@ class AnnotatedImage:
                 print_debug ( 10, "Skipping image: \"" + self.image_file_name + "\" (" + str(self.image_size) + " > " + str(max_image_file_size) + ")" )
             except:
                 print_debug ( 1, "Error opening image: \"" + str(self.image_file_name) )
+                exi = sys.exc_info()
+                print ( "  Exception type = " + str(exi[0]) )
+                print ( "  Exception value = " + str(exi[1]) )
+                print ( "  Exception trace = " + str(exi[2]) )
 
 
     def unload ( self ):
@@ -359,6 +380,7 @@ class ZoomPanWidget(QWidget):
 
     def wheelEvent(self, event):
 
+        global project_data
         global scale_list
         global scale_index
         global alignment_layer_index
@@ -368,43 +390,85 @@ class ZoomPanWidget(QWidget):
 
         kmods = event.modifiers()
         if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
+
             # Unshifted Scroll Wheel moves through layers
             layer_delta = int(event.delta()/120)
 
-            print_debug ( 50, "Wheel Event: Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
-            if len(alignment_layer_list) <= 0:
-              alignment_layer_index = 0
-              print_debug ( 60, " Index = " + str(alignment_layer_index) )
+            if work_from_dict:
+
+              if project_data != None:
+
+                local_scales = project_data['data']['scales']
+                local_current_scale = project_data['data']['current_scale']
+                if local_current_scale in local_scales:
+                    local_scale = local_scales[local_current_scale]
+                    if 'alignment_stack' in local_scale:
+                        local_stack = local_scale['alignment_stack']
+                        if len(local_stack) <= 0:
+                            project_data['data']['current_layer'] = 0
+                        else:
+                            # Adjust the current layer
+                            local_current_layer = project_data['data']['current_layer']
+                            local_current_layer += layer_delta
+                            if local_current_layer >= len(local_stack):
+                                local_current_layer =  len(local_stack)-1
+                            elif local_current_layer < 0:
+                                local_current_layer = 0
+                            # Store the final value
+                            project_data['data']['current_layer'] = local_current_layer
+
+                            # Define the images needed
+                            needed_images = set()
+                            for i in range(len(local_stack)):
+                              if abs(i-local_current_layer) < preloading_range:
+                                for role,local_image in local_stack[i]['images'].items():
+                                  if len(local_image['filename']) > 0:
+                                    needed_images.add ( local_image['filename'] )
+                            # Ask the library to keep only those images
+                            image_library.make_available ( needed_images )
+
+                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+                # if len(project_data['data']['scales'][local_current_layer]
+
+                self.update_siblings()
+
             else:
-              main_window.control_panel.distribute_all_layer_data ( [ al.control_panel_data for al in alignment_layer_list ] )
-              alignment_layer_list[alignment_layer_index].control_panel_data = main_window.control_panel.copy_self_to_data()
-              alignment_layer_index += layer_delta
-              if layer_delta > 0:
-                if alignment_layer_index >= len(alignment_layer_list):
-                  alignment_layer_index =  len(alignment_layer_list)-1
-              elif layer_delta < 0:
-                if alignment_layer_index < 0:
+
+                print_debug ( 50, "Wheel Event: Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
+                if len(alignment_layer_list) <= 0:
                   alignment_layer_index = 0
+                  print_debug ( 60, " Index = " + str(alignment_layer_index) )
+                else:
+                  main_window.control_panel.distribute_all_layer_data ( [ al.control_panel_data for al in alignment_layer_list ] )
+                  alignment_layer_list[alignment_layer_index].control_panel_data = main_window.control_panel.copy_self_to_data()
+                  alignment_layer_index += layer_delta
+                  if layer_delta > 0:
+                    if alignment_layer_index >= len(alignment_layer_list):
+                      alignment_layer_index =  len(alignment_layer_list)-1
+                  elif layer_delta < 0:
+                    if alignment_layer_index < 0:
+                      alignment_layer_index = 0
 
-              if alignment_layer_list[alignment_layer_index].control_panel_data != None:
-                main_window.control_panel.copy_data_to_self(alignment_layer_list[alignment_layer_index].control_panel_data)
-              ##main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
+                  if alignment_layer_list[alignment_layer_index].control_panel_data != None:
+                    main_window.control_panel.copy_data_to_self(alignment_layer_list[alignment_layer_index].control_panel_data)
+                  ##main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
-              print_debug ( 80, "Images at layer " + str(alignment_layer_index) + " are:" )
-              for im in alignment_layer_list[alignment_layer_index].image_list:
-                print_debug ( 80, "   " + str(im.role) + ":   " + str(im.image_file_name) )
+                  print_debug ( 80, "Images at layer " + str(alignment_layer_index) + " are:" )
+                  for im in alignment_layer_list[alignment_layer_index].image_list:
+                    print_debug ( 80, "   " + str(im.role) + ":   " + str(im.image_file_name) )
 
-            # Unload images no longer needed
-            for i in range(len(alignment_layer_list)):
-              if abs(i-alignment_layer_index) >= preloading_range:
-                alignment_layer_list[i].unload()
+                # Unload images no longer needed
+                for i in range(len(alignment_layer_list)):
+                  if abs(i-alignment_layer_index) >= preloading_range:
+                    alignment_layer_list[i].unload()
 
-            # Load a new image as needed
-            if len(alignment_layer_list) > 0:
-              if not alignment_layer_list[alignment_layer_index].isLoaded():
-                alignment_layer_list[alignment_layer_index].load()
+                # Load a new image as needed
+                if len(alignment_layer_list) > 0:
+                  if not alignment_layer_list[alignment_layer_index].isLoaded():
+                    alignment_layer_list[alignment_layer_index].load()
 
-            self.update_siblings()
+                self.update_siblings()
 
         else:
             # Shifted Scroll Wheel zooms
@@ -424,38 +488,76 @@ class ZoomPanWidget(QWidget):
         painter = QPainter(self)
 
         if True:
-            print_debug ( 50, "Painting layer " + str(alignment_layer_index) )
-            if len(alignment_layer_list) > 0:
-              if (alignment_layer_index >= 0) and (alignment_layer_index < len(alignment_layer_list)):
 
-                pixmap = None
-                for layer_image in alignment_layer_list[alignment_layer_index].image_list:
-                  if layer_image.role == self.role:
-                    pixmap = layer_image.pixmap
+            if work_from_dict:
+                if project_data != None:
 
-                # Scale the painter to draw the image as the background
-                painter.scale ( self.zoom_scale, self.zoom_scale )
+                    l = project_data['data']['current_layer']
+                    s = project_data['data']['current_scale']
+                    image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
 
-                if pixmap != None:
-                    if self.draw_border:
-                        # Draw an optional border around the image
-                        painter.setPen(QPen(QColor(255, 255, 255, 255),4))
-                        painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                    # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+                    if self.role in image_dict.keys():
+                        ann_image = image_dict[self.role]
+                        pixmap = image_library.get_image_reference(ann_image['filename'])
 
-                    # Draw any items that should scale with the image
+                        # Scale the painter to draw the image as the background
+                        painter.scale ( self.zoom_scale, self.zoom_scale )
 
-                # Rescale the painter to draw items at screen resolution
-                painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+                        if pixmap != None:
+                            if self.draw_border:
+                                # Draw an optional border around the image
+                                painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                                painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                            # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                            painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
 
-                # Draw the borders of the viewport for each panel to separate panels
-                painter.setPen(QPen(self.border_color,4))
-                painter.drawRect(painter.viewport())
+                            # Draw any items that should scale with the image
 
-            # Draw the role
-            painter.setPen(QPen(QColor(255,100,100,255), 5))
-            painter.drawText(20, 30, self.role)
+                        # Rescale the painter to draw items at screen resolution
+                        painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+
+                        # Draw the borders of the viewport for each panel to separate panels
+                        painter.setPen(QPen(self.border_color,4))
+                        painter.drawRect(painter.viewport())
+
+                # Draw the role
+                painter.setPen(QPen(QColor(255,100,100,255), 5))
+                painter.drawText(20, 30, self.role)
+
+            else:
+
+                print_debug ( 50, "Painting layer " + str(alignment_layer_index) )
+                if len(alignment_layer_list) > 0:
+                  if (alignment_layer_index >= 0) and (alignment_layer_index < len(alignment_layer_list)):
+
+                    pixmap = None
+                    for layer_image in alignment_layer_list[alignment_layer_index].image_list:
+                      if layer_image.role == self.role:
+                        pixmap = layer_image.pixmap
+
+                    # Scale the painter to draw the image as the background
+                    painter.scale ( self.zoom_scale, self.zoom_scale )
+
+                    if pixmap != None:
+                        if self.draw_border:
+                            # Draw an optional border around the image
+                            painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                            painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                        # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                        painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+
+                        # Draw any items that should scale with the image
+
+                    # Rescale the painter to draw items at screen resolution
+                    painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+
+                    # Draw the borders of the viewport for each panel to separate panels
+                    painter.setPen(QPen(self.border_color,4))
+                    painter.drawRect(painter.viewport())
+
+                # Draw the role
+                painter.setPen(QPen(QColor(255,100,100,255), 5))
+                painter.drawText(20, 30, self.role)
 
 
         else:
@@ -1153,14 +1255,28 @@ class MainWindow(QMainWindow):
 
             if file_name != None:
                 if len(file_name) > 0:
-                    self.current_project_file_name = file_name
 
-                    # Attempt to hide the file dialog before opening ...
-                    for p in self.panel_list:
-                        p.update_zpa_self()
-                    # self.update_win_self()
+                    if work_from_dict:
 
-                    self.project_open ( file_name )
+                        f = open ( file_name, 'r' )
+                        text = f.read()
+                        f.close()
+
+                        # Read the JSON file from the text
+                        global project_data
+                        project_data = json.loads ( text )
+
+                        self.image_panel.update_multi_self()
+
+                    else:
+
+                        self.current_project_file_name = file_name
+
+                        # Attempt to hide the file dialog before opening ...
+                        for p in self.panel_list:
+                            p.update_zpa_self()
+                        # self.update_win_self()
+                        self.project_open ( file_name )
 
     @Slot()
     def save_project(self, checked):
