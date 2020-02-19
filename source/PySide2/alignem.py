@@ -8,6 +8,7 @@ using any number of technologies.
 import sys
 import os
 import argparse
+import copy
 import cv2
 import json
 import numpy
@@ -42,6 +43,96 @@ import swift_project
 
 project_data = None
 
+
+new_project_template = \
+{
+  "version": 0.25,
+  "method": "SWiFT-IR",
+  "user_settings": {
+    "max_image_file_size": 100000000
+  },
+  "data": {
+    "source_path": "",
+    "current_layer": 0,
+    "current_scale": "scale_1",
+    "defaults": {
+      "align_to_next_pars": {
+        "addx": 800,
+        "addy": 800,
+        "bias_x_per_image": 0.0,
+        "bias_y_per_image": 0.0,
+        "output_level": 0,
+        "window_size": 1024
+      }
+    },
+    "destination_path": "",
+    "pairwise_alignment": True,
+    "panel_roles": [
+      "ref",
+      "base",
+      "aligned"
+    ],
+    "scales": {
+      "scale_1": {
+        "alignment_stack": []
+      }
+    }
+  }
+}
+
+new_layer_template = \
+{
+  "align_to_ref_method": {
+    "method_data": {
+      "addx": 256,
+      "addy": 256,
+      "alignment_option": "Init Affine",
+      "alignment_options": [
+        "Init Affine",
+        "Refine Affine",
+        "Apply Affine"
+      ],
+      "bias_rot_per_image": 0.0,
+      "bias_scale_x_per_image": 0.0,
+      "bias_scale_y_per_image": 0.0,
+      "bias_skew_x_per_image": 0.0,
+      "bias_x_per_image": 0.0,
+      "bias_y_per_image": 0.0,
+      "output_level": 0,
+      "window_size": 256
+    },
+    "method_options": [
+      "Auto Swim Align",
+      "Match Point Align"
+    ],
+    "selected_method": "Auto Swim Align",
+    "method_results": {
+      "affine_matrix": [
+        [ 1.0, 0.0, 0.0 ],
+        [ 0.0, 1.0, 0.0 ]
+      ],
+      "cumulative_afm": [
+        [ 1.0, 0.0, 0.0 ],
+        [ 0.0, 1.0, 0.0 ]
+      ],
+      "snr": 12.345
+    }
+  },
+  "images": {},
+  "skip": None
+}
+
+
+new_image_template = \
+{
+  "filename": "",
+  "metadata": {
+    "annotations": [],
+    "match_points": []
+  }
+}
+
+
 work_from_dict = False
 
 debug_level = 0
@@ -59,7 +150,7 @@ max_image_file_size = 1000000000
 # The scale_list is a list of dictionaries containing an alignment_layer and scale information
 scale_list = [ [] ]
 scale_index = 0
-current_scale = '1'
+current_scale = 'scale_1'
 
 # alignment_layer_list = []
 alignment_layer_index = 0
@@ -490,35 +581,40 @@ class ZoomPanWidget(QWidget):
         if True:
 
             if work_from_dict:
+
                 if project_data != None:
 
-                    l = project_data['data']['current_layer']
                     s = project_data['data']['current_scale']
-                    image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                    l = project_data['data']['current_layer']
 
-                    if self.role in image_dict.keys():
-                        ann_image = image_dict[self.role]
-                        pixmap = image_library.get_image_reference(ann_image['filename'])
+                    if len(project_data['data']['scales']) > 0:
+                        if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
 
-                        # Scale the painter to draw the image as the background
-                        painter.scale ( self.zoom_scale, self.zoom_scale )
+                            image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
 
-                        if pixmap != None:
-                            if self.draw_border:
-                                # Draw an optional border around the image
-                                painter.setPen(QPen(QColor(255, 255, 255, 255),4))
-                                painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                            # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                            painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+                            if self.role in image_dict.keys():
+                                ann_image = image_dict[self.role]
+                                pixmap = image_library.get_image_reference(ann_image['filename'])
 
-                            # Draw any items that should scale with the image
+                                # Scale the painter to draw the image as the background
+                                painter.scale ( self.zoom_scale, self.zoom_scale )
 
-                        # Rescale the painter to draw items at screen resolution
-                        painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+                                if pixmap != None:
+                                    if self.draw_border:
+                                        # Draw an optional border around the image
+                                        painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                                        painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                                    # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
 
-                        # Draw the borders of the viewport for each panel to separate panels
-                        painter.setPen(QPen(self.border_color,4))
-                        painter.drawRect(painter.viewport())
+                                    # Draw any items that should scale with the image
+
+                                # Rescale the painter to draw items at screen resolution
+                                painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+
+                                # Draw the borders of the viewport for each panel to separate panels
+                                painter.setPen(QPen(self.border_color,4))
+                                painter.drawRect(painter.viewport())
 
                 # Draw the role
                 painter.setPen(QPen(QColor(255,100,100,255), 5))
@@ -942,6 +1038,9 @@ class MainWindow(QMainWindow):
         if app == None:
                 app = QApplication()
 
+        global project_data
+        project_data = copy.deepcopy ( new_project_template )
+
         QMainWindow.__init__(self)
         self.setWindowTitle(title)
 
@@ -1356,28 +1455,49 @@ class MainWindow(QMainWindow):
           if len(image_file_name) > 0:
             found_layer = None
             this_layer_index = 0
-            for alignment_layer in alignment_layer_list:
-              role_taken = False
-              for image in alignment_layer.image_list:
-                print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
-                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                if image.role == str(role_name):
-                  role_taken = True
-                  break
-              print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
-              if not role_taken:
-                # Add the image here at this layer
-                found_layer = alignment_layer
-                break
-              this_layer_index += 1
-            if found_layer != None:
-              # Add the image/role to the found layer
-              print_debug ( 40, "Adding \"" + str(image_file_name) + "\" to layer " + str(this_layer_index) )
-              found_layer.image_list.append ( AnnotatedImage ( str(role_name), image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+
+            if work_from_dict:
+
+              used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+              print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+              layer_index_for_new_role = -1
+              if False in used_for_this_role:
+                # This means that there is an unused slot for this role. Find the first:
+                layer_index_for_new_role = used_for_this_role.index(False)
+                print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
+              else:
+                # This means that there are no unused slots for this role. Add a new layer
+                print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
+                project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+                layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+              image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+              image_dict[role_name] = copy.deepcopy(new_image_template)
+              image_dict[role_name]['filename'] = image_file_name
+
             else:
-              # Add a new layer for the image
-              print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
-              alignment_layer_list.append ( DisplayLayer ( role_name, image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+
+              for alignment_layer in alignment_layer_list:
+                role_taken = False
+                for image in alignment_layer.image_list:
+                  print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
+                  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                  if image.role == str(role_name):
+                    role_taken = True
+                    break
+                print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
+                if not role_taken:
+                  # Add the image here at this layer
+                  found_layer = alignment_layer
+                  break
+                this_layer_index += 1
+              if found_layer != None:
+                # Add the image/role to the found layer
+                print_debug ( 40, "Adding \"" + str(image_file_name) + "\" to layer " + str(this_layer_index) )
+                found_layer.image_list.append ( AnnotatedImage ( str(role_name), image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
+              else:
+                # Add a new layer for the image
+                print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
+                alignment_layer_list.append ( DisplayLayer ( role_name, image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
 
 
     def add_empty_to_role ( self, role_name ):
@@ -1462,7 +1582,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def import_images_dialog(self, import_role_name):
 
-        print_debug ( 5, "Importing images for role: " + str(import_role_name) )
+        print_debug ( 5, "Importing images dialog for role: " + str(import_role_name) )
 
         options = QFileDialog.Options()
         if False:  # self.native.isChecked():
