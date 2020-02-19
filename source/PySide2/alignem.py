@@ -80,6 +80,7 @@ new_project_template = \
   }
 }
 
+
 new_layer_template = \
 {
   "align_to_ref_method": {
@@ -133,7 +134,13 @@ new_image_template = \
 }
 
 
-work_from_dict = False
+work_from_dict = True
+print ( "\n\n" + (3*((80*'*')+'\n')) )
+if work_from_dict:
+  print ( (20*' ') + "Working from dictionary" )
+else:
+  print ( (20*' ') + "Working from classes" )
+print ( "\n" + (3*((80*'*')+'\n')) )
 
 debug_level = 0
 def print_debug ( level, str ):
@@ -1087,7 +1094,8 @@ class MainWindow(QMainWindow):
         self.main_panel_layout.addWidget ( self.image_panel )
         self.main_panel_layout.addWidget ( self.control_panel )
 
-        self.destination_path = None
+        if not work_from_dict:
+          self.destination_path = None
 
 
         self.setCentralWidget(self.main_panel)
@@ -1377,15 +1385,25 @@ class MainWindow(QMainWindow):
                         # self.update_win_self()
                         self.project_open ( file_name )
 
+
+    def save_project_to_current_file(self):
+        if self.current_project_file_name != None:
+          if len(self.current_project_file_name) > 0:
+              # Write out the project
+              f = open ( self.current_project_file_name, 'w' )
+              jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
+              proj_json = jde.encode ( project_data )
+              f.write ( proj_json )
+              f.close()
+
     @Slot()
     def save_project(self, checked):
-        if self.project_save == None:
-            print_debug ( 1, "\n\nSaving Projects is unsupported (project_save not registered)\n\n" )
-        elif self.current_project_file_name is None:
+        if self.current_project_file_name is None:
+            # Force the choosing of a name
             self.save_project_as ( None )
         else:
             print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
-            self.project_save ( self.current_project_file_name )
+            self.save_project_to_current_file()
 
     @Slot()
     def save_project_as(self, checked):
@@ -1410,7 +1428,7 @@ class MainWindow(QMainWindow):
                     for p in self.panel_list:
                         p.update_zpa_self()
                     # self.update_win_self()
-                    self.project_save ( file_name )
+                    self.save_project_to_current_file()
 
 
     @Slot()
@@ -1445,6 +1463,8 @@ class MainWindow(QMainWindow):
 
 
     def add_image_to_role ( self, image_file_name, role_name ):
+        #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
+
         global scale_list
         global scale_index
         global alignment_layer_index
@@ -1614,9 +1634,12 @@ class MainWindow(QMainWindow):
         if False:  # self.native.isChecked():
             options |= QFileDialog.DontUseNativeDialog
 
-        self.destination_path = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=self.destination_path, options=options)
-
-        print_debug ( 1, "Destination is: " + str(self.destination_path) )
+        if work_from_dict:
+          project_data['data']['destination_path'] = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=project_data['data']['destination_path'], options=options)
+          print_debug ( 1, "Destination is: " + str(project_data['data']['destination_path']) )
+        else:
+          self.destination_path = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=self.destination_path, options=options)
+          print_debug ( 1, "Destination is: " + str(self.destination_path) )
 
 
 
@@ -1697,6 +1720,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def empty_into_role(self, checked):
+        #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
         global scale_list
         global scale_index
         global alignment_layer_index
@@ -1706,31 +1730,51 @@ class MainWindow(QMainWindow):
 
         print_debug ( 30, "Adding empty for role: " + str(role_to_import) )
 
-        # Find next layer with an empty role matching the requested role_to_import
-        print_debug ( 60, "Trying to place file <empty> in role " + str(role_to_import) )
-        found_layer = None
-        this_layer_index = 0
-        for alignment_layer in alignment_layer_list:
-          role_taken = False
-          for image in alignment_layer.image_list:
-            print_debug ( 80, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
-            if image.role == str(role_to_import):
-              role_taken = True
-              break
-          print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
-          if not role_taken:
-            # Add the image here at this layer
-            found_layer = alignment_layer
-            break
-          this_layer_index += 1
-        if found_layer:
-          # Add the image/role to the found layer
-          print_debug ( 40, "Adding <empty> to layer " + str(this_layer_index) )
-          found_layer.image_list.append ( AnnotatedImage ( str(role_to_import), None, load_now=0 ) )
+        if work_from_dict:
+
+            used_for_this_role = [ role_to_import in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+            print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+            layer_index_for_new_role = -1
+            if False in used_for_this_role:
+              # This means that there is an unused slot for this role. Find the first:
+              layer_index_for_new_role = used_for_this_role.index(False)
+              print_debug ( 60, "Inserting <empty> in role " + str(role_to_import) + " into existing layer " + str(layer_index_for_new_role) )
+            else:
+              # This means that there are no unused slots for this role. Add a new layer
+              print_debug ( 60, "Making a new layer for <empty> in role " + str(role_to_import) + " at layer " + str(layer_index_for_new_role) )
+              project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+              layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+            image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+            image_dict[role_to_import] = copy.deepcopy(new_image_template)
+            # image_dict[role_to_import]['filename'] = image_file_name
+
         else:
-          # Add a new layer for the image
-          print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
-          alignment_layer_list.append ( DisplayLayer ( role_to_import, None, load_now=0 ) )
+
+            # Find next layer with an empty role matching the requested role_to_import
+            print_debug ( 60, "Trying to place file <empty> in role " + str(role_to_import) )
+            found_layer = None
+            this_layer_index = 0
+            for alignment_layer in alignment_layer_list:
+              role_taken = False
+              for image in alignment_layer.image_list:
+                print_debug ( 80, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
+                if image.role == str(role_to_import):
+                  role_taken = True
+                  break
+              print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
+              if not role_taken:
+                # Add the image here at this layer
+                found_layer = alignment_layer
+                break
+              this_layer_index += 1
+            if found_layer:
+              # Add the image/role to the found layer
+              print_debug ( 40, "Adding <empty> to layer " + str(this_layer_index) )
+              found_layer.image_list.append ( AnnotatedImage ( str(role_to_import), None, load_now=0 ) )
+            else:
+              # Add a new layer for the image
+              print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
+              alignment_layer_list.append ( DisplayLayer ( role_to_import, None, load_now=0 ) )
 
         # Draw the panels ("windows")
         for p in self.panel_list:
