@@ -181,7 +181,7 @@ class AnnotatedImage:
 
 global_panel_roles = []
 
-global_image_scales = [ '1' ]
+global_image_scales = [ 'scale_' + '1' ]
 
 
 class DisplayLayer:
@@ -1524,7 +1524,7 @@ class MainWindow(QMainWindow):
                   m.removeAction(m.actions()[-1])
                 # Add the new actions
                 first = True
-                for scale in scales_list:
+                for scale in [ scale_str[len('scale_'):] for scale_str in scales_list ]:
                   item = QAction ( str(scale), self )
                   item.setCheckable(True)
                   item.setChecked(first)
@@ -1537,15 +1537,16 @@ class MainWindow(QMainWindow):
     @Slot()
     def define_scales_callback(self, checked):
         global global_image_scales
-        default_scales = ['1']
+        default_scales = ['scale_' + '1']
         if len(global_image_scales) > 0:
           default_scales = global_image_scales
-        input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(default_scales)), echo=QLineEdit.Normal, text=' '.join(default_scales) )
+        cur_scale_values = [ scale_str[len('scale_'):] for scale_str in default_scales ]
+        input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(cur_scale_values)), echo=QLineEdit.Normal, text=' '.join(cur_scale_values) )
         if ok:
           input_val = input_val.strip()
           scales_list = global_image_scales
           if len(input_val) > 0:
-            scales_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
+            scales_list = [ 'scale_' + str(v) for v in input_val.split(' ') if len(v) > 0 ]
           if not (scales_list == global_image_scales):
             self.define_scales (scales_list)
             global_image_scales = scales_list

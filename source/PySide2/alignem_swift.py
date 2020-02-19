@@ -63,10 +63,10 @@ def build_current_data_model ( destination_path=None, project_file_name=None ):
     jd['scales'] = {}
     jds = jd['scales']
     print ( "Saving scales for: " + str(alignem.global_image_scales) )
-    for scale in [ str(s) for s in alignem.global_image_scales ]:
+    for scale in [ 'scale_'+str(s) for s in alignem.global_image_scales ]:
       align_layer_list_for_scale = alignem.scale_dict[alignem.current_scale] # This should be indexed by scale but there's only one at this time
-      jds['scale_'+str(scale)] = {}
-      jdsn = jds['scale_'+str(scale)]
+      jds[scale] = {}
+      jdsn = jds[scale]
       if align_layer_list_for_scale != None:
         if len(align_layer_list_for_scale) > 0:
           jdsn['alignment_stack'] = []
