@@ -139,9 +139,6 @@ class ImageLibrary:
 image_library = ImageLibrary()
 
 
-global_image_scales = [ '1' ]
-
-
 
 class ZoomPanWidget(QWidget):
     '''A widget to display a single annotated image with zooming and panning.'''
@@ -1075,14 +1072,33 @@ class MainWindow(QMainWindow):
                     # self.update_win_self()
                     self.project_open ( file_name )
 
+    def make_relative ( self, file_path, proj_path ):
+        print ( "Proj path: " + str(proj_path) )
+        print ( "File path: " + str(file_path) )
+        rel_path = os.path.relpath(file_path,start=os.path.split(proj_path)[0])
+        print ( "Full path: " + str(file_path) )
+        print ( "Relative path: " + str(rel_path) )
+        print ( "" )
+        return rel_path
 
     def save_project_to_current_file(self):
+        # Save to current file and make known file paths relative to the project file name
         if self.current_project_file_name != None:
           if len(self.current_project_file_name) > 0:
               # Write out the project
+              proj_copy = copy.deepcopy ( project_data )
+              if len(proj_copy['data']['destination_path']) > 0:
+                proj_copy['data']['destination_path'] = self.make_relative ( proj_copy['data']['destination_path'], self.current_project_file_name )
+              for scale_key in proj_copy['data']['scales'].keys():
+                scale_dict = proj_copy['data']['scales'][scale_key]
+                for layer in scale_dict['alignment_stack']:
+                  for role in layer['images'].keys():
+                    if layer['images'][role]['filename'] != None:
+                      if len(layer['images'][role]['filename']) > 0:
+                        layer['images'][role]['filename'] = self.make_relative ( layer['images'][role]['filename'], self.current_project_file_name )
               f = open ( self.current_project_file_name, 'w' )
               jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
-              proj_json = jde.encode ( project_data )
+              proj_json = jde.encode ( proj_copy )
               f.write ( proj_json )
               f.close()
 
@@ -1390,7 +1406,7 @@ class MainWindow(QMainWindow):
 
 
 
-    def define_scales ( self, scales_list ):
+    def define_scales_menu ( self, scales_list ):
 
         # Set the Scales menu from this scales_list
         scales_menu = None
@@ -1416,9 +1432,12 @@ class MainWindow(QMainWindow):
                   first = False
 
 
+    ##global_image_scales = [ '1' ]
+
     @Slot()
     def define_scales_callback(self, checked):
-        global global_image_scales
+        global_image_scales = [ s[len('scale_'):] for s in sorted(project_data['data']['scales'].keys()) ]
+
         default_scales = ['1']
         if len(global_image_scales) > 0:
           default_scales = global_image_scales
@@ -1429,8 +1448,28 @@ class MainWindow(QMainWindow):
           if len(input_val) > 0:
             scales_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
           if not (scales_list == global_image_scales):
-            self.define_scales (scales_list)
+            self.define_scales_menu (scales_list)
             global_image_scales = scales_list
+            # Remove any scales not in the new list (except always leave 1)
+            scales_to_remove = []
+            for scale_key in project_data['data']['scales'].keys():
+              if not (scale_key in global_image_scales):
+                if int(scale_key[len('scale_'):]) != 1:
+                  scales_to_remove.append ( scale_key )
+            for scale_key in scales_to_remove:
+              project_data['data']['scales'].pop ( scale_key )
+            # Add any scales not in the new list
+            scales_to_add = []
+            for scale_key in global_image_scales:
+              if not (scale_key in project_data['data']['scales'].keys()):
+                scales_to_add.append ( scale_key )
+            for scale_key in scales_to_add:
+              new_stack = []
+              scale_1_stack = project_data['data']['scales']['scale_1']['alignment_stack']
+              for l in scale_1_stack:
+                new_layer = copy.deepcopy ( l )
+                new_stack.append ( new_layer )
+              project_data['data']['scales']['scale_'+scale_key] = { 'alignment_stack': new_stack }
         else:
           print_debug ( 30, "Cancel: Scales not changed" )
 
@@ -1438,7 +1477,9 @@ class MainWindow(QMainWindow):
     def set_current_scale(self, checked):
         print ( "Set current Scale to " + str(self.sender().text()) )
         global current_scale
-        current_scale = str ( self.sender().text() )
+        current_scale = 'scale_' + str ( self.sender().text() )
+        project_data['data']['current_scale'] = current_scale
+
 
     @Slot()
     def generate_scales_callback(self, checked):
