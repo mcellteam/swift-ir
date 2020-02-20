@@ -13,7 +13,7 @@ from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 
 from PySide2.QtWidgets import QInputDialog
 
-import swift_project
+import pyswift_tui
 
 main_win = None
 
