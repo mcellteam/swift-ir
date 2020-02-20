@@ -1045,8 +1045,9 @@ class MainWindow(QMainWindow):
                 # Read the JSON file from the text
                 global project_data
                 project_data = json.loads ( text )
-
+                self.define_scales_menu ( sorted(project_data['data']['scales'].keys()) )
                 self.image_panel.update_multi_self()
+
 
     def make_relative ( self, file_path, proj_path ):
         print ( "Proj path: " + str(proj_path) )
@@ -1369,7 +1370,6 @@ class MainWindow(QMainWindow):
 
 
     def define_scales_menu ( self, scales_list ):
-
         # Set the Scales menu from this scales_list
         scales_menu = None
         mb = self.menuBar()
@@ -1393,8 +1393,6 @@ class MainWindow(QMainWindow):
                   m.addAction(item)
                   first = False
 
-
-    ##global_image_scales = [ '1' ]
 
     @Slot()
     def define_scales_callback(self, checked):
@@ -1439,8 +1437,12 @@ class MainWindow(QMainWindow):
     def set_current_scale(self, checked):
         print ( "Set current Scale to " + str(self.sender().text()) )
         global current_scale
-        current_scale = 'scale_' + str ( self.sender().text() )
+        current_scale = str ( self.sender().text() )
         project_data['data']['current_scale'] = current_scale
+
+        for p in self.panel_list:
+            p.update_zpa_self()
+        self.update_win_self()
 
 
     @Slot()
