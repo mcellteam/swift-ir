@@ -64,8 +64,8 @@ def build_current_data_model ( destination_path=None, project_file_name=None ):
 
     jd['scales'] = {}
     jds = jd['scales']
-    print ( "Saving scales for: " + str(alignem.global_image_scales) )
-    for scale in [ str(s) for s in alignem.global_image_scales ]:
+    print ( "Saving scales for: " + str(alignem.image_scales_to_run) )
+    for scale in [ str(s) for s in alignem.image_scales_to_run ]:
       align_layer_list_for_scale = alignem.scale_list[alignem.scale_index] # This should be indexed by scale but there's only one at this time
       jds[str(scale)] = {}
       jdsn = jds[str(scale)]
@@ -149,12 +149,12 @@ def open_json_project ( project_file_name ):
     main_win.define_roles ( all_roles )
 
     # Add the images to the scales
-    alignem.global_image_scales = sorted(project_data['data']['scales'].keys())
-    main_win.define_scales ( alignem.global_image_scales )
+    alignem.image_scales_to_run = sorted(project_data['data']['scales'].keys())
+    main_win.define_scales ( alignem.image_scales_to_run )
 
     alignem.project_data['data']['destination_path'] = project_data['data']['destination_path']
 
-    for scale_key in alignem.global_image_scales:
+    for scale_key in alignem.image_scales_to_run:
         print ( "Importing images for scale " + str(scale_key) )
         for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
             print ( "  Importing images for a layer" )
@@ -188,12 +188,18 @@ def save_json_project ( project_file_name ):
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
 
-    alignem.print_debug ( 40, "Create images at all scales: " + str ( alignem.global_image_scales ) )
+    image_scales_to_run = [ s[len('scale_'):] for s in sorted(alignem.project_data['data']['scales'].keys()) ]
+
+    alignem.print_debug ( 40, "Create images at all scales: " + str ( image_scales_to_run ) )
 
     if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
+
       alignem.show_warning ( "Note", "Scales can not be generated without a destination (use File/Set Destination)" )
+
     else:
-      for scale in alignem.global_image_scales:
+
+      for scale in image_scales_to_run:
+
         alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
 
         subdir = 'scale_' + str(scale)
@@ -219,6 +225,27 @@ def generate_scales ():
           # This catches directories that already exist
           pass
 
+        alignem.print_debug ( 1, "WARNING: Only Scale 1 is supported in alignem_swift at this time!" )
+
+        for layer in alignem.project_data['data']['scales']['scale_1']['alignment_stack']:
+          # Remove previously aligned images from panel
+
+          # Copy (or link) the source images to the expected "scale_1/img_src" directory
+          base_file_name = layer['images']['base']['filename']
+          if base_file_name != None:
+            if len(base_file_name) > 0:
+              abs_file_name = os.path.abspath(base_file_name)
+              bare_file_name = os.path.split(abs_file_name)[1]
+              destination_path = os.path.abspath ( alignem.project_data['data']['destination_path'] )
+              try:
+                os.symlink ( abs_file_name, os.path.join(destination_path, 'scale_1', 'img_src', bare_file_name) )
+              except:
+                pass
+
+              #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+        '''
         for al in alignem.scale_list[alignem.scale_index]:
           try:
             for image in al.image_list:
@@ -227,7 +254,6 @@ def generate_scales ():
                 alignem.print_debug ( 2, "Scaling image role of " + image.role )
 
 
-            '''
             #original_name = os.path.join(alignem.project_data['data']['destination_path'],os.path.basename(al.base_image_name))
             __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
             original_name = al.base_image_name
@@ -264,13 +290,13 @@ def generate_scales ():
                 alignem.print_debug ( 70, "Resizing " + original_name + " to " + new_name )
                 img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
                 align_swiftir.swiftir.saveImage ( img, new_name )
-            '''
           except:
             alignem.print_debug ( 10, "Error: Failed to copy?" )
             exi = sys.exc_info()
             print ( "  Exception type = " + str(exi[0]) )
             print ( "  Exception value = " + str(exi[1]) )
             print ( "  Exception trace = " + str(exi[2]) )
+        '''
 
 
 def align_all():
@@ -372,7 +398,6 @@ def align_all():
         if 'base' in layer['images'].keys():
           image_name = layer['images']['base']['filename']
 
-
         # Convert from the base name to the standard aligned name:
         aligned_name = None
         if image_name != None:
@@ -392,7 +417,15 @@ def align_forward():
 
 def remove_aligned():
     alignem.print_debug ( 30, "Removing aligned images ..." )
+
     delete_list = []
+
+    for layer in alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack']:
+      if 'aligned' in layer['images'].keys():
+        delete_list.append ( layer['images']['aligned']['filename'] )
+        layer['images'].pop('aligned')
+
+    '''
     for layer in alignem.scale_list[alignem.scale_index]:
       for image in layer.image_list:
         if image.role == 'aligned':
@@ -400,6 +433,7 @@ def remove_aligned():
           image.unload()
           image.pixmap = None
           image.image_file_name = None
+    '''
 
     alignem.image_library.remove_all_images()
 
@@ -409,7 +443,9 @@ def remove_aligned():
           os.remove(fname)
           alignem.image_library.remove_image_reference ( fname )
 
+    '''
     alignem.image_library.remove_all_images()
+    '''
     main_win.update_panels()
 
 
@@ -426,7 +462,7 @@ skip = BoolField("Skip",False)
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ CallbackButton('Align All SWiFT', align_all), CallbackButton('Align Forward SWiFT', align_all), IntField("#",1,1), CallbackButton('Remove Aligned', remove_aligned), "         ", skip, CallbackButton('SWIFT Debug', method_debug) ]
+    [ CallbackButton('GenScales', generate_scales), CallbackButton('Align All SWiFT', align_all), CallbackButton('Align Forward SWiFT', align_all), IntField("#",1,1), CallbackButton('Remove Aligned', remove_aligned), "         ", skip, CallbackButton('SWIFT Debug', method_debug) ]
   ] # End first pane
 ]
 
