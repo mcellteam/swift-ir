@@ -24,49 +24,37 @@ from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 
 # Get the path of ../python
-alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
-alignem_p    = os.path.dirname( alignem_file )               # path/PySide2
-alignem_pp   = os.path.dirname( alignem_p )                  # path
-alignem_shared_path = os.path.join ( alignem_pp, 'python' )  # path/python
+#alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
+#alignem_p    = os.path.dirname( alignem_file )               # path/PySide2
+#alignem_pp   = os.path.dirname( alignem_p )                  # path
+#alignem_shared_path = os.path.join ( alignem_pp, 'python' )  # path/python
 
-if len(sys.path) <= 0:
-  # Add the path to the currently empty path (this would be an unusual case)
-  sys.path.append ( alignem_shared_path )
-else:
-  # Add the path in the second position (after the default current directory of "")
-  sys.path.insert ( 1, alignem_shared_path )
+#if len(sys.path) <= 0:
+#  # Add the path to the currently empty path (this would be an unusual case)
+#  sys.path.append ( alignem_shared_path )
+#else:
+#  # Add the path in the second position (after the default current directory of "")
+#  sys.path.insert ( 1, alignem_shared_path )
 
 # Import project and alignment support from SWiFT-IR:
 
-
-import swift_project
+from alignem_data_model import new_project_template, new_layer_template, new_image_template
 
 project_data = None
 
-
+'''
 new_project_template = \
 {
   "version": 0.25,
-  "method": "SWiFT-IR",
+  "method": "None",
   "user_settings": {
     "max_image_file_size": 100000000
   },
   "data": {
     "source_path": "",
+    "destination_path": "",
     "current_layer": 0,
     "current_scale": "scale_1",
-    "defaults": {
-      "align_to_next_pars": {
-        "addx": 800,
-        "addy": 800,
-        "bias_x_per_image": 0.0,
-        "bias_y_per_image": 0.0,
-        "output_level": 0,
-        "window_size": 1024
-      }
-    },
-    "destination_path": "",
-    "pairwise_alignment": True,
     "panel_roles": [
       "ref",
       "base",
@@ -85,42 +73,16 @@ new_layer_template = \
 {
   "align_to_ref_method": {
     "method_data": {
-      "addx": 256,
-      "addy": 256,
-      "alignment_option": "Init Affine",
-      "alignment_options": [
-        "Init Affine",
-        "Refine Affine",
-        "Apply Affine"
-      ],
-      "bias_rot_per_image": 0.0,
-      "bias_scale_x_per_image": 0.0,
-      "bias_scale_y_per_image": 0.0,
-      "bias_skew_x_per_image": 0.0,
-      "bias_x_per_image": 0.0,
-      "bias_y_per_image": 0.0,
-      "output_level": 0,
-      "window_size": 256
     },
     "method_options": [
-      "Auto Swim Align",
-      "Match Point Align"
+      "None"
     ],
-    "selected_method": "Auto Swim Align",
+    "selected_method": "None",
     "method_results": {
-      "affine_matrix": [
-        [ 1.0, 0.0, 0.0 ],
-        [ 0.0, 1.0, 0.0 ]
-      ],
-      "cumulative_afm": [
-        [ 1.0, 0.0, 0.0 ],
-        [ 0.0, 1.0, 0.0 ]
-      ],
-      "snr": 12.345
     }
   },
   "images": {},
-  "skip": None
+  "skip": False
 }
 
 
@@ -132,6 +94,7 @@ new_image_template = \
     "match_points": []
   }
 }
+'''
 
 
 work_from_dict = True
@@ -2251,7 +2214,7 @@ if __name__ == "__main__":
         main_window = MainWindow ( control_model=control_model )
         main_window.resize(2400,1000)
 
-        main_window.define_roles ( ['Image Stack'] )
+        main_window.define_roles ( ['ref','base','aligned'] )
 
 
     elif test_option in [1, 2]:
