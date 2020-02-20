@@ -2,6 +2,7 @@ import sys, traceback
 import os
 import argparse
 import cv2
+import copy
 
 import json
 
@@ -18,6 +19,7 @@ main_win = None
 
 project_data = None
 
+'''
 def build_current_data_model ( destination_path=None, project_file_name=None ):
 
     reference_path = ""
@@ -39,7 +41,7 @@ def build_current_data_model ( destination_path=None, project_file_name=None ):
     jd = j['data']
     jd['panel_roles'] = alignem.global_panel_roles
     jd['source_path'] = ""
-    jd['destination_path'] = main_win.destination_path
+    jd['destination_path'] = alignem.project_data['data']['destination_path']
     jd['pairwise_alignment'] = True
     jd['defaults'] = {}
     jdd = jd['defaults']
@@ -150,7 +152,7 @@ def open_json_project ( project_file_name ):
     alignem.global_image_scales = sorted(project_data['data']['scales'].keys())
     main_win.define_scales ( alignem.global_image_scales )
 
-    main_win.destination_path = project_data['data']['destination_path']
+    alignem.project_data['data']['destination_path'] = project_data['data']['destination_path']
 
     for scale_key in alignem.global_image_scales:
         print ( "Importing images for scale " + str(scale_key) )
@@ -178,23 +180,24 @@ def save_json_project ( project_file_name ):
             # Write out the project
             f = open ( project_file_name, 'w' )
             jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
-            proj_json = jde.encode ( build_current_data_model ( destination_path=main_win.destination_path, project_file_name=project_file_name ) )
+            proj_json = jde.encode ( build_current_data_model ( destination_path=alignem.project_data['data']['destination_path'], project_file_name=project_file_name ) )
             f.write ( proj_json )
             f.close()
+'''
 
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
 
     alignem.print_debug ( 40, "Create images at all scales: " + str ( alignem.global_image_scales ) )
 
-    if (main_win.destination_path == None) or (len(main_win.destination_path) <= 0):
+    if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
       alignem.show_warning ( "Note", "Scales can not be generated without a destination (use File/Set Destination)" )
     else:
       for scale in alignem.global_image_scales:
         alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
 
         subdir = 'scale_' + str(scale)
-        subdir_path = os.path.join(main_win.destination_path,subdir)
+        subdir_path = os.path.join(alignem.project_data['data']['destination_path'],subdir)
         alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
         try:
           os.mkdir ( subdir_path )
@@ -225,7 +228,7 @@ def generate_scales ():
 
 
             '''
-            #original_name = os.path.join(main_win.destination_path,os.path.basename(al.base_image_name))
+            #original_name = os.path.join(alignem.project_data['data']['destination_path'],os.path.basename(al.base_image_name))
             __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
             original_name = al.base_image_name
             new_name = os.path.join(src_path,os.path.basename(original_name))
@@ -298,48 +301,60 @@ def align_all():
         if use_c_version.isChecked():
           code_mode = "c"
 
-    if (main_win.destination_path == None) or len(main_win.destination_path) <= 0:
+    if (alignem.project_data['data']['destination_path'] == None) or len(alignem.project_data['data']['destination_path']) <= 0:
 
       alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
       alignem.show_warning ( "Note", "Projects can not be aligned without a destination (use File/Set Destination)" )
 
     else:
 
-      alignem.print_debug ( 10, "Aligning with output in " + main_win.destination_path )
+      alignem.print_debug ( 10, "Aligning with output in " + alignem.project_data['data']['destination_path'] )
 
       # Create the expected directory structure for pyswift_tui.py
-      source_dir = os.path.join ( main_win.destination_path, "scale_1", "img_src" )
+      source_dir = os.path.join ( alignem.project_data['data']['destination_path'], "scale_1", "img_src" )
       alignem.makedirs_exist_ok ( source_dir, exist_ok=True )
-      target_dir = os.path.join ( main_win.destination_path, "scale_1", "img_aligned" )
+      target_dir = os.path.join ( alignem.project_data['data']['destination_path'], "scale_1", "img_aligned" )
       alignem.makedirs_exist_ok ( target_dir, exist_ok=True )
 
       # Create links or copy files in the expected directory structure
       # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
-      for layer in alignem.scale_list[alignem.scale_index]:
+      s1 = alignem.project_data['data']['scales']['scale_1']['alignment_stack']
+      for layer in s1:
         image_name = None
-        for image in layer.image_list:
-          if image.role == 'base':
-            try:
-              image_name = os.path.basename(image.image_file_name)
-              destination_image_name = os.path.join(source_dir,image_name)
-              shutil.copyfile(image.image_file_name, destination_image_name)
-            except:
-              pass
+        if 'base' in layer['images'].keys():
+          image = layer['images']['base']
+          try:
+            image_name = os.path.basename(image['filename'])
+            destination_image_name = os.path.join(source_dir,image_name)
+            shutil.copyfile(image.image_file_name, destination_image_name)
+          except:
+            pass
 
       # Print out what might be done to produce the JSON for this project
-      for index in range(len(alignem.scale_list[alignem.scale_index])):
-        print ( "Aligning layer " + str(index) )
-        al = alignem.scale_list[alignem.scale_index][index]
-        for im in al.image_list:
-          if im.image_file_name != None:
-            print ( "   " + im.role + ":  " + im.image_file_name )
+      #for index in range(len(alignem.scale_list[alignem.scale_index])):
+      #  print ( "Aligning layer " + str(index) )
+      #  al = alignem.scale_list[alignem.scale_index][index]
+      #  for im in al.image_list:
+      #    if im.image_file_name != None:
+      #      print ( "   " + im.role + ":  " + im.image_file_name )
 
       # Build a data model for this project
-      dm = build_current_data_model ( destination_path=main_win.destination_path, project_file_name=None )
+      #### dm = build_current_data_model ( destination_path=alignem.project_data['data']['destination_path'], project_file_name=None )
       # Run the project via pyswift_tui
       #                              dm,   align_opt, scale_done,      use_scale,        scale_tbd, swiftir_code_mode
-      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(alignem.current_scale),      0,        code_mode )
+      dm = copy.deepcopy ( alignem.project_data )
+      # Add fields needed for SWiFT:
+      s1 = dm['data']['scales']['scale_1']['alignment_stack']
+      for layer in s1:
+        layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
+        layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
+        layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
+      scale_to_run_text = alignem.current_scale[len('scale_'):]
+      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(scale_to_run_text),      0,        code_mode )
+
+
+      '''
       # Load the alignment stack after the alignment
       aln_image_stack = []
       for layer in alignem.scale_list[alignem.scale_index]:
@@ -347,6 +362,16 @@ def align_all():
         for image in layer.image_list:
           if image.role == 'base':
             image_name = image.image_file_name
+      '''
+      aln_image_stack = []
+
+      # Load the alignment stack after the alignment
+      s1 = alignem.project_data['data']['scales']['scale_1']['alignment_stack']
+      for layer in s1:
+        image_name = None
+        if 'base' in layer['images'].keys():
+          image_name = layer['images']['base']['filename']
+
 
         # Convert from the base name to the standard aligned name:
         aligned_name = None
@@ -430,9 +455,9 @@ if __name__ == "__main__":
         pass
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
-    main_win.register_project_open ( open_json_project )
-    main_win.register_project_save ( save_json_project )
-    main_win.register_gen_scales ( generate_scales )
+    #main_win.register_project_open ( open_json_project )
+    #main_win.register_project_save ( save_json_project )
+    #main_win.register_gen_scales ( generate_scales )
 
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 
