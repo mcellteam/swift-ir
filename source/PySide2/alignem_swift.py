@@ -13,7 +13,7 @@ from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 
 from PySide2.QtWidgets import QInputDialog
 
-import pyswift_tui
+import swift_project
 
 main_win = None
 
@@ -28,7 +28,7 @@ def build_current_data_model ( destination_path=None, project_file_name=None ):
     if project_file_name != None:
       reference_path = os.path.split(os.path.abspath(project_file_name))[0]
 
-    alignment_layer_list = alignem.scale_list[alignem.scale_index]
+    alignment_layer_list = alignem.scale_dict[alignem.current_scale]
     alignment_layer_index = alignem.alignment_layer_index
 
     control_panel_data = main_win.control_panel.copy_self_to_data()
@@ -383,7 +383,7 @@ def align_all():
       '''
       # Load the alignment stack after the alignment
       aln_image_stack = []
-      for layer in alignem.scale_list[alignem.scale_index]:
+      for layer in alignem.scale_dict[alignem.current_scale]:
         image_name = None
         for image in layer.image_list:
           if image.role == 'base':
