@@ -42,14 +42,6 @@ from alignem_data_model import new_project_template, new_layer_template, new_ima
 
 project_data = None
 
-work_from_dict = True
-
-print ( "\n\n" + (3*((80*'*')+'\n')) )
-if work_from_dict:
-  print ( (20*' ') + "Working from dictionary" )
-else:
-  print ( (20*' ') + "Working from classes" )
-print ( "\n" + (3*((80*'*')+'\n')) )
 
 debug_level = 0
 def print_debug ( level, str ):
@@ -793,10 +785,6 @@ class MainWindow(QMainWindow):
         self.main_panel_layout.addWidget ( self.image_panel )
         self.main_panel_layout.addWidget ( self.control_panel )
 
-        if not work_from_dict:
-          self.destination_path = None
-
-
         self.setCentralWidget(self.main_panel)
 
 
@@ -1050,27 +1038,15 @@ class MainWindow(QMainWindow):
         if file_name != None:
             if len(file_name) > 0:
 
-                if work_from_dict:
+                f = open ( file_name, 'r' )
+                text = f.read()
+                f.close()
 
-                    f = open ( file_name, 'r' )
-                    text = f.read()
-                    f.close()
+                # Read the JSON file from the text
+                global project_data
+                project_data = json.loads ( text )
 
-                    # Read the JSON file from the text
-                    global project_data
-                    project_data = json.loads ( text )
-
-                    self.image_panel.update_multi_self()
-
-                else:
-
-                    self.current_project_file_name = file_name
-
-                    # Attempt to hide the file dialog before opening ...
-                    for p in self.panel_list:
-                        p.update_zpa_self()
-                    # self.update_win_self()
-                    self.project_open ( file_name )
+                self.image_panel.update_multi_self()
 
     def make_relative ( self, file_path, proj_path ):
         print ( "Proj path: " + str(proj_path) )
@@ -1174,44 +1150,40 @@ class MainWindow(QMainWindow):
             found_layer = None
             this_layer_index = 0
 
-            if work_from_dict:
-
-              used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
-              print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
-              layer_index_for_new_role = -1
-              if False in used_for_this_role:
-                # This means that there is an unused slot for this role. Find the first:
-                layer_index_for_new_role = used_for_this_role.index(False)
-                print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
-              else:
-                # This means that there are no unused slots for this role. Add a new layer
-                print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
-                project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-                layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-              image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
-              image_dict[role_name] = copy.deepcopy(new_image_template)
-              image_dict[role_name]['filename'] = image_file_name
+            used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+            print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+            layer_index_for_new_role = -1
+            if False in used_for_this_role:
+              # This means that there is an unused slot for this role. Find the first:
+              layer_index_for_new_role = used_for_this_role.index(False)
+              print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
+            else:
+              # This means that there are no unused slots for this role. Add a new layer
+              print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
+              project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+              layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+            image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+            image_dict[role_name] = copy.deepcopy(new_image_template)
+            image_dict[role_name]['filename'] = image_file_name
 
 
     def add_empty_to_role ( self, role_name ):
 
-        if work_from_dict:
-
-          used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
-          print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
-          layer_index_for_new_role = -1
-          if False in used_for_this_role:
-            # This means that there is an unused slot for this role. Find the first:
-            layer_index_for_new_role = used_for_this_role.index(False)
-            print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
-          else:
-            # This means that there are no unused slots for this role. Add a new layer
-            print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
-            project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-            layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-          image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
-          image_dict[role_name] = copy.deepcopy(new_image_template)
-          image_dict[role_name]['filename'] = None
+        used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+        print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+        layer_index_for_new_role = -1
+        if False in used_for_this_role:
+          # This means that there is an unused slot for this role. Find the first:
+          layer_index_for_new_role = used_for_this_role.index(False)
+          print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
+        else:
+          # This means that there are no unused slots for this role. Add a new layer
+          print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
+          project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+          layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+        image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+        image_dict[role_name] = copy.deepcopy(new_image_template)
+        image_dict[role_name]['filename'] = None
 
 
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
@@ -1288,14 +1260,8 @@ class MainWindow(QMainWindow):
         if False:  # self.native.isChecked():
             options |= QFileDialog.DontUseNativeDialog
 
-        if work_from_dict:
-          project_data['data']['destination_path'] = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=project_data['data']['destination_path'], options=options)
-          print_debug ( 1, "Destination is: " + str(project_data['data']['destination_path']) )
-        else:
-          self.destination_path = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=self.destination_path, options=options)
-          print_debug ( 1, "Destination is: " + str(self.destination_path) )
-
-
+        project_data['data']['destination_path'] = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=project_data['data']['destination_path'], options=options)
+        print_debug ( 1, "Destination is: " + str(project_data['data']['destination_path']) )
 
 
     def load_images_in_role ( self, role, file_names ):
@@ -1379,23 +1345,20 @@ class MainWindow(QMainWindow):
 
         print_debug ( 30, "Adding empty for role: " + str(role_to_import) )
 
-        if work_from_dict:
-
-            used_for_this_role = [ role_to_import in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
-            print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
-            layer_index_for_new_role = -1
-            if False in used_for_this_role:
-              # This means that there is an unused slot for this role. Find the first:
-              layer_index_for_new_role = used_for_this_role.index(False)
-              print_debug ( 60, "Inserting <empty> in role " + str(role_to_import) + " into existing layer " + str(layer_index_for_new_role) )
-            else:
-              # This means that there are no unused slots for this role. Add a new layer
-              print_debug ( 60, "Making a new layer for <empty> in role " + str(role_to_import) + " at layer " + str(layer_index_for_new_role) )
-              project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-              layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-            image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
-            image_dict[role_to_import] = copy.deepcopy(new_image_template)
-            # image_dict[role_to_import]['filename'] = image_file_name
+        used_for_this_role = [ role_to_import in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+        print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+        layer_index_for_new_role = -1
+        if False in used_for_this_role:
+          # This means that there is an unused slot for this role. Find the first:
+          layer_index_for_new_role = used_for_this_role.index(False)
+          print_debug ( 60, "Inserting <empty> in role " + str(role_to_import) + " into existing layer " + str(layer_index_for_new_role) )
+        else:
+          # This means that there are no unused slots for this role. Add a new layer
+          print_debug ( 60, "Making a new layer for <empty> in role " + str(role_to_import) + " at layer " + str(layer_index_for_new_role) )
+          project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+          layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+        image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+        image_dict[role_to_import] = copy.deepcopy(new_image_template)
 
         # Draw the panels ("windows")
         for p in self.panel_list:
@@ -1403,7 +1366,6 @@ class MainWindow(QMainWindow):
             p.update_zpa_self()
 
         self.update_win_self()
-
 
 
     def define_scales_menu ( self, scales_list ):
@@ -1491,12 +1453,11 @@ class MainWindow(QMainWindow):
     def remove_this_layer(self, checked):
         global current_scale
 
-        if work_from_dict:
-          local_current_layer = project_data['data']['current_layer']
-          project_data['data']['scales'][current_scale]['alignment_stack'].pop(local_current_layer)
-          if local_current_layer >= len(project_data['data']['scales'][current_scale]['alignment_stack']):
-            local_current_layer = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-          project_data['data']['current_layer'] = local_current_layer
+        local_current_layer = project_data['data']['current_layer']
+        project_data['data']['scales'][current_scale]['alignment_stack'].pop(local_current_layer)
+        if local_current_layer >= len(project_data['data']['scales'][current_scale]['alignment_stack']):
+          local_current_layer = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+        project_data['data']['current_layer'] = local_current_layer
 
         for p in self.panel_list:
             p.update_zpa_self()
