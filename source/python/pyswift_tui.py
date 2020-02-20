@@ -221,7 +221,7 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
   print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode]) )
   align_swiftir.global_swiftir_mode = swiftir_code_mode
 
-  scales = sorted([ int(s) for s in project['data']['scales'].keys() ])
+  scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
   destination_path = project['data']['destination_path']
 
   if use_scale==0:
@@ -258,7 +258,7 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
       # Copy settings from finest completed scale to tbd:
       s_done = project['data']['scales'][str(scale_done)]['alignment_stack']
       project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
-    s_tbd = project['data']['scales'][str(scale_tbd)]['alignment_stack']
+    s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
     #   Copy skip, swim, and match point settings
     for i in range(len(s_tbd)):
       # fix path for base and ref filenames for scale_tbd
