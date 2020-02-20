@@ -42,62 +42,8 @@ from alignem_data_model import new_project_template, new_layer_template, new_ima
 
 project_data = None
 
-'''
-new_project_template = \
-{
-  "version": 0.25,
-  "method": "None",
-  "user_settings": {
-    "max_image_file_size": 100000000
-  },
-  "data": {
-    "source_path": "",
-    "destination_path": "",
-    "current_layer": 0,
-    "current_scale": "scale_1",
-    "panel_roles": [
-      "ref",
-      "base",
-      "aligned"
-    ],
-    "scales": {
-      "scale_1": {
-        "alignment_stack": []
-      }
-    }
-  }
-}
-
-
-new_layer_template = \
-{
-  "align_to_ref_method": {
-    "method_data": {
-    },
-    "method_options": [
-      "None"
-    ],
-    "selected_method": "None",
-    "method_results": {
-    }
-  },
-  "images": {},
-  "skip": False
-}
-
-
-new_image_template = \
-{
-  "filename": "",
-  "metadata": {
-    "annotations": [],
-    "match_points": []
-  }
-}
-'''
-
-
 work_from_dict = True
+
 print ( "\n\n" + (3*((80*'*')+'\n')) )
 if work_from_dict:
   print ( (20*' ') + "Working from dictionary" )
@@ -117,13 +63,7 @@ app = None
 preloading_range = 3
 max_image_file_size = 1000000000
 
-# The scale_list is a list of dictionaries containing an alignment_layer and scale information
-scale_list = [ [] ]
-scale_index = 0
 current_scale = 'scale_1'
-
-# alignment_layer_list = []
-alignment_layer_index = 0
 
 main_window = None
 
@@ -199,102 +139,8 @@ class ImageLibrary:
 image_library = ImageLibrary()
 
 
-
-class AnnotatedImage:
-    '''A class containing an image and other information to be displayed.'''
-    def __init__ ( self, role, file_name, load_now=False ):
-        self.role = role
-        if file_name is None:
-          self.image_file_name = None
-        else:
-          self.image_file_name = os.path.realpath(os.path.normpath(file_name))
-        self.image_size = None
-        self.pixmap = None
-        if load_now:
-          self.load()
-
-    def load ( self ):
-        global max_image_file_size
-        global image_library
-        if self.image_file_name != None:
-          if len(self.image_file_name) > 0:
-            try:
-              if self.image_size == None:
-                # Get the size if needed
-                f = open ( self.image_file_name )
-                f.seek (0, 2)  # Seek to the end
-                self.image_size = f.tell()
-                f.close()
-              if self.image_size <= max_image_file_size:
-                app.setOverrideCursor(Qt.WaitCursor)
-                ##print_debug ( 10, "Loading image: \"" + self.image_file_name + "\"" )
-                ##self.pixmap = QPixmap(self.image_file_name)
-                self.pixmap = image_library.get_image_reference(self.image_file_name)
-                app.restoreOverrideCursor()
-              else:
-                print_debug ( 10, "Skipping image: \"" + self.image_file_name + "\" (" + str(self.image_size) + " > " + str(max_image_file_size) + ")" )
-            except:
-                print_debug ( 1, "Error opening image: \"" + str(self.image_file_name) )
-                exi = sys.exc_info()
-                print ( "  Exception type = " + str(exi[0]) )
-                print ( "  Exception value = " + str(exi[1]) )
-                print ( "  Exception trace = " + str(exi[2]) )
-
-
-    def unload ( self ):
-        global scale_list
-        global scale_index
-        global image_library
-        alignment_layer_list = scale_list[scale_index]
-        self.pixmap = None
-        found = False
-        for alignment_layer in alignment_layer_list:
-          for image in alignment_layer.image_list:
-            if image.image_file_name == self.image_file_name:
-              if image != self:
-                found = True
-                break
-        if not found:
-          image_library.remove_image_reference ( self.image_file_name )
-
-
-global_panel_roles = []
-
 global_image_scales = [ '1' ]
 
-
-class DisplayLayer:
-    '''A class representing the data at one "layer" of an image stack.'''
-    def __init__ ( self, role_name, file_name, load_now=False ):
-        self.image_list = []
-        self.image_list.append ( AnnotatedImage ( str(role_name), file_name, load_now ) )
-        self.control_panel_data = None
-
-    def isLoaded ( self ):
-        for im in self.image_list:
-            if im.pixmap == None:
-                return ( False )
-        return ( True )
-
-    def load ( self ):
-        for im in self.image_list:
-            im.load()
-
-    def unload ( self ):
-        for im in self.image_list:
-            im.unload()
-
-    def to_data ( self ):
-        data = {}
-        data['control_panel_data'] = self.control_panel_data
-        data['image_list'] = []
-        for im in self.image_list:
-            im_data = {}
-            im_data['role'] = im.role
-            im_data['image_file_name'] = im.image_file_name
-            im_data['image_size'] = im.image_size
-            data['image_list'].append ( im_data )
-        return data
 
 
 class ZoomPanWidget(QWidget):
@@ -442,10 +288,6 @@ class ZoomPanWidget(QWidget):
     def wheelEvent(self, event):
 
         global project_data
-        global scale_list
-        global scale_index
-        global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
         global main_window
         global preloading_range
 
@@ -455,81 +297,42 @@ class ZoomPanWidget(QWidget):
             # Unshifted Scroll Wheel moves through layers
             layer_delta = int(event.delta()/120)
 
-            if work_from_dict:
+            if project_data != None:
 
-              if project_data != None:
+              local_scales = project_data['data']['scales']
+              local_current_scale = project_data['data']['current_scale']
+              if local_current_scale in local_scales:
+                  local_scale = local_scales[local_current_scale]
+                  if 'alignment_stack' in local_scale:
+                      local_stack = local_scale['alignment_stack']
+                      if len(local_stack) <= 0:
+                          project_data['data']['current_layer'] = 0
+                      else:
+                          # Adjust the current layer
+                          local_current_layer = project_data['data']['current_layer']
+                          local_current_layer += layer_delta
+                          if local_current_layer >= len(local_stack):
+                              local_current_layer =  len(local_stack)-1
+                          elif local_current_layer < 0:
+                              local_current_layer = 0
+                          # Store the final value
+                          project_data['data']['current_layer'] = local_current_layer
 
-                local_scales = project_data['data']['scales']
-                local_current_scale = project_data['data']['current_scale']
-                if local_current_scale in local_scales:
-                    local_scale = local_scales[local_current_scale]
-                    if 'alignment_stack' in local_scale:
-                        local_stack = local_scale['alignment_stack']
-                        if len(local_stack) <= 0:
-                            project_data['data']['current_layer'] = 0
-                        else:
-                            # Adjust the current layer
-                            local_current_layer = project_data['data']['current_layer']
-                            local_current_layer += layer_delta
-                            if local_current_layer >= len(local_stack):
-                                local_current_layer =  len(local_stack)-1
-                            elif local_current_layer < 0:
-                                local_current_layer = 0
-                            # Store the final value
-                            project_data['data']['current_layer'] = local_current_layer
+                          # Define the images needed
+                          needed_images = set()
+                          for i in range(len(local_stack)):
+                            if abs(i-local_current_layer) < preloading_range:
+                              for role,local_image in local_stack[i]['images'].items():
+                                if len(local_image['filename']) > 0:
+                                  needed_images.add ( local_image['filename'] )
+                          # Ask the library to keep only those images
+                          image_library.make_available ( needed_images )
 
-                            # Define the images needed
-                            needed_images = set()
-                            for i in range(len(local_stack)):
-                              if abs(i-local_current_layer) < preloading_range:
-                                for role,local_image in local_stack[i]['images'].items():
-                                  if len(local_image['filename']) > 0:
-                                    needed_images.add ( local_image['filename'] )
-                            # Ask the library to keep only those images
-                            image_library.make_available ( needed_images )
+              #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+              # if len(project_data['data']['scales'][local_current_layer]
 
-                # if len(project_data['data']['scales'][local_current_layer]
-
-                self.update_siblings()
-
-            else:
-
-                print_debug ( 50, "Wheel Event: Moving through the stack with alignment_layer_index = " + str(alignment_layer_index) )
-                if len(alignment_layer_list) <= 0:
-                  alignment_layer_index = 0
-                  print_debug ( 60, " Index = " + str(alignment_layer_index) )
-                else:
-                  main_window.control_panel.distribute_all_layer_data ( [ al.control_panel_data for al in alignment_layer_list ] )
-                  alignment_layer_list[alignment_layer_index].control_panel_data = main_window.control_panel.copy_self_to_data()
-                  alignment_layer_index += layer_delta
-                  if layer_delta > 0:
-                    if alignment_layer_index >= len(alignment_layer_list):
-                      alignment_layer_index =  len(alignment_layer_list)-1
-                  elif layer_delta < 0:
-                    if alignment_layer_index < 0:
-                      alignment_layer_index = 0
-
-                  if alignment_layer_list[alignment_layer_index].control_panel_data != None:
-                    main_window.control_panel.copy_data_to_self(alignment_layer_list[alignment_layer_index].control_panel_data)
-                  ##main_window.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
-
-                  print_debug ( 80, "Images at layer " + str(alignment_layer_index) + " are:" )
-                  for im in alignment_layer_list[alignment_layer_index].image_list:
-                    print_debug ( 80, "   " + str(im.role) + ":   " + str(im.image_file_name) )
-
-                # Unload images no longer needed
-                for i in range(len(alignment_layer_list)):
-                  if abs(i-alignment_layer_index) >= preloading_range:
-                    alignment_layer_list[i].unload()
-
-                # Load a new image as needed
-                if len(alignment_layer_list) > 0:
-                  if not alignment_layer_list[alignment_layer_index].isLoaded():
-                    alignment_layer_list[alignment_layer_index].load()
-
-                self.update_siblings()
+              self.update_siblings()
 
         else:
             # Shifted Scroll Wheel zooms
@@ -541,110 +344,49 @@ class ZoomPanWidget(QWidget):
 
 
     def paintEvent(self, event):
-        global scale_list
-        global scale_index
-        global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
-
         painter = QPainter(self)
 
-        if True:
+        role_text = self.role
 
-            if work_from_dict:
+        if project_data != None:
 
-                role_text = self.role
+            s = project_data['data']['current_scale']
+            l = project_data['data']['current_layer']
 
-                if project_data != None:
+            role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
 
-                    s = project_data['data']['current_scale']
-                    l = project_data['data']['current_layer']
+            if len(project_data['data']['scales']) > 0:
+                if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
 
-                    role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
+                    image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
 
-                    if len(project_data['data']['scales']) > 0:
-                        if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
+                    if self.role in image_dict.keys():
+                        ann_image = image_dict[self.role]
+                        pixmap = image_library.get_image_reference(ann_image['filename'])
 
-                            image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                        # Scale the painter to draw the image as the background
+                        painter.scale ( self.zoom_scale, self.zoom_scale )
 
-                            if self.role in image_dict.keys():
-                                ann_image = image_dict[self.role]
-                                pixmap = image_library.get_image_reference(ann_image['filename'])
+                        if pixmap != None:
+                            if self.draw_border:
+                                # Draw an optional border around the image
+                                painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                                painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                            # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                            painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
 
-                                # Scale the painter to draw the image as the background
-                                painter.scale ( self.zoom_scale, self.zoom_scale )
+                            # Draw any items that should scale with the image
 
-                                if pixmap != None:
-                                    if self.draw_border:
-                                        # Draw an optional border around the image
-                                        painter.setPen(QPen(QColor(255, 255, 255, 255),4))
-                                        painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                                    # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+                        # Rescale the painter to draw items at screen resolution
+                        painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
 
-                                    # Draw any items that should scale with the image
+                        # Draw the borders of the viewport for each panel to separate panels
+                        painter.setPen(QPen(self.border_color,4))
+                        painter.drawRect(painter.viewport())
 
-                                # Rescale the painter to draw items at screen resolution
-                                painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
-
-                                # Draw the borders of the viewport for each panel to separate panels
-                                painter.setPen(QPen(self.border_color,4))
-                                painter.drawRect(painter.viewport())
-
-                # Draw the role
-                painter.setPen(QPen(QColor(255,100,100,255), 5))
-                painter.drawText(20, 30, role_text)
-
-            else:
-
-                print_debug ( 50, "Painting layer " + str(alignment_layer_index) )
-                if len(alignment_layer_list) > 0:
-                  if (alignment_layer_index >= 0) and (alignment_layer_index < len(alignment_layer_list)):
-
-                    pixmap = None
-                    for layer_image in alignment_layer_list[alignment_layer_index].image_list:
-                      if layer_image.role == self.role:
-                        pixmap = layer_image.pixmap
-
-                    # Scale the painter to draw the image as the background
-                    painter.scale ( self.zoom_scale, self.zoom_scale )
-
-                    if pixmap != None:
-                        if self.draw_border:
-                            # Draw an optional border around the image
-                            painter.setPen(QPen(QColor(255, 255, 255, 255),4))
-                            painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                        # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                        painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
-
-                        # Draw any items that should scale with the image
-
-                    # Rescale the painter to draw items at screen resolution
-                    painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
-
-                    # Draw the borders of the viewport for each panel to separate panels
-                    painter.setPen(QPen(self.border_color,4))
-                    painter.drawRect(painter.viewport())
-
-                # Draw the role
-                painter.setPen(QPen(QColor(255,100,100,255), 5))
-                painter.drawText(20, 30, self.role)
-
-
-        else:
-            painter.setRenderHint(QPainter.Antialiasing, self.antialiased)
-            painter.translate(self.width() / 2, self.height() / 2)
-            for diameter in range(0, 256, 9):
-                delta = abs((self.wheel_index % 128) - diameter / 2)
-                alpha = 255 - (delta * delta) / 4 - diameter
-                if alpha > 0:
-                    painter.setPen(QPen(QColor(0, diameter / 2, 127, alpha), 3))
-                    if self.floatBased:
-                        painter.drawEllipse(QRectF(-diameter / 2.0,
-                                -diameter / 2.0, diameter, diameter))
-                    else:
-                        painter.drawEllipse(QRect(-diameter / 2,
-                                -diameter / 2, diameter, diameter))
-
+        # Draw the role
+        painter.setPen(QPen(QColor(255,100,100,255), 5))
+        painter.drawText(20, 30, role_text)
 
 
 class MultiImagePanel(QWidget):
@@ -707,7 +449,6 @@ class MultiImagePanel(QWidget):
             self.repaint()
 
     def set_roles (self, roles_list):
-      global global_panel_roles
       if len(roles_list) > 0:
         # Save these roles
         role_settings = {}
@@ -715,7 +456,7 @@ class MultiImagePanel(QWidget):
           if type(w) == ZoomPanWidget:
             role_settings[w.role] = w.get_settings()
 
-        global_panel_roles = roles_list
+        project_data['data']['panel_roles'] = roles_list
         # Remove all the image panels (to be replaced)
         try:
             self.remove_all_panels(None)
@@ -1007,7 +748,6 @@ class MainWindow(QMainWindow):
 
     def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM"):
 
-        global global_panel_roles
         global app
         if app == None:
                 app = QApplication()
@@ -1019,18 +759,13 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
 
         self.current_project_file_name = None
-        self.project_open = None
-        self.project_save = None
-        self.generate_scales = None
 
         if panel_roles != None:
-            global_panel_roles = panel_roles
+            project_data['data']['panel_roles'] = panel_roles
 
         self.draw_border = False
 
         self.panel_list = []
-        #if global_panel_roles != None:
-        #  self.remove_all_panels(None)
 
         self.control_model = control_model
 
@@ -1240,15 +975,6 @@ class MainWindow(QMainWindow):
     def update_win_self ( self ):
         self.update()
 
-    def register_project_open ( self, function ):
-        self.project_open = function
-
-    def register_project_save ( self, function ):
-        self.project_save = function
-
-    def register_gen_scales ( self, function ):
-        self.generate_scales = function
-
 
     def build_menu_from_list (self, parent, menu_list):
         # Get the group names first
@@ -1314,43 +1040,40 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def open_project(self, checked):
-        if self.project_open == None:
-            print_debug ( 1, "\n\nOpening Projects is unsupported\n\n" )
-        else:
-            print_debug ( 1, "\n\nOpening Project\n\n" )
+        print_debug ( 1, "\n\nOpening Project\n\n" )
 
-            options = QFileDialog.Options()
-            file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
-                                                              caption="Open Project",
-                                                              filter="Projects (*.json);;All Files (*)",
-                                                              selectedFilter="",
-                                                              options=options)
-            print_debug ( 60, "open_project ( " + str(file_name) + ")" )
+        options = QFileDialog.Options()
+        file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
+                                                          caption="Open Project",
+                                                          filter="Projects (*.json);;All Files (*)",
+                                                          selectedFilter="",
+                                                          options=options)
+        print_debug ( 60, "open_project ( " + str(file_name) + ")" )
 
-            if file_name != None:
-                if len(file_name) > 0:
+        if file_name != None:
+            if len(file_name) > 0:
 
-                    if work_from_dict:
+                if work_from_dict:
 
-                        f = open ( file_name, 'r' )
-                        text = f.read()
-                        f.close()
+                    f = open ( file_name, 'r' )
+                    text = f.read()
+                    f.close()
 
-                        # Read the JSON file from the text
-                        global project_data
-                        project_data = json.loads ( text )
+                    # Read the JSON file from the text
+                    global project_data
+                    project_data = json.loads ( text )
 
-                        self.image_panel.update_multi_self()
+                    self.image_panel.update_multi_self()
 
-                    else:
+                else:
 
-                        self.current_project_file_name = file_name
+                    self.current_project_file_name = file_name
 
-                        # Attempt to hide the file dialog before opening ...
-                        for p in self.panel_list:
-                            p.update_zpa_self()
-                        # self.update_win_self()
-                        self.project_open ( file_name )
+                    # Attempt to hide the file dialog before opening ...
+                    for p in self.panel_list:
+                        p.update_zpa_self()
+                    # self.update_win_self()
+                    self.project_open ( file_name )
 
 
     def save_project_to_current_file(self):
@@ -1374,28 +1097,25 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def save_project_as(self, checked):
-        if self.project_save == None:
-            print_debug ( 1, "\n\nSaving Projects is unsupported (project_save not registered)\n\n" )
-        else:
-            print_debug ( 1, "\n\nSaving Project\n\n" )
+        print_debug ( 1, "\n\nSaving Project\n\n" )
 
-            options = QFileDialog.Options()
-            file_name, filter = QFileDialog.getSaveFileName ( parent=None,  # None was self
-                                                              caption="Save Project",
-                                                              filter="Projects (*.json);;All Files (*)",
-                                                              selectedFilter="",
-                                                              options=options)
-            print_debug ( 60, "save_project_dialog ( " + str(file_name) + ")" )
+        options = QFileDialog.Options()
+        file_name, filter = QFileDialog.getSaveFileName ( parent=None,  # None was self
+                                                          caption="Save Project",
+                                                          filter="Projects (*.json);;All Files (*)",
+                                                          selectedFilter="",
+                                                          options=options)
+        print_debug ( 60, "save_project_dialog ( " + str(file_name) + ")" )
 
-            if file_name != None:
-                if len(file_name) > 0:
-                    self.current_project_file_name = file_name
+        if file_name != None:
+            if len(file_name) > 0:
+                self.current_project_file_name = file_name
 
-                    # Attempt to hide the file dialog before opening ...
-                    for p in self.panel_list:
-                        p.update_zpa_self()
-                    # self.update_win_self()
-                    self.save_project_to_current_file()
+                # Attempt to hide the file dialog before opening ...
+                for p in self.panel_list:
+                    p.update_zpa_self()
+                # self.update_win_self()
+                self.save_project_to_current_file()
 
 
     @Slot()
@@ -1432,11 +1152,6 @@ class MainWindow(QMainWindow):
     def add_image_to_role ( self, image_file_name, role_name ):
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
 
-        global scale_list
-        global scale_index
-        global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
-
         print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
         if image_file_name != None:
           if len(image_file_name) > 0:
@@ -1461,71 +1176,30 @@ class MainWindow(QMainWindow):
               image_dict[role_name] = copy.deepcopy(new_image_template)
               image_dict[role_name]['filename'] = image_file_name
 
-            else:
-
-              for alignment_layer in alignment_layer_list:
-                role_taken = False
-                for image in alignment_layer.image_list:
-                  print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
-                  #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                  if image.role == str(role_name):
-                    role_taken = True
-                    break
-                print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
-                if not role_taken:
-                  # Add the image here at this layer
-                  found_layer = alignment_layer
-                  break
-                this_layer_index += 1
-              if found_layer != None:
-                # Add the image/role to the found layer
-                print_debug ( 40, "Adding \"" + str(image_file_name) + "\" to layer " + str(this_layer_index) )
-                found_layer.image_list.append ( AnnotatedImage ( str(role_name), image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
-              else:
-                # Add a new layer for the image
-                print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
-                alignment_layer_list.append ( DisplayLayer ( role_name, image_file_name, load_now=(abs(this_layer_index-alignment_layer_index)<preloading_range) ) )
-
 
     def add_empty_to_role ( self, role_name ):
-        global scale_list
-        global scale_index
-        global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
 
-        # Find next layer with an empty role matching the requested role_name
-        print_debug ( 60, "Trying to place file <empty> in role " + str(role_name) )
-        found_layer = None
-        this_layer_index = 0
-        for alignment_layer in alignment_layer_list:
-          role_taken = False
-          for image in alignment_layer.image_list:
-            print_debug ( 80, "Checking image role of " + image.role + " against role_name of " + str(role_name) )
-            if image.role == str(role_name):
-              role_taken = True
-              break
-          print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
-          if not role_taken:
-            # Add the image here at this layer
-            found_layer = alignment_layer
-            break
-          this_layer_index += 1
-        if found_layer != None:
-          # Add the image/role to the found layer
-          print_debug ( 40, "Adding <empty> to layer " + str(this_layer_index) )
-          found_layer.image_list.append ( AnnotatedImage ( str(role_name), None, load_now=0 ) )
-        else:
-          # Add a new layer for the image
-          print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
-          alignment_layer_list.append ( DisplayLayer ( role_name, None, load_now=0 ) )
+        if work_from_dict:
+
+          used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+          print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+          layer_index_for_new_role = -1
+          if False in used_for_this_role:
+            # This means that there is an unused slot for this role. Find the first:
+            layer_index_for_new_role = used_for_this_role.index(False)
+            print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
+          else:
+            # This means that there are no unused slots for this role. Add a new layer
+            print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
+            project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+            layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+          image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+          image_dict[role_name] = copy.deepcopy(new_image_template)
+          image_dict[role_name]['filename'] = None
 
 
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
-        global scale_list
-        global scale_index
-        global alignment_layer_index
         global preloading_range
-        alignment_layer_list = scale_list[scale_index]
 
         print_debug ( 60, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
 
@@ -1534,9 +1208,9 @@ class MainWindow(QMainWindow):
           print_debug ( 30, "   " + str(f) )
         print_debug ( 10, "Importing images for role: " + str(role_to_import) )
 
-        if clear_role:
-          for alignment_layer in alignment_layer_list:
-            alignment_layer.image_list = [ i for i in alignment_layer.image_list if i.role != role_to_import ]
+        #if clear_role:
+        #  for alignment_layer in alignment_layer_list:
+        #    alignment_layer.image_list = [ i for i in alignment_layer.image_list if i.role != role_to_import ]
 
         if file_name_list != None:
           if len(file_name_list) > 0:
@@ -1555,9 +1229,6 @@ class MainWindow(QMainWindow):
               p.update_zpa_self()
 
         self.update_win_self()
-
-        #if len(alignment_layer_list) > 0:
-        #    self.status.showMessage("File: " + alignment_layer_list[alignment_layer_index].image_file_name)
 
 
     def update_panels(self):
@@ -1664,17 +1335,16 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def define_roles_callback(self, checked):
-        global global_panel_roles
         default_roles = ['ref','src','aligned']
-        if len(global_panel_roles) > 0:
-          default_roles = global_panel_roles
+        if len(project_data['data']['panel_roles']) > 0:
+          default_roles = project_data['data']['panel_roles']
         input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(' '.join(default_roles)), echo=QLineEdit.Normal, text=' '.join(default_roles) )
         if ok:
           input_val = input_val.strip()
-          roles_list = global_panel_roles
+          roles_list = project_data['data']['panel_roles']
           if len(input_val) > 0:
             roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          if not (roles_list == global_panel_roles):
+          if not (roles_list == project_data['data']['panel_roles']):
             self.define_roles (roles_list)
         else:
           print_debug ( 30, "Cancel: Roles not changed" )
@@ -1688,10 +1358,6 @@ class MainWindow(QMainWindow):
     @Slot()
     def empty_into_role(self, checked):
         #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
-        global scale_list
-        global scale_index
-        global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
 
         role_to_import = str ( self.sender().text() )
 
@@ -1714,34 +1380,6 @@ class MainWindow(QMainWindow):
             image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
             image_dict[role_to_import] = copy.deepcopy(new_image_template)
             # image_dict[role_to_import]['filename'] = image_file_name
-
-        else:
-
-            # Find next layer with an empty role matching the requested role_to_import
-            print_debug ( 60, "Trying to place file <empty> in role " + str(role_to_import) )
-            found_layer = None
-            this_layer_index = 0
-            for alignment_layer in alignment_layer_list:
-              role_taken = False
-              for image in alignment_layer.image_list:
-                print_debug ( 80, "Checking image role of " + image.role + " against role_to_import of " + str(role_to_import) )
-                if image.role == str(role_to_import):
-                  role_taken = True
-                  break
-              print_debug ( 60, "Searched layer and role_taken = " + str(role_taken) )
-              if not role_taken:
-                # Add the image here at this layer
-                found_layer = alignment_layer
-                break
-              this_layer_index += 1
-            if found_layer:
-              # Add the image/role to the found layer
-              print_debug ( 40, "Adding <empty> to layer " + str(this_layer_index) )
-              found_layer.image_list.append ( AnnotatedImage ( str(role_to_import), None, load_now=0 ) )
-            else:
-              # Add a new layer for the image
-              print_debug ( 30, "Creating a new layer at " + str(this_layer_index) )
-              alignment_layer_list.append ( DisplayLayer ( role_to_import, None, load_now=0 ) )
 
         # Draw the panels ("windows")
         for p in self.panel_list:
@@ -1804,34 +1442,31 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def generate_scales_callback(self, checked):
-        if self.generate_scales != None:
-            print ( "Generate the scales now" )
-            self.generate_scales()
+        print ( "Generate the scales now" )
+        print ( "Not done yet" )
 
 
     @Slot()
     def remove_this_layer(self, checked):
-        global scale_list
-        global scale_index
-        global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
-        alignment_layer_list = alignment_layer_list[0:alignment_layer_index] + alignment_layer_list[alignment_layer_index+1:]
-        if alignment_layer_index > 0:
-          alignment_layer_index += -1
+        global current_scale
+
+        if work_from_dict:
+          local_current_layer = project_data['data']['current_layer']
+          project_data['data']['scales'][current_scale]['alignment_stack'].pop(local_current_layer)
+          if local_current_layer >= len(project_data['data']['scales'][current_scale]['alignment_stack']):
+            local_current_layer = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+          project_data['data']['current_layer'] = local_current_layer
+
         for p in self.panel_list:
             p.update_zpa_self()
         self.update_win_self()
 
     @Slot()
     def remove_all_layers(self, checked):
-        global scale_list
-        global scale_index
-        global alignment_layer_index
-        alignment_layer_list = scale_list[scale_index]
-
-        alignment_layer_index = 0
-        while len(alignment_layer_list) > 0:
-          self.remove_this_layer(checked)
+        global project_data
+        project_data['data']['current_layer'] = 0
+        while len ( project_data['data']['scales'][current_scale]['alignment_stack'] ) > 0:
+          project_data['data']['scales'][current_scale]['alignment_stack'].pop(0)
         self.update_win_self()
 
     @Slot()
@@ -1860,7 +1495,6 @@ class MainWindow(QMainWindow):
         self.image_panel.bg_color = c
         self.image_panel.update_multi_self()
         self.image_panel.repaint()
-        alignment_layer_list = scale_list[scale_index]
 
         for p in self.panel_list:
             p.update_zpa_self()
@@ -1884,19 +1518,33 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_preloading_range(self, checked):
-        global scale_list
-        global scale_index
-        global alignment_layer_index
         global preloading_range
-        alignment_layer_list = scale_list[scale_index]
 
         input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
         if ok:
           preloading_range = input_val
-          # Unload images to bring total down to preloading value
-          for i in range(len(alignment_layer_list)):
-            if abs(i-alignment_layer_index) >= preloading_range:
-              alignment_layer_list[i].unload()
+
+          if project_data != None:
+
+            local_scales = project_data['data']['scales']
+            local_current_scale = project_data['data']['current_scale']
+            if local_current_scale in local_scales:
+                local_scale = local_scales[local_current_scale]
+                if 'alignment_stack' in local_scale:
+                    local_stack = local_scale['alignment_stack']
+                    if len(local_stack) > 0:
+                        local_current_layer = project_data['data']['current_layer']
+
+                        # Define the images needed
+                        needed_images = set()
+                        for i in range(len(local_stack)):
+                          if abs(i-local_current_layer) < preloading_range:
+                            for role,local_image in local_stack[i]['images'].items():
+                              if len(local_image['filename']) > 0:
+                                needed_images.add ( local_image['filename'] )
+                        # Ask the library to keep only those images
+                        image_library.make_available ( needed_images )
+
 
     @Slot()
     def exit_app(self, checked):
@@ -1908,278 +1556,6 @@ class MainWindow(QMainWindow):
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-def run_app(main_win=None):
-    global app
-    global main_window
-
-    if main_win == None:
-        main_window = MainWindow()
-    else:
-        main_window = main_win
-
-    # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
-
-    main_window.show()
-    sys.exit(app.exec_())
-
-
-
-test_option = None
-
-
-def resize_images():
-
-    print_debug ( 0, "Resizing Images with Test Option 1 ..." )
-
-    adjusted_stack = []
-
-    for layer in alignment_layer_list:
-
-        baselist = [ im for im in layer.image_list if im.role == 'Original' ]
-        if len(baselist) > 0:
-            basename = baselist[0].image_file_name
-            basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-
-            if basedata != None:
-
-                scale_value = float(control_model[0][1][0].get_value())
-                scaled_image = cv2.resize ( basedata, tuple([ int(x*scale_value) for x in basedata.shape ]), interpolation=cv2.INTER_AREA )
-
-                # Write the adjusted data using to the proper directory
-                path_parts = os.path.split(basename)
-                if not os.path.exists ( os.path.join ( path_parts[0], 'adjusted' ) ):
-                    # Create the scaled base subdirectory
-                    os.mkdir ( os.path.join ( path_parts[0], 'adjusted' ) )
-                adjusted_name = os.path.join ( path_parts[0], 'adjusted', path_parts[1] )
-
-                print ( "Saving file: " + str(adjusted_name) )
-                cv2.imwrite(adjusted_name, scaled_image)
-
-                # Put the new image in the list to go into the aligned role
-                adjusted_stack.append ( adjusted_name )
-
-    # Remove the old images from the library
-    for name in adjusted_stack:
-        image_library.remove_image_reference ( name )
-
-    # Load the updated images into the stack
-    main_window.load_images_in_role ( 'Adjusted', adjusted_stack )
-
-
-def adjust_brightness():
-
-    print_debug ( 0, "Adjusting brightness with Test Option 2 ..." )
-
-    adjusted_stack = []
-
-    for layer in alignment_layer_list:
-
-        baselist = [ im for im in layer.image_list if im.role == 'Original' ]
-        if len(baselist) > 0:
-            basename = baselist[0].image_file_name
-            basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-
-            if basedata != None:
-
-                scale_value = float(control_model[0][1][0].get_value())
-                offset_value = float(control_model[0][1][2].get_value())
-
-                f = numpy.array ( basedata, dtype=float )
-
-                f = (scale_value * f) + offset_value
-
-                # Write the adjusted data using to the proper directory
-                path_parts = os.path.split(basename)
-                if not os.path.exists ( os.path.join ( path_parts[0], 'adjusted' ) ):
-                    # Create the scaled base subdirectory
-                    os.mkdir ( os.path.join ( path_parts[0], 'adjusted' ) )
-                adjusted_name = os.path.join ( path_parts[0], 'adjusted', path_parts[1] )
-
-                print ( "Saving file: " + str(adjusted_name) )
-                cv2.imwrite ( adjusted_name, numpy.array(f, dtype='uint8') )
-
-                # Put the new image in the list to go into the aligned role
-                adjusted_stack.append ( adjusted_name )
-
-    # Remove the old images from the library
-    for name in adjusted_stack:
-        image_library.remove_image_reference ( name )
-
-    # Load the updated images into the stack
-    main_window.load_images_in_role ( 'Adjusted', adjusted_stack )
-
-
-def align_all_2():
-
-    print_debug ( 0, "Aligning All with AlignEM..." )
-    print_debug ( 70, "Control Model = " + str(control_model) )
-
-    scaled_base_stack = []
-    scaled_ref_stack = []
-    scaled_corr_stack = []
-    aln_image_stack = []
-
-    for layer in alignment_layer_list:
-        basename = None
-        baseimage = None
-        basedata = None
-
-        refname = None
-        refimage = None
-        refdata = None
-
-        baselist = [ im for im in layer.image_list if im.role == 'base' ]
-        if len(baselist) > 0:
-            basename = baselist[0].image_file_name
-            baseimage = baselist[0].pixmap # Not used yet
-            basedata = cv2.imread(basename, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-
-        reflist = [ im for im in layer.image_list if im.role == 'ref' ]
-        if len(reflist) > 0:
-            refname = reflist[0].image_file_name
-            refimage = reflist[0].pixmap # Not used yet
-            refdata = cv2.imread(refname, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-
-        sbasedata = None
-        srefdata = None
-
-        if basedata != None:
-            # There is an image to be aligned
-
-            sbasedata = cv2.resize ( basedata, tuple([ x/int(scale_down_factor.get_value()) for x in basedata.shape ]), interpolation=cv2.INTER_AREA )
-
-            if refdata == None:
-                # Put an empty image on the stack
-                scaled_ref_stack.append ( None )
-                scaled_corr_stack.append ( None )
-            else:
-                # There is a reference, so align the base to the ref
-                print ( "Aligning " + basename )
-                print ( "    with " + refname )
-
-                # Resize to show that it's actually working. Eventually use cv2.matchTemplate ?
-
-
-                srefdata = cv2.resize ( refdata, tuple([ x/int(scale_down_factor.get_value()) for x in refdata.shape ]), interpolation=cv2.INTER_AREA )
-
-                # Write out the aligned data using to the proper directory
-                path_parts = os.path.split(refname)
-                if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_ref' ) ):
-                    # Create the scaled base subdirectory
-                    os.mkdir ( os.path.join ( path_parts[0], 'scaled_ref' ) )
-                aligned_name = os.path.join ( path_parts[0], 'scaled_ref', path_parts[1] )
-
-                print ( "Saving file: " + str(aligned_name) )
-                cv2.imwrite(aligned_name, srefdata)
-
-                # Put the new image in the list to go into the aligned role
-                scaled_ref_stack.append ( aligned_name )
-
-                #scorrdata = scipy.ndimage.correlate(srefdata, sbasedata)
-                #scorrdata = scipy.ndimage.convolve(srefdata, sbasedata)
-                # scorrdata = 255 + (sbasedata - srefdata)
-
-                D = search_radius.get_value()
-                results = []
-                rows,cols = sbasedata.shape
-
-                for drow in range(-D,D+1):
-                    ref_start_row = 0
-                    ref_end_row = rows
-                    src_start_row = 0
-                    src_end_row = rows
-                    if drow > 0:
-                        ref_start_row = drow
-                        src_end_row = rows-drow
-                    if drow < 0:
-                        ref_end_row = rows+drow
-                        src_start_row = -drow
-
-                    row_res = []
-
-                    for dcol in range(-D,D+1):
-                        ref_start_col = 0
-                        ref_end_col = cols
-                        src_start_col = 0
-                        src_end_col = cols
-                        if dcol > 0:
-                            ref_start_col = dcol
-                            src_end_col = cols-dcol
-                        if dcol < 0:
-                            ref_end_col = cols+dcol
-                            src_start_col = -dcol
-                        subref = srefdata [ref_start_row:ref_end_row, ref_start_col:ref_end_col]
-                        subsrc = sbasedata[src_start_row:src_end_row, src_start_col:src_end_col]
-
-                        scorrdata = abs(((1.0*subref) - subsrc)/2) + 128
-
-                        row_res.append ( int ( 1000 * scorrdata.min() / ( (ref_end_row-ref_start_row) * (ref_end_col-ref_start_col) ) ) )
-
-                        #print ( "drow = " + str(drow) + "   dcol = " + str(dcol) )
-                        #print ( "  Ref rows: " + str(ref_start_row) + " to " + str(ref_end_row) + "     Ref cols: " + str(ref_start_col) + " to " + str(ref_end_col) )
-                        #print ( "  Src rows: " + str(src_start_row) + " to " + str(src_end_row) + "     Src cols: " + str(src_start_col) + " to " + str(src_end_col) )
-
-                    results.append ( row_res )
-
-                print ( 100*'*' )
-                for r in results:
-                  print ( "  " + str(r) )
-                print ( 100*'*' )
-
-                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-                # Write out the aligned data using to the proper directory
-                path_parts = os.path.split(refname)
-                if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_corr' ) ):
-                    # Create the scaled base subdirectory
-                    os.mkdir ( os.path.join ( path_parts[0], 'scaled_corr' ) )
-                aligned_name = os.path.join ( path_parts[0], 'scaled_corr', path_parts[1] )
-
-                print ( "Saving file: " + str(aligned_name) )
-                cv2.imwrite(aligned_name, scorrdata)
-
-                # Put the new image in the list to go into the aligned role
-                scaled_corr_stack.append ( aligned_name )
-
-
-            # Write out the aligned data using to the proper directory
-            path_parts = os.path.split(basename)
-            if not os.path.exists ( os.path.join ( path_parts[0], 'scaled_base' ) ):
-                # Create the scaled base subdirectory
-                os.mkdir ( os.path.join ( path_parts[0], 'scaled_base' ) )
-            aligned_name = os.path.join ( path_parts[0], 'scaled_base', path_parts[1] )
-
-            print ( "Saving file: " + str(aligned_name) )
-            cv2.imwrite(aligned_name, sbasedata)
-
-
-            # Put the new image in the list to go into the aligned role
-            scaled_base_stack.append ( aligned_name )
-
-    # Purge the old images from the library
-    for name in aln_image_stack:
-        image_library.remove_image_reference ( name )
-    for name in scaled_base_stack:
-        image_library.remove_image_reference ( name )
-    for name in scaled_ref_stack:
-        image_library.remove_image_reference ( name )
-    for name in scaled_corr_stack:
-        image_library.remove_image_reference ( name )
-
-    # Load the updated images into the stack
-    main_window.load_images_in_role ( 'sref', scaled_ref_stack )
-    main_window.load_images_in_role ( 'sbase', scaled_base_stack )
-    main_window.load_images_in_role ( 'scorr', scaled_corr_stack )
-
-
-def local_debug():
-  print ( "In alignem" )
-  __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-
-scale_down_factor = IntField ( "Scale Down Factor:", 16, all_layers=1 )
-search_radius = IntField ( "Search Radius (in pixels):", 20, all_layers=1 )
-
 control_model = None
 
 # This provides default command line parameters if none are given (as with "Idle")
@@ -2190,115 +1566,25 @@ if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
-    options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST (currently 1 or 2)")
+    # options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST")
     args = options.parse_args()
     try:
         debug_level = int(args.debug)
     except:
         pass
-    try:
-        test_option = int(args.test)
-    except:
-        pass
 
-    if test_option is None:
+    control_model = [
+      # Panes
+      [ # Begin first pane
+        [ "Program: " + __file__ ],
+        [ "No Control Panel Data Defined." ]
+      ] # End first pane
+    ]
 
-        control_model = [
-          # Panes
-          [ # Begin first pane
-            [ "Program: " + __file__ ],
-            [ "No Control Panel Data Defined." ]
-          ] # End first pane
-        ]
+    main_window = MainWindow ( control_model=control_model )
+    main_window.resize(2400,1000)
 
-        main_window = MainWindow ( control_model=control_model )
-        main_window.resize(2400,1000)
-
-        main_window.define_roles ( ['ref','base','aligned'] )
-
-
-    elif test_option in [1, 2]:
-
-        # All of these test options share the same original image files
-
-        ref_image_stack = [ None,
-                            "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
-
-        src_image_stack = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
-                            "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
-
-        if test_option == 1:
-
-            control_model = [
-              # Panes
-              [ # Begin first pane
-                [ "Program \"" + __file__ + "\":   Scaling" ],
-                [ FloatField("Scale Image Size by: ", 1.0, all_layers=1), "  ", CallbackButton('Apply', resize_images) ]
-              ] # End first pane
-            ]
-
-            main_window = MainWindow ( control_model=control_model )
-            main_window.resize(2400,1000)
-
-            main_window.define_roles ( ['Original','Adjusted'] )
-
-            main_window.load_images_in_role ( 'Original', src_image_stack )
-
-        if test_option == 2:
-
-            control_model = [
-              # Panes
-              [ # Begin first pane
-                [ "Program \"" + __file__ + "\":   Brightness" ],
-                [ FloatField("Scale Brightness: ", 1.0, all_layers=1), 10*" ", FloatField("Offset Brightness: ", 0.0, all_layers=1), "  ", CallbackButton('Apply', adjust_brightness) ]
-              ] # End first pane
-            ]
-
-            main_window = MainWindow ( control_model=control_model )
-            main_window.resize(2400,1000)
-
-            main_window.define_roles ( ['Original','Adjusted'] )
-
-            main_window.load_images_in_role ( 'Original', src_image_stack )
-
-        elif test_option == 3:
-
-            control_model = [
-              # Panes
-              [ # Begin first pane
-                [ "Program:", 6*" ", __file__ ],
-                [ scale_down_factor, 6*" " ], #, FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
-                [ search_radius, 6*" " ], #, FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
-                [ TextField("String:","Default text"), 20*" ", CallbackButton('Align All', align_all_2), CallbackButton('Debug', local_debug) ]
-              ] # End first pane
-            ]
-
-            main_window = MainWindow ( control_model=control_model )
-            main_window.resize(2400,1000)
-
-            main_window.define_roles ( ['ref','base','align'] )
-
-            main_window.define_roles ( ['ref','base','sref', 'sbase', 'scorr'] )
-
-            main_window.load_images_in_role ( 'ref', ref_image_stack )
-            main_window.load_images_in_role ( 'base', src_image_stack )
-
-
-    else:
-
-      print ( "Undefined test option: " + str(test_option) + ", try --help option." )
-      exit(99)
-
+    main_window.define_roles ( ['ref','base','aligned'] )
 
     main_window.show()
     sys.exit(app.exec_())
