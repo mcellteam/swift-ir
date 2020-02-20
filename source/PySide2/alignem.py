@@ -1560,6 +1560,22 @@ class MainWindow(QMainWindow):
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+
+def run_app(main_win=None):
+    global app
+    global main_window
+
+    if main_win == None:
+        main_window = MainWindow()
+    else:
+        main_window = main_win
+
+    # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
+
+    main_window.show()
+    sys.exit(app.exec_())
+
+
 control_model = None
 
 # This provides default command line parameters if none are given (as with "Idle")
