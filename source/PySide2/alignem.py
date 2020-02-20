@@ -1197,9 +1197,10 @@ class MainWindow(QMainWindow):
           print_debug ( 30, "   " + str(f) )
         print_debug ( 10, "Importing images for role: " + str(role_to_import) )
 
-        #if clear_role:
-        #  for alignment_layer in alignment_layer_list:
-        #    alignment_layer.image_list = [ i for i in alignment_layer.image_list if i.role != role_to_import ]
+        if clear_role:
+          for layer in project_data['data']['scales'][current_scale]['alignment_stack']:
+            if role_to_import in layer['images'].keys():
+              layer['images'].pop(role_to_import)
 
         if file_name_list != None:
           if len(file_name_list) > 0:
