@@ -202,8 +202,12 @@ def generate_scales ():
 
         alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
 
-        subdir = 'scale_' + str(scale)
-        subdir_path = os.path.join(alignem.project_data['data']['destination_path'],subdir)
+        scale_str = str(scale)
+        if not 'scale_' in scale_str:
+          scale_str = 'scale_' + scale_str
+
+        subdir_path = os.path.join(alignem.project_data['data']['destination_path'],scale_str)
+
         alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
         try:
           os.mkdir ( subdir_path )
@@ -227,10 +231,10 @@ def generate_scales ():
 
         alignem.print_debug ( 1, "WARNING: Only Scale 1 is supported in alignem_swift at this time!" )
 
-        for layer in alignem.project_data['data']['scales']['scale_1']['alignment_stack']:
+        for layer in alignem.project_data['data']['scales'][scale_str]['alignment_stack']:
           # Remove previously aligned images from panel
 
-          # Copy (or link) the source images to the expected "scale_1/img_src" directory
+          # Copy (or link) the source images to the expected scale_str"/img_src" directory
           base_file_name = layer['images']['base']['filename']
           if base_file_name != None:
             if len(base_file_name) > 0:
@@ -238,7 +242,7 @@ def generate_scales ():
               bare_file_name = os.path.split(abs_file_name)[1]
               destination_path = os.path.abspath ( alignem.project_data['data']['destination_path'] )
               try:
-                os.symlink ( abs_file_name, os.path.join(destination_path, 'scale_1', 'img_src', bare_file_name) )
+                os.symlink ( abs_file_name, os.path.join(destination_path, scale_str, 'img_src', bare_file_name) )
               except:
                 pass
 
