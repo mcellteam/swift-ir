@@ -319,8 +319,8 @@ def align_all():
 
       # Create links or copy files in the expected directory structure
       # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
-      s1 = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
-      for layer in s1:
+      stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
+      for layer in stack_at_this_scale:
         image_name = None
         if 'base' in layer['images'].keys():
           image = layer['images']['base']
@@ -343,8 +343,8 @@ def align_all():
       #### dm = build_current_data_model ( destination_path=alignem.project_data['data']['destination_path'], project_file_name=None )
       dm = copy.deepcopy ( alignem.project_data )
       # Add fields needed for SWiFT:
-      s1 = dm['data']['scales'][scale_to_run_text]['alignment_stack']
-      for layer in s1:
+      stack_at_this_scale = dm['data']['scales'][scale_to_run_text]['alignment_stack']
+      for layer in stack_at_this_scale:
         layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
@@ -366,8 +366,9 @@ def align_all():
       aln_image_stack = []
 
       # Load the alignment stack after the alignment
-      s1 = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
-      for layer in s1:
+      stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
+      for layer in stack_at_this_scale:
+
         image_name = None
         if 'base' in layer['images'].keys():
           image_name = layer['images']['base']['filename']
@@ -375,13 +376,22 @@ def align_all():
         # Convert from the base name to the standard aligned name:
         aligned_name = None
         if image_name != None:
-          name_parts = os.path.split(image_name)
-          if len(name_parts) == 2:
-            aligned_name = os.path.join ( name_parts[0], os.path.join(target_dir, name_parts[1]) )
+          if not image_name.startswith(os.path.sep):
+            # This is relative to the destination, so make it absolute?
+            aligned_name = os.path.join ( os.path.join ( os.path.join(alignem.project_data['data']['destination_path'], scale_to_run_text), 'img_aligned'), image_name )
+          else:
+            #
+            name_parts = os.path.split(image_name)
+            if len(name_parts) >= 2:
+              aligned_name = os.path.join ( os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]) )
         aln_image_stack.append ( aligned_name )
+        alignem.print_debug ( 30, "Adding aligned image " + aligned_name )
+        layer['images']['aligned'] = {}
+        layer['images']['aligned']['filename'] = aligned_name
       try:
         main_win.load_images_in_role ( 'aligned', aln_image_stack )
       except:
+        alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
         pass
 
 
