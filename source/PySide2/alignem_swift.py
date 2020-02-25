@@ -20,172 +20,6 @@ main_win = None
 
 project_data = None
 
-'''
-def build_current_data_model ( destination_path=None, project_file_name=None ):
-
-    reference_path = ""
-    if destination_path != None:
-      reference_path = destination_path
-    if project_file_name != None:
-      reference_path = os.path.split(os.path.abspath(project_file_name))[0]
-
-    alignment_layer_list = alignem.scale_dict[alignem.current_scale]
-    alignment_layer_index = alignem.alignment_layer_index
-
-    control_panel_data = main_win.control_panel.copy_self_to_data()
-
-    j = {}
-    j['version'] = 0.2
-    j['method'] = "SWiFT-IR"
-    j['user_settings'] = { "max_image_file_size": 100000000 }
-    j['data'] = {}
-    jd = j['data']
-    jd['panel_roles'] = alignem.global_panel_roles
-    jd['source_path'] = ""
-    jd['destination_path'] = alignem.project_data['data']['destination_path']
-    jd['pairwise_alignment'] = True
-    jd['defaults'] = {}
-    jdd = jd['defaults']
-    jdd['align_to_next_pars'] = {}
-    jdda = jdd['align_to_next_pars']
-    jdda['window_size'] = 1024
-    jdda['addx'] = 800
-    jdda['addy'] = 800
-    jdda['bias_x_per_image'] = 0.0
-    jdda['bias_y_per_image'] = 0.0
-    jdda['output_level'] = 0
-    jd['current_scale'] = alignem.current_scale
-    jd['current_layer'] = alignem.alignment_layer_index
-
-    print ( "\n\n\n" + (100*"%") )
-    print ( "alignem.current_scale = " + str(alignem.current_scale) )
-    print ( "alignem.alignment_layer_index = " + str(alignem.alignment_layer_index) )
-    print ( "\n\n\n" + (100*"%") )
-
-
-    jd['scales'] = {}
-    jds = jd['scales']
-    print ( "Saving scales for: " + str(alignem.image_scales_to_run) )
-    for scale in [ str(s) for s in alignem.image_scales_to_run ]:
-      align_layer_list_for_scale = alignem.scale_list[alignem.scale_index] # This should be indexed by scale but there's only one at this time
-      jds[str(scale)] = {}
-      jdsn = jds[str(scale)]
-      if align_layer_list_for_scale != None:
-        if len(align_layer_list_for_scale) > 0:
-          jdsn['alignment_stack'] = []
-          for a in align_layer_list_for_scale:
-            jdsns = {}
-            jdsns['skip'] = control_panel_data[0][0][3][0]
-            jdsns['images'] = {}
-            for im in a.image_list:
-              jdsns['images'][im.role] = {}
-              jdsnsr = jdsns['images'][im.role]
-              rel_file_name = ""
-              if type(im.image_file_name) != type(None):
-                rel_file_name = os.path.relpath(im.image_file_name,start=reference_path)
-              jdsnsr['filename'] = rel_file_name
-              jdsnsr['metadata'] = {}
-              jdsnsrm = jdsnsr['metadata']
-              jdsnsrm['match_points'] = []
-              jdsnsrm['annotations'] = []
-            jdsns['align_to_ref_method'] = {}
-            jdsnsa = jdsns['align_to_ref_method']
-            jdsnsa['selected_method'] = "Auto Swim Align"
-            jdsnsa['method_options'] = ["Auto Swim Align", "Match Point Align"]
-            jdsnsa['method_data'] = {}
-            jdsnsam = jdsnsa['method_data']
-            jdsnsam['alignment_options'] = ["Init Affine", "Refine Affine", "Apply Affine"]
-            jdsnsam['alignment_option'] = "Init Affine"
-            jdsnsam['window_size'] = 256
-            jdsnsam['addx'] = 256
-            jdsnsam['addy'] = 256
-            jdsnsam['bias_x_per_image'] = 0.0
-            jdsnsam['bias_y_per_image'] = 0.0
-            jdsnsam['bias_scale_x_per_image'] = 0.0
-            jdsnsam['bias_scale_y_per_image'] = 0.0
-            jdsnsam['bias_skew_x_per_image'] = 0.0
-            jdsnsam['bias_rot_per_image'] = 0.0
-            jdsnsam['output_level'] = 0
-            jdsnsa['method_results'] = {
-              'affine_matrix': [ [1.0, 0.0, 0.0], [0.0, 1.0, 0.0] ],
-              'cumulative_afm': [ [1.0, 0.0, 0.0], [0.0, 1.0, 0.0] ],
-              'snr': 12.345
-            }
-            jdsn['alignment_stack'].append ( jdsns )
-
-    return ( j )
-
-
-def open_json_project ( project_file_name ):
-    global project_data
-    print ( "SWiFT opening project " + str(project_file_name) )
-
-    f = open ( project_file_name, 'r' )
-    text = f.read()
-    f.close()
-
-    main_win.remove_all_layers(None)
-    main_win.remove_all_panels(None)
-
-    # Read the JSON file from the text
-    project_data = json.loads ( text )
-
-    all_roles = None
-    if 'panel_roles' in project_data['data'].keys():
-        all_roles = project_data['data']['panel_roles']
-        print ( "Using panel roles from JSON: " + str(all_roles) )
-    else:
-        # Find all of the image roles in the file
-        set_of_roles = set()
-        empty_roles = None
-        for scale_key in sorted(project_data['data']['scales'].keys()):
-            print ( "Finding roles in scale " + str(scale_key) )
-            for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
-                # Add images to this layer by role
-                for role_key in layer['images'].keys():
-                    set_of_roles.add ( role_key )
-        all_roles = [ k for k in set_of_roles ]
-
-    # Define all of the roles found as panels
-    main_win.define_roles ( all_roles )
-
-    # Add the images to the scales
-    alignem.image_scales_to_run = sorted(project_data['data']['scales'].keys())
-    main_win.define_scales ( alignem.image_scales_to_run )
-
-    alignem.project_data['data']['destination_path'] = project_data['data']['destination_path']
-
-    for scale_key in alignem.image_scales_to_run:
-        print ( "Importing images for scale " + str(scale_key) )
-        for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
-            print ( "  Importing images for a layer" )
-            added_roles = set()
-            for role_key in layer['images'].keys():
-                if len(layer['images'][role_key]['filename']) > 0:
-                    added_roles.add ( role_key )
-                    print ( "      Adding image " + str(layer['images'][role_key]['filename']) + " to role " + role_key )
-                    main_win.add_image_to_role ( layer['images'][role_key]['filename'], role_key )
-            # Any roles that didn't have images at this layer need to be given an "empty" in this layer
-            empty_roles = set(all_roles) - added_roles
-            print ( "    Empty Roles for layer: " + str(empty_roles) )
-            for empty_role in empty_roles:
-                print ( "      Adding empty to role " + empty_role )
-                main_win.add_empty_to_role ( empty_role )
-
-
-def save_json_project ( project_file_name ):
-    global project_data
-    print ( "SWiFT saving project to " + str(project_file_name) )
-    if project_file_name != None:
-        if len(project_file_name) > 0:
-            # Write out the project
-            f = open ( project_file_name, 'w' )
-            jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
-            proj_json = jde.encode ( build_current_data_model ( destination_path=alignem.project_data['data']['destination_path'], project_file_name=project_file_name ) )
-            f.write ( proj_json )
-            f.close()
-'''
-
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
 
@@ -230,8 +64,6 @@ def generate_scales ():
           # This catches directories that already exist
           pass
 
-        # alignem.print_debug ( 1, "WARNING: Only Scale 1 is supported in alignem_swift at this time!" )
-
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
           # Remove previously aligned images from panel ??
 
@@ -269,8 +101,6 @@ def generate_scales ():
                     traceback.print_tb(exi[2])
                     pass
 
-                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
 
 def align_all():
     alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
@@ -300,6 +130,7 @@ def align_all():
         if use_c_version.isChecked():
           code_mode = "c"
 
+    # Check that there is a place to put the aligned images
     if (alignem.project_data['data']['destination_path'] == None) or len(alignem.project_data['data']['destination_path']) <= 0:
 
       alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
@@ -331,16 +162,7 @@ def align_all():
           except:
             pass
 
-      # Print out what might be done to produce the JSON for this project
-      #for index in range(len(alignem.scale_list[alignem.scale_index])):
-      #  print ( "Aligning layer " + str(index) )
-      #  al = alignem.scale_list[alignem.scale_index][index]
-      #  for im in al.image_list:
-      #    if im.image_file_name != None:
-      #      print ( "   " + im.role + ":  " + im.image_file_name )
-
-      # Build a data model for this project
-      #### dm = build_current_data_model ( destination_path=alignem.project_data['data']['destination_path'], project_file_name=None )
+      # Copy the data model for this project to add local fields
       dm = copy.deepcopy ( alignem.project_data )
       # Add fields needed for SWiFT:
       stack_at_this_scale = dm['data']['scales'][scale_to_run_text]['alignment_stack']
@@ -353,20 +175,10 @@ def align_all():
       #                              dm,   align_opt,  scale_done,      use_scale,                        scale_tbd, swiftir_code_mode
       pyswift_tui.run_json_project ( dm, 'init_affine',    0,   alignem.get_scale_val(scale_to_run_text),      0,        code_mode )
 
-
-      '''
-      # Load the alignment stack after the alignment
+      # Load the alignment stack after the alignment has completed
       aln_image_stack = []
-      for layer in alignem.scale_dict[alignem.current_scale]:
-        image_name = None
-        for image in layer.image_list:
-          if image.role == 'base':
-            image_name = image.image_file_name
-      '''
-      aln_image_stack = []
-
-      # Load the alignment stack after the alignment
       stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
+
       for layer in stack_at_this_scale:
 
         image_name = None
@@ -376,11 +188,10 @@ def align_all():
         # Convert from the base name to the standard aligned name:
         aligned_name = None
         if image_name != None:
-          if not image_name.startswith(os.path.sep):
-            # This is relative to the destination, so make it absolute?
-            aligned_name = os.path.join ( os.path.join ( os.path.join(alignem.project_data['data']['destination_path'], scale_to_run_text), 'img_aligned'), image_name )
+          # The first scale is handled differently now, but it might be better to unify if possible
+          if scale_to_run_text == "scale_1":
+            aligned_name = os.path.join ( os.path.abspath(alignem.project_data['data']['destination_path']), scale_to_run_text, 'img_aligned', os.path.split(image_name)[-1] )
           else:
-            #
             name_parts = os.path.split(image_name)
             if len(name_parts) >= 2:
               aligned_name = os.path.join ( os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]) )
@@ -409,16 +220,6 @@ def remove_aligned():
         delete_list.append ( layer['images']['aligned']['filename'] )
         layer['images'].pop('aligned')
 
-    '''
-    for layer in alignem.scale_list[alignem.scale_index]:
-      for image in layer.image_list:
-        if image.role == 'aligned':
-          delete_list.append ( image.image_file_name )
-          image.unload()
-          image.pixmap = None
-          image.image_file_name = None
-    '''
-
     alignem.image_library.remove_all_images()
 
     for fname in delete_list:
@@ -427,9 +228,6 @@ def remove_aligned():
           os.remove(fname)
           alignem.image_library.remove_image_reference ( fname )
 
-    '''
-    alignem.image_library.remove_all_images()
-    '''
     main_win.update_panels()
 
 
