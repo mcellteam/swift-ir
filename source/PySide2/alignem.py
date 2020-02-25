@@ -870,7 +870,8 @@ class MainWindow(QMainWindow):
               [ '&Scaling',  # Note that this can NOT contain the string "Scale". "Scaling" is OK.
                 [
                   [ '&Define Scales', None, self.define_scales_callback, None, None, None ],
-                  [ '&Generate Scales', None, self.generate_scales_callback, None, None, None ],
+                  # [ '&Generate Scales', None, self.generate_scales_callback, None, None, None ],
+                  [ '&Generate Scales', None, self.not_yet, None, None, None ],
                   [ '&Import All Scales', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ '&Generate Tiled', None, self.not_yet, False, None, None ],
