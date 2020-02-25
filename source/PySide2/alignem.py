@@ -5,7 +5,7 @@ using any number of technologies.
 '''
 
 
-import sys
+import sys, traceback
 import os
 import argparse
 import copy
@@ -14,7 +14,6 @@ import json
 import numpy
 import scipy
 import scipy.ndimage
-
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
@@ -81,8 +80,43 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       if not os.path.exists(full):
         os.makedirs ( full )
 
+
 def show_warning ( title, text ):
     wbox = QMessageBox.warning ( None, title, text )
+
+
+def get_scale_val ( scale_of_any_type ):
+    # This should return an integer value from any reasonable input (string or int)
+    scale = scale_of_any_type
+    try:
+        if type(scale) == type(1):
+            # It's already an integer, so return it
+            return scale
+        else: #elif type(scale) in [ str, unicode ]:
+            # It's a string, so remove any optional "scale_" prefix(es) and return as int
+            while scale.startswith('scale_'):
+              scale = scale[len('scale_'):]
+            return int(scale)
+        #else:
+        #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
+        #    traceback.print_stack()
+    except:
+        print_debug ( 10, "Error converting " + str(scale_of_any_type) + " to a value." )
+        exi = sys.exc_info()
+        print ( "  Exception type = " + str(exi[0]) )
+        print ( "  Exception value = " + str(exi[1]) )
+        print ( "  Exception trace = " + str(exi[2]) )
+        return ( -1 )
+
+def get_scale_key ( scale_val ):
+    # Create a key like "scale_#" from either an integer or a string
+    s = str(scale_val)
+    while s.startswith ( 'scale_' ):
+        s = s[len('scale_'):]
+    return ( 'scale_' + s )
+
+
+
 
 class ImageLibrary:
     '''A class containing multiple images keyed by their file name.'''
@@ -288,8 +322,8 @@ class ZoomPanWidget(QWidget):
 
             if project_data != None:
 
-              local_scales = project_data['data']['scales']
-              local_current_scale = project_data['data']['current_scale']
+              local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
+              local_current_scale = project_data['data']['current_scale']  # Get it from the data model
               if local_current_scale in local_scales:
                   local_scale = local_scales[local_current_scale]
                   if 'alignment_stack' in local_scale:
@@ -1385,7 +1419,7 @@ class MainWindow(QMainWindow):
                   m.removeAction(m.actions()[-1])
                 # Add the new actions
                 first = True
-                for scale in [ scale_str[len('scale_'):] for scale_str in scales_list ]:
+                for scale in [ get_scale_val(s) for s in scales_list ]:
                   item = QAction ( str(scale), self )
                   item.setCheckable(True)
                   item.setChecked(first)
@@ -1397,50 +1431,61 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def define_scales_callback(self, checked):
-        global_image_scales = [ s[len('scale_'):] for s in sorted(project_data['data']['scales'].keys()) ]
-
         default_scales = ['1']
-        if len(global_image_scales) > 0:
-          default_scales = global_image_scales
-        cur_scale_values = [ scale_str[len('scale_'):] for scale_str in default_scales ]
-        input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(cur_scale_values)), echo=QLineEdit.Normal, text=' '.join(cur_scale_values) )
+
+        cur_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in project_data['data']['scales'].keys() ] ) ]
+        if len(cur_scales) > 0:
+            default_scales = cur_scales
+
+        input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(default_scales)), echo=QLineEdit.Normal, text=' '.join(default_scales) )
         if ok:
-          input_val = input_val.strip()
-          scales_list = global_image_scales
-          if len(input_val) > 0:
-            scales_list = [ 'scale_' + str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          if not (scales_list == global_image_scales):
-            self.define_scales_menu (scales_list)
-            global_image_scales = scales_list
-            # Remove any scales not in the new list (except always leave 1)
-            scales_to_remove = []
-            for scale_key in project_data['data']['scales'].keys():
-              if not (scale_key in global_image_scales):
-                if int(scale_key[len('scale_'):]) != 1:
-                  scales_to_remove.append ( scale_key )
-            for scale_key in scales_to_remove:
-              project_data['data']['scales'].pop ( scale_key )
-            # Add any scales not in the new list
-            scales_to_add = []
-            for scale_key in global_image_scales:
-              if not (scale_key in project_data['data']['scales'].keys()):
-                scales_to_add.append ( scale_key )
-            for scale_key in scales_to_add:
-              new_stack = []
-              scale_1_stack = project_data['data']['scales']['scale_1']['alignment_stack']
-              for l in scale_1_stack:
-                new_layer = copy.deepcopy ( l )
-                new_stack.append ( new_layer )
-              project_data['data']['scales']['scale_'+scale_key] = { 'alignment_stack': new_stack }
+            input_val = input_val.strip()
+            if len(input_val) > 0:
+                input_scales = []
+                try:
+                    input_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in input_val.strip().split(' ') ] ) ]
+                except:
+                    print_debug ( 1, "Bad input: (" + str(input_val) + "), Scales not changed" )
+                    input_scales = []
+
+                if not (input_scales == cur_scales):
+                    # The scales have changed!!
+                    self.define_scales_menu (input_scales)
+                    cur_scale_keys = [ get_scale_key(v) for v in cur_scales ]
+                    input_scale_keys = [ get_scale_key(v) for v in input_scales ]
+
+                    # Remove any scales not in the new list (except always leave 1)
+                    scales_to_remove = []
+                    for scale_key in project_data['data']['scales'].keys():
+                      if not (scale_key in input_scale_keys):
+                        if get_scale_val(scale_key) != 1:
+                          scales_to_remove.append ( scale_key )
+                    for scale_key in scales_to_remove:
+                      project_data['data']['scales'].pop ( scale_key )
+
+                    # Add any scales not in the new list
+                    scales_to_add = []
+                    for scale_key in input_scale_keys:
+                      if not (scale_key in project_data['data']['scales'].keys()):
+                        scales_to_add.append ( scale_key )
+                    for scale_key in scales_to_add:
+                      new_stack = []
+                      scale_1_stack = project_data['data']['scales'][get_scale_key(1)]['alignment_stack']
+                      for l in scale_1_stack:
+                        new_layer = copy.deepcopy ( l )
+                        new_stack.append ( new_layer )
+                      project_data['data']['scales'][scale_key] = { 'alignment_stack': new_stack }
+            else:
+                print_debug ( 30, "No input: Scales not changed" )
         else:
-          print_debug ( 30, "Cancel: Scales not changed" )
+            print_debug ( 30, "Cancel: Scales not changed" )
 
     @Slot()
     def set_current_scale(self, checked):
         print ( "Set current Scale to " + str(self.sender().text()) )
         global current_scale
         current_scale = str ( self.sender().text() )
-        project_data['data']['current_scale'] = current_scale
+        project_data['data']['current_scale'] = get_scale_key(current_scale)
 
         for p in self.panel_list:
             p.update_zpa_self()
