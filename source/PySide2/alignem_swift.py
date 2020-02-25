@@ -308,16 +308,18 @@ def align_all():
     else:
 
       alignem.print_debug ( 10, "Aligning with output in " + alignem.project_data['data']['destination_path'] )
+      scale_to_run_text = alignem.project_data['data']['current_scale']
+      alignem.print_debug ( 10, "Aligning scale " + str(scale_to_run_text) )
 
       # Create the expected directory structure for pyswift_tui.py
-      source_dir = os.path.join ( alignem.project_data['data']['destination_path'], "scale_1", "img_src" )
+      source_dir = os.path.join ( alignem.project_data['data']['destination_path'], scale_to_run_text, "img_src" )
       alignem.makedirs_exist_ok ( source_dir, exist_ok=True )
-      target_dir = os.path.join ( alignem.project_data['data']['destination_path'], "scale_1", "img_aligned" )
+      target_dir = os.path.join ( alignem.project_data['data']['destination_path'], scale_to_run_text, "img_aligned" )
       alignem.makedirs_exist_ok ( target_dir, exist_ok=True )
 
       # Create links or copy files in the expected directory structure
       # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
-      s1 = alignem.project_data['data']['scales']['scale_1']['alignment_stack']
+      s1 = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
       for layer in s1:
         image_name = None
         if 'base' in layer['images'].keys():
@@ -339,19 +341,17 @@ def align_all():
 
       # Build a data model for this project
       #### dm = build_current_data_model ( destination_path=alignem.project_data['data']['destination_path'], project_file_name=None )
-      # Run the project via pyswift_tui
-      #                              dm,   align_opt, scale_done,      use_scale,        scale_tbd, swiftir_code_mode
       dm = copy.deepcopy ( alignem.project_data )
       # Add fields needed for SWiFT:
-      s1 = dm['data']['scales']['scale_1']['alignment_stack']
+      s1 = dm['data']['scales'][scale_to_run_text]['alignment_stack']
       for layer in s1:
         layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
-      scale_to_run_text = str(alignem.get_scale_val(alignem.current_scale))
-      alignem.print_debug ( 10, "Aligning scale " + str(scale_to_run_text) )
-      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(scale_to_run_text),      0,        code_mode )
+      # Run the project via pyswift_tui
+      #                              dm,   align_opt,  scale_done,      use_scale,                        scale_tbd, swiftir_code_mode
+      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   alignem.get_scale_val(scale_to_run_text),      0,        code_mode )
 
 
       '''
@@ -366,7 +366,7 @@ def align_all():
       aln_image_stack = []
 
       # Load the alignment stack after the alignment
-      s1 = alignem.project_data['data']['scales']['scale_1']['alignment_stack']
+      s1 = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
       for layer in s1:
         image_name = None
         if 'base' in layer['images'].keys():
