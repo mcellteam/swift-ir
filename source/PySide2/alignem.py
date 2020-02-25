@@ -105,7 +105,8 @@ def get_scale_val ( scale_of_any_type ):
         exi = sys.exc_info()
         print ( "  Exception type = " + str(exi[0]) )
         print ( "  Exception value = " + str(exi[1]) )
-        print ( "  Exception trace = " + str(exi[2]) )
+        print ( "  Exception traceback:" )
+        traceback.print_tb(exi[2])
         return ( -1 )
 
 def get_scale_key ( scale_val ):
@@ -1040,6 +1041,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def do_nothing(self, checked):
+        print_debug ( 30, "Doing Nothing" )
         pass
 
     @Slot()
@@ -1482,10 +1484,11 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_current_scale(self, checked):
-        print ( "Set current Scale to " + str(self.sender().text()) )
+        print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
         global current_scale
         current_scale = str ( self.sender().text() )
         project_data['data']['current_scale'] = get_scale_key(current_scale)
+        print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
 
         for p in self.panel_list:
             p.update_zpa_self()
@@ -1494,8 +1497,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def generate_scales_callback(self, checked):
-        print ( "Generate the scales now" )
-        print ( "Not done yet" )
+        print ( "Generating scales is now handled via control panel buttons in subclass alignem_swift." )
 
 
     @Slot()
