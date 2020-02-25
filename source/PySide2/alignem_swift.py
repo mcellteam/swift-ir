@@ -14,6 +14,7 @@ from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 from PySide2.QtWidgets import QInputDialog
 
 import pyswift_tui
+import align_swiftir
 
 main_win = None
 
@@ -188,7 +189,7 @@ def save_json_project ( project_file_name ):
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
 
-    image_scales_to_run = [ s[len('scale_'):] for s in sorted(alignem.project_data['data']['scales'].keys()) ]
+    image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
 
     alignem.print_debug ( 40, "Create images at all scales: " + str ( image_scales_to_run ) )
 
@@ -202,11 +203,11 @@ def generate_scales ():
 
         alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
 
-        scale_str = str(scale)
-        if not 'scale_' in scale_str:
-          scale_str = 'scale_' + scale_str
+        scale_key = str(scale)
+        if not 'scale_' in scale_key:
+          scale_key = 'scale_' + scale_key
 
-        subdir_path = os.path.join(alignem.project_data['data']['destination_path'],scale_str)
+        subdir_path = os.path.join(alignem.project_data['data']['destination_path'],scale_key)
 
         alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
         try:
@@ -229,78 +230,46 @@ def generate_scales ():
           # This catches directories that already exist
           pass
 
-        alignem.print_debug ( 1, "WARNING: Only Scale 1 is supported in alignem_swift at this time!" )
+        # alignem.print_debug ( 1, "WARNING: Only Scale 1 is supported in alignem_swift at this time!" )
 
-        for layer in alignem.project_data['data']['scales'][scale_str]['alignment_stack']:
-          # Remove previously aligned images from panel
+        for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+          # Remove previously aligned images from panel ??
 
-          # Copy (or link) the source images to the expected scale_str"/img_src" directory
-          base_file_name = layer['images']['base']['filename']
-          if base_file_name != None:
-            if len(base_file_name) > 0:
-              abs_file_name = os.path.abspath(base_file_name)
-              bare_file_name = os.path.split(abs_file_name)[1]
-              destination_path = os.path.abspath ( alignem.project_data['data']['destination_path'] )
-              try:
-                os.symlink ( abs_file_name, os.path.join(destination_path, scale_str, 'img_src', bare_file_name) )
-              except:
-                pass
-
-              #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-
-        '''
-        for al in alignem.scale_list[alignem.scale_index]:
-          try:
-            for image in al.image_list:
-              if image.role == 'base':
-                # Only scale down images from the base role since the ref role uses the same images
-                alignem.print_debug ( 2, "Scaling image role of " + image.role )
-
-
-            #original_name = os.path.join(alignem.project_data['data']['destination_path'],os.path.basename(al.base_image_name))
-            __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            original_name = al.base_image_name
-            new_name = os.path.join(src_path,os.path.basename(original_name))
-            if False:   # generate_as_tiled:
-              # Generate as tiled images (means duplicating the originals also)
-              tiled_name = os.path.splitext(new_name)[0] + ".ttif"
-              alignem.print_debug ( 70, "Resizing " + original_name + " to " + tiled_name )
-              if False:
-                # Generate internally
-                # Don't know how to do this and make tiles yet
-                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                align_swiftir.swiftir.saveImage ( img, new_name )
-              else:
-                # Scale as before:
-                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                align_swiftir.swiftir.saveImage ( img, new_name )
-                # Use "convert" from ImageMagick to hopefully tile in place
-                import subprocess
-                p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
-                p = subprocess.Popen ( ['/usr/bin/convert', new_name, "-compress", "None", "-define", "tiff:tile-geometry=1024x1024", "tif:"+tiled_name] )
-                p.wait() # Allow the subprocess to complete before deleting the input file!!
-                os.remove ( new_name ) # This would be the file name of the resized copy of the original image
-            else:
-              # Generate non-tiled images
-              if scale == 1:
-                if os.name == 'posix':
-                  alignem.print_debug ( 70, "Posix: Linking " + original_name + " to " + new_name )
-                  os.symlink ( original_name, new_name )
+          # Copy (or link) the source images to the expected scale_key"/img_src" directory
+          for role in layer['images'].keys():
+            base_file_name = layer['images'][role]['filename']
+            if base_file_name != None:
+              if len(base_file_name) > 0:
+                abs_file_name = os.path.abspath(base_file_name)
+                bare_file_name = os.path.split(abs_file_name)[1]
+                destination_path = os.path.abspath ( alignem.project_data['data']['destination_path'] )
+                outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
+                if scale == 1:
+                  try:
+                    alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
+                    os.symlink ( abs_file_name, outfile_name )
+                  except:
+                    alignem.print_debug ( 1, "Error!!" )
+                    pass
                 else:
-                  alignem.print_debug ( 70, "Non-Posix: Copying " + original_name + " to " + new_name )
-                  shutil.copyfile ( original_name, new_name )
-              else:
-                alignem.print_debug ( 70, "Resizing " + original_name + " to " + new_name )
-                img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                align_swiftir.swiftir.saveImage ( img, new_name )
-          except:
-            alignem.print_debug ( 10, "Error: Failed to copy?" )
-            exi = sys.exc_info()
-            print ( "  Exception type = " + str(exi[0]) )
-            print ( "  Exception value = " + str(exi[1]) )
-            print ( "  Exception trace = " + str(exi[2]) )
-        '''
+                  try:
+                    # Do the scaling
+                    alignem.print_debug ( 70, "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+                    img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+                    align_swiftir.swiftir.saveImage ( img, outfile_name )
+                    # Change the base image for this scale to the new file
+                    layer['images'][role]['filename'] = outfile_name
+                  except:
+                    alignem.print_debug ( 1, "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+                    exi = sys.exc_info()
+                    print ( "  Exception type = " + str(exi[0]) )
+                    print ( "  Exception value = " + str(exi[1]) )
+                    print ( "  Exception trace = " + str(exi[2]) )
+                    print ( "  Exception traceback:" )
+                    traceback.print_tb(exi[2])
+                    pass
+
+                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 def align_all():
@@ -380,7 +349,8 @@ def align_all():
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
-      scale_to_run_text = alignem.current_scale[len('scale_'):]
+      scale_to_run_text = str(alignem.get_scale_val(alignem.current_scale))
+      alignem.print_debug ( 10, "Aligning scale " + str(scale_to_run_text) )
       pyswift_tui.run_json_project ( dm, 'init_affine',    0,   int(scale_to_run_text),      0,        code_mode )
 
 
