@@ -20,6 +20,17 @@ main_win = None
 
 project_data = None
 
+swift_roles = ['ref','base','aligned']
+
+def print_exception():
+    exi = sys.exc_info()
+    print ( "  Exception type = " + str(exi[0]) )
+    print ( "  Exception value = " + str(exi[1]) )
+    print ( "  Exception trace = " + str(exi[2]) )
+    print ( "  Exception traceback:" )
+    traceback.print_tb(exi[2])
+
+
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
 
@@ -42,6 +53,7 @@ def generate_scales ():
           scale_key = 'scale_' + scale_key
 
         subdir_path = os.path.join(alignem.project_data['data']['destination_path'],scale_key)
+        scale_1_path = os.path.join(alignem.project_data['data']['destination_path'],'scale_1')
 
         alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
         try:
@@ -79,27 +91,31 @@ def generate_scales ():
                 if scale == 1:
                   try:
                     alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
+                    os.unlink ( outfile_name )
                     os.symlink ( abs_file_name, outfile_name )
                   except:
-                    alignem.print_debug ( 1, "Error!!" )
+                    alignem.print_debug ( 1, "Error Linking from " + abs_file_name + " to " + outfile_name )
+                    print_exception()
                     pass
                 else:
                   try:
                     # Do the scaling
                     alignem.print_debug ( 70, "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+
+                    if os.path.split ( os.path.split ( os.path.split ( abs_file_name )[0] )[0] )[1].startswith('scale_'):
+                      # Convert the source from whatever scale is currently processed to scale_1
+                      p,f = os.path.split(abs_file_name)
+                      p,r = os.path.split(p)
+                      p,s = os.path.split(p)
+                      abs_file_name = os.path.join ( p, 'scale_1', r, f )
+
                     img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
                     align_swiftir.swiftir.saveImage ( img, outfile_name )
                     # Change the base image for this scale to the new file
                     layer['images'][role]['filename'] = outfile_name
                   except:
                     alignem.print_debug ( 1, "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
-                    exi = sys.exc_info()
-                    print ( "  Exception type = " + str(exi[0]) )
-                    print ( "  Exception value = " + str(exi[1]) )
-                    print ( "  Exception trace = " + str(exi[2]) )
-                    print ( "  Exception traceback:" )
-                    traceback.print_tb(exi[2])
-                    pass
+                    print_exception()
 
 
 def align_all():
@@ -203,6 +219,7 @@ def align_all():
         main_win.load_images_in_role ( 'aligned', aln_image_stack )
       except:
         alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
+        print_exception()
         pass
 
 
@@ -239,12 +256,18 @@ def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
 
-skip = BoolField("Skip",False)
+gen_scales_cb = CallbackButton('GenScales', generate_scales)
+align_all_cb  = CallbackButton('Align All SWiFT', align_all)
+align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_all)
+num_fwd       = IntField("#",1,1)
+rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
+skip          = BoolField("Skip",False)
+debug_cb      = CallbackButton('SWIFT Debug', method_debug)
 
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ CallbackButton('GenScales', generate_scales), CallbackButton('Align All SWiFT', align_all), CallbackButton('Align Forward SWiFT', align_all), IntField("#",1,1), CallbackButton('Remove Aligned', remove_aligned), "         ", skip, CallbackButton('SWIFT Debug', method_debug) ]
+    [ gen_scales_cb, align_all_cb, align_fwd_cb, num_fwd, rem_algn_cb, "         ", skip, debug_cb ]
   ] # End first pane
 ]
 
@@ -279,7 +302,7 @@ if __name__ == "__main__":
 
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 
-    main_win.define_roles ( ['ref','base','aligned'] )
+    main_win.define_roles ( swift_roles )
 
     if test_option in [ 1, 2 ]:
         # Import test images
