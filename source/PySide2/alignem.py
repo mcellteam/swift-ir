@@ -371,6 +371,7 @@ class ZoomPanWidget(QWidget):
         painter = QPainter(self)
 
         role_text = self.role
+        img_text = None
 
         if project_data != None:
 
@@ -387,6 +388,7 @@ class ZoomPanWidget(QWidget):
                     if self.role in image_dict.keys():
                         ann_image = image_dict[self.role]
                         pixmap = image_library.get_image_reference(ann_image['filename'])
+                        img_text = ann_image['filename']
 
                         # Scale the painter to draw the image as the background
                         painter.scale ( self.zoom_scale, self.zoom_scale )
@@ -411,6 +413,8 @@ class ZoomPanWidget(QWidget):
         # Draw the role
         painter.setPen(QPen(QColor(255,100,100,255), 5))
         painter.drawText(20, 30, role_text)
+        painter.setPen(QPen(QColor(100,100,255,255), 5))
+        painter.drawText(20, 60, img_text)
 
 
 class MultiImagePanel(QWidget):
@@ -934,10 +938,9 @@ class MainWindow(QMainWindow):
                 [
                   [ '&Python Console', 'Ctrl+P', self.py_console, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Print Structures', None, self.not_yet, None, None, None ],
+                  [ 'Print Structures', None, self.print_structures, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Print Affine',     None, self.not_yet, None, None, None ],
-                  [ 'Print Structures', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Define Waves', None, self.not_yet, None, None, None ],
                   [ 'Make Waves',   None, self.not_yet, None, None, None ],
@@ -1059,6 +1062,30 @@ class MainWindow(QMainWindow):
             debug_level = value
         except:
             print_debug ( 30, "Invalid debug value in: \"" + str(action_text) )
+
+    @Slot()
+    def print_structures(self, checked):
+        global debug_level
+        print_debug ( 30, "Data Structures:" )
+        print_debug ( 30, "  project_data['version'] = " + str(project_data['version']) )
+        print_debug ( 30, "  project_data.keys() = " + str(project_data.keys()) )
+        print_debug ( 30, "  project_data['data'].keys() = " + str(project_data['data'].keys()) )
+        print_debug ( 30, "  project_data['data']['panel_roles'] = " + str(project_data['data']['panel_roles']) )
+        scale_keys = list(project_data['data']['scales'].keys())
+        print_debug ( 30, "  list(project_data['data']['scales'].keys()) = " + str(scale_keys) )
+        print ( "Scales, Layers, and Images:" )
+        for k in sorted(scale_keys):
+          print ( "  Scale key: " + str(k) )
+          scale = project_data['data']['scales'][k]
+          for layer in scale['alignment_stack']:
+            print ( "    Layer: " + str([ k for k in layer['images'].keys()]) )
+            for role in layer['images'].keys():
+              im = layer['images'][role]
+              print ( "      " + str(role) + ": " + str(layer['images'][role]['filename']) )
+
+
+
+        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     @Slot()
     def open_project(self, checked):
@@ -1235,6 +1262,7 @@ class MainWindow(QMainWindow):
         print_debug ( 10, "Importing images for role: " + str(role_to_import) )
 
         if clear_role:
+          # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
           for layer in project_data['data']['scales'][current_scale]['alignment_stack']:
             if role_to_import in layer['images'].keys():
               layer['images'].pop(role_to_import)
@@ -1485,10 +1513,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_current_scale(self, checked):
-        print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
         global current_scale
-        current_scale = str ( self.sender().text() )
-        project_data['data']['current_scale'] = get_scale_key(current_scale)
+        print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
+        current_scale = get_scale_key ( str ( self.sender().text() ) )
+        project_data['data']['current_scale'] = current_scale
         print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
 
         for p in self.panel_list:
@@ -1503,8 +1531,6 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def remove_this_layer(self, checked):
-        global current_scale
-
         local_current_layer = project_data['data']['current_layer']
         project_data['data']['scales'][current_scale]['alignment_stack'].pop(local_current_layer)
         if local_current_layer >= len(project_data['data']['scales'][current_scale]['alignment_stack']):
