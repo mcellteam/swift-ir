@@ -158,7 +158,7 @@ class ImageLibrary:
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def remove_all_images ( self ):
-        keys = self.images.keys()
+        keys = list(self.images.keys())
         for k in keys:
           self.remove_image_reference ( k )
         self.images = {}
