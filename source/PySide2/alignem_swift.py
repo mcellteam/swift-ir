@@ -81,6 +81,7 @@ def generate_scales ():
 
           # Copy (or link) the source images to the expected scale_key"/img_src" directory
           for role in layer['images'].keys():
+
             base_file_name = layer['images'][role]['filename']
             if base_file_name != None:
               if len(base_file_name) > 0:
@@ -90,13 +91,16 @@ def generate_scales ():
                 outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
                 if scale == 1:
                   try:
-                    alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
+                    alignem.print_debug ( 101, "UnLinking " + outfile_name )
                     os.unlink ( outfile_name )
+                  except:
+                    alignem.print_debug ( 101, "Error UnLinking " + outfile_name )
+                  try:
+                    alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
                     os.symlink ( abs_file_name, outfile_name )
                   except:
                     alignem.print_debug ( 1, "Error Linking from " + abs_file_name + " to " + outfile_name )
                     print_exception()
-                    pass
                 else:
                   try:
                     # Do the scaling
