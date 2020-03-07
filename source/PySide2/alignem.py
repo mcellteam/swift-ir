@@ -323,9 +323,21 @@ class ZoomPanWidget(QWidget):
         if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
 
             # Unshifted Scroll Wheel moves through layers
+
             layer_delta = int(event.delta()/120)
 
             if project_data != None:
+
+              if main_window.data_change_callback != None:
+
+                leaving_layer = project_data['data']['current_layer']
+                entering_layer = project_data['data']['current_layer'] + layer_delta
+
+                if entering_layer < 0:
+                    entering_layer = 0
+
+                main_window.data_change_callback ( leaving_layer, entering_layer )
+
 
               local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
               local_current_scale = project_data['data']['current_scale']  # Get it from the data model
@@ -807,6 +819,8 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(title)
 
         self.current_project_file_name = None
+
+        self.data_change_callback = None
 
         if panel_roles != None:
             project_data['data']['panel_roles'] = panel_roles
@@ -1436,6 +1450,9 @@ class MainWindow(QMainWindow):
                         item.triggered.connect ( self.empty_into_role )
                         mm.addAction(item)
                         first = False
+
+    def register_data_change_callback ( self, callback_function ):
+        self.data_change_callback = callback_function
 
     @Slot()
     def define_roles_callback(self, checked):
