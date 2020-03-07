@@ -30,6 +30,8 @@ def print_exception():
     print ( "  Exception traceback:" )
     traceback.print_tb(exi[2])
 
+def get_best_path ( file_path ):
+    return os.path.abspath(os.path.normpath(file_path))
 
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
@@ -44,7 +46,7 @@ def generate_scales ():
 
     else:
 
-      for scale in image_scales_to_run:
+      for scale in sorted(image_scales_to_run):
 
         alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
 
@@ -81,47 +83,56 @@ def generate_scales ():
 
           # Copy (or link) the source images to the expected scale_key"/img_src" directory
           for role in layer['images'].keys():
-            # Note that this code could only copy files for roles "ref" and "base"
-            # But the current logic copies images to all roles, including "aligned"
 
-            base_file_name = layer['images'][role]['filename']
-            if base_file_name != None:
-              if len(base_file_name) > 0:
-                abs_file_name = os.path.abspath(base_file_name)
-                bare_file_name = os.path.split(abs_file_name)[1]
-                destination_path = os.path.abspath ( alignem.project_data['data']['destination_path'] )
-                outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
-                if scale == 1:
-                  try:
-                    alignem.print_debug ( 101, "UnLinking " + outfile_name )
-                    os.unlink ( outfile_name )
-                  except:
-                    alignem.print_debug ( 101, "Error UnLinking " + outfile_name )
-                  try:
-                    alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
-                    os.symlink ( abs_file_name, outfile_name )
-                  except:
-                    alignem.print_debug ( 1, "Error Linking from " + abs_file_name + " to " + outfile_name )
-                    print_exception()
-                else:
-                  try:
-                    # Do the scaling
-                    alignem.print_debug ( 70, "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+            # Only copy files for roles "ref" and "base"
 
-                    if os.path.split ( os.path.split ( os.path.split ( abs_file_name )[0] )[0] )[1].startswith('scale_'):
-                      # Convert the source from whatever scale is currently processed to scale_1
-                      p,f = os.path.split(abs_file_name)
-                      p,r = os.path.split(p)
-                      p,s = os.path.split(p)
-                      abs_file_name = os.path.join ( p, 'scale_1', r, f )
+            if role in ['ref', 'base']:
 
-                    img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
-                    align_swiftir.swiftir.saveImage ( img, outfile_name )
-                    # Change the base image for this scale to the new file
-                    layer['images'][role]['filename'] = outfile_name
-                  except:
-                    alignem.print_debug ( 1, "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
-                    print_exception()
+              base_file_name = layer['images'][role]['filename']
+              if base_file_name != None:
+                if len(base_file_name) > 0:
+                  abs_file_name = os.path.abspath(base_file_name)
+                  bare_file_name = os.path.split(abs_file_name)[1]
+                  destination_path = os.path.abspath ( alignem.project_data['data']['destination_path'] )
+                  outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
+                  if scale == 1:
+                    if get_best_path(abs_file_name) != get_best_path(outfile_name):
+                      # The paths are different so make the link
+                      try:
+                        alignem.print_debug ( 70, "UnLinking " + outfile_name )
+                        os.unlink ( outfile_name )
+                      except:
+                        alignem.print_debug ( 70, "Error UnLinking " + outfile_name )
+                      try:
+                        alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
+                        os.symlink ( abs_file_name, outfile_name )
+                      except:
+                        alignem.print_debug ( 1, "Error Linking from " + abs_file_name + " to " + outfile_name )
+                        print_exception()
+                  else:
+                    try:
+                      # Do the scaling
+                      alignem.print_debug ( 70, "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+
+                      if os.path.split ( os.path.split ( os.path.split ( abs_file_name )[0] )[0] )[1].startswith('scale_'):
+                        # Convert the source from whatever scale is currently processed to scale_1
+                        p,f = os.path.split(abs_file_name)
+                        p,r = os.path.split(p)
+                        p,s = os.path.split(p)
+                        abs_file_name = os.path.join ( p, 'scale_1', r, f )
+
+                      img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+                      align_swiftir.swiftir.saveImage ( img, outfile_name )
+                      # Change the base image for this scale to the new file
+                      layer['images'][role]['filename'] = outfile_name
+                    except:
+                      alignem.print_debug ( 1, "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+                      print_exception()
+
+                  # Update the Data Model with the new absolute file name. This replaces the originally opened file names
+                  alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
+                  layer['images'][role]['filename'] = outfile_name
+                  alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
 
 
 def align_all():
