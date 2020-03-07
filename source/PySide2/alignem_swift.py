@@ -279,10 +279,27 @@ def skip_callback(state):
       print ( "Skip has been checked for " + str(scale_key) + " on layer " + str(layer_num) )
     else:
       print ( "Skip has been cleared for " + str(scale_key) + " on layer " + str(layer_num) )
-    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
+
+def data_changed_callback ( prev_layer, next_layer ):
+    print ( "Layer changed from " + str(prev_layer) + " to " + str(next_layer) )
+    if alignem.project_data != None:
+      print ( "Swapping data" )
+      scale_key = alignem.project_data['data']['current_scale']
+      layer_num = alignem.project_data['data']['current_layer']
+      stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
+      layer = stack[layer_num]
+
+      if prev_layer < 0:
+        prev_layer = 0
+      if next_layer >= len(stack):
+        next_layer = len(stack)-1
+
+      stack[prev_layer]['skip'] = skip.get_value()
+      skip.set_value(stack[next_layer]['skip'])
 
 
 gen_scales_cb = CallbackButton('GenScales', generate_scales)
@@ -290,7 +307,8 @@ align_all_cb  = CallbackButton('Align All SWiFT', align_all)
 align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_all)
 num_fwd       = IntField("#",1,1)
 rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
-skip          = BoolField("Skip",False,callback=skip_callback)
+skip          = BoolField("Skip",False,callback=None)
+#skip          = BoolField("Skip",False,callback=skip_callback)
 debug_cb      = CallbackButton('SWIFT Debug', method_debug)
 
 control_model = [
@@ -325,6 +343,8 @@ if __name__ == "__main__":
         pass
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
+    main_win.register_data_change_callback ( data_changed_callback )
+
     #main_win.register_project_open ( open_json_project )
     #main_win.register_project_save ( save_json_project )
     #main_win.register_gen_scales ( generate_scales )
