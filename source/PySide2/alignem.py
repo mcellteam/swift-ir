@@ -124,12 +124,16 @@ class ImageLibrary:
     def __init__ ( self ):
         self.images = {}
 
+    def pathkey ( self, file_path ):
+        return os.path.abspath(os.path.normpath(file_path))
+
     def get_image_reference ( self, file_path ):
         image_ref = None
-        real_norm_path = os.path.realpath(os.path.normpath(file_path))
+        real_norm_path = self.pathkey(file_path)
         if real_norm_path in self.images:
             image_ref = self.images[real_norm_path]
         else:
+            print_debug ( 10, "  Request image: \"" + file_path + "\"" )
             print_debug ( 10, "  Loading image: \"" + real_norm_path + "\"" )
             self.images[real_norm_path] = QPixmap(real_norm_path)
             image_ref = self.images[real_norm_path]
@@ -138,7 +142,7 @@ class ImageLibrary:
     def remove_image_reference ( self, file_path ):
         image_ref = None
         if not (file_path is None):
-            real_norm_path = os.path.realpath(os.path.normpath(file_path))
+            real_norm_path = self.pathkey(file_path)
             if real_norm_path in self.images:
                 print_debug ( 10, "Unloading image: \"" + real_norm_path + "\"" )
                 image_ref = self.images.pop(real_norm_path)
@@ -146,7 +150,7 @@ class ImageLibrary:
 
     def make_available ( self, requested ):
         already_loaded = set(self.images.keys())
-        normalized_requested = set( [os.path.realpath(os.path.normpath(f)) for f in requested] )
+        normalized_requested = set ( [self.pathkey(f) for f in requested] )
         need_to_load = normalized_requested - already_loaded
         need_to_unload = already_loaded - normalized_requested
         for f in need_to_unload:
@@ -154,7 +158,7 @@ class ImageLibrary:
         for f in need_to_load:
             self.get_image_reference ( f )
 
-        print ( "Library has " + str(len(self.images.keys())) + " images" )
+        print_debug ( 10, "Library has " + str(len(self.images.keys())) + " images" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def remove_all_images ( self ):
@@ -1151,6 +1155,8 @@ class MainWindow(QMainWindow):
                 print_debug ( 30, "Set current Scale to " + str(project_data['data']['current_scale']) )
                 self.set_selected_scale ( project_data['data']['current_scale'] )
 
+                self.setWindowTitle("Project: " + self.current_project_file_name )
+
 
     def save_project_to_current_file(self):
         # Save to current file and make known file paths relative to the project file name
@@ -1173,6 +1179,8 @@ class MainWindow(QMainWindow):
               proj_json = jde.encode ( proj_copy )
               f.write ( proj_json )
               f.close()
+
+              self.setWindowTitle("Project: " + self.current_project_file_name )
 
     @Slot()
     def save_project(self, checked):
