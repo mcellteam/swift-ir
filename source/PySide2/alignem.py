@@ -125,6 +125,8 @@ class ImageLibrary:
         self.images = {}
 
     def pathkey ( self, file_path ):
+        if file_path == None:
+            return None
         return os.path.abspath(os.path.normpath(file_path))
 
     def get_image_reference ( self, file_path ):
@@ -133,10 +135,11 @@ class ImageLibrary:
         if real_norm_path in self.images:
             image_ref = self.images[real_norm_path]
         else:
-            print_debug ( 10, "  Request image: \"" + file_path + "\"" )
-            print_debug ( 10, "  Loading image: \"" + real_norm_path + "\"" )
-            self.images[real_norm_path] = QPixmap(real_norm_path)
-            image_ref = self.images[real_norm_path]
+            print_debug ( 10, "  Request image: \"" + str(file_path) + "\"" )
+            print_debug ( 10, "  Loading image: \"" + str(real_norm_path) + "\"" )
+            if real_norm_path != None:
+              self.images[real_norm_path] = QPixmap(real_norm_path)
+              image_ref = self.images[real_norm_path]
         return ( image_ref )
 
     def remove_image_reference ( self, file_path ):
@@ -363,8 +366,9 @@ class ZoomPanWidget(QWidget):
                           for i in range(len(local_stack)):
                             if abs(i-local_current_layer) < preloading_range:
                               for role,local_image in local_stack[i]['images'].items():
-                                if len(local_image['filename']) > 0:
-                                  needed_images.add ( local_image['filename'] )
+                                if local_image['filename'] != None:
+                                  if len(local_image['filename']) > 0:
+                                    needed_images.add ( local_image['filename'] )
                           # Ask the library to keep only those images
                           image_library.make_available ( needed_images )
 
@@ -1332,7 +1336,7 @@ class MainWindow(QMainWindow):
         if False in used_for_this_role:
           # This means that there is an unused slot for this role. Find the first:
           layer_index_for_new_role = used_for_this_role.index(False)
-          print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
+          print_debug ( 60, "Inserting empty in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
         else:
           # This means that there are no unused slots for this role. Add a new layer
           print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )

@@ -33,6 +33,29 @@ def print_exception():
 def get_best_path ( file_path ):
     return os.path.abspath(os.path.normpath(file_path))
 
+def link_stack():
+    print ( "Linking stack" )
+
+    ref_image_stack = []
+    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
+      if layer_index == 0:
+        main_win.add_empty_to_role ( 'ref' )
+      else:
+        # layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]
+        prev_layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index-1]
+        fn = ""
+        if 'base' in prev_layer['images'].keys():
+          fn = prev_layer['images']['base']['filename']
+        main_win.add_image_to_role ( fn, 'ref' )
+
+    print ( "Loading images: " + str(ref_image_stack) )
+    #main_win.load_images_in_role ( 'ref', ref_image_stack )
+
+    main_win.update_panels()
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
 
@@ -294,7 +317,8 @@ def data_changed_callback ( prev_layer, next_layer ):
         stack[prev_layer]['skip'] = skip.get_value()
         skip.set_value(stack[next_layer]['skip'])
 
-gen_scales_cb = CallbackButton('GenScales', generate_scales)
+link_stack_cb = CallbackButton('Link Stack', link_stack)
+gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
 align_all_cb  = CallbackButton('Align All SWiFT', align_all)
 align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_all)
 num_fwd       = IntField("#",1,1)
@@ -305,7 +329,7 @@ debug_cb      = CallbackButton('SWIFT Debug', method_debug)
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ gen_scales_cb, align_all_cb, align_fwd_cb, num_fwd, rem_algn_cb, "         ", skip, debug_cb ]
+    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, debug_cb ]
   ] # End first pane
 ]
 
