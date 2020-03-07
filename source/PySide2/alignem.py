@@ -1085,6 +1085,25 @@ class MainWindow(QMainWindow):
 
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+    def make_relative ( self, file_path, proj_path ):
+        print ( "Proj path: " + str(proj_path) )
+        print ( "File path: " + str(file_path) )
+        rel_path = os.path.relpath(file_path,start=os.path.split(proj_path)[0])
+        print ( "Full path: " + str(file_path) )
+        print ( "Relative path: " + str(rel_path) )
+        print ( "" )
+        return rel_path
+
+    def make_absolute ( self, file_path, proj_path ):
+        print ( "Proj path: " + str(proj_path) )
+        print ( "File path: " + str(file_path) )
+        abs_path = os.path.join ( os.path.split(proj_path)[0], file_path )
+        print ( "Full path: " + str(file_path) )
+        print ( "Absolute path: " + str(abs_path) )
+        print ( "" )
+        return abs_path
+
+
     @Slot()
     def open_project(self, checked):
         print_debug ( 1, "\n\nOpening Project\n\n" )
@@ -1106,28 +1125,39 @@ class MainWindow(QMainWindow):
 
                 # Read the JSON file from the text
                 global project_data
-                project_data = json.loads ( text )
+                proj_copy = json.loads ( text )
+
+                self.current_project_file_name = file_name
+
+                # Modifiy the copy to use absolute paths internally
+                if len(proj_copy['data']['destination_path']) > 0:
+                  proj_copy['data']['destination_path'] = self.make_absolute ( proj_copy['data']['destination_path'], self.current_project_file_name )
+                for scale_key in proj_copy['data']['scales'].keys():
+                  scale_dict = proj_copy['data']['scales'][scale_key]
+                  for layer in scale_dict['alignment_stack']:
+                    for role in layer['images'].keys():
+                      if layer['images'][role]['filename'] != None:
+                        if len(layer['images'][role]['filename']) > 0:
+                          layer['images'][role]['filename'] = self.make_absolute ( layer['images'][role]['filename'], self.current_project_file_name )
+
+                # Replace the current version with the copy
+                project_data = copy.deepcopy ( proj_copy )
+
+                # Update the scales menu
                 self.define_scales_menu ( sorted(project_data['data']['scales'].keys()) )
                 self.image_panel.update_multi_self()
 
+                # Set the currently selected scale from the JSON project data
                 print_debug ( 30, "Set current Scale to " + str(project_data['data']['current_scale']) )
                 self.set_selected_scale ( project_data['data']['current_scale'] )
 
-
-    def make_relative ( self, file_path, proj_path ):
-        print ( "Proj path: " + str(proj_path) )
-        print ( "File path: " + str(file_path) )
-        rel_path = os.path.relpath(file_path,start=os.path.split(proj_path)[0])
-        print ( "Full path: " + str(file_path) )
-        print ( "Relative path: " + str(rel_path) )
-        print ( "" )
-        return rel_path
 
     def save_project_to_current_file(self):
         # Save to current file and make known file paths relative to the project file name
         if self.current_project_file_name != None:
           if len(self.current_project_file_name) > 0:
               # Write out the project
+              print_debug ( 0, "Saving to: \"" + str(self.current_project_file_name) + "\"" )
               proj_copy = copy.deepcopy ( project_data )
               if len(proj_copy['data']['destination_path']) > 0:
                 proj_copy['data']['destination_path'] = self.make_relative ( proj_copy['data']['destination_path'], self.current_project_file_name )
