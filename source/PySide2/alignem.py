@@ -1083,8 +1083,6 @@ class MainWindow(QMainWindow):
               im = layer['images'][role]
               print ( "      " + str(role) + ": " + str(layer['images'][role]['filename']) )
 
-
-
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     @Slot()
@@ -1111,6 +1109,9 @@ class MainWindow(QMainWindow):
                 project_data = json.loads ( text )
                 self.define_scales_menu ( sorted(project_data['data']['scales'].keys()) )
                 self.image_panel.update_multi_self()
+
+                print_debug ( 30, "Set current Scale to " + str(project_data['data']['current_scale']) )
+                self.set_selected_scale ( project_data['data']['current_scale'] )
 
 
     def make_relative ( self, file_path, proj_path ):
@@ -1459,6 +1460,25 @@ class MainWindow(QMainWindow):
                   m.addAction(item)
                   first = False
 
+    def set_selected_scale ( self, scale_str ):
+        # Set the Scales menu from this scales_list
+        scales_menu = None
+        mb = self.menuBar()
+        if not (mb is None):
+          for m in mb.children():
+            if type(m) == QMenu:
+              text_label = ''.join(m.title().split('&'))
+              if 'Scale' in text_label:
+                print_debug ( 30, "Found Scale Menu" )
+                global current_scale
+                scale_to_match = int(str(project_data['data']['current_scale'].split('_')[1]))
+                for a in m.actions():
+                  if int(a.text()) == scale_to_match:
+                    a.setChecked ( True )
+                    project_data['data']['current_scale'] = 'scale_' + str(scale_to_match)
+                    current_scale = project_data['data']['current_scale']
+                  else:
+                    a.setChecked ( False )
 
     @Slot()
     def define_scales_callback(self, checked):

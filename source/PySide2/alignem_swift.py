@@ -81,6 +81,8 @@ def generate_scales ():
 
           # Copy (or link) the source images to the expected scale_key"/img_src" directory
           for role in layer['images'].keys():
+            # Note that this code could only copy files for roles "ref" and "base"
+            # But the current logic copies images to all roles, including "aligned"
 
             base_file_name = layer['images'][role]['filename']
             if base_file_name != None:
