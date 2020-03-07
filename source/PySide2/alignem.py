@@ -533,6 +533,25 @@ class MultiImagePanel(QWidget):
             #self.actual_children = self.actual_children[0:-1]
         self.repaint()
 
+ignore_changes = True  # Default for first change which happens on file open?
+
+def bool_changed_callback ( state ):
+    print ( 100*'+' )
+    print ( "Bool changed to " + str(state) )
+    print ( 100*'+' )
+    global ignore_changes
+    if not ignore_changes:
+        if main_window != None:
+            if main_window.data_change_callback != None:
+                layer = 0
+                if project_data != None:
+                    if 'data' in project_data:
+                        if 'current_layer' in project_data['data']:
+                            layer = project_data['data']['current_layer']
+                ignore_changes = True
+                main_window.data_change_callback ( layer, layer )
+                ignore_changes = False
+
 
 class ControlPanelWidget(QWidget):
     '''A widget to hold all of the application data for an alignment method.'''
@@ -569,10 +588,7 @@ class ControlPanelWidget(QWidget):
                   elif isinstance(item, BoolField):
                       val_widget = ( QCheckBox ( str(item.text) ) )
                       row_box_layout.addWidget ( val_widget )
-                      print ( "Creating a BoolField" )
-                      if item.callback != None:
-                          print ( "Setting a callback on " + str(item) )
-                          val_widget.stateChanged.connect ( item.callback )
+                      val_widget.stateChanged.connect ( bool_changed_callback )
                       item.widget = val_widget
                   elif isinstance(item, TextField):
                       if item.text != None:
@@ -725,6 +741,7 @@ class TextField(GenericField):
           pass
 
 class BoolField(GenericField):
+    '''
     def __init__ ( self, text, value, all_layers=0, callback=None ):
         self.text = text  # Should be handled by super, but fails in Python2
         self.widget = None
@@ -737,6 +754,8 @@ class BoolField(GenericField):
         super(BoolField,self).__init__( text, value, all_layers )
         self.callback = callback
     """
+    '''
+
     def get_value ( self ):
       if 'widget' in dir(self):
         try:
@@ -1153,6 +1172,8 @@ class MainWindow(QMainWindow):
         if file_name != None:
             if len(file_name) > 0:
 
+                ignore_changes = True
+
                 f = open ( file_name, 'r' )
                 text = f.read()
                 f.close()
@@ -1186,6 +1207,8 @@ class MainWindow(QMainWindow):
                 self.set_selected_scale ( project_data['data']['current_scale'] )
 
                 self.setWindowTitle("Project: " + self.current_project_file_name )
+
+                ignore_changes = False
 
 
     def save_project_to_current_file(self):
