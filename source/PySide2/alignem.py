@@ -557,6 +557,10 @@ class ControlPanelWidget(QWidget):
                   elif isinstance(item, BoolField):
                       val_widget = ( QCheckBox ( str(item.text) ) )
                       row_box_layout.addWidget ( val_widget )
+                      print ( "Creating a BoolField" )
+                      if item.callback != None:
+                          print ( "Setting a callback on " + str(item) )
+                          val_widget.stateChanged.connect ( item.callback )
                       item.widget = val_widget
                   elif isinstance(item, TextField):
                       if item.text != None:
@@ -709,6 +713,18 @@ class TextField(GenericField):
           pass
 
 class BoolField(GenericField):
+    def __init__ ( self, text, value, all_layers=0, callback=None ):
+        self.text = text  # Should be handled by super, but fails in Python2
+        self.widget = None
+        self.value = value
+        self.all_layers = all_layers
+        self.callback = callback
+        print ( "BoolField created with callback = " + str(self.callback) )
+    """
+    def __init__ ( self, text, value, all_layers=0, callback=None ):
+        super(BoolField,self).__init__( text, value, all_layers )
+        self.callback = callback
+    """
     def get_value ( self ):
       if 'widget' in dir(self):
         try:

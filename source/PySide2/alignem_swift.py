@@ -18,7 +18,7 @@ import align_swiftir
 
 main_win = None
 
-project_data = None
+## project_data = None  # Use from alignem
 
 swift_roles = ['ref','base','aligned']
 
@@ -269,6 +269,18 @@ def method_debug():
     print ( "In Method debug for " + str(__name__) )
     __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+def skip_callback(state):
+    alignem.print_debug ( 0, "Skip = " + str(state) )
+    scale_key = alignem.project_data['data']['current_scale']
+    layer_num = alignem.project_data['data']['current_layer']
+    alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_num]['skip'] = (state != 0)
+    stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
+    if state:
+      print ( "Skip has been checked for " + str(scale_key) + " on layer " + str(layer_num) )
+    else:
+      print ( "Skip has been cleared for " + str(scale_key) + " on layer " + str(layer_num) )
+    __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
@@ -278,7 +290,7 @@ align_all_cb  = CallbackButton('Align All SWiFT', align_all)
 align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_all)
 num_fwd       = IntField("#",1,1)
 rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
-skip          = BoolField("Skip",False)
+skip          = BoolField("Skip",False,callback=skip_callback)
 debug_cb      = CallbackButton('SWIFT Debug', method_debug)
 
 control_model = [
