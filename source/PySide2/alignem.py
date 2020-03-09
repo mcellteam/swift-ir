@@ -195,6 +195,8 @@ class ZoomPanWidget(QWidget):
         self.dy = 0   # Offset in y of the image
 
         self.draw_border = False
+        self.draw_annotations = True
+        self.draw_full_paths = True
 
         self.setStyleSheet("background-color:black;")
         self.setAutoFillBackground(True)
@@ -212,7 +214,7 @@ class ZoomPanWidget(QWidget):
 
     def get_settings ( self ):
         settings_dict = {}
-        for key in [ "floatBased", "antialiased", "wheel_index", "scroll_factor", "zoom_scale", "last_button", "mdx", "mdy", "ldx", "ldy", "dx", "dy", "draw_border" ]:
+        for key in [ "floatBased", "antialiased", "wheel_index", "scroll_factor", "zoom_scale", "last_button", "mdx", "mdy", "ldx", "ldy", "dx", "dy", "draw_border", "draw_annotations", "draw_full_paths" ]:
             settings_dict[key] = self.__dict__[key]
         return ( settings_dict )
 
@@ -235,6 +237,8 @@ class ZoomPanWidget(QWidget):
         # Call the super "update" function for this panel's QWidget (this "self")
         if self.parent != None:
             self.draw_border = self.parent.draw_border
+            self.draw_annotations = self.parent.draw_annotations
+            self.draw_full_paths = self.parent.draw_full_paths
         super(ZoomPanWidget, self).update()
 
 
@@ -430,12 +434,20 @@ class ZoomPanWidget(QWidget):
                         painter.setPen(QPen(self.border_color,4))
                         painter.drawRect(painter.viewport())
 
-        # Draw the role
-        painter.setPen(QPen(QColor(255,100,100,255), 5))
-        painter.drawText(20, 30, role_text)
-        painter.setPen(QPen(QColor(100,100,255,255), 5))
-        painter.drawText(20, 60, img_text)
+        if self.draw_annotations:
+            # Draw the role
+            painter.setPen(QPen(QColor(255,100,100,255), 5))
+            painter.drawText(20, 30, role_text)
+            painter.setPen(QPen(QColor(100,100,255,255), 5))
+            if self.draw_full_paths:
+              painter.drawText(20, 60, img_text)
+            else:
+              painter.drawText(20, 60, os.path.split(img_text)[-1])
 
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+        painter.end()
+        del painter
 
 class MultiImagePanel(QWidget):
 
@@ -457,6 +469,8 @@ class MultiImagePanel(QWidget):
         self.actual_children = []
         self.setContentsMargins(0,0,0,0)
         self.draw_border = False
+        self.draw_annotations = True
+        self.draw_full_paths = True
         self.bg_color = QColor(40,50,50,255)
         self.border_color = QColor(0,0,0,255)
 
@@ -517,6 +531,8 @@ class MultiImagePanel(QWidget):
           if role in role_settings:
             zpw.set_settings ( role_settings[role] )
           zpw.draw_border = self.draw_border
+          zpw.draw_annotations = self.draw_annotations
+          zpw.draw_full_paths = self.draw_full_paths
           self.add_panel ( zpw )
 
     def remove_all_panels ( self, unused_checked ):
@@ -849,6 +865,8 @@ class MainWindow(QMainWindow):
             project_data['data']['panel_roles'] = panel_roles
 
         self.draw_border = False
+        self.draw_annotations = True
+        self.draw_full_paths = True
 
         self.panel_list = []
 
@@ -875,6 +893,8 @@ class MainWindow(QMainWindow):
 
         self.image_panel = MultiImagePanel()
         self.image_panel.draw_border = self.draw_border
+        self.image_panel.draw_annotations = self.draw_annotations
+        self.image_panel.draw_full_paths = self.draw_full_paths
         self.image_panel.setStyleSheet("background-color:black;")
         self.image_panel.setAutoFillBackground(True)
 
@@ -988,7 +1008,10 @@ class MainWindow(QMainWindow):
                   [ 'Affines', None, self.not_yet, False, None, None ],
                   [ 'Skipped Images', None, self.not_yet, True, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Plot', None, self.not_yet, None, None, None ]
+                  [ 'Plot', None, self.not_yet, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Annotations', None, self.toggle_annotations, True, None, None ],
+                  [ 'Full Paths', None, self.toggle_full_paths, True, None, None ]
                 ]
               ],
               [ '&Debug',
@@ -1102,12 +1125,20 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def do_nothing(self, checked):
-        print_debug ( 30, "Doing Nothing" )
+        print_debug ( 90, "Doing Nothing" )
         pass
 
     @Slot()
     def not_yet(self, checked):
         print_debug ( 30, "Function is not implemented yet" )
+
+    @Slot()
+    def toggle_annotations(self, checked):
+        print_debug ( 30, "Toggling Annotations" )
+
+    @Slot()
+    def toggle_full_paths(self, checked):
+        print_debug ( 30, "Toggling Full Paths" )
 
     @Slot()
     def set_debug_level(self, checked):
@@ -1210,7 +1241,10 @@ class MainWindow(QMainWindow):
                 print_debug ( 30, "Set current Scale to " + str(project_data['data']['current_scale']) )
                 self.set_selected_scale ( project_data['data']['current_scale'] )
 
-                self.setWindowTitle("Project: " + self.current_project_file_name )
+                if self.draw_full_paths:
+                  self.setWindowTitle("Project: " + self.current_project_file_name )
+                else:
+                  self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
                 ignore_changes = False
 
@@ -1237,7 +1271,10 @@ class MainWindow(QMainWindow):
               f.write ( proj_json )
               f.close()
 
-              self.setWindowTitle("Project: " + self.current_project_file_name )
+              if self.draw_full_paths:
+                self.setWindowTitle("Project: " + self.current_project_file_name )
+              else:
+                self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
     @Slot()
     def save_project(self, checked):
@@ -1290,6 +1327,26 @@ class MainWindow(QMainWindow):
         self.image_panel.update_multi_self()
         for p in self.panel_list:
             p.draw_border = self.draw_border
+            p.update_zpa_self()
+
+    @Slot()
+    def toggle_annotations(self, checked):
+        print_debug ( 90, "toggle_annotations called with checked = " + str(checked) )
+        self.draw_annotations = checked
+        self.image_panel.draw_annotations = self.draw_annotations
+        self.image_panel.update_multi_self()
+        for p in self.panel_list:
+            p.draw_annotations = self.draw_annotations
+            p.update_zpa_self()
+
+    @Slot()
+    def toggle_full_paths(self, checked):
+        print_debug ( 90, "toggle_full_paths called with checked = " + str(checked) )
+        self.draw_full_paths = checked
+        self.image_panel.draw_full_paths = self.draw_full_paths
+        self.image_panel.update_multi_self()
+        for p in self.panel_list:
+            p.draw_full_paths = self.draw_full_paths
             p.update_zpa_self()
 
 
@@ -1483,7 +1540,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def define_roles_callback(self, checked):
-        default_roles = ['ref','src','aligned']
+        default_roles = ['Stack']
         if len(project_data['data']['panel_roles']) > 0:
           default_roles = project_data['data']['panel_roles']
         input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(' '.join(default_roles)), echo=QLineEdit.Normal, text=' '.join(default_roles) )
@@ -1798,7 +1855,7 @@ if __name__ == "__main__":
     main_window = MainWindow ( control_model=control_model )
     main_window.resize(2400,1000)
 
-    main_window.define_roles ( ['ref','base','aligned'] )
+    main_window.define_roles ( ['Stack'] )
 
     main_window.show()
     sys.exit(app.exec_())
