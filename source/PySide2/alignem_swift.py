@@ -130,8 +130,14 @@ def generate_scales ():
                         alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
                         os.symlink ( abs_file_name, outfile_name )
                       except:
-                        alignem.print_debug ( 1, "Error Linking from " + abs_file_name + " to " + outfile_name )
-                        print_exception()
+                        alignem.print_debug ( 5, "Unable to link from " + abs_file_name + " to " + outfile_name )
+                        alignem.print_debug ( 5, "Copying file instead" )
+                        # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
+                        try:
+                          shutil.copy ( abs_file_name, outfile_name )
+                        except:
+                          alignem.print_debug ( 1, "Unable to link or copy from " + abs_file_name + " to " + outfile_name )
+                          print_exception()
                   else:
                     try:
                       # Do the scaling
@@ -187,7 +193,7 @@ def align_all():
           code_mode = "c"
 
     # Check that there is a place to put the aligned images
-    if (alignem.project_data['data']['destination_path'] == None) or len(alignem.project_data['data']['destination_path']) <= 0:
+    if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
 
       alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
       alignem.show_warning ( "Note", "Projects can not be aligned without a destination (use File/Set Destination)" )
