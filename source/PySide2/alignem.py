@@ -15,6 +15,8 @@ import numpy
 import scipy
 import scipy.ndimage
 
+import threading
+
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
 from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox
@@ -117,6 +119,10 @@ def get_scale_key ( scale_val ):
     return ( 'scale_' + s )
 
 
+def load_image_worker ( real_norm_path, image_dict ):
+    # Load the image
+    image_dict['image'] = QPixmap(real_norm_path)
+    image_dict['loaded'] = True
 
 
 class ImageLibrary:
@@ -132,14 +138,23 @@ class ImageLibrary:
     def get_image_reference ( self, file_path ):
         image_ref = None
         real_norm_path = self.pathkey(file_path)
-        if real_norm_path in self._images:
+        if (real_norm_path in self._images) and (self._images[real_norm_path]['loaded']):
+            # The image is already loaded, so return it
             image_ref = self._images[real_norm_path]['image']
         else:
-            print_debug ( 10, "  Request image: \"" + str(file_path) + "\"" )
-            print_debug ( 10, "  Loading image: \"" + str(real_norm_path) + "\"" )
             if real_norm_path != None:
-              self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'task':None }
-              image_ref = self._images[real_norm_path]['image']
+                # There is a path that's either not in the library or still loading
+                print_debug ( 10, "  Request image: \"" + str(file_path) + "\"" )
+                print_debug ( 10, "  Loading image: \"" + str(real_norm_path) + "\"" )
+                # The image is either not in the library or may still be loading
+                if (real_norm_path in self._images) and (self._images[real_norm_path]['task'] != None):
+                    # The image had been loading, so wait for it to complete
+                    self._images[real_norm_path]['task'].join()
+                else:
+                    # The image is not in the library at all, so force a load now (and wait)
+                    self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'task':None }
+                # Return the image which should be loaded one way or another
+                image_ref = self._images[real_norm_path]['image']
         return ( image_ref )
 
     def remove_image_reference ( self, file_path ):
@@ -149,6 +164,7 @@ class ImageLibrary:
             if real_norm_path in self._images:
                 print_debug ( 10, "Unloading image: \"" + real_norm_path + "\"" )
                 image_ref = self._images.pop(real_norm_path)['image']
+        # This returned value may not be valid when multi-threading is implemented
         return ( image_ref )
 
     def make_available ( self, requested ):
