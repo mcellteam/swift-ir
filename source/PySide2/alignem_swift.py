@@ -235,38 +235,40 @@ def align_all():
 
       # Run the project via pyswift_tui
       #                              dm,   align_opt,  scale_done,      use_scale,                        scale_tbd, swiftir_code_mode
-      pyswift_tui.run_json_project ( dm, 'init_affine',    0,   alignem.get_scale_val(scale_to_run_text),      0,        code_mode )
+      updated_model, need_to_write_json = pyswift_tui.run_json_project ( dm, 'init_affine',    0,   alignem.get_scale_val(scale_to_run_text),      0,        code_mode )
+      if need_to_write_json:
+          alignem.project_data = updated_model
+      else:
+          # Load the alignment stack after the alignment has completed
+          aln_image_stack = []
+          stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
 
-      # Load the alignment stack after the alignment has completed
-      aln_image_stack = []
-      stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
+          for layer in stack_at_this_scale:
 
-      for layer in stack_at_this_scale:
+            image_name = None
+            if 'base' in layer['images'].keys():
+              image_name = layer['images']['base']['filename']
 
-        image_name = None
-        if 'base' in layer['images'].keys():
-          image_name = layer['images']['base']['filename']
-
-        # Convert from the base name to the standard aligned name:
-        aligned_name = None
-        if image_name != None:
-          # The first scale is handled differently now, but it might be better to unify if possible
-          if scale_to_run_text == "scale_1":
-            aligned_name = os.path.join ( os.path.abspath(alignem.project_data['data']['destination_path']), scale_to_run_text, 'img_aligned', os.path.split(image_name)[-1] )
-          else:
-            name_parts = os.path.split(image_name)
-            if len(name_parts) >= 2:
-              aligned_name = os.path.join ( os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]) )
-        aln_image_stack.append ( aligned_name )
-        alignem.print_debug ( 30, "Adding aligned image " + aligned_name )
-        layer['images']['aligned'] = {}
-        layer['images']['aligned']['filename'] = aligned_name
-      try:
-        main_win.load_images_in_role ( 'aligned', aln_image_stack )
-      except:
-        alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
-        print_exception()
-        pass
+            # Convert from the base name to the standard aligned name:
+            aligned_name = None
+            if image_name != None:
+              # The first scale is handled differently now, but it might be better to unify if possible
+              if scale_to_run_text == "scale_1":
+                aligned_name = os.path.join ( os.path.abspath(alignem.project_data['data']['destination_path']), scale_to_run_text, 'img_aligned', os.path.split(image_name)[-1] )
+              else:
+                name_parts = os.path.split(image_name)
+                if len(name_parts) >= 2:
+                  aligned_name = os.path.join ( os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]) )
+            aln_image_stack.append ( aligned_name )
+            alignem.print_debug ( 30, "Adding aligned image " + aligned_name )
+            layer['images']['aligned'] = {}
+            layer['images']['aligned']['filename'] = aligned_name
+          try:
+            main_win.load_images_in_role ( 'aligned', aln_image_stack )
+          except:
+            alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
+            print_exception()
+            pass
 
 
 def align_forward():
