@@ -178,6 +178,18 @@ class ImageLibrary:
         self._images[real_norm_path]['task'] = t
 
     def make_available ( self, requested ):
+        '''
+        SOMETHING TO LOOK AT:
+
+        Note that the threaded loading sometimes loads the same image multiple
+        times. This may be due to an uncertainty about whether an image has been
+        scheduled for loading or not.
+
+        Right now, the current check is whether it is actually loaded before
+        scheduling it to be loaded. However, a load may be in progress from an
+        earlier request. This may cause images to be loaded multiple times.
+        '''
+
         print_debug ( 1, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
         already_loaded = set(self._images.keys())
         normalized_requested = set ( [self.pathkey(f) for f in requested] )
@@ -226,7 +238,7 @@ class ZoomPanWidget(QWidget):
 
         self.draw_border = False
         self.draw_annotations = True
-        self.draw_full_paths = True
+        self.draw_full_paths = False
 
         self.setStyleSheet("background-color:black;")
         self.setAutoFillBackground(True)
@@ -469,11 +481,16 @@ class ZoomPanWidget(QWidget):
             # Draw the role
             painter.setPen(QPen(QColor(255,100,100,255), 5))
             painter.drawText(20, 30, role_text)
-            painter.setPen(QPen(QColor(100,100,255,255), 5))
-            if self.draw_full_paths:
-              painter.drawText(20, 60, img_text)
-            else:
-              painter.drawText(20, 60, os.path.split(img_text)[-1])
+            if img_text != None:
+              painter.setPen(QPen(QColor(100,100,255,255), 5))
+              if self.draw_full_paths:
+                painter.drawText(20, 60, img_text)
+              else:
+                if os.path.sep in img_text:
+                  # Only split the path if it's splittable
+                  painter.drawText(20, 60, os.path.split(img_text)[-1])
+                else:
+                  painter.drawText(20, 60, img_text)
 
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
@@ -501,7 +518,7 @@ class MultiImagePanel(QWidget):
         self.setContentsMargins(0,0,0,0)
         self.draw_border = False
         self.draw_annotations = True
-        self.draw_full_paths = True
+        self.draw_full_paths = False
         self.bg_color = QColor(40,50,50,255)
         self.border_color = QColor(0,0,0,255)
 
@@ -897,7 +914,7 @@ class MainWindow(QMainWindow):
 
         self.draw_border = False
         self.draw_annotations = True
-        self.draw_full_paths = True
+        self.draw_full_paths = False
 
         self.panel_list = []
 
@@ -1043,7 +1060,7 @@ class MainWindow(QMainWindow):
                   [ 'Plot', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Annotations', None, self.toggle_annotations, True, None, None ],
-                  [ 'Full Paths', None, self.toggle_full_paths, True, None, None ]
+                  [ 'Full Paths', None, self.toggle_full_paths, False, None, None ]
                 ]
               ],
               [ '&Debug',
