@@ -121,14 +121,17 @@ def get_scale_key ( scale_val ):
 
 def load_image_worker ( real_norm_path, image_dict ):
     # Load the image
+    print_debug ( 10, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
     image_dict['image'] = QPixmap(real_norm_path)
     image_dict['loaded'] = True
+    print_debug ( 10, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
 
 
 class ImageLibrary:
     '''A class containing multiple images keyed by their file name.'''
     def __init__ ( self ):
         self._images = {}  # { image_key: { "task": task, "loaded": bool, "image": image }
+        self.threaded_loading = False
 
     def pathkey ( self, file_path ):
         if file_path == None:
@@ -167,6 +170,13 @@ class ImageLibrary:
         # This returned value may not be valid when multi-threading is implemented
         return ( image_ref )
 
+    def queue_image_read ( self, file_path ):
+        real_norm_path = self.pathkey(file_path)
+        self._images[real_norm_path] = { 'image': None, 'loaded': False, 'task':None }
+        t = threading.Thread ( target = load_image_worker, args = (real_norm_path,self._images[real_norm_path]) )
+        t.start()
+        self._images[real_norm_path]['task'] = t
+
     def make_available ( self, requested ):
         print_debug ( 1, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
         already_loaded = set(self._images.keys())
@@ -176,7 +186,10 @@ class ImageLibrary:
         for f in need_to_unload:
             self.remove_image_reference ( f )
         for f in need_to_load:
-            self.get_image_reference ( f )
+            if self.threaded_loading:
+                self.queue_image_read ( f )   # Using this will enable threaded reading behavior
+            else:
+                self.get_image_reference ( f )   # Using this will force sequential reading behavior
 
         print_debug ( 10, "Library has " + str(len(self._images.keys())) + " images" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -1002,6 +1015,7 @@ class MainWindow(QMainWindow):
                   [ '&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
+                  [ 'Threaded Loading', None, self.toggle_threaded_loading, False, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Show Border', None, self.toggle_border, False, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1346,6 +1360,11 @@ class MainWindow(QMainWindow):
         for p in self.panel_list:
             p.draw_border = self.draw_border
             p.update_zpa_self()
+
+    @Slot()
+    def toggle_threaded_loading(self, checked):
+        print_debug ( 90, "toggle_border called with checked = " + str(checked) )
+        image_library.threaded_loading = checked
 
     @Slot()
     def toggle_annotations(self, checked):
