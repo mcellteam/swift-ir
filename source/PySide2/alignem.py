@@ -122,7 +122,7 @@ def get_scale_key ( scale_val ):
 class ImageLibrary:
     '''A class containing multiple images keyed by their file name.'''
     def __init__ ( self ):
-        self.images = {}
+        self._images = {}  # { image_key: { "task": task, "loaded": bool, "image": image }
 
     def pathkey ( self, file_path ):
         if file_path == None:
@@ -132,27 +132,28 @@ class ImageLibrary:
     def get_image_reference ( self, file_path ):
         image_ref = None
         real_norm_path = self.pathkey(file_path)
-        if real_norm_path in self.images:
-            image_ref = self.images[real_norm_path]
+        if real_norm_path in self._images:
+            image_ref = self._images[real_norm_path]['image']
         else:
             print_debug ( 10, "  Request image: \"" + str(file_path) + "\"" )
             print_debug ( 10, "  Loading image: \"" + str(real_norm_path) + "\"" )
             if real_norm_path != None:
-              self.images[real_norm_path] = QPixmap(real_norm_path)
-              image_ref = self.images[real_norm_path]
+              self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'task':None }
+              image_ref = self._images[real_norm_path]['image']
         return ( image_ref )
 
     def remove_image_reference ( self, file_path ):
         image_ref = None
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)
-            if real_norm_path in self.images:
+            if real_norm_path in self._images:
                 print_debug ( 10, "Unloading image: \"" + real_norm_path + "\"" )
-                image_ref = self.images.pop(real_norm_path)
+                image_ref = self._images.pop(real_norm_path)['image']
         return ( image_ref )
 
     def make_available ( self, requested ):
-        already_loaded = set(self.images.keys())
+        print_debug ( 1, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
+        already_loaded = set(self._images.keys())
         normalized_requested = set ( [self.pathkey(f) for f in requested] )
         need_to_load = normalized_requested - already_loaded
         need_to_unload = already_loaded - normalized_requested
@@ -161,14 +162,14 @@ class ImageLibrary:
         for f in need_to_load:
             self.get_image_reference ( f )
 
-        print_debug ( 10, "Library has " + str(len(self.images.keys())) + " images" )
+        print_debug ( 10, "Library has " + str(len(self._images.keys())) + " images" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def remove_all_images ( self ):
-        keys = list(self.images.keys())
+        keys = list(self._images.keys())
         for k in keys:
           self.remove_image_reference ( k )
-        self.images = {}
+        self._images = {}
 
 image_library = ImageLibrary()
 
@@ -358,11 +359,12 @@ class ZoomPanWidget(QWidget):
                           # Adjust the current layer
                           local_current_layer = project_data['data']['current_layer']
                           local_current_layer += layer_delta
+                          # Apply limits (top and bottom of stack)
                           if local_current_layer >= len(local_stack):
                               local_current_layer =  len(local_stack)-1
                           elif local_current_layer < 0:
                               local_current_layer = 0
-                          # Store the final value
+                          # Store the final value in the shared "JSON"
                           project_data['data']['current_layer'] = local_current_layer
 
                           # Define the images needed
