@@ -316,6 +316,7 @@ class ZoomPanWidget(QWidget):
     def sizeHint(self):
         return QSize(180, 180)
 
+
     def mousePressEvent(self, event):
         ex = event.x()
         ey = event.y()
@@ -362,6 +363,62 @@ class ZoomPanWidget(QWidget):
         self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
 
 
+    def change_layer ( self, layer_delta ):
+        global project_data
+        global main_window
+        global preloading_range
+
+        if project_data != None:
+
+          if main_window.data_change_callback != None:
+
+            leaving_layer = project_data['data']['current_layer']
+            entering_layer = project_data['data']['current_layer'] + layer_delta
+
+            if entering_layer < 0:
+                entering_layer = 0
+
+            main_window.data_change_callback ( leaving_layer, entering_layer )
+
+          local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
+          local_current_scale = project_data['data']['current_scale']  # Get it from the data model
+          if local_current_scale in local_scales:
+              local_scale = local_scales[local_current_scale]
+              if 'alignment_stack' in local_scale:
+                  local_stack = local_scale['alignment_stack']
+                  if len(local_stack) <= 0:
+                      project_data['data']['current_layer'] = 0
+                  else:
+                      # Adjust the current layer
+                      local_current_layer = project_data['data']['current_layer']
+                      local_current_layer += layer_delta
+                      # Apply limits (top and bottom of stack)
+                      if local_current_layer >= len(local_stack):
+                          local_current_layer =  len(local_stack)-1
+                      elif local_current_layer < 0:
+                          local_current_layer = 0
+                      # Store the final value in the shared "JSON"
+                      project_data['data']['current_layer'] = local_current_layer
+
+                      # Define the images needed
+                      needed_images = set()
+                      for i in range(len(local_stack)):
+                        if abs(i-local_current_layer) < preloading_range:
+                          for role,local_image in local_stack[i]['images'].items():
+                            if local_image['filename'] != None:
+                              if len(local_image['filename']) > 0:
+                                needed_images.add ( local_image['filename'] )
+                      # Ask the library to keep only those images
+                      image_library.make_available ( needed_images )
+
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+          # if len(project_data['data']['scales'][local_current_layer]
+
+          self.update_siblings()
+
+
+
     def wheelEvent(self, event):
 
         global project_data
@@ -375,55 +432,7 @@ class ZoomPanWidget(QWidget):
 
             layer_delta = int(event.delta()/120)
 
-            if project_data != None:
-
-              if main_window.data_change_callback != None:
-
-                leaving_layer = project_data['data']['current_layer']
-                entering_layer = project_data['data']['current_layer'] + layer_delta
-
-                if entering_layer < 0:
-                    entering_layer = 0
-
-                main_window.data_change_callback ( leaving_layer, entering_layer )
-
-
-              local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
-              local_current_scale = project_data['data']['current_scale']  # Get it from the data model
-              if local_current_scale in local_scales:
-                  local_scale = local_scales[local_current_scale]
-                  if 'alignment_stack' in local_scale:
-                      local_stack = local_scale['alignment_stack']
-                      if len(local_stack) <= 0:
-                          project_data['data']['current_layer'] = 0
-                      else:
-                          # Adjust the current layer
-                          local_current_layer = project_data['data']['current_layer']
-                          local_current_layer += layer_delta
-                          # Apply limits (top and bottom of stack)
-                          if local_current_layer >= len(local_stack):
-                              local_current_layer =  len(local_stack)-1
-                          elif local_current_layer < 0:
-                              local_current_layer = 0
-                          # Store the final value in the shared "JSON"
-                          project_data['data']['current_layer'] = local_current_layer
-
-                          # Define the images needed
-                          needed_images = set()
-                          for i in range(len(local_stack)):
-                            if abs(i-local_current_layer) < preloading_range:
-                              for role,local_image in local_stack[i]['images'].items():
-                                if local_image['filename'] != None:
-                                  if len(local_image['filename']) > 0:
-                                    needed_images.add ( local_image['filename'] )
-                          # Ask the library to keep only those images
-                          image_library.make_available ( needed_images )
-
-              #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-              # if len(project_data['data']['scales'][local_current_layer]
-
-              self.update_siblings()
+            self.change_layer ( layer_delta )
 
         else:
             # Shifted Scroll Wheel zooms
@@ -521,6 +530,28 @@ class MultiImagePanel(QWidget):
         self.draw_full_paths = False
         self.bg_color = QColor(40,50,50,255)
         self.border_color = QColor(0,0,0,255)
+        # QWidgets don't get the keyboard focus by default
+        # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
+        self.setFocusPolicy(Qt.StrongFocus)
+
+    def keyPressEvent(self, event):
+
+        print_debug ( 80, "Got a key press event: " + str(event) )
+
+        layer_delta = 0
+        if event.key() == Qt.Key_Up:
+          print_debug ( 70, "Key Up" )
+          layer_delta = 1
+        if event.key() == Qt.Key_Down:
+          print_debug ( 70, "Key Down" )
+          layer_delta = -1
+
+        if (layer_delta != 0) and (self.actual_children != None):
+            panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
+            for p in [ panels_to_update[0] ]:  # Only update the first one which will update the rest
+                p.change_layer ( layer_delta )
+                p.update_zpa_self()
+                p.repaint()
 
     def paintEvent(self, event):
         painter = QPainter(self)

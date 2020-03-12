@@ -310,20 +310,21 @@ def data_changed_callback ( prev_layer, next_layer ):
       scale_key = alignem.project_data['data']['current_scale']
       layer_num = alignem.project_data['data']['current_layer']
       stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
-      layer = stack[layer_num]
+      if layer_num in range(len(stack)):
+        layer = stack[layer_num]
 
-      if prev_layer < 0:
-        prev_layer = 0
-      if next_layer >= len(stack):
-        next_layer = len(stack)-1
+        if prev_layer < 0:
+          prev_layer = 0
+        if next_layer >= len(stack):
+          next_layer = len(stack)-1
 
-      if prev_layer == next_layer:
-        # Just copy the data into this layer
-        stack[prev_layer]['skip'] = skip.get_value()
-      else:
-        # Save the value into the previous layer and set the value from the next layer
-        stack[prev_layer]['skip'] = skip.get_value()
-        skip.set_value(stack[next_layer]['skip'])
+        if prev_layer == next_layer:
+          # Just copy the data into this layer
+          stack[prev_layer]['skip'] = skip.get_value()
+        else:
+          # Save the value into the previous layer and set the value from the next layer
+          stack[prev_layer]['skip'] = skip.get_value()
+          skip.set_value(stack[next_layer]['skip'])
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
