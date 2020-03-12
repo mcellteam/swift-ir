@@ -698,7 +698,7 @@ class MultiImagePanel(QWidget):
           zpw.draw_full_paths = self.draw_full_paths
           self.add_panel ( zpw )
 
-    def remove_all_panels ( self, unused_checked ):
+    def remove_all_panels ( self ):
         print_debug ( 30, "In remove_all_panels" )
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget ( self.actual_children[-1] )
@@ -1368,7 +1368,7 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def open_project(self, checked):
+    def open_project(self):
         print_debug ( 1, "\n\nOpening Project\n\n" )
 
         options = QFileDialog.Options()
@@ -1454,7 +1454,7 @@ class MainWindow(QMainWindow):
                 self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
     @Slot()
-    def save_project(self, checked):
+    def save_project(self):
         if self.current_project_file_name is None:
             # Force the choosing of a name
             self.save_project_as ( None )
@@ -1463,7 +1463,7 @@ class MainWindow(QMainWindow):
             self.save_project_to_current_file()
 
     @Slot()
-    def save_project_as(self, checked):
+    def save_project_as(self):
         print_debug ( 1, "\n\nSaving Project\n\n" )
 
         options = QFileDialog.Options()
@@ -1486,7 +1486,7 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def actual_size(self, checked):
+    def actual_size(self):
         print_debug ( 90, "Setting images to actual size" )
         for p in self.panel_list:
             p.dx = p.mdx = p.ldx = 0
@@ -1726,7 +1726,7 @@ class MainWindow(QMainWindow):
         self.data_change_callback = callback_function
 
     @Slot()
-    def define_roles_callback(self, checked):
+    def define_roles_callback(self):
         default_roles = ['Stack']
         if len(project_data['data']['panel_roles']) > 0:
           default_roles = project_data['data']['panel_roles']
@@ -1743,12 +1743,12 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def import_into_role(self, checked):
+    def import_into_role(self):
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( import_role_name )
 
     @Slot()
-    def empty_into_role(self, checked):
+    def empty_into_role(self):
         #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
 
         role_to_import = str ( self.sender().text() )
@@ -1823,7 +1823,7 @@ class MainWindow(QMainWindow):
                     a.setChecked ( False )
 
     @Slot()
-    def define_scales_callback(self, checked):
+    def define_scales_callback(self):
         default_scales = ['1']
 
         cur_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in project_data['data']['scales'].keys() ] ) ]
@@ -1874,7 +1874,7 @@ class MainWindow(QMainWindow):
             print_debug ( 30, "Cancel: Scales not changed" )
 
     @Slot()
-    def set_current_scale(self, checked):
+    def set_current_scale(self):
         global current_scale
         print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
         current_scale = get_scale_key ( str ( self.sender().text() ) )
@@ -1887,12 +1887,12 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def generate_scales_callback(self, checked):
+    def generate_scales_callback(self):
         print ( "Generating scales is now handled via control panel buttons in subclass alignem_swift." )
 
 
     @Slot()
-    def remove_this_layer(self, checked):
+    def remove_this_layer(self):
         local_current_layer = project_data['data']['current_layer']
         project_data['data']['scales'][current_scale]['alignment_stack'].pop(local_current_layer)
         if local_current_layer >= len(project_data['data']['scales'][current_scale]['alignment_stack']):
@@ -1904,7 +1904,7 @@ class MainWindow(QMainWindow):
         self.update_win_self()
 
     @Slot()
-    def remove_all_layers(self, checked):
+    def remove_all_layers(self):
         global project_data
         project_data['data']['current_layer'] = 0
         while len ( project_data['data']['scales'][current_scale]['alignment_stack'] ) > 0:
@@ -1912,7 +1912,7 @@ class MainWindow(QMainWindow):
         self.update_win_self()
 
     @Slot()
-    def remove_all_panels(self, checked):
+    def remove_all_panels(self):
         print_debug ( 30, "Removing all panels" )
         if 'image_panel' in dir(self):
             print_debug ( 30, "image_panel exists" )
@@ -1924,14 +1924,14 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def set_max_image_size(self, checked):
+    def set_max_image_size(self):
         global max_image_file_size
         input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image Size:", max_image_file_size )
         if ok:
           max_image_file_size = input_val
 
     @Slot()
-    def set_bg_color(self, checked):
+    def set_bg_color(self):
         c = QColorDialog.getColor()
         # print_debug ( 30, " Color = " + str(c) )
         self.image_panel.bg_color = c
@@ -1943,7 +1943,7 @@ class MainWindow(QMainWindow):
             p.repaint()
 
     @Slot()
-    def set_border_color(self, checked):
+    def set_border_color(self):
         c = QColorDialog.getColor()
         self.image_panel.border_color = c
         self.image_panel.update_multi_self()
@@ -1954,15 +1954,15 @@ class MainWindow(QMainWindow):
             p.repaint()
 
     @Slot()
-    def center_all_images(self, checked=False):
+    def center_all_images(self):
         self.image_panel.center_all_images()
 
     @Slot()
-    def all_images_actual_size(self, checked):
+    def all_images_actual_size(self):
         self.image_panel.all_images_actual_size()
 
     @Slot()
-    def set_preloading_range(self, checked):
+    def set_preloading_range(self):
         global preloading_range
 
         input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
@@ -1992,11 +1992,11 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def exit_app(self, checked):
+    def exit_app(self):
         sys.exit()
 
     @Slot()
-    def py_console(self, checked):
+    def py_console(self):
         print_debug ( 1, "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
