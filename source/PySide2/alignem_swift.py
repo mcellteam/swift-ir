@@ -275,6 +275,9 @@ def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
 
+def center_all():
+    main_win.center_all_images()
+
 def remove_aligned():
     alignem.print_debug ( 30, "Removing aligned images ..." )
 
@@ -329,6 +332,7 @@ def data_changed_callback ( prev_layer, next_layer ):
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
 align_all_cb  = CallbackButton('Align All SWiFT', align_all)
+center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_all)
 num_fwd       = IntField("#",1,1)
 rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
@@ -338,7 +342,7 @@ debug_cb      = CallbackButton('SWIFT Debug', method_debug)
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, debug_cb ]
+    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", center_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, debug_cb ]
   ] # End first pane
 ]
 

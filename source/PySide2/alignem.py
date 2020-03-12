@@ -1415,7 +1415,7 @@ class MainWindow(QMainWindow):
                 else:
                   self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
-                self.center_all_images(False)
+                self.center_all_images()
 
                 ignore_changes = False
 
@@ -1948,7 +1948,7 @@ class MainWindow(QMainWindow):
             p.repaint()
 
     @Slot()
-    def center_all_images(self, checked):
+    def center_all_images(self, checked=False):
         self.image_panel.center_all_images()
 
     @Slot()
