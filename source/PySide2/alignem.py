@@ -1024,7 +1024,7 @@ class MainWindow(QMainWindow):
 
         global app
         if app == None:
-                app = QApplication()
+                app = QApplication([])
 
         global project_data
         project_data = copy.deepcopy ( new_project_template )
