@@ -533,6 +533,7 @@ class MultiImagePanel(QWidget):
         # QWidgets don't get the keyboard focus by default
         # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
         self.setFocusPolicy(Qt.StrongFocus)
+        self.arrow_direction = 1
 
     def keyPressEvent(self, event):
 
@@ -541,10 +542,10 @@ class MultiImagePanel(QWidget):
         layer_delta = 0
         if event.key() == Qt.Key_Up:
           print_debug ( 70, "Key Up" )
-          layer_delta = 1
+          layer_delta = 1 * self.arrow_direction
         if event.key() == Qt.Key_Down:
           print_debug ( 70, "Key Down" )
-          layer_delta = -1
+          layer_delta = -1 * self.arrow_direction
 
         if (layer_delta != 0) and (self.actual_children != None):
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
@@ -1077,6 +1078,7 @@ class MainWindow(QMainWindow):
                   [ 'Use C Version', None, self.do_nothing, False, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
+                  [ 'Reverse Arrow Keys', None, self.toggle_arrow_direction, False, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Default Plot Code', None, self.not_yet, None, None, None ],
                   [ 'Custom Plot Code', None, self.not_yet, None, None, None ]
@@ -1408,6 +1410,11 @@ class MainWindow(QMainWindow):
         for p in self.panel_list:
             p.draw_border = self.draw_border
             p.update_zpa_self()
+
+    @Slot()
+    def toggle_arrow_direction(self, checked):
+        print_debug ( 90, "toggle_arrow_direction called with checked = " + str(checked) )
+        self.image_panel.arrow_direction = -self.image_panel.arrow_direction
 
     @Slot()
     def toggle_threaded_loading(self, checked):
