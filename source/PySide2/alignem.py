@@ -1743,12 +1743,12 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def import_into_role(self):
+    def import_into_role(self, checked):
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( import_role_name )
 
     @Slot()
-    def empty_into_role(self):
+    def empty_into_role(self, checked):
         #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
 
         role_to_import = str ( self.sender().text() )
@@ -1874,7 +1874,7 @@ class MainWindow(QMainWindow):
             print_debug ( 30, "Cancel: Scales not changed" )
 
     @Slot()
-    def set_current_scale(self):
+    def set_current_scale(self, checked):
         global current_scale
         print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
         current_scale = get_scale_key ( str ( self.sender().text() ) )
