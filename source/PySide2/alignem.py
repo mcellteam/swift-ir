@@ -212,6 +212,7 @@ class ImageLibrary:
           self.remove_image_reference ( k )
         self._images = {}
 
+
 image_library = ImageLibrary()
 
 
@@ -274,7 +275,6 @@ class ZoomPanWidget(QWidget):
             print_debug ( 30, "Child of MultiImagePanel" )
             self.parent.update_multi_self(exclude=[self])
 
-
     def update_zpa_self ( self ):
         # Call the super "update" function for this panel's QWidget (this "self")
         if self.parent != None:
@@ -283,6 +283,81 @@ class ZoomPanWidget(QWidget):
             self.draw_full_paths = self.parent.draw_full_paths
         super(ZoomPanWidget, self).update()
 
+
+    def show_actual_size ( self ):
+        print_debug ( 30, "Showing actual size image for role " + str(self.role) )
+        self.zoom_scale = 1.0
+        self.ldx = 0
+        self.ldy = 0
+        self.wheel_index = 0
+        self.zoom_to_wheel_at ( 0, 0 )
+
+
+    def center_image ( self ):
+        print_debug ( 30, "Centering image for " + str(self.role) )
+
+        if project_data != None:
+
+            s = project_data['data']['current_scale']
+            l = project_data['data']['current_layer']
+
+            if len(project_data['data']['scales']) > 0:
+                if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
+
+                    image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
+
+                    if self.role in image_dict.keys():
+                        ann_image = image_dict[self.role]
+                        pixmap = image_library.get_image_reference(ann_image['filename'])
+                        if pixmap != None:
+                            img_w = pixmap.width()
+                            img_h = pixmap.height()
+                            win_w = self.width()
+                            win_h = self.height()
+
+                            self.zoom_scale = 1.0
+                            self.ldx = 0
+                            self.ldy = 0
+                            self.wheel_index = 0
+                            # self.zoom_to_wheel_at ( 0, 0 )
+
+                            # Enlarge the image while it is within the size of the window
+                            while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
+                              self.zoom_to_wheel_at ( 0, 0 )
+                              self.wheel_index += 1
+                              print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
+                              print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                              print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                              if abs(self.wheel_index) > 100:
+                                print_debug ( 5, "Magnitude of Wheel index > 100" )
+                                break
+
+                            # Shrink the image while it is larger than the size of the window
+                            while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
+                              self.zoom_to_wheel_at ( 0, 0 )
+                              self.wheel_index += -1
+                              print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
+                              print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                              print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                              if abs(self.wheel_index) > 100:
+                                print_debug ( 5, "Magnitude of Wheel index > 100" )
+                                break
+
+                            # Adjust the offsets to center
+                            extra_x = win_w - self.win_x(img_w)
+                            extra_y = win_h - self.win_y(img_h)
+
+                            # Bias the y value downward to make room for text at top
+                            extra_y = 1.7 * extra_y
+                            self.ldx = (extra_x / 2) / self.zoom_scale  # It seems like these should be divided by 2
+                            self.ldy = (extra_y / 2) / self.zoom_scale  # It seems like these should be divided by 2
+
+
+    def win_x ( self, image_x ):
+        return ( self.zoom_scale * (image_x + self.ldx) )
+
+    def win_y ( self, image_y ):
+        return ( self.zoom_scale * (image_y + self.ldy) )
 
     def image_x ( self, win_x ):
         img_x = (win_x/self.zoom_scale) - self.ldx
@@ -506,6 +581,8 @@ class ZoomPanWidget(QWidget):
         painter.end()
         del painter
 
+
+
 class MultiImagePanel(QWidget):
 
     def __init__(self):
@@ -624,14 +701,26 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def center_all_images ( self ):
-        print_debug ( 30, "In center_all_images" )
-        for child in self.actual_children:
-            pass # Not sure how to do this yet
-            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            #self.hb_layout.removeWidget ( self.actual_children[-1] )
-            #self.actual_children[-1].deleteLater()
-            #self.actual_children = self.actual_children[0:-1]
+        print_debug ( 30, "In MultiImagePanel.center_all_images" )
+        if self.actual_children != None:
+            panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
+            for p in panels_to_update:
+                p.center_image()
+                p.update_zpa_self()
+                p.repaint()
         self.repaint()
+
+    def all_images_actual_size ( self ):
+        print_debug ( 30, "In MultiImagePanel.all_images_actual_size" )
+        if self.actual_children != None:
+            panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
+            for p in panels_to_update:
+                p.show_actual_size()
+                p.update_zpa_self()
+                p.repaint()
+        self.repaint()
+
+
 
 ignore_changes = True  # Default for first change which happens on file open?
 
@@ -1016,10 +1105,8 @@ class MainWindow(QMainWindow):
                     ]
                   ],
                   [ '-', None, None, None, None, None ],
-                  # [ 'Center', None, self.center_all_images, None, None, None ],
-                  [ 'Center', None, self.not_yet, None, None, None ],
-                  # [ 'Actual Size', None, self.actual_size, None, None, None ],
-                  [ 'Actual Size', None, self.not_yet, None, None, None ],
+                  [ 'Center', None, self.center_all_images, None, None, None ],
+                  [ 'Actual Size', None, self.all_images_actual_size, None, None, None ],
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
@@ -1328,6 +1415,8 @@ class MainWindow(QMainWindow):
                 else:
                   self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
+                self.center_all_images(False)
+
                 ignore_changes = False
 
 
@@ -1488,7 +1577,7 @@ class MainWindow(QMainWindow):
           print_debug ( 60, "Inserting empty in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
         else:
           # This means that there are no unused slots for this role. Add a new layer
-          print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
+          print_debug ( 60, "Making a new layer for empty in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
           project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
           layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
         image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
@@ -1862,6 +1951,9 @@ class MainWindow(QMainWindow):
     def center_all_images(self, checked):
         self.image_panel.center_all_images()
 
+    @Slot()
+    def all_images_actual_size(self, checked):
+        self.image_panel.all_images_actual_size()
 
     @Slot()
     def set_preloading_range(self, checked):
