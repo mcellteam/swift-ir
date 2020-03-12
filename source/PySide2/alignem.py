@@ -131,7 +131,7 @@ class ImageLibrary:
     '''A class containing multiple images keyed by their file name.'''
     def __init__ ( self ):
         self._images = {}  # { image_key: { "task": task, "loaded": bool, "image": image }
-        self.threaded_loading = False
+        self.threaded_loading_enabled = False
 
     def pathkey ( self, file_path ):
         if file_path == None:
@@ -141,22 +141,28 @@ class ImageLibrary:
     def get_image_reference ( self, file_path ):
         image_ref = None
         real_norm_path = self.pathkey(file_path)
-        if (real_norm_path in self._images) and (self._images[real_norm_path]['loaded']):
-            # The image is already loaded, so return it
-            image_ref = self._images[real_norm_path]['image']
-        else:
-            if real_norm_path != None:
-                # There is a path that's either not in the library or still loading
-                print_debug ( 10, "  Request image: \"" + str(file_path) + "\"" )
-                print_debug ( 10, "  Loading image: \"" + str(real_norm_path) + "\"" )
-                # The image is either not in the library or may still be loading
-                if (real_norm_path in self._images) and (self._images[real_norm_path]['task'] != None):
-                    # The image had been loading, so wait for it to complete
+        if real_norm_path != None:
+            # This is an actual path
+            load_new = False
+            if real_norm_path in self._images:
+                # This file is already in the library ... it may be complete or still loading
+                if self._images[real_norm_path]['loaded']:
+                    # The image is already loaded, so return it
+                    image_ref = self._images[real_norm_path]['image']
+                elif self._images[real_norm_path]['loading']:
+                    # The image is still loading, so wait for it to complete
                     self._images[real_norm_path]['task'].join()
+                    self._images[real_norm_path]['task'] = None
+                    self._images[real_norm_path]['loaded'] = True
+                    self._images[real_norm_path]['loading'] = False
+                    image_ref = self._images[real_norm_path]['image']
                 else:
-                    # The image is not in the library at all, so force a load now (and wait)
-                    self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'task':None }
-                # Return the image which should be loaded one way or another
+                    print_debug ( 5, "  Load Warning for: \"" + str(real_norm_path) + "\"" )
+                    image_ref = self._images[real_norm_path]['image']
+            else:
+                # The image is not in the library at all, so force a load now (and wait)
+                print_debug ( 10, "  Forced load of image: \"" + str(real_norm_path) + "\"" )
+                self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'loading': False, 'task':None }
                 image_ref = self._images[real_norm_path]['image']
         return ( image_ref )
 
@@ -172,7 +178,7 @@ class ImageLibrary:
 
     def queue_image_read ( self, file_path ):
         real_norm_path = self.pathkey(file_path)
-        self._images[real_norm_path] = { 'image': None, 'loaded': False, 'task':None }
+        self._images[real_norm_path] = { 'image': None, 'loaded': False, 'loading': True, 'task':None }
         t = threading.Thread ( target = load_image_worker, args = (real_norm_path,self._images[real_norm_path]) )
         t.start()
         self._images[real_norm_path]['task'] = t
@@ -198,7 +204,7 @@ class ImageLibrary:
         for f in need_to_unload:
             self.remove_image_reference ( f )
         for f in need_to_load:
-            if self.threaded_loading:
+            if self.threaded_loading_enabled:
                 self.queue_image_read ( f )   # Using this will enable threaded reading behavior
             else:
                 self.get_image_reference ( f )   # Using this will force sequential reading behavior
@@ -1508,7 +1514,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def toggle_threaded_loading(self, checked):
         print_debug ( 90, "toggle_border called with checked = " + str(checked) )
-        image_library.threaded_loading = checked
+        image_library.threaded_loading_enabled = checked
 
     @Slot()
     def toggle_annotations(self, checked):
