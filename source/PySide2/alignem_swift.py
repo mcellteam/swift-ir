@@ -332,9 +332,15 @@ def data_changed_callback ( prev_layer, next_layer ):
 
 def mouse_down_callback ( role, screen_coords, image_coords ):
     global match_pt_mode
-    # print ( "Mouse Clicked" )
     if match_pt_mode.get_value():
         print ( "Adding a match point for role \"" + str(role) + "\" at " + str(screen_coords) + " == " + str(image_coords) )
+        scale_key = alignem.project_data['data']['current_scale']
+        layer_num = alignem.project_data['data']['current_layer']
+        stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
+        layer = stack[layer_num]
+        metadata = layer['images'][role]['metadata']
+        metadata['match_points'].append ( [ c for c in image_coords ] )
+        metadata['annotations'].append ( "circle(%f,%f,10)" % image_coords )
         return ( True )  # Lets the framework know that the click has been handled
     else:
         # print ( "Do Normal Processing" )
