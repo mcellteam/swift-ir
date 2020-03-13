@@ -330,23 +330,22 @@ def data_changed_callback ( prev_layer, next_layer ):
           skip.set_value(stack[next_layer]['skip'])
 
 
-mouse_mode = "norm"
-
-def set_normal_mode():
-    mouse_mode = "norm"
-    print ( "Entered normal mode" )
-
-def set_match_pt_mode():
-    mouse_mode = "matchpt"
-    print ( "Entered match point mode" )
-
 def mouse_down_callback ( role, screen_coords, image_coords ):
-    print ( "Mouse Clicked" )
-    if mouse_mode == "matchpt":
-        print ( "Adding a match point" )
+    global match_pt_mode
+    # print ( "Mouse Clicked" )
+    if match_pt_mode.get_value():
+        print ( "Adding a match point for role \"" + str(role) + "\" at " + str(screen_coords) + " == " + str(image_coords) )
         return ( True )  # Lets the framework know that the click has been handled
     else:
+        # print ( "Do Normal Processing" )
         return ( False ) # Lets the framework know that the click has not been handled
+
+def mouse_move_callback ( role, screen_coords, image_coords ):
+    global match_pt_mode
+    if match_pt_mode.get_value():
+        return ( True )  # Lets the framework know that the move has been handled
+    else:
+        return ( False ) # Lets the framework know that the move has not been handled
 
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
@@ -356,15 +355,14 @@ center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_all)
 num_fwd       = IntField("#",1,1)
 rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
-normal_mode   = CallbackButton("Normal",set_normal_mode)
-match_pt_mode = CallbackButton("Match",set_match_pt_mode)
+match_pt_mode = BoolField("Match",False)
 skip          = BoolField("Skip",False)
 debug_cb      = CallbackButton('SWIFT Debug', method_debug)
 
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", center_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, normal_mode, match_pt_mode, debug_cb ]
+    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", center_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, match_pt_mode, debug_cb ]
   ] # End first pane
 ]
 
@@ -394,6 +392,7 @@ if __name__ == "__main__":
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_data_change_callback ( data_changed_callback )
+    main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
 
     #main_win.register_project_open ( open_json_project )
