@@ -1304,7 +1304,7 @@ class MainWindow(QMainWindow):
         pass
 
     @Slot()
-    def not_yet(self, checked):
+    def not_yet(self):
         print_debug ( 30, "Function is not implemented yet" )
 
     @Slot()
@@ -1985,8 +1985,9 @@ class MainWindow(QMainWindow):
                         for i in range(len(local_stack)):
                           if abs(i-local_current_layer) < preloading_range:
                             for role,local_image in local_stack[i]['images'].items():
-                              if len(local_image['filename']) > 0:
-                                needed_images.add ( local_image['filename'] )
+                              if local_image['filename'] != None:
+                                if len(local_image['filename']) > 0:
+                                  needed_images.add ( local_image['filename'] )
                         # Ask the library to keep only those images
                         image_library.make_available ( needed_images )
 
