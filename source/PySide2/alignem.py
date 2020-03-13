@@ -399,29 +399,44 @@ class ZoomPanWidget(QWidget):
 
 
     def mousePressEvent(self, event):
+        event_handled = False
+
         ex = event.x()
         ey = event.y()
 
-        self.last_button = event.button()
-        if event.button() == Qt.MouseButton.RightButton:
-            # Resest the pan and zoom
-            self.dx = self.mdx = self.ldx = 0
-            self.dy = self.mdy = self.ldy = 0
-            self.wheel_index = 0
-            self.zoom_scale = 1.0
-        elif event.button() == Qt.MouseButton.MiddleButton:
-            self.dump()
-        else:
-            # Set the Mouse Down position to be the screen location of the mouse
-            self.mdx = ex
-            self.mdy = ey
+        if main_window.mouse_down_callback != None:
+            event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)) )
+
+        if not event_handled:
+
+            self.last_button = event.button()
+            if event.button() == Qt.MouseButton.RightButton:
+                # Resest the pan and zoom
+                self.dx = self.mdx = self.ldx = 0
+                self.dy = self.mdy = self.ldy = 0
+                self.wheel_index = 0
+                self.zoom_scale = 1.0
+            elif event.button() == Qt.MouseButton.MiddleButton:
+                self.dump()
+            else:
+                # Set the Mouse Down position to be the screen location of the mouse
+                self.mdx = ex
+                self.mdy = ey
+
         self.update_zpa_self()
 
     def mouseMoveEvent(self, event):
-        if self.last_button == Qt.MouseButton.LeftButton:
-            self.dx = (event.x() - self.mdx) / self.zoom_scale
-            self.dy = (event.y() - self.mdy) / self.zoom_scale
-            self.update_zpa_self()
+        event_handled = False
+
+        if main_window.mouse_move_callback != None:
+            event_handled = main_window.mouse_move_callback ( self.role, (0,0), (0,0) )  # These will be ignored anyway for now
+
+        if not event_handled:
+
+            if self.last_button == Qt.MouseButton.LeftButton:
+                self.dx = (event.x() - self.mdx) / self.zoom_scale
+                self.dy = (event.y() - self.mdy) / self.zoom_scale
+                self.update_zpa_self()
 
     def mouseReleaseEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -1036,6 +1051,7 @@ class MainWindow(QMainWindow):
 
         self.data_change_callback = None
         self.mouse_down_callback = None
+        self.mouse_move_callback = None
 
         if panel_roles != None:
             project_data['data']['panel_roles'] = panel_roles
@@ -1728,6 +1744,9 @@ class MainWindow(QMainWindow):
 
     def register_mouse_down_callback ( self, callback_function ):
         self.mouse_down_callback = callback_function
+
+    def register_mouse_move_callback ( self, callback_function ):
+        self.mouse_move_callback = callback_function
 
     @Slot()
     def define_roles_callback(self):
