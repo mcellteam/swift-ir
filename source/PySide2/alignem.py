@@ -1035,6 +1035,7 @@ class MainWindow(QMainWindow):
         self.current_project_file_name = None
 
         self.data_change_callback = None
+        self.mouse_down_callback = None
 
         if panel_roles != None:
             project_data['data']['panel_roles'] = panel_roles
@@ -1724,6 +1725,9 @@ class MainWindow(QMainWindow):
 
     def register_data_change_callback ( self, callback_function ):
         self.data_change_callback = callback_function
+
+    def register_mouse_down_callback ( self, callback_function ):
+        self.mouse_down_callback = callback_function
 
     @Slot()
     def define_roles_callback(self):
