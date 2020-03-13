@@ -360,10 +360,10 @@ class ZoomPanWidget(QWidget):
 
 
     def win_x ( self, image_x ):
-        return ( self.zoom_scale * (image_x + self.ldx) )
+        return ( self.zoom_scale * (image_x + self.ldx + self.dx) )
 
     def win_y ( self, image_y ):
-        return ( self.zoom_scale * (image_y + self.ldy) )
+        return ( self.zoom_scale * (image_y + self.ldy + self.dy) )
 
     def image_x ( self, win_x ):
         img_x = (win_x/self.zoom_scale) - self.ldx
@@ -588,12 +588,21 @@ class ZoomPanWidget(QWidget):
                                 painter.setPen(QPen(QColor(255, 100, 100, 255),4))
                                 ann_list = ann_image['metadata']['annotations']
                                 for ann in ann_list:
-                                    print ( "Drawing " + ann )
-                                    cv = [ float(n.strip()) for n in ann [ ann.find('(')+1: -1 ].split(',') ]
-                                    print ( "  Values = " + str(cv) )
-                                    r = cv[2]
-                                    r2 = r / 2
-                                    painter.drawRect ( QRectF ( self.ldx+self.win_x(cv[0])-r2, self.ldy+self.win_x(cv[1])-r2, r, r ) )
+                                    print_debug ( 50, "Drawing " + ann )
+                                    cmd = ann[:ann.find('(')].strip().lower()
+                                    pars = [ float(n.strip()) for n in ann [ ann.find('(')+1: -1 ].split(',') ]
+                                    print_debug ( 50, "Command: " + cmd + " with pars: " + str(pars) )
+                                    x = 0
+                                    y = 0
+                                    r = 0
+                                    if cmd in ['circle', 'square']:
+                                        x = self.win_x(pars[0])
+                                        y = self.win_y(pars[1])
+                                        r = pars[2]
+                                    if cmd == 'circle':
+                                        painter.drawEllipse ( x-r, y-r, r*2, r*2 )
+                                    if cmd == 'square':
+                                        painter.drawRect ( QRectF ( x-r, y-r, r*2, r*2 ) )
 
 
 
@@ -1192,8 +1201,6 @@ class MainWindow(QMainWindow):
                   [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
                   [ 'Threaded Loading', None, self.toggle_threaded_loading, False, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Show Border', None, self.toggle_border, False, None, None ],
-                  [ '-', None, None, None, None, None ],
                   [ 'Background Color', None, self.set_bg_color, None, None, None ],
                   [ 'Border Color', None, self.set_border_color, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1212,6 +1219,7 @@ class MainWindow(QMainWindow):
               ],
               [ '&Show',
                 [
+                  [ 'Borders', None, self.toggle_border, False, None, None ],
                   [ 'Window Centers', None, self.not_yet, False, None, None ],
                   [ 'Affines', None, self.not_yet, False, None, None ],
                   [ 'Skipped Images', None, self.not_yet, True, None, None ],
