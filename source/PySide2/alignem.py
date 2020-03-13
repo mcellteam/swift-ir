@@ -582,6 +582,22 @@ class ZoomPanWidget(QWidget):
                         painter.setPen(QPen(self.border_color,4))
                         painter.drawRect(painter.viewport())
 
+                        if self.draw_annotations and 'metadata' in ann_image:
+                            if 'annotations' in ann_image['metadata']:
+                                # Draw the application-specific annotations from the metadata
+                                painter.setPen(QPen(QColor(255, 100, 100, 255),4))
+                                ann_list = ann_image['metadata']['annotations']
+                                for ann in ann_list:
+                                    print ( "Drawing " + ann )
+                                    cv = [ float(n.strip()) for n in ann [ ann.find('(')+1: -1 ].split(',') ]
+                                    print ( "  Values = " + str(cv) )
+                                    r = cv[2]
+                                    r2 = r / 2
+                                    painter.drawRect ( QRectF ( self.ldx+self.win_x(cv[0])-r2, self.ldy+self.win_x(cv[1])-r2, r, r ) )
+
+
+
+
         if self.draw_annotations:
             # Draw the role
             painter.setPen(QPen(QColor(255,100,100,255), 5))
