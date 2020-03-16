@@ -330,28 +330,68 @@ def data_changed_callback ( prev_layer, next_layer ):
           skip.set_value(stack[next_layer]['skip'])
 
 
-def mouse_down_callback ( role, screen_coords, image_coords ):
+def mouse_down_callback ( role, screen_coords, image_coords, button ):
     global match_pt_mode
     if match_pt_mode.get_value():
-        print ( "Adding a match point for role \"" + str(role) + "\" at " + str(screen_coords) + " == " + str(image_coords) )
+        alignem.print_debug ( 20, "Adding a match point for role \"" + str(role) + "\" at " + str(screen_coords) + " == " + str(image_coords) )
         scale_key = alignem.project_data['data']['current_scale']
         layer_num = alignem.project_data['data']['current_layer']
         stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
         layer = stack[layer_num]
+
+        if not 'metadata' in layer['images'][role]:
+            layer['images'][role]['match_points'] = {}
+
         metadata = layer['images'][role]['metadata']
-        metadata['match_points'].append ( [ c for c in image_coords ] )
-        metadata['annotations'].append ( "circle(%f,%f,10)" % image_coords )
+
+        if not 'match_points' in metadata:
+            metadata['match_points'] = []
+        match_point_data = [ c for c in image_coords ]
+        metadata['match_points'].append ( match_point_data )
+
+        if not 'annotations' in metadata:
+            metadata['annotations'] = []
+        if not 'colors' in metadata:
+            metadata['colors'] = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ],  ]
+
+        match_point_data = [ m for m in match_point_data ]
+
+        color_index = len(metadata['annotations'])
+        match_point_data.append ( color_index )
+
+        metadata['annotations'].append ( "circle(%f,%f,10,%d)" % tuple(match_point_data) )
+        for ann in metadata['annotations']:
+          alignem.print_debug ( 20, "   Annotation: " + str(ann) )
         return ( True )  # Lets the framework know that the click has been handled
     else:
         # print ( "Do Normal Processing" )
         return ( False ) # Lets the framework know that the click has not been handled
 
-def mouse_move_callback ( role, screen_coords, image_coords ):
+def mouse_move_callback ( role, screen_coords, image_coords, button ):
     global match_pt_mode
     if match_pt_mode.get_value():
         return ( True )  # Lets the framework know that the move has been handled
     else:
         return ( False ) # Lets the framework know that the move has not been handled
+
+def clear_match_points():
+    global match_pt_mode
+    if not match_pt_mode.get_value():
+        alignem.print_debug ( 1, "\nMust be in \"Match\" mode to delete all match points." )
+    else:
+        alignem.print_debug ( 20, "Deleting all match points for this layer" )
+        scale_key = alignem.project_data['data']['current_scale']
+        layer_num = alignem.project_data['data']['current_layer']
+        stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
+        layer = stack[layer_num]
+
+        for role in layer['images'].keys():
+            if 'metadata' in layer['images'][role]:
+                layer['images'][role]['metadata']['match_points'] = []
+                layer['images'][role]['metadata']['annotations'] = []
+        main_win.update_panels()
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
 
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
@@ -361,14 +401,15 @@ center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_all)
 num_fwd       = IntField("#",1,1)
 rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
-match_pt_mode = BoolField("Match",False)
 skip          = BoolField("Skip",False)
+match_pt_mode = BoolField("Match",False)
+clear_match   = CallbackButton("Clear", clear_match_points)
 debug_cb      = CallbackButton('SWIFT Debug', method_debug)
 
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", center_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, match_pt_mode, debug_cb ]
+    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", center_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, match_pt_mode, clear_match, "         ", debug_cb ]
   ] # End first pane
 ]
 
