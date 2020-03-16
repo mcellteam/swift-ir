@@ -583,7 +583,7 @@ class ZoomPanWidget(QWidget):
                         painter.drawRect(painter.viewport())
 
                         if self.draw_annotations and 'metadata' in ann_image:
-                            colors = [ [ 255, 100, 100 ] ]
+                            colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
                             if 'colors' in ann_image['metadata']:
                                 colors = ann_image['metadata']['colors']
                                 print_debug ( 95, "Colors in metadata = " + str(colors) )
