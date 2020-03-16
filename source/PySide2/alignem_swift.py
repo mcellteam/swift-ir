@@ -307,9 +307,9 @@ def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
 def data_changed_callback ( prev_layer, next_layer ):
-    # print ( "Layer changed from " + str(prev_layer) + " to " + str(next_layer) )
+    alignem.print_debug ( 30, "Layer changed from " + str(prev_layer) + " to " + str(next_layer) )
     if alignem.project_data != None:
-      alignem.print_debug ( 20, "Swapping data" )
+      alignem.print_debug ( 30, "Swapping data" )
       scale_key = alignem.project_data['data']['current_scale']
       layer_num = alignem.project_data['data']['current_layer']
       stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
