@@ -121,10 +121,10 @@ def get_scale_key ( scale_val ):
 
 def load_image_worker ( real_norm_path, image_dict ):
     # Load the image
-    print_debug ( 10, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
+    print_debug ( 25, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
     image_dict['image'] = QPixmap(real_norm_path)
     image_dict['loaded'] = True
-    print_debug ( 10, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
+    print_debug ( 25, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
 
 
 class ImageLibrary:
@@ -161,7 +161,7 @@ class ImageLibrary:
                     image_ref = self._images[real_norm_path]['image']
             else:
                 # The image is not in the library at all, so force a load now (and wait)
-                print_debug ( 10, "  Forced load of image: \"" + str(real_norm_path) + "\"" )
+                print_debug ( 25, "  Forced load of image: \"" + str(real_norm_path) + "\"" )
                 self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'loading': False, 'task':None }
                 image_ref = self._images[real_norm_path]['image']
         return ( image_ref )
@@ -171,7 +171,7 @@ class ImageLibrary:
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)
             if real_norm_path in self._images:
-                print_debug ( 10, "Unloading image: \"" + real_norm_path + "\"" )
+                print_debug ( 25, "Unloading image: \"" + real_norm_path + "\"" )
                 image_ref = self._images.pop(real_norm_path)['image']
         # This returned value may not be valid when multi-threading is implemented
         return ( image_ref )
@@ -196,7 +196,7 @@ class ImageLibrary:
         earlier request. This may cause images to be loaded multiple times.
         '''
 
-        print_debug ( 1, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
+        print_debug ( 25, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
         already_loaded = set(self._images.keys())
         normalized_requested = set ( [self.pathkey(f) for f in requested] )
         need_to_load = normalized_requested - already_loaded
@@ -209,7 +209,7 @@ class ImageLibrary:
             else:
                 self.get_image_reference ( f )   # Using this will force sequential reading behavior
 
-        print_debug ( 10, "Library has " + str(len(self._images.keys())) + " images" )
+        print_debug ( 25, "Library has " + str(len(self._images.keys())) + " images" )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def remove_all_images ( self ):
