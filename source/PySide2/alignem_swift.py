@@ -309,13 +309,14 @@ def notyet():
 def data_changed_callback ( prev_layer, next_layer ):
     # print ( "Layer changed from " + str(prev_layer) + " to " + str(next_layer) )
     if alignem.project_data != None:
-      print ( "Swapping data" )
+      alignem.print_debug ( 20, "Swapping data" )
       scale_key = alignem.project_data['data']['current_scale']
       layer_num = alignem.project_data['data']['current_layer']
       stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
       if layer_num in range(len(stack)):
         layer = stack[layer_num]
 
+        # Limit to legal values
         if prev_layer < 0:
           prev_layer = 0
         if next_layer >= len(stack):
@@ -351,8 +352,11 @@ def mouse_down_callback ( role, screen_coords, image_coords, button ):
 
         if not 'annotations' in metadata:
             metadata['annotations'] = []
+        '''
+        # Use default colors when commented, so there are no colors in the JSON
         if not 'colors' in metadata:
-            metadata['colors'] = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ],  ]
+            metadata['colors'] = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
+        '''
 
         match_point_data = [ m for m in match_point_data ]
 
@@ -390,7 +394,6 @@ def clear_match_points():
                 layer['images'][role]['metadata']['match_points'] = []
                 layer['images'][role]['metadata']['annotations'] = []
         main_win.update_panels()
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 
