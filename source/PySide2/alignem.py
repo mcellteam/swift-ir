@@ -405,7 +405,7 @@ class ZoomPanWidget(QWidget):
         ey = event.y()
 
         if main_window.mouse_down_callback != None:
-            event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)) )
+            event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)), int(event.button()) )
 
         if not event_handled:
 
@@ -429,7 +429,7 @@ class ZoomPanWidget(QWidget):
         event_handled = False
 
         if main_window.mouse_move_callback != None:
-            event_handled = main_window.mouse_move_callback ( self.role, (0,0), (0,0) )  # These will be ignored anyway for now
+            event_handled = main_window.mouse_move_callback ( self.role, (0,0), (0,0), int(event.button()) )  # These will be ignored anyway for now
 
         if not event_handled:
 
@@ -583,15 +583,27 @@ class ZoomPanWidget(QWidget):
                         painter.drawRect(painter.viewport())
 
                         if self.draw_annotations and 'metadata' in ann_image:
+                            colors = [ [ 255, 100, 100 ] ]
+                            if 'colors' in ann_image['metadata']:
+                                colors = ann_image['metadata']['colors']
+                                print_debug ( 95, "Colors in metadata = " + str(colors) )
                             if 'annotations' in ann_image['metadata']:
                                 # Draw the application-specific annotations from the metadata
-                                painter.setPen(QPen(QColor(255, 100, 100, 255),4))
+                                color_index = 0
                                 ann_list = ann_image['metadata']['annotations']
                                 for ann in ann_list:
                                     print_debug ( 50, "Drawing " + ann )
                                     cmd = ann[:ann.find('(')].strip().lower()
                                     pars = [ float(n.strip()) for n in ann [ ann.find('(')+1: -1 ].split(',') ]
                                     print_debug ( 50, "Command: " + cmd + " with pars: " + str(pars) )
+                                    if len(pars) >= 4:
+                                        color_index = int(pars[3])
+                                    else:
+                                        color_index = 0
+
+                                    color_to_use = colors[color_index%len(colors)]
+                                    print_debug ( 50, " Color to use: " + str(color_to_use) )
+                                    painter.setPen(QPen(QColor(*color_to_use),5))
                                     x = 0
                                     y = 0
                                     r = 0
@@ -603,7 +615,7 @@ class ZoomPanWidget(QWidget):
                                         painter.drawEllipse ( x-r, y-r, r*2, r*2 )
                                     if cmd == 'square':
                                         painter.drawRect ( QRectF ( x-r, y-r, r*2, r*2 ) )
-
+                                    color_index += 1
 
 
 
@@ -771,9 +783,9 @@ class MultiImagePanel(QWidget):
 ignore_changes = True  # Default for first change which happens on file open?
 
 def bool_changed_callback ( state ):
-    print ( 100*'+' )
-    print ( "Bool changed to " + str(state) )
-    print ( 100*'+' )
+    print_debug ( 50, 100*'+' )
+    print_debug ( 50, "Bool changed to " + str(state) )
+    print_debug ( 50, 100*'+' )
     global ignore_changes
     if not ignore_changes:
         if main_window != None:
