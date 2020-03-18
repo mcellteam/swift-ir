@@ -139,5 +139,5 @@ whitening. arXiv:1612.04787. https://arxiv.org/abs/1612.04787.
 
 Author
 ------
-*swim* was written by Tom Wetzel. This page was written by Daniel
+*swim* was written by Art Wetzel. This page was written by Daniel
  Wagenaar.
