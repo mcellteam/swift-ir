@@ -321,42 +321,52 @@ class ZoomPanWidget(QWidget):
                             win_w = self.width()
                             win_h = self.height()
 
-                            self.zoom_scale = 1.0
-                            self.ldx = 0
-                            self.ldy = 0
-                            self.wheel_index = 0
-                            # self.zoom_to_wheel_at ( 0, 0 )
+                            if (img_w<=0) or (img_h<=0) or (win_w<=0) or (win_h<=0):  # Zero or negative dimensions might lock up?
 
-                            # Enlarge the image while it is within the size of the window
-                            while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
-                              self.zoom_to_wheel_at ( 0, 0 )
-                              self.wheel_index += 1
-                              print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
-                              print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                              print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
-                              if abs(self.wheel_index) > 100:
-                                print_debug ( 5, "Magnitude of Wheel index > 100" )
-                                break
+                                print_debug ( -1, "Warning: Image or Window dimension is zero - cannot center image for role \"" + str(self.role) + "\"" )
 
-                            # Shrink the image while it is larger than the size of the window
-                            while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
-                              self.zoom_to_wheel_at ( 0, 0 )
-                              self.wheel_index += -1
-                              print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
-                              print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                              print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
-                              if abs(self.wheel_index) > 100:
-                                print_debug ( 5, "Magnitude of Wheel index > 100" )
-                                break
+                            else:
 
-                            # Adjust the offsets to center
-                            extra_x = win_w - self.win_x(img_w)
-                            extra_y = win_h - self.win_y(img_h)
+                                # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
+                                self.zoom_scale = 1.0
+                                self.ldx = 0
+                                self.ldy = 0
+                                self.wheel_index = 0
+                                # self.zoom_to_wheel_at ( 0, 0 )
 
-                            # Bias the y value downward to make room for text at top
-                            extra_y = 1.7 * extra_y
-                            self.ldx = (extra_x / 2) / self.zoom_scale  # It seems like these should be divided by 2
-                            self.ldy = (extra_y / 2) / self.zoom_scale  # It seems like these should be divided by 2
+                                # Enlarge the image (scaling up) while it is within the size of the window
+                                while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
+                                  print_debug ( 40, "Enlarging image to fit in center.")
+                                  self.zoom_to_wheel_at ( 0, 0 )
+                                  self.wheel_index += 1
+                                  print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
+                                  print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                                  print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                                  if abs(self.wheel_index) > 100:
+                                    print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
+                                    break
+
+                                # Shrink the image (scaling down) while it is larger than the size of the window
+                                while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
+                                  print_debug ( 40, "Shrinking image to fit in center.")
+                                  self.zoom_to_wheel_at ( 0, 0 )
+                                  self.wheel_index += -1
+                                  print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
+                                  print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                                  print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                                  if abs(self.wheel_index) > 100:
+                                    print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
+                                    break
+
+                                # Adjust the offsets to center
+                                extra_x = win_w - self.win_x(img_w)
+                                extra_y = win_h - self.win_y(img_h)
+
+                                # Bias the y value downward to make room for text at top
+                                extra_y = 1.7 * extra_y
+                                self.ldx = (extra_x / 2) / self.zoom_scale
+                                self.ldy = (extra_y / 2) / self.zoom_scale
+        print_debug ( 30, "Done centering image for " + str(self.role) )
 
 
     def win_x ( self, image_x ):
