@@ -274,6 +274,8 @@ def align_all():
 def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
+    alignem.print_debug ( 1, "Currently aligning all..." )
+    self.align_all()
 
 def center_all():
     main_win.center_all_images()
