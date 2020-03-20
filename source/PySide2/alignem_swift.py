@@ -33,7 +33,7 @@ def print_exception():
 def get_best_path ( file_path ):
     return os.path.abspath(os.path.normpath(file_path))
 
-def link_stack():
+def link_stack_orig():
     print ( "Linking stack" )
 
     ref_image_stack = []
@@ -50,6 +50,50 @@ def link_stack():
 
     print ( "Loading images: " + str(ref_image_stack) )
     #main_win.load_images_in_role ( 'ref', ref_image_stack )
+
+    main_win.update_panels()
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+def link_stack():
+    print ( "Linking stack" )
+
+    skip_list = []
+    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
+      if alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]['skip']==True:
+        skip_list.append(layer_index)
+
+    print('\nSkip List = \n' + str(skip_list) + '\n')
+
+    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
+      base_layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]
+
+      if layer_index == 0:
+        # No ref for layer 0
+        if 'ref' not in base_layer['images'].keys():
+          base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+        base_layer['images']['ref']['filename'] = ''
+      elif layer_index in skip_list:
+        # No ref for skipped layer
+        if 'ref' not in base_layer['images'].keys():
+          base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+        base_layer['images']['ref']['filename'] = ''
+      else:
+        # Find nearest previous non-skipped layer
+        j = layer_index-1
+        while (j in skip_list) and (j>=0):
+          j -= 1
+
+        # Use the nearest previous non-skipped layer as ref for this layer
+        if (j not in skip_list) and (j>=0):
+          ref_layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][j]
+          ref_fn = ''
+          if 'base' in ref_layer['images'].keys():
+            ref_fn = ref_layer['images']['base']['filename']
+          if 'ref' not in base_layer['images'].keys():
+            base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+          base_layer['images']['ref']['filename'] = ref_fn
 
     main_win.update_panels()
 

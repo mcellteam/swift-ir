@@ -130,8 +130,9 @@ class alignment_process:
     im_mov = swiftir.loadImage(self.im_mov_fn)
 
     # window size scale factor
-    wsf = 0.75
-#    wsf = 0.80
+#    wsf = 0.75
+    wsf = 0.80
+#    wsf = 0.90
 #    wsf = 1.0
 
     # Set up 1x1 point and window
