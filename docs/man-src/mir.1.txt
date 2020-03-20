@@ -260,5 +260,5 @@ Output
   
 Author
 ------
-*mir* was written by Tom Wetzel. This page was written by Daniel
+*mir* was written by Art Wetzel. This page was written by Daniel
  Wagenaar. DW does not yet fully understand *mir*.
