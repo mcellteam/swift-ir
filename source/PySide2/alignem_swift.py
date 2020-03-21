@@ -313,6 +313,7 @@ def align_all():
             alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
             print_exception()
             pass
+      center_all()
 
 
 def align_forward():
