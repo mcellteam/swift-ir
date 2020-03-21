@@ -778,6 +778,16 @@ class MultiImagePanel(QWidget):
                 p.repaint()
         self.repaint()
 
+    @Slot()
+    def refresh_all_images(self):
+        print_debug ( 30, "In MultiImagePanel.refresh_all_images" )
+        if self.actual_children != None:
+            panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
+            for p in panels_to_update:
+                p.update_zpa_self()
+                p.repaint()
+        self.repaint()
+
     def all_images_actual_size ( self ):
         print_debug ( 30, "In MultiImagePanel.all_images_actual_size" )
         if self.actual_children != None:
@@ -2025,6 +2035,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def center_all_images(self):
         self.image_panel.center_all_images()
+
+    @Slot()
+    def refresh_all_images(self):
+        self.image_panel.refresh_all_images()
 
     @Slot()
     def all_images_actual_size(self):

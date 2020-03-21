@@ -313,7 +313,7 @@ def align_all():
             alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
             print_exception()
             pass
-      center_all()
+      refresh_all()
 
 
 def align_forward():
@@ -322,8 +322,11 @@ def align_forward():
     alignem.print_debug ( 1, "Currently aligning all..." )
     self.align_all()
 
-def center_all():
-    main_win.center_all_images()
+def center_all ():
+  main_win.center_all_images ()
+
+def refresh_all():
+    main_win.refresh_all_images()
 
 def remove_aligned():
     alignem.print_debug ( 30, "Removing aligned images ..." )
@@ -344,6 +347,7 @@ def remove_aligned():
           alignem.image_library.remove_image_reference ( fname )
 
     main_win.update_panels()
+    refresh_all ()
 
 
 def method_debug():
