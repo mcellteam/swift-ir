@@ -1,0 +1,34 @@
+
+
+1) Sort Scales in Menu
+2) Copy Skip status to other scales?
+     Optional. Might want to unskip at finer scale as alignement is refined.
+3) Remember corresponding image zoom and relative position across scales
+4) Show Status info:
+     a) Progress while generating scales
+     b) Progress while aligning
+     c) Status of project:
+        i)   Perhaps need project description/metadata field?
+        ii)  Perhaps need flag to mark in-work status?
+        iii) Done scales (meaning afm's for all base images)
+        iv)  Next scale TBD (next finest scale with missing afm's)
+
+5) Buttons for "Refine Affine" and "Apply Affine"
+6) Button for remaking aligned images with nulled bias.
+   a) store bias stats for given scale
+   b) store bias function (as eval function string) in data model
+7) Parameter for whitening factor
+8) Parameter for wsf (swiftir window scaling factor)
+   a) Whole stack
+   b) custom value for a given problematic image
+   
+
+
+Wish List:
+
+Some thoughts while working remotely from home on my Mac using X to eccles.
+Mac on WiFi 5GHz 802.11n.  Ookla SpeedTest 70Mbps download, 6Mbps upload.
+Likely useful when using alignem_swift.py via the 3DEM portal on TACC.
+
+1) Jump to Frame #
+     Scrolling is a bit slow over X.  About 1 fps.
