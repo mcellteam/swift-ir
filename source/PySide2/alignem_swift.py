@@ -319,14 +319,27 @@ def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
     alignem.print_debug ( 1, "Currently aligning all..." )
-    self.align_all()
+    align_all()
+
+def jump_to_layer():
+    requested_layer = jump_to_val.get_value()
+    alignem.print_debug ( 3, "Jump to layer " + str(requested_layer) )
+    num_layers = len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])
+    if requested_layer >= num_layers: # Limit to largest
+        requested_layer = num_layers - 1
+    if requested_layer < 0: # Consider negative values as indexes from the end
+        requested_layer = num_layers + requested_layer
+    if requested_layer < 0: # If the end index was greater than the length, just show 0
+        requested_layer = 0
+    alignem.project_data['data']['current_layer'] = requested_layer
+    main_win.image_panel.update_multi_self()
 
 def center_all():
     main_win.center_all_images()
 
 
 def refresh_all ():
-  main_win.refresh_all_images ()
+    main_win.refresh_all_images ()
 
 
 def remove_aligned():
@@ -451,20 +464,22 @@ def clear_match_points():
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
-align_all_cb  = CallbackButton('Align All SWiFT', align_all)
+align_all_cb  = CallbackButton('Align All', align_all)
 center_cb     = CallbackButton('Center', center_all)
-align_fwd_cb  = CallbackButton('Align Forward SWiFT', align_forward)
+align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 num_fwd       = IntField("#",1,1)
+jump_to_cb    = CallbackButton('Jump To:', jump_to_layer)
+jump_to_val   = IntField("#",1,1)
 rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
 skip          = BoolField("Skip",False)
 match_pt_mode = BoolField("Match",False)
-clear_match   = CallbackButton("Clear", clear_match_points)
-debug_cb      = CallbackButton('SWIFT Debug', method_debug)
+clear_match   = CallbackButton("Clear Match", clear_match_points)
+debug_cb      = CallbackButton('Debug', method_debug)
 
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", center_cb, " ", align_fwd_cb, num_fwd, " ", rem_algn_cb, "         ", skip, match_pt_mode, clear_match, "         ", debug_cb ]
+    [ debug_cb, link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", align_fwd_cb, num_fwd, " ", jump_to_cb, jump_to_val, " ", center_cb, "  ", rem_algn_cb, "    ", skip, "  ", match_pt_mode, " ", clear_match ]
   ] # End first pane
 ]
 
