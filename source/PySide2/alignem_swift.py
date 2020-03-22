@@ -315,18 +315,19 @@ def align_all():
             pass
       refresh_all()
 
-
 def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
     alignem.print_debug ( 1, "Currently aligning all..." )
     self.align_all()
 
-def center_all ():
-  main_win.center_all_images ()
+def center_all():
+    main_win.center_all_images()
 
-def refresh_all():
-    main_win.refresh_all_images()
+
+def refresh_all ():
+  main_win.refresh_all_images ()
+
 
 def remove_aligned():
     alignem.print_debug ( 30, "Removing aligned images ..." )
@@ -338,7 +339,7 @@ def remove_aligned():
         delete_list.append ( layer['images']['aligned']['filename'] )
         layer['images'].pop('aligned')
 
-    alignem.image_library.remove_all_images()
+    #alignem.image_library.remove_all_images()
 
     for fname in delete_list:
       if fname != None:
@@ -474,8 +475,10 @@ if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
+    options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST")
     args = options.parse_args()
 
+    test_option = 0
     if args.debug != None:
       alignem.debug_level = args.debug
     try:
@@ -483,9 +486,13 @@ if __name__ == "__main__":
         alignem.debug_level = int(args.debug)
     except:
         pass
+    try:
+      if args.test != None:
+        test_option = int(args.test)
+    except:
+        pass
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
-    main_win.resize(1200,600)
     main_win.register_data_change_callback ( data_changed_callback )
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
@@ -497,6 +504,49 @@ if __name__ == "__main__":
     alignem.print_debug ( 30, "================= Defining Roles =================" )
 
     main_win.define_roles ( swift_roles )
+
+    if test_option in [ 1, 2 ]:
+        # Import test images
+
+        alignem.print_debug ( 30, "================= Importing Images =================" )
+
+        ref_image_stack = [ None,
+                            "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg" ]
+        try:
+          main_win.load_images_in_role ( 'ref', ref_image_stack )
+        except:
+          pass
+
+        src_image_stack = [ "vj_097_shift_rot_skew_crop_1k1k_1.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_2.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_3.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_4.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_5.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_6.jpg",
+                            "vj_097_shift_rot_skew_crop_1k1k_7.jpg" ]
+        try:
+          main_win.load_images_in_role ( 'base', src_image_stack )
+        except:
+          pass
+
+        if test_option == 2:
+            aln_image_stack = [ os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_1.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_2.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_3.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_4.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_5.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_6.jpg"),
+                                os.path.join("output","scale_1","img_aligned","vj_097_shift_rot_skew_crop_1k1k_7.jpg") ]
+            try:
+              main_win.load_images_in_role ( 'aligned', aln_image_stack )
+            except:
+              pass
+
 
     alignem.run_app(main_win)
 
