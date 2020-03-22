@@ -30,5 +30,5 @@ Some thoughts while working remotely from home on my Mac using X to eccles.
 Mac on WiFi 5GHz 802.11n.  Ookla SpeedTest 70Mbps download, 6Mbps upload.
 Likely useful when using alignem_swift.py via the 3DEM portal on TACC.
 
-1) Jump to Frame #
+1) Jump to Frame # (Done: March 21st, 2020)
      Scrolling is a bit slow over X.  About 1 fps.
