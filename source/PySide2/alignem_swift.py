@@ -490,6 +490,8 @@ if __name__ == "__main__":
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
 
+    main_win.resize(1200,600)
+
     #main_win.register_project_open ( open_json_project )
     #main_win.register_project_save ( save_json_project )
     #main_win.register_gen_scales ( generate_scales )

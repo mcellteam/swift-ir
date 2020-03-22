@@ -1529,7 +1529,7 @@ class MainWindow(QMainWindow):
     def save_project(self):
         if self.current_project_file_name is None:
             # Force the choosing of a name
-            self.save_project_as ( None )
+            self.save_project_as()
         else:
             print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
             self.save_project_to_current_file()
