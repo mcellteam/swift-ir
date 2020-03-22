@@ -768,22 +768,21 @@ class MultiImagePanel(QWidget):
             self.actual_children = self.actual_children[0:-1]
         self.repaint()
 
+    def refresh_all_images ( self ):
+        print_debug ( 30, "In MultiImagePanel.refresh_all_images" )
+        if self.actual_children != None:
+            panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
+            for p in panels_to_update:
+                p.update_zpa_self()
+                p.repaint()
+        self.repaint()
+
     def center_all_images ( self ):
         print_debug ( 30, "In MultiImagePanel.center_all_images" )
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
                 p.center_image()
-                p.update_zpa_self()
-                p.repaint()
-        self.repaint()
-
-    @Slot()
-    def refresh_all_images(self):
-        print_debug ( 30, "In MultiImagePanel.refresh_all_images" )
-        if self.actual_children != None:
-            panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
-            for p in panels_to_update:
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
@@ -1872,7 +1871,7 @@ class MainWindow(QMainWindow):
                   m.removeAction(m.actions()[-1])
                 # Add the new actions
                 first = True
-                for scale in [ get_scale_val(s) for s in scales_list ]:
+                for scale in sorted([ get_scale_val(s) for s in scales_list ]):
                   item = QAction ( str(scale), self )
                   item.setCheckable(True)
                   item.setChecked(first)
