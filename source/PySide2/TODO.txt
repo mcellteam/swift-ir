@@ -1,6 +1,6 @@
 
 
-1) Sort Scales in Menu
+1) Sort Scales in Menu (Done: March 21st, 2020)
 2) Copy Skip status to other scales?
      Optional. Might want to unskip at finer scale as alignement is refined.
 3) Remember corresponding image zoom and relative position across scales
