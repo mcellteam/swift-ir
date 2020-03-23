@@ -102,6 +102,7 @@ def link_stack():
 
 def generate_scales ():
     print ( "generate_scales inside alignem_swift called" )
+    main_win.status.showMessage("Generating Scales ...")
 
     image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
 
@@ -116,6 +117,7 @@ def generate_scales ():
       for scale in sorted(image_scales_to_run):
 
         alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
+        main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
 
         scale_key = str(scale)
         if not 'scale_' in scale_key:
@@ -206,6 +208,7 @@ def generate_scales ():
                   alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
                   layer['images'][role]['filename'] = outfile_name
                   alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
+    # main_win.status.showMessage("Done Generating Scales ...")
 
 
 def align_all():
@@ -479,7 +482,18 @@ debug_cb      = CallbackButton('Debug', method_debug)
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ debug_cb, link_stack_cb, " ", gen_scales_cb, " ", align_all_cb, " ", align_fwd_cb, num_fwd, " ", jump_to_cb, jump_to_val, " ", center_cb, "  ", rem_algn_cb, "    ", skip, "  ", match_pt_mode, " ", clear_match ]
+    [ debug_cb,
+      link_stack_cb,
+      " ", gen_scales_cb,
+      " ", align_all_cb,
+      " ", align_fwd_cb, num_fwd,
+      " ", jump_to_cb, jump_to_val,
+      " ", center_cb,
+      "  ", rem_algn_cb,
+      "    ", skip,
+      "  ", match_pt_mode,
+      " ", clear_match,
+      "    ", debug_cb ]
   ] # End first pane
 ]
 
