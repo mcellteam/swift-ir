@@ -11,10 +11,14 @@ import shutil
 import alignem
 from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
 
-from PySide2.QtWidgets import QInputDialog
+from PySide2.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar
+from PySide2.QtCore import QThread, Signal, QObject
 
 import pyswift_tui
 import align_swiftir
+
+import time
+
 
 main_win = None
 
@@ -464,6 +468,56 @@ def clear_match_points():
         main_win.update_panels()
 
 
+class RunProgressDialog(QDialog):
+    """
+    Simple dialog that consists of a Progress Bar and a Button.
+    Clicking on the button results in the start of a timer and
+    updates the progress bar.
+    """
+    def __init__(self):
+        super().__init__()
+        print ( "RunProgressDialog constructor called" )
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Progress Bar')
+        self.progress = QProgressBar(self)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.progress.setMaximum(100)
+        self.button = QPushButton('Start', self)
+        self.button.move(0, 30)
+        self.show()
+
+        self.button.clicked.connect(self.onButtonClick)
+
+    def onButtonClick(self):
+        self.calc = RunnableThread()
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()
+
+    def onCountChanged(self, value):
+        self.progress.setValue(value)
+
+COUNT_LIMIT = 100
+class RunnableThread(QThread):
+    """
+    Runs a counter thread.
+    """
+    countChanged = Signal(int)
+
+    def run(self):
+        count = 0
+        while count < COUNT_LIMIT:
+            count +=1
+            time.sleep(0.1)
+            self.countChanged.emit(count)
+
+window = None
+def run_progress():
+    global window
+    print ( "Run started" )
+    window = RunProgressDialog()
+
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
@@ -477,12 +531,13 @@ rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
 skip          = BoolField("Skip",False)
 match_pt_mode = BoolField("Match",False)
 clear_match   = CallbackButton("Clear Match", clear_match_points)
+progress_cb   = CallbackButton('Run', run_progress)
 debug_cb      = CallbackButton('Debug', method_debug)
 
 control_model = [
   # Panes
   [ # Begin first pane of rows
-    [ debug_cb,
+    [
       link_stack_cb,
       " ", gen_scales_cb,
       " ", align_all_cb,
@@ -493,7 +548,13 @@ control_model = [
       "    ", skip,
       "  ", match_pt_mode,
       " ", clear_match,
-      "    ", debug_cb ]
+      "    "
+    ],
+    [
+      "This row is for temporary debugging controls:      ",
+      debug_cb,
+      " ", progress_cb
+    ]
   ] # End first pane
 ]
 
