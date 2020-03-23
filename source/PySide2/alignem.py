@@ -53,7 +53,7 @@ def print_debug ( level, str ):
 
 app = None
 
-preloading_range = 3
+preloading_range = 10
 max_image_file_size = 1000000000
 
 current_scale = 'scale_1'
@@ -131,7 +131,7 @@ class ImageLibrary:
     '''A class containing multiple images keyed by their file name.'''
     def __init__ ( self ):
         self._images = {}  # { image_key: { "task": task, "loaded": bool, "image": image }
-        self.threaded_loading_enabled = False
+        self.threaded_loading_enabled = True
 
     def pathkey ( self, file_path ):
         if file_path == None:
@@ -1315,8 +1315,8 @@ class MainWindow(QMainWindow):
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(600)
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(400)
         self.resize(2000,1000)
 
         # self.setCentralWidget(self.image_hbox)
@@ -1556,6 +1556,11 @@ class MainWindow(QMainWindow):
                 # self.update_win_self()
                 self.save_project_to_current_file()
 
+                if self.draw_full_paths:
+                  self.setWindowTitle("Project: " + self.current_project_file_name )
+                else:
+                  self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
+
 
     @Slot()
     def actual_size(self):
@@ -1608,6 +1613,10 @@ class MainWindow(QMainWindow):
             p.draw_full_paths = self.draw_full_paths
             p.update_zpa_self()
 
+        if self.draw_full_paths:
+            self.setWindowTitle("Project: " + self.current_project_file_name )
+        else:
+            self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
     @Slot()
     def opt_n(self, option_name, option_action):
