@@ -484,11 +484,13 @@ class RunProgressDialog(QDialog):
         self.progress = QProgressBar(self)
         self.progress.setGeometry(0, 0, 300, 25)
         self.progress.setMaximum(100)
-        self.button = QPushButton('Start', self)
-        self.button.move(0, 30)
+        #self.button = QPushButton('Start', self)
+        #self.button.move(0, 30)
+        self.setModal(True)
         self.show()
+        self.onButtonClick()
 
-        self.button.clicked.connect(self.onButtonClick)
+        #self.button.clicked.connect(self.onButtonClick)
 
     def onButtonClick(self):
         self.calc = RunnableThread()
@@ -509,7 +511,7 @@ class RunnableThread(QThread):
         count = 0
         while count < COUNT_LIMIT:
             count +=1
-            time.sleep(0.1)
+            time.sleep(0.05)
             self.countChanged.emit(count)
 
 window = None
