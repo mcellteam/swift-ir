@@ -105,7 +105,6 @@ def link_stack():
 
 
 
-
 class RunProgressDialog(QDialog):
     """
     Simple dialog that consists of a Progress Bar and a Button.
@@ -159,6 +158,166 @@ def run_progress():
     window = RunProgressDialog()
 
 
+
+
+class GenScalesDialog(QDialog):
+    """
+    Simple dialog that consists of a Progress Bar and a Button.
+    Clicking on the button results in the start of a timer and
+    updates the progress bar.
+    """
+    def __init__(self):
+        super().__init__()
+        print ( "GenScalesDialog constructor called" )
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Generating Scales')
+        self.progress = QProgressBar(self)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.progress.setMaximum(100)
+        #self.button = QPushButton('Start', self)
+        #self.button.move(0, 30)
+        self.setModal(True)
+        self.show()
+        self.onButtonClick()
+
+        #self.button.clicked.connect(self.onButtonClick)
+
+    def onButtonClick(self):
+        self.calc = GenScalesThread()
+        self.calc.countChanged.connect(self.onCountChanged)
+        self.calc.start()
+
+    def onCountChanged(self, value):
+        self.progress.setValue(value)
+
+
+class GenScalesThread ( QThread ):
+
+  countChanged = Signal(int)
+
+  def run(self):
+    print ( "generate_scales inside alignem_swift called" )
+    main_win.status.showMessage("Generating Scales ...")
+
+    count = 0
+
+    image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
+
+    alignem.print_debug ( 40, "Create images at all scales: " + str ( image_scales_to_run ) )
+
+    if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
+
+      alignem.show_warning ( "Note", "Scales can not be generated without a destination (use File/Set Destination)" )
+
+    else:
+
+      for scale in sorted(image_scales_to_run):
+
+        alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
+        main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+
+        scale_key = str(scale)
+        if not 'scale_' in scale_key:
+          scale_key = 'scale_' + scale_key
+
+        subdir_path = os.path.join(alignem.project_data['data']['destination_path'],scale_key)
+        scale_1_path = os.path.join(alignem.project_data['data']['destination_path'],'scale_1')
+
+        alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
+        try:
+          os.mkdir ( subdir_path )
+        except:
+          # This catches directories that already exist
+          pass
+        src_path = os.path.join(subdir_path,'img_src')
+        alignem.print_debug ( 70, "Creating source subsubdirectory named " + src_path )
+        try:
+          os.mkdir ( src_path )
+        except:
+          # This catches directories that already exist
+          pass
+        aligned_path = os.path.join(subdir_path,'img_aligned')
+        alignem.print_debug ( 70, "Creating aligned subsubdirectory named " + aligned_path )
+        try:
+          os.mkdir ( aligned_path )
+        except:
+          # This catches directories that already exist
+          pass
+
+        for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+          # Remove previously aligned images from panel ??
+
+          # Copy (or link) the source images to the expected scale_key"/img_src" directory
+          for role in layer['images'].keys():
+
+            # Only copy files for roles "ref" and "base"
+            count += 1
+            self.countChanged.emit(count)
+
+
+            if role in ['ref', 'base']:
+
+              base_file_name = layer['images'][role]['filename']
+              if base_file_name != None:
+                if len(base_file_name) > 0:
+                  abs_file_name = os.path.abspath(base_file_name)
+                  bare_file_name = os.path.split(abs_file_name)[1]
+                  destination_path = os.path.abspath ( alignem.project_data['data']['destination_path'] )
+                  outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
+                  if scale == 1:
+                    if get_best_path(abs_file_name) != get_best_path(outfile_name):
+                      # The paths are different so make the link
+                      try:
+                        alignem.print_debug ( 70, "UnLinking " + outfile_name )
+                        os.unlink ( outfile_name )
+                      except:
+                        alignem.print_debug ( 70, "Error UnLinking " + outfile_name )
+                      try:
+                        alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
+                        os.symlink ( abs_file_name, outfile_name )
+                      except:
+                        alignem.print_debug ( 5, "Unable to link from " + abs_file_name + " to " + outfile_name )
+                        alignem.print_debug ( 5, "Copying file instead" )
+                        # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
+                        try:
+                          shutil.copy ( abs_file_name, outfile_name )
+                        except:
+                          alignem.print_debug ( 1, "Unable to link or copy from " + abs_file_name + " to " + outfile_name )
+                          print_exception()
+                  else:
+                    try:
+                      # Do the scaling
+                      alignem.print_debug ( 70, "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+
+                      if os.path.split ( os.path.split ( os.path.split ( abs_file_name )[0] )[0] )[1].startswith('scale_'):
+                        # Convert the source from whatever scale is currently processed to scale_1
+                        p,f = os.path.split(abs_file_name)
+                        p,r = os.path.split(p)
+                        p,s = os.path.split(p)
+                        abs_file_name = os.path.join ( p, 'scale_1', r, f )
+
+                      img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+                      align_swiftir.swiftir.saveImage ( img, outfile_name )
+                      # Change the base image for this scale to the new file
+                      layer['images'][role]['filename'] = outfile_name
+                    except:
+                      alignem.print_debug ( 1, "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+                      print_exception()
+
+                  # Update the Data Model with the new absolute file name. This replaces the originally opened file names
+                  alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
+                  layer['images'][role]['filename'] = outfile_name
+                  alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
+    # main_win.status.showMessage("Done Generating Scales ...")
+
+
+gen_scales_window = None
+def gen_scales_with_thread():
+    global gen_scales_window
+    print ( "Generating Scales ..." )
+    gen_scales_window = GenScalesDialog()
 
 
 def generate_scales ():
@@ -538,14 +697,15 @@ skip          = BoolField("Skip",False)
 match_pt_mode = BoolField("Match",False)
 clear_match   = CallbackButton("Clear Match", clear_match_points)
 progress_cb   = CallbackButton('Run', run_progress)
+gen_scales_thread_cb = CallbackButton('Gen Scales Thread', gen_scales_with_thread)
 debug_cb      = CallbackButton('Debug', method_debug)
 
 control_model = [
   # Panes
   [ # Begin first pane of rows
     [
-      link_stack_cb,
-      " ", gen_scales_cb,
+      gen_scales_cb,
+      " ", link_stack_cb,
       " ", align_all_cb,
       " ", align_fwd_cb, num_fwd,
       " ", jump_to_cb, jump_to_val,
@@ -559,6 +719,7 @@ control_model = [
     [
       "This row is for temporary debugging controls:      ",
       debug_cb,
+      " ", gen_scales_thread_cb,
       " ", progress_cb
     ]
   ] # End first pane
