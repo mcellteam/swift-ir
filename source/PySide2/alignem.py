@@ -1169,7 +1169,9 @@ class MainWindow(QMainWindow):
                   [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ 'Save Project &As', 'Ctrl+A', self.save_project_as, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Set Destination...', None, self.set_destination, None, None, None ],
+                  [ 'Set Project Destination', None, self.set_def_proj_dest, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Set Other Destination...', None, self.set_destination, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
                 ]
@@ -1764,6 +1766,22 @@ class MainWindow(QMainWindow):
 
         project_data['data']['destination_path'] = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=project_data['data']['destination_path'], options=options)
         print_debug ( 1, "Destination is: " + str(project_data['data']['destination_path']) )
+
+    @Slot()
+    def set_def_proj_dest ( self ):
+        print_debug ( 1, "Set Default Project Destination to " + str(self.current_project_file_name) )
+        if self.current_project_file_name == None:
+          show_warning ( "No Project File", "Unable to set a project destination without a project file.\nPlease save the project file first." )
+        elif len(self.current_project_file_name) == 0:
+          show_warning ( "No Legal Project File", "Unable to set a project destination without a project file.\nPlease save the project file first." )
+        else:
+          p,e = os.path.splitext(self.current_project_file_name)
+          if not (e.lower() == '.json'):
+            show_warning ( "Not JSON File Extension", 'Project file must be of type "JSON".\nPlease save the project file as ".JSON" first.' )
+          else:
+            project_data['data']['destination_path'] = p
+            os.makedirs(project_data['data']['destination_path'])
+            print ( "Destination path is : " + str(project_data['data']['destination_path']) )
 
 
     def load_images_in_role ( self, role, file_names ):
