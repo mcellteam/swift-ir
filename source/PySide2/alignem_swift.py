@@ -766,6 +766,30 @@ def clear_match_points():
                 layer['images'][role]['metadata']['annotations'] = []
         main_win.update_panels()
 
+def clear_all_skips():
+    image_scale_keys = [ s for s in sorted(alignem.project_data['data']['scales'].keys()) ]
+    for scale in image_scale_keys:
+        scale_key = str(scale)
+        for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+            layer['skip'] = False
+    skip.set_value(False)
+
+def copy_skips_to_all_scales():
+    source_scale_key = alignem.project_data['data']['current_scale']
+    if not 'scale_' in str(source_scale_key):
+        source_scale_key = 'scale_' + str(source_scale_key)
+    scales = alignem.project_data['data']['scales']
+    image_scale_keys = [ s for s in sorted(scales.keys()) ]
+    for scale in image_scale_keys:
+        scale_key = str(scale)
+        if not 'scale_' in str(scale_key):
+            scale_key = 'scale_' + str(scale_key)
+        if scale_key != source_scale_key:
+            for l in range(len(scales[source_scale_key]['alignment_stack'])):
+                if l < len(scales[scale_key]['alignment_stack']):
+                    scales[scale_key]['alignment_stack'][l]['skip'] = scales[source_scale_key]['alignment_stack'][l]['skip']
+    # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][alignem.project_data['data']['current_layer']]['skip']
+
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
@@ -783,6 +807,9 @@ progress_cb   = CallbackButton('Test Progress Bar', run_progress)
 gen_scales_thread_cb = CallbackButton('Gen Scales (threaded)', gen_scales_with_thread)
 link_stacks_cb = CallbackButton("Link All Stacks", link_all_stacks )
 debug_cb       = CallbackButton('Debug', method_debug)
+
+clear_skips_cb = CallbackButton("Clear all Skips", clear_all_skips)
+skips_to_all_cb = CallbackButton('Copy Skips to All Scales', copy_skips_to_all_scales)
 
 refine_aff_cb  = CallbackButton('Refine Affine', notyet)
 apply_aff_cb  = CallbackButton('Apply Affine', notyet)
@@ -806,11 +833,13 @@ control_model = [
       "    "
     ],
     [
-      "Work in progress:      ",
+      "Test: ",
       gen_scales_thread_cb,
       " ", link_stacks_cb,
       " ", refine_aff_cb,
       " ", apply_aff_cb,
+      " ", clear_skips_cb,
+      " ", skips_to_all_cb,
       " ", whitening_factor,
       " ", win_scale_factor,
       " ", progress_cb,
@@ -841,7 +870,7 @@ if __name__ == "__main__":
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
 
-    main_win.resize(1200,600)
+    main_win.resize(1400,600)  # This value is typically chosen to show all widget text
 
     #main_win.register_project_open ( open_json_project )
     #main_win.register_project_save ( save_json_project )
