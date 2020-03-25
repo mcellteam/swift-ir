@@ -1,11 +1,11 @@
 
 
 1) Sort Scales in Menu (Done: March 21st, 2020)
-2) Copy Skip status to other scales?
+2) Copy Skip status to other scales? (Done: March 24th, 2020 ... skip is copied when generating scales)
      Optional. Might want to unskip at finer scale as alignement is refined.
 3) Remember corresponding image zoom and relative position across scales
 4) Show Status info:
-     a) Progress while generating scales
+     a) Progress while generating scales (Prototype created March 23rd, 2020, problems on Mac)
      b) Progress while aligning
      c) Status of project:
         i)   Perhaps need project description/metadata field?
