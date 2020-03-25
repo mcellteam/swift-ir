@@ -104,7 +104,7 @@ def link_stack():
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-
+'''
 class RunProgressDialog(QDialog):
     """
     Simple dialog that consists of a Progress Bar and a Button.
@@ -156,15 +156,13 @@ def run_progress():
     global window
     print ( "Run started" )
     window = RunProgressDialog()
-
+'''
 
 
 
 class GenScalesDialog(QDialog):
     """
-    Simple dialog that consists of a Progress Bar and a Button.
-    Clicking on the button results in the start of a timer and
-    updates the progress bar.
+    Simple dialog that consists of a Progress Bar.
     """
     def __init__(self):
         super().__init__()
@@ -175,16 +173,26 @@ class GenScalesDialog(QDialog):
         self.setWindowTitle('Generating Scales')
         self.progress = QProgressBar(self)
         self.progress.setGeometry(0, 0, 300, 25)
-        self.progress.setMaximum(100)
+
+        total_images_to_scale = 42
+        total_images_to_scale = 0
+        image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
+        for scale in image_scales_to_run:
+            scale_key = str(scale)
+            if not 'scale_' in scale_key:
+                scale_key = 'scale_' + scale_key
+            total_images_to_scale += len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])
+        if total_images_to_scale <= 1:
+            total_images_to_scale = 1
+        print ( "Total images to scale = " + str(total_images_to_scale) )
+
+        self.progress.setMaximum(total_images_to_scale)
+
         #self.button = QPushButton('Start', self)
         #self.button.move(0, 30)
+
         self.setModal(True)
         self.show()
-        self.onButtonClick()
-
-        #self.button.clicked.connect(self.onButtonClick)
-
-    def onButtonClick(self):
         self.calc = GenScalesThread()
         self.calc.countChanged.connect(self.onCountChanged)
         self.calc.start()
@@ -198,8 +206,8 @@ class GenScalesThread ( QThread ):
   countChanged = Signal(int)
 
   def run(self):
-    print ( "generate_scales inside alignem_swift called" )
-    main_win.status.showMessage("Generating Scales ...")
+    print ( "GenScalesThread.run inside alignem_swift called" )
+    #main_win.status.showMessage("Generating Scales ...")
 
     count = 0
 
@@ -252,12 +260,13 @@ class GenScalesThread ( QThread ):
           # Copy (or link) the source images to the expected scale_key"/img_src" directory
           for role in layer['images'].keys():
 
-            # Only copy files for roles "ref" and "base"
+            # Update the counter for the progress bar and emit the signal to update
             count += 1
             self.countChanged.emit(count)
 
-
-            if role in ['ref', 'base']:
+            # Only copy files for roles "ref" and "base"
+            # if role in ['ref', 'base']:
+            if role in ['base']:
 
               base_file_name = layer['images'][role]['filename']
               if base_file_name != None:
@@ -310,13 +319,13 @@ class GenScalesThread ( QThread ):
                   alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
                   layer['images'][role]['filename'] = outfile_name
                   alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
-    # main_win.status.showMessage("Done Generating Scales ...")
+    #main_win.status.showMessage("Done Generating Scales ...")
 
 
 gen_scales_window = None
 def gen_scales_with_thread():
     global gen_scales_window
-    print ( "Generating Scales ..." )
+    print ( "Generating Scales with Progress Bar ..." )
     gen_scales_window = GenScalesDialog()
 
 
@@ -428,7 +437,7 @@ def generate_scales ():
                   alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
                   layer['images'][role]['filename'] = outfile_name
                   alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
-    # main_win.status.showMessage("Done Generating Scales ...")
+    main_win.status.showMessage("Done Generating Scales ...")
 
 
 def align_all():
@@ -696,7 +705,7 @@ rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
 skip          = BoolField("Skip",False)
 match_pt_mode = BoolField("Match",False)
 clear_match   = CallbackButton("Clear Match", clear_match_points)
-progress_cb   = CallbackButton('Run', run_progress)
+# progress_cb   = CallbackButton('Run', run_progress)
 gen_scales_thread_cb = CallbackButton('Gen Scales Thread', gen_scales_with_thread)
 debug_cb      = CallbackButton('Debug', method_debug)
 
@@ -720,7 +729,7 @@ control_model = [
       "This row is for temporary debugging controls:      ",
       debug_cb,
       " ", gen_scales_thread_cb,
-      " ", progress_cb
+      " " # , progress_cb
     ]
   ] # End first pane
 ]
