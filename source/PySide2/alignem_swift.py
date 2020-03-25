@@ -151,7 +151,7 @@ def link_all_stacks():
 
 
 
-'''
+
 class RunProgressDialog(QDialog):
     """
     Simple dialog that consists of a Progress Bar and a Button.
@@ -195,7 +195,7 @@ class RunnableThread(QThread):
         count = 0
         while count < COUNT_LIMIT:
             count +=1
-            time.sleep(0.05)
+            time.sleep(0.02)
             self.countChanged.emit(count)
 
 window = None
@@ -203,7 +203,7 @@ def run_progress():
     global window
     print ( "Run started" )
     window = RunProgressDialog()
-'''
+
 
 
 
@@ -752,10 +752,15 @@ rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
 skip          = BoolField("Skip",False)
 match_pt_mode = BoolField("Match",False)
 clear_match   = CallbackButton("Clear Match", clear_match_points)
-# progress_cb   = CallbackButton('Run', run_progress)
-gen_scales_thread_cb = CallbackButton('Gen Scales Thread', gen_scales_with_thread)
+progress_cb   = CallbackButton('Test Progress Bar', run_progress)
+gen_scales_thread_cb = CallbackButton('Gen Scales (threaded)', gen_scales_with_thread)
 link_stacks_cb = CallbackButton("Link All Stacks", link_all_stacks )
 debug_cb       = CallbackButton('Debug', method_debug)
+
+refine_aff_cb  = CallbackButton('Refine Affine', notyet)
+apply_aff_cb  = CallbackButton('Apply Affine', notyet)
+whitening_factor  = FloatField('Whitening', 1.0)
+win_scale_factor  = FloatField('Window Scale Factor', 1.0)
 
 control_model = [
   # Panes
@@ -774,11 +779,15 @@ control_model = [
       "    "
     ],
     [
-      "This row is for temporary debugging controls:      ",
-      link_stacks_cb,
-      " ", debug_cb,
-      " ", gen_scales_thread_cb,
-      " " # , progress_cb
+      "Work in progress:      ",
+      gen_scales_thread_cb,
+      " ", link_stacks_cb,
+      " ", refine_aff_cb,
+      " ", apply_aff_cb,
+      " ", whitening_factor,
+      " ", win_scale_factor,
+      " ", progress_cb,
+      " ", debug_cb
     ]
   ] # End first pane
 ]
