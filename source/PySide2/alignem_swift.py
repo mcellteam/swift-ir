@@ -104,6 +104,53 @@ def link_stack():
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+
+def link_all_stacks():
+    print ( "Linking all stacks" )
+
+    for scale_key in alignem.project_data['data']['scales'].keys():
+        skip_list = []
+        for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
+          if alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip']==True:
+            skip_list.append(layer_index)
+
+        print('\nSkip List = \n' + str(skip_list) + '\n')
+
+        for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
+          base_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
+
+          if layer_index == 0:
+            # No ref for layer 0
+            if 'ref' not in base_layer['images'].keys():
+              base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+            base_layer['images']['ref']['filename'] = ''
+          elif layer_index in skip_list:
+            # No ref for skipped layer
+            if 'ref' not in base_layer['images'].keys():
+              base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+            base_layer['images']['ref']['filename'] = ''
+          else:
+            # Find nearest previous non-skipped layer
+            j = layer_index-1
+            while (j in skip_list) and (j>=0):
+              j -= 1
+
+            # Use the nearest previous non-skipped layer as ref for this layer
+            if (j not in skip_list) and (j>=0):
+              ref_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][j]
+              ref_fn = ''
+              if 'base' in ref_layer['images'].keys():
+                ref_fn = ref_layer['images']['base']['filename']
+              if 'ref' not in base_layer['images'].keys():
+                base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+              base_layer['images']['ref']['filename'] = ref_fn
+
+    main_win.update_panels()
+
+    #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+
 '''
 class RunProgressDialog(QDialog):
     """
@@ -707,7 +754,8 @@ match_pt_mode = BoolField("Match",False)
 clear_match   = CallbackButton("Clear Match", clear_match_points)
 # progress_cb   = CallbackButton('Run', run_progress)
 gen_scales_thread_cb = CallbackButton('Gen Scales Thread', gen_scales_with_thread)
-debug_cb      = CallbackButton('Debug', method_debug)
+link_stacks_cb = CallbackButton("Link All Stacks", link_all_stacks )
+debug_cb       = CallbackButton('Debug', method_debug)
 
 control_model = [
   # Panes
@@ -727,7 +775,8 @@ control_model = [
     ],
     [
       "This row is for temporary debugging controls:      ",
-      debug_cb,
+      link_stacks_cb,
+      " ", debug_cb,
       " ", gen_scales_thread_cb,
       " " # , progress_cb
     ]
