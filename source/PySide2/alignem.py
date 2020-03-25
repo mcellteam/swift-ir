@@ -1110,6 +1110,7 @@ class MainWindow(QMainWindow):
         self.current_project_file_name = None
 
         self.data_change_callback = None
+        self.scale_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
 
@@ -1780,7 +1781,8 @@ class MainWindow(QMainWindow):
             show_warning ( "Not JSON File Extension", 'Project file must be of type "JSON".\nPlease save the project file as ".JSON" first.' )
           else:
             project_data['data']['destination_path'] = p
-            os.makedirs(project_data['data']['destination_path'])
+            #os.makedirs(project_data['data']['destination_path'])
+            makedirs_exist_ok ( project_data['data']['destination_path'], exist_ok=True )
             print ( "Destination path is : " + str(project_data['data']['destination_path']) )
 
 
@@ -1837,6 +1839,9 @@ class MainWindow(QMainWindow):
 
     def register_data_change_callback ( self, callback_function ):
         self.data_change_callback = callback_function
+
+    def register_scale_change_callback ( self, callback_function ):
+        self.scale_change_callback = callback_function
 
     def register_mouse_down_callback ( self, callback_function ):
         self.mouse_down_callback = callback_function
@@ -1944,6 +1949,7 @@ class MainWindow(QMainWindow):
                   else:
                     a.setChecked ( False )
 
+
     @Slot()
     def define_scales_callback(self):
         default_scales = ['1']
@@ -1999,7 +2005,11 @@ class MainWindow(QMainWindow):
     def set_current_scale(self, checked):
         global current_scale
         print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
-        current_scale = get_scale_key ( str ( self.sender().text() ) )
+        old_scale = current_scale
+        new_scale = get_scale_key ( str ( self.sender().text() ) )
+        if self.scale_change_callback != None:
+            self.scale_change_callback ( old_scale, new_scale )
+        current_scale = new_scale
         project_data['data']['current_scale'] = current_scale
         print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
 
