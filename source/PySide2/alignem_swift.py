@@ -650,8 +650,8 @@ def method_debug():
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
-def data_changed_callback ( prev_layer, next_layer ):
-    alignem.print_debug ( 30, "Layer changed from " + str(prev_layer) + " to " + str(next_layer) )
+def data_changed_callback ( prev_layer, next_layer, new_data_model=False ):
+    alignem.print_debug ( 2, "Layer changed from " + str(prev_layer) + " to " + str(next_layer) + " with new data model = " + str(new_data_model) )
     if alignem.project_data != None:
       alignem.print_debug ( 30, "Swapping data" )
       scale_key = alignem.project_data['data']['current_scale']
@@ -666,13 +666,40 @@ def data_changed_callback ( prev_layer, next_layer ):
         if next_layer >= len(stack):
           next_layer = len(stack)-1
 
+        # Ensure that the proper structure exists
+        if not 'align_to_ref_method' in stack[prev_layer]:
+          stack[prev_layer]['align_to_ref_method'] = {}
+        if not 'method_data' in stack[prev_layer]['align_to_ref_method']:
+          stack[prev_layer]['align_to_ref_method']['method_data'] = {}
+        if not 'align_to_ref_method' in stack[next_layer]:
+          stack[next_layer]['align_to_ref_method'] = {}
+        if not 'method_data' in stack[next_layer]['align_to_ref_method']:
+          stack[next_layer]['align_to_ref_method']['method_data'] = {}
+
+        # Exchange data between widget fields and the data model itself
         if prev_layer == next_layer:
-          # Just copy the data into this layer
-          stack[prev_layer]['skip'] = skip.get_value()
+          if new_data_model:
+              # Ignore what's in the fields and copy from the data model
+              skip.set_value(stack[next_layer]['skip'])
+              if 'whitening_factor' in stack[next_layer]['align_to_ref_method']['method_data']:
+                whitening_factor.set_value(stack[next_layer]['align_to_ref_method']['method_data']['whitening_factor'])
+              if 'win_scale_factor' in stack[next_layer]['align_to_ref_method']['method_data']:
+                win_scale_factor.set_value(stack[next_layer]['align_to_ref_method']['method_data']['win_scale_factor'])
+          else:
+              # Just copy the data into this layer from the current field values
+              stack[prev_layer]['skip'] = skip.get_value()
+              stack[prev_layer]['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
+              stack[prev_layer]['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
         else:
           # Save the value into the previous layer and set the value from the next layer
           stack[prev_layer]['skip'] = skip.get_value()
           skip.set_value(stack[next_layer]['skip'])
+          stack[prev_layer]['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
+          if 'whitening_factor' in stack[next_layer]['align_to_ref_method']['method_data']:
+            whitening_factor.set_value(stack[next_layer]['align_to_ref_method']['method_data']['whitening_factor'])
+          stack[prev_layer]['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
+          if 'win_scale_factor' in stack[next_layer]['align_to_ref_method']['method_data']:
+            win_scale_factor.set_value(stack[next_layer]['align_to_ref_method']['method_data']['win_scale_factor'])
 
 
 def mouse_down_callback ( role, screen_coords, image_coords, button ):

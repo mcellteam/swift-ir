@@ -484,7 +484,10 @@ class ZoomPanWidget(QWidget):
             if entering_layer < 0:
                 entering_layer = 0
 
-            main_window.data_change_callback ( leaving_layer, entering_layer )
+            try:
+              main_window.data_change_callback ( leaving_layer, entering_layer )
+            except:
+              print ( "Exception in data_change_callback" )
 
           local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
           local_current_scale = project_data['data']['current_scale']  # Get it from the data model
@@ -521,6 +524,7 @@ class ZoomPanWidget(QWidget):
 
           # if len(project_data['data']['scales'][local_current_layer]
 
+          self.update_zpa_self()
           self.update_siblings()
 
 
@@ -1489,6 +1493,14 @@ class MainWindow(QMainWindow):
                 # Set the currently selected scale from the JSON project data
                 print_debug ( 30, "Set current Scale to " + str(project_data['data']['current_scale']) )
                 self.set_selected_scale ( project_data['data']['current_scale'] )
+
+                # Force the currently displayed fields to reflect the newly loaded data
+                if self.data_change_callback != None:
+                    if project_data != None:
+                        if 'data' in project_data:
+                            if 'current_layer' in project_data['data']:
+                                layer = project_data['data']['current_layer']
+                                self.data_change_callback ( layer, layer, True )
 
                 if self.draw_full_paths:
                   self.setWindowTitle("Project: " + self.current_project_file_name )
