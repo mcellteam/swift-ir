@@ -650,6 +650,12 @@ def method_debug():
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
+def scale_changed_callback ( prev_scale, next_scale ):
+    print ( 100 * "#" )
+    print ( "Scale changed callback: " + str(prev_scale) + " to " + str(next_scale) )
+    print ( "TODO: Need to model alignem_swift.scale_changed_callback after alignem_swift.data_changed_callback" )
+    print ( 100 * "#" )
+
 def data_changed_callback ( prev_layer, next_layer, new_data_model=False ):
     alignem.print_debug ( 2, "Layer changed from " + str(prev_layer) + " to " + str(next_layer) + " with new data model = " + str(new_data_model) )
     if alignem.project_data != None:
@@ -867,6 +873,7 @@ if __name__ == "__main__":
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_data_change_callback ( data_changed_callback )
+    main_win.register_scale_change_callback ( scale_changed_callback )
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
 

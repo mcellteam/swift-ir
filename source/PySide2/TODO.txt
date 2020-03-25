@@ -1,7 +1,7 @@
 
 
 1) Sort Scales in Menu (Done: March 21st, 2020)
-2) Copy Skip status to other scales? (Done: March 24th, 2020 ... skip is copied when generating scales)
+2) Copy Skip status to other scales? (Done: March 24th, 2020 ... New buttons to clear/copy)
      Optional. Might want to unskip at finer scale as alignement is refined.
 3) Remember corresponding image zoom and relative position across scales
 4) Show Status info:
@@ -13,16 +13,15 @@
         iii) Done scales (meaning afm's for all base images)
         iv)  Next scale TBD (next finest scale with missing afm's)
 
-5) Buttons for "Refine Affine" and "Apply Affine"
+5) Buttons for "Refine Affine" and "Apply Affine" (Buttons Added March 24th, 2020)
 6) Button for remaking aligned images with nulled bias.
    a) store bias stats for given scale
    b) store bias function (as eval function string) in data model
-7) Parameter for whitening factor
-8) Parameter for wsf (swiftir window scaling factor)
+7) Parameter for whitening factor                    (Parameter Added March 24th, 2020)
+8) Parameter for wsf (swiftir window scaling factor)  (Parameter Added March 24th, 2020)
    a) Whole stack
    b) custom value for a given problematic image
    
-
 
 Wish List:
 
@@ -30,5 +29,5 @@ Some thoughts while working remotely from home on my Mac using X to eccles.
 Mac on WiFi 5GHz 802.11n.  Ookla SpeedTest 70Mbps download, 6Mbps upload.
 Likely useful when using alignem_swift.py via the 3DEM portal on TACC.
 
-1) Jump to Frame # (Done: March 21st, 2020)
+1) Jump to Frame #                            (Done: March 21st, 2020)
      Scrolling is a bit slow over X.  About 1 fps.
