@@ -1173,6 +1173,8 @@ class MainWindow(QMainWindow):
               [ '&Images',
                 [
                   [ 'Define Roles', None, self.define_roles_callback, None, None, None ],
+                  [ 'Import &Base Images', None, self.import_base_images, None, None, None ],
+                  [ '-', None, None, None, None, None ],
                   [ '&Import into',
                     [
                       # Empty list to hold the dynamic roles as defined above
@@ -1833,6 +1835,9 @@ class MainWindow(QMainWindow):
     def import_into_role(self, checked):
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( import_role_name )
+
+    def import_base_images ( self ):
+        self.import_images_dialog ( 'base' )
 
     @Slot()
     def empty_into_role(self, checked):
