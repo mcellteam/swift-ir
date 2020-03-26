@@ -476,7 +476,7 @@ class ZoomPanWidget(QWidget):
 
         if project_data != None:
 
-          if main_window.data_change_callback != None:
+          if main_window.view_change_callback != None:
 
             leaving_layer = project_data['data']['current_layer']
             entering_layer = project_data['data']['current_layer'] + layer_delta
@@ -485,9 +485,11 @@ class ZoomPanWidget(QWidget):
                 entering_layer = 0
 
             try:
-              main_window.data_change_callback ( leaving_layer, entering_layer )
+              leaving_scale = -1
+              entering_scale = -1
+              main_window.view_change_callback ( leaving_scale, entering_scale, leaving_layer, entering_layer )
             except:
-              print ( "Exception in data_change_callback" )
+              print ( "Exception in view_change_callback" )
 
           local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
           local_current_scale = project_data['data']['current_scale']  # Get it from the data model
@@ -812,14 +814,14 @@ def bool_changed_callback ( state ):
     global ignore_changes
     if not ignore_changes:
         if main_window != None:
-            if main_window.data_change_callback != None:
+            if main_window.view_change_callback != None:
                 layer = 0
                 if project_data != None:
                     if 'data' in project_data:
                         if 'current_layer' in project_data['data']:
                             layer = project_data['data']['current_layer']
                 ignore_changes = True
-                main_window.data_change_callback ( layer, layer )
+                main_window.view_change_callback ( -1, -1, layer, layer )
                 ignore_changes = False
 
 
@@ -1109,7 +1111,7 @@ class MainWindow(QMainWindow):
 
         self.current_project_file_name = None
 
-        self.data_change_callback = None
+        self.view_change_callback = None
         self.scale_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
@@ -1498,12 +1500,12 @@ class MainWindow(QMainWindow):
                 self.set_selected_scale ( project_data['data']['current_scale'] )
 
                 # Force the currently displayed fields to reflect the newly loaded data
-                if self.data_change_callback != None:
+                if self.view_change_callback != None:
                     if project_data != None:
                         if 'data' in project_data:
                             if 'current_layer' in project_data['data']:
                                 layer = project_data['data']['current_layer']
-                                self.data_change_callback ( layer, layer, True )
+                                self.view_change_callback ( -1, -1, layer, layer, True )
 
                 if self.draw_full_paths:
                   self.setWindowTitle("Project: " + self.current_project_file_name )
@@ -1837,8 +1839,8 @@ class MainWindow(QMainWindow):
                         mm.addAction(item)
                         first = False
 
-    def register_data_change_callback ( self, callback_function ):
-        self.data_change_callback = callback_function
+    def register_view_change_callback ( self, callback_function ):
+        self.view_change_callback = callback_function
 
     def register_scale_change_callback ( self, callback_function ):
         self.scale_change_callback = callback_function
