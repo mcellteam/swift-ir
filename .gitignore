@@ -32,4 +32,20 @@ libraries
 *.png
 *.pyc
 *.json
+source/.DS_Store
+source/PySide2/.DS_Store
+source/PySide2/afm_1.dat
+source/PySide2/alignem2.py
+source/PySide2/alignem_swift2.py
+source/PySide2/bias_det_1.dat
+source/PySide2/bias_rot_1.dat
+source/PySide2/bias_scale_x_1.dat
+source/PySide2/bias_scale_y_1.dat
+source/PySide2/bias_skew_x_1.dat
+source/PySide2/bias_x_1.dat
+source/PySide2/bias_y_1.dat
+source/PySide2/c_afm_1.dat
+source/PySide2/idle.py
+source/PySide2/out/
+source/PySide2/snr_1.dat
 
