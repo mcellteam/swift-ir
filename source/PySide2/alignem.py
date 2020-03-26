@@ -485,9 +485,9 @@ class ZoomPanWidget(QWidget):
                 entering_layer = 0
 
             try:
-              leaving_scale = -1
-              entering_scale = -1
-              main_window.view_change_callback ( leaving_scale, entering_scale, leaving_layer, entering_layer )
+              leaving_scale = project_data['data']['current_scale']
+              entering_scale = project_data['data']['current_scale']
+              main_window.view_change_callback ( get_scale_key(leaving_scale), get_scale_key(entering_scale), leaving_layer, entering_layer )
             except:
               print ( "Exception in view_change_callback" )
 
@@ -815,13 +815,13 @@ def bool_changed_callback ( state ):
     if not ignore_changes:
         if main_window != None:
             if main_window.view_change_callback != None:
-                layer = 0
+                layer_num = 0
                 if project_data != None:
                     if 'data' in project_data:
                         if 'current_layer' in project_data['data']:
-                            layer = project_data['data']['current_layer']
+                            layer_num = project_data['data']['current_layer']
                 ignore_changes = True
-                main_window.view_change_callback ( -1, -1, layer, layer )
+                main_window.view_change_callback ( -1, -1, layer_num, layer_num )
                 ignore_changes = False
 
 
@@ -1504,8 +1504,8 @@ class MainWindow(QMainWindow):
                     if project_data != None:
                         if 'data' in project_data:
                             if 'current_layer' in project_data['data']:
-                                layer = project_data['data']['current_layer']
-                                self.view_change_callback ( -1, -1, layer, layer, True )
+                                layer_num = project_data['data']['current_layer']
+                                self.view_change_callback ( -1, -1, layer_num, layer_num, True )
 
                 if self.draw_full_paths:
                   self.setWindowTitle("Project: " + self.current_project_file_name )

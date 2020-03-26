@@ -663,53 +663,60 @@ def scale_changed_callback ( prev_scale, next_scale ):
 def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False ):
     alignem.print_debug ( 2, "Layer changed from " + str(prev_layer_num) + " to " + str(next_layer_num) + " with new data model = " + str(new_data_model) )
     if alignem.project_data != None:
-      alignem.print_debug ( 30, "Swapping data" )
-      scale_key = alignem.project_data['data']['current_scale']
-      layer_num = alignem.project_data['data']['current_layer']
-      stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
-      if layer_num in range(len(stack)):
-        layer = stack[layer_num]
+      alignem.print_debug ( 30, "Swapping data between " + str((prev_scale_key,prev_layer_num)) + " and " + str((next_scale_key,next_layer_num)) )
+      #scale_key = alignem.project_data['data']['current_scale']
+      #layer_num = alignem.project_data['data']['current_layer']
+      #stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
+      prev_layer = None
+      next_layer = None
+      if prev_scale_key in alignem.project_data['data']['scales']:
+          if prev_layer_num in range(len(alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'])):
+              prev_layer = alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'][prev_layer_num]
+      if next_scale_key in alignem.project_data['data']['scales']:
+          if next_layer_num in range(len(alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'])):
+              next_layer = alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'][next_layer_num]
 
-        # Limit to legal values
-        if prev_layer_num < 0:
-          prev_layer_num = 0
-        if next_layer_num >= len(stack):
-          next_layer_num = len(stack)-1
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+      if (prev_layer != None) and (next_layer != None):
+
+        alignem.print_debug ( 35, "Swapping data between " + str(prev_layer) + " and " + str(next_layer) )
 
         # Ensure that the proper structure exists
-        if not 'align_to_ref_method' in stack[prev_layer_num]:
-          stack[prev_layer_num]['align_to_ref_method'] = {}
-        if not 'method_data' in stack[prev_layer_num]['align_to_ref_method']:
-          stack[prev_layer_num]['align_to_ref_method']['method_data'] = {}
-        if not 'align_to_ref_method' in stack[next_layer_num]:
-          stack[next_layer_num]['align_to_ref_method'] = {}
-        if not 'method_data' in stack[next_layer_num]['align_to_ref_method']:
-          stack[next_layer_num]['align_to_ref_method']['method_data'] = {}
+        if not 'align_to_ref_method' in prev_layer:
+          prev_layer['align_to_ref_method'] = {}
+        if not 'method_data' in prev_layer['align_to_ref_method']:
+          prev_layer['align_to_ref_method']['method_data'] = {}
+        if not 'align_to_ref_method' in next_layer:
+          next_layer['align_to_ref_method'] = {}
+        if not 'method_data' in next_layer['align_to_ref_method']:
+          next_layer['align_to_ref_method']['method_data'] = {}
 
         # Exchange data between widget fields and the data model itself
-        if prev_layer_num == next_layer_num:
+        if prev_layer == next_layer:
           if new_data_model:
               # Ignore what's in the fields and copy from the data model
-              skip.set_value(stack[next_layer_num]['skip'])
-              if 'whitening_factor' in stack[next_layer_num]['align_to_ref_method']['method_data']:
-                whitening_factor.set_value(stack[next_layer_num]['align_to_ref_method']['method_data']['whitening_factor'])
-              if 'win_scale_factor' in stack[next_layer_num]['align_to_ref_method']['method_data']:
-                win_scale_factor.set_value(stack[next_layer_num]['align_to_ref_method']['method_data']['win_scale_factor'])
+              skip.set_value(next_layer['skip'])
+              if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
+                whitening_factor.set_value(next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+              if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
+                win_scale_factor.set_value(next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
           else:
               # Just copy the data into this layer from the current field values
-              stack[prev_layer_num]['skip'] = skip.get_value()
-              stack[prev_layer_num]['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
-              stack[prev_layer_num]['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
+              prev_layer['skip'] = skip.get_value()
+              prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
+              prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
         else:
           # Save the value into the previous layer and set the value from the next layer
-          stack[prev_layer_num]['skip'] = skip.get_value()
-          skip.set_value(stack[next_layer_num]['skip'])
-          stack[prev_layer_num]['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
-          if 'whitening_factor' in stack[next_layer_num]['align_to_ref_method']['method_data']:
-            whitening_factor.set_value(stack[next_layer_num]['align_to_ref_method']['method_data']['whitening_factor'])
-          stack[prev_layer_num]['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
-          if 'win_scale_factor' in stack[next_layer_num]['align_to_ref_method']['method_data']:
-            win_scale_factor.set_value(stack[next_layer_num]['align_to_ref_method']['method_data']['win_scale_factor'])
+          prev_layer['skip'] = skip.get_value()
+          skip.set_value(next_layer['skip'])
+          prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
+          if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
+            whitening_factor.set_value(next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+          prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
+          if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
+            win_scale_factor.set_value(next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
 
 
 def mouse_down_callback ( role, screen_coords, image_coords, button ):
