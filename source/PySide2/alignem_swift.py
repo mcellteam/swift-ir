@@ -654,11 +654,13 @@ def method_debug():
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
-def scale_changed_callback ( prev_scale, next_scale ):
+def scale_changed_callback ( prev_scale_key, next_scale_key ):
     print ( 100 * "#" )
-    print ( "Scale changed callback: " + str(prev_scale) + " to " + str(next_scale) )
+    print ( "Scale changed callback: " + str(prev_scale_key) + " to " + str(next_scale_key) )
     print ( "TODO: Need to model alignem_swift.scale_changed_callback after alignem_swift.view_change_callback" )
     print ( 100 * "#" )
+    current_layer = alignem.project_data['data']['current_layer']
+    view_change_callback ( prev_scale_key, next_scale_key, current_layer, current_layer )
 
 def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False ):
     alignem.print_debug ( 2, "Layer changed from " + str(prev_layer_num) + " to " + str(next_layer_num) + " with new data model = " + str(new_data_model) )
