@@ -1505,7 +1505,8 @@ class MainWindow(QMainWindow):
                         if 'data' in project_data:
                             if 'current_layer' in project_data['data']:
                                 layer_num = project_data['data']['current_layer']
-                                self.view_change_callback ( -1, -1, layer_num, layer_num, True )
+                                scale_key = project_data['data']['current_scale']
+                                self.view_change_callback ( scale_key, scale_key, layer_num, layer_num, True )
 
                 if self.draw_full_paths:
                   self.setWindowTitle("Project: " + self.current_project_file_name )
