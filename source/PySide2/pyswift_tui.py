@@ -216,6 +216,7 @@ def BoundingRect(align_list,siz):
 
 
 def run_json_project ( project=None, alignment_option='init_affine', scale_done=0, use_scale=0, scale_tbd=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
+  '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
 
   print ( 80*"!" )
   print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode, start_layer, num_layers]) )

@@ -591,6 +591,9 @@ def align_all ( first_layer=0, num_layers=-1 ):
       if need_to_write_json:
           alignem.project_data = updated_model
       else:
+          alignem.print_debug ( 1, 100*"+" )
+          alignem.print_debug ( 1, "run_json_project returned with need_to_write_json=false" )
+          alignem.print_debug ( 1, 100*"+" )
           # Load the alignment stack after the alignment has completed
           aln_image_stack = []
           stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
