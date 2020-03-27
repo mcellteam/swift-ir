@@ -1112,7 +1112,6 @@ class MainWindow(QMainWindow):
         self.current_project_file_name = None
 
         self.view_change_callback = None
-        self.scale_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
 
@@ -1843,9 +1842,6 @@ class MainWindow(QMainWindow):
     def register_view_change_callback ( self, callback_function ):
         self.view_change_callback = callback_function
 
-    def register_scale_change_callback ( self, callback_function ):
-        self.scale_change_callback = callback_function
-
     def register_mouse_down_callback ( self, callback_function ):
         self.mouse_down_callback = callback_function
 
@@ -2010,8 +2006,14 @@ class MainWindow(QMainWindow):
         print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
         old_scale = current_scale
         new_scale = get_scale_key ( str ( self.sender().text() ) )
-        if self.scale_change_callback != None:
-            self.scale_change_callback ( old_scale, new_scale )
+        if self.view_change_callback != None:
+          leaving_layer = project_data['data']['current_layer']
+          entering_layer = project_data['data']['current_layer']
+          try:
+            # This guards against errors in "user code"
+            main_window.view_change_callback ( old_scale, new_scale, leaving_layer, entering_layer )
+          except:
+            print ( "Exception in view_change_callback" )
         current_scale = new_scale
         project_data['data']['current_scale'] = current_scale
         print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
