@@ -487,17 +487,13 @@ def generate_scales ():
     main_win.status.showMessage("Done Generating Scales ...")
 
 
-def align_all():
-    alignem.print_debug ( 30, "Aligning All with SWiFT-IR ..." )
-
-    code_mode = 'python'
-
+def get_code_mode():
     ### All of this code is just trying to find the right menu item for the Use C Version check box:
-    ###   It would be better if such options were created in the menu bar by this subclass of alignem.
+    code_mode = 'python'
     menubar = alignem.main_window.menu
     menubar_items = [ menubar.children()[x].title() for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
     submenus = [ menubar.children()[x] for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
-    print ( "Menubar contains: " + str(menubar_items) )
+    alignem.print_debug ( 40, "Menubar contains: " + str(menubar_items) )
     setmenu_index = -1
     for m in menubar_items:
       if "Set" in m:
@@ -514,6 +510,15 @@ def align_all():
       if use_c_version != None:
         if use_c_version.isChecked():
           code_mode = "c"
+    return ( code_mode )
+
+
+def align_all ( first_layer=0, num_layers=-1 ):
+    alignem.print_debug ( 30, 100*'=' )
+    alignem.print_debug ( 30, "Aligning layers " + str(first_layer) + " through " + str(first_layer+num_layers+1) + " with SWiFT-IR ..." )
+    alignem.print_debug ( 30, 100*'=' )
+
+    code_mode = get_code_mode()
 
     # Check that there is a place to put the aligned images
     if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
@@ -556,13 +561,33 @@ def align_all():
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
+      first_layer = alignem.project_data['data']['current_layer']
+      num_layers = num_fwd.get_value ()
+      '''
+      # Build a subset of the stacks as needed to support the align forward option
+      for scale_key in dm['data']['scales'].keys():
+        s = dm['data']['scales'][scale_key]
+        s['saved_stack'] = s['alignment_stack']
+        s['alignment_stack'] = [ s['saved_stack'][i] for i in range(first_layer,first_layer+num_layers+1)]
+      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      '''
+
       # Run the project via pyswift_tui
       updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
                                                                          alignment_option = 'init_affine',
                                                                          scale_done = 0,
                                                                          use_scale = alignem.get_scale_val(scale_to_run_text),
                                                                          scale_tbd = 0,
-                                                                         swiftir_code_mode = code_mode )
+                                                                         swiftir_code_mode = code_mode,
+                                                                         start_layer = first_layer,
+                                                                         num_layers = num_layers )
+      '''
+      # Restore the original full stack
+      for scale_key in dm['data']['scales'].keys():
+        s = dm['data']['scales'][scale_key]
+        s['alignment_stack'] = s['saved_stack']
+      '''
+
       if need_to_write_json:
           alignem.project_data = updated_model
       else:
@@ -602,7 +627,9 @@ def align_forward():
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
     alignem.print_debug ( 70, "Control Model = " + str(control_model) )
     alignem.print_debug ( 1, "Currently aligning all..." )
-    align_all()
+    first_layer = alignem.project_data ['data'] ['current_layer']
+    num_layers = num_fwd.get_value ()
+    align_all(first_layer,num_layers)
 
 def jump_to_layer():
     requested_layer = jump_to_val.get_value()
