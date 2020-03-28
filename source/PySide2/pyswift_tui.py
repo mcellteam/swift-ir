@@ -261,34 +261,26 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
       project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)   # Q: Is this scale index proper? Does it need "scale_" prefix?
     s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
 
+    # Align Forward Change:
     # Limit the range of the layers based on start_layer and num_layers
-    s_tbd_at_zero = (start_layer == 0)
-    print("Starting at zero = " + str(s_tbd_at_zero))
-    if s_tbd_at_zero and (num_layers < 0):
-      # This is the whole stack, so the previous s_tbd is fine. Do nothing.
-      pass
-    elif s_tbd_at_zero and (num_layers >= 0):
-      # The stack needs to be shortened but still starts at zero
-      print ("This stack starts at zero, but ends at " + str(num_layers))
-      actual_num_layers = num_layers
-      if actual_num_layers < 2:
-        # For some reason the TUI won't align just one layer from the start
-        actual_num_layers = 2
-      s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack'][0:actual_num_layers]
-    else:
-      # The stack needs to be shifted
-      actual_num_layers = num_layers
-      #if actual_num_layers < 2:
-      #  # For some reason the TUI won't align just one layer from the start
-      #  actual_num_layers = 2
-      s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack'][start_layer:start_layer+actual_num_layers]
+    actual_num_layers = num_layers
+    if actual_num_layers < 0:
+      # Set the actual number of layers to align to the end
+      actual_num_layers = len(s_tbd) - start_layer
+    if actual_num_layers < 2:  # For some reason the TUI won't align just one layer from the start
+      actual_num_layers = 2    # For some reason the TUI won't align just one layer from the start
+    # Align Forward Change:
+    range_to_process = [ x for x in range(start_layer, start_layer+actual_num_layers) ] # Convert to list for better display ... could remain a "range" otherwise
+    print (80 * "@")
+    print ("Range limited to: " + str(range_to_process))
+    print (80 * "@")
 
     #   Copy skip, swim, and match point settings
     for i in range(len(s_tbd)):
       # fix path for base and ref filenames for scale_tbd
       base_fn = os.path.basename(s_tbd[i]['images']['base']['filename'])
       s_tbd[i]['images']['base']['filename'] = os.path.join(scale_tbd_dir,'img_src',base_fn)
-      if (i>0) or not s_tbd_at_zero:
+      if i>0:
         ref_fn = os.path.basename(s_tbd[i]['images']['ref']['filename'])
         s_tbd[i]['images']['ref']['filename'] = os.path.join(scale_tbd_dir,'img_src',ref_fn)
 
@@ -414,14 +406,29 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
           bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
           bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
 
-          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
+          # Align Forward Change:
+          if i in range_to_process:
+            align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
 #          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=swiftir.composeAffine(bias_mat,afm_scaled[i]))
         else:
-          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
-        align_list.append([i,align_proc])
+          # Align Forward Change:
+          if i in range_to_process:
+            align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
+        # Align Forward Change:
+        if i in range_to_process:
+          align_list.append([i,align_proc])
 
     # Initialize c_afm to identity matrix
     c_afm = swiftir.identityAffine()
+    # Align Forward Change:
+    if range_to_process[0] != 0:
+      print (80 * "@")
+      print ("Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
+      print (80 * "@")
+      # Set the c_afm to the afm of the previously aligned image
+      prev_aligned_index = range_to_process[0] - 1
+      method_results = s_tbd[prev_aligned_index]['align_to_ref_method']['method_results']
+      c_afm = method_results['cumulative_afm']  # Note that this might not be the right type (it's a list not a matrix)
 
     '''
     # Initialize c_afm with initial offsets
@@ -543,6 +550,20 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     x_bias = 0.0
     y_bias = 0.0
 
+    # Align Forward Change:
+    if range_to_process[0] != 0:
+      print (80 * "@")
+      print ("Initialize to non-zero biases")
+      print (80 * "@")
+      # Set the biases from the previously aligned image
+      prev_aligned_index = range_to_process[0] - 1
+      method_data = s_tbd[prev_aligned_index]['align_to_ref_method']['method_data']
+      x_bias = method_data['bias_x_per_image']
+      y_bias = method_data['bias_y_per_image']
+      rot_bias = method_data['bias_rot_per_image']
+      scale_x_bias = method_data['bias_scale_x_per_image']
+      scale_y_bias = method_data['bias_scale_y_per_image']
+      skew_x_bias = method_data['bias_skew_x_per_image']
 
     '''
     rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0],[np.sin(rot_bias), np.cos(rot_bias), 0.0]])

@@ -564,17 +564,6 @@ def align_all ( first_layer=0, num_layers=-1 ):
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
-      first_layer = alignem.project_data['data']['current_layer']
-      num_layers = num_fwd.get_value ()
-      '''
-      # Build a subset of the stacks as needed to support the align forward option
-      for scale_key in dm['data']['scales'].keys():
-        s = dm['data']['scales'][scale_key]
-        s['saved_stack'] = s['alignment_stack']
-        s['alignment_stack'] = [ s['saved_stack'][i] for i in range(first_layer,first_layer+num_layers+1)]
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-      '''
-
       # Run the project via pyswift_tui
       updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
                                                                          alignment_option = 'init_affine',
@@ -584,12 +573,6 @@ def align_all ( first_layer=0, num_layers=-1 ):
                                                                          swiftir_code_mode = code_mode,
                                                                          start_layer = first_layer,
                                                                          num_layers = num_layers )
-      '''
-      # Restore the original full stack
-      for scale_key in dm['data']['scales'].keys():
-        s = dm['data']['scales'][scale_key]
-        s['alignment_stack'] = s['saved_stack']
-      '''
 
       if need_to_write_json:
           alignem.project_data = updated_model
