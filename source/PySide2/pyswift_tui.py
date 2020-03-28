@@ -261,21 +261,36 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
       project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)   # Q: Is this scale index proper? Does it need "scale_" prefix?
     s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
 
+    # Limit the range of the layers based on start_layer and num_layers
     s_tbd_at_zero = (start_layer == 0)
     print("Starting at zero = " + str(s_tbd_at_zero))
-    if s_tbd_at_zero and (num_layers > 0):
+    if s_tbd_at_zero and (num_layers < 0):
+      # This is the whole stack, so the previous s_tbd is fine. Do nothing.
+      pass
+    elif s_tbd_at_zero and (num_layers >= 0):
+      # The stack needs to be shortened but still starts at zero
       print ("This stack starts at zero, but ends at " + str(num_layers))
-      s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack'][0:num_layers]
+      actual_num_layers = num_layers
+      if actual_num_layers < 2:
+        # For some reason the TUI won't align just one layer from the start
+        actual_num_layers = 2
+      s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack'][0:actual_num_layers]
+    else:
+      # The stack needs to be shifted
+      actual_num_layers = num_layers
+      #if actual_num_layers < 2:
+      #  # For some reason the TUI won't align just one layer from the start
+      #  actual_num_layers = 2
+      s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack'][start_layer:start_layer+actual_num_layers]
 
     #   Copy skip, swim, and match point settings
     for i in range(len(s_tbd)):
       # fix path for base and ref filenames for scale_tbd
       base_fn = os.path.basename(s_tbd[i]['images']['base']['filename'])
       s_tbd[i]['images']['base']['filename'] = os.path.join(scale_tbd_dir,'img_src',base_fn)
-      if i>0:
+      if (i>0) or not s_tbd_at_zero:
         ref_fn = os.path.basename(s_tbd[i]['images']['ref']['filename'])
         s_tbd[i]['images']['ref']['filename'] = os.path.join(scale_tbd_dir,'img_src',ref_fn)
-
 
       atrm = s_tbd[i]['align_to_ref_method']
 
