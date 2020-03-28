@@ -793,6 +793,7 @@ def clear_match_points():
                 layer['images'][role]['metadata']['match_points'] = []
                 layer['images'][role]['metadata']['annotations'] = []
         main_win.update_panels()
+        main_win.refresh_all_images ()
 
 def clear_all_skips():
     image_scale_keys = [ s for s in sorted(alignem.project_data['data']['scales'].keys()) ]
