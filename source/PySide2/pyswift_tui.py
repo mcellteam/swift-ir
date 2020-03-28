@@ -257,9 +257,16 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
 
     if scale_done:
       # Copy settings from finest completed scale to tbd:
-      s_done = project['data']['scales'][str(scale_done)]['alignment_stack']
-      project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+      s_done = project['data']['scales'][str(scale_done)]['alignment_stack']                 # Q: Is this scale index proper? Does it need "scale_" prefix?
+      project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)   # Q: Is this scale index proper? Does it need "scale_" prefix?
     s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
+
+    s_tbd_at_zero = (start_layer == 0)
+    print("Starting at zero = " + str(s_tbd_at_zero))
+    if s_tbd_at_zero and (num_layers > 0):
+      print ("This stack starts at zero, but ends at " + str(num_layers))
+      s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack'][0:num_layers]
+
     #   Copy skip, swim, and match point settings
     for i in range(len(s_tbd)):
       # fix path for base and ref filenames for scale_tbd
@@ -325,7 +332,7 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
 
     if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
       # Copy the affine_matrices from s_tbd and scale the translation part to use as the initial guess for s_tbd
-      afm_tmp = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in s_tbd ])
+      afm_tmp = np.array([ al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd ])
       afm_scaled = afm_tmp.copy()
       afm_scaled[:,:,2] = afm_scaled[:,:,2]*upscale
     else:

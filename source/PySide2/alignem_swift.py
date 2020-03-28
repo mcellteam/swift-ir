@@ -515,7 +515,10 @@ def get_code_mode():
 
 def align_all ( first_layer=0, num_layers=-1 ):
     alignem.print_debug ( 30, 100*'=' )
-    alignem.print_debug ( 30, "Aligning layers " + str(first_layer) + " through " + str(first_layer+num_layers+1) + " with SWiFT-IR ..." )
+    if num_layers < 0:
+      alignem.print_debug ( 30, "Aligning all layers starting with " + str(first_layer) + " using SWiFT-IR ..." )
+    else:
+      alignem.print_debug (30, "Aligning layers " + str (first_layer) + " through " + str (first_layer + num_layers - 1) + " using SWiFT-IR ...")
     alignem.print_debug ( 30, 100*'=' )
 
     code_mode = get_code_mode()
