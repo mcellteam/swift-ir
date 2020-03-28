@@ -23,6 +23,7 @@ from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
+import align_swiftir
 
 # Get the path of ../python
 #alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
@@ -63,7 +64,7 @@ main_window = None
 
 def makedirs_exist_ok ( path_to_build, exist_ok=False ):
     # Needed for old python which doesn't have the exist_ok option!!!
-    print ( " Make dirs for " + path_to_build )
+    print_debug ( 30, " Make dirs for " + path_to_build )
     parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
     full = ""
     if len(parts[0]) == 0:
@@ -103,11 +104,11 @@ def get_scale_val ( scale_of_any_type ):
         #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
         #    traceback.print_stack()
     except:
-        print_debug ( 10, "Error converting " + str(scale_of_any_type) + " to a value." )
+        print_debug ( 1, "Error converting " + str(scale_of_any_type) + " to a value." )
         exi = sys.exc_info()
-        print ( "  Exception type = " + str(exi[0]) )
-        print ( "  Exception value = " + str(exi[1]) )
-        print ( "  Exception traceback:" )
+        print_debug ( 1, "  Exception type = " + str(exi[0]) )
+        print_debug ( 1, "  Exception value = " + str(exi[1]) )
+        print_debug ( 1, "  Exception traceback:" )
         traceback.print_tb(exi[2])
         return ( -1 )
 
@@ -323,7 +324,7 @@ class ZoomPanWidget(QWidget):
 
                             if (img_w<=0) or (img_h<=0) or (win_w<=0) or (win_h<=0):  # Zero or negative dimensions might lock up?
 
-                                print_debug ( -1, "Warning: Image or Window dimension is zero - cannot center image for role \"" + str(self.role) + "\"" )
+                                print_debug ( 11, "Warning: Image or Window dimension is zero - cannot center image for role \"" + str(self.role) + "\"" )
 
                             else:
 
@@ -489,7 +490,7 @@ class ZoomPanWidget(QWidget):
               entering_scale = project_data['data']['current_scale']
               main_window.view_change_callback ( get_scale_key(leaving_scale), get_scale_key(entering_scale), leaving_layer, entering_layer )
             except:
-              print ( "Exception in view_change_callback" )
+              print_debug ( 1, "Exception in view_change_callback" )
 
           local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
           local_current_scale = project_data['data']['current_scale']  # Get it from the data model
@@ -895,14 +896,14 @@ class ControlPanelWidget(QWidget):
               self.control_panel_layout.addWidget ( row_box )
 
     def dump ( self ):
-        print ( "Control Panel:" )
+        pprint_debug ( 1, "Control Panel:" )
         for p in self.cm:
-          print ( "  Panel:" )
+          print_debug ( 1, "  Panel:" )
           for r in p:
-            print ( "    Row:" )
+            print_debug ( 1, "    Row:" )
             for i in r:
-              print ( "      Item: " + str(i) )
-              print ( "          Subclass of GenericWidget: " + str(isinstance(i,GenericWidget)) )
+              print_debug ( 1, "      Item: " + str(i) )
+              print_debug ( 1, "          Subclass of GenericWidget: " + str(isinstance(i,GenericWidget)) )
 
     def copy_self_to_data ( self ):
         data = []
@@ -1020,7 +1021,7 @@ class BoolField(GenericField):
         self.value = value
         self.all_layers = all_layers
         self.callback = callback
-        print ( "BoolField created with callback = " + str(self.callback) )
+        print_debug ( 20, "BoolField created with callback = " + str(self.callback) )
     """
     def __init__ ( self, text, value, all_layers=0, callback=None ):
         super(BoolField,self).__init__( text, value, all_layers )
@@ -1092,6 +1093,8 @@ def console():
     print_debug ( 0, "\n\n\nPython Console:\n" )
     __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+
+import pyswift_tui
 
 
 # MainWindow contains the Menu Bar and the Status Bar
@@ -1403,55 +1406,67 @@ class MainWindow(QMainWindow):
         action_text = self.sender().text()
         try:
             value = int(action_text.split(' ')[1])
-            print_debug ( 30, "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
+            print_debug ( 5, "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
             debug_level = value
+            try:
+                print_debug (5, "Changing TUI Debug Level from " + str (pyswift_tui.debug_level) + " to " + str (value))
+                pyswift_tui.debug_level = value
+                try:
+                    print_debug (5, "Changing SWIFT Debug Level from " + str (align_swiftir.debug_level) + " to " + str (value))
+                    align_swiftir.debug_level = value
+                except:
+                    print_debug (1, "Unable to change SWIFT Debug Level")
+                    pass
+            except:
+                print_debug (1, "Unable to change TUI Debug Level" )
+                pass
         except:
-            print_debug ( 30, "Invalid debug value in: \"" + str(action_text) )
+            print_debug ( 1, "Invalid debug value in: \"" + str(action_text) )
 
     @Slot()
     def print_structures(self, checked):
         global debug_level
-        print_debug ( 30, "Data Structures:" )
-        print_debug ( 30, "  project_data['version'] = " + str(project_data['version']) )
-        print_debug ( 30, "  project_data.keys() = " + str(project_data.keys()) )
-        print_debug ( 30, "  project_data['data'].keys() = " + str(project_data['data'].keys()) )
-        print_debug ( 30, "  project_data['data']['panel_roles'] = " + str(project_data['data']['panel_roles']) )
+        print_debug ( 2, "Data Structures:" )
+        print_debug ( 2, "  project_data['version'] = " + str(project_data['version']) )
+        print_debug ( 2, "  project_data.keys() = " + str(project_data.keys()) )
+        print_debug ( 2, "  project_data['data'].keys() = " + str(project_data['data'].keys()) )
+        print_debug ( 2, "  project_data['data']['panel_roles'] = " + str(project_data['data']['panel_roles']) )
         scale_keys = list(project_data['data']['scales'].keys())
-        print_debug ( 30, "  list(project_data['data']['scales'].keys()) = " + str(scale_keys) )
-        print ( "Scales, Layers, and Images:" )
+        print_debug ( 2, "  list(project_data['data']['scales'].keys()) = " + str(scale_keys) )
+        print_debug ( 2, "Scales, Layers, and Images:" )
         for k in sorted(scale_keys):
-          print ( "  Scale key: " + str(k) )
+          print_debug ( 2, "  Scale key: " + str(k) )
           scale = project_data['data']['scales'][k]
           for layer in scale['alignment_stack']:
-            print ( "    Layer: " + str([ k for k in layer['images'].keys()]) )
+            print_debug ( 2, "    Layer: " + str([ k for k in layer['images'].keys()]) )
             for role in layer['images'].keys():
               im = layer['images'][role]
-              print ( "      " + str(role) + ": " + str(layer['images'][role]['filename']) )
+              print_debug ( 2, "      " + str(role) + ": " + str(layer['images'][role]['filename']) )
 
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def make_relative ( self, file_path, proj_path ):
-        print ( "Proj path: " + str(proj_path) )
-        print ( "File path: " + str(file_path) )
+        print_debug ( 20, "Proj path: " + str(proj_path) )
+        print_debug ( 20, "File path: " + str(file_path) )
         rel_path = os.path.relpath(file_path,start=os.path.split(proj_path)[0])
-        print ( "Full path: " + str(file_path) )
-        print ( "Relative path: " + str(rel_path) )
-        print ( "" )
+        print_debug ( 20, "Full path: " + str(file_path) )
+        print_debug ( 20, "Relative path: " + str(rel_path) )
+        print_debug ( 20, "" )
         return rel_path
 
     def make_absolute ( self, file_path, proj_path ):
-        print ( "Proj path: " + str(proj_path) )
-        print ( "File path: " + str(file_path) )
+        print_debug ( 20, "Proj path: " + str(proj_path) )
+        print_debug ( 20, "File path: " + str(file_path) )
         abs_path = os.path.join ( os.path.split(proj_path)[0], file_path )
-        print ( "Full path: " + str(file_path) )
-        print ( "Absolute path: " + str(abs_path) )
-        print ( "" )
+        print_debug ( 20, "Full path: " + str(file_path) )
+        print_debug ( 20, "Absolute path: " + str(abs_path) )
+        print_debug ( 20, "" )
         return abs_path
 
 
     @Slot()
     def open_project(self):
-        print_debug ( 1, "\n\nOpening Project\n\n" )
+        print_debug ( 20, "\n\nOpening Project\n\n" )
 
         options = QFileDialog.Options()
         file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
@@ -1785,7 +1800,7 @@ class MainWindow(QMainWindow):
             project_data['data']['destination_path'] = p
             #os.makedirs(project_data['data']['destination_path'])
             makedirs_exist_ok ( project_data['data']['destination_path'], exist_ok=True )
-            print ( "Destination path is : " + str(project_data['data']['destination_path']) )
+            print_debug ( 5, "Destination path is : " + str(project_data['data']['destination_path']) )
 
 
     def load_images_in_role ( self, role, file_names ):
@@ -2013,7 +2028,7 @@ class MainWindow(QMainWindow):
             # This guards against errors in "user code"
             main_window.view_change_callback ( old_scale, new_scale, leaving_layer, entering_layer )
           except:
-            print ( "Exception in view_change_callback" )
+            print_debug ( 0, "Exception in view_change_callback" )
         current_scale = new_scale
         project_data['data']['current_scale'] = current_scale
         print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
@@ -2025,7 +2040,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def generate_scales_callback(self):
-        print ( "Generating scales is now handled via control panel buttons in subclass alignem_swift." )
+        print_debug ( 5, "Generating scales is now handled via control panel buttons in subclass alignem_swift." )
 
 
     @Slot()

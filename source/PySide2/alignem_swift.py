@@ -28,17 +28,17 @@ swift_roles = ['ref','base','aligned']
 
 def print_exception():
     exi = sys.exc_info()
-    print ( "  Exception type = " + str(exi[0]) )
-    print ( "  Exception value = " + str(exi[1]) )
-    print ( "  Exception trace = " + str(exi[2]) )
-    print ( "  Exception traceback:" )
+    alignem.print_debug ( 1, "  Exception type = " + str(exi[0]) )
+    alignem.print_debug ( 1, "  Exception value = " + str(exi[1]) )
+    alignem.print_debug ( 1, "  Exception trace = " + str(exi[2]) )
+    alignem.print_debug ( 1, "  Exception traceback:" )
     traceback.print_tb(exi[2])
 
 def get_best_path ( file_path ):
     return os.path.abspath(os.path.normpath(file_path))
 
 def link_stack_orig():
-    print ( "Linking stack" )
+    alignem.print_debug ( 10, "Linking stack" )
 
     ref_image_stack = []
     for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
@@ -52,7 +52,7 @@ def link_stack_orig():
           fn = prev_layer['images']['base']['filename']
         main_win.add_image_to_role ( fn, 'ref' )
 
-    print ( "Loading images: " + str(ref_image_stack) )
+    alignem.print_debug ( 10, "Loading images: " + str(ref_image_stack) )
     #main_win.load_images_in_role ( 'ref', ref_image_stack )
 
     main_win.update_panels()
@@ -61,14 +61,14 @@ def link_stack_orig():
 
 
 def link_stack():
-    print ( "Linking stack" )
+    alignem.print_debug ( 10, "Linking stack" )
 
     skip_list = []
     for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
       if alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]['skip']==True:
         skip_list.append(layer_index)
 
-    print('\nSkip List = \n' + str(skip_list) + '\n')
+    alignem.print_debug ( 10, '\nSkip List = \n' + str(skip_list) + '\n')
 
     for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
       base_layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]
@@ -106,7 +106,7 @@ def link_stack():
 
 
 def link_all_stacks():
-    print ( "Linking all stacks" )
+    alignem.print_debug ( 10, "Linking all stacks" )
 
     for scale_key in alignem.project_data['data']['scales'].keys():
         skip_list = []
@@ -114,7 +114,7 @@ def link_all_stacks():
           if alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip']==True:
             skip_list.append(layer_index)
 
-        print('\nSkip List = \n' + str(skip_list) + '\n')
+        alignem.print_debug ( 10, '\nSkip List = \n' + str(skip_list) + '\n')
 
         for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
           base_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
@@ -160,7 +160,7 @@ class RunProgressDialog(QDialog):
     """
     def __init__(self):
         super().__init__()
-        print ( "RunProgressDialog constructor called" )
+        alignem.print_debug ( 10, "RunProgressDialog constructor called" )
         self.initUI()
 
     def initUI(self):
@@ -201,7 +201,7 @@ class RunnableThread(QThread):
 window = None
 def run_progress():
     global window
-    print ( "Run started" )
+    alignem.print_debug ( 10, "Run started" )
     window = RunProgressDialog()
 
 
@@ -213,7 +213,7 @@ class GenScalesDialog(QDialog):
     """
     def __init__(self):
         super().__init__()
-        print ( "GenScalesDialog constructor called" )
+        alignem.print_debug ( 10, "GenScalesDialog constructor called" )
         self.initUI()
 
     def initUI(self):
@@ -231,7 +231,7 @@ class GenScalesDialog(QDialog):
             total_images_to_scale += len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])
         if total_images_to_scale <= 1:
             total_images_to_scale = 1
-        print ( "Total images to scale = " + str(total_images_to_scale) )
+        alignem.print_debug ( 10, "Total images to scale = " + str(total_images_to_scale) )
 
         self.progress.setMaximum(total_images_to_scale)
 
@@ -253,7 +253,8 @@ class GenScalesThread ( QThread ):
   countChanged = Signal(int)
 
   def run(self):
-    #print ( "GenScalesThread.run inside alignem_swift called" )
+    # Note: all printed output has been suppressed for testing
+    #alignem.print_debug ( 10, "GenScalesThread.run inside alignem_swift called" )
     #main_win.status.showMessage("Generating Scales ...")
 
     count = 0
@@ -371,13 +372,13 @@ def gen_scales_with_thread():
     if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
       alignem.show_warning ( "Note", "Scales can not be generated without a destination (use File/Set Destination)" )
     else:
-      print ( "Generating Scales with Progress Bar ..." )
+      alignem.print_debug ( 10, "Generating Scales with Progress Bar ..." )
       gen_scales_dialog = GenScalesDialog()
       #main_win.status.showMessage("Done Generating Scales ...")
 
 
 def generate_scales ():
-    print ( "generate_scales inside alignem_swift called" )
+    alignem.print_debug ( 10, "generate_scales inside alignem_swift called" )
     main_win.status.showMessage("Generating Scales ...")
 
     image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
@@ -498,7 +499,7 @@ def get_code_mode():
     for m in menubar_items:
       if "Set" in m:
         setmenu_index = menubar_items.index(m)
-    print ( "Set menu is item " + str(setmenu_index) )
+    alignem.print_debug ( 40, "Set menu is item " + str(setmenu_index) )
     if setmenu_index >= 0:
       set_menu = submenus[setmenu_index]
       set_menu_actions = set_menu.actions()
@@ -664,14 +665,14 @@ def remove_aligned():
 
 
 def method_debug():
-    print ( "In Method debug for " + str(__name__) )
+    alignem.print_debug ( 1, "In Method debug for " + str(__name__) )
     __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
 def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False ):
-    alignem.print_debug ( 2, "Layer changed from " + str(prev_layer_num) + " to " + str(next_layer_num) + " with new data model = " + str(new_data_model) )
+    alignem.print_debug ( 30, "Layer changed from " + str(prev_layer_num) + " to " + str(next_layer_num) + " with new data model = " + str(new_data_model) )
     if alignem.project_data != None:
       alignem.print_debug ( 30, "Swapping data between " + str((prev_scale_key,prev_layer_num)) + " and " + str((next_scale_key,next_layer_num)) )
       #scale_key = alignem.project_data['data']['current_scale']
@@ -766,7 +767,7 @@ def mouse_down_callback ( role, screen_coords, image_coords, button ):
           alignem.print_debug ( 20, "   Annotation: " + str(ann) )
         return ( True )  # Lets the framework know that the click has been handled
     else:
-        # print ( "Do Normal Processing" )
+        # print_debug ( 10, "Do Normal Processing" )
         return ( False ) # Lets the framework know that the click has not been handled
 
 def mouse_move_callback ( role, screen_coords, image_coords, button ):
@@ -878,7 +879,7 @@ control_model = [
 
 if __name__ == "__main__":
 
-    alignem.debug_level = 20
+    alignem.debug_level = 10
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
@@ -889,6 +890,7 @@ if __name__ == "__main__":
     try:
       if args.debug != None:
         alignem.debug_level = int(args.debug)
+        align_swiftir.debug_level = int(args.debug)
     except:
         pass
 
