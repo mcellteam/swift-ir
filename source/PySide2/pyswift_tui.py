@@ -11,18 +11,26 @@ import json
 import copy
 import matplotlib.pyplot as plt
 
+# This is monotonic (0 to 100) with the amount of output:
+debug_level = 50  # A larger value prints more stuff
+def print_debug ( level, *ds ):
+  # print_debug ( 1, "This is really important!!" )
+  # print_debug ( 99, "This isn't very important." )
+  global debug_level
+  if level <= debug_level:
+    print ( *ds )
 
 # Do Linear Regression of X,Y data
 def lin_fit(x,y):
 
   (m,b,r,p,stderr) = sps.linregress(x,y)
-#  print('linear regression:')
-#  print('  slope:',m)
-#  print('  intercept:',b)
-#  print('  r:',r)
-#  print('  p:',p)
-#  print('  stderr:',stderr)
-#  print('')
+  print_debug(90,'linear regression:')
+  print_debug(90,'  slope:',m)
+  print_debug(90,'  intercept:',b)
+  print_debug(90,'  r:',r)
+  print_debug(90,'  p:',p)
+  print_debug(90,'  stderr:',stderr)
+  print_debug(90,'')
 
   return(m,b,r,p,stderr)
 
@@ -31,7 +39,7 @@ align_swiftir.global_swiftir_mode = 'python'
 
 
 def BiasFuncs(align_list,bias_funcs=None):
-  print(50*'B0')
+  print_debug(50,50*'B0')
   if type(bias_funcs) == type(None):
     init_scalars = True
     bias_funcs = {}
@@ -51,7 +59,7 @@ def BiasFuncs(align_list,bias_funcs=None):
   x_array = np.zeros((len(align_list),2))
   y_array = np.zeros((len(align_list),2))
 
-  print(50*'B1')
+  print_debug(50,50*'B1')
   i=0
   for item in align_list:
     align_idx = item[0]
@@ -73,33 +81,33 @@ def BiasFuncs(align_list,bias_funcs=None):
     y_array[i] = [align_idx,c_afm[1,2]]
     i+=1
 
-  print(20*'B2 ')
+  print_debug(50,20*'B2 ')
   p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
-  print(10*'B2a ')
+  print_debug(50,10*'B2a ')
   bias_funcs['skew_x'][:-1] += p[:-1]
-  print(10*'B2b ')
+  print_debug(50,10*'B2b ')
   if init_scalars:
-    print(10*'B2c ')
+    print_debug(50,10*'B2c ')
     bias_funcs['skew_x'][4] = p[4]
-  print(50*'B3')
+  print_debug(50,50*'B3')
 
   p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
   bias_funcs['scale_x'][:-1] += p[:-1]
   if init_scalars:
     bias_funcs['scale_x'][4] = p[4]
-  print(50*'B4')
+  print_debug(50,50*'B4')
 
   p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
   bias_funcs['scale_y'][:-1] += p[:-1]
   if init_scalars:
     bias_funcs['scale_y'][4] = p[4]
-  print(50*'B5')
+  print_debug(50,50*'B5')
 
   p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
   bias_funcs['rot'][:-1] += p[:-1]
   if init_scalars:
     bias_funcs['rot'][4] = p[4]
-  print(50*'B6')
+  print_debug(50,50*'B6')
 
   p = np.polyfit(x_array[:,0],x_array[:,1],4)
   bias_funcs['x'][:-1] += p[:-1]
@@ -111,7 +119,7 @@ def BiasFuncs(align_list,bias_funcs=None):
   if init_scalars:
     bias_funcs['y'][4] = p[4]
 
-  print("\nBias Funcs: \n%s\n" % (str(bias_funcs)))
+  print_debug(50,"\nBias Funcs: \n%s\n" % (str(bias_funcs)))
 
   return bias_funcs
 
@@ -218,8 +226,8 @@ def BoundingRect(align_list,siz):
 def run_json_project ( project=None, alignment_option='init_affine', scale_done=0, use_scale=0, scale_tbd=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
   '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
 
-  print ( 80*"!" )
-  print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode, start_layer, num_layers]) )
+  print_debug(10,80*"!" )
+  print_debug(10,"run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode, start_layer, num_layers]) )
   align_swiftir.global_swiftir_mode = swiftir_code_mode
 
   scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
@@ -242,14 +250,14 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
   if scale_tbd:
     if use_scale:
       upscale = 1.0
-      print("Performing alignment_option: %s  at scale: %d" % (alignment_option,scale_tbd))
-      print("Operating on images at scale: ",scale_tbd)
-      print("Upscale factor: ",upscale)
+      print_debug(50,"Performing alignment_option: %s  at scale: %d" % (alignment_option,scale_tbd))
+      print_debug(50,"Operating on images at scale: ",scale_tbd)
+      print_debug(50,"Upscale factor: ",upscale)
     else:
       upscale = (float(scale_done)/float(scale_tbd))
-      print("Coarsest scale completed: ",scale_done)
-      print("Operating on images at scale: ",scale_tbd)
-      print("Upscale factor: ",upscale)
+      print_debug(50,"Coarsest scale completed: ",scale_done)
+      print_debug(50,"Operating on images at scale: ",scale_tbd)
+      print_debug(50,"Upscale factor: ",upscale)
 
     scale_tbd_dir = os.path.join(destination_path,'scale_'+str(scale_tbd))
 
@@ -271,9 +279,9 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
       actual_num_layers = 2    # For some reason the TUI won't align just one layer from the start
     # Align Forward Change:
     range_to_process = [ x for x in range(start_layer, start_layer+actual_num_layers) ] # Convert to list for better display ... could remain a "range" otherwise
-    print (80 * "@")
-    print ("Range limited to: " + str(range_to_process))
-    print (80 * "@")
+    print_debug(10,80 * "@")
+    print_debug(10,"Range limited to: " + str(range_to_process))
+    print_debug(10,80 * "@")
 
     #   Copy skip, swim, and match point settings
     for i in range(len(s_tbd)):
@@ -379,7 +387,7 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
       bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
       bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
       bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
-#      print("Refine affine using bias mat:\n", bias_mat)
+      print_debug(90,"Refine affine using bias mat:\n", bias_mat)
 
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:
@@ -422,9 +430,9 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     c_afm = swiftir.identityAffine()
     # Align Forward Change:
     if range_to_process[0] != 0:
-      print (80 * "@")
-      print ("Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
-      print (80 * "@")
+      print_debug(10,80 * "@")
+      print_debug(10,"Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
+      print_debug(10,80 * "@")
       # Set the c_afm to the afm of the previously aligned image
       prev_aligned_index = range_to_process[0] - 1
       method_results = s_tbd[prev_aligned_index]['align_to_ref_method']['method_results']
@@ -459,7 +467,7 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     im_sta_fn = s_tbd[0]['images']['base']['filename']
     base_fn = os.path.basename(im_sta_fn)
     al_fn = os.path.join(align_dir,base_fn)
-    print("Saving first image in align dir: ", al_fn)
+    print_debug(50,"Saving first image in align dir: ", al_fn)
     im_sta = swiftir.loadImage(im_sta_fn)
     im_aligned = swiftir.affineImage(c_afm,im_sta)
     swiftir.saveImage(im_aligned,al_fn)
@@ -552,9 +560,9 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
 
     # Align Forward Change:
     if range_to_process[0] != 0:
-      print (80 * "@")
-      print ("Initialize to non-zero biases")
-      print (80 * "@")
+      print_debug(10,80 * "@")
+      print_debug(10,"Initialize to non-zero biases")
+      print_debug(10,80 * "@")
       # Set the biases from the previously aligned image
       prev_aligned_index = range_to_process[0] - 1
       method_data = s_tbd[prev_aligned_index]['align_to_ref_method']['method_data']
@@ -584,7 +592,7 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     for item in align_list:
 
       align_item = item[1]
-      print('\n\nAligning: %s %s\n' % (align_item.im_sta_fn, align_item.im_mov_fn))
+      print_debug(50,'\n\nAligning: %s %s\n' % (align_item.im_sta_fn, align_item.im_mov_fn))
 
 #      align_item.cumulative_afm = c_afm
       c_afm = align_item.align(c_afm,save=False)
@@ -595,40 +603,40 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     if null_bias:
 
       # TODO
-      print ( 50*'!' )
-      print ( " Computing and Nulling Biases is disabled due to errors. Check on this!!" )
-      print ( 50*'!' )
+      print_debug(10,50*'!')
+      print_debug(10," Computing and Nulling Biases is disabled due to errors. Check on this!!")
+      print_debug(10,50*'!')
 
       # Iteratively determine and null out bias in c_afm
-      print("\nComputing and Nulling Biases...\n")
-      print(50*'0')
+      print_debug(50,"\nComputing and Nulling Biases...\n")
+      print_debug(50,50*'0')
       bias_funcs = BiasFuncs(align_list)
-      print(50*'1')
+      print_debug(50,50*'1')
       c_afm_init = InitCafm(bias_funcs)
       #    c_afm_init = swiftir.identityAffine()
       bias_iters = 2
-      print(50*'2')
+      print_debug(50,50*'2')
       for bi in range(bias_iters):
         c_afm = c_afm_init
-        print(50*'3')
+        print_debug(50,50*'3')
         for item in align_list:
           align_idx = item[0]
           align_item = item[1]
-          print(50*'4')
+          print_debug(50,50*'4')
           bias_mat = BiasMat(align_idx,bias_funcs)
           c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
-        print(50*'5')
+        print_debug(50,50*'5')
         if bi < bias_iters-1:
           bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
 
     # Save all final aligned images:
-    print("\nSaving all aligned images...\n")
+    print_debug(50,"\nSaving all aligned images...\n")
 
     # Save possibly unmodified first image into align_dir
     im_sta_fn = s_tbd[0]['images']['base']['filename']
     base_fn = os.path.basename(im_sta_fn)
     al_fn = os.path.join(align_dir,base_fn)
-    print("Saving first image in align dir: ", al_fn)
+    print_debug(50,"Saving first image in align dir: ", al_fn)
     im_sta = swiftir.loadImage(im_sta_fn)
 
     siz = im_sta.shape
@@ -733,9 +741,9 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
 if (__name__ == '__main__'):
 
   if (len(sys.argv)<3):
-    print('\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-    print('         Open swiftir project file and perform alignment operations\n\n')
-    print('         Result is written to output project file\n\n')
+    print_debug(50,'\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+    print_debug(50,'         Open swiftir project file and perform alignment operations\n\n')
+    print_debug(50,'         Result is written to output project file\n\n')
     exit(1)
 
 
@@ -762,9 +770,9 @@ if (__name__ == '__main__'):
       elif sys.argv[i] == '-alignment_option':
         alignment_option = sys.argv[i+1]
       else:
-        print('\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-        print('         Open swiftir project file and perform alignment operations\n\n')
-        print('         Result is written to output project file\n\n')
+        print_debug(50,'\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
+        print_debug(50,'         Open swiftir project file and perform alignment operations\n\n')
+        print_debug(50,'         Result is written to output project file\n\n')
         exit(1)
       i+=2
 
@@ -780,28 +788,28 @@ if (__name__ == '__main__'):
   if need_to_write_json:
 
     # Write out updated json project file
-    print("Writing project to file: ", proj_ofn)
+    print_debug(50,"Writing project to file: ", proj_ofn)
     ofp = open(proj_ofn,'w')
     json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
 
     '''
     p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
-    print("\n4th degree of Skew_X bias: \n", p)
+    print_debug(50,"\n4th degree of Skew_X bias: \n", p)
 
     p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
-    print("\n4th degree of Scale_X bias: \n", p)
+    print_debug(50,"\n4th degree of Scale_X bias: \n", p)
 
     p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
-    print("\n4th degree of Scale_Y bias: \n", p)
+    print_debug(50,"\n4th degree of Scale_Y bias: \n", p)
 
     p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
-    print("\n4th degree of Rot bias: \n", p)
+    print_debug(50,"\n4th degree of Rot bias: \n", p)
 
     p = np.polyfit(x_array[:,0],x_array[:,1],4)
-    print("\n4th degree of X bias: \n", p)
+    print_debug(50,"\n4th degree of X bias: \n", p)
 
     p = np.polyfit(y_array[:,0],y_array[:,1],4)
-    print("\n4th degree of Y bias: \n", p)
+    print_debug(50,"\n4th degree of Y bias: \n", p)
     '''
 
 
@@ -817,8 +825,8 @@ if (__name__ == '__main__'):
   xl = mx*np.arange(len(cx))+bx
   yl = my*np.arange(len(cy))+by
 
-  print("(mx,bx): ",mx,bx)
-  print("(my,by): ",my,by)
+  print_debug(50,"(mx,bx): ",mx,bx)
+  print_debug(50,"(my,by): ",my,by)
 
 
   # plot data

@@ -19,12 +19,14 @@ which brings the "moving" image into alignment with the "stationary" image.
 Together these ingredients comprise a procedure, or "recipe".
 '''
 
-debug_level = 10
-
-def print_debug ( level, str ):
+# This is monotonic (0 to 100) with the amount of output:
+debug_level = 10  # A larger value prints more stuff
+def print_debug ( level, *ds ):
+  # print_debug ( 1, "This is really important!!" )
+  # print_debug ( 99, "This isn't very important." )
   global debug_level
   if level <= debug_level:
-    print ( str )
+    print ( *ds )
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
 #global_swiftir_mode = 'c'   # Either 'python' or 'c'
@@ -541,9 +543,9 @@ class align_ingredient:
     global global_do_cfms
     global global_gen_imgs
 
-    if global_do_swims: print ( "Doing swims" )
-    if global_do_cfms: print ( "Doing cfms" )
-    if global_gen_imgs: print ( "Generating images" )
+    if global_do_swims: print_debug ( 10, "Doing swims" )
+    if global_do_cfms: print_debug ( 10, "Doing cfms" )
+    if global_gen_imgs: print_debug ( 10, "Generating images" )
 
 
     # If ww==None then this is a Matching Point ingredient of a recipe
@@ -587,7 +589,7 @@ class align_ingredient:
     if self.align_mode == 'swim_align':
       self.afm = afm
 
-    if debug_level >= 90:
+    if debug_level >= 101:
       print_debug ( 50, "Entering the command line debugger:" )
       __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
