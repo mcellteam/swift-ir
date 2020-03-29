@@ -415,15 +415,12 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
           bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
 
           # Align Forward Change:
-          #if i in range_to_process:
           align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
           # align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=swiftir.composeAffine(bias_mat,afm_scaled[i]))
         else:
           # Align Forward Change:
-          #if i in range_to_process:
           align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
         # Align Forward Change:
-        #if i in range_to_process:
         align_list.append({'i':i, 'proc':align_proc, 'do':(i in range_to_process)})
 
     # Initialize c_afm to identity matrix
@@ -434,6 +431,15 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
       print_debug(10,"Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
       print_debug(10,80 * "@")
       # Set the c_afm to the afm of the previously aligned image
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
+      # TODO: Check this for handling skips!!!
       prev_aligned_index = range_to_process[0] - 1
       method_results = s_tbd[prev_aligned_index]['align_to_ref_method']['method_results']
       c_afm = method_results['cumulative_afm']  # Note that this might not be the right type (it's a list not a matrix)
@@ -591,11 +597,14 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     # Align the images
     for item in align_list:
 
-      align_item = item['proc'] # was item[1]
-      print_debug(50,'\n\nAligning: %s %s\n' % (align_item.im_sta_fn, align_item.im_mov_fn))
-
-#      align_item.cumulative_afm = c_afm
-      c_afm = align_item.align(c_afm,save=False)
+      if item['do']:
+        align_item = item ['proc']
+        print_debug(20,'\n\nAligning: %s %s\n' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
+        # align_item.cumulative_afm = c_afm
+        c_afm = align_item.align(c_afm,save=False)
+      else:
+        align_item = item ['proc']
+        print_debug(20,'\n\nNot Aligning: %s %s\n' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
 
     c_afm_init = swiftir.identityAffine()
 
@@ -620,8 +629,8 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
         c_afm = c_afm_init
         print_debug(50,50*'3')
         for item in align_list:
-          align_idx = item['i']  # was item[0]
-          align_item = item['proc'] # was item[1]
+          align_idx = item['i']
+          align_item = item['proc']
           print_debug(50,50*'4')
           bias_mat = BiasMat(align_idx,bias_funcs)
           c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
@@ -661,16 +670,18 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
 
     i = 0
     for item in align_list:
-      align_idx = item['i']  # was item[0]
-      align_item = item['proc']  # was item[1]
-      # Save the image:
-#      align_item.saveAligned()
-      align_item.saveAligned(rect=rect, grayBorder=True)
+      align_idx = item['i']
+      align_item = item['proc']
+      if item['do']:
+        # Save the image:
+        # align_item.saveAligned()
+        align_item.saveAligned(rect=rect, grayBorder=True)
 
       # Retrieve alignment result
-      recipe = align_item.recipe
-      snr = recipe.ingredients[-1].snr
-      afm = recipe.ingredients[-1].afm
+      if item['do']:
+        recipe = align_item.recipe
+        snr = recipe.ingredients[-1].snr
+        afm = recipe.ingredients[-1].afm
       c_afm = align_item.cumulative_afm
 
       # Store custom bias values in the dictionary for this stack item
@@ -691,39 +702,42 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
       s_tbd[align_idx]['images']['aligned']['metadata']['match_points'] = []
       s_tbd[align_idx]['images']['aligned']['metadata']['annotations'] = []
       method_results = s_tbd[align_idx]['align_to_ref_method']['method_results']
-      method_results['snr'] = snr[0]
-      method_results['affine_matrix'] = afm.tolist()
-      method_results['cumulative_afm'] = c_afm.tolist()
+      if item['do']:
+        method_results['snr'] = snr[0]
+        method_results['affine_matrix'] = afm.tolist()
+        method_results['cumulative_afm'] = c_afm.tolist()
 
-      # Compute and save final biases
-      rot = np.arctan(c_afm[1,0]/c_afm[0,0])
-      scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
-      scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
-      skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
-      det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
+        # Compute and save final biases
+        rot = np.arctan(c_afm[1,0]/c_afm[0,0])
+        scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
+        scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
+        skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
+        det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
 
-      skew_x_array[i] = [align_idx,skew_x]
-      scale_x_array[i] = [align_idx,scale_x]
-      scale_y_array[i] = [align_idx,scale_y]
-      rot_array[i] = [align_idx,rot]
-      x_array[i] = [align_idx,c_afm[0,2]]
-      y_array[i] = [align_idx,c_afm[1,2]]
+        skew_x_array[i] = [align_idx,skew_x]
+        scale_x_array[i] = [align_idx,scale_x]
+        scale_y_array[i] = [align_idx,scale_y]
+        rot_array[i] = [align_idx,rot]
+        x_array[i] = [align_idx,c_afm[0,2]]
+        y_array[i] = [align_idx,c_afm[1,2]]
 
-      snr_file.write('%d %.6g\n' % (i, snr[0]))
-      bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
-      bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
-      bias_rot_file.write('%d %.6g\n' % (i, rot))
-      bias_scale_x_file.write('%d %.6g\n' % (i, scale_x))
-      bias_scale_y_file.write('%d %.6g\n' % (i, scale_y))
-      bias_skew_x_file.write('%d %.6g\n' % (i, skew_x))
-      bias_det_file.write('%d %.6g\n' % (i, det))
+        snr_file.write('%d %.6g\n' % (i, snr[0]))
+        bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
+        bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
+        bias_rot_file.write('%d %.6g\n' % (i, rot))
+        bias_scale_x_file.write('%d %.6g\n' % (i, scale_x))
+        bias_scale_y_file.write('%d %.6g\n' % (i, scale_y))
+        bias_skew_x_file.write('%d %.6g\n' % (i, skew_x))
+        bias_det_file.write('%d %.6g\n' % (i, det))
 
-      afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-      c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+        afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+        c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+
+      if item['do']:
+        print_debug(2, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+        print_debug(2, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+
       i+=1
-
-      print_debug(2, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-      print_debug(2, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
     snr_file.close()
     bias_x_file.close()
