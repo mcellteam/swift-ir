@@ -720,6 +720,9 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
       c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
       i+=1
 
+      print_debug(2, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+      print_debug(2, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+
     snr_file.close()
     bias_x_file.close()
     bias_y_file.close()
@@ -731,9 +734,18 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     afm_file.close()
     c_afm_file.close()
 
+    print_debug(1, 30 * "|=|")
+    print_debug(1, "Returning True")
+    print_debug(1, 30 * "|=|")
+
+    # The code generally returns "True"
     return (project,True)
 
   else:  # if scale_tbd:
+
+    print_debug(1, 30 * "|=|")
+    print_debug(1, "Returning False")
+    print_debug(1, 30 * "|=|")
 
     return (project,False)
 
