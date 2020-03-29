@@ -644,7 +644,9 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     rect = BoundingRect(align_list,siz)
 
 #    im_aligned = swiftir.affineImage(c_afm_init,im_sta)
+    print("Applying affine: " + str(c_afm_init))
     im_aligned = swiftir.affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
+    print("Saving image: " + al_fn)
     swiftir.saveImage(im_aligned,al_fn)
     if not 'aligned' in s_tbd[0]['images']:
       s_tbd[0]['images']['aligned'] = {}
