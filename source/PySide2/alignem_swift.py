@@ -514,7 +514,7 @@ def get_code_mode():
     return ( code_mode )
 
 
-def align_all ( first_layer=0, num_layers=-1 ):
+def align_layers ( first_layer=0, num_layers=-1 ):
     alignem.print_debug ( 30, 100*'=' )
     if num_layers < 0:
       alignem.print_debug ( 30, "Aligning all layers starting with " + str(first_layer) + " using SWiFT-IR ..." )
@@ -614,12 +614,15 @@ def align_all ( first_layer=0, num_layers=-1 ):
       refresh_all()
 
 def align_forward():
-    alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR ..." )
-    alignem.print_debug ( 70, "Control Model = " + str(control_model) )
-    alignem.print_debug ( 1, "Currently aligning all..." )
-    first_layer = alignem.project_data ['data'] ['current_layer']
     num_layers = num_fwd.get_value ()
-    align_all(first_layer,num_layers)
+    first_layer = alignem.project_data ['data'] ['current_layer']
+    alignem.print_debug ( 30, "Removing aligned from layer " + str(first_layer) )
+    remove_aligned (starting_layer=first_layer)
+    alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ..." )
+    alignem.print_debug ( 70, "Control Model = " + str(control_model) )
+    align_layers (first_layer,num_layers)
+    refresh_all ()
+
 
 def jump_to_layer():
     requested_layer = jump_to_val.get_value()
@@ -642,15 +645,18 @@ def refresh_all ():
     main_win.refresh_all_images ()
 
 
-def remove_aligned():
+def remove_aligned(starting_layer=0):
     alignem.print_debug ( 30, "Removing aligned images ..." )
 
     delete_list = []
 
+    layer_index = 0
     for layer in alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack']:
-      if 'aligned' in layer['images'].keys():
-        delete_list.append ( layer['images']['aligned']['filename'] )
-        layer['images'].pop('aligned')
+      if layer_index >= starting_layer:
+        if 'aligned' in layer['images'].keys():
+          delete_list.append ( layer['images']['aligned']['filename'] )
+          layer['images'].pop('aligned')
+      layer_index += 1
 
     #alignem.image_library.remove_all_images()
 
@@ -822,7 +828,7 @@ def copy_skips_to_all_scales():
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
-align_all_cb  = CallbackButton('Align All', align_all)
+align_all_cb  = CallbackButton('Align All', align_layers)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 num_fwd       = IntField("#",1,1)

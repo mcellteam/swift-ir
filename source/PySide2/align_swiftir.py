@@ -262,12 +262,12 @@ class alignment_process:
       print_debug(2, "  self.cumulative_afm = " + str(self.cumulative_afm))
       print_debug(2, "  rect = " + str(rect))
       print_debug(2, "  grayBorder = " + str(grayBorder))
-      print ( 100*'#' )
-      print ( 100*'#' )
-      print ( "  WARNING: Hard-coding rect as test!! ")
-      rect = [-116, -116, 914, 914]
-      print ( 100*'#' )
-      print ( 100*'#' )
+      #print ( 100*'#' )
+      #print ( 100*'#' )
+      #print ( "  WARNING: Hard-coding rect as test!! ")
+      #rect = [-116, -116, 914, 914]
+      #print ( 100*'#' )
+      #print ( 100*'#' )
       im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
 #      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
       ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
