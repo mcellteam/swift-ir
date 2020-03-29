@@ -62,8 +62,8 @@ def BiasFuncs(align_list,bias_funcs=None):
   print_debug(50,50*'B1')
   i=0
   for item in align_list:
-    align_idx = item[0]
-    align_item = item[1]
+    align_idx = item['i']
+    align_item = item['proc']
 
     c_afm = align_item.cumulative_afm
 
@@ -209,7 +209,7 @@ def BoundingRect(align_list,siz):
   model_bounds = None
 
   for item in align_list:
-    align_item = item[1]
+    align_item = item['proc']
 
     if type(model_bounds) == type(None):
       model_bounds = swiftir.modelBounds2(align_item.cumulative_afm, siz)
@@ -415,16 +415,16 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
           bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
 
           # Align Forward Change:
-          if i in range_to_process:
-            align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
-#          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=swiftir.composeAffine(bias_mat,afm_scaled[i]))
+          #if i in range_to_process:
+          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
+          # align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=swiftir.composeAffine(bias_mat,afm_scaled[i]))
         else:
           # Align Forward Change:
-          if i in range_to_process:
-            align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
+          #if i in range_to_process:
+          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
         # Align Forward Change:
-        if i in range_to_process:
-          align_list.append([i,align_proc])
+        #if i in range_to_process:
+        align_list.append({'i':i, 'proc':align_proc, 'do':(i in range_to_process)})
 
     # Initialize c_afm to identity matrix
     c_afm = swiftir.identityAffine()
@@ -591,7 +591,7 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     # Align the images
     for item in align_list:
 
-      align_item = item[1]
+      align_item = item['proc'] # was item[1]
       print_debug(50,'\n\nAligning: %s %s\n' % (align_item.im_sta_fn, align_item.im_mov_fn))
 
 #      align_item.cumulative_afm = c_afm
@@ -620,8 +620,8 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
         c_afm = c_afm_init
         print_debug(50,50*'3')
         for item in align_list:
-          align_idx = item[0]
-          align_item = item[1]
+          align_idx = item['i']  # was item[0]
+          align_item = item['proc'] # was item[1]
           print_debug(50,50*'4')
           bias_mat = BiasMat(align_idx,bias_funcs)
           c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
@@ -661,8 +661,8 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
 
     i = 0
     for item in align_list:
-      align_idx = item[0]
-      align_item = item[1]
+      align_idx = item['i']  # was item[0]
+      align_item = item['proc']  # was item[1]
       # Save the image:
 #      align_item.saveAligned()
       align_item.saveAligned(rect=rect, grayBorder=True)
