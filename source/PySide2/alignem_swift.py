@@ -247,6 +247,39 @@ class GenScalesDialog(QDialog):
     def onCountChanged(self, value):
         self.progress.setValue(value)
 
+def create_project_structure_directories ( subdir_path ):
+  alignem.print_debug (70, "Creating a subdirectory named " + subdir_path)
+  try:
+    os.mkdir (subdir_path)
+  except:
+    # This catches directories that already exist
+    alignem.print_debug (40, 'Warning: Exception creating scale path (may already exist).')
+    pass
+  src_path = os.path.join (subdir_path, 'img_src')
+  alignem.print_debug (70, "Creating source subsubdirectory named " + src_path)
+  try:
+    os.mkdir (src_path)
+  except:
+    # This catches directories that already exist
+    alignem.print_debug (40, 'Warning: Exception creating "img_src" path (may already exist).')
+    pass
+  aligned_path = os.path.join (subdir_path, 'img_aligned')
+  alignem.print_debug (70, "Creating aligned subsubdirectory named " + aligned_path)
+  try:
+    os.mkdir (aligned_path)
+  except:
+    # This catches directories that already exist
+    alignem.print_debug (40, 'Warning: Exception creating "img_aligned" path (may already exist).')
+    pass
+  bias_data_path = os.path.join (subdir_path, 'bias_data')
+  alignem.print_debug (70, "Creating bias subsubdirectory named " + bias_data_path)
+  try:
+    os.mkdir (bias_data_path)
+  except:
+    # This catches directories that already exist
+    alignem.print_debug (40, 'Warning: Exception creating "bias_data" path (may already exist).')
+    pass
+
 
 class GenScalesThread ( QThread ):
 
@@ -275,33 +308,7 @@ class GenScalesThread ( QThread ):
       subdir_path = os.path.join(alignem.project_data['data']['destination_path'],scale_key)
       scale_1_path = os.path.join(alignem.project_data['data']['destination_path'],'scale_1')
 
-      #alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
-      try:
-        os.mkdir ( subdir_path )
-      except:
-        # This catches directories that already exist
-        pass
-      src_path = os.path.join(subdir_path,'img_src')
-      #alignem.print_debug ( 70, "Creating source subsubdirectory named " + src_path )
-      try:
-        os.mkdir ( src_path )
-      except:
-        # This catches directories that already exist
-        pass
-      aligned_path = os.path.join(subdir_path,'img_aligned')
-      #alignem.print_debug ( 70, "Creating aligned subsubdirectory named " + aligned_path )
-      try:
-        os.mkdir ( aligned_path )
-      except:
-        # This catches directories that already exist
-        pass
-      bias_data_path = os.path.join(subdir_path,'bias_data')
-      #alignem.print_debug ( 70, "Creating aligned subsubdirectory named " + bias_data_path )
-      try:
-        os.mkdir ( bias_data_path )
-      except:
-        # This catches directories that already exist
-        pass
+      create_project_structure_directories(subdir_path)
 
       for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
         # Remove previously aligned images from panel ??
@@ -410,33 +417,7 @@ def generate_scales ():
         subdir_path = os.path.join(alignem.project_data['data']['destination_path'],scale_key)
         scale_1_path = os.path.join(alignem.project_data['data']['destination_path'],'scale_1')
 
-        alignem.print_debug ( 70, "Creating a subdirectory named " + subdir_path )
-        try:
-          os.mkdir ( subdir_path )
-        except:
-          # This catches directories that already exist
-          pass
-        src_path = os.path.join(subdir_path,'img_src')
-        alignem.print_debug ( 70, "Creating source subsubdirectory named " + src_path )
-        try:
-          os.mkdir ( src_path )
-        except:
-          # This catches directories that already exist
-          pass
-        aligned_path = os.path.join(subdir_path,'img_aligned')
-        alignem.print_debug ( 70, "Creating aligned subsubdirectory named " + aligned_path )
-        try:
-          os.mkdir ( aligned_path )
-        except:
-          # This catches directories that already exist
-          pass
-        bias_data_path = os.path.join(subdir_path,'bias_data')
-        alignem.print_debug ( 70, "Creating aligned subsubdirectory named " + bias_data_path )
-        try:
-          os.mkdir ( bias_data_path )
-        except:
-          # This catches directories that already exist
-          pass
+        create_project_structure_directories (subdir_path)
 
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
           # Remove previously aligned images from panel ??
