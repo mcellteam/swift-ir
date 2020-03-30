@@ -430,6 +430,13 @@ def generate_scales ():
         except:
           # This catches directories that already exist
           pass
+        bias_data_path = os.path.join(subdir_path,'bias_data')
+        alignem.print_debug ( 70, "Creating aligned subsubdirectory named " + bias_data_path )
+        try:
+          os.mkdir ( bias_data_path )
+        except:
+          # This catches directories that already exist
+          pass
 
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
           # Remove previously aligned images from panel ??
