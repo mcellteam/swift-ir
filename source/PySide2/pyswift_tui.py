@@ -230,7 +230,10 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
   print_debug(10,"run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode, start_layer, num_layers]) )
   align_swiftir.global_swiftir_mode = swiftir_code_mode
 
-  scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
+  # Get int values for scales in a way compatible with old ('1') and new ('scale_1') style for keys
+  scales = sorted([ int(s.split('scale_')[-1]) for s in project['data']['scales'].keys() ])
+  # scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
+
   destination_path = project['data']['destination_path']
 
   if use_scale==0:
@@ -238,7 +241,7 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
     # Identify coarsest scale lacking affine matrices in method_results
     #   and the finest scale which has affine matrices
     for scale in scales:
-      sn = project['data']['scales'][str(scale)]['alignment_stack']
+      sn = project['data']['scales']['scale_'+str(scale)]['alignment_stack']
       afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in sn if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
       if not len(afm):
         scale_tbd = scale
@@ -265,8 +268,8 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
 
     if scale_done:
       # Copy settings from finest completed scale to tbd:
-      s_done = project['data']['scales'][str(scale_done)]['alignment_stack']                 # Q: Is this scale index proper? Does it need "scale_" prefix?
-      project['data']['scales'][str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)   # Q: Is this scale index proper? Does it need "scale_" prefix?
+      s_done = project['data']['scales']['scale_'+str(scale_done)]['alignment_stack']
+      project['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
     s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
 
     # Align Forward Change:
@@ -363,6 +366,7 @@ def run_json_project ( project=None, alignment_option='init_affine', scale_done=
         if e.errno != errno.EEXIST:
             raise
 
+    bias_data_path = os.path.join(destination_path,'scale_'+str(scale_tbd),'bias_data')
     snr_file = open('snr_1.dat','w')
     bias_x_file = open('bias_x_1.dat','w')
     bias_y_file = open('bias_y_1.dat','w')
