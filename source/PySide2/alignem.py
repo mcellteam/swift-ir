@@ -46,10 +46,10 @@ project_data = None
 
 
 debug_level = 0
-def print_debug ( level, str ):
+def print_debug ( level, text ):
   global debug_level
   if level <= debug_level:
-    print ( str )
+    print ( text )
 
 
 app = None
@@ -82,10 +82,12 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
       full = os.path.join(full,p)
       if not os.path.exists(full):
         os.makedirs ( full )
+      elif not exist_ok:
+        print_debug ( 1, "Warning: Attempt to create existing directory: " + full)
 
 
 def show_warning ( title, text ):
-    wbox = QMessageBox.warning ( None, title, text )
+    QMessageBox.warning ( None, title, text )
 
 
 def get_scale_val ( scale_of_any_type ):
@@ -110,14 +112,14 @@ def get_scale_val ( scale_of_any_type ):
         print_debug ( 1, "  Exception value = " + str(exi[1]) )
         print_debug ( 1, "  Exception traceback:" )
         traceback.print_tb(exi[2])
-        return ( -1 )
+        return -1
 
 def get_scale_key ( scale_val ):
     # Create a key like "scale_#" from either an integer or a string
     s = str(scale_val)
     while s.startswith ( 'scale_' ):
         s = s[len('scale_'):]
-    return ( 'scale_' + s )
+    return 'scale_' + s
 
 
 def load_image_worker ( real_norm_path, image_dict ):
@@ -144,7 +146,6 @@ class ImageLibrary:
         real_norm_path = self.pathkey(file_path)
         if real_norm_path != None:
             # This is an actual path
-            load_new = False
             if real_norm_path in self._images:
                 # This file is already in the library ... it may be complete or still loading
                 if self._images[real_norm_path]['loaded']:
@@ -165,7 +166,7 @@ class ImageLibrary:
                 print_debug ( 25, "  Forced load of image: \"" + str(real_norm_path) + "\"" )
                 self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'loading': False, 'task':None }
                 image_ref = self._images[real_norm_path]['image']
-        return ( image_ref )
+        return image_ref
 
     def remove_image_reference ( self, file_path ):
         image_ref = None
@@ -175,7 +176,7 @@ class ImageLibrary:
                 print_debug ( 25, "Unloading image: \"" + real_norm_path + "\"" )
                 image_ref = self._images.pop(real_norm_path)['image']
         # This returned value may not be valid when multi-threading is implemented
-        return ( image_ref )
+        return image_ref
 
     def queue_image_read ( self, file_path ):
         real_norm_path = self.pathkey(file_path)
@@ -223,12 +224,12 @@ class ImageLibrary:
 image_library = ImageLibrary()
 
 
-
 class ZoomPanWidget(QWidget):
     """A widget to display a single annotated image with zooming and panning."""
-    def __init__(self, role, parent=None, fname=None):
+    def __init__(self, role, parent=None):
         super(ZoomPanWidget, self).__init__(parent)
         self.role = role
+        self.parent = None
 
         self.floatBased = False
         self.antialiased = False
@@ -266,7 +267,7 @@ class ZoomPanWidget(QWidget):
         settings_dict = {}
         for key in [ "floatBased", "antialiased", "wheel_index", "scroll_factor", "zoom_scale", "last_button", "mdx", "mdy", "ldx", "ldy", "dx", "dy", "draw_border", "draw_annotations", "draw_full_paths" ]:
             settings_dict[key] = self.__dict__[key]
-        return ( settings_dict )
+        return settings_dict
 
     def set_settings ( self, settings_dict ):
         for key in settings_dict.keys():
@@ -371,18 +372,18 @@ class ZoomPanWidget(QWidget):
 
 
     def win_x ( self, image_x ):
-        return ( self.zoom_scale * (image_x + self.ldx + self.dx) )
+        return self.zoom_scale * (image_x + self.ldx + self.dx)
 
     def win_y ( self, image_y ):
-        return ( self.zoom_scale * (image_y + self.ldy + self.dy) )
+        return self.zoom_scale * (image_y + self.ldy + self.dy)
 
     def image_x ( self, win_x ):
         img_x = (win_x/self.zoom_scale) - self.ldx
-        return ( img_x )
+        return img_x
 
     def image_y ( self, win_y ):
         img_y = (win_y/self.zoom_scale) - self.ldy
-        return ( img_y )
+        return img_y
 
     def dump(self):
         print_debug ( 30, "wheel = " + str(self.wheel_index) )
@@ -394,8 +395,8 @@ class ZoomPanWidget(QWidget):
         print_debug ( 30, " dx  = " + str(self.dx) )
         print_debug ( 30, " dy  = " + str(self.dy) )
 
-    def setFloatBased(self, floatBased):
-        self.floatBased = floatBased
+    def setFloatBased(self, float_based):
+        self.floatBased = float_based
         self.update_zpa_self()
 
     def setAntialiased(self, antialiased):
@@ -727,7 +728,7 @@ class MultiImagePanel(QWidget):
         self.hb_layout.setSpacing(self.current_margin)    # This sets margins around the outer edge of all panels
         self.repaint()
 
-    def update_multi_self ( self, exclude=[] ):
+    def update_multi_self ( self, exclude=() ):
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude)) ]
             for p in panels_to_update:
@@ -753,12 +754,12 @@ class MultiImagePanel(QWidget):
         project_data['data']['panel_roles'] = roles_list
         # Remove all the image panels (to be replaced)
         try:
-            self.remove_all_panels(None)
+            self.remove_all_panels()
         except:
             pass
         # Create the new panels
         for role in roles_list:
-          zpw = ZoomPanWidget(role=role, parent=self, fname=None)
+          zpw = ZoomPanWidget(role=role, parent=self)
           # Restore the settings from the previous zpw
           if role in role_settings:
             zpw.set_settings ( role_settings[role] )
@@ -921,7 +922,7 @@ class ControlPanelWidget(QWidget):
                 new_row.append ( '' )   # Save an empty string as a place holder for static data
             new_panel.append ( new_row )
           data.append ( new_panel )
-        return ( data )
+        return data
 
     def copy_data_to_self ( self, data ):
         ip = 0
@@ -1329,13 +1330,13 @@ class MainWindow(QMainWindow):
         # Status Bar
         self.status = self.statusBar()
         if fname == None:
-          self.status.showMessage("No Status Yet ...")
+          self.status.showMessage("No Project Yet ...")
         else:
           # self.status.showMessage("File: "+fname)
           self.status.showMessage("File: unknown")
 
         # Window dimensions
-        geometry = qApp.desktop().availableGeometry(self)
+        # geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
         self.setMinimumWidth(600)
         self.setMinimumHeight(400)
@@ -1499,6 +1500,8 @@ class MainWindow(QMainWindow):
                 proj_copy = json.loads ( text )
 
                 self.current_project_file_name = file_name
+                self.status.showMessage ("Project File: " + self.current_project_file_name
+                                         + "   Destination: " + str(proj_copy ['data'] ['destination_path']))
 
                 # Modifiy the copy to use absolute paths internally
                 if len(proj_copy['data']['destination_path']) > 0:
@@ -1567,6 +1570,8 @@ class MainWindow(QMainWindow):
                 self.setWindowTitle("Project: " + self.current_project_file_name )
               else:
                 self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
+              self.status.showMessage ("Project File: " + self.current_project_file_name
+                                       + "   Destination: " + str(proj_copy['data']['destination_path']))
 
     @Slot()
     def save_project(self):
@@ -1676,9 +1681,6 @@ class MainWindow(QMainWindow):
         print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
         if image_file_name != None:
           if len(image_file_name) > 0:
-            found_layer = None
-            this_layer_index = 0
-
             used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
             print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
             layer_index_for_new_role = -1
@@ -1762,8 +1764,8 @@ class MainWindow(QMainWindow):
         print_debug ( 5, "Importing images dialog for role: " + str(import_role_name) )
 
         options = QFileDialog.Options()
-        if False:  # self.native.isChecked():
-            options |= QFileDialog.DontUseNativeDialog
+        #if False:  # self.native.isChecked():
+        #    options |= QFileDialog.DontUseNativeDialog
 
         file_name_list, filtr = QFileDialog.getOpenFileNames ( None,  # None was self
                                                                "Select Images to Import",
@@ -1788,11 +1790,14 @@ class MainWindow(QMainWindow):
 
         options = QFileDialog.Options()
         options |= QFileDialog.Directory
-        if False:  # self.native.isChecked():
-            options |= QFileDialog.DontUseNativeDialog
+        #if False:  # self.native.isChecked():
+        #    options |= QFileDialog.DontUseNativeDialog
 
         project_data['data']['destination_path'] = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=project_data['data']['destination_path'], options=options)
         print_debug ( 1, "Destination is: " + str(project_data['data']['destination_path']) )
+
+        self.status.showMessage ("Project File: " + self.current_project_file_name
+                             + "   Destination: " + str (project_data['data']['destination_path']))
 
     @Slot()
     def set_def_proj_dest ( self ):
@@ -1810,6 +1815,8 @@ class MainWindow(QMainWindow):
             #os.makedirs(project_data['data']['destination_path'])
             makedirs_exist_ok ( project_data['data']['destination_path'], exist_ok=True )
             print_debug ( 5, "Destination path is : " + str(project_data['data']['destination_path']) )
+            self.status.showMessage ("Project File: " + self.current_project_file_name
+                                 + "   Destination: " + str (project_data['data']['destination_path']))
 
 
     def load_images_in_role ( self, role, file_names ):
@@ -1823,7 +1830,6 @@ class MainWindow(QMainWindow):
         self.image_panel.set_roles ( roles_list )
 
         # Set the Roles menu from this roles_list
-        roles_menu = None
         mb = self.menuBar()
         if not (mb is None):
           for m in mb.children():
@@ -1840,28 +1846,20 @@ class MainWindow(QMainWindow):
                       while len(mm.actions()) > 0:
                         mm.removeAction(mm.actions()[-1])
                       # Add the new actions
-                      first = True
                       for role in roles_list:
                         item = QAction ( role, self )
-                        #item.setCheckable(True)
-                        #item.setChecked(first)
                         item.triggered.connect ( self.import_into_role )
                         mm.addAction(item)
-                        first = False
                     if 'Empty into' in text_label:
                       print_debug ( 30, "Found Empty Into Menu" )
                       # Remove all the old actions:
                       while len(mm.actions()) > 0:
                         mm.removeAction(mm.actions()[-1])
                       # Add the new actions
-                      first = True
                       for role in roles_list:
                         item = QAction ( role, self )
-                        #item.setCheckable(True)
-                        #item.setChecked(first)
                         item.triggered.connect ( self.empty_into_role )
                         mm.addAction(item)
-                        first = False
 
     def register_view_change_callback ( self, callback_function ):
         self.view_change_callback = callback_function
@@ -1930,7 +1928,6 @@ class MainWindow(QMainWindow):
 
     def define_scales_menu ( self, scales_list ):
         # Set the Scales menu from this scales_list
-        scales_menu = None
         mb = self.menuBar()
         if not (mb is None):
           for m in mb.children():
@@ -1954,7 +1951,6 @@ class MainWindow(QMainWindow):
 
     def set_selected_scale ( self, scale_str ):
         # Set the Scales menu from this scales_list
-        scales_menu = None
         mb = self.menuBar()
         if not (mb is None):
           for m in mb.children():
@@ -2077,7 +2073,7 @@ class MainWindow(QMainWindow):
         print_debug ( 30, "Removing all panels" )
         if 'image_panel' in dir(self):
             print_debug ( 30, "image_panel exists" )
-            self.image_panel.remove_all_panels(None)
+            self.image_panel.remove_all_panels()
         else:
             print_debug ( 30, "image_panel does not exit!!" )
         self.define_roles ( [] )
