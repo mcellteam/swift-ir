@@ -299,7 +299,7 @@ class GenScalesThread ( QThread ):
     for scale in sorted(image_scales_to_run):
 
       #alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
-      main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+      #main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
 
       scale_key = str(scale)
       if not 'scale_' in scale_key:
@@ -377,7 +377,7 @@ class GenScalesThread ( QThread ):
                 #alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
                 layer['images'][role]['filename'] = outfile_name
                 #alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
-    main_win.status.showMessage("Done Generating Scales")
+    #main_win.status.showMessage("Done Generating Scales")
 
 
 gen_scales_dialog = None
@@ -393,7 +393,7 @@ def gen_scales_with_thread():
 
 def generate_scales ():
     alignem.print_debug ( 10, "generate_scales inside alignem_swift called" )
-    main_win.status.showMessage("Generating Scales ...")
+    #main_win.status.showMessage("Generating Scales ...")
 
     image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
 
@@ -408,7 +408,7 @@ def generate_scales ():
       for scale in sorted(image_scales_to_run):
 
         alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
-        main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+        #main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
 
         scale_key = str(scale)
         if not 'scale_' in scale_key:
@@ -419,7 +419,10 @@ def generate_scales ():
 
         create_project_structure_directories (subdir_path)
 
+        alignem.print_debug ( 70, "Begin creating images at each layer for key: " + str(scale_key))
+
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+          alignem.print_debug (40, "Generating images for layer: \"" + str(alignem.project_data['data']['scales'][scale_key]['alignment_stack'].index(layer)) + "\"")
           # Remove previously aligned images from panel ??
 
           # Copy (or link) the source images to the expected scale_key"/img_src" directory
@@ -428,7 +431,7 @@ def generate_scales ():
             # Only copy files for roles "ref" and "base"
 
             if role in ['ref', 'base']:
-
+              alignem.print_debug (40, "Generating images for role: \"" + role + "\"")
               base_file_name = layer['images'][role]['filename']
               if base_file_name != None:
                 if len(base_file_name) > 0:
@@ -480,7 +483,7 @@ def generate_scales ():
                   alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
                   layer['images'][role]['filename'] = outfile_name
                   alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
-    main_win.status.showMessage("Done Generating Scales ...")
+    #main_win.status.showMessage("Done Generating Scales ...")
 
 
 def get_code_mode():
