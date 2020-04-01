@@ -1,8 +1,8 @@
-'''AlignEm - Alignment Framework for multiple images
+"""AlignEm - Alignment Framework for multiple images
 
 AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
-'''
+"""
 
 
 import sys, traceback
@@ -129,9 +129,9 @@ def load_image_worker ( real_norm_path, image_dict ):
 
 
 class ImageLibrary:
-    '''A class containing multiple images keyed by their file name.'''
+    """A class containing multiple images keyed by their file name."""
     def __init__ ( self ):
-        self._images = {}  # { image_key: { "task": task, "loaded": bool, "image": image }
+        self._images = {}  # { image_key: { "task": task, "loading": bool, "loaded": bool, "image": image }
         self.threaded_loading_enabled = True
 
     def pathkey ( self, file_path ):
@@ -185,7 +185,7 @@ class ImageLibrary:
         self._images[real_norm_path]['task'] = t
 
     def make_available ( self, requested ):
-        '''
+        """
         SOMETHING TO LOOK AT:
 
         Note that the threaded loading sometimes loads the same image multiple
@@ -195,7 +195,7 @@ class ImageLibrary:
         Right now, the current check is whether it is actually loaded before
         scheduling it to be loaded. However, a load may be in progress from an
         earlier request. This may cause images to be loaded multiple times.
-        '''
+        """
 
         print_debug ( 25, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
         already_loaded = set(self._images.keys())
@@ -225,7 +225,7 @@ image_library = ImageLibrary()
 
 
 class ZoomPanWidget(QWidget):
-    '''A widget to display a single annotated image with zooming and panning.'''
+    """A widget to display a single annotated image with zooming and panning."""
     def __init__(self, role, parent=None, fname=None):
         super(ZoomPanWidget, self).__init__(parent)
         self.role = role
@@ -827,7 +827,7 @@ def bool_changed_callback ( state ):
 
 
 class ControlPanelWidget(QWidget):
-    '''A widget to hold all of the application data for an alignment method.'''
+    """A widget to hold all of the application data for an alignment method."""
     def __init__(self, control_model=None):
         super(ControlPanelWidget, self).__init__()
         self.cm = control_model
@@ -1014,7 +1014,7 @@ class TextField(GenericField):
           pass
 
 class BoolField(GenericField):
-    '''
+    """
     def __init__ ( self, text, value, all_layers=0, callback=None ):
         self.text = text  # Should be handled by super, but fails in Python2
         self.widget = None
@@ -1022,12 +1022,12 @@ class BoolField(GenericField):
         self.all_layers = all_layers
         self.callback = callback
         print_debug ( 20, "BoolField created with callback = " + str(self.callback) )
-    """
+    '''
     def __init__ ( self, text, value, all_layers=0, callback=None ):
         super(BoolField,self).__init__( text, value, all_layers )
         self.callback = callback
-    """
     '''
+    """
 
     def get_value ( self ):
       if 'widget' in dir(self):
