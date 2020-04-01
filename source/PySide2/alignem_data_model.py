@@ -24,6 +24,8 @@ new_project_template = \
     ],
     "scales": {
       "scale_1": {
+        "null_cafm_bias": False,
+        "use_bounding_rect": False,
         "alignment_stack": []
       }
     }
