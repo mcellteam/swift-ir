@@ -1,8 +1,8 @@
-'''AlignEm - Alignment Framework for multiple images
+"""AlignEm - Alignment Framework for multiple images
 
 AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
-'''
+"""
 
 
 new_project_template = \
@@ -57,6 +57,6 @@ new_image_template = \
   }
 }
 
-class data_model:
-  ''' Encapsulate data model dictionary and wrap with methods for convenience '''
+class DataModel:
+  """ Encapsulate data model dictionary and wrap with methods for convenience """
   pass
