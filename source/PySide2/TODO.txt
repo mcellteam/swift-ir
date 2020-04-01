@@ -45,11 +45,11 @@ Bug Reports (add date when competed):
 
    Thursday, March 26th, 2020
     Child of MultiImagePanel
-      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_4.jpg"
-      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_5.jpg"
+      load_image_worker finished for: ".../source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_4.jpg"
+      load_image_worker finished for: ".../source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_5.jpg"
     Python(1400,0x700001e59000) malloc: *** error for object 0x7fdf1ed031d0: double free
     *** set a breakpoint in malloc_error_break to debug
-      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_2.jpg"
+      load_image_worker finished for: ".../source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_2.jpg"
     Abort trap: 6
 
   Friday, March 27th, 2020
@@ -60,10 +60,19 @@ Bug Reports (add date when competed):
   Tuesday, March 31st, 2020
     Update_siblings called, calling siblings.update_self
     Child of MultiImagePanel
-      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_2.jpg"
-      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_5.jpg"
-      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_4.jpg"
+      load_image_worker finished for: ".../source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_2.jpg"
+      load_image_worker finished for: ".../source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_5.jpg"
+      load_image_worker finished for: ".../source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_4.jpg"
     Python(5455,0x700001cd0000) malloc: *** error for object 0x7f86548001c0: pointer being freed was not allocated
+    *** set a breakpoint in malloc_error_break to debug
+    Abort trap: 6
+
+  Wednesday, April 1st, 2020
+    Child of MultiImagePanel
+      Forced load of image: ".../source/PySide2"
+      load_image_worker finished for: ".../source/PySide2/align_fwd_test_2020_04_01/scale_1/img_src/vj_097_shift_rot_skew_crop_6.jpg"
+    QPaintDevice: Cannot destroy paint device that is being painted
+    Python(5887,0x700002759000) malloc: *** error for object 0x7fec175183e0: pointer being freed was not allocated
     *** set a breakpoint in malloc_error_break to debug
     Abort trap: 6
 

@@ -7,7 +7,7 @@ using any number of technologies.
 
 new_project_template = \
 {
-  "version": 0.25,
+  "version": 0.26,
   "method": "None",
   "user_settings": {
     "max_image_file_size": 100000000
