@@ -1,4 +1,4 @@
-
+TODO Task list (add date when completed):
 
 1) Sort Scales in Menu (Done: March 21st, 2020)
 2) Copy Skip status to other scales? (Done: March 24th, 2020 ... New buttons to clear/copy)
@@ -23,7 +23,7 @@
    b) custom value for a given problematic image
    
 
-Wish List:
+Wish List (add date when completed):
 
 Some thoughts while working remotely from home on my Mac using X to eccles.
 Mac on WiFi 5GHz 802.11n.  Ookla SpeedTest 70Mbps download, 6Mbps upload.
@@ -31,3 +31,52 @@ Likely useful when using alignem_swift.py via the 3DEM portal on TACC.
 
 1) Jump to Frame #                            (Done: March 21st, 2020)
      Scrolling is a bit slow over X.  About 1 fps.
+
+
+Bug Reports (add date when competed):
+
+1) Unusual crashes due to "malloc" errors:
+
+  These have happened while rapidly scrolling through the stack.
+
+  Because they appear to be due to the Python interpreter crashing,
+  there is very little debug information available.
+  All of these crashes have happened on the older Macintosh.
+
+   Thursday, March 26th, 2020
+    Child of MultiImagePanel
+      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_4.jpg"
+      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_5.jpg"
+    Python(1400,0x700001e59000) malloc: *** error for object 0x7fdf1ed031d0: double free
+    *** set a breakpoint in malloc_error_break to debug
+      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/testtom2/scale_5/img_aligned/vj_097_shift_rot_skew_crop_4k4k_2.jpg"
+    Abort trap: 6
+
+  Friday, March 27th, 2020
+    Python(2622,0x7fff7d4e8000) malloc: *** error for object 0x7fed83e4c418: incorrect checksum for freed object - object was probably modified after being freed.
+    *** set a breakpoint in malloc_error_break to debug
+    Abort trap: 6
+
+  Tuesday, March 31st, 2020
+    Update_siblings called, calling siblings.update_self
+    Child of MultiImagePanel
+      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_2.jpg"
+      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_5.jpg"
+      load_image_worker finished for: "/Users/bob/proj/swiftir/source/PySide2/align_fwd_test_2020_03_31/scale_2/img_aligned/vj_097_shift_rot_skew_crop_4.jpg"
+    Python(5455,0x700001cd0000) malloc: *** error for object 0x7f86548001c0: pointer being freed was not allocated
+    *** set a breakpoint in malloc_error_break to debug
+    Abort trap: 6
+
+2) Not generating all scales
+
+  Sometimes the JSON file will contain layers for only the first scale,
+  but no layers for any of the other scales. When this happens, generation
+  of scales proceeds properly, but no scaled images are generated because
+  the image stacks for the scales are empty. The key question here is: How
+  does such a JSON file get created?
+
+3) Changing roles generates additional panels
+
+  The changing of roles does not seem to work properly in aligem.py.
+  Adding a role ('x1') to the default roles ('ref', 'base', 'aligned') gives:
+    'ref' 'base' 'aligned' 'ref' 'base' 'aligned' 'x1'
