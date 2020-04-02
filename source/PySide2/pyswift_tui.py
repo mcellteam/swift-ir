@@ -223,53 +223,126 @@ def BoundingRect(align_list,siz):
   return rect
 
 
-def run_json_project ( project=None, alignment_option='init_affine', scale_done=0, use_scale=0, scale_tbd=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
-  '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
+'''
+# Schema of project status dictionary:
+# Should we merge this with the project datamodel?
+proj_status { 
+  'defined_scales': [ 1, 4 ]
+  'finest_scale_done': 4
+  'scale_tbd': 1
+  'scales': {
+    'scale_1': {
+      'all_aligned': False
+      'aligned_stat': np.array([ True, True, True, False, False ])
+    }
+    'scale_4': {
+      'all_aligned': True
+      'aligned_stat': np.array([ True, True, True, True, True ])
+    }
+  }
+}
+'''
 
-  print_debug(10,80*"!" )
-  print_debug(10,"run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode, start_layer, num_layers]) )
-  align_swiftir.global_swiftir_mode = swiftir_code_mode
+def evaluate_project_status(project):
 
   # Get int values for scales in a way compatible with old ('1') and new ('scale_1') style for keys
   scales = sorted([ int(s.split('scale_')[-1]) for s in project['data']['scales'].keys() ])
-  # scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
+  
+  proj_status = {}
+  proj_status['defined_scales'] = scales
+  proj_status['finest_scale_done'] = 0
+  proj_status['scale_tbd'] = 0
+  proj_status['scales'] = {}
+  for scale in scales:
+    scale_key = 'scale_'+str(scale)
+    proj_status['scales'][scale_key] = {}
+
+    alstack = project['data']['scales'][scale_key]['alignment_stack']
+    num_alstack = len(alstack)
+    
+#    afm_list = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in alstack if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
+
+    proj_status['scales'][scale_key]['aligned_stat'] = np.array([ 'affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack ])
+    num_afm = np.count_nonzero(proj_status['scales'][scale_key]['aligned_stat'] == True)
+
+    if num_afm == num_alstack:
+      proj_status['scales'][scale_key]['all_aligned'] = True
+      if not proj_status['finest_scale_done']:
+        # If not yet set, we've just found the finest scale that is done
+        proj_status['finest_scale_done'] = scale
+    else:
+      proj_status['scales'][scale_key]['all_aligned'] = False
+      # Since the outer loop iterates scales from finest to coarsest,
+      #   this will always be the coarsest scale not done:
+      proj_status['scale_tbd'] = scale
+
+  return proj_status
+  
+
+
+def run_json_project ( project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
+  '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
+
+  print_debug(10,80*"!" )
+  print_debug(10,"run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers]) )
+  align_swiftir.global_swiftir_mode = swiftir_code_mode
 
   destination_path = project['data']['destination_path']
 
+  # Evaluate Status of Project and set appropriate flags here:
+  proj_status = evaluate_project_status(project)
+  finest_scale_done = proj_status['finest_scale_done']
+  # allow_scale_climb defaults to False
+  allow_scale_climb = False
+  # upscale factor defaults to 1.0
+  upscale = 1.0
+  next_scale = 0
   if use_scale==0:
-    # Iterate over scales from finest to coarsest
-    # Identify coarsest scale lacking affine matrices in method_results
-    #   and the finest scale which has affine matrices
-    for scale in scales:
-      sn = project['data']['scales']['scale_'+str(scale)]['alignment_stack']
-      afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in sn if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
-      if not len(afm):
-        scale_tbd = scale
-      elif not scale_done:
-        scale_done = scale
+    # Get scale_tbd from proj_status:
+    scale_tbd = proj_status['scale_tbd']
+    # Compute upscale factor:
+    if finest_scale_done != 0:
+      upscale = (float(finest_scale_done)/float(scale_tbd))
+      next_scale = finest_scale_done
+    # Allow scale climbing if there is a finest_scale_done
+    allow_scale_climb = (finest_scale_done != 0)
   else:
+    # Force scale_tbd to be equal to use_scale
     scale_tbd = use_scale
+    # Set allow_scale_climb according to status of next coarser scale
+    scale_tbd_idx = proj_status['defined_scales'].index(scale_tbd)
+    if scale_tbd_idx < len(proj_status['defined_scales'])-1:
+      next_scale = proj_status['defined_scales'][scale_tbd_idx+1]
+      next_scale_key = 'scale_'+str(next_scale)
+      upscale = (float(next_scale)/float(scale_tbd))
+      allow_scale_climb = proj_status['scales'][next_scale_key]['all_aligned']
+
+  if ((not allow_scale_climb) & (alignment_option!='init_affine')):
+      print('AlignEM SWiFT Error: Cannot perform alignment_option: %s at scale: %d' % (alignment_option,scale_tbd))
+      print('                       Because next coarsest scale is not fully aligned')
+
+      return (project,False)
+    
 
   if scale_tbd:
     if use_scale:
-      upscale = 1.0
-      print_debug(50,"Performing alignment_option: %s  at scale: %d" % (alignment_option,scale_tbd))
-      print_debug(50,"Operating on images at scale: ",scale_tbd)
+      print_debug(50,"Performing alignment_option: %s  at user specified scale: %d" % (alignment_option,scale_tbd))
+      print_debug(50,"Next coarsest scale completed: ",next_scale)
       print_debug(50,"Upscale factor: ",upscale)
     else:
-      upscale = (float(scale_done)/float(scale_tbd))
-      print_debug(50,"Coarsest scale completed: ",scale_done)
-      print_debug(50,"Operating on images at scale: ",scale_tbd)
+      print_debug(50,"Performing alignment_option: %s  at automatically determined scale: %d" % (alignment_option,scale_tbd))
+      print_debug(50,"Finest scale completed: ",finest_scale_done)
       print_debug(50,"Upscale factor: ",upscale)
 
     scale_tbd_dir = os.path.join(destination_path,'scale_'+str(scale_tbd))
 
     ident = swiftir.identityAffine().tolist()
 
-    if scale_done:
+    if finest_scale_done:
       # Copy settings from finest completed scale to tbd:
-      s_done = project['data']['scales']['scale_'+str(scale_done)]['alignment_stack']
+      s_done = project['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
       project['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+
     s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
 
     # Align Forward Change:
@@ -787,7 +860,7 @@ if (__name__ == '__main__'):
   use_scale = 0
   alignment_option = 'refine_affine'
   scale_tbd = 0
-  scale_done = 0
+  finest_scale_done = 0
   swiftir_code_mode = 'python'
 
   # check for an even number of additional args
@@ -814,7 +887,7 @@ if (__name__ == '__main__'):
   d = json.load(fp)
 
 
-  d, need_to_write_json = run_json_project ( d, alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode )
+  d, need_to_write_json = run_json_project ( d, alignment_option, use_scale, swiftir_code_mode )
 
 
   if need_to_write_json:
