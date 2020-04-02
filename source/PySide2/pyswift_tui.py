@@ -204,6 +204,27 @@ def InitCafm(bias_funcs):
 
 
 
+def ApplyBiasFuncs(align_list):
+
+  # Iteratively determine and null out bias in c_afm
+  print_debug(50,"\nComputing and Nulling Biases...\n")
+  bias_funcs = BiasFuncs(align_list)
+  c_afm_init = InitCafm(bias_funcs)
+  bias_iters = 2
+  for bi in range(bias_iters):
+    c_afm = c_afm_init
+    for item in align_list:
+      align_idx = item['i']
+      align_item = item['proc']
+      bias_mat = BiasMat(align_idx,bias_funcs)
+      c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
+    if bi < bias_iters-1:
+      bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
+
+  return c_afm_init
+
+
+
 def BoundingRect(align_list,siz):
 
   model_bounds = None
@@ -440,16 +461,16 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
             raise
 
     bias_data_path = os.path.join(destination_path,'scale_'+str(scale_tbd),'bias_data')
-    snr_file = open('snr_1.dat','w')
-    bias_x_file = open('bias_x_1.dat','w')
-    bias_y_file = open('bias_y_1.dat','w')
-    bias_rot_file = open('bias_rot_1.dat','w')
-    bias_scale_x_file = open('bias_scale_x_1.dat','w')
-    bias_scale_y_file = open('bias_scale_y_1.dat','w')
-    bias_skew_x_file = open('bias_skew_x_1.dat','w')
-    bias_det_file = open('bias_det_1.dat','w')
-    afm_file = open('afm_1.dat','w')
-    c_afm_file = open('c_afm_1.dat','w')
+    snr_file = open(os.path.join(bias_data_path,'snr_1.dat'),'w')
+    bias_x_file = open(os.path.join(bias_data_path,'bias_x_1.dat'),'w')
+    bias_y_file = open(os.path.join(bias_data_path,'bias_y_1.dat'),'w')
+    bias_rot_file = open(os.path.join(bias_data_path,'bias_rot_1.dat'),'w')
+    bias_scale_x_file = open(os.path.join(bias_data_path,'bias_scale_x_1.dat'),'w')
+    bias_scale_y_file = open(os.path.join(bias_data_path,'bias_scale_y_1.dat'),'w')
+    bias_skew_x_file = open(os.path.join(bias_data_path,'bias_skew_x_1.dat'),'w')
+    bias_det_file = open(os.path.join(bias_data_path,'bias_det_1.dat'),'w')
+    afm_file = open(os.path.join(bias_data_path,'afm_1.dat'),'w')
+    c_afm_file = open(os.path.join(bias_data_path,'c_afm_1.dat'),'w')
 
     if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
       # Create skew, scale, rot, and tranlation matrices
@@ -683,11 +704,15 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         align_item = item ['proc']
         print_debug(20,'\n\nNot Aligning: %s %s\n' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
 
+
     c_afm_init = swiftir.identityAffine()
 
-    null_bias = False
-    if null_bias:
+    # Null Trends in CAFM if requested
+    if project['data']['scales']['scale_'+str(scale_tbd)]['null_cafm_trends']:
+      c_afm_init = ApplyBiasFuncs(align_list)
 
+      # ApplyBiasFuncs replaces the commented block below:
+      '''
       # TODO
       print_debug(10,50*'!')
       print_debug(10," Computing and Nulling Biases is disabled due to errors. Check on this!!")
@@ -714,6 +739,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         print_debug(50,50*'5')
         if bi < bias_iters-1:
           bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
+      '''
 
     # Save all final aligned images:
     print_debug(50,"\nSaving all aligned images...\n")
@@ -727,7 +753,9 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     siz = im_sta.shape
 
-    rect = BoundingRect(align_list,siz)
+    rect = None
+    if project['data']['scales']['scale_'+str(scale_tbd)]['use_bounding_rect']:
+      rect = BoundingRect(align_list,siz)
 
 #    im_aligned = swiftir.affineImage(c_afm_init,im_sta)
     print("Applying affine: " + str(c_afm_init))
