@@ -566,9 +566,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
       # Run the project via pyswift_tui
       updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
                                                                          alignment_option = 'init_affine',
-                                                                         scale_done = 0,
                                                                          use_scale = alignem.get_scale_val(scale_to_run_text),
-                                                                         scale_tbd = 0,
                                                                          swiftir_code_mode = code_mode,
                                                                          start_layer = first_layer,
                                                                          num_layers = num_layers )
