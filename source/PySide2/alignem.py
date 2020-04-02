@@ -809,11 +809,29 @@ class MultiImagePanel(QWidget):
 
 ignore_changes = True  # Default for first change which happens on file open?
 
+def null_bias_changed_callback ( state ):
+    global ignore_changes
+    print_debug ( 50, 100*'+' )
+    print_debug ( 50, "Null Bias changed to " + str(state) )
+    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
+    print_debug ( 50, 100*'+' )
+    project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = state
+
+def bounding_rect_changed_callback ( state ):
+    global ignore_changes
+    print_debug ( 50, 100*'+' )
+    print_debug ( 50, "Bounding Rect changed to " + str(state) )
+    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
+    print_debug ( 50, 100*'+' )
+    project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = state
+
+
 def bool_changed_callback ( state ):
+    global ignore_changes
     print_debug ( 50, 100*'+' )
     print_debug ( 50, "Bool changed to " + str(state) )
+    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
     print_debug ( 50, 100*'+' )
-    global ignore_changes
     if not ignore_changes:
         if main_window != None:
             if main_window.view_change_callback != None:
@@ -862,7 +880,12 @@ class ControlPanelWidget(QWidget):
                   elif isinstance(item, BoolField):
                       val_widget = ( QCheckBox ( str(item.text) ) )
                       row_box_layout.addWidget ( val_widget )
-                      val_widget.stateChanged.connect ( bool_changed_callback )
+                      if item.text == "Null Bias":
+                          val_widget.stateChanged.connect(null_bias_changed_callback)
+                      elif item.text == "Bounding Rect":
+                          val_widget.stateChanged.connect(bounding_rect_changed_callback)
+                      else:
+                          val_widget.stateChanged.connect(bool_changed_callback)
                       item.widget = val_widget
                   elif isinstance(item, TextField):
                       if item.text != None:
@@ -1029,6 +1052,13 @@ class BoolField(GenericField):
         self.callback = callback
     '''
     """
+    def __init__ ( self, text, value, all_layers=0, callback=None ):
+        self.text = text  # Should be handled by super, but fails in Python2
+        self.widget = None
+        self.value = value
+        self.all_layers = all_layers
+        self.callback = callback
+        print_debug ( 20, "BoolField created with callback = " + str(self.callback) )
 
     def get_value ( self ):
       if 'widget' in dir(self):
@@ -1445,7 +1475,9 @@ class MainWindow(QMainWindow):
         print_debug ( 2, "  list(project_data['data']['scales'].keys()) = " + str(scale_keys) )
         print_debug ( 2, "Scales, Layers, and Images:" )
         for k in sorted(scale_keys):
-          print_debug ( 2, "  Scale key: " + str(k) )
+          print_debug ( 2, "  Scale key: " + str(k) +
+                        ", NullBias: " + str(project_data['data']['scales'][k]['null_cafm_trends']) +
+                        ", Bounding Rect: " + str(project_data['data']['scales'][k]['use_bounding_rect']) )
           scale = project_data['data']['scales'][k]
           for layer in scale['alignment_stack']:
             print_debug ( 2, "    Layer: " + str([ k for k in layer['images'].keys()]) )
