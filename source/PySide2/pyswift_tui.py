@@ -711,7 +711,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if project['data']['scales']['scale_'+str(scale_tbd)]['null_cafm_trends']:
       c_afm_init = ApplyBiasFuncs(align_list)
 
-      # ApplyBiasFuncs replaces the commented block below:
+      # Note: call to ApplyBiasFuncs above replaces the commented block below:
       '''
       # TODO
       print_debug(10,50*'!')
@@ -756,6 +756,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     rect = None
     if project['data']['scales']['scale_'+str(scale_tbd)]['use_bounding_rect']:
       rect = BoundingRect(align_list,siz)
+    print('Bounding Rectangle: %s' % (str(rect)))
 
 #    im_aligned = swiftir.affineImage(c_afm_init,im_sta)
     print("Applying affine: " + str(c_afm_init))
