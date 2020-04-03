@@ -618,7 +618,17 @@ def do_requested ():
     scale_to_run_text = alignem.project_data['data']['current_scale']
     this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
     this_scale['method_data']['alignment_option'] = str(translate_to_dm[thing_to_do])
+    alignem.print_debug ( 5, '')
+    alignem.print_debug ( 5, 40 * '@=' + '@')
+    alignem.print_debug ( 5, 40 * '=@' + '=')
+    alignem.print_debug ( 5, 40 * '@=' + '@')
+    alignem.print_debug ( 5, '')
     print ("Doing " + thing_to_do + " which is: " + str(translate_to_dm[thing_to_do]))
+    alignem.print_debug ( 5, '')
+    alignem.print_debug ( 5, 40 * '@=' + '@')
+    alignem.print_debug ( 5, 40 * '=@' + '=')
+    alignem.print_debug ( 5, 40 * '@=' + '@')
+    alignem.print_debug ( 5, '')
     align_layers()
 
 def align_forward():
