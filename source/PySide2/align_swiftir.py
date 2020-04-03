@@ -131,9 +131,14 @@ class alignment_process:
     im_sta = swiftir.loadImage(self.im_sta_fn)
     im_mov = swiftir.loadImage(self.im_mov_fn)
 
+    atrm = self.layer_dict['align_to_ref_method']
     # window size scale factor
-#    wsf = 0.75
-    wsf = 0.80
+    wsf = atrm['method_data']['win_scale_factor']
+
+#    Previously hard-coded values for wsf chosen by trial-and-error
+#    wsf = 0.80  # Most common good value for wsf
+#    wsf = 0.75  # Also a good value for most projects
+
 #    wsf = 0.90
 #    wsf = 1.0
 
@@ -186,19 +191,19 @@ class alignment_process:
 
     self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
-    atrm = self.layer_dict['align_to_ref_method']
+    wht = atrm['method_data']['whitening_factor']
     if atrm['selected_method']=='Auto Swim Align':
       alignment_option = atrm['method_data'].get('alignment_option')
       if alignment_option == 'refine_affine':
-        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
         self.recipe.add_ingredient(ingredient_4x4)
       elif alignment_option == 'apply_affine':
         self.recipe.afm = self.init_affine_matrix
       else:
         # Normal Auto Swim Align - Full Recipe
-        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
-        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
-        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
         self.recipe.add_ingredient(ingredient_1)
         self.recipe.add_ingredient(ingredient_2x2)
         self.recipe.add_ingredient(ingredient_4x4)
@@ -207,13 +212,13 @@ class alignment_process:
       mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
       mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
       # First ingredient is to calculate the Affine matrix from match points alone
-      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
       # Second ingredient is to refine the Affine matrix by swimming at each match point
-      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
       self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
       self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
 
-    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
     self.recipe.add_ingredient(ingredient_check_align)
 
