@@ -7,12 +7,15 @@ using any number of technologies.
 def upgrade_data_model(data_model):
   # Upgrade the "Data Model"
   if data_model['version'] != new_project_template['version']:
+
     # Begin the upgrade process:
-    if data_model ['version'] <= 0.27:
+
+    if data_model['version'] <= 0.26:
+      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.27) )
       # Need to modify the data model from 0.26 or lower up to 0.27
-      # The "alignment_option" had been in the method_data at each scale
+      # The "alignment_option" had been in the method_data at each layer
       # This new version defines it only at the scale level
-      # So loop through each scale and move the alignment_option from the method_data to the scale
+      # So loop through each scale and move the alignment_option from the layer to the scale
       for scale_key in data_model['data']['scales'].keys():
         scale = data_model['data']['scales'][scale_key]
         stack = scale['alignment_stack']
@@ -40,20 +43,39 @@ def upgrade_data_model(data_model):
           scale['method_data'] = {}
         # Finally set the value
         scale['method_data']["alignment_option"] = scale_option
-
       # Now the data model is at 0.27, so give it the appropriate version
       data_model ['version'] = 0.27
+
+    if data_model ['version'] == 0.27:
+      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.28) )
+      # Need to modify the data model from 0.27 up to 0.28
+      # The "alignment_option" had been left in the method_data at each layer
+      # This new version removes that option from the layer method data
+      # So loop through each scale and remove the alignment_option from the layer
+      for scale_key in data_model['data']['scales'].keys():
+        scale = data_model['data']['scales'][scale_key]
+        stack = scale['alignment_stack']
+        current_alignment_options = []
+        for layer in stack:
+          if "align_to_ref_method" in layer:
+            align_method = layer['align_to_ref_method']
+            if 'method_data' in align_method:
+              if 'alignment_option' in align_method['method_data']:
+                align_method ['method_data'].pop('alignment_option')
+      # Now the data model is at 0.28, so give it the appropriate version
+      data_model ['version'] = 0.28
 
     # Make the final test
     if data_model ['version'] != new_project_template['version']:
       # The data model could not be upgraded, so return a string with the error
       data_model = 'Version mismatch. Expected "' + str(new_project_template['version']) + '" but found ' + str(data_model['version'])
+
   return data_model
 
 
 new_project_template = \
 {
-  "version": 0.27,
+  "version": 0.28,
   "method": "None",
   "user_settings": {
     "max_image_file_size": 100000000
