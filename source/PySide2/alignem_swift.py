@@ -911,8 +911,8 @@ skips_to_all_cb = CallbackButton('Copy Skips to All Scales', copy_skips_to_all_s
 
 refine_aff_cb  = CallbackButton('Refine Affine', notyet)
 apply_aff_cb  = CallbackButton('Apply Affine', notyet)
-whitening_factor  = FloatField('Whitening', 1.0)
-win_scale_factor  = FloatField('Window Scale Factor', 1.0)
+whitening_factor  = FloatField('Whitening', -0.68)
+win_scale_factor  = FloatField('Window Scale Factor', 0.8125)
 
 null_cafm_trends  = BoolField("Null Bias",False)
 use_bounding_rect = BoolField("Bounding Rect",False)
