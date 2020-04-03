@@ -19,7 +19,7 @@ import threading
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
-from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox
+from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -662,7 +662,6 @@ class ZoomPanWidget(QWidget):
                             method_results = layer['align_to_ref_method']['method_results']
                             if 'snr' in method_results:
                                 painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
-                                print ("painter.viewport = " + str (dir (painter.viewport ())))
                                 midw = painter.viewport().width() / 2
                                 painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
 
@@ -928,6 +927,12 @@ class ControlPanelWidget(QWidget):
                       item_widget.clicked.connect ( item.callback )
                       item.widget = item_widget
                       row_box_layout.addWidget ( item_widget )
+                  elif isinstance (item, ComboBoxControl):
+                      item_widget = QComboBox()
+                      item_widget.addItems (item.choices)
+                      #item_widget.clicked.connect ( item.callback )
+                      item.widget = item_widget
+                      row_box_layout.addWidget ( item_widget )
                   else:
                       item_widget = QLineEdit ( str(item) )
                       item_widget.setAlignment(Qt.AlignHCenter)
@@ -1131,6 +1136,16 @@ class CallbackButton(GenericWidget):
         return None
     def set_value ( self, value ):
         pass
+
+class ComboBoxControl(GenericWidget):
+    def __init__ ( self, choices ):
+        #super(CallbackButton,self).__init__(text)
+        self.choices = choices
+    def get_value ( self ):
+        return "Nothing yet"
+    def set_value ( self, value ):
+        pass
+
 
 def align_forward():
     print_debug ( 30, "Aligning Forward ..." )
@@ -2264,7 +2279,7 @@ if __name__ == "__main__":
     ]
 
     main_window = MainWindow ( control_model=control_model )
-    main_window.resize(2400,1000)
+    main_window.resize(2200,1000)
 
     main_window.define_roles ( ['Stack'] )
 
