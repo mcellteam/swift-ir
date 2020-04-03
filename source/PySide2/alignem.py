@@ -491,7 +491,7 @@ class ZoomPanWidget(QWidget):
               entering_scale = project_data['data']['current_scale']
               main_window.view_change_callback ( get_scale_key(leaving_scale), get_scale_key(entering_scale), leaving_layer, entering_layer )
             except:
-              print_debug ( 1, "Exception in view_change_callback" )
+              print_debug ( 0, "Exception in change_layer: " + str (sys.exc_info ()) )
 
           local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
           local_current_scale = project_data['data']['current_scale']  # Get it from the data model
@@ -599,6 +599,10 @@ class ZoomPanWidget(QWidget):
                         # Draw the borders of the viewport for each panel to separate panels
                         painter.setPen(QPen(self.border_color,4))
                         painter.drawRect(painter.viewport())
+
+                        if self.draw_annotations:
+                            painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
+                            painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width (), pixmap.height ()))
 
                         if self.draw_annotations and 'metadata' in ann_image:
                             colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
@@ -2111,7 +2115,7 @@ class MainWindow(QMainWindow):
             # This guards against errors in "user code"
             main_window.view_change_callback ( old_scale, new_scale, leaving_layer, entering_layer )
           except:
-            print_debug ( 0, "Exception in view_change_callback" )
+            print_debug ( 0, "Exception in set_current_scale: " + str(sys.exc_info()) )
         current_scale = new_scale
         project_data['data']['current_scale'] = current_scale
         print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
