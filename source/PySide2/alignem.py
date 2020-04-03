@@ -640,18 +640,33 @@ class ZoomPanWidget(QWidget):
         if self.draw_annotations:
             # Draw the role
             painter.setPen(QPen(QColor(255,100,100,255), 5))
-            painter.drawText(20, 30, role_text)
+            painter.drawText(10, 20, role_text)
             if img_text != None:
-              painter.setPen(QPen(QColor(100,100,255,255), 5))
-              if self.draw_full_paths:
-                painter.drawText(20, 60, img_text)
-              else:
-                if os.path.sep in img_text:
-                  # Only split the path if it's splittable
-                  painter.drawText(20, 60, os.path.split(img_text)[-1])
+                # Draw the image name
+                painter.setPen(QPen(QColor(100,100,255,255), 5))
+                if self.draw_full_paths:
+                    painter.drawText(10, 40, img_text)
                 else:
-                  painter.drawText(20, 60, img_text)
+                    if os.path.sep in img_text:
+                        # Only split the path if it's splittable
+                        painter.drawText(10, 40, os.path.split(img_text)[-1])
+                    else:
+                        painter.drawText(10, 40, img_text)
 
+            if len(project_data['data']['scales']) > 0:
+                scale = project_data['data']['scales'][s]
+                if len(scale['alignment_stack']) > 0:
+                    layer =  scale['alignment_stack'][l]
+                    if 'align_to_ref_method' in layer:
+                        if 'method_results' in layer['align_to_ref_method']:
+                            method_results = layer['align_to_ref_method']['method_results']
+                            if 'snr' in method_results:
+                                painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
+                                print ("painter.viewport = " + str (dir (painter.viewport ())))
+                                midw = painter.viewport().width() / 2
+                                painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
+
+        # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
         painter.end()
