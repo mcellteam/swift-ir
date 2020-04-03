@@ -542,118 +542,6 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       method_results = s_tbd[prev_aligned_index]['align_to_ref_method']['method_results']
       c_afm = method_results['cumulative_afm']  # Note that this might not be the right type (it's a list not a matrix)
 
-    '''
-    # Initialize c_afm with initial offsets
-    # Initial offsets for c_afm
-    init_skew_x = 0.037
-    init_scale_x = 1/1.05
-    init_scale_y = 1/1.15
-    init_rot= 0.05
-    init_x = -20.0
-    init_y = 16.0
-
-    # Create skew, scale, rot, and tranlation matrices
-    init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0],[0.0, 1.0, 0.0]])
-    init_scale_mat = np.array([[init_scale_x, 0.0, 0.0],[0.0, init_scale_y, 0.0]])
-    init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0],[np.sin(init_rot), np.cos(init_rot), 0.0]])
-    init_trans_mat = np.array([[1.0, 0.0, init_x],[0.0, 1.0, init_y]])
-
-    c_afm = swiftir.identityAffine()
-
-    # Compose bias matrix as skew*scale*rot*trans
-    c_afm = swiftir.composeAffine(init_skew_x_mat,c_afm)
-    c_afm = swiftir.composeAffine(init_scale_mat,c_afm)
-    c_afm = swiftir.composeAffine(init_rot_mat,c_afm)
-    c_afm = swiftir.composeAffine(init_trans_mat,c_afm)
-
-
-    # Save unmodified first image into align_dir
-    im_sta_fn = s_tbd[0]['images']['base']['filename']
-    base_fn = os.path.basename(im_sta_fn)
-    al_fn = os.path.join(align_dir,base_fn)
-    print_debug(50,"Saving first image in align dir: ", al_fn)
-    im_sta = swiftir.loadImage(im_sta_fn)
-    im_aligned = swiftir.affineImage(c_afm,im_sta)
-    swiftir.saveImage(im_aligned,al_fn)
-    if not 'aligned' in s_tbd[0]['images']:
-      s_tbd[0]['images']['aligned'] = {}
-    s_tbd[0]['images']['aligned']['filename'] = al_fn
-    '''
-
-
-    # Setup custom bias values for this alignment run
-    # SYGQK scale 24 biases
-    '''
-    rot_bias = -(0.062/270.)
-    scale_x_bias = (1/(0.96))**(1/270.)
-    scale_y_bias = (1/(0.8))**(1/270.)
-    skew_x_bias = -(0.145/270.)
-    x_bias = -(-80/270.)
-    y_bias = -(80/270.)
-    '''
-
-    '''
-    # SYGQK scale 6 biases
-    rot_bias = -(0.072/270.)
-    scale_x_bias = (1/(0.94))**(1/270.)
-    scale_y_bias = (1/(0.78**2))**(1/270.)
-    skew_x_bias = -(1.1*0.145/270.)
-    x_bias = -(-80*2.7/270.)
-    y_bias = -(80*5/270.)
-    '''
-
-    '''
-    # SYGQK scale 6 biases, using apply_affine from scale 24
-    rot_bias = -(0.045/270.)
-    scale_x_bias = (1/(0.960))**(1/270.)
-    scale_y_bias = (1/(0.82))**(1/270.)
-    skew_x_bias = -(0.118/270.)
-    x_bias = -(-80*4/270.)
-    y_bias = -(80*4/270.)
-    '''
-
-    # SYGQK scale 6 biases, using apply_affine from scale 24
-    '''
-    rot_bias = -(0.045/270.)
-    scale_x_bias = (1/(0.960))**(1/270.)
-    scale_y_bias = (1/(0.82))**(1/270.)
-    skew_x_bias = -(0.118/270.)
-    x_bias = -(-80*24/270.)
-    y_bias = -(80*24/270.)
-    '''
-
-    # LM9R5CA1 scale 24 biases
-    '''
-    rot_bias = -(-0.015/266.)
-    scale_x_bias = (1/(1.02))**(1/266.)
-    scale_y_bias = (1/(1.03))**(1/266.)
-    skew_x_bias = -(-0.02/266.)
-    x_bias = -(-145/266.)
-    y_bias = -(110/266.)
-    '''
-
-    '''
-    # LM9R5CA1 scale 8 biases, scaled up from scale 24
-    rot_bias = -(-0.02/266.)
-    scale_x_bias = 1.02**(-1.0/266.)
-    scale_y_bias = 1.046**(-1.0/266.)
-    skew_x_bias = -(-0.02/266.)
-    x_bias = -(-165*3/266.)
-    y_bias = -(110*3/266.)
-    '''
-
-    # R34 scale 4 biases
-    '''
-    rot_bias = -(-0.7/193.)
-    scale_x_bias = 1.11**(-1.0/193.)
-    scale_y_bias = 1.17**(-1.0/193.)
-    skew_x_bias = -(-0.2/193.)
-    x_bias = -(-700/193.)
-    y_bias = -(40/193.)
-    '''
-
-    '''
-    '''
     # Setup for no bias
     rot_bias = 0.0
     scale_x_bias = 1.0
@@ -691,7 +579,6 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
     '''
 
-
     # Align the images
     for item in align_list:
 
@@ -707,39 +594,10 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     c_afm_init = swiftir.identityAffine()
 
-    # Null Trends in CAFM if requested
+    # Null Trends in c_afm if requested
     if project['data']['scales']['scale_'+str(scale_tbd)]['null_cafm_trends']:
       c_afm_init = ApplyBiasFuncs(align_list)
 
-      # Note: call to ApplyBiasFuncs above replaces the commented block below:
-      '''
-      # TODO
-      print_debug(10,50*'!')
-      print_debug(10," Computing and Nulling Biases is disabled due to errors. Check on this!!")
-      print_debug(10,50*'!')
-
-      # Iteratively determine and null out bias in c_afm
-      print_debug(50,"\nComputing and Nulling Biases...\n")
-      print_debug(50,50*'0')
-      bias_funcs = BiasFuncs(align_list)
-      print_debug(50,50*'1')
-      c_afm_init = InitCafm(bias_funcs)
-      #    c_afm_init = swiftir.identityAffine()
-      bias_iters = 2
-      print_debug(50,50*'2')
-      for bi in range(bias_iters):
-        c_afm = c_afm_init
-        print_debug(50,50*'3')
-        for item in align_list:
-          align_idx = item['i']
-          align_item = item['proc']
-          print_debug(50,50*'4')
-          bias_mat = BiasMat(align_idx,bias_funcs)
-          c_afm = align_item.setCafm(c_afm,bias_mat=bias_mat)
-        print_debug(50,50*'5')
-        if bi < bias_iters-1:
-          bias_funcs = BiasFuncs(align_list,bias_funcs=bias_funcs)
-      '''
 
     # Save all final aligned images:
     print_debug(50,"\nSaving all aligned images...\n")
@@ -751,14 +609,12 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     print_debug(50,"Saving first image in align dir: ", al_fn)
     im_sta = swiftir.loadImage(im_sta_fn)
 
-    siz = im_sta.shape
-
     rect = None
     if project['data']['scales']['scale_'+str(scale_tbd)]['use_bounding_rect']:
+      siz = im_sta.shape
       rect = BoundingRect(align_list,siz)
     print('Bounding Rectangle: %s' % (str(rect)))
 
-#    im_aligned = swiftir.affineImage(c_afm_init,im_sta)
     print("Applying affine: " + str(c_afm_init))
     im_aligned = swiftir.affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
     print("Saving image: " + al_fn)
@@ -780,7 +636,6 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       align_item = item['proc']
       if item['do']:
         # Save the image:
-        # align_item.saveAligned()
         align_item.saveAligned(rect=rect, grayBorder=True)
 
       # Retrieve alignment result
