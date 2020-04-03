@@ -9,7 +9,7 @@ import json
 import shutil
 
 import alignem
-from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow
+from alignem import IntField, BoolField, FloatField, CallbackButton, ComboBoxControl, MainWindow
 
 from PySide2.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar
 from PySide2.QtCore import QThread, Signal, QObject
@@ -895,6 +895,7 @@ gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
 align_all_cb  = CallbackButton('Align All', align_layers)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
+init_ref_app  = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
 num_fwd       = IntField("#",1,1)
 jump_to_cb    = CallbackButton('Jump To:', jump_to_layer)
 jump_to_val   = IntField("#",1,1)
@@ -902,13 +903,13 @@ rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
 skip          = BoolField("Skip",False)
 match_pt_mode = BoolField("Match",False)
 clear_match   = CallbackButton("Clear Match", clear_match_points)
-progress_cb   = CallbackButton('Test Progress Bar', run_progress)
-gen_scales_thread_cb = CallbackButton('Gen Scales (threaded)', gen_scales_with_thread)
+progress_cb   = CallbackButton('Prog Bar', run_progress)
+gen_scales_thread_cb = CallbackButton('Gen Scales (thread)', gen_scales_with_thread)
 link_stacks_cb = CallbackButton("Link All Stacks", link_all_stacks )
 debug_cb       = CallbackButton('Debug', method_debug)
 
 clear_skips_cb = CallbackButton("Clear all Skips", clear_all_skips)
-skips_to_all_cb = CallbackButton('Copy Skips to All Scales', copy_skips_to_all_scales)
+skips_to_all_cb = CallbackButton('Skips -> All Scales', copy_skips_to_all_scales)
 
 refine_aff_cb  = CallbackButton('Refine Affine', notyet)
 apply_aff_cb  = CallbackButton('Apply Affine', notyet)
@@ -937,17 +938,18 @@ control_model = [
       "    "
     ],
     [
-      "Test: ",
+      # "Test: ",
       gen_scales_thread_cb,
       " ", link_stack_cb,
+      " ", init_ref_app,
       " ", refine_aff_cb,
       " ", apply_aff_cb,
       " ", clear_skips_cb,
       " ", skips_to_all_cb,
       " ", whitening_factor,
-      " ", win_scale_factor,
-      " ", progress_cb,
-      " ", debug_cb
+      " ", win_scale_factor
+      # " ", progress_cb,
+      # " ", debug_cb
     ]
   ] # End first pane
 ]
