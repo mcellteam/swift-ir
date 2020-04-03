@@ -610,6 +610,17 @@ def align_layers ( first_layer=0, num_layers=-1 ):
             pass
       refresh_all()
 
+
+def do_requested ():
+    translate_to_dm = {'Init Affine':'init_affine', 'Refine Affine':'refine_affine', 'Apply Affine':'apply_affine'}
+    # translate_from_dm = {'init_affine':'Init Affine', 'refine_affine':'Refine Affine', 'apply_affine':'Apply Affine'}
+    thing_to_do = init_ref_app.get_value ()
+    scale_to_run_text = alignem.project_data['data']['current_scale']
+    this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
+    this_scale['method_data']['alignment_option'] = str(translate_to_dm[thing_to_do])
+    print ("Doing " + thing_to_do + " which is: " + str(translate_to_dm[thing_to_do]))
+    align_layers()
+
 def align_forward():
     num_layers = num_fwd.get_value ()
     first_layer = alignem.project_data['data']['current_layer']
@@ -695,18 +706,27 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
       # Check to do the scale logic
       if prev_scale_key != next_scale_key:
 
-        alignem.print_debug ( 35, "Swapping data between scales " + str(prev_layer) + " and " + str(next_layer) )
+        alignem.print_debug ( 1, "Swapping data between scales " + str(prev_layer) + " and " + str(next_layer) )
 
         # Ensure that the proper structure exists
         if not 'null_cafm_trends' in alignem.project_data['data']['scales'][prev_scale_key]:
           alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
         if not 'use_bounding_rect' in alignem.project_data['data']['scales'][prev_scale_key]:
           alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
+        if not 'method_data' in alignem.project_data['data']['scales'][prev_scale_key]:
+          alignem.project_data['data']['scales'][prev_scale_key]['method_data'] = {}
+        if not 'alignment_option' in alignem.project_data['data']['scales'][prev_scale_key]['method_data']:
+          alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = "init_affine"
+
 
         if not 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
           alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = False
         if not 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
           alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = False
+        if not 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
+          alignem.project_data['data']['scales'][next_scale_key]['method_data'] = {}
+        if not 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+          alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = "init_affine"
 
         # Exchange data between widget fields and the data model itself
         if prev_layer == next_layer:
@@ -716,10 +736,14 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
                 null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
               if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
                 use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
+              if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
+                if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+                  init_ref_app.set_value (alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'])
           else:
               # Just copy the data into this layer from the current field values
               alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
               alignem.project_data['data']['scales'][use_bounding_rect]['use_bounding_rect'] = use_bounding_rect.get_value()
+              alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = init_ref_app.get_value()
 
         else:
           # Save the value into the previous layer and set the value from the next layer
@@ -730,6 +754,11 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
           alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
           if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
             use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
+
+          alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = init_ref_app.get_value()
+          if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
+            if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+              init_ref_app.set_value(alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'])
 
 
       # Check to do the layer logic
@@ -896,6 +925,9 @@ align_all_cb  = CallbackButton('Align All', align_layers)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 init_ref_app  = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
+
+do_thing_cb   = CallbackButton('Execute', do_requested)
+
 num_fwd       = IntField("#",1,1)
 jump_to_cb    = CallbackButton('Jump To:', jump_to_layer)
 jump_to_val   = IntField("#",1,1)
@@ -942,14 +974,15 @@ control_model = [
       gen_scales_thread_cb,
       " ", link_stack_cb,
       " ", init_ref_app,
+      " ", do_thing_cb,
       " ", refine_aff_cb,
       " ", apply_aff_cb,
       " ", clear_skips_cb,
       " ", skips_to_all_cb,
       " ", whitening_factor,
-      " ", win_scale_factor
+      " ", win_scale_factor,
       # " ", progress_cb,
-      # " ", debug_cb
+      " ", debug_cb
     ]
   ] # End first pane
 ]

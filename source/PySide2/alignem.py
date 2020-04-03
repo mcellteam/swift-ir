@@ -1142,8 +1142,12 @@ class ComboBoxControl(GenericWidget):
         #super(CallbackButton,self).__init__(text)
         self.choices = choices
     def get_value ( self ):
-        return "Nothing yet"
+        return self.widget.currentText()
     def set_value ( self, value ):
+        print ( "ComboBoxControl.set_value ( " + str(value) + ")")
+        self.widget.setCurrentText(value)
+        #print ( "Setting value")
+        #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
         pass
 
 
