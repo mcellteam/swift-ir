@@ -542,6 +542,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
 
       # Create links or copy files in the expected directory structure
       # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
+      this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
       stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
       for layer in stack_at_this_scale:
         image_name = None
@@ -565,7 +566,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
 
       # Run the project via pyswift_tui
       updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
-                                                                         alignment_option = 'init_affine',
+                                                                         alignment_option = this_scale['method_data']['alignment_option'],
                                                                          use_scale = alignem.get_scale_val(scale_to_run_text),
                                                                          swiftir_code_mode = code_mode,
                                                                          start_layer = first_layer,
@@ -611,7 +612,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
 
 def align_forward():
     num_layers = num_fwd.get_value ()
-    first_layer = alignem.project_data ['data'] ['current_layer']
+    first_layer = alignem.project_data['data']['current_layer']
     alignem.print_debug ( 30, "Removing aligned from layer " + str(first_layer) )
     remove_aligned (starting_layer=first_layer)
     alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ..." )

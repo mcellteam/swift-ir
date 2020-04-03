@@ -2058,7 +2058,7 @@ class MainWindow(QMainWindow):
                       for l in scale_1_stack:
                         new_layer = copy.deepcopy ( l )
                         new_stack.append ( new_layer )
-                      project_data['data']['scales'][scale_key] = { 'alignment_stack': new_stack }
+                      project_data['data']['scales'][scale_key] = { 'alignment_stack': new_stack, 'method_data': {'alignment_option': 'init_affine'} }
             else:
                 print_debug ( 30, "No input: Scales not changed" )
         else:
