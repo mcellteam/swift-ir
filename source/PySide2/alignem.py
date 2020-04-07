@@ -665,9 +665,10 @@ class ZoomPanWidget(QWidget):
                         if 'method_results' in layer['align_to_ref_method']:
                             method_results = layer['align_to_ref_method']['method_results']
                             if 'snr' in method_results:
-                                painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
-                                midw = painter.viewport().width() / 2
-                                painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
+                                if method_results['snr'] != None:
+                                    painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
+                                    midw = painter.viewport().width() / 2
+                                    painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
 
         # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})

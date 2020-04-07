@@ -638,20 +638,20 @@ def align_layers ( first_layer=0, num_layers=-1 ):
             pass
       refresh_all()
 
+combo_name_to_dm_name = {'Init Affine':'init_affine', 'Refine Affine':'refine_affine', 'Apply Affine':'apply_affine'}
+dm_name_to_combo_name = {'init_affine':'Init Affine', 'refine_affine':'Refine Affine', 'apply_affine':'Apply Affine'}
 
 def do_requested ():
-    translate_to_dm = {'Init Affine':'init_affine', 'Refine Affine':'refine_affine', 'Apply Affine':'apply_affine'}
-    # translate_from_dm = {'init_affine':'Init Affine', 'refine_affine':'Refine Affine', 'apply_affine':'Apply Affine'}
     thing_to_do = init_ref_app.get_value ()
     scale_to_run_text = alignem.project_data['data']['current_scale']
     this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
-    this_scale['method_data']['alignment_option'] = str(translate_to_dm[thing_to_do])
+    this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
     alignem.print_debug ( 5, '')
     alignem.print_debug ( 5, 40 * '@=' + '@')
     alignem.print_debug ( 5, 40 * '=@' + '=')
     alignem.print_debug ( 5, 40 * '@=' + '@')
     alignem.print_debug ( 5, '')
-    print ("Doing " + thing_to_do + " which is: " + str(translate_to_dm[thing_to_do]))
+    print ("Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do]))
     alignem.print_debug ( 5, '')
     alignem.print_debug ( 5, 40 * '@=' + '@')
     alignem.print_debug ( 5, 40 * '=@' + '=')
@@ -705,25 +705,9 @@ def remove_aligned(starting_layer=0):
           # Remove the method results since they are no longer applicable
           if 'align_to_ref_method' in layer.keys():
             if 'method_results' in layer['align_to_ref_method']:
-              # layer['align_to_ref_method'].pop('method_results') # Can't remove method_results because pyswift_tui.py uses:
-              #   When the method results are completely removed, pyswift_tui gives this error:
-              #    run_json_project called with: ['init_affine', 1, 'python', 0, -1]
-              #    Traceback (most recent call last):
-              #     File "alignem_swift.py", line 601, in align_layers
-              #       num_layers = num_layers )
-              #     File "/Users/bob/proj/swiftir/source/PySide2/pyswift_tui.py", line 314, in run_json_project
-              #       proj_status = evaluate_project_status(project)
-              #     File "/Users/bob/proj/swiftir/source/PySide2/pyswift_tui.py", line 286, in evaluate_project_status
-              #       proj_status['scales'][scale_key]['aligned_stat'] = np.array([ 'affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack ])
-              #     File "/Users/bob/proj/swiftir/source/PySide2/pyswift_tui.py", line 286, in <listcomp>
-              #       proj_status['scales'][scale_key]['aligned_stat'] = np.array([ 'affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack ])
-              #   KeyError: 'method_results'
-
-              # Empty the afm and snr instead:
+              # Empty the afm and snr fields to signify no results:
               layer['align_to_ref_method']['method_results']['affine_matrix'] = None
               layer['align_to_ref_method']['method_results']['snr'] = None
-
-          #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
     layer_index += 1
 
@@ -747,7 +731,7 @@ def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
 def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False ):
-    alignem.print_debug ( 30, "Layer changed from " + str(prev_layer_num) + " to " + str(next_layer_num) + " with new data model = " + str(new_data_model) )
+    alignem.print_debug ( 30, "Layer (or possibly scale) changed from " + str(prev_layer_num) + " to " + str(next_layer_num) + " with new data model = " + str(new_data_model) )
     if alignem.project_data != None:
       alignem.print_debug ( 30, "Swapping data between " + str((prev_scale_key,prev_layer_num)) + " and " + str((next_scale_key,next_layer_num)) )
       #scale_key = alignem.project_data['data']['current_scale']
@@ -779,7 +763,6 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
         if not 'alignment_option' in alignem.project_data['data']['scales'][prev_scale_key]['method_data']:
           alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = "init_affine"
 
-
         if not 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
           alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = False
         if not 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
@@ -799,12 +782,12 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
                 use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
               if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
                 if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
-                  init_ref_app.set_value (alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'])
+                  init_ref_app.set_value (dm_name_to_combo_name[alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']])
           else:
               # Just copy the data into this layer from the current field values
               alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
               alignem.project_data['data']['scales'][use_bounding_rect]['use_bounding_rect'] = use_bounding_rect.get_value()
-              alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = init_ref_app.get_value()
+              alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
 
         else:
           # Save the value into the previous layer and set the value from the next layer
@@ -816,10 +799,10 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
           if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
             use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
 
-          alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = init_ref_app.get_value()
+          alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
           if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
             if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
-              init_ref_app.set_value(alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'])
+              init_ref_app.set_value(dm_name_to_combo_name[alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']])
 
 
       # Check to do the layer logic
