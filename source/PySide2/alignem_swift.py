@@ -111,11 +111,9 @@ def ensure_proper_data_structure ():
       scale = scales_dict[scale_key]
 
       if not 'null_cafm_trends' in scale:
-        print ("NOTE: Using defaults rather than user data!!")
-        scale ['null_cafm_trends'] = False
+        scale ['null_cafm_trends'] = null_cafm_trends.get_value()
       if not 'use_bounding_rect' in scale:
-        print ("NOTE: Using defaults rather than user data!!")
-        scale ['use_bounding_rect'] = False
+        scale ['use_bounding_rect'] = use_bounding_rect.get_value()
 
       for layer_index in range(len(scale['alignment_stack'])):
         layer = scale['alignment_stack'][layer_index]
@@ -126,14 +124,9 @@ def ensure_proper_data_structure ():
           atrm['method_data'] = {}
         mdata = atrm['method_data']
         if not 'win_scale_factor' in mdata:
-          print ( "NOTE: Using defaults rather than user data!!")
-          mdata['win_scale_factor'] = 0.8125
+          mdata['win_scale_factor'] = win_scale_factor.get_value()
         if not 'whitening_factor' in mdata:
-          print ( "NOTE: Using defaults rather than user data!!")
-          mdata['whitening_factor'] = -0.68
-
-
-        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+          mdata['whitening_factor'] = whitening_factor.get_value()
 
 
 
