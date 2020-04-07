@@ -702,7 +702,30 @@ def remove_aligned(starting_layer=0):
         if 'aligned' in layer['images'].keys():
           delete_list.append ( layer['images']['aligned']['filename'] )
           layer['images'].pop('aligned')
-      layer_index += 1
+          # Remove the method results since they are no longer applicable
+          if 'align_to_ref_method' in layer.keys():
+            if 'method_results' in layer['align_to_ref_method']:
+              # layer['align_to_ref_method'].pop('method_results') # Can't remove method_results because pyswift_tui.py uses:
+              #   When the method results are completely removed, pyswift_tui gives this error:
+              #    run_json_project called with: ['init_affine', 1, 'python', 0, -1]
+              #    Traceback (most recent call last):
+              #     File "alignem_swift.py", line 601, in align_layers
+              #       num_layers = num_layers )
+              #     File "/Users/bob/proj/swiftir/source/PySide2/pyswift_tui.py", line 314, in run_json_project
+              #       proj_status = evaluate_project_status(project)
+              #     File "/Users/bob/proj/swiftir/source/PySide2/pyswift_tui.py", line 286, in evaluate_project_status
+              #       proj_status['scales'][scale_key]['aligned_stat'] = np.array([ 'affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack ])
+              #     File "/Users/bob/proj/swiftir/source/PySide2/pyswift_tui.py", line 286, in <listcomp>
+              #       proj_status['scales'][scale_key]['aligned_stat'] = np.array([ 'affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack ])
+              #   KeyError: 'method_results'
+
+              # Empty the afm and snr instead:
+              layer['align_to_ref_method']['method_results']['affine_matrix'] = None
+              layer['align_to_ref_method']['method_results']['snr'] = None
+
+          #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+
+    layer_index += 1
 
     #alignem.image_library.remove_all_images()
 
