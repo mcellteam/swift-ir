@@ -348,20 +348,25 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
   if scale_tbd:
     if use_scale:
       print_debug(50,"Performing alignment_option: %s  at user specified scale: %d" % (alignment_option,scale_tbd))
+      print_debug(50,"Finest scale completed: ",finest_scale_done)
       print_debug(50,"Next coarsest scale completed: ",next_scale)
       print_debug(50,"Upscale factor: ",upscale)
     else:
       print_debug(50,"Performing alignment_option: %s  at automatically determined scale: %d" % (alignment_option,scale_tbd))
       print_debug(50,"Finest scale completed: ",finest_scale_done)
+      print_debug(50,"Next coarsest scale completed: ",next_scale)
       print_debug(50,"Upscale factor: ",upscale)
 
     scale_tbd_dir = os.path.join(destination_path,'scale_'+str(scale_tbd))
 
-    ident = swiftir.identityAffine().tolist()
+#    ident = swiftir.identityAffine().tolist()
+    ident = swiftir.identityAffine()
 
-    if finest_scale_done:
+#    if finest_scale_done:
+    if next_scale:
       # Copy settings from finest completed scale to tbd:
-      s_done = project['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
+#      s_done = project['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
+      s_done = project['data']['scales']['scale_'+str(next_scale)]['alignment_stack']
       project['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
 
     s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
@@ -375,7 +380,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if actual_num_layers < 2:  # For some reason the TUI won't align just one layer from the start
       actual_num_layers = 2    # For some reason the TUI won't align just one layer from the start
     # Align Forward Change:
-    range_to_process = [ x for x in range(start_layer, start_layer+actual_num_layers) ] # Convert to list for better display ... could remain a "range" otherwise
+    range_to_process = list(range(start_layer, start_layer+actual_num_layers))
     print_debug(10,80 * "@")
     print_debug(10,"Range limited to: " + str(range_to_process))
     print_debug(10,80 * "@")
@@ -393,8 +398,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
       # Initialize method_results for skipped or missing method_results
       if s_tbd[i]['skip'] or atrm['method_results'] == {}:
-        atrm['method_results']['affine_matrix'] = ident
-        atrm['method_results']['cumulative_afm'] = ident
+        atrm['method_results']['affine_matrix'] = ident.tolist()
+        atrm['method_results']['cumulative_afm'] = ident.tolist()
         atrm['method_results']['snr'] = 0.0
 
       # set alignment option
@@ -447,6 +452,11 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       afm_tmp = np.array([ al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd ])
       afm_scaled = afm_tmp.copy()
       afm_scaled[:,:,2] = afm_scaled[:,:,2]*upscale
+      print('\n>>>>>>> Original affine matrices: \n\n')
+      print(str(afm_tmp))
+      print('\n>>>>>>> Scaled affine matrices: \n\n')
+      print(str(afm_scaled))
+#      exit(0)
     else:
       afm_scale = None
 
@@ -473,7 +483,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     c_afm_file = open(os.path.join(bias_data_path,'c_afm_1.dat'),'w')
 
     if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
-      # Create skew, scale, rot, and tranlation matrices
+      # Create skew, scale, rot, and translation matrices
       skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0],[0.0, 1.0, 0.0]])
       scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0],[0.0, scale_y_bias, 0.0]])
       rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0],[np.sin(rot_bias), np.cos(rot_bias), 0.0]])
@@ -523,6 +533,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     # Initialize c_afm to identity matrix
     c_afm = swiftir.identityAffine()
+
     # Align Forward Change:
     if range_to_process[0] != 0:
       print_debug(10,80 * "@")
@@ -632,38 +643,36 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     i = 0
     for item in align_list:
-      align_idx = item['i']
-      align_item = item['proc']
       if item['do']:
+        align_idx = item['i']
+        align_item = item['proc']
         # Save the image:
         align_item.saveAligned(rect=rect, grayBorder=True)
 
       # Retrieve alignment result
-      if item['do']:
         recipe = align_item.recipe
         snr = recipe.ingredients[-1].snr
         afm = recipe.ingredients[-1].afm
-      c_afm = align_item.cumulative_afm
+        c_afm = align_item.cumulative_afm
 
       # Store custom bias values in the dictionary for this stack item
-      atrm = s_tbd[align_idx]['align_to_ref_method']
-      atrm['method_data']['bias_x_per_image'] = x_bias
-      atrm['method_data']['bias_y_per_image'] = y_bias
-      atrm['method_data']['bias_rot_per_image'] = rot_bias
-      atrm['method_data']['bias_scale_x_per_image'] = scale_x_bias
-      atrm['method_data']['bias_scale_y_per_image'] = scale_y_bias
-      atrm['method_data']['bias_skew_x_per_image'] = skew_x_bias
+        atrm = s_tbd[align_idx]['align_to_ref_method']
+        atrm['method_data']['bias_x_per_image'] = x_bias
+        atrm['method_data']['bias_y_per_image'] = y_bias
+        atrm['method_data']['bias_rot_per_image'] = rot_bias
+        atrm['method_data']['bias_scale_x_per_image'] = scale_x_bias
+        atrm['method_data']['bias_scale_y_per_image'] = scale_y_bias
+        atrm['method_data']['bias_skew_x_per_image'] = skew_x_bias
 
       # Add results to layer dictionary for this stack item
-      base_fn = os.path.basename(s_tbd[align_idx]['images']['base']['filename'])
-      al_fn = os.path.join(align_dir,base_fn)
-      s_tbd[align_idx]['images']['aligned'] = {}
-      s_tbd[align_idx]['images']['aligned']['filename'] = al_fn
-      s_tbd[align_idx]['images']['aligned']['metadata'] = {}
-      s_tbd[align_idx]['images']['aligned']['metadata']['match_points'] = []
-      s_tbd[align_idx]['images']['aligned']['metadata']['annotations'] = []
-      method_results = s_tbd[align_idx]['align_to_ref_method']['method_results']
-      if item['do']:
+        base_fn = os.path.basename(s_tbd[align_idx]['images']['base']['filename'])
+        al_fn = os.path.join(align_dir,base_fn)
+        s_tbd[align_idx]['images']['aligned'] = {}
+        s_tbd[align_idx]['images']['aligned']['filename'] = al_fn
+        s_tbd[align_idx]['images']['aligned']['metadata'] = {}
+        s_tbd[align_idx]['images']['aligned']['metadata']['match_points'] = []
+        s_tbd[align_idx]['images']['aligned']['metadata']['annotations'] = []
+        method_results = s_tbd[align_idx]['align_to_ref_method']['method_results']
         method_results['snr'] = snr[0]
         method_results['affine_matrix'] = afm.tolist()
         method_results['cumulative_afm'] = c_afm.tolist()
@@ -694,7 +703,6 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
         c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
-      if item['do']:
         print_debug(2, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
         print_debug(2, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
