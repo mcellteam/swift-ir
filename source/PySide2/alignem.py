@@ -1251,7 +1251,7 @@ class MainWindow(QMainWindow):
                   [ '-', None, None, None, None, None ],
                   [ 'Set Project Destination', None, self.set_def_proj_dest, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Set Other Destination...', None, self.set_destination, None, None, None ],
+                  [ 'Set Custom Destination...', None, self.set_destination, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
                 ]
