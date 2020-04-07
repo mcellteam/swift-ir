@@ -711,8 +711,7 @@ def remove_aligned(starting_layer=0):
               if 'align_to_ref_method' in layer.keys():
                 if 'method_results' in layer['align_to_ref_method']:
                   # Empty the afm and snr fields to signify no results:
-                  layer['align_to_ref_method']['method_results']['affine_matrix'] = None
-                  layer['align_to_ref_method']['method_results']['snr'] = None
+                  layer['align_to_ref_method']['method_results'] = {}
 
         layer_index += 1
 
