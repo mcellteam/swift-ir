@@ -450,10 +450,10 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
       # Copy the affine_matrices from s_tbd and scale the translation part to use as the initial guess for s_tbd
       afm_tmp = np.array([ al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd ])
-      afm_scaled = afm_tmp.copy()
-      afm_scaled[:,:,2] = afm_scaled[:,:,2]*upscale
       print('\n>>>>>>> Original affine matrices: \n\n')
       print(str(afm_tmp))
+      afm_scaled = afm_tmp.copy()
+      afm_scaled[:,:,2] = afm_scaled[:,:,2]*upscale
       print('\n>>>>>>> Scaled affine matrices: \n\n')
       print(str(afm_scaled))
 #      exit(0)
