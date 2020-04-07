@@ -669,6 +669,8 @@ def align_forward():
     align_layers (first_layer,num_layers)
     refresh_all ()
 
+def regenerate_aligned():
+    print ( "Regenerate Aligned ... not working yet.")
 
 def jump_to_layer():
     requested_layer = jump_to_val.get_value()
@@ -965,13 +967,14 @@ def copy_skips_to_all_scales():
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
-align_all_cb  = CallbackButton('Align All', align_layers)
+#align_all_cb  = CallbackButton('Align All', align_layers)
+align_all_cb  = CallbackButton('Align All', do_requested)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 init_ref_app  = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
 
-do_thing_cb   = CallbackButton('Execute', do_requested)
-
+# do_thing_cb   = CallbackButton('Execute', do_requested)
+regen_aligned_cb = CallbackButton('Regenerate Aligned', regenerate_aligned)
 num_fwd       = IntField("#",1,1)
 jump_to_cb    = CallbackButton('Jump To:', jump_to_layer)
 jump_to_val   = IntField("#",1,1)
@@ -1018,9 +1021,10 @@ control_model = [
       gen_scales_thread_cb,
       " ", link_stack_cb,
       " ", init_ref_app,
-      " ", do_thing_cb,
-      " ", refine_aff_cb,
-      " ", apply_aff_cb,
+      #" ", do_thing_cb,
+      #" ", refine_aff_cb,
+      #" ", apply_aff_cb,
+      " ", regen_aligned_cb,
       " ", clear_skips_cb,
       " ", skips_to_all_cb,
       " ", whitening_factor,
