@@ -314,6 +314,8 @@ class align_recipe:
     self.ingredients.append(ingredient)
 
   def execute(self):
+    if type(self.ingredients[0].afm) != type(None):
+      self.afm = self.ingredients[0].afm
     for ingredient in self.ingredients:
       ingredient.afm = self.afm
       self.afm = ingredient.execute()
@@ -552,7 +554,6 @@ class align_ingredient:
       self.snr = snr_list
 
     return self.afm
-
 
 
   def execute(self):
