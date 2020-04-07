@@ -1327,7 +1327,7 @@ class MainWindow(QMainWindow):
                   [ 'Update CFMs', None, self.not_yet, True, None, None ],
                   [ 'Generate Images', None, self.not_yet, True, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Use C Version', None, self.do_nothing, False, None, None ],
+                  [ 'Use C Version', None, self.do_nothing, True, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
                   [ 'Reverse Arrow Keys', None, self.toggle_arrow_direction, False, None, None ],
