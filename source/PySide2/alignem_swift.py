@@ -710,7 +710,7 @@ def remove_aligned(starting_layer=0):
               # Remove the method results since they are no longer applicable
               if 'align_to_ref_method' in layer.keys():
                 if 'method_results' in layer['align_to_ref_method']:
-                  # Empty the afm and snr fields to signify no results:
+                  # Set the "method_results" to an empty dictionary to signify no results:
                   layer['align_to_ref_method']['method_results'] = {}
 
         layer_index += 1
