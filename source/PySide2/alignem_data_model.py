@@ -65,6 +65,14 @@ def upgrade_data_model(data_model):
       # Now the data model is at 0.28, so give it the appropriate version
       data_model ['version'] = 0.28
 
+    if data_model ['version'] == 0.28:
+      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.29) )
+      # Need to modify the data model from 0.28 up to 0.29
+      # The "use_c_version" was added to the "user_settings" dictionary
+      data_model['user_settings']['use_c_version'] = True
+      # Now the data model is at 0.29, so give it the appropriate version
+      data_model ['version'] = 0.29
+
     # Make the final test
     if data_model ['version'] != new_project_template['version']:
       # The data model could not be upgraded, so return a string with the error
@@ -75,10 +83,11 @@ def upgrade_data_model(data_model):
 
 new_project_template = \
 {
-  "version": 0.28,
+  "version": 0.29,
   "method": "None",
   "user_settings": {
-    "max_image_file_size": 100000000
+    "max_image_file_size": 100000000,
+    "use_c_version": True
   },
   "data": {
     "source_path": "",
