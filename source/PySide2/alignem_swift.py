@@ -104,9 +104,42 @@ def link_stack():
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+def ensure_proper_data_structure ():
+    ''' Try to ensure that the data model is usable. '''
+    scales_dict = alignem.project_data['data']['scales']
+    for scale_key in scales_dict.keys():
+      scale = scales_dict[scale_key]
+
+      if not 'null_cafm_trends' in scale:
+        print ("NOTE: Using defaults rather than user data!!")
+        scale ['null_cafm_trends'] = False
+      if not 'use_bounding_rect' in scale:
+        print ("NOTE: Using defaults rather than user data!!")
+        scale ['use_bounding_rect'] = False
+
+      for layer_index in range(len(scale['alignment_stack'])):
+        layer = scale['alignment_stack'][layer_index]
+        if not 'align_to_ref_method' in layer:
+          layer['align_to_ref_method'] = {}
+        atrm = layer['align_to_ref_method']
+        if not 'method_data' in atrm:
+          atrm['method_data'] = {}
+        mdata = atrm['method_data']
+        if not 'win_scale_factor' in mdata:
+          print ( "NOTE: Using defaults rather than user data!!")
+          mdata['win_scale_factor'] = 0.8125
+        if not 'whitening_factor' in mdata:
+          print ( "NOTE: Using defaults rather than user data!!")
+          mdata['whitening_factor'] = -0.68
+
+
+        #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
 
 def link_all_stacks():
     alignem.print_debug ( 10, "Linking all stacks" )
+    ensure_proper_data_structure()
 
     for scale_key in alignem.project_data['data']['scales'].keys():
         skip_list = []
@@ -519,6 +552,8 @@ def align_layers ( first_layer=0, num_layers=-1 ):
     else:
       alignem.print_debug (30, "Aligning layers " + str (first_layer) + " through " + str (first_layer + num_layers - 1) + " using SWiFT-IR ...")
     alignem.print_debug ( 30, 100*'=' )
+
+    ensure_proper_data_structure()
 
     code_mode = get_code_mode()
 
