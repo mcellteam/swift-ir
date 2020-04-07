@@ -89,6 +89,11 @@ def makedirs_exist_ok ( path_to_build, exist_ok=False ):
 def show_warning ( title, text ):
     QMessageBox.warning ( None, title, text )
 
+def request_confirmation ( title, text ):
+    button = QMessageBox.question ( None, title, text )
+    print ( "You clicked " + str(button) )
+    print ( "Returning " + str(button == QMessageBox.StandardButton.Yes))
+    return ( button == QMessageBox.StandardButton.Yes )
 
 def get_scale_val ( scale_of_any_type ):
     # This should return an integer value from any reasonable input (string or int)

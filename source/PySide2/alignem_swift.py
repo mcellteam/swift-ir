@@ -642,22 +642,24 @@ combo_name_to_dm_name = {'Init Affine':'init_affine', 'Refine Affine':'refine_af
 dm_name_to_combo_name = {'init_affine':'Init Affine', 'refine_affine':'Refine Affine', 'apply_affine':'Apply Affine'}
 
 def do_requested ():
-    thing_to_do = init_ref_app.get_value ()
-    scale_to_run_text = alignem.project_data['data']['current_scale']
-    this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
-    this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
-    alignem.print_debug ( 5, '')
-    alignem.print_debug ( 5, 40 * '@=' + '@')
-    alignem.print_debug ( 5, 40 * '=@' + '=')
-    alignem.print_debug ( 5, 40 * '@=' + '@')
-    alignem.print_debug ( 5, '')
-    print ("Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do]))
-    alignem.print_debug ( 5, '')
-    alignem.print_debug ( 5, 40 * '@=' + '@')
-    alignem.print_debug ( 5, 40 * '=@' + '=')
-    alignem.print_debug ( 5, 40 * '@=' + '@')
-    alignem.print_debug ( 5, '')
-    align_layers()
+    if ( alignem.request_confirmation ("Warning", "Are you sure you want to delete any existing aligned images?") ):
+
+        thing_to_do = init_ref_app.get_value ()
+        scale_to_run_text = alignem.project_data['data']['current_scale']
+        this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
+        this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
+        alignem.print_debug ( 5, '')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, 40 * '=@' + '=')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, '')
+        print ("Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do]))
+        alignem.print_debug ( 5, '')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, 40 * '=@' + '=')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, '')
+        align_layers()
 
 def align_forward():
     num_layers = num_fwd.get_value ()
@@ -694,35 +696,36 @@ def refresh_all ():
 
 
 def remove_aligned(starting_layer=0):
-    alignem.print_debug ( 30, "Removing aligned images ..." )
+    if alignem.request_confirmation ("Note", "Do you want to delete any existing aligned images?"):
+        alignem.print_debug ( 30, "Removing aligned images ..." )
 
-    delete_list = []
+        delete_list = []
 
-    layer_index = 0
-    for layer in alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack']:
-      if layer_index >= starting_layer:
-        if 'aligned' in layer['images'].keys():
-          delete_list.append ( layer['images']['aligned']['filename'] )
-          layer['images'].pop('aligned')
-          # Remove the method results since they are no longer applicable
-          if 'align_to_ref_method' in layer.keys():
-            if 'method_results' in layer['align_to_ref_method']:
-              # Empty the afm and snr fields to signify no results:
-              layer['align_to_ref_method']['method_results']['affine_matrix'] = None
-              layer['align_to_ref_method']['method_results']['snr'] = None
+        layer_index = 0
+        for layer in alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack']:
+          if layer_index >= starting_layer:
+            if 'aligned' in layer['images'].keys():
+              delete_list.append ( layer['images']['aligned']['filename'] )
+              layer['images'].pop('aligned')
+              # Remove the method results since they are no longer applicable
+              if 'align_to_ref_method' in layer.keys():
+                if 'method_results' in layer['align_to_ref_method']:
+                  # Empty the afm and snr fields to signify no results:
+                  layer['align_to_ref_method']['method_results']['affine_matrix'] = None
+                  layer['align_to_ref_method']['method_results']['snr'] = None
 
-    layer_index += 1
+        layer_index += 1
 
-    #alignem.image_library.remove_all_images()
+        #alignem.image_library.remove_all_images()
 
-    for fname in delete_list:
-      if fname != None:
-        if os.path.exists(fname):
-          os.remove(fname)
-          alignem.image_library.remove_image_reference ( fname )
+        for fname in delete_list:
+          if fname != None:
+            if os.path.exists(fname):
+              os.remove(fname)
+              alignem.image_library.remove_image_reference ( fname )
 
-    main_win.update_panels()
-    refresh_all ()
+        main_win.update_panels()
+        refresh_all ()
 
 
 def method_debug():
