@@ -364,7 +364,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
 #    if finest_scale_done:
     if next_scale:
-      # Copy settings from finest completed scale to tbd:
+      # Copy settings from next coarsest completed scale to tbd:
 #      s_done = project['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
       s_done = project['data']['scales']['scale_'+str(next_scale)]['alignment_stack']
       project['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
@@ -458,7 +458,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       print(str(afm_scaled))
 #      exit(0)
     else:
-      afm_scale = None
+      afm_scaled = None
 
     # Now setup the alignment for s_tbd
     align_list = []
