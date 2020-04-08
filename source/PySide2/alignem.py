@@ -21,7 +21,7 @@ from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxL
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
 from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
-from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
+from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 import align_swiftir
 
