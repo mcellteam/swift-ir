@@ -26,7 +26,8 @@ def print_debug ( level, *ds ):
   # print_debug ( 99, "This isn't very important." )
   global debug_level
   if level <= debug_level:
-    print ( *ds )
+    # print ( *ds )
+    print ( "Debug at level " + str(level) + " temporarily suppressed for Python2")
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
 #global_swiftir_mode = 'c'   # Either 'python' or 'c'
