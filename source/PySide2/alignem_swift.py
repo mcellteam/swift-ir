@@ -1037,6 +1037,7 @@ control_model = [
   ] # End first pane
 ]
 
+from source_tracker import get_hash_and_rev
 
 if __name__ == "__main__":
 
@@ -1054,6 +1055,20 @@ if __name__ == "__main__":
         align_swiftir.debug_level = int(args.debug)
     except:
         pass
+
+    source_list = [
+      "alignem_swift.py",
+      "alignem_data_model.py",
+      "alignem.py",
+      "swift_project.py",
+      "pyswift_tui.py",
+      "swiftir.py",
+      "align_swiftir.py",
+      "source_tracker.py"
+    ]
+    hash, rev = get_hash_and_rev (source_list, "source_info.json")
+
+    print ("Running with source hash: " + str (hash) + ", revision: " + str (rev))
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_view_change_callback ( view_change_callback )
