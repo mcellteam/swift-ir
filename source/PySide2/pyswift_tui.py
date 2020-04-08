@@ -18,7 +18,8 @@ def print_debug ( level, *ds ):
   # print_debug ( 99, "This isn't very important." )
   global debug_level
   if level <= debug_level:
-    print ( *ds )
+    # print ( *ds )
+    print ( "Debug at level " + str(level) + " temporarily suppressed for Python2")
 
 # Do Linear Regression of X,Y data
 def lin_fit(x,y):
