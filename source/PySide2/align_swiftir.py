@@ -4,6 +4,7 @@ import swiftir
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
 
 import subprocess as sp
 
@@ -21,13 +22,38 @@ Together these ingredients comprise a procedure, or "recipe".
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 10  # A larger value prints more stuff
-def print_debug ( level, *ds ):
-  # print_debug ( 1, "This is really important!!" )
-  # print_debug ( 99, "This isn't very important." )
-  global debug_level
-  if level <= debug_level:
-    # print ( *ds )
-    print ( "Debug at level " + str(level) + " temporarily suppressed for Python2")
+
+# Using the Python version does not work because the Python 3 code can't
+# even be parsed by Python2. It could be dynamically compiled, or use the
+# alternate syntax, but that's more work than it's worth for now.
+if sys.version_info >= (3, 0):
+    print ( "Python 3: Supports arbitrary arguments via print")
+    #def print_debug ( level, *ds ):
+    #  # print_debug ( 1, "This is really important!!" )
+    #  # print_debug ( 99, "This isn't very important." )
+    #  global debug_level
+    #  if level <= debug_level:
+    #    print ( *ds )
+else:
+    print ("Python 2: Use default parameters for limited support of arbitrary arguments via print")
+
+# For now, always use the limited argument version
+def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
+    # print_debug ( 1, "This is really important!!" )
+    # print_debug ( 99, "This isn't very important." )
+    global debug_level
+    if level <= debug_level:
+      if p1 == None:
+        print ( "" )
+      elif p2 == None:
+        print ( str(p1) )
+      elif p3 == None:
+        print ( str(p1) + str(p2) )
+      elif p4 == None:
+        print ( str(p1) + str(p2) + str(p3) )
+      else:
+        print ( str(p1) + str(p2) + str(p3) + str(p4) )
+
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'
 #global_swiftir_mode = 'c'   # Either 'python' or 'c'
