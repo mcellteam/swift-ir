@@ -1039,6 +1039,9 @@ control_model = [
 
 from source_tracker import get_hash_and_rev
 
+global_source_rev = ""
+global_source_hash = ""
+
 if __name__ == "__main__":
 
     alignem.debug_level = 10
@@ -1066,9 +1069,10 @@ if __name__ == "__main__":
       "align_swiftir.py",
       "source_tracker.py"
     ]
-    hash, rev = get_hash_and_rev (source_list, "source_info.json")
+    global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
+    control_model[0].append ( [ "Source Revision: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
 
-    print ("Running with source hash: " + str (hash) + ", revision: " + str (rev))
+    print ("Running with source hash: " + str (global_source_hash) + ", revision: " + str (global_source_rev))
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_view_change_callback ( view_change_callback )
