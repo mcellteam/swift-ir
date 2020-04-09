@@ -118,8 +118,8 @@ def show_warning ( title, text ):
 
 def request_confirmation ( title, text ):
     button = QMessageBox.question ( None, title, text )
-    print ( "You clicked " + str(button) )
-    print ( "Returning " + str(button == QMessageBox.StandardButton.Yes))
+    print_debug ( 50, "You clicked " + str(button) )
+    print_debug ( 50, "Returning " + str(button == QMessageBox.StandardButton.Yes))
     return ( button == QMessageBox.StandardButton.Yes )
 
 def get_scale_val ( scale_of_any_type ):
@@ -866,7 +866,12 @@ def null_bias_changed_callback ( state ):
     print_debug ( 50, "Null Bias changed to " + str(state) )
     print_debug ( 50, "ignore_changes = " + str(ignore_changes))
     print_debug ( 50, 100*'+' )
-    project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = state
+    if not ignore_changes:
+        if state:
+            project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = True
+        else:
+            project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = False
+        print_debug ( 50, "null_bias_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends']) + ")")
 
 def bounding_rect_changed_callback ( state ):
     global ignore_changes
@@ -874,14 +879,18 @@ def bounding_rect_changed_callback ( state ):
     print_debug ( 50, "Bounding Rect changed to " + str(state) )
     print_debug ( 50, "ignore_changes = " + str(ignore_changes))
     print_debug ( 50, 100*'+' )
-    project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = state
-
+    if not ignore_changes:
+        if state:
+            project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = True
+        else:
+            project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = False
+        print_debug ( 50, "bounding_rec_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect']) + ")")
 
 def bool_changed_callback ( state ):
     global ignore_changes
     print_debug ( 50, 100*'+' )
-    print_debug ( 50, "Bool changed to " + str(state) )
-    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
+    print_debug ( 2, "Bool changed to " + str(state) )
+    print_debug ( 2, "ignore_changes = " + str(ignore_changes))
     print_debug ( 50, 100*'+' )
     if not ignore_changes:
         if main_window != None:
@@ -892,7 +901,7 @@ def bool_changed_callback ( state ):
                         if 'current_layer' in project_data['data']:
                             layer_num = project_data['data']['current_layer']
                 ignore_changes = True
-                main_window.view_change_callback ( -1, -1, layer_num, layer_num )
+                main_window.view_change_callback ( None, None, layer_num, layer_num )
                 ignore_changes = False
 
 
@@ -931,6 +940,7 @@ class ControlPanelWidget(QWidget):
                   elif isinstance(item, BoolField):
                       val_widget = ( QCheckBox ( str(item.text) ) )
                       row_box_layout.addWidget ( val_widget )
+                      # Hard code a few special callbacks ...
                       if item.text == "Null Bias":
                           val_widget.stateChanged.connect(null_bias_changed_callback)
                       elif item.text == "Bounding Rect":
@@ -1181,7 +1191,7 @@ class ComboBoxControl(GenericWidget):
     def get_value ( self ):
         return self.widget.currentText()
     def set_value ( self, value ):
-        print ( "ComboBoxControl.set_value ( " + str(value) + ")")
+        print_debug ( 20, "ComboBoxControl.set_value ( " + str(value) + ")")
         self.widget.setCurrentText(value)
         #print ( "Setting value")
         #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
@@ -1556,7 +1566,7 @@ class MainWindow(QMainWindow):
               im = layer['images'][role]
               print_debug ( 2, "      " + str(role) + ": " + str(layer['images'][role]['filename']) )
 
-        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def make_relative ( self, file_path, proj_path ):
         print_debug ( 20, "Proj path: " + str(proj_path) )
