@@ -735,134 +735,129 @@ def method_debug():
 def notyet():
     alignem.print_debug ( 0, "Function not implemented yet. Skip = " + str(skip.value) )
 
+
 def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False ):
-    alignem.print_debug ( 30, "Layer (or possibly scale) changed from " + str(prev_layer_num) + " to " + str(next_layer_num) + " with new data model = " + str(new_data_model) )
+    alignem.print_debug ( 3, "\nView changed from scale,layer " + str((prev_scale_key,prev_layer_num)) + " to " + str((next_scale_key,next_layer_num)) )
+
     if alignem.project_data != None:
-      alignem.print_debug ( 30, "Swapping data between " + str((prev_scale_key,prev_layer_num)) + " and " + str((next_scale_key,next_layer_num)) )
-      #scale_key = alignem.project_data['data']['current_scale']
-      #layer_num = alignem.project_data['data']['current_layer']
-      #stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
-      prev_layer = None
-      next_layer = None
-      if prev_scale_key in alignem.project_data['data']['scales']:
-          if prev_layer_num in range(len(alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'])):
-              prev_layer = alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'][prev_layer_num]
-      if next_scale_key in alignem.project_data['data']['scales']:
-          if next_layer_num in range(len(alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'])):
-              next_layer = alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'][next_layer_num]
 
-      #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      if new_data_model:
 
-      # Check to do the scale logic
-      if prev_scale_key != next_scale_key:
+          # Copy all data from the data model into the fields
+          # Ignore what's in the fields and copy from the data model
 
-        alignem.print_debug ( 1, "Swapping data between scales " + str(prev_layer) + " and " + str(next_layer) )
+          if 'null_cafm_trends' in alignem.project_data ['data'] ['scales'] [next_scale_key]:
+              null_cafm_trends.set_value (alignem.project_data ['data'] ['scales'] [next_scale_key] ['null_cafm_trends'])
+          if 'use_bounding_rect' in alignem.project_data ['data'] ['scales'] [next_scale_key]:
+              use_bounding_rect.set_value (alignem.project_data ['data'] ['scales'] [next_scale_key] ['use_bounding_rect'])
+          if 'poly_order' in alignem.project_data ['data'] ['scales'] [next_scale_key]:
+              poly_order.set_value (alignem.project_data ['data'] ['scales'] [next_scale_key] ['poly_order'])
+          if 'method_data' in alignem.project_data ['data'] ['scales'] [next_scale_key]:
+              if 'alignment_option' in alignem.project_data ['data'] ['scales'] [next_scale_key] ['method_data']:
+                  new_option = alignem.project_data ['data'] ['scales'] [next_scale_key] ['method_data'] ['alignment_option']
+                  init_ref_app.set_value (dm_name_to_combo_name[new_option])
+      else:
 
-        # Ensure that the proper structure exists
-        if not 'null_cafm_trends' in alignem.project_data['data']['scales'][prev_scale_key]:
-          alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
-        if not 'use_bounding_rect' in alignem.project_data['data']['scales'][prev_scale_key]:
-          alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
-        if not 'poly_order' in alignem.project_data['data']['scales'][prev_scale_key]:
-          print ( "Setting poly_order to 4")
-          alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = 4
-        if not 'method_data' in alignem.project_data['data']['scales'][prev_scale_key]:
-          alignem.project_data['data']['scales'][prev_scale_key]['method_data'] = {}
-        if not 'alignment_option' in alignem.project_data['data']['scales'][prev_scale_key]['method_data']:
-          alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = "init_affine"
+          alignem.print_debug ( 3, "\nSwapping data between scale,layer " + str((prev_scale_key,prev_layer_num)) + " and " + str((next_scale_key,next_layer_num)) )
+          #scale_key = alignem.project_data['data']['current_scale']
+          #layer_num = alignem.project_data['data']['current_layer']
+          #stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
+          prev_layer = None
+          next_layer = None
+          if prev_scale_key in alignem.project_data['data']['scales']:
+              if prev_layer_num in range(len(alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'])):
+                  prev_layer = alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'][prev_layer_num]
+          if next_scale_key in alignem.project_data['data']['scales']:
+              if next_layer_num in range(len(alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'])):
+                  next_layer = alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'][next_layer_num]
 
-        if not 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
-          alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = False
-        if not 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
-          alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = False
-        if not 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
-          print ( "Setting poly_order to 4")
-          alignem.project_data['data']['scales'][next_scale_key]['poly_order'] = 4
-        if not 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
-          alignem.project_data['data']['scales'][next_scale_key]['method_data'] = {}
-        if not 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
-          alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = "init_affine"
+          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-        # Exchange data between widget fields and the data model itself
-        if prev_layer == next_layer:
-          if new_data_model:
-              # Ignore what's in the fields and copy from the data model
-              if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
-                null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
-              if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
-                use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
-              if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
-                poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
-              if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
-                if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
-                  init_ref_app.set_value (dm_name_to_combo_name[alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']])
-          else:
+          # Check to do the scale logic
+          if prev_scale_key != next_scale_key:
+
+            alignem.print_debug ( 3, "\nSwapping data between scales " ) # + str(prev_layer) + " and " + str(next_layer) )
+
+            # Ensure that the proper structure exists
+            if not 'null_cafm_trends' in alignem.project_data['data']['scales'][prev_scale_key]:
+              alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
+            if not 'use_bounding_rect' in alignem.project_data['data']['scales'][prev_scale_key]:
+              alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
+            if not 'poly_order' in alignem.project_data['data']['scales'][prev_scale_key]:
+              print ( "Setting poly_order to 4")
+              alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = 4
+            if not 'method_data' in alignem.project_data['data']['scales'][prev_scale_key]:
+              alignem.project_data['data']['scales'][prev_scale_key]['method_data'] = {}
+            if not 'alignment_option' in alignem.project_data['data']['scales'][prev_scale_key]['method_data']:
+              alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = "init_affine"
+
+            if not 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
+              alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = False
+            if not 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
+              alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = False
+            if not 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+              print ( "Setting poly_order to 4")
+              alignem.project_data['data']['scales'][next_scale_key]['poly_order'] = 4
+            if not 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
+              alignem.project_data['data']['scales'][next_scale_key]['method_data'] = {}
+            if not 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+              alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = "init_affine"
+
+            # Exchange data between widget fields and the data model itself
+            if prev_layer == next_layer:
               # Just copy the data into this layer from the current field values
               alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
               alignem.project_data['data']['scales'][use_bounding_rect]['use_bounding_rect'] = use_bounding_rect.get_value()
               alignem.project_data['data']['scales'][use_bounding_rect]['poly_order'] = poly_order.get_value()
               alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
 
-        else:
-          # Save the value into the previous layer and set the value from the next layer
-          alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
-          if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
-            null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
+            else:
+              # Save the value into the previous layer and set the value from the next layer
+              alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
+              if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
+                null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
 
-          alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
-          if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
-            use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
+              alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
+              if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
+                use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
 
-          alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
-          if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
-            poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
+              alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
+              if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+                poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
 
-          alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
-          if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
-            if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
-              init_ref_app.set_value(dm_name_to_combo_name[alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']])
+              alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
+              if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
+                if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+                  init_ref_app.set_value(dm_name_to_combo_name[alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']])
 
 
-      # Check to do the layer logic
-      if (prev_layer != None) and (next_layer != None):
+          # Check to do the layer logic
+          if (prev_layer != None) and (next_layer != None):
 
-        alignem.print_debug ( 35, "Swapping data between " + str(prev_layer) + " and " + str(next_layer) )
+            alignem.print_debug ( 3, "\nSwapping data between layers " ) # + str(prev_layer) + " and " + str(next_layer) )
 
-        # Ensure that the proper structure exists
-        #if not 'null_cafm_trends' in alignem.project_data['data']['scales'][prev_scale_key]:
-        #  alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
-        #if not 'use_bounding_rect' in alignem.project_data['data']['scales'][prev_scale_key]:
-        #  alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
+            # Ensure that the proper structure exists
+            #if not 'null_cafm_trends' in alignem.project_data['data']['scales'][prev_scale_key]:
+            #  alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
+            #if not 'use_bounding_rect' in alignem.project_data['data']['scales'][prev_scale_key]:
+            #  alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
 
-        if not 'align_to_ref_method' in prev_layer:
-          prev_layer['align_to_ref_method'] = {}
-        if not 'method_data' in prev_layer['align_to_ref_method']:
-          prev_layer['align_to_ref_method']['method_data'] = {}
-        if not 'align_to_ref_method' in next_layer:
-          next_layer['align_to_ref_method'] = {}
-        if not 'method_data' in next_layer['align_to_ref_method']:
-          next_layer['align_to_ref_method']['method_data'] = {}
+            if not 'align_to_ref_method' in prev_layer:
+              prev_layer['align_to_ref_method'] = {}
+            if not 'method_data' in prev_layer['align_to_ref_method']:
+              prev_layer['align_to_ref_method']['method_data'] = {}
+            if not 'align_to_ref_method' in next_layer:
+              next_layer['align_to_ref_method'] = {}
+            if not 'method_data' in next_layer['align_to_ref_method']:
+              next_layer['align_to_ref_method']['method_data'] = {}
 
-        #if not 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
-        #  alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = False
-        #if not 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
-        #  alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = False
+            #if not 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
+            #  alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = False
+            #if not 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
+            #  alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = False
 
-        # Exchange data between widget fields and the data model itself
-        if prev_layer == next_layer:
-          if new_data_model:
-              # Ignore what's in the fields and copy from the data model
-              skip.set_value(next_layer['skip'])
-              if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
-                whitening_factor.set_value(next_layer['align_to_ref_method']['method_data']['whitening_factor'])
-              if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
-                win_scale_factor.set_value(next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
-
-              #if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
-              #  null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
-              #if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
-              #  use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
-          else:
+            # Exchange data between widget fields and the data model itself
+            if prev_layer == next_layer:
               # Just copy the data into this layer from the current field values
               prev_layer['skip'] = skip.get_value()
               prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
@@ -872,24 +867,24 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
               alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
               alignem.project_data['data']['scales'][next_scale_key]['poly_order'] = poly_order.get_value()
 
-        else:
-          # Save the value into the previous layer and set the value from the next layer
-          prev_layer['skip'] = skip.get_value()
-          skip.set_value(next_layer['skip'])
-          prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
-          if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
-            whitening_factor.set_value(next_layer['align_to_ref_method']['method_data']['whitening_factor'])
-          prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
-          if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
-            win_scale_factor.set_value(next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
+            else:
+              # Save the value into the previous layer and set the value from the next layer
+              prev_layer['skip'] = skip.get_value()
+              skip.set_value(next_layer['skip'])
+              prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
+              if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
+                whitening_factor.set_value(next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+              prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
+              if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
+                win_scale_factor.set_value(next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
 
-          #alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
-          #if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
-          #  null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
+              #alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
+              #if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
+              #  null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
 
-          #alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
-          #if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
-          #  use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
+              #alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
+              #if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
+              #  use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
 
 
 def mouse_down_callback ( role, screen_coords, image_coords, button ):

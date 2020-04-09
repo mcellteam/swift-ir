@@ -114,7 +114,7 @@ new_project_template = \
         "method_data": {
           "alignment_option": "init_affine"
         },
-        "null_cafm_bias": False,
+        "null_cafm_trends": False,
         "use_bounding_rect": False,
         "alignment_stack": []
       }

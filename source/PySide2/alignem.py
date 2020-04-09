@@ -1604,9 +1604,10 @@ class MainWindow(QMainWindow):
 
                 # Upgrade the "Data Model"
                 proj_copy = upgrade_data_model(proj_copy)
+
                 if proj_copy == None:
                     # There was an unknown error loading the data model
-                    print ( "Unable to load project" )
+                    print ( "Unable to load project (loaded as None)" )
                 elif type(proj_copy) == type('abc'):
                     # There was a known error loading the data model
                     print ( "Error loading project:" )
@@ -1618,7 +1619,7 @@ class MainWindow(QMainWindow):
                     self.status.showMessage ("Project File: " + self.current_project_file_name
                                              + "   Destination: " + str(proj_copy ['data'] ['destination_path']))
 
-                    # Modifiy the copy to use absolute paths internally
+                    # Modify the copy to use absolute paths internally
                     if len(proj_copy['data']['destination_path']) > 0:
                       proj_copy['data']['destination_path'] = self.make_absolute ( proj_copy['data']['destination_path'], self.current_project_file_name )
                     for scale_key in proj_copy['data']['scales'].keys():
@@ -1647,6 +1648,7 @@ class MainWindow(QMainWindow):
                                 if 'current_layer' in project_data['data']:
                                     layer_num = project_data['data']['current_layer']
                                     scale_key = project_data['data']['current_scale']
+                                    print_debug(3, "\nOpen Project forcing values into fields with view_change_callback()\n")
                                     self.view_change_callback ( scale_key, scale_key, layer_num, layer_num, True )
 
                     if self.draw_full_paths:
