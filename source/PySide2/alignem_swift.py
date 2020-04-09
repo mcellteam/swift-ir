@@ -114,6 +114,8 @@ def ensure_proper_data_structure ():
         scale ['null_cafm_trends'] = null_cafm_trends.get_value()
       if not 'use_bounding_rect' in scale:
         scale ['use_bounding_rect'] = use_bounding_rect.get_value()
+      if not 'poly_order' in scale:
+        scale ['poly_order'] = poly_order.get_value()
 
       for layer_index in range(len(scale['alignment_stack'])):
         layer = scale['alignment_stack'][layer_index]
