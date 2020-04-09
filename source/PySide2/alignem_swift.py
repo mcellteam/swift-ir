@@ -249,7 +249,6 @@ class GenScalesDialog(QDialog):
         self.progress = QProgressBar(self)
         self.progress.setGeometry(0, 0, 300, 25)
 
-        total_images_to_scale = 42
         total_images_to_scale = 0
         image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
         for scale in image_scales_to_run:
@@ -764,6 +763,9 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
           alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
         if not 'use_bounding_rect' in alignem.project_data['data']['scales'][prev_scale_key]:
           alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
+        if not 'poly_order' in alignem.project_data['data']['scales'][prev_scale_key]:
+          print ( "Setting poly_order to 4")
+          alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = 4
         if not 'method_data' in alignem.project_data['data']['scales'][prev_scale_key]:
           alignem.project_data['data']['scales'][prev_scale_key]['method_data'] = {}
         if not 'alignment_option' in alignem.project_data['data']['scales'][prev_scale_key]['method_data']:
@@ -773,6 +775,9 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
           alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = False
         if not 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
           alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = False
+        if not 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+          print ( "Setting poly_order to 4")
+          alignem.project_data['data']['scales'][next_scale_key]['poly_order'] = 4
         if not 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
           alignem.project_data['data']['scales'][next_scale_key]['method_data'] = {}
         if not 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
@@ -786,6 +791,8 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
                 null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
               if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
                 use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
+              if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+                poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
               if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
                 if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
                   init_ref_app.set_value (dm_name_to_combo_name[alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']])
@@ -793,6 +800,7 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
               # Just copy the data into this layer from the current field values
               alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
               alignem.project_data['data']['scales'][use_bounding_rect]['use_bounding_rect'] = use_bounding_rect.get_value()
+              alignem.project_data['data']['scales'][use_bounding_rect]['poly_order'] = poly_order.get_value()
               alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
 
         else:
@@ -804,6 +812,10 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
           alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
           if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
             use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
+
+          alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
+          if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+            poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
 
           alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
           if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
@@ -857,7 +869,8 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
               prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
 
               alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'] = null_cafm_trends.get_value()
-              alignem.project_data['data']['scales'][use_bounding_rect]['use_bounding_rect'] = use_bounding_rect.get_value()
+              alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'] = use_bounding_rect.get_value()
+              alignem.project_data['data']['scales'][next_scale_key]['poly_order'] = poly_order.get_value()
 
         else:
           # Save the value into the previous layer and set the value from the next layer
@@ -1075,7 +1088,7 @@ if __name__ == "__main__":
       "source_tracker.py"
     ]
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
-    control_model[0].append ( [ "Source Revision: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
+    control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
 
     print ("Running with source hash: " + str (global_source_hash) + ", revision: " + str (global_source_rev))
 
