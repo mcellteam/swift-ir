@@ -73,6 +73,16 @@ def upgrade_data_model(data_model):
       # Now the data model is at 0.29, so give it the appropriate version
       data_model ['version'] = 0.29
 
+    if data_model ['version'] == 0.29:
+      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.30) )
+      # Need to modify the data model from 0.29 up to 0.30
+      # The "poly_order" was added to the "scales" dictionary
+      for scale_key in data_model['data']['scales'].keys():
+        scale = data_model['data']['scales'][scale_key]
+        scale['poly_order'] = 4
+      # Now the data model is at 0.30, so give it the appropriate version
+      data_model ['version'] = 0.30
+
     # Make the final test
     if data_model ['version'] != new_project_template['version']:
       # The data model could not be upgraded, so return a string with the error
@@ -83,7 +93,7 @@ def upgrade_data_model(data_model):
 
 new_project_template = \
 {
-  "version": 0.29,
+  "version": 0.30,
   "method": "None",
   "user_settings": {
     "max_image_file_size": 100000000,
