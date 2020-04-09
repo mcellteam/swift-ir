@@ -975,6 +975,8 @@ center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 init_ref_app  = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
 
+poly_order   = IntField("Poly Order:",4,1)
+
 # do_thing_cb   = CallbackButton('Execute', do_requested)
 regen_aligned_cb = CallbackButton('Regenerate Aligned', regenerate_aligned)
 num_fwd       = IntField("#",1,1)
@@ -1006,6 +1008,7 @@ control_model = [
     [
       gen_scales_cb,
       " ", link_stacks_cb,
+      " ", poly_order,
       " ", null_cafm_trends,
       " ", use_bounding_rect,
       " ", align_all_cb,
@@ -1020,7 +1023,7 @@ control_model = [
     ],
     [
       # "Test: ",
-      gen_scales_thread_cb,
+      # gen_scales_thread_cb,
       " ", link_stack_cb,
       " ", init_ref_app,
       #" ", do_thing_cb,
