@@ -1690,6 +1690,7 @@ class MainWindow(QMainWindow):
         # Save to current file and make known file paths relative to the project file name
         if self.current_project_file_name != None:
           if len(self.current_project_file_name) > 0:
+            if project_data['data']['destination_path'] != None:
               # Write out the project
               print_debug ( 0, "Saving to: \"" + str(self.current_project_file_name) + "\"" )
               proj_copy = copy.deepcopy ( project_data )
