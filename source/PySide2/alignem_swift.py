@@ -553,6 +553,8 @@ def align_layers ( first_layer=0, num_layers=-1 ):
       alignem.print_debug (30, "Aligning layers " + str (first_layer) + " through " + str (first_layer + num_layers - 1) + " using SWiFT-IR ...")
     alignem.print_debug ( 30, 100*'=' )
 
+    remove_aligned(prompt=False)
+
     ensure_proper_data_structure()
 
     code_mode = get_code_mode()
@@ -648,8 +650,16 @@ def align_layers ( first_layer=0, num_layers=-1 ):
 combo_name_to_dm_name = {'Init Affine':'init_affine', 'Refine Affine':'refine_affine', 'Apply Affine':'apply_affine'}
 dm_name_to_combo_name = {'init_affine':'Init Affine', 'refine_affine':'Refine Affine', 'apply_affine':'Apply Affine'}
 
-def do_requested ():
-    if ( alignem.request_confirmation ("Warning", "Are you sure you want to delete any existing aligned images?") ):
+def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
+    actually_remove = True
+    if prompt:
+        actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images from " + str(first_layer) + "?")
+
+    if actually_remove:
+        alignem.print_debug ( 30, "Removing aligned from layer " + str(first_layer) )
+        remove_aligned (starting_layer=first_layer,prompt=False)
+        alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ..." )
+        alignem.print_debug ( 70, "Control Model = " + str(control_model) )
 
         thing_to_do = init_ref_app.get_value ()
         scale_to_run_text = alignem.project_data['data']['current_scale']
@@ -660,23 +670,20 @@ def do_requested ():
         alignem.print_debug ( 5, 40 * '=@' + '=')
         alignem.print_debug ( 5, 40 * '@=' + '@')
         alignem.print_debug ( 5, '')
-        print ("Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do]))
+        alignem.print_debug ( 5, "Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do]))
         alignem.print_debug ( 5, '')
         alignem.print_debug ( 5, 40 * '@=' + '@')
         alignem.print_debug ( 5, 40 * '=@' + '=')
         alignem.print_debug ( 5, 40 * '@=' + '@')
         alignem.print_debug ( 5, '')
-        align_layers()
+        align_layers(first_layer, num_layers)
+        refresh_all()
 
 def align_forward():
     num_layers = num_fwd.get_value ()
     first_layer = alignem.project_data['data']['current_layer']
-    alignem.print_debug ( 30, "Removing aligned from layer " + str(first_layer) )
-    remove_aligned (starting_layer=first_layer)
-    alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ..." )
-    alignem.print_debug ( 70, "Control Model = " + str(control_model) )
-    align_layers (first_layer,num_layers)
-    refresh_all ()
+    align_all_or_some (first_layer,num_layers,prompt=True)
+    refresh_all()
 
 def regenerate_aligned():
     print ( "Regenerate Aligned ... not working yet.")
@@ -702,8 +709,11 @@ def refresh_all ():
     main_win.refresh_all_images ()
 
 
-def remove_aligned(starting_layer=0):
-    if alignem.request_confirmation ("Note", "Do you want to delete any existing aligned images?"):
+def remove_aligned(starting_layer=0, prompt=True):
+    actually_remove = True
+    if prompt:
+        actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images?")
+    if actually_remove:
         alignem.print_debug ( 30, "Removing aligned images ..." )
 
         delete_list = []
@@ -930,15 +940,13 @@ def copy_skips_to_all_scales():
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
-#align_all_cb  = CallbackButton('Align All', align_layers)
-align_all_cb  = CallbackButton('Align All', do_requested)
+align_all_cb  = CallbackButton('Align All', align_all_or_some)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 init_ref_app  = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
 
 poly_order   = IntField("Poly Order:",4,1)
 
-# do_thing_cb   = CallbackButton('Execute', do_requested)
 regen_aligned_cb = CallbackButton('Regenerate Aligned', regenerate_aligned)
 num_fwd       = IntField("#",1,1)
 jump_to_cb    = CallbackButton('Jump To:', jump_to_layer)
@@ -1036,7 +1044,7 @@ if __name__ == "__main__":
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
 
-    print ("Running with source hash: " + str (global_source_hash) + ", revision: " + str (global_source_rev))
+    print ("\n\nRunning with source hash: " + str (global_source_hash) + ", tagged as revision: " + str (global_source_rev)+"\n\n")
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_view_change_callback ( view_change_callback )
