@@ -1280,7 +1280,7 @@ class MainWindow(QMainWindow):
         ml = [
               [ '&File',
                 [
-                  #[ '&New Project', 'Ctrl+N', self.not_yet, None, None, None ],
+                  [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
                   [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
                   #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
@@ -1586,6 +1586,21 @@ class MainWindow(QMainWindow):
         print_debug ( 20, "" )
         return abs_path
 
+
+    @Slot()
+    def new_project(self):
+        make_new = request_confirmation ( "Are you sure?", "Are you sure you've saved everything you want to save?" )
+        if (make_new):
+            print ( "Creating new project ...")
+            global project_data
+            project_data = copy.deepcopy ( new_project_template )
+            self.current_project_file_name = None
+            project_data['data']['destination_path'] = None
+
+            self.setWindowTitle ("No Project File")
+            self.status.showMessage ( "Project File:       Destination: " )
+
+            self.actual_size ()
 
     @Slot()
     def open_project(self):
