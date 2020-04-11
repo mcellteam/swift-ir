@@ -1690,12 +1690,14 @@ class MainWindow(QMainWindow):
         # Save to current file and make known file paths relative to the project file name
         if self.current_project_file_name != None:
           if len(self.current_project_file_name) > 0:
-            if project_data['data']['destination_path'] != None:
               # Write out the project
+              if not self.current_project_file_name.endswith('.json'):
+                  self.current_project_file_name = self.current_project_file_name + ".json"
               print_debug ( 0, "Saving to: \"" + str(self.current_project_file_name) + "\"" )
               proj_copy = copy.deepcopy ( project_data )
-              if len(proj_copy['data']['destination_path']) > 0:
-                proj_copy['data']['destination_path'] = self.make_relative ( proj_copy['data']['destination_path'], self.current_project_file_name )
+              if project_data ['data'] ['destination_path'] != None:
+                if len(proj_copy['data']['destination_path']) > 0:
+                  proj_copy['data']['destination_path'] = self.make_relative ( proj_copy['data']['destination_path'], self.current_project_file_name )
               for scale_key in proj_copy['data']['scales'].keys():
                 scale_dict = proj_copy['data']['scales'][scale_key]
                 for layer in scale_dict['alignment_stack']:
