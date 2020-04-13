@@ -27,7 +27,7 @@ debug_level = 10  # A larger value prints more stuff
 # even be parsed by Python2. It could be dynamically compiled, or use the
 # alternate syntax, but that's more work than it's worth for now.
 if sys.version_info >= (3, 0):
-    print ( "Python 3: Supports arbitrary arguments via print")
+    if debug_level > 10: print ( "Python 3: Supports arbitrary arguments via print")
     #def print_debug ( level, *ds ):
     #  # print_debug ( 1, "This is really important!!" )
     #  # print_debug ( 99, "This isn't very important." )
@@ -35,7 +35,7 @@ if sys.version_info >= (3, 0):
     #  if level <= debug_level:
     #    print ( *ds )
 else:
-    print ("Python 2: Use default parameters for limited support of arbitrary arguments via print")
+    if debug_level > 10: print ("Python 2: Use default parameters for limited support of arbitrary arguments via print")
 
 # For now, always use the limited argument version
 def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):

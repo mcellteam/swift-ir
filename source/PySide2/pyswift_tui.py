@@ -18,18 +18,20 @@ debug_level = 50  # A larger value prints more stuff
 # even be parsed by Python2. It could be dynamically compiled, or use the
 # alternate syntax, but that's more work than it's worth for now.
 if sys.version_info >= (3, 0):
-    print ( "Python 3: Supports arbitrary arguments via print")
+    # print ( "Python 3: Supports arbitrary arguments via print")
     #def print_debug ( level, *ds ):
     #  # print_debug ( 1, "This is really important!!" )
     #  # print_debug ( 99, "This isn't very important." )
     #  global debug_level
     #  if level <= debug_level:
     #    print ( *ds )
+    pass
 else:
-    print ("Python 2: Use default parameters for limited support of arbitrary arguments via print")
+    # print ("Python 2: Use default parameters for limited support of arbitrary arguments via print")
+    pass
 
 # For now, always use the limited argument version
-def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
+def print_debug ( level, p1=None, p2=None, p3=None, p4=None, p5=None ):
     # print_debug ( 1, "This is really important!!" )
     # print_debug ( 99, "This isn't very important." )
     global debug_level
@@ -41,9 +43,11 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
       elif p3 == None:
         print ( str(p1) + str(p2) )
       elif p4 == None:
-        print ( str(p1) + str(p2) + str(p3) )
+        print (str (p1) + str (p2) + str (p3))
+      elif p5 == None:
+        print (str (p1) + str (p2) + str (p3) + str(p4))
       else:
-        print ( str(p1) + str(p2) + str(p3) + str(p4) )
+        print ( str(p1) + str(p2) + str(p3) + str(p4) + str(p5) )
 
 
 # Do Linear Regression of X,Y data
@@ -650,11 +654,11 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if project['data']['scales']['scale_'+str(scale_tbd)]['use_bounding_rect']:
       siz = im_sta.shape
       rect = BoundingRect(align_list,siz)
-    print('Bounding Rectangle: %s' % (str(rect)))
+    print_debug(10,'Bounding Rectangle: %s' % (str(rect)))
 
-    print("Applying affine: " + str(c_afm_init))
+    print_debug(10,"Applying affine: " + str(c_afm_init))
     im_aligned = swiftir.affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
-    print("Saving image: " + al_fn)
+    print_debug(10,"Saving image: " + al_fn)
     swiftir.saveImage(im_aligned,al_fn)
     if not 'aligned' in s_tbd[0]['images']:
       s_tbd[0]['images']['aligned'] = {}
@@ -760,15 +764,29 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     return (project,False)
 
+def print_command_line_syntax ( args ):
+  print_debug ( -1, "" )
+  print_debug ( -1, 'Usage: %s [ options ] inproject.json outproject.json' % (args[0]) )
+  print_debug ( -1, 'Description:' )
+  print_debug ( -1, '  Open swiftir project file and perform alignment operations.' )
+  print_debug ( -1, '  Result is written to output project file.' )
+  print_debug ( -1, 'Options:' )
+  print_debug ( -1, '  -code m             : m = c | python' )
+  print_debug ( -1, '  -start s            : s = first layer number (starting at 0), defaults to 0' )
+  print_debug ( -1, '  -count n            : n = number of layers (-1 for all remaining), defaults to -1' )
+  print_debug ( -1, '  -debug d            : d = debug level (0-100, larger numbers produce more output)' )
+  print_debug ( -1, '  -alignment_option o : o = init_affine | refine_affine | apply_affine' )
+  print_debug ( -1, 'Arguments:' )
+  print_debug ( -1, '  inproject.json      : input project file name (opened for reading only)' )
+  print_debug ( -1, '  outproject.json     : output project file name (opened for writing and overwritten)' )
+  print_debug ( -1, "" )
+
 
 if (__name__ == '__main__'):
 
   if (len(sys.argv)<3):
-    print_debug(50,'\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-    print_debug(50,'         Open swiftir project file and perform alignment operations\n\n')
-    print_debug(50,'         Result is written to output project file\n\n')
+    print_command_line_syntax (sys.argv)
     exit(1)
-
 
   proj_ifn = sys.argv[-2]
   proj_ofn = sys.argv[-1]
@@ -780,6 +798,8 @@ if (__name__ == '__main__'):
   scale_tbd = 0
   finest_scale_done = 0
   swiftir_code_mode = 'python'
+  start_layer = 0
+  num_layers = -1
 
   # check for an even number of additional args
   if (l > 0) and (int(l/2.) == l/2.):
@@ -790,12 +810,16 @@ if (__name__ == '__main__'):
       elif sys.argv[i] == '-code':
         # align_swiftir.global_swiftir_mode = str(sys.argv[i+1])
         swiftir_code_mode = str(sys.argv[i+1])
-      elif sys.argv[i] == '-alignment_option':
-        alignment_option = sys.argv[i+1]
+      elif sys.argv [i] == '-alignment_option':
+        alignment_option = sys.argv [i + 1]
+      elif sys.argv [i] == '-start':
+        start_layer = int(sys.argv [i + 1])
+      elif sys.argv [i] == '-count':
+        num_layers = int (sys.argv [i + 1])
+      elif sys.argv [i] == '-debug':
+        debug_level = int (sys.argv [i + 1])
       else:
-        print_debug(50,'\nUsage: %s [ -scale n ] [ -code c|python ] [ -alignment_option init_affine|refine_affine|apply_affine ] swiftir_project_input_filename swiftir_project_output_filename \n'%(sys.argv[0]))
-        print_debug(50,'         Open swiftir project file and perform alignment operations\n\n')
-        print_debug(50,'         Result is written to output project file\n\n')
+        print_command_line_syntax ( sys.argv )
         exit(1)
       i+=2
 
@@ -804,9 +828,14 @@ if (__name__ == '__main__'):
 
   d = json.load(fp)
 
+  align_swiftir.debug_level = debug_level
 
-  d, need_to_write_json = run_json_project ( d, alignment_option, use_scale, swiftir_code_mode )
-
+  d, need_to_write_json = run_json_project ( project=d,
+                                             alignment_option=alignment_option,
+                                             use_scale=use_scale,
+                                             swiftir_code_mode=swiftir_code_mode,
+                                             start_layer=start_layer,
+                                             num_layers=num_layers )
 
   if need_to_write_json:
 
