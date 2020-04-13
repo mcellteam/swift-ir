@@ -1,0 +1,48 @@
+# FLAGS = -O3 -m64 -msse3 -xCORE-AVX2 -axCORE-AVX512,MIC-AVX512
+#FLAGS = -O3 -xCORE-AVX2 -axCORE-AVX512,MIC-AVX512
+FLAGS = -O3 -m64 -msse3
+
+all: swim iavg iscale mir remod 
+
+#all: test_libs swim iavg iscale mir remod remod_old sxox json_parser.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
+
+swim: swim.c swimio.h debug.h makefile
+	gcc $(FLAGS) -Wno-implicit -o swim swim.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) -ltiff -ljpeg -lpng -lfftw3f -lm
+
+iavg: iavg.c swimio.h debug.h makefile
+	gcc $(FLAGS) -Wno-implicit -o iavg iavg.c -ljpeg -ltiff -lpng
+
+iscale: iscale.c swimio.h debug.h makefile
+	gcc $(FLAGS) -Wno-implicit -o iscale iscale.c -ljpeg -ltiff -lpng
+
+
+mir: mir.c swimio.h debug.h makefile
+	gcc $(FLAGS) -Wno-implicit -o mir mir.c -ljpeg -ltiff -lpng -lm
+
+remod: remod.c swimio.h debug.h makefile
+	gcc $(FLAGS) -Wno-implicit -o remod remod.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) -lfftw3f -ltiff -ljpeg -lpng -lm
+
+remod_old: remod_old.c swimio.h debug.h makefile
+	gcc $(FLAGS) -Wno-implicit -o remod_old remod_old.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) -lfftw3f -ltiff -ljpeg -lpng -lm
+
+sxox: sxox.c makefile
+	gcc $(FLAGS) -Wno-implicit -o sxox sxox.c -lm
+
+sha1sum.txt: swim iavg iscale mir remod
+	sha1sum swim > sha1sum.txt
+	sha1sum iavg >> sha1sum.txt
+	sha1sum iscale >> sha1sum.txt
+	sha1sum mir >> sha1sum.txt
+	sha1sum remod >> sha1sum.txt
+
+rev:
+	git log --pretty=format:"public class revision { static String githash=\"%H on %ad\"; }" HEAD^..HEAD > revision.java
+
+clean:
+	rm -f swim iavg iscale mir remod sxox
+	rm -f *.jar
+	rm -f *.class
+	rm -f *.o
+	rm -f a.out
+	rm -f *~
+

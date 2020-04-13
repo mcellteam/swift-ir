@@ -508,7 +508,7 @@ class align_ingredient:
 
     print_debug ( 10, "" )
 
-    o = run_command ( "swim", arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
+    o = run_command ( "../c/swim", arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
 
     swim_out_lines = o['out'].strip().split('\n')
     swim_err_lines = o['err'].strip().split('\n')
@@ -538,7 +538,7 @@ class align_ingredient:
 
     # print_debug ( 50, "mir_script: " + mir_script )
 
-    o = run_command ( "mir", arg_list=[], cmd_input=mir_script )
+    o = run_command ( "../c/mir", arg_list=[], cmd_input=mir_script )
 
     mir_out_lines = o['out'].strip().split('\n')
     mir_err_lines = o['err'].strip().split('\n')
