@@ -403,8 +403,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if actual_num_layers < 0:
       # Set the actual number of layers to align to the end
       actual_num_layers = len(s_tbd) - start_layer
-    if actual_num_layers < 2:  # For some reason the TUI won't align just one layer from the start
-      actual_num_layers = 2    # For some reason the TUI won't align just one layer from the start
+    #if actual_num_layers < 2:  # For some reason the TUI won't align just one layer from the start
+    #  actual_num_layers = 2    # For some reason the TUI won't align just one layer from the start
     # Align Forward Change:
     range_to_process = list(range(start_layer, start_layer+actual_num_layers))
     print_debug(10,80 * "@")
