@@ -602,6 +602,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
       # Run the project via pyswift_tui
+      pyswift_tui.debug_level = alignem.debug_level
       updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
                                                                          alignment_option = this_scale['method_data']['alignment_option'],
                                                                          use_scale = alignem.get_scale_val(scale_to_run_text),
