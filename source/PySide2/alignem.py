@@ -4,7 +4,6 @@ AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
 
-
 import sys, traceback
 import os
 import argparse

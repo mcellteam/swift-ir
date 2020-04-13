@@ -408,7 +408,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     # Align Forward Change:
     range_to_process = list(range(start_layer, start_layer+actual_num_layers))
     print_debug(10,80 * "@")
-    print_debug(10,"Range limited to: " + str(range_to_process))
+    print_debug(10,"Range limited to: " + str(range_to_process) + ", but seems to align 1 more ...")
     print_debug(10,80 * "@")
 
     #   Copy skip, swim, and match point settings
