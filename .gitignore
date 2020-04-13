@@ -15,12 +15,7 @@ tests/*
 data/*
 *.tar
 *.class
-iavg
-iscale
-mir
-remod
-swim
-sxox
+remod_old
 fftw
 jpeg
 png
