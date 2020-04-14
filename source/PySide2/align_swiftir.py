@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
+import platform
 
 import subprocess as sp
 
@@ -385,6 +386,20 @@ class align_ingredient:
     global global_swiftir_mode
     self.swiftir_mode = global_swiftir_mode
 
+    # Configure platform-specific path to executables for C SWiFT-IR
+    self.system = platform.system()
+    self.node = platform.node()
+    if self.system == 'Darwin':
+      self.swim_c = '../c/bin_darwin/swim'
+      self.mir_c = '../c/bin_darwin/mir'
+    elif self.system == 'Linux':
+      if '.tacc.utexas.edu' in self.node:
+        self.swim_c = '../c/bin_tacc/swim'
+        self.mir_c = '../c/bin_tacc/mir'
+      else:
+        self.swim_c = '../c/bin_linux/swim'
+        self.mir_c = '../c/bin_linux/mir'
+
     #if self.swiftir_mode == 'c':
     #  print_debug ( 70, "Actually loading images" )
     #  self.im_sta = swiftir.loadImage(self.im_sta_fn)
@@ -508,7 +523,7 @@ class align_ingredient:
 
     print_debug ( 10, "" )
 
-    o = run_command ( "../c/swim", arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
+    o = run_command ( self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string )
 
     swim_out_lines = o['out'].strip().split('\n')
     swim_err_lines = o['err'].strip().split('\n')
@@ -538,7 +553,7 @@ class align_ingredient:
 
     # print_debug ( 50, "mir_script: " + mir_script )
 
-    o = run_command ( "../c/mir", arg_list=[], cmd_input=mir_script )
+    o = run_command ( self.mir_c, arg_list=[], cmd_input=mir_script )
 
     mir_out_lines = o['out'].strip().split('\n')
     mir_err_lines = o['err'].strip().split('\n')
