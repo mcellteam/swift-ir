@@ -553,7 +553,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
       alignem.print_debug (30, "Aligning layers " + str (first_layer) + " through " + str (first_layer + num_layers - 1) + " using SWiFT-IR ...")
     alignem.print_debug ( 30, 100*'=' )
 
-    remove_aligned(prompt=False)
+    remove_aligned(starting_layer=first_layer, prompt=False)
 
     ensure_proper_data_structure()
 
@@ -683,6 +683,7 @@ def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
 def align_forward():
     num_layers = num_fwd.get_value ()
     first_layer = alignem.project_data['data']['current_layer']
+    alignem.print_debug ( 5, "Inside 'align_forward' with first_layer=" + str(first_layer))
     align_all_or_some (first_layer,num_layers,prompt=True)
     refresh_all()
 
@@ -711,6 +712,7 @@ def refresh_all ():
 
 
 def remove_aligned(starting_layer=0, prompt=True):
+    alignem.print_debug ( 5, "Removing aligned from scale " + str(alignem.current_scale) + " forward from layer " + str(starting_layer) )
     actually_remove = True
     if prompt:
         actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images?")
@@ -722,6 +724,7 @@ def remove_aligned(starting_layer=0, prompt=True):
         layer_index = 0
         for layer in alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack']:
           if layer_index >= starting_layer:
+            alignem.print_debug ( 5, "Removing Aligned from Layer " + str(layer_index) )
             if 'aligned' in layer['images'].keys():
               delete_list.append ( layer['images']['aligned']['filename'] )
               layer['images'].pop('aligned')
@@ -730,8 +733,7 @@ def remove_aligned(starting_layer=0, prompt=True):
                 if 'method_results' in layer['align_to_ref_method']:
                   # Set the "method_results" to an empty dictionary to signify no results:
                   layer['align_to_ref_method']['method_results'] = {}
-
-        layer_index += 1
+          layer_index += 1
 
         #alignem.image_library.remove_all_images()
 
