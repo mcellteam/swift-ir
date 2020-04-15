@@ -10,6 +10,7 @@ import align_swiftir
 import json
 import copy
 import matplotlib.pyplot as plt
+import inspect
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 50  # A larger value prints more stuff
@@ -49,10 +50,14 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None, p5=None ):
       else:
         print ( str(p1) + str(p2) + str(p3) + str(p4) + str(p5) )
 
+def print_debug_enter (level):
+    if level <= debug_level:
+        call_stack = inspect.stack()
+        print ( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) )
 
 # Do Linear Regression of X,Y data
 def lin_fit(x,y):
-
+  print_debug_enter (90)
   (m,b,r,p,stderr) = sps.linregress(x,y)
   print_debug(90,'linear regression:')
   print_debug(90,'  slope:',m)
@@ -69,6 +74,7 @@ align_swiftir.global_swiftir_mode = 'python'
 
 
 def BiasFuncs(align_list,bias_funcs=None):
+  print_debug_enter (90)
   print_debug(50,50*'B0')
   if type(bias_funcs) == type(None):
     init_scalars = True
@@ -156,6 +162,7 @@ def BiasFuncs(align_list,bias_funcs=None):
 
 
 def BiasMat(x,bias_funcs):
+  print_debug_enter (90)
 
   xdot = np.array([4.0,3.0,2.0,1.0])
 
@@ -208,6 +215,7 @@ def BiasMat(x,bias_funcs):
 
 
 def InitCafm(bias_funcs):
+  print_debug_enter (70)
 
   init_skew_x = -bias_funcs['skew_x'][4]
   init_scale_x = 1.0/bias_funcs['scale_x'][4]
@@ -235,6 +243,7 @@ def InitCafm(bias_funcs):
 
 
 def ApplyBiasFuncs(align_list):
+  print_debug_enter (70)
 
   # Iteratively determine and null out bias in c_afm
   print_debug(50,"\nComputing and Nulling Biases...\n")
@@ -256,6 +265,7 @@ def ApplyBiasFuncs(align_list):
 
 
 def BoundingRect(align_list,siz):
+  print_debug_enter (70)
 
   model_bounds = None
 
@@ -295,6 +305,7 @@ proj_status {
 '''
 
 def evaluate_project_status(project):
+  print_debug_enter (40)
 
   # Get int values for scales in a way compatible with old ('1') and new ('scale_1') style for keys
   scales = sorted([ int(s.split('scale_')[-1]) for s in project['data']['scales'].keys() ])
@@ -313,7 +324,9 @@ def evaluate_project_status(project):
     
 #    afm_list = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in alstack if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
 
+    # Create an array of boolean values representing whether 'affine_matrix' is in the method results for each layer
     proj_status['scales'][scale_key]['aligned_stat'] = np.array([ 'affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack ])
+
     num_afm = np.count_nonzero(proj_status['scales'][scale_key]['aligned_stat'] == True)
 
     if num_afm == num_alstack:
@@ -333,6 +346,7 @@ def evaluate_project_status(project):
 
 def run_json_project ( project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
   '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
+  print_debug_enter (40)
 
   print_debug(10,80*"!" )
   print_debug(10,"run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers]) )
