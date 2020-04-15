@@ -305,6 +305,7 @@ proj_status {
 '''
 
 def evaluate_project_status(project):
+  # Construct a project status dictionary (proj_status above)
   print_debug_enter (40)
 
   # Get int values for scales in a way compatible with old ('1') and new ('scale_1') style for keys
@@ -494,12 +495,12 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
       # Copy the affine_matrices from s_tbd and scale the translation part to use as the initial guess for s_tbd
       afm_tmp = np.array([ al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd ])
-      print('\n>>>>>>> Original affine matrices: \n\n')
-      print(str(afm_tmp))
+      print_debug(12, '\n>>>>>>> Original affine matrices: \n\n')
+      print_debug(12, str(afm_tmp))
       afm_scaled = afm_tmp.copy()
       afm_scaled[:,:,2] = afm_scaled[:,:,2]*upscale
-      print('\n>>>>>>> Scaled affine matrices: \n\n')
-      print(str(afm_scaled))
+      print_debug(12, '\n>>>>>>> Scaled affine matrices: \n\n')
+      print_debug(12, str(afm_scaled))
 #      exit(0)
     else:
       afm_scaled = None
@@ -575,6 +576,11 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         # Align Forward Change:
         align_list.append({'i':i, 'proc':align_proc, 'do':(i in range_to_process)})
 
+
+    print_debug(10,80 * "#")
+    print_debug(10,"Before aligning, align_list: " + str(align_list))
+    print_debug(10,80 * "#")
+
     # Initialize c_afm to identity matrix
     c_afm = swiftir.identityAffine()
 
@@ -639,12 +645,12 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
       if item['do']:
         align_item = item ['proc']
-        print_debug(20,'\n\nAligning: %s %s\n' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
+        print_debug(4,'\nAligning: %s %s' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
         # align_item.cumulative_afm = c_afm
         c_afm = align_item.align(c_afm,save=False)
       else:
         align_item = item ['proc']
-        print_debug(20,'\n\nNot Aligning: %s %s\n' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
+        print_debug(4,'\nNot Aligning: %s %s' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
 
 
     c_afm_init = swiftir.identityAffine()
@@ -747,8 +753,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
         c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
-        print_debug(2, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-        print_debug(2, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+        print_debug(12, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+        print_debug(12, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
       i+=1
 
@@ -777,6 +783,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     print_debug(1, 30 * "|=|")
 
     return (project,False)
+
+
 
 def print_command_line_syntax ( args ):
   print_debug ( -1, "" )

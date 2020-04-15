@@ -1,9 +1,9 @@
 {
-  "current_hash": "4aafedcb7bc5b1897890baf7d9e6192523777a5e",
+  "current_hash": "ca02cd9533eaef1023b708042dbe40d19051fae0",
   "tagged_versions": {
-    "4aafedcb7bc5b1897890baf7d9e6192523777a5e": "0.2.4",
     "150e0acd86a3c57a7d79fde4b3c4e225b55f26e4": "0.2.3",
     "2eac19472e2631173bbbe09d3c4251e219508602": "0.2.2",
+    "4aafedcb7bc5b1897890baf7d9e6192523777a5e": "0.2.4",
     "5d9fc94902a283bf458d7be61f6dccaafd5fb553": "0.2.1"
   }
 }

@@ -288,13 +288,14 @@ class alignment_process:
 
   def saveAligned(self, rect=None, apodize=False, grayBorder=False):
 
-      print_debug(2, "\nsaveAligned self.cumulative_afm: " + str(self.cumulative_afm))
+      print_debug(12, "\nsaveAligned self.cumulative_afm: " + str(self.cumulative_afm))
 
       im_mov = swiftir.loadImage(self.im_mov_fn)
-      print_debug(2, "\nTransforming " + str(self.im_mov_fn) + " with:" )
-      print_debug(2, "  self.cumulative_afm = " + str(self.cumulative_afm))
-      print_debug(2, "  rect = " + str(rect))
-      print_debug(2, "  grayBorder = " + str(grayBorder))
+      print_debug(4, "\nTransforming " + str(self.im_mov_fn) )
+      print_debug(12, " with:" )
+      print_debug(12, "  self.cumulative_afm = " + str(self.cumulative_afm))
+      print_debug(12, "  rect = " + str(rect))
+      print_debug(12, "  grayBorder = " + str(grayBorder))
       #print ( 100*'#' )
       #print ( 100*'#' )
       #print ( "  WARNING: Hard-coding rect as test!! ")
@@ -304,7 +305,7 @@ class alignment_process:
       im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
 #      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
       ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
-      print_debug(2, "  saving as: " + str(ofn))
+      print_debug(4, "  saving as: " + str(ofn))
       if apodize:
         im_apo = swiftir.apodize2(im_aligned, wfrac=1/3.)
         swiftir.saveImage(im_apo,ofn)

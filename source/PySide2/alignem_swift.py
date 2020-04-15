@@ -657,7 +657,8 @@ def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
         actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images from " + str(first_layer) + "?")
 
     if actually_remove:
-        alignem.print_debug ( 30, "Removing aligned from layer " + str(first_layer) )
+        alignem.print_debug ( 5, "Removing aligned from scale " + str (alignem.current_scale) + " forward from layer " + str (first_layer) + "  (align_all_or_some)" )
+
         remove_aligned (starting_layer=first_layer,prompt=False)
         alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ..." )
         alignem.print_debug ( 70, "Control Model = " + str(control_model) )
@@ -712,12 +713,12 @@ def refresh_all ():
 
 
 def remove_aligned(starting_layer=0, prompt=True):
-    alignem.print_debug ( 5, "Removing aligned from scale " + str(alignem.current_scale) + " forward from layer " + str(starting_layer) )
+    alignem.print_debug ( 5, "Removing aligned from scale " + str(alignem.current_scale) + " forward from layer " + str(starting_layer) + "  (remove_aligned)" )
     actually_remove = True
     if prompt:
         actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images?")
     if actually_remove:
-        alignem.print_debug ( 30, "Removing aligned images ..." )
+        alignem.print_debug ( 5, "Removing aligned images ..." )
 
         delete_list = []
 
@@ -727,6 +728,7 @@ def remove_aligned(starting_layer=0, prompt=True):
             alignem.print_debug ( 5, "Removing Aligned from Layer " + str(layer_index) )
             if 'aligned' in layer['images'].keys():
               delete_list.append ( layer['images']['aligned']['filename'] )
+              alignem.print_debug (5, "  Removing " + str (layer['images']['aligned']['filename']))
               layer['images'].pop('aligned')
               # Remove the method results since they are no longer applicable
               if 'align_to_ref_method' in layer.keys():
