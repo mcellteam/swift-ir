@@ -2,23 +2,23 @@
 
 ## Resolving Conflicts in the "source_info.json" File
 
-The "source_info.json" file maintains a current hash of all the source
+The "**source_info.json**" file maintains a current hash of all the source
 code files in the project. It also retains a history of tagged versions
 and their corresponding hash values. This information is valuable for
 historical reasons, but it is also useful for displaying and comparing
 the current source code to known versions.
 
-The "source_info.json" file is automatically updated by alignem.py or
-alignem_swift.py whenever it differs from the current source code. This
+The "**source_info.json**" file is automatically updated by **alignem.py** or
+**alignem_swift.py** whenever it differs from the current source code. This
 makes it very easy (almost trivial) to keep it maintained during the
 development process. All that's needed is to run the code (either
-alignem.py or alignem_swift.py) so that it updates the file as needed.
+**alignem.py** or **alignem_swift.py**) so that it updates the file as needed.
 It is expected that this would happen before every commit since code
 should NOT be committed if it hasn't been run at least once.
 
 The only somewhat serious problem with this approach arises when the
 code needs to be merged. In almost any merge scenario, the hash values
-stored in "source_info.json" will be different, and GIT will not know
+stored in "**source_info.json**" will be different, and GIT will not know
 which version to use. So GIT will modify the file to insert its own
 "merge markers" as shown in this example:
 
@@ -41,22 +41,22 @@ This means that the file would need to be edited by hand every time a
 merge was done to either choose one of the "current_hash" values or to
 delete them both so they will be automatically regenerated.
 
-In order to avoid this manual work for every merge, the alignem.py and
-alignem_swift.py programs will automatically fix this whenever they are
+In order to avoid this manual work for every merge, the **alignem.py** and
+**alignem_swift.py** programs will automatically fix this whenever they are
 run. Rather than importing the file directly as JSON (which would fail
 with those markers present), they first read the file and check it for
 GIT merge markers. If they are found, then they are removed and a new
-"current_hash" is calculated and written to the file. This happens just
-by running either alignem.py or alignem_swift.py.
+"current_hash" is calculated and written to the file. This generally
+happens just by running either **alignem.py** or **alignem_swift.py**.
 
 Of course, this cannot resolve other merge conflicts that might be found.
 They must be resolved by hand just as they always have. But when the only
-remaining merge conflict involves "source_info.json", it can be resolved
-by simply running alignem.py or alignem_swift.py. No project needs to be
-opened, and nothing else needs to be done inside the application. Just run
-it and exit. That will update the "source_info.json" file. If there are no
-other merge conflicts (or if they've been resolved by hand), then the new
-merge can be committed using the standard process.
+remaining merge conflict involves "**source_info.json**", it can generally
+be resolved by simply running **alignem.py** or **alignem_swift.py**. No project
+needs to be opened, and nothing else needs to be done inside the application.
+Just run it and exit. That will update the "**source_info.json**" file. If there
+are no other merge conflicts (or if they've been resolved by hand), then the
+new merge can be committed using the standard process.
 
 ## Joint GIT-based development without a shared repository
 
