@@ -41,12 +41,12 @@ def link_stack_orig():
     alignem.print_debug ( 10, "Linking stack" )
 
     ref_image_stack = []
-    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
+    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])):
       if layer_index == 0:
         main_win.add_empty_to_role ( 'ref' )
       else:
-        # layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]
-        prev_layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index-1]
+        # layer = alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]
+        prev_layer = alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index-1]
         fn = ""
         if 'base' in prev_layer['images'].keys():
           fn = prev_layer['images']['base']['filename']
@@ -64,14 +64,14 @@ def link_stack():
     alignem.print_debug ( 10, "Linking stack" )
 
     skip_list = []
-    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
-      if alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]['skip']==True:
+    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])):
+      if alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]['skip']==True:
         skip_list.append(layer_index)
 
     alignem.print_debug ( 10, '\nSkip List = \n' + str(skip_list) + '\n')
 
-    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])):
-      base_layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][layer_index]
+    for layer_index in range(len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])):
+      base_layer = alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]
 
       if layer_index == 0:
         # No ref for layer 0
@@ -91,7 +91,7 @@ def link_stack():
 
         # Use the nearest previous non-skipped layer as ref for this layer
         if (j not in skip_list) and (j>=0):
-          ref_layer = alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'][j]
+          ref_layer = alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][j]
           ref_fn = ''
           if 'base' in ref_layer['images'].keys():
             ref_fn = ref_layer['images']['base']['filename']
@@ -657,7 +657,7 @@ def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
         actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images from " + str(first_layer) + "?")
 
     if actually_remove:
-        alignem.print_debug ( 5, "Removing aligned from scale " + str (alignem.current_scale) + " forward from layer " + str (first_layer) + "  (align_all_or_some)" )
+        alignem.print_debug ( 5, "Removing aligned from scale " + str (alignem.get_cur_scale()) + " forward from layer " + str (first_layer) + "  (align_all_or_some)" )
 
         remove_aligned (starting_layer=first_layer,prompt=False)
         alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ..." )
@@ -694,7 +694,7 @@ def regenerate_aligned():
 def jump_to_layer():
     requested_layer = jump_to_val.get_value()
     alignem.print_debug ( 3, "Jump to layer " + str(requested_layer) )
-    num_layers = len(alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack'])
+    num_layers = len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])
     if requested_layer >= num_layers: # Limit to largest
         requested_layer = num_layers - 1
     if requested_layer < 0: # Consider negative values as indexes from the end
@@ -713,7 +713,7 @@ def refresh_all ():
 
 
 def remove_aligned(starting_layer=0, prompt=True):
-    alignem.print_debug ( 5, "Removing aligned from scale " + str(alignem.current_scale) + " forward from layer " + str(starting_layer) + "  (remove_aligned)" )
+    alignem.print_debug ( 5, "Removing aligned from scale " + str(alignem.get_cur_scale()) + " forward from layer " + str(starting_layer) + "  (remove_aligned)" )
     actually_remove = True
     if prompt:
         actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images?")
@@ -723,7 +723,7 @@ def remove_aligned(starting_layer=0, prompt=True):
         delete_list = []
 
         layer_index = 0
-        for layer in alignem.project_data['data']['scales'][alignem.current_scale]['alignment_stack']:
+        for layer in alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack']:
           if layer_index >= starting_layer:
             alignem.print_debug ( 5, "Removing Aligned from Layer " + str(layer_index) )
             if 'aligned' in layer['images'].keys():
