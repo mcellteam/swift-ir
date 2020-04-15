@@ -342,7 +342,7 @@ def evaluate_project_status(project):
       proj_status['scale_tbd'] = scale
 
   return proj_status
-  
+
 
 
 def run_json_project ( project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
@@ -392,42 +392,53 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
   if scale_tbd:
     if use_scale:
-      print_debug(50,"Performing alignment_option: %s  at user specified scale: %d" % (alignment_option,scale_tbd))
-      print_debug(50,"Finest scale completed: ",finest_scale_done)
-      print_debug(50,"Next coarsest scale completed: ",next_scale)
-      print_debug(50,"Upscale factor: ",upscale)
+      print_debug(5,"Performing alignment_option: %s  at user specified scale: %d" % (alignment_option,scale_tbd))
+      print_debug(5,"Finest scale completed: ",finest_scale_done)
+      print_debug(5,"Next coarsest scale completed: ",next_scale)
+      print_debug(5,"Upscale factor: ",upscale)
     else:
-      print_debug(50,"Performing alignment_option: %s  at automatically determined scale: %d" % (alignment_option,scale_tbd))
-      print_debug(50,"Finest scale completed: ",finest_scale_done)
-      print_debug(50,"Next coarsest scale completed: ",next_scale)
-      print_debug(50,"Upscale factor: ",upscale)
+      print_debug(5,"Performing alignment_option: %s  at automatically determined scale: %d" % (alignment_option,scale_tbd))
+      print_debug(5,"Finest scale completed: ",finest_scale_done)
+      print_debug(5,"Next coarsest scale completed: ",next_scale)
+      print_debug(5,"Upscale factor: ",upscale)
 
     scale_tbd_dir = os.path.join(destination_path,'scale_'+str(scale_tbd))
 
 #    ident = swiftir.identityAffine().tolist()
     ident = swiftir.identityAffine()
 
+    s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
+    common_length = len(s_tbd)
+
+    # Align Forward Change:
+    # Limit the range of the layers based on start_layer and num_layers
+
 #    if finest_scale_done:
     if next_scale:
       # Copy settings from next coarsest completed scale to tbd:
 #      s_done = project['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
       s_done = project['data']['scales']['scale_'+str(next_scale)]['alignment_stack']
-      project['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      common_length = min(len(s_tbd),len(s_done))
+      # Copy from coarser to finer
+      num_to_copy = num_layers
+      if num_layers < 0:
+        # Copy to the end
+        num_to_copy = common_length - start_layer
+      for i in range(num_to_copy):
+        s_tbd[start_layer+i]['align_to_ref_method']['method_results'] = copy.deepcopy(s_done[start_layer+i]['align_to_ref_method']['method_results'])
 
-    s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
+      # project['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
 
-    # Align Forward Change:
-    # Limit the range of the layers based on start_layer and num_layers
     actual_num_layers = num_layers
     if actual_num_layers < 0:
       # Set the actual number of layers to align to the end
-      actual_num_layers = len(s_tbd) - start_layer
-    #if actual_num_layers < 2:  # For some reason the TUI won't align just one layer from the start
-    #  actual_num_layers = 2    # For some reason the TUI won't align just one layer from the start
+      actual_num_layers = common_length - start_layer
+
     # Align Forward Change:
     range_to_process = list(range(start_layer, start_layer+actual_num_layers))
     print_debug(10,80 * "@")
-    print_debug(10,"Range limited to: " + str(range_to_process) + ", but seems to align 1 more ...")
+    print_debug(10,"Range limited to: " + str(range_to_process) )
     print_debug(10,80 * "@")
 
     #   Copy skip, swim, and match point settings
