@@ -83,7 +83,11 @@ app = None
 preloading_range = 10
 max_image_file_size = 1000000000
 
-current_scale = 'scale_1'
+# current_scale = 'scale_1'
+
+def get_cur_scale():
+    global project_data
+    return ( project_data['data']['current_scale'] )
 
 main_window = None
 
@@ -337,7 +341,7 @@ class ZoomPanWidget(QWidget):
 
         if project_data != None:
 
-            s = project_data['data']['current_scale']
+            s = get_cur_scale()
             l = project_data['data']['current_layer']
 
             if len(project_data['data']['scales']) > 0:
@@ -518,16 +522,16 @@ class ZoomPanWidget(QWidget):
                 entering_layer = 0
 
             try:
-              leaving_scale = project_data['data']['current_scale']
-              entering_scale = project_data['data']['current_scale']
+              leaving_scale = get_cur_scale()
+              entering_scale = get_cur_scale()
               main_window.view_change_callback ( get_scale_key(leaving_scale), get_scale_key(entering_scale), leaving_layer, entering_layer )
             except:
               print_debug ( 0, "Exception in change_layer: " + str (sys.exc_info ()) )
 
           local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
-          local_current_scale = project_data['data']['current_scale']  # Get it from the data model
-          if local_current_scale in local_scales:
-              local_scale = local_scales[local_current_scale]
+          local_cur_scale = get_cur_scale()
+          if local_cur_scale in local_scales:
+              local_scale = local_scales[local_cur_scale]
               if 'alignment_stack' in local_scale:
                   local_stack = local_scale['alignment_stack']
                   if len(local_stack) <= 0:
@@ -1821,11 +1825,12 @@ class MainWindow(QMainWindow):
 
     def add_image_to_role ( self, image_file_name, role_name ):
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
+        local_cur_scale = get_cur_scale()
 
         print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
         if image_file_name != None:
           if len(image_file_name) > 0:
-            used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+            used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][local_cur_scale]['alignment_stack'] ]
             print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
             layer_index_for_new_role = -1
             if False in used_for_this_role:
@@ -1835,16 +1840,17 @@ class MainWindow(QMainWindow):
             else:
               # This means that there are no unused slots for this role. Add a new layer
               print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
-              project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-              layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-            image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+              project_data['data']['scales'][local_cur_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+              layer_index_for_new_role = len(project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
+            image_dict = project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role]['images']
             image_dict[role_name] = copy.deepcopy(new_image_template)
             image_dict[role_name]['filename'] = image_file_name
 
 
     def add_empty_to_role ( self, role_name ):
+        local_cur_scale = get_cur_scale()
 
-        used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+        used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][local_cur_scale]['alignment_stack'] ]
         print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
         layer_index_for_new_role = -1
         if False in used_for_this_role:
@@ -1854,15 +1860,16 @@ class MainWindow(QMainWindow):
         else:
           # This means that there are no unused slots for this role. Add a new layer
           print_debug ( 60, "Making a new layer for empty in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
-          project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-          layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-        image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+          project_data['data']['scales'][local_cur_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+          layer_index_for_new_role = len(project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
+        image_dict = project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role]['images']
         image_dict[role_name] = copy.deepcopy(new_image_template)
         image_dict[role_name]['filename'] = None
 
 
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
         global preloading_range
+        local_cur_scale = get_cur_scale()
 
         print_debug ( 60, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
 
@@ -1873,7 +1880,7 @@ class MainWindow(QMainWindow):
 
         if clear_role:
           # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-          for layer in project_data['data']['scales'][current_scale]['alignment_stack']:
+          for layer in project_data['data']['scales'][local_cur_scale]['alignment_stack']:
             if role_to_import in layer['images'].keys():
               layer['images'].pop(role_to_import)
 
@@ -2042,12 +2049,13 @@ class MainWindow(QMainWindow):
     @Slot()
     def empty_into_role(self, checked):
         #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
+        local_cur_scale = get_cur_scale()
 
         role_to_import = str ( self.sender().text() )
 
         print_debug ( 30, "Adding empty for role: " + str(role_to_import) )
 
-        used_for_this_role = [ role_to_import in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
+        used_for_this_role = [ role_to_import in l['images'].keys() for l in project_data['data']['scales'][local_cur_scale]['alignment_stack'] ]
         print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
         layer_index_for_new_role = -1
         if False in used_for_this_role:
@@ -2057,9 +2065,9 @@ class MainWindow(QMainWindow):
         else:
           # This means that there are no unused slots for this role. Add a new layer
           print_debug ( 60, "Making a new layer for <empty> in role " + str(role_to_import) + " at layer " + str(layer_index_for_new_role) )
-          project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-          layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-        image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
+          project_data['data']['scales'][local_cur_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
+          layer_index_for_new_role = len(project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
+        image_dict = project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role]['images']
         image_dict[role_to_import] = copy.deepcopy(new_image_template)
 
         # Draw the panels ("windows")
@@ -2102,13 +2110,11 @@ class MainWindow(QMainWindow):
               text_label = ''.join(m.title().split('&'))
               if 'Scale' in text_label:
                 print_debug ( 30, "Found Scale Menu" )
-                global current_scale
                 scale_to_match = int(str(project_data['data']['current_scale'].split('_')[1]))
                 for a in m.actions():
                   if int(a.text()) == scale_to_match:
                     a.setChecked ( True )
                     project_data['data']['current_scale'] = 'scale_' + str(scale_to_match)
-                    current_scale = project_data['data']['current_scale']
                   else:
                     a.setChecked ( False )
 
@@ -2166,9 +2172,9 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_current_scale(self, checked):
-        global current_scale
+        local_cur_scale = get_cur_scale()
         print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
-        old_scale = current_scale
+        old_scale = local_cur_scale
         new_scale = get_scale_key ( str ( self.sender().text() ) )
         if self.view_change_callback != None:
           leaving_layer = project_data['data']['current_layer']
@@ -2178,8 +2184,8 @@ class MainWindow(QMainWindow):
             main_window.view_change_callback ( old_scale, new_scale, leaving_layer, entering_layer )
           except:
             print_debug ( 0, "Exception in set_current_scale: " + str(sys.exc_info()) )
-        current_scale = new_scale
-        project_data['data']['current_scale'] = current_scale
+        local_cur_scale = new_scale
+        project_data['data']['current_scale'] = local_cur_scale
         print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
 
         for p in self.panel_list:
@@ -2194,10 +2200,11 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def remove_this_layer(self):
+        local_cur_scale = get_cur_scale()
         local_current_layer = project_data['data']['current_layer']
-        project_data['data']['scales'][current_scale]['alignment_stack'].pop(local_current_layer)
-        if local_current_layer >= len(project_data['data']['scales'][current_scale]['alignment_stack']):
-          local_current_layer = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
+        project_data['data']['scales'][local_cur_scale]['alignment_stack'].pop(local_current_layer)
+        if local_current_layer >= len(project_data['data']['scales'][local_cur_scale]['alignment_stack']):
+          local_current_layer = len(project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
         project_data['data']['current_layer'] = local_current_layer
 
         for p in self.panel_list:
@@ -2207,9 +2214,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def remove_all_layers(self):
         global project_data
+        local_cur_scale = get_cur_scale()
         project_data['data']['current_layer'] = 0
-        while len ( project_data['data']['scales'][current_scale]['alignment_stack'] ) > 0:
-          project_data['data']['scales'][current_scale]['alignment_stack'].pop(0)
+        while len ( project_data['data']['scales'][local_cur_scale]['alignment_stack'] ) > 0:
+          project_data['data']['scales'][local_cur_scale]['alignment_stack'].pop(0)
         self.update_win_self()
 
     @Slot()
@@ -2277,9 +2285,9 @@ class MainWindow(QMainWindow):
           if project_data != None:
 
             local_scales = project_data['data']['scales']
-            local_current_scale = project_data['data']['current_scale']
-            if local_current_scale in local_scales:
-                local_scale = local_scales[local_current_scale]
+            local_cur_scale = get_cur_scale()
+            if local_cur_scale in local_scales:
+                local_scale = local_scales[local_cur_scale]
                 if 'alignment_stack' in local_scale:
                     local_stack = local_scale['alignment_stack']
                     if len(local_stack) > 0:
