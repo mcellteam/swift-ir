@@ -254,7 +254,8 @@ class alignment_process:
 
     ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht)
 
-    self.recipe.add_ingredient(ingredient_check_align)
+# DISABLE CHECK_ALIGN INGREDIENT FOR PERFORMANCE TESTING
+#    self.recipe.add_ingredient(ingredient_check_align)
 
     self.recipe.execute()
 
@@ -631,8 +632,9 @@ class align_ingredient:
     if self.align_mode == 'swim_align':
       self.afm = aim
 
-    if self.align_mode == 'check_align':
-      self.snr = snr_list
+#    if self.align_mode == 'check_align':
+#      self.snr = snr_list
+    self.snr = snr_list
 
     return self.afm
 
