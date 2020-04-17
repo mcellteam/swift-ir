@@ -1,5 +1,102 @@
 # SWiFT-IR Development
 
+## Finding Commit ID from Source Hash
+
+Modern versions of alignem.py and alignem_swift.py will show a "Source Hash"
+field in the lower right corner of the main window. This can be used to get
+the GIT commit ID (GIT hash) of that version. This is best explained with
+an example ...
+
+Suppose the Source Hash shown is: bd63e14fd7a45d2949ca5fdd27f7ed87c1ef4905
+
+You will want to search the GIT repository for the version of "source_info.py" 
+that contains that hash string. This can be done with GIT's "search" option
+(-S) as follows:
+
+```
+$ git log -S'bd63e14fd7' -- source_info.json
+```
+
+Note that you don't need to specify the full hash. Also note that you need
+to specify the file to be searched ("source_info.json") after the "--". This
+command will show the commit messages associated with that value in the
+file "source_info.json". In this example:
+
+```
+$ git log -S'bd63e14fd7' -- source_info.json
+
+commit 14370af4fa0346e23f6f5c2c1163e41ca08f24c1
+Author: Bob Kuczewski <bobkuczewski@salk.edu>
+Date:   Wed Apr 8 21:56:29 2020 -0700
+
+    Implementing the poly_order field as a per-scale item.
+    
+    Note that the other 2 per-scale flags don't seem to retain their
+    values between scale changes in this version.
+
+commit 1af1de55315ad93f2529107991a0d95dc7547287
+Author: Bob Kuczewski <bobkuczewski@salk.edu>
+Date:   Wed Apr 8 18:18:05 2020 -0700
+
+    Added poly_order to the data model at each scale (defaults to 4).
+    
+    This commit just adds "poly_order" to the data model and doesn't yet
+    connect it to the field in the GUI.
+```
+
+This shows the two commits associated with that Source Hash. It's not clear
+why there are two. It's possible that they both make reference to the same
+change (diff) in the repository. In general, the second commit will be the one
+that matches the Source Hash:
+
+```
+$ git checkout 1af1de55
+Note: switching to '1af1de55'.
+ :
+ :
+HEAD is now at 1af1de5 Added poly_order to the data model at each scale (defaults to 4).
+```
+
+At this point, you can verify that this is the proper commit by checking the
+current Source Hash in that commit:
+
+```
+$ cat source_info.json
+
+{
+  "current_hash": "bd63e14fd7a45d2949ca5fdd27f7ed87c1ef4905",
+  "tagged_versions": {
+    "2eac19472e2631173bbbe09d3c4251e219508602": "0.2.2",
+    "5d9fc94902a283bf458d7be61f6dccaafd5fb553": "0.2.1"
+  }
+}
+```
+
+Since the "current_hash" field matches the desired "Source Hash", this is most
+likely the version that reported the original "Source Hash" value. The phrase
+"most likely" is appropriate because this mechanism depends on developers actually
+running their code before making the commit. It is the running "alignem.py"
+program that stores the current hash value into "source_info.py". If "alignem.py"
+wasn't run before making the commit, then the hash value may not be in the file.
+
+Note that additional options can be passed to the git log function. For example,
+the "--oneline" option can be used to get simplified output:
+
+```
+$ git log -S'bd63e14fd7' --oneline -- source_info.json
+14370af Implementing the poly_order field as a per-scale item.
+1af1de5 Added poly_order to the data model at each scale (defaults to 4).
+```
+
+GIT also supports many other formatting options such as "--pretty=format":
+
+```
+$ git log -S'bd63e14fd7' --pretty=format:"%h %cn on %ad ==> %s" -- source_info.json
+14370af Bob Kuczewski on Wed Apr 8 21:56:29 2020 -0700 ==> Implementing the poly_order field as a per-scale item.
+1af1de5 Bob Kuczewski on Wed Apr 8 18:18:05 2020 -0700 ==> Added poly_order to the data model at each scale (defaults to 4).
+```
+
+
 ## Resolving Conflicts in the "source_info.json" File
 
 The "**source_info.json**" file maintains a current hash of all the source
