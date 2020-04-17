@@ -688,6 +688,11 @@ class align_ingredient:
         print_debug ( 50, '  SNR:  ' + str(snr))
       self.snr = snr
 
+    snr_array = np.array(self.snr)
+    self.snr = [snr_array.mean()]
+    print_debug ( 10, "SNR = <%.4g  %.4g  %.4g> (+-%.4g n:%d)" % (snr_array.min(), snr_array.mean(), snr_array.max(), snr_array.std(), len(snr_array)))
+
+
     if self.align_mode == 'swim_align':
       self.afm = afm
 
