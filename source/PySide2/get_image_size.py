@@ -28,7 +28,7 @@ def get_image_size(file_path):
     """
     size = os.path.getsize(file_path)
 
-    with open(file_path) as input:
+    with open(file_path,'rb') as input:
         height = -1
         width = -1
         data = input.read(25)
@@ -38,18 +38,18 @@ def get_image_size(file_path):
             w, h = struct.unpack("<HH", data[6:10])
             width = int(w)
             height = int(h)
-        elif ((size >= 24) and data.startswith('\211PNG\r\n\032\n')
-              and (data[12:16] == 'IHDR')):
+        elif ((size >= 24) and data.startswith(b'\211PNG\r\n\032\n')
+              and (data[12:16] == b'IHDR')):
             # PNGs
             w, h = struct.unpack(">LL", data[16:24])
             width = int(w)
             height = int(h)
-        elif (size >= 16) and data.startswith('\211PNG\r\n\032\n'):
+        elif (size >= 16) and data.startswith(b'\211PNG\r\n\032\n'):
             # older PNGs?
             w, h = struct.unpack(">LL", data[8:16])
             width = int(w)
             height = int(h)
-        elif (size >= 2) and data.startswith('\377\330'):
+        elif (size >= 2) and data.startswith(b'\377\330'):
             # JPEG
             msg = " raised while trying to decode as JPEG."
             input.seek(0)
@@ -90,7 +90,7 @@ def get_image_size(file_path):
                 raise UnknownImageFormat(
                     "Unkown DIB header size:" +
                     str(headersize))
-        elif (size >= 8) and data[:4] in (b"II\052\000", b"MM\000\052"):
+        elif (size >= 8) and data[:4] in (b'II\052\000', b'MM\000\052'):
             # Standard TIFF, big- or little-endian
             # BigTIFF and other different but TIFF-like formats are not
             # supported currently
@@ -176,4 +176,7 @@ def get_image_size(file_path):
 
     return width, height
 
-print(get_image_size(sys.argv[1]))
+
+if __name__=='__main__':
+
+  print(get_image_size(sys.argv[1]))

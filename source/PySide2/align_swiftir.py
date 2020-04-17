@@ -1,12 +1,12 @@
 #!/usr/bin/env python2.7
 
 import swiftir
+from get_image_size import get_image_size
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
 import platform
-
 import subprocess as sp
 
 
@@ -156,8 +156,13 @@ class alignment_process:
     print_debug ( 20, "********************************" )
     print_debug ( 50, "\n\n" )
 
-    im_sta = swiftir.loadImage(self.im_sta_fn)
-    im_mov = swiftir.loadImage(self.im_mov_fn)
+#    im_sta = swiftir.loadImage(self.im_sta_fn)
+#    im_mov = swiftir.loadImage(self.im_mov_fn)
+#    siz = (int(im_sta.shape[0]), int(im_sta.shape[1]))
+
+    # Get Image Size
+    siz = get_image_size(self.im_sta_fn)
+
 
     atrm = self.layer_dict['align_to_ref_method']
     # window size scale factor
@@ -173,12 +178,12 @@ class alignment_process:
     # Set up 1x1 point and window
     pa = np.zeros((2,1))                # Point Array for one point
 
-    wwx_f = int(im_sta.shape[0])        # Window Width in x (Full Size)
-    wwy_f = int(im_sta.shape[1])        # Window Width in y (Full Size)
-    wwx = int(wsf*im_sta.shape[0])      # Window Width in x Scaled
-    wwy = int(wsf*im_sta.shape[1])      # Window Width in y Scaled
-    cx = int(im_sta.shape[0]/2)         # Window Center in x
-    cy = int(im_sta.shape[1]/2)         # Window Center in y
+    wwx_f = siz[0]                      # Window Width in x (Full Size)
+    wwy_f = siz[1]                      # Window Width in y (Full Size)
+    wwx = int(wsf*wwx_f)                # Window Width in x Scaled
+    wwy = int(wsf*wwy_f)                # Window Width in y Scaled
+    cx = int(wwx_f/2.0)                 # Window Center in x
+    cy = int(wwy_f/2.0)                 # Window Center in y
     pa[0,0] = cx
     pa[1,0] = cy
     psta_1 = pa
@@ -188,7 +193,7 @@ class alignment_process:
     nx = 2
     ny = 2
     pa = np.zeros((2,nx*ny))                # Point Array (2x4) points
-    s = int(im_sta.shape[0]/2)              # Initial Size of each window
+    s = int(wwx_f/2.0)                      # Initial Size of each window
     for x in range(nx):
       for y in range(ny):
         pa[0, x + nx*y] = int(0.5*s + s*x)  # Point Array (2x4) points
@@ -201,7 +206,7 @@ class alignment_process:
     nx = 4
     ny = 4
     pa = np.zeros((2,nx*ny))
-    s = int(im_sta.shape[0]/4)
+    s = int(wwx_f/4.0)                      # Initial Size of each window
     for x in range(nx):
       for y in range(ny):
         pa[0, x + nx*y] = int(0.5*s + s*x)
@@ -211,27 +216,28 @@ class alignment_process:
     psta_4x4 = pa
 
     # Set up a window size for match point alignment (1/32 of x dimension)
-    s_mp = int(im_sta.shape[0]/32)
+    s_mp = int(siz[0]/32.0)
 
     print_debug ( 70, "  psta_1   = " + str(psta_1) )
     print_debug ( 70, "  psta_2x2 = " + str(psta_2x2) )
     print_debug ( 70, "  psta_4x4 = " + str(psta_4x4) )
 
-    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+#    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+    self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
 
     wht = atrm['method_data']['whitening_factor']
     if atrm['selected_method']=='Auto Swim Align':
       alignment_option = atrm['method_data'].get('alignment_option')
       if alignment_option == 'refine_affine':
-        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht)
         self.recipe.add_ingredient(ingredient_4x4)
       elif alignment_option == 'apply_affine':
         self.recipe.afm = self.init_affine_matrix
       else:
         # Normal Auto Swim Align - Full Recipe
-        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
-        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
-        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, wht=wht)
+        ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht)
+        ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht)
         self.recipe.add_ingredient(ingredient_1)
         self.recipe.add_ingredient(ingredient_2x2)
         self.recipe.add_ingredient(ingredient_4x4)
@@ -240,13 +246,13 @@ class alignment_process:
       mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
       mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
       # First ingredient is to calculate the Affine matrix from match points alone
-      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht)
       # Second ingredient is to refine the Affine matrix by swimming at each match point
-      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+      ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht)
       self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
       self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
 
-    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+    ingredient_check_align = align_ingredient(ww=(wwx_f,wwy_f), psta=psta_1, iters=1, align_mode='check_align', wht=wht)
 
     self.recipe.add_ingredient(ingredient_check_align)
 
@@ -312,18 +318,31 @@ class alignment_process:
       else:
         swiftir.saveImage(im_aligned,ofn)
 
+      # del the images to allow for automatic garbage collection
+      del im_mov
+      del im_aligned
+
 
 
 # Universal class for alignment recipes
 class align_recipe:
 
-  def __init__(self, im_sta, im_mov, im_sta_fn=None, im_mov_fn=None):
+#  def __init__(self, im_sta, im_mov, im_sta_fn=None, im_mov_fn=None):
+  def __init__(self, im_sta_fn=None, im_mov_fn=None):
     self.ingredients = []
-    self.im_sta = im_sta
-    self.im_mov = im_mov
+#    self.im_sta = im_sta
+#    self.im_mov = im_mov
+    self.im_sta = None
+    self.im_mov = None
     self.im_sta_fn = im_sta_fn
     self.im_mov_fn = im_mov_fn
     self.afm = swiftir.identityAffine()
+
+    global global_swiftir_mode
+    self.swiftir_mode = global_swiftir_mode
+
+    # Get Image Size
+    self.siz = get_image_size(self.im_sta_fn)
 
   def __str__(self):
     s = "recipe: \n"
@@ -340,14 +359,29 @@ class align_recipe:
     ingredient.im_mov = self.im_mov
     ingredient.im_sta_fn = self.im_sta_fn
     ingredient.im_mov_fn = self.im_mov_fn
+    ingredient.recipe = self
     self.ingredients.append(ingredient)
 
   def execute(self):
+
+    # Load images now but only in 'python' mode
+    #    C SWiFT-IR loads its own images
+    if self.swiftir_mode == 'python':
+      self.im_sta = swiftir.loadImage(self.im_sta_fn)
+      self.im_mov = swiftir.loadImage(self.im_mov_fn)
+
+    # Initialize afm to afm of first ingredient in recipe
     if type(self.ingredients[0].afm) != type(None):
       self.afm = self.ingredients[0].afm
+
+    # Execute each ingredient in recipe
     for ingredient in self.ingredients:
       ingredient.afm = self.afm
       self.afm = ingredient.execute()
+  
+    # del the images to allow for automatic garbage collection
+    del self.im_sta
+    del self.im_mov
 
 
 
@@ -365,15 +399,17 @@ class align_ingredient:
   #        If psta contains only one point then the estimated afm will be a translation matrix
   #   3) If align_mode is 'check_align' then use swim to check the SNR achieved by the
   #        supplied afm matrix but do not refine the afm matrix
-  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
+#  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
+  def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align'):
 
     self.swim_drift = 0.5
 
     self.afm = afm
-    self.im_sta = im_sta
-    self.im_mov = im_mov
-    self.im_sta_fn = im_sta_fn
-    self.im_mov_fn = im_mov_fn
+    self.recipe = None
+#    self.im_sta = im_sta
+#    self.im_mov = im_mov
+#    self.im_sta_fn = im_sta_fn
+#    self.im_mov_fn = im_mov_fn
     self.ww = ww
     self.psta = psta
     self.pmov = pmov
@@ -384,8 +420,8 @@ class align_ingredient:
     self.snr = None
     self.threshold = (3.5,200,200)
 
-    global global_swiftir_mode
-    self.swiftir_mode = global_swiftir_mode
+#    global global_swiftir_mode
+#    self.swiftir_mode = global_swiftir_mode
 
     # Configure platform-specific path to executables for C SWiFT-IR
     self.system = platform.system()
@@ -446,8 +482,10 @@ class align_ingredient:
     print_debug ( 50, "Inside run_swim_c() with self = align_ingredient:" )
     print_debug ( 50, str(self) )
 
-    wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
-    wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
+#    wwx_f = int(self.im_sta.shape[0])        # Window Width in x (Full Size)
+#    wwy_f = int(self.im_sta.shape[1])        # Window Width in y (Full Size)
+    wwx_f = self.recipe.siz[0]                # Window Width in x (Full Size)
+    wwy_f = self.recipe.siz[1]                # Window Width in y (Full Size)
     cx = int(wwx_f / 2.0)
     cy = int(wwy_f / 2.0)
 
@@ -510,10 +548,10 @@ class align_ingredient:
                        ' -x ' + str(offx) + \
                        ' -y ' + str(offy) + \
                        ' ' + karg + \
-                       ' ' + self.im_sta_fn + \
+                       ' ' + self.recipe.im_sta_fn + \
                        ' ' + base_x + \
                        ' ' + base_y + \
-                       ' ' + self.im_mov_fn + \
+                       ' ' + self.recipe.im_mov_fn + \
                        ' ' + adjust_x + \
                        ' ' + adjust_y + \
                        ' ' + rota_arg + \
@@ -624,7 +662,7 @@ class align_ingredient:
     if type(afm)==type(None):
       afm = swiftir.identityAffine()
 
-    if self.swiftir_mode == 'c':
+    if self.recipe.swiftir_mode == 'c':
 
       print_debug ( 50, "Running c version of swim" )
 
@@ -634,11 +672,11 @@ class align_ingredient:
 
       print_debug ( 50, "Running python version of swim" )
       self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-      sta = swiftir.stationaryPatches(self.im_sta, self.psta, self.ww)
+      sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
       for i in range(self.iters):
         print_debug ( 50, 'psta = ' + str(self.psta) )
         print_debug ( 50, 'pmov = ' + str(self.pmov) )
-        mov = swiftir.movingPatches(self.im_mov, self.pmov, afm, self.ww)
+        mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
         (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
         print_debug ( 50, '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr) )
         self.pmov = self.pmov + dp
