@@ -109,7 +109,7 @@ if __name__ == '__main__':
         args = raw_input()
 
       sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
-      sys.stdout.write('Running run_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
+      sys.stdout.write('Running task_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
 
       cmd_list = []
       if (cmd.strip()[0] == '"') and (cmd.strip()[-1] == '"'):
@@ -143,7 +143,7 @@ if __name__ == '__main__':
         sys.stdout.write('\nSending signal: {0} to child PID: {1}\n'.format(signum, proc.pid))
         sys.stdout.flush()
         proc.send_signal(signum)
-        sys.stdout.write('\nTerminated run_wrapper.py\n')
+        sys.stdout.write('\nTerminated task_wrapper.py\n')
         sys.stdout.flush()
         exit(15)
 
@@ -165,7 +165,7 @@ if __name__ == '__main__':
         args = raw_input()
 
       sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
-      sys.stdout.write('Running run_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
+      sys.stdout.write('Running task_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
 
       cmd_list = []
       if (cmd.strip()[0] == '"') and (cmd.strip()[-1] == '"'):
@@ -200,7 +200,7 @@ if __name__ == '__main__':
         sys.stdout.write('\nSending signal: {0} to child PID: {1}\n'.format(signum, proc.pid))
         sys.stdout.flush()
         proc.send_signal(signum)
-        sys.stdout.write('\nTerminated run_wrapper.py\n')
+        sys.stdout.write('\nTerminated task_wrapper.py\n')
         sys.stdout.flush()
         exit(15)
 

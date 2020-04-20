@@ -146,8 +146,8 @@ class TaskQueue:
     self.task_dict = {}
     self.n_threads = 0
     self.python_exec = python_path
-    module_dir_path = os.path.dirname(os.path.realpath(__file__))
-    module_file_path = os.path.join(module_dir_path, 'task_wrapper.py')
+    self.module_dir_path = os.path.dirname(os.path.realpath(__file__))
+    module_file_path = os.path.join(self.module_dir_path, 'task_wrapper.py')
     self.task_wrapper = module_file_path
     self.notify = False
 
@@ -314,6 +314,8 @@ if (__name__ == '__main__'):
   my_q.add_task(cmd='cp foo.txt foo_2.txt', wd=wd)
   my_q.add_task(cmd='cp foo.txt foo_3.txt', wd=wd)
   my_q.add_task(cmd='cp foo.txt foo_4.txt', wd=wd)
+#  my_hello = os.path.join(my_q.module_dir_path,'hello_world.py')
+#  my_q.add_task(cmd='python', args=my_hello, wd=wd)
 
 #  my_q.add_task('sleep 7 ; cp foo.txt foo_1.txt', '', wd)
 #  my_q.add_task('sleep 7 ; cp foo.txt foo_2.txt', '', wd)
@@ -329,10 +331,13 @@ if (__name__ == '__main__'):
 
   pids = list(my_q.task_dict.keys())
   pids.sort()
-  a_pid = pids[2]
-  my_q.task_dict[a_pid]['process'].terminate()
+#  a_pid = pids[2]
+#  my_q.task_dict[a_pid]['process'].terminate()
 
   my_q.work_q.join()
+
+#  print(my_q.task_dict[pids[0]]['stdout'])
+#  print(my_q.task_dict[pids[0]]['stderr'])
 
 #  time.sleep(0.5)
 
