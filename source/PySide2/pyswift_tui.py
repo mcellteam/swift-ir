@@ -456,7 +456,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       if s_tbd[i]['skip'] or atrm['method_results'] == {}:
         atrm['method_results']['affine_matrix'] = ident.tolist()
         atrm['method_results']['cumulative_afm'] = ident.tolist()
-        atrm['method_results']['snr'] = 0.0
+        atrm['method_results']['snr'] = [0.0]
+        atrm['method_results']['snr_report'] = 'SNR: --'
 
       # set alignment option
       atrm['method_data']['alignment_option'] = alignment_option
@@ -714,6 +715,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       # Retrieve alignment result
         recipe = align_item.recipe
         snr = recipe.ingredients[-1].snr
+        snr_report = recipe.ingredients[-1].snr_report
         afm = recipe.ingredients[-1].afm
         c_afm = align_item.cumulative_afm
 
@@ -735,7 +737,9 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         s_tbd[align_idx]['images']['aligned']['metadata']['match_points'] = []
         s_tbd[align_idx]['images']['aligned']['metadata']['annotations'] = []
         method_results = s_tbd[align_idx]['align_to_ref_method']['method_results']
-        method_results['snr'] = snr[0]
+#        method_results['snr'] = snr[0]
+        method_results['snr'] = list(snr)
+        method_results['snr_report'] = snr_report
         method_results['affine_matrix'] = afm.tolist()
         method_results['cumulative_afm'] = c_afm.tolist()
 
@@ -753,7 +757,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         x_array[i] = [align_idx,c_afm[0,2]]
         y_array[i] = [align_idx,c_afm[1,2]]
 
-        snr_file.write('%d %.6g\n' % (i, snr[0]))
+#        snr_file.write('%d %.6g\n' % (i, snr[0]))
+        snr_file.write('%d %.6g\n' % (i, snr.mean()))
         bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
         bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
         bias_rot_file.write('%d %.6g\n' % (i, rot))

@@ -419,6 +419,7 @@ class align_ingredient:
     self.iters = iters
     self.align_mode = align_mode
     self.snr = None
+    self.snr_report = None
     self.threshold = (3.5,200,200)
 
 #    global global_swiftir_mode
@@ -689,8 +690,10 @@ class align_ingredient:
       self.snr = snr
 
     snr_array = np.array(self.snr)
-    self.snr = [snr_array.mean()]
-    print_debug ( 10, "SNR = <%.4g  %.4g  %.4g> (+-%.4g n:%d)" % (snr_array.min(), snr_array.mean(), snr_array.max(), snr_array.std(), len(snr_array)))
+#    self.snr = [snr_array.mean()]
+    self.snr = snr_array
+    self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+    print_debug ( 10, self.snr_report )
 
 
     if self.align_mode == 'swim_align':
