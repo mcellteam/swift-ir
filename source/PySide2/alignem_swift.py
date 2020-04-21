@@ -635,6 +635,126 @@ def generate_scales_queue ():
     #main_win.status.showMessage("Done Generating Scales ...")
 
 
+def generate_scales_optimized ():
+  alignem.print_debug (1, "generate_scales_optimized inside alignem_swift called")
+
+  image_scales_to_run = [alignem.get_scale_val (s) for s in sorted (alignem.project_data ['data'] ['scales'].keys ())]
+
+  alignem.print_debug (2, "Create images at all scales: " + str (image_scales_to_run))
+
+  if (alignem.project_data ['data'] ['destination_path'] == None) or (
+      len (alignem.project_data ['data'] ['destination_path']) <= 0):
+
+    alignem.show_warning ("Note", "Scales can not be generated without a destination (use File/Set Destination)")
+
+  else:
+
+    ### Create the queue here
+    task_queue.debug_level = alignem.debug_level
+    task_wrapper.debug_level = alignem.debug_level
+    scaling_queue = task_queue.TaskQueue (sys.executable)
+    cpus = psutil.cpu_count (logical=False)
+    scaling_queue.start (cpus)
+    scaling_queue.notify = True
+
+    for scale in sorted (image_scales_to_run):
+
+      alignem.print_debug (70, "Creating images for scale " + str (scale))
+      # main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+
+      scale_key = str (scale)
+      if not 'scale_' in scale_key:
+        scale_key = 'scale_' + scale_key
+
+      subdir_path = os.path.join (alignem.project_data ['data'] ['destination_path'], scale_key)
+      scale_1_path = os.path.join (alignem.project_data ['data'] ['destination_path'], 'scale_1')
+
+      create_project_structure_directories (subdir_path)
+
+      alignem.print_debug (70, "Begin creating images at each layer for key: " + str (scale_key))
+
+      for layer in alignem.project_data ['data'] ['scales'] [scale_key] ['alignment_stack']:
+        alignem.print_debug (40, "Generating images for layer: \"" + str (
+          alignem.project_data ['data'] ['scales'] [scale_key] ['alignment_stack'].index (layer)) + "\"")
+        # Remove previously aligned images from panel ??
+
+        # Copy (or link) the source images to the expected scale_key"/img_src" directory
+        for role in layer ['images'].keys ():
+
+          # Only copy files for roles "ref" and "base"
+
+          if role in ['ref', 'base']:
+            alignem.print_debug (40, "Generating images for role: \"" + role + "\"")
+            base_file_name = layer ['images'] [role] ['filename']
+            if base_file_name != None:
+              if len (base_file_name) > 0:
+                abs_file_name = os.path.abspath (base_file_name)
+                bare_file_name = os.path.split (abs_file_name) [1]
+                destination_path = os.path.abspath (alignem.project_data ['data'] ['destination_path'])
+                outfile_name = os.path.join (destination_path, scale_key, 'img_src', bare_file_name)
+                if scale == 1:
+                  if get_best_path (abs_file_name) != get_best_path (outfile_name):
+                    # The paths are different so make the link
+                    try:
+                      alignem.print_debug (70, "UnLinking " + outfile_name)
+                      os.unlink (outfile_name)
+                    except:
+                      alignem.print_debug (70, "Error UnLinking " + outfile_name)
+                    try:
+                      alignem.print_debug (70, "Linking from " + abs_file_name + " to " + outfile_name)
+                      os.symlink (abs_file_name, outfile_name)
+                    except:
+                      alignem.print_debug (5, "Unable to link from " + abs_file_name + " to " + outfile_name)
+                      alignem.print_debug (5, "Copying file instead")
+                      # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
+                      try:
+                        shutil.copy (abs_file_name, outfile_name)
+                      except:
+                        alignem.print_debug (1, "Unable to link or copy from " + abs_file_name + " to " + outfile_name)
+                        print_exception ()
+                else:
+                  try:
+                    # Do the scaling
+                    alignem.print_debug (70,
+                                         "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str (
+                                           scale))
+
+                    if os.path.split (os.path.split (os.path.split (abs_file_name) [0]) [0]) [1].startswith ('scale_'):
+                      # Convert the source from whatever scale is currently processed to scale_1
+                      p, f = os.path.split (abs_file_name)
+                      p, r = os.path.split (p)
+                      p, s = os.path.split (p)
+                      abs_file_name = os.path.join (p, 'scale_1', r, f)
+
+                    ### Add this job to the task queue
+                    scaling_queue.add_task (cmd=sys.executable,
+                                            args=['gen_scales_job.py', str (scale), str (abs_file_name),
+                                                  str (outfile_name)], wd='.')
+
+                    # These two lines generate the scales directly rather than through the queue
+                    # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+                    # align_swiftir.swiftir.saveImage ( img, outfile_name )
+
+                    # Change the base image for this scale to the new file
+                    layer ['images'] [role] ['filename'] = outfile_name
+                  except:
+                    alignem.print_debug (1,
+                                         "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str (
+                                           scale))
+                    print_exception ()
+
+                # Update the Data Model with the new absolute file name. This replaces the originally opened file names
+                alignem.print_debug (40, "Original File Name: " + str (layer ['images'] [role] ['filename']))
+                layer ['images'] [role] ['filename'] = outfile_name
+                alignem.print_debug (40, "Updated  File Name: " + str (layer ['images'] [role] ['filename']))
+
+    ### Join the queue here to ensure that all have been generated before returning
+    alignem.print_debug (1, "Waiting for TaskQueue.join to return")
+    scaling_queue.work_q.join ()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+
+  # main_win.status.showMessage("Done Generating Scales ...")
+
+
 def get_code_mode():
     ### All of this code is just trying to find the right menu item for the Use C Version check box:
     code_mode = 'python'
@@ -1062,6 +1182,7 @@ def copy_skips_to_all_scales():
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
 gen_scalesq_cb = CallbackButton('Gen Scales Q', generate_scales_queue)
+gen_scaleso_cb = CallbackButton('Gen Scales Opt', generate_scales_optimized)
 align_all_cb  = CallbackButton('Align All', align_all_or_some)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
@@ -1099,6 +1220,7 @@ control_model = [
     [
       gen_scales_cb,
       " ", gen_scalesq_cb,
+      " ", gen_scaleso_cb,
       " ", link_stacks_cb,
       " ", poly_order,
       " ", null_cafm_trends,
