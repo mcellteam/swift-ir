@@ -760,8 +760,12 @@ def generate_scales_optimized ():
     job_keys = sorted(scaling_jobs_by_input_file.keys())
     for k in job_keys:
       print ( " Scaling " + str(k) )
+      arg_list = ['multi_scale_job.py', k]
       for s in scaling_jobs_by_input_file[k]:
-        print ( "   " + str(s) )
+        arg_list.append ( str(s['scale']) )
+        arg_list.append ( str(s['target']) )
+      scaling_queue.add_task (cmd=sys.executable, args=arg_list, wd='.')
+
     ### Join the queue here to ensure that all have been generated before returning
     alignem.print_debug (1, "Waiting for TaskQueue.join to return")
     scaling_queue.work_q.join ()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
