@@ -129,8 +129,10 @@ class OutputQueue:
       errs = ' '.join(errs)
 
     else:
-
-      outs, errs = proc.communicate()
+      arg_in_stream = b''
+      for arg in arg_in:
+        arg_in_stream += bytes(arg + '\n','utf-8')
+      outs, errs = proc.communicate(input=arg_in_stream)
       outs = '' if outs == None else outs.decode('utf-8')
       errs = '' if errs == None else errs.decode('utf-8')
 
@@ -336,13 +338,10 @@ if (__name__ == '__main__'):
 
   my_q.work_q.join()
 
-#  print(my_q.task_dict[pids[0]]['stdout'])
-#  print(my_q.task_dict[pids[0]]['stderr'])
+#  sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
+#  sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])
 
 #  time.sleep(0.5)
-
-#  sys.stdout.write(my_q.task_dict[a_pid]['stdout'])
-#  sys.stdout.write(my_q.task_dict[a_pid]['stderr'])
 
   sys.stdout.write('\n\nTook {0:0.2f} seconds.\n\n'.format(time.time() - begin))
 
