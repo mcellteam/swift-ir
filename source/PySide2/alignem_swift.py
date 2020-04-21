@@ -16,6 +16,8 @@ from PySide2.QtCore import QThread, Signal, QObject
 
 import pyswift_tui
 import align_swiftir
+
+import psutil
 import task_queue
 # import task_wrapper
 
@@ -535,6 +537,10 @@ def generate_scales_queue ():
     else:
 
       ### Create the queue here
+      scaling_queue = task_queue.TaskQueue (sys.executable)
+      cpus = psutil.cpu_count (logical=False)
+      scaling_queue.start (cpus)
+      scaling_queue.notify = True
 
       for scale in sorted(image_scales_to_run):
 
@@ -603,6 +609,7 @@ def generate_scales_queue ():
                         abs_file_name = os.path.join ( p, 'scale_1', r, f )
 
                       ### Add this job to the task queue
+                      scaling_queue.add_task (cmd=sys.executable, args='gen_scales_job.py', wd='.')
 
                       img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
                       align_swiftir.swiftir.saveImage ( img, outfile_name )
@@ -618,6 +625,7 @@ def generate_scales_queue ():
                   alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
 
       ### Join the queue here to ensure that all have been generated before returning
+      scaling_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
 
     #main_win.status.showMessage("Done Generating Scales ...")
 
@@ -1151,7 +1159,8 @@ if __name__ == "__main__":
       "align_swiftir.py",
       "source_tracker.py",
       "task_queue.py",
-      "task_wrapper.py"
+      "task_wrapper.py",
+      "gen_scales_job.py"
     ]
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
