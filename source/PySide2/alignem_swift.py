@@ -19,7 +19,7 @@ import align_swiftir
 
 import psutil
 import task_queue
-# import task_wrapper
+import task_wrapper # Only needed to set the debug level for that module
 
 import time
 
@@ -537,6 +537,8 @@ def generate_scales_queue ():
     else:
 
       ### Create the queue here
+      task_queue.debug_level = alignem.debug_level
+      task_wrapper.debug_level = alignem.debug_level
       scaling_queue = task_queue.TaskQueue (sys.executable)
       cpus = psutil.cpu_count (logical=False)
       scaling_queue.start (cpus)
@@ -609,10 +611,12 @@ def generate_scales_queue ():
                         abs_file_name = os.path.join ( p, 'scale_1', r, f )
 
                       ### Add this job to the task queue
-                      scaling_queue.add_task (cmd=sys.executable, args='gen_scales_job.py', wd='.')
+                      scaling_queue.add_task (cmd=sys.executable, args=['gen_scales_job.py', str(scale), str(abs_file_name), str(outfile_name)], wd='.')
 
-                      img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
-                      align_swiftir.swiftir.saveImage ( img, outfile_name )
+                      # These two lines generate the scales directly rather than through the queue
+                      #img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+                      #align_swiftir.swiftir.saveImage ( img, outfile_name )
+
                       # Change the base image for this scale to the new file
                       layer['images'][role]['filename'] = outfile_name
                     except:
@@ -625,6 +629,7 @@ def generate_scales_queue ():
                   alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
 
       ### Join the queue here to ensure that all have been generated before returning
+      alignem.print_debug (1, "Waiting for TaskQueue.join to return")
       scaling_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
 
     #main_win.status.showMessage("Done Generating Scales ...")

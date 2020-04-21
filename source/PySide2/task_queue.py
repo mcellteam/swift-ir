@@ -10,6 +10,23 @@ import threading
 import subprocess as sp
 import time
 
+# This is monotonic (0 to 100) with the amount of output:
+debug_level = 0  # A larger value prints more stuff
+
+def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
+    global debug_level
+    if level <= debug_level:
+      if p1 == None:
+        print ( "" )
+      elif p2 == None:
+        print ( str(p1) )
+      elif p3 == None:
+        print ( str(p1) + str(p2) )
+      elif p4 == None:
+        print ( str(p1) + str(p2) + str(p3) )
+      else:
+        print ( str(p1) + str(p2) + str(p3) + str(p4) )
+
 '''
 #################################
 
@@ -59,9 +76,9 @@ class OutputQueue:
           if type(i) == type([]):
               self.flatten_list(i, f)
           else:
-              print ( " item: " + str(i) )
+              print_debug ( 3, " item: " + str(i) )
               f.append ( i )
-      print ( "flattened so far: " + str(f) )
+      print_debug ( 3, "flattened so far: " + str(f) )
 
 
   # In passthrough mode, set up threadworkers and queues to manage stdout and stderr of task and send command string and args to task_wrapper.py process
@@ -93,8 +110,8 @@ class OutputQueue:
         t.start()
 
       if arg_in:
-        sys.stdout.write('run_proc in task_queue.py with arg_in = ' + str(arg_in) + '\n')
-        sys.stdout.write('run_proc in task_queue.py with args:\n')
+        if debug_level > 4: sys.stdout.write('run_proc in task_queue.py with arg_in = ' + str(arg_in) + '\n')
+        if debug_level > 4: sys.stdout.write('run_proc in task_queue.py with args:\n')
         for arg in arg_in:
           char_stream = ""
           if type(arg) == type([]):
@@ -110,8 +127,8 @@ class OutputQueue:
           else:
             # Use previous string format
             char_stream = arg
-          sys.stdout.write('  arg: ' + str(char_stream) + '\n')
-#          sys.stdout.write('run_proc sending: {0}\n'.format(arg).encode().decode())
+          if debug_level > 4: sys.stdout.write('  arg: ' + str(char_stream) + '\n')
+#          if debug_level > 4: sys.stdout.write('run_proc sending: {0}\n'.format(arg).encode().decode())
           proc.stdin.write('{0}\n'.format(char_stream).encode())
           proc.stdin.flush()
       proc.wait()
@@ -177,9 +194,9 @@ class TaskQueue:
       cmd = task['cmd']
       args = task['args']
       if self.notify:
-        sys.stdout.write('Starting PID {0} {1}\n'.format(pid, cmd))
+        if debug_level > 4: sys.stdout.write('Starting PID {0} {1}\n'.format(pid, cmd))
       out_q = OutputQueue()
-#      sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
+#      if debug_level > 4: sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
       task['status'] = 'running'
       self.task_dict[pid]['output'] = []
       rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, output_list=self.task_dict[pid]['output'])
@@ -195,9 +212,9 @@ class TaskQueue:
         else:
           task['status'] = 'died'
       if self.notify:
-        sys.stdout.write('Task PID {0}  status: {1}  return code: {2}\n'.format(pid, task['status'], rc))
+        if debug_level > 4: sys.stdout.write('Task PID {0}  status: {1}  return code: {2}\n'.format(pid, task['status'], rc))
       self.work_q.task_done()
-    sys.stdout.write('Worker thread %s exiting\n' % (threading.currentThread().getName()))
+    if debug_level > 4: sys.stdout.write('Worker thread %s exiting\n' % (threading.currentThread().getName()))
 
   def clear_queue(self):
     with self.work_q.mutex:
@@ -234,11 +251,11 @@ class TaskQueue:
 
   def shutdown(self):
 
-    sys.stdout.write("Shutting down task queue...\n")
+    if debug_level > 4: sys.stdout.write("Shutting down task queue...\n")
 
     # Send stop signal to worker threads
     for i in range(self.n_threads):
-      sys.stdout.write('Stopping thread %s\n' % (self.workers[i].getName()))
+      if debug_level > 4: sys.stdout.write('Stopping thread %s\n' % (self.workers[i].getName()))
       self.work_q.put(None)
 
     pids = list(self.task_dict.keys())
@@ -263,14 +280,14 @@ class TaskQueue:
         task['status'] = 'died'
 
     # Now wait for workers to finish and exit
-    sys.stdout.write('Waiting for task worker threads to exit...\n')
+    if debug_level > 4: sys.stdout.write('Waiting for task worker threads to exit...\n')
     for worker in self.workers:
       worker.join()
 
-    sys.stdout.write('Waiting for task queue to exit...\n')
+    if debug_level > 4: sys.stdout.write('Waiting for task queue to exit...\n')
     self.work_q.join()
 
-    sys.stdout.write("Done shutting down task queue.\n")
+    if debug_level > 4: sys.stdout.write("Done shutting down task queue.\n")
     sys.stdout.flush()
 
 
@@ -338,11 +355,11 @@ if (__name__ == '__main__'):
 
   my_q.work_q.join()
 
-#  sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
-#  sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])
+#  if debug_level > 4: sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
+#  if debug_level > 4: sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])
 
 #  time.sleep(0.5)
 
-  sys.stdout.write('\n\nTook {0:0.2f} seconds.\n\n'.format(time.time() - begin))
+  if debug_level > 4: sys.stdout.write('\n\nTook {0:0.2f} seconds.\n\n'.format(time.time() - begin))
 
 

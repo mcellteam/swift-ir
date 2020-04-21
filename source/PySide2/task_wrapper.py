@@ -6,6 +6,23 @@ import sys
 import signal
 import subprocess as sp
 
+# This is monotonic (0 to 100) with the amount of output:
+debug_level = 0  # A larger value prints more stuff
+
+def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
+    global debug_level
+    if level <= debug_level:
+      if p1 == None:
+        print ( "" )
+      elif p2 == None:
+        print ( str(p1) )
+      elif p3 == None:
+        print ( str(p1) + str(p2) )
+      elif p4 == None:
+        print ( str(p1) + str(p2) + str(p3) )
+      else:
+        print ( str(p1) + str(p2) + str(p3) + str(p4) )
+
 
 def is_windows ():
 
@@ -31,7 +48,7 @@ def is_windows ():
 def parse_quoted_args_posix ( s ):
     # Turn a string of quoted arguments into a list of arguments
     # This code handles escaped quotes (\") and escaped backslashes (\\)
-    print ( "parse_quoted_args_posix got " + s )
+    print_debug ( 3, "parse_quoted_args_posix got " + s )
     args = []
     next = ""
     inquote = False
@@ -64,7 +81,7 @@ def parse_quoted_args_posix ( s ):
 
 def parse_quoted_args_windows ( s ):
 	# Turn a string of quoted arguments into a list of arguments
-	print ( "parse_quoted_args_windows got " + s )
+	print_debug ( 3, "parse_quoted_args_windows got " + s )
 	args = []
 	next = ""
 	inquote = False
@@ -82,7 +99,7 @@ def parse_quoted_args_windows ( s ):
 		i += 1
 	if len(next) > 0:
 		args.append ( next )
-	print ( "parse_quoted_args_windows returning " + str(args) )
+	print_debug ( 3, "parse_quoted_args_windows returning " + str(args) )
 	return args
 
 def convert_for_windows ( cmds ):
@@ -108,42 +125,42 @@ if __name__ == '__main__':
         cmd = raw_input()
         args = raw_input()
 
-      sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
-      sys.stdout.write('Running task_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
+      if debug_level > 4: sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
+      if debug_level > 4: sys.stdout.write('Running task_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
 
       cmd_list = []
       if (cmd.strip()[0] == '"') and (cmd.strip()[-1] == '"'):
-        sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd )
+        if debug_level > 4: sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd )
         # Using quoted command syntax, so remove quotes before adding
         cmd_list.extend ( parse_quoted_args_windows(cmd.strip()) )
       else:
-        sys.stdout.write("\nUsing string command syntax\n")
+        if debug_level > 4: sys.stdout.write("\nUsing string command syntax\n")
         # Just add the string as before
         cmd_list.append(cmd)
 
       if (args.strip()[0] == '"') and (args.strip()[-1] == '"'):
-        sys.stdout.write("\nUsing quoted arg syntax\n")
+        if debug_level > 4: sys.stdout.write("\nUsing quoted arg syntax\n")
         cmd_list.extend ( parse_quoted_args_windows ( args.strip() ) )
         # Using quoted arguments syntax (space separated list of strings), so remove quotes before adding
         # cmd_list.append ( cmd.strip()[1:-1] )
       else:
-        sys.stdout.write("\nUsing string arg syntax\n")
+        if debug_level > 4: sys.stdout.write("\nUsing string arg syntax\n")
         # Just add the strings split by spaces as before
         cmd_list.extend(args.split())
 
-      sys.stdout.write ( "\nNormal cmd_list: " + str(cmd_list) )
+      if debug_level > 4: sys.stdout.write ( "\nNormal cmd_list: " + str(cmd_list) )
       cmd_list = convert_for_windows ( cmd_list )
-      sys.stdout.write ( "\nWindows cmd_list: " + str(cmd_list) )
+      if debug_level > 4: sys.stdout.write ( "\nWindows cmd_list: " + str(cmd_list) )
 
-      sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
+      if debug_level > 4: sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
 
       proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
       def sig_handler(signum, frame):
-        sys.stdout.write('\nSending signal: {0} to child PID: {1}\n'.format(signum, proc.pid))
+        if debug_level > 4: sys.stdout.write('\nSending signal: {0} to child PID: {1}\n'.format(signum, proc.pid))
         sys.stdout.flush()
         proc.send_signal(signum)
-        sys.stdout.write('\nTerminated task_wrapper.py\n')
+        if debug_level > 4: sys.stdout.write('\nTerminated task_wrapper.py\n')
         sys.stdout.flush()
         exit(15)
 
@@ -164,43 +181,43 @@ if __name__ == '__main__':
         cmd = raw_input()
         args = raw_input()
 
-      sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
-      sys.stdout.write('Running task_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
+      if debug_level > 4: sys.stdout.write('\n\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n')
+      if debug_level > 4: sys.stdout.write('Running task_wrapper.py with \n  cmd: {0}   \n  args: {1}   \n  wd: {2}\n'.format(cmd, args, wd))
 
       cmd_list = []
       if (cmd.strip()[0] == '"') and (cmd.strip()[-1] == '"'):
-        sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd )
+        if debug_level > 4: sys.stdout.write("\nUsing quoted command syntax with cmd:\n " + cmd )
         # Using quoted command syntax, so remove quotes before adding
         cmd_list.extend ( parse_quoted_args_posix(cmd.strip()) )
       else:
-        sys.stdout.write("\nUsing string command syntax\n")
+        if debug_level > 4: sys.stdout.write("\nUsing string command syntax\n")
         # Just add the string as before
         cmd_list.extend(cmd.split())
 
       if len(args.split()):
         if (args.strip()[0] == '"') and (args.strip()[-1] == '"'):
-          sys.stdout.write("\nUsing quoted arg syntax\n")
+          if debug_level > 4: sys.stdout.write("\nUsing quoted arg syntax\n")
           cmd_list.extend ( parse_quoted_args_posix(args.strip()) )
           # Using quoted arguments syntax (space separated list of strings), so remove quotes before adding
           # cmd_list.append ( cmd.strip()[1:-1] )
         else:
-          sys.stdout.write("\nUsing string arg syntax\n")
+          if debug_level > 4: sys.stdout.write("\nUsing string arg syntax\n")
           # Just add the strings split by spaces as before
           cmd_list.extend(args.split())
 
-      sys.stdout.write ( "\nFinal cmd_list: " + str(cmd_list) )
+      if debug_level > 4: sys.stdout.write ( "\nFinal cmd_list: " + str(cmd_list) )
 
-      sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
+      if debug_level > 4: sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
 
       proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
 #      proc = sp.Popen(['echo "this is it" > foo_5.txt'], cwd=wd, bufsize=1, shell=True, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
       def sig_handler(signum, frame):
-        sys.stdout.write('\nSending signal: {0} to child PID: {1}\n'.format(signum, proc.pid))
+        if debug_level > 4: sys.stdout.write('\nSending signal: {0} to child PID: {1}\n'.format(signum, proc.pid))
         sys.stdout.flush()
         proc.send_signal(signum)
-        sys.stdout.write('\nTerminated task_wrapper.py\n')
+        if debug_level > 4: sys.stdout.write('\nTerminated task_wrapper.py\n')
         sys.stdout.flush()
         exit(15)
 
