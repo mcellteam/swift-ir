@@ -611,7 +611,7 @@ def generate_scales_queue ():
                         abs_file_name = os.path.join ( p, 'scale_1', r, f )
 
                       ### Add this job to the task queue
-                      scaling_queue.add_task (cmd=sys.executable, args=['gen_scales_job.py', str(scale), str(abs_file_name), str(outfile_name)], wd='.')
+                      scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str(scale), str(abs_file_name), str(outfile_name)], wd='.')
 
                       # These two lines generate the scales directly rather than through the queue
                       #img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
@@ -737,7 +737,7 @@ def generate_scales_optimized ():
                       scaling_jobs_by_input_file[abs_file_name] = []
                     scaling_jobs_by_input_file[abs_file_name].append ( {'scale':scale, 'target':outfile_name} )
                     #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-                    #scaling_queue.add_task (cmd=sys.executable, args=['gen_scales_job.py', str (scale), str (abs_file_name), str(outfile_name)], wd='.')
+                    #scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str (scale), str (abs_file_name), str(outfile_name)], wd='.')
                     # These two lines generate the scales directly rather than through the queue
                     # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
                     # align_swiftir.swiftir.saveImage ( img, outfile_name )
@@ -1301,7 +1301,7 @@ if __name__ == "__main__":
       "source_tracker.py",
       "task_queue.py",
       "task_wrapper.py",
-      "gen_scales_job.py"
+      "single_scale_job.py"
     ]
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
