@@ -657,6 +657,9 @@ def generate_scales_optimized ():
     scaling_queue.start (cpus)
     scaling_queue.notify = True
 
+    # Create a list of scaling jobs to be built by looping through scales and layers
+    scaling_jobs_by_input_file = {}
+
     for scale in sorted (image_scales_to_run):
 
       alignem.print_debug (70, "Creating images for scale " + str (scale))
@@ -673,7 +676,11 @@ def generate_scales_optimized ():
 
       alignem.print_debug (70, "Begin creating images at each layer for key: " + str (scale_key))
 
+      layer_index = 0
       for layer in alignem.project_data ['data'] ['scales'] [scale_key] ['alignment_stack']:
+        #if not layer_index in scaling_jobs_by_input_file:
+        #  scaling_jobs_by_input_file[layer_index] = []
+
         alignem.print_debug (40, "Generating images for layer: \"" + str (
           alignem.project_data ['data'] ['scales'] [scale_key] ['alignment_stack'].index (layer)) + "\"")
         # Remove previously aligned images from panel ??
@@ -693,6 +700,7 @@ def generate_scales_optimized ():
                 destination_path = os.path.abspath (alignem.project_data ['data'] ['destination_path'])
                 outfile_name = os.path.join (destination_path, scale_key, 'img_src', bare_file_name)
                 if scale == 1:
+                  # Make links or copy immediately without creating a job
                   if get_best_path (abs_file_name) != get_best_path (outfile_name):
                     # The paths are different so make the link
                     try:
@@ -715,9 +723,7 @@ def generate_scales_optimized ():
                 else:
                   try:
                     # Do the scaling
-                    alignem.print_debug (70,
-                                         "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str (
-                                           scale))
+                    alignem.print_debug (70, "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale))
 
                     if os.path.split (os.path.split (os.path.split (abs_file_name) [0]) [0]) [1].startswith ('scale_'):
                       # Convert the source from whatever scale is currently processed to scale_1
@@ -726,11 +732,12 @@ def generate_scales_optimized ():
                       p, s = os.path.split (p)
                       abs_file_name = os.path.join (p, 'scale_1', r, f)
 
-                    ### Add this job to the task queue
-                    scaling_queue.add_task (cmd=sys.executable,
-                                            args=['gen_scales_job.py', str (scale), str (abs_file_name),
-                                                  str (outfile_name)], wd='.')
-
+                    ### Add this job to the task queue or job list
+                    if not (abs_file_name in scaling_jobs_by_input_file.keys()):
+                      scaling_jobs_by_input_file[abs_file_name] = []
+                    scaling_jobs_by_input_file[abs_file_name].append ( {'scale':scale, 'target':outfile_name} )
+                    #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+                    #scaling_queue.add_task (cmd=sys.executable, args=['gen_scales_job.py', str (scale), str (abs_file_name), str(outfile_name)], wd='.')
                     # These two lines generate the scales directly rather than through the queue
                     # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
                     # align_swiftir.swiftir.saveImage ( img, outfile_name )
@@ -738,9 +745,7 @@ def generate_scales_optimized ():
                     # Change the base image for this scale to the new file
                     layer ['images'] [role] ['filename'] = outfile_name
                   except:
-                    alignem.print_debug (1,
-                                         "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str (
-                                           scale))
+                    alignem.print_debug (1, "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale))
                     print_exception ()
 
                 # Update the Data Model with the new absolute file name. This replaces the originally opened file names
@@ -748,6 +753,15 @@ def generate_scales_optimized ():
                 layer ['images'] [role] ['filename'] = outfile_name
                 alignem.print_debug (40, "Updated  File Name: " + str (layer ['images'] [role] ['filename']))
 
+        layer_index += 1
+
+    print ( "Jobs to Scale: " + str(scaling_jobs_by_input_file) )
+    print()
+    job_keys = sorted(scaling_jobs_by_input_file.keys())
+    for k in job_keys:
+      print ( " Scaling " + str(k) )
+      for s in scaling_jobs_by_input_file[k]:
+        print ( "   " + str(s) )
     ### Join the queue here to ensure that all have been generated before returning
     alignem.print_debug (1, "Waiting for TaskQueue.join to return")
     scaling_queue.work_q.join ()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
