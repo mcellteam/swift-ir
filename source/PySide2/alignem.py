@@ -203,6 +203,29 @@ class ImageLibrary:
                 image_ref = self._images[real_norm_path]['image']
         return image_ref
 
+    def get_image_reference_if_loaded ( self, file_path ):
+        image_ref = None
+        real_norm_path = self.pathkey(file_path)
+        if real_norm_path != None:
+            # This is an actual path
+            if real_norm_path in self._images:
+                # This file is already in the library ... it may be complete or still loading
+                if self._images[real_norm_path]['loaded']:
+                    # The image is already loaded, so return it
+                    image_ref = self._images[real_norm_path]['image']
+                elif self._images[real_norm_path]['loading']:
+                    # The image is still loading, so wait for it to complete
+                    self._images[real_norm_path]['task'].join()
+                    self._images[real_norm_path]['task'] = None
+                    self._images[real_norm_path]['loaded'] = True
+                    self._images[real_norm_path]['loading'] = False
+                    image_ref = self._images[real_norm_path]['image']
+                else:
+                    print_debug ( 5, "  Load Warning for: \"" + str(real_norm_path) + "\"" )
+                    image_ref = self._images[real_norm_path]['image']
+        return image_ref
+
+
     def remove_image_reference ( self, file_path ):
         image_ref = None
         if not (file_path is None):
@@ -336,7 +359,7 @@ class ZoomPanWidget(QWidget):
         self.zoom_to_wheel_at ( 0, 0 )
 
 
-    def center_image ( self ):
+    def center_image ( self, all_images_in_stack = True ):
         print_debug ( 30, "Centering image for " + str(self.role) )
 
         if project_data != None:
@@ -352,11 +375,26 @@ class ZoomPanWidget(QWidget):
                     if self.role in image_dict.keys():
                         ann_image = image_dict[self.role]
                         pixmap = image_library.get_image_reference(ann_image['filename'])
-                        if pixmap != None:
-                            img_w = pixmap.width()
-                            img_h = pixmap.height()
+                        if (pixmap != None) or all_images_in_stack:
+                            img_w = 0
+                            img_h = 0
+                            if pixmap != None:
+                                img_w = pixmap.width()
+                                img_h = pixmap.height()
                             win_w = self.width()
                             win_h = self.height()
+                            if all_images_in_stack:
+                                # Search through all images in this stack to find bounds
+                                stack = project_data['data']['scales'][s]['alignment_stack']
+                                for layer in stack:
+                                    if 'images' in layer.keys():
+                                        if self.role in layer['images'].keys():
+                                            other_pixmap = image_library.get_image_reference_if_loaded(layer['images'][self.role]['filename'])
+                                            if other_pixmap != None:
+                                                other_w = other_pixmap.width()
+                                                other_h = other_pixmap.height()
+                                                img_w = max(img_w, other_w)
+                                                img_h = max(img_h, other_h)
 
                             if (img_w<=0) or (img_h<=0) or (win_w<=0) or (win_h<=0):  # Zero or negative dimensions might lock up?
 
@@ -840,12 +878,12 @@ class MultiImagePanel(QWidget):
                 p.repaint()
         self.repaint()
 
-    def center_all_images ( self ):
+    def center_all_images ( self, all_images_in_stack=True ):
         print_debug ( 30, "In MultiImagePanel.center_all_images" )
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
-                p.center_image()
+                p.center_image(all_images_in_stack=all_images_in_stack)
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
@@ -2314,8 +2352,8 @@ class MainWindow(QMainWindow):
             p.repaint()
 
     @Slot()
-    def center_all_images(self):
-        self.image_panel.center_all_images()
+    def center_all_images(self,all_images_in_stack=True):
+        self.image_panel.center_all_images(all_images_in_stack=all_images_in_stack)
 
     @Slot()
     def refresh_all_images(self):
