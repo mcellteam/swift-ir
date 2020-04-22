@@ -1198,9 +1198,9 @@ def copy_skips_to_all_scales():
 
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
-gen_scales_cb = CallbackButton('Gen Scales', generate_scales)
-gen_scalesq_cb = CallbackButton('Gen Scales Q', generate_scales_queue)
-gen_scaleso_cb = CallbackButton('Gen Scales Opt', generate_scales_optimized)
+#gen_scales_cb = CallbackButton('Gen Scales Ser', generate_scales)
+#gen_scalesq_cb = CallbackButton('Gen Scales Q', generate_scales_queue)
+gen_scales_opt_cb = CallbackButton('Gen Scales', generate_scales_optimized)
 align_all_cb  = CallbackButton('Align All', align_all_or_some)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
@@ -1236,9 +1236,9 @@ control_model = [
   # Panes
   [ # Begin first pane of rows
     [
-      gen_scales_cb,
-      " ", gen_scalesq_cb,
-      " ", gen_scaleso_cb,
+      # gen_scales_cb,
+      # " ", gen_scalesq_cb,
+      " ", gen_scales_opt_cb,
       " ", link_stacks_cb,
       " ", poly_order,
       " ", null_cafm_trends,
