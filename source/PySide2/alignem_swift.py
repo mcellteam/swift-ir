@@ -835,16 +835,18 @@ def align_layers ( first_layer=0, num_layers=-1 ):
       # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
       this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
       stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
-      for layer in stack_at_this_scale:
-        image_name = None
-        if 'base' in layer['images'].keys():
-          image = layer['images']['base']
-          try:
-            image_name = os.path.basename(image['filename'])
-            destination_image_name = os.path.join(source_dir,image_name)
-            shutil.copyfile(image.image_file_name, destination_image_name)
-          except:
-            pass
+
+      if False:
+        for layer in stack_at_this_scale:
+          image_name = None
+          if 'base' in layer['images'].keys():
+            image = layer['images']['base']
+            try:
+              image_name = os.path.basename(image['filename'])
+              destination_image_name = os.path.join(source_dir,image_name)
+              shutil.copyfile(image.image_file_name, destination_image_name)
+            except:
+              pass
 
       # Copy the data model for this project to add local fields
       dm = copy.deepcopy ( alignem.project_data )
