@@ -1601,6 +1601,9 @@ class MainWindow(QMainWindow):
             self.current_project_file_name = None
             project_data['data']['destination_path'] = None
 
+            self.set_scales_from_string ( "1" )
+            self.define_scales_menu ( ["1"] )
+
             self.setWindowTitle ("No Project File")
             self.status.showMessage ( "Project File:       Destination: " )
 
@@ -1649,8 +1652,10 @@ class MainWindow(QMainWindow):
                                              + "   Destination: " + str(proj_copy ['data'] ['destination_path']))
 
                     # Modify the copy to use absolute paths internally
-                    if len(proj_copy['data']['destination_path']) > 0:
-                      proj_copy['data']['destination_path'] = self.make_absolute ( proj_copy['data']['destination_path'], self.current_project_file_name )
+                    if 'destination_path' in proj_copy['data']:
+                      if proj_copy['data']['destination_path'] != None:
+                        if len(proj_copy['data']['destination_path']) > 0:
+                          proj_copy['data']['destination_path'] = self.make_absolute ( proj_copy['data']['destination_path'], self.current_project_file_name )
                     for scale_key in proj_copy['data']['scales'].keys():
                       scale_dict = proj_copy['data']['scales'][scale_key]
                       for layer in scale_dict['alignment_stack']:
@@ -2119,6 +2124,48 @@ class MainWindow(QMainWindow):
                   else:
                     a.setChecked ( False )
 
+    def set_scales_from_string(self, scale_string):
+        cur_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in project_data['data']['scales'].keys() ] ) ]
+        scale_string = scale_string.strip ()
+        if len (scale_string) > 0:
+            input_scales = []
+            try:
+                input_scales = [str (v) for v in sorted ([get_scale_val (s) for s in scale_string.strip ().split (' ')])]
+            except:
+                print_debug (1, "Bad input: (" + str (scale_string) + "), Scales not changed")
+                input_scales = []
+
+            if not (input_scales == cur_scales):
+                # The scales have changed!!
+                self.define_scales_menu (input_scales)
+                cur_scale_keys = [get_scale_key (v) for v in cur_scales]
+                input_scale_keys = [get_scale_key (v) for v in input_scales]
+
+                # Remove any scales not in the new list (except always leave 1)
+                scales_to_remove = []
+                for scale_key in project_data ['data'] ['scales'].keys ():
+                    if not (scale_key in input_scale_keys):
+                        if get_scale_val (scale_key) != 1:
+                            scales_to_remove.append (scale_key)
+                for scale_key in scales_to_remove:
+                    project_data ['data'] ['scales'].pop (scale_key)
+
+                # Add any scales not in the new list
+                scales_to_add = []
+                for scale_key in input_scale_keys:
+                    if not (scale_key in project_data ['data'] ['scales'].keys ()):
+                        scales_to_add.append (scale_key)
+                for scale_key in scales_to_add:
+                    new_stack = []
+                    scale_1_stack = project_data ['data'] ['scales'] [get_scale_key (1)] ['alignment_stack']
+                    for l in scale_1_stack:
+                        new_layer = copy.deepcopy (l)
+                        new_stack.append (new_layer)
+                    project_data ['data'] ['scales'] [scale_key] = { 'alignment_stack': new_stack, 'method_data': {
+                        'alignment_option': 'init_affine' } }
+        else:
+            print_debug (30, "No input: Scales not changed")
+
 
     @Slot()
     def define_scales_callback(self):
@@ -2130,6 +2177,8 @@ class MainWindow(QMainWindow):
 
         input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(default_scales)), echo=QLineEdit.Normal, text=' '.join(default_scales) )
         if ok:
+            set_scales_from_string ( input_val )
+            '''
             input_val = input_val.strip()
             if len(input_val) > 0:
                 input_scales = []
@@ -2168,6 +2217,7 @@ class MainWindow(QMainWindow):
                       project_data['data']['scales'][scale_key] = { 'alignment_stack': new_stack, 'method_data': {'alignment_option': 'init_affine'} }
             else:
                 print_debug ( 30, "No input: Scales not changed" )
+            '''
         else:
             print_debug ( 30, "Cancel: Scales not changed" )
 
