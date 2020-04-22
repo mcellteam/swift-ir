@@ -184,15 +184,18 @@ class TaskQueue:
 
   def run_q_item(self):
     while True:
-      task = self.work_q.get()
-      if task == None:
+      work = self.work_q.get()
+      if work == None:
         self.work_q.task_done()
         break
 
-      process = task['process']
+#      process = work['process']
+      process = self.create_process(work)
       pid = process.pid
+      task = self.task_dict[pid]
       cmd = task['cmd']
       args = task['args']
+
       if self.notify:
         if debug_level > 4: sys.stdout.write('Starting PID {0} {1}\n'.format(pid, cmd))
       out_q = OutputQueue()
@@ -202,6 +205,9 @@ class TaskQueue:
       rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, output_list=self.task_dict[pid]['output'])
       self.task_dict[pid]['stdout'] = res[0]
       self.task_dict[pid]['stderr'] = res[1]
+      process.stdin.close()
+      process.stdout.close()
+      process.stderr.close()
 #      self.task_dict[pid]['text'].write(res[0])
 #      self.task_dict[pid]['text'].write(res[1])
       if task['status'] != 'died':
@@ -221,6 +227,24 @@ class TaskQueue:
       self.work_q.queue.clear()
 
   def add_task(self,cmd='',args='',wd=None,env=None):
+
+    # Lighter-weight method for adding task
+    #   Create a string template for the process 
+    #   The template will be used to create the actual task process
+    #   only when a thread worker grabs it from the work_q 
+
+    process_template = "sp.Popen(['%s', '%s', '%s'], env=None, bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)" % (self.python_exec, self.task_wrapper, wd)
+
+    work = {}
+    work['process_template'] = process_template
+    work['cmd'] = cmd
+    work['args'] = args
+    self.work_q.put(work)
+
+    # Disable previous working method for adding task
+    #   Disadvantage is that it creates the process here
+    #   and this consumes valuable resources in the os process table
+    '''
     process = sp.Popen([self.python_exec, self.task_wrapper, wd], env=env, bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
     self.task_dict[pid] = {}
@@ -232,6 +256,20 @@ class TaskQueue:
     self.task_dict[pid]['stderr'] = b''
     self.task_dict[pid]['output'] = []
     self.work_q.put(self.task_dict[pid])
+    return process
+    '''
+
+  def create_process(self,work):
+    process = eval(work['process_template'])
+    pid = process.pid
+    self.task_dict[pid] = {}
+    self.task_dict[pid]['process'] = process
+    self.task_dict[pid]['cmd'] = work['cmd']
+    self.task_dict[pid]['args'] = work['args']
+    self.task_dict[pid]['status'] = 'queued'
+    self.task_dict[pid]['stdout'] = b''
+    self.task_dict[pid]['stderr'] = b''
+    self.task_dict[pid]['output'] = []
     return process
 
   def kill_task(self,pid):
@@ -333,6 +371,9 @@ if (__name__ == '__main__'):
   my_q.add_task(cmd='cp foo.txt foo_2.txt', wd=wd)
   my_q.add_task(cmd='cp foo.txt foo_3.txt', wd=wd)
   my_q.add_task(cmd='cp foo.txt foo_4.txt', wd=wd)
+  my_q.add_task(cmd='pwd', wd=wd)
+  my_q.add_task(cmd='ls', args='.', wd=wd)
+  my_q.add_task(cmd='echo', args='Hello World!!!', wd=wd)
 #  my_hello = os.path.join(my_q.module_dir_path,'hello_world.py')
 #  my_q.add_task(cmd='python', args=my_hello, wd=wd)
 
