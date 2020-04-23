@@ -464,8 +464,14 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       atrm['method_data']['alignment_option'] = alignment_option
 
       # Upscale x & y bias values
-      atrm['method_data']['bias_x_per_image'] = upscale*atrm['method_data']['bias_x_per_image']
-      atrm['method_data']['bias_y_per_image'] = upscale*atrm['method_data']['bias_y_per_image']
+      if 'bias_x_per_image' in atrm['method_data']:
+        atrm['method_data']['bias_x_per_image'] = upscale*atrm['method_data']['bias_x_per_image']
+      else:
+        atrm ['method_data'] ['bias_x_per_image'] = 0
+      if 'bias_y_per_image' in atrm['method_data']:
+        atrm['method_data']['bias_y_per_image'] = upscale*atrm['method_data']['bias_y_per_image']
+      else:
+        atrm['method_data']['bias_y_per_image'] = 0
       # TODO: handle bias values in a better way than this
       x_bias = atrm['method_data']['bias_x_per_image']
       y_bias = atrm['method_data']['bias_y_per_image']
@@ -812,9 +818,10 @@ def print_command_line_syntax ( args ):
   print_debug ( -1, '  Result is written to output project file.' )
   print_debug ( -1, 'Options:' )
   print_debug ( -1, '  -code m             : m = c | python' )
-  print_debug ( -1, '  -start s            : s = first layer number (starting at 0), defaults to 0' )
-  print_debug ( -1, '  -count n            : n = number of layers (-1 for all remaining), defaults to -1' )
-  print_debug ( -1, '  -debug d            : d = debug level (0-100, larger numbers produce more output)' )
+  print_debug ( -1, '  -scale #            : # = first layer number (starting at 0), defaults to 0' )
+  print_debug ( -1, '  -start #            : # = first layer number (starting at 0), defaults to 0' )
+  print_debug ( -1, '  -count #            : # = number of layers (-1 for all remaining), defaults to -1' )
+  print_debug ( -1, '  -debug #            : # = debug level (0-100, larger numbers produce more output)' )
   print_debug ( -1, '  -alignment_option o : o = init_affine | refine_affine | apply_affine' )
   print_debug ( -1, 'Arguments:' )
   print_debug ( -1, '  inproject.json      : input project file name (opened for reading only)' )
