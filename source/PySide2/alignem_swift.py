@@ -17,6 +17,7 @@ from PySide2.QtCore import QThread, Signal, QObject
 import pyswift_tui
 import align_swiftir
 
+import platform
 import psutil
 import task_queue
 import task_wrapper # Only needed to set the debug level for that module
@@ -611,7 +612,25 @@ def generate_scales_queue ():
                         abs_file_name = os.path.join ( p, 'scale_1', r, f )
 
                       ### Add this job to the task queue
-                      scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str(scale), str(abs_file_name), str(outfile_name)], wd='.')
+                      code_mode = get_code_mode()
+                      if code_mode == 'python':
+                        scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str(scale), str(abs_file_name), str(outfile_name)], wd='.')
+                      else:
+                        # Configure platform-specific path to executables for C SWiFT-IR
+                        my_system = platform.system()
+                        my_node = platform.node()
+                        if my_system == 'Darwin':
+                          iscale2_c = '../c/bin_darwin/iscale2'
+                        elif my_system == 'Linux':
+                          if '.tacc.utexas.edu' in my_node:
+                            iscale2_c = '../c/bin_tacc/iscale2'
+                          else:
+                            iscale2_c = '../c/bin_linux/iscale2'
+
+                        scale_arg = '+%d' % (scale)
+                        outfile_arg = 'of=%s' % (outfile_name)
+                        infile_arg = '%s' % (abs_file_name)
+                        scaling_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
 
                       # These two lines generate the scales directly rather than through the queue
                       #img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
@@ -1201,8 +1220,8 @@ def copy_skips_to_all_scales():
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 #gen_scales_cb = CallbackButton('Gen Scales Ser', generate_scales)
-#gen_scalesq_cb = CallbackButton('Gen Scales Q', generate_scales_queue)
-gen_scales_opt_cb = CallbackButton('Gen Scales', generate_scales_optimized)
+gen_scalesq_cb = CallbackButton('Gen Scales', generate_scales_queue)
+#gen_scales_opt_cb = CallbackButton('Gen Scales Opt', generate_scales_optimized)
 align_all_cb  = CallbackButton('Align All', align_all_or_some)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
@@ -1239,8 +1258,8 @@ control_model = [
   [ # Begin first pane of rows
     [
       # gen_scales_cb,
-      # " ", gen_scalesq_cb,
-      " ", gen_scales_opt_cb,
+      " ", gen_scalesq_cb,
+      # " ", gen_scales_opt_cb,
       " ", link_stacks_cb,
       " ", poly_order,
       " ", null_cafm_trends,
