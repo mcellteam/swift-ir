@@ -6,7 +6,6 @@ using any number of technologies.
 
 import sys, traceback
 import os
-import argparse
 import copy
 import cv2
 import json
@@ -1652,6 +1651,7 @@ class MainWindow(QMainWindow):
         print_debug ( 20, "\n\nOpening Project\n\n" )
 
         options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
         file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
                                                           caption="Open Project",
                                                           filter="Projects (*.json);;All Files (*)",
@@ -1779,6 +1779,7 @@ class MainWindow(QMainWindow):
         print_debug ( 1, "\n\nSaving Project\n\n" )
 
         options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
         file_name, filter = QFileDialog.getSaveFileName ( parent=None,  # None was self
                                                           caption="Save Project",
                                                           filter="Projects (*.json);;All Files (*)",
@@ -1959,9 +1960,7 @@ class MainWindow(QMainWindow):
         print_debug ( 5, "Importing images dialog for role: " + str(import_role_name) )
 
         options = QFileDialog.Options()
-        #if False:  # self.native.isChecked():
-        #    options |= QFileDialog.DontUseNativeDialog
-
+        options |= QFileDialog.DontUseNativeDialog
         file_name_list, filtr = QFileDialog.getOpenFileNames ( None,  # None was self
                                                                "Select Images to Import",
                                                                #self.openFileNameLabel.text(),
@@ -1985,8 +1984,7 @@ class MainWindow(QMainWindow):
 
         options = QFileDialog.Options()
         options |= QFileDialog.Directory
-        #if False:  # self.native.isChecked():
-        #    options |= QFileDialog.DontUseNativeDialog
+        options |= QFileDialog.DontUseNativeDialog
 
         project_data['data']['destination_path'] = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=project_data['data']['destination_path'], options=options)
         print_debug ( 1, "Destination is: " + str(project_data['data']['destination_path']) )
