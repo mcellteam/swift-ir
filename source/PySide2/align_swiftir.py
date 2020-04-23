@@ -140,6 +140,7 @@ class alignment_process:
   def align(self,c_afm,save=True):
 
     atrm = self.layer_dict['align_to_ref_method']
+    result = None
     if atrm['selected_method']=='Auto Swim Align':
       result = self.auto_swim_align(c_afm,save=save)
     elif atrm['selected_method']=='Match Point Align':
