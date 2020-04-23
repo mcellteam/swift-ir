@@ -389,7 +389,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       print('                       Because next coarsest scale is not fully aligned')
 
       return (project,False)
-    
+
 
   if scale_tbd:
     if use_scale:
@@ -462,6 +462,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
       # set alignment option
       atrm['method_data']['alignment_option'] = alignment_option
+      if not 'seleted_method' in atrm:
+        atrm['selected_method'] = "Auto Swim Align"
 
       # Upscale x & y bias values
       if 'bias_x_per_image' in atrm['method_data']:
