@@ -2213,7 +2213,7 @@ class MainWindow(QMainWindow):
 
         input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(default_scales)), echo=QLineEdit.Normal, text=' '.join(default_scales) )
         if ok:
-            set_scales_from_string ( input_val )
+            self.set_scales_from_string ( input_val )
             '''
             input_val = input_val.strip()
             if len(input_val) > 0:
