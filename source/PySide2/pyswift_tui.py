@@ -2,16 +2,18 @@
 
 import sys
 import os
-import errno
-import argparse
-import numpy as np
-import scipy.stats as sps
-import swiftir
-import align_swiftir
 import json
 import copy
-import matplotlib.pyplot as plt
+import errno
 import inspect
+import argparse
+import psutil
+import numpy as np
+import scipy.stats as sps
+import matplotlib.pyplot as plt
+import swiftir
+import align_swiftir
+import task_queue
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 50  # A larger value prints more stuff
@@ -810,6 +812,29 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     return (project,False)
 
+class task_master:
+  ''' Run an alignment project by splitting it up by layers '''
+  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
+    self.project = copy.deepcopy ( project )
+    self.alignment_optioin = alignment_option
+    self.use_scale = use_scale
+    self.swifir_code_mode = swiftir_code_mode
+    self.start_layer = start_layer
+    self.num_layers = num_layers
+
+    self.task_queue.debug_level = alignem.debug_level
+    self.task_wrapper.debug_level = alignem.debug_level
+
+    self.task_queue = task_queue.TaskQueue(sys.executable)
+    self.task_queue.start ( psutil.cpu_count(logical=False) )
+    self.task_queue.notify = True
+
+  def run ( self ):
+    # Chop up the JSON project to only have the first selected layer to be aligned
+    for scale_key in d['data']['scales'].keys():
+      scale = d['data']['scales'][scale_key]
+      # Set the entire stack equal to the single layer that needs to be aligned (including both ref and base)
+      scale['alignment_stack'] = [ scale['alignment_stack'][args.start] ]
 
 
 def print_command_line_syntax ( args ):
@@ -825,6 +850,8 @@ def print_command_line_syntax ( args ):
   print_debug ( -1, '  -count #            : # = number of layers (-1 for all remaining), defaults to -1' )
   print_debug ( -1, '  -debug #            : # = debug level (0-100, larger numbers produce more output)' )
   print_debug ( -1, '  -alignment_option o : o = init_affine | refine_affine | apply_affine' )
+  print_debug ( -1, '  -master             : Run as master process .. generate sub-data-models and delegate' )
+  print_debug ( -1, '  -worker             : Run as worker process .. work only on this particular data model' )
   print_debug ( -1, 'Arguments:' )
   print_debug ( -1, '  inproject.json      : input project file name (opened for reading only)' )
   print_debug ( -1, '  outproject.json     : output project file name (opened for writing and overwritten)' )
@@ -849,36 +876,50 @@ if (__name__ == '__main__'):
   swiftir_code_mode = 'python'
   start_layer = 0
   num_layers = -1
+  run_as_master = False
+  run_as_worker = False
 
   # check for an even number of additional args
   if (l > 0) and (int(l/2.) == l/2.):
     i = 1
     while (i < len(sys.argv)-2):
-      if sys.argv[i] == '-scale':
-        use_scale = int(sys.argv[i+1])
+      if sys.argv[i] == '-master':
+        run_as_master = True
+        # No need to increment i because no additional arguments were taken
+      elif sys.argv [i] == '-worker':
+        run_as_worker = True
+        # No need to increment i because no additional arguments were taken
+      elif sys.argv[i] == '-scale':
+        i += 1  # Increment to get the argument
+        use_scale = int(sys.argv[i])
       elif sys.argv[i] == '-code':
+        i += 1  # Increment to get the argument
         # align_swiftir.global_swiftir_mode = str(sys.argv[i+1])
-        swiftir_code_mode = str(sys.argv[i+1])
+        swiftir_code_mode = str(sys.argv[i])
       elif sys.argv [i] == '-alignment_option':
-        alignment_option = sys.argv [i + 1]
+        i += 1  # Increment to get the argument
+        alignment_option = sys.argv [i]
       elif sys.argv [i] == '-start':
-        start_layer = int(sys.argv [i + 1])
+        i += 1  # Increment to get the argument
+        start_layer = int(sys.argv [i])
       elif sys.argv [i] == '-count':
-        num_layers = int (sys.argv [i + 1])
+        i += 1  # Increment to get the argument
+        num_layers = int (sys.argv [i])
       elif sys.argv [i] == '-debug':
-        debug_level = int (sys.argv [i + 1])
+        i += 1  # Increment to get the argument
+        debug_level = int (sys.argv [i])
       else:
         print_command_line_syntax ( sys.argv )
         exit(1)
-      i+=2
+      i += 1  # Increment to get the next option
 
   #fp = open('/m2scratch/bartol/swift-ir_tests/LM9R5CA1_project.json','r')
   fp = open(proj_ifn,'r')
 
   d = json.load(fp)
 
-  align_swiftir.debug_level = debug_level
 
+  align_swiftir.debug_level = debug_level
   d, need_to_write_json = run_json_project ( project=d,
                                              alignment_option=alignment_option,
                                              use_scale=use_scale,
