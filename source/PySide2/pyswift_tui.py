@@ -348,12 +348,12 @@ def evaluate_project_status(project):
 
 
 
-def run_json_project ( project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
+def run_json_project ( project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, alone=False ):
   '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
   print_debug_enter (40)
 
   print_debug(10,80*"!" )
-  print_debug(10,"run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers]) )
+  print_debug(10,"run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone]) )
   align_swiftir.global_swiftir_mode = swiftir_code_mode
 
   destination_path = project['data']['destination_path']
@@ -608,7 +608,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     c_afm = swiftir.identityAffine()
 
     # Align Forward Change:
-    if range_to_process[0] != 0:
+    if (range_to_process[0] != 0) and not alone:
       print_debug(10,80 * "@")
       print_debug(10,"Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
       print_debug(10,80 * "@")
@@ -635,7 +635,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     y_bias = 0.0
 
     # Align Forward Change:
-    if range_to_process[0] != 0:
+    if (range_to_process[0] != 0) and not alone:
       print_debug(10,80 * "@")
       print_debug(10,"Initialize to non-zero biases")
       print_debug(10,80 * "@")
@@ -876,6 +876,7 @@ if (__name__ == '__main__'):
   num_layers = -1
   run_as_master = False
   run_as_worker = False
+  alone = False
 
   # Scan arguments (excluding program name and last 2 file names)
   i = 1
@@ -886,6 +887,7 @@ if (__name__ == '__main__'):
       # No need to increment i because no additional arguments were taken
     elif sys.argv [i] == '-worker':
       run_as_worker = True
+      alone = True
       # No need to increment i because no additional arguments were taken
     elif sys.argv[i] == '-scale':
       i += 1  # Increment to get the argument
@@ -927,7 +929,7 @@ if (__name__ == '__main__'):
 
 
   align_swiftir.debug_level = debug_level
-  print_debug ( 1, "Before RJP: " + str([ d['data']['current_scale'], alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers ]) )
+  print_debug ( 1, "Before RJP: " + str([ d['data']['current_scale'], alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone ]) )
 
 
   d, need_to_write_json = run_json_project ( project=d,
@@ -935,7 +937,8 @@ if (__name__ == '__main__'):
                                              use_scale=use_scale,
                                              swiftir_code_mode=swiftir_code_mode,
                                              start_layer=start_layer,
-                                             num_layers=num_layers )
+                                             num_layers=num_layers,
+                                             alone=alone)
 
   if run_as_worker:
     # When run as a worker, always return the data model to the master on stdout
