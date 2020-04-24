@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import swiftir
 import align_swiftir
 import task_queue
+import align_task_mgr
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 50  # A larger value prints more stuff
@@ -820,30 +821,6 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     return (project,False)
 
-class task_master:
-  ''' Run an alignment project by splitting it up by layers '''
-  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
-    self.project = copy.deepcopy ( project )
-    self.alignment_optioin = alignment_option
-    self.use_scale = use_scale
-    self.swifir_code_mode = swiftir_code_mode
-    self.start_layer = start_layer
-    self.num_layers = num_layers
-
-    self.task_queue.debug_level = alignem.debug_level
-    self.task_wrapper.debug_level = alignem.debug_level
-
-    self.task_queue = task_queue.TaskQueue(sys.executable)
-    self.task_queue.start ( psutil.cpu_count(logical=False) )
-    self.task_queue.notify = True
-
-  def run ( self ):
-    # Chop up the JSON project to only have the first selected layer to be aligned
-    for scale_key in d['data']['scales'].keys():
-      scale = d['data']['scales'][scale_key]
-      # Set the entire stack equal to the single layer that needs to be aligned (including both ref and base)
-      scale['alignment_stack'] = [ scale['alignment_stack'][args.start] ]
-
 
 def print_command_line_syntax ( args ):
   print_debug ( -1, "" )
@@ -922,9 +899,8 @@ if (__name__ == '__main__'):
       exit(1)
     i += 1  # Increment to get the next option
 
-  #fp = open('/m2scratch/bartol/swift-ir_tests/LM9R5CA1_project.json','r')
+  # Load the JSON project regardless of the mode
   fp = open(proj_ifn,'r')
-
   d = json.load(fp)
   need_to_write_json = False
 
@@ -952,7 +928,10 @@ if (__name__ == '__main__'):
 
   elif run_as_master:
 
-    print_debug ( -1, "Error: The \"run_as_master\" flag should not be used in the current design." )
+    # This task was called to process the entire stack in parallel mode
+    # This will create a task manager instance and have it run the jobs
+
+    print_debug ( -1, "Warning: The \"run_as_master\" flag isn't supported yet." )
     exit(99)
 
   else:
@@ -970,7 +949,7 @@ if (__name__ == '__main__'):
                                                swiftir_code_mode=swiftir_code_mode,
                                                start_layer=start_layer,
                                                num_layers=num_layers,
-                                               alone=alone)
+                                               alone=False)
     if need_to_write_json:
 
       # Write out updated json project file
