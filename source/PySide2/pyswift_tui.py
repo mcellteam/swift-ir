@@ -918,6 +918,13 @@ if (__name__ == '__main__'):
 
   d = json.load(fp)
 
+  if run_as_worker:
+    # Chop up the JSON project so that the only layer is the one requested
+    for scale_key in d['data']['scales'].keys():
+      scale = d['data']['scales'][scale_key]
+      # Set the entire stack equal to the single layer that needs to be aligned (including both ref and base)
+      scale['alignment_stack'] = [ scale['alignment_stack'][args.start] ]
+
 
   align_swiftir.debug_level = debug_level
   d, need_to_write_json = run_json_project ( project=d,
@@ -927,7 +934,12 @@ if (__name__ == '__main__'):
                                              start_layer=start_layer,
                                              num_layers=num_layers )
 
-  if need_to_write_json:
+  if run_as_worker:
+    # When run as a worker, always return the data model to the master on stdout
+    print ( "NEED TO RETURN DATA MODEL TO MASTER")
+    pass
+
+  elif need_to_write_json:
 
     # Write out updated json project file
     print_debug(50,"Writing project to file: ", proj_ofn)

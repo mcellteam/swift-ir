@@ -17,6 +17,7 @@ from PySide2.QtCore import QThread, Signal, QObject
 import pyswift_tui
 import align_swiftir
 
+import platform
 import psutil
 import task_queue
 import task_wrapper # Only needed to set the debug level for that module
@@ -611,7 +612,26 @@ def generate_scales_queue ():
                         abs_file_name = os.path.join ( p, 'scale_1', r, f )
 
                       ### Add this job to the task queue
-                      scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str(scale), str(abs_file_name), str(outfile_name)], wd='.')
+                      code_mode = get_code_mode()
+                      if code_mode == 'python':
+                        scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str(scale), str(abs_file_name), str(outfile_name)], wd='.')
+                      else:
+                        # Configure platform-specific path to executables for C SWiFT-IR
+                        my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+                        my_system = platform.system()
+                        my_node = platform.node()
+                        if my_system == 'Darwin':
+                          iscale2_c = my_path + '../c/bin_darwin/iscale2'
+                        elif my_system == 'Linux':
+                          if '.tacc.utexas.edu' in my_node:
+                            iscale2_c = my_path + '../c/bin_tacc/iscale2'
+                          else:
+                            iscale2_c = my_path + '../c/bin_linux/iscale2'
+
+                        scale_arg = '+%d' % (scale)
+                        outfile_arg = 'of=%s' % (outfile_name)
+                        infile_arg = '%s' % (abs_file_name)
+                        scaling_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
 
                       # These two lines generate the scales directly rather than through the queue
                       #img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
@@ -1201,8 +1221,8 @@ def copy_skips_to_all_scales():
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 #gen_scales_cb = CallbackButton('Gen Scales Ser', generate_scales)
-#gen_scalesq_cb = CallbackButton('Gen Scales Q', generate_scales_queue)
-gen_scales_opt_cb = CallbackButton('Gen Scales', generate_scales_optimized)
+gen_scalesq_cb = CallbackButton('Gen Scales', generate_scales_queue)
+#gen_scales_opt_cb = CallbackButton('Gen Scales Opt', generate_scales_optimized)
 align_all_cb  = CallbackButton('Align All', align_all_or_some)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
@@ -1239,8 +1259,8 @@ control_model = [
   [ # Begin first pane of rows
     [
       # gen_scales_cb,
-      # " ", gen_scalesq_cb,
-      " ", gen_scales_opt_cb,
+      " ", gen_scalesq_cb,
+      # " ", gen_scales_opt_cb,
       " ", link_stacks_cb,
       " ", poly_order,
       " ", null_cafm_trends,
@@ -1296,19 +1316,20 @@ if __name__ == "__main__":
     except:
         pass
 
+    my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     source_list = [
-      "alignem_swift.py",
-      "alignem_data_model.py",
-      "alignem.py",
-      "swift_project.py",
-      "pyswift_tui.py",
-      "swiftir.py",
-      "align_swiftir.py",
-      "source_tracker.py",
-      "task_queue.py",
-      "task_wrapper.py",
-      "single_scale_job.py",
-      "multi_scale_job.py"
+      my_path + "alignem_swift.py",
+      my_path + "alignem_data_model.py",
+      my_path + "alignem.py",
+      my_path + "swift_project.py",
+      my_path + "pyswift_tui.py",
+      my_path + "swiftir.py",
+      my_path + "align_swiftir.py",
+      my_path + "source_tracker.py",
+      my_path + "task_queue.py",
+      my_path + "task_wrapper.py",
+      my_path + "single_scale_job.py",
+      my_path + "multi_scale_job.py"
     ]
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
