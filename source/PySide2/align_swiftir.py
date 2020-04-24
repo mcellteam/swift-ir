@@ -427,18 +427,19 @@ class align_ingredient:
 #    self.swiftir_mode = global_swiftir_mode
 
     # Configure platform-specific path to executables for C SWiFT-IR
+    my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     self.system = platform.system()
     self.node = platform.node()
     if self.system == 'Darwin':
-      self.swim_c = '../c/bin_darwin/swim'
-      self.mir_c = '../c/bin_darwin/mir'
+      self.swim_c = my_path + '../c/bin_darwin/swim'
+      self.mir_c = my_path + '../c/bin_darwin/mir'
     elif self.system == 'Linux':
       if '.tacc.utexas.edu' in self.node:
-        self.swim_c = '../c/bin_tacc/swim'
-        self.mir_c = '../c/bin_tacc/mir'
+        self.swim_c = my_path + '../c/bin_tacc/swim'
+        self.mir_c = my_path + '../c/bin_tacc/mir'
       else:
-        self.swim_c = '../c/bin_linux/swim'
-        self.mir_c = '../c/bin_linux/mir'
+        self.swim_c = my_path + '../c/bin_linux/swim'
+        self.mir_c = my_path + '../c/bin_linux/mir'
 
     #if self.swiftir_mode == 'c':
     #  print_debug ( 70, "Actually loading images" )
