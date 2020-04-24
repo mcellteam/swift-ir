@@ -351,13 +351,14 @@ def evaluate_project_status(project):
 def run_json_project ( project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, alone=False ):
   '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
   print_debug_enter (40)
+  # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
   first_layer_has_ref = False
-  if project['data']['scales']['scale_5']['alignment_stack'][0]['images']['ref']['filename'] != None:
-    if len(project['data']['scales']['scale_5']['alignment_stack'][0]['images']['ref']['filename']) > 0:
+  if project['data']['scales']['scale_%d'%use_scale]['alignment_stack'][0]['images']['ref']['filename'] != None:
+    if len(project['data']['scales']['scale_%d'%use_scale]['alignment_stack'][0]['images']['ref']['filename']) > 0:
       first_layer_has_ref = True
 
   print_debug ( 20, "first_layer_has_ref = " + str(first_layer_has_ref) )
-  print_debug ( 20, "  ref = \"" + str(project['data']['scales']['scale_5']['alignment_stack'][0]['images']['ref']['filename']) + "\"" )
+  print_debug ( 20, "  ref = \"" + str(project['data']['scales']['scale_%d'%use_scale]['alignment_stack'][0]['images']['ref']['filename']) + "\"" )
 
   print_debug(10,80*"!" )
   print_debug(10,"run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone]) )
@@ -925,59 +926,77 @@ if (__name__ == '__main__'):
   fp = open(proj_ifn,'r')
 
   d = json.load(fp)
+  need_to_write_json = False
 
   if run_as_worker:
+
+    # This task was called to just process one layer
+    print_debug ( 1, "Running as a worker for just one layer with PID=" + str(os.getpid()) )
     # Chop up the JSON project so that the only layer is the one requested
-    print_debug ( 1, "Running as a worker for just one layer.")
     for scale_key in d['data']['scales'].keys():
       scale = d['data']['scales'][scale_key]
       # Set the entire stack equal to the single layer that needs to be aligned (including both ref and base)
       scale['alignment_stack'] = [ scale['alignment_stack'][start_layer] ]
 
+    # Call run_json_project with the partial data model and the "alone" flag set to True
+    d, need_to_write_json = run_json_project ( project=d,
+                                               alignment_option=alignment_option,
+                                               use_scale=use_scale,
+                                               swiftir_code_mode=swiftir_code_mode,
+                                               start_layer=start_layer,
+                                               num_layers=num_layers,
+                                               alone=True)
 
-  align_swiftir.debug_level = debug_level
-  print_debug ( 1, "Before RJP: " + str([ d['data']['current_scale'], alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone ]) )
-
-
-  d, need_to_write_json = run_json_project ( project=d,
-                                             alignment_option=alignment_option,
-                                             use_scale=use_scale,
-                                             swiftir_code_mode=swiftir_code_mode,
-                                             start_layer=start_layer,
-                                             num_layers=num_layers,
-                                             alone=alone)
-
-  if run_as_worker:
     # When run as a worker, always return the data model to the master on stdout
-    print ( "NEED TO RETURN DATA MODEL TO MASTER")
-    pass
+    print ("NEED TO RETURN DATA MODEL TO MASTER from PID=" + str(os.getpid()))
 
-  elif need_to_write_json:
+  elif run_as_master:
 
-    # Write out updated json project file
-    print_debug(50,"Writing project to file: ", proj_ofn)
-    ofp = open(proj_ofn,'w')
-    json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
+    print_debug ( -1, "Error: The \"run_as_master\" flag should not be used in the current design." )
+    exit(99)
 
-    '''
-    p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
-    print_debug(50,"\n4th degree of Skew_X bias: \n", p)
+  else:
 
-    p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
-    print_debug(50,"\n4th degree of Scale_X bias: \n", p)
+    # This task was called to process the entire stack in serial mode
+    print_debug ( 1, "Running in serial mode with PID=" + str(os.getpid()) )
 
-    p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
-    print_debug(50,"\n4th degree of Scale_Y bias: \n", p)
+    align_swiftir.debug_level = debug_level
+    print_debug ( 20, "Before RJP: " + str( [ d['data']['current_scale'], alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone ] ) )
 
-    p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
-    print_debug(50,"\n4th degree of Rot bias: \n", p)
 
-    p = np.polyfit(x_array[:,0],x_array[:,1],4)
-    print_debug(50,"\n4th degree of X bias: \n", p)
+    d, need_to_write_json = run_json_project ( project=d,
+                                               alignment_option=alignment_option,
+                                               use_scale=use_scale,
+                                               swiftir_code_mode=swiftir_code_mode,
+                                               start_layer=start_layer,
+                                               num_layers=num_layers,
+                                               alone=alone)
+    if need_to_write_json:
 
-    p = np.polyfit(y_array[:,0],y_array[:,1],4)
-    print_debug(50,"\n4th degree of Y bias: \n", p)
-    '''
+      # Write out updated json project file
+      print_debug(50,"Writing project to file: ", proj_ofn)
+      ofp = open(proj_ofn,'w')
+      json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
+
+      '''
+      p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
+      print_debug(50,"\n4th degree of Skew_X bias: \n", p)
+
+      p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
+      print_debug(50,"\n4th degree of Scale_X bias: \n", p)
+
+      p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
+      print_debug(50,"\n4th degree of Scale_Y bias: \n", p)
+
+      p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
+      print_debug(50,"\n4th degree of Rot bias: \n", p)
+
+      p = np.polyfit(x_array[:,0],x_array[:,1],4)
+      print_debug(50,"\n4th degree of X bias: \n", p)
+
+      p = np.polyfit(y_array[:,0],y_array[:,1],4)
+      print_debug(50,"\n4th degree of Y bias: \n", p)
+      '''
 
 
 
