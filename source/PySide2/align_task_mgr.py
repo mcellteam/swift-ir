@@ -117,7 +117,38 @@ def print_command_line_syntax ( args ):
 
 if (__name__ == '__main__'):
   print ("Align Task Manager run as main ... not sure what this should do.")
-  pass
+
+  import psutil
+  from argparse import ArgumentParser
+  import time
+
+  my_q = task_queue.TaskQueue (sys.executable)
+
+  cpus = 3
+
+  my_q.start (cpus)
+  my_q.notify = True
+
+  begin = time.time ()
+
+  wd = '.'
+
+  my_q.add_task (cmd='cp foo.txt foo_1.txt', wd=wd)
+  my_q.add_task (cmd='cp foo.txt foo_2.txt', wd=wd)
+  my_q.add_task (cmd='cp foo.txt foo_3.txt', wd=wd)
+  my_q.add_task (cmd='cp foo.txt foo_4.txt', wd=wd)
+  my_q.add_task (cmd='pwd', wd=wd)
+  my_q.add_task (cmd='ls', args='.', wd=wd)
+  my_q.add_task (cmd='echo', args='Hello World!!!', wd=wd)
+
+  time.sleep (2.)
+
+  pids = list (my_q.task_dict.keys ())
+  pids.sort ()
+
+  my_q.work_q.join ()
+
+  if debug_level > 4: sys.stdout.write ('\n\nTook {0:0.2f} seconds.\n\n'.format (time.time () - begin))
 
 '''
 
