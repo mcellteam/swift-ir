@@ -867,8 +867,6 @@ if (__name__ == '__main__'):
   proj_ifn = sys.argv[-2]
   proj_ofn = sys.argv[-1]
 
-  l = len(sys.argv)-3
-
   use_scale = 0
   alignment_option = 'refine_affine'
   scale_tbd = 0
@@ -879,39 +877,40 @@ if (__name__ == '__main__'):
   run_as_master = False
   run_as_worker = False
 
-  # check for an even number of additional args
-  if (l > 0) and (int(l/2.) == l/2.):
-    i = 1
-    while (i < len(sys.argv)-2):
-      if sys.argv[i] == '-master':
-        run_as_master = True
-        # No need to increment i because no additional arguments were taken
-      elif sys.argv [i] == '-worker':
-        run_as_worker = True
-        # No need to increment i because no additional arguments were taken
-      elif sys.argv[i] == '-scale':
-        i += 1  # Increment to get the argument
-        use_scale = int(sys.argv[i])
-      elif sys.argv[i] == '-code':
-        i += 1  # Increment to get the argument
-        # align_swiftir.global_swiftir_mode = str(sys.argv[i+1])
-        swiftir_code_mode = str(sys.argv[i])
-      elif sys.argv [i] == '-alignment_option':
-        i += 1  # Increment to get the argument
-        alignment_option = sys.argv [i]
-      elif sys.argv [i] == '-start':
-        i += 1  # Increment to get the argument
-        start_layer = int(sys.argv [i])
-      elif sys.argv [i] == '-count':
-        i += 1  # Increment to get the argument
-        num_layers = int (sys.argv [i])
-      elif sys.argv [i] == '-debug':
-        i += 1  # Increment to get the argument
-        debug_level = int (sys.argv [i])
-      else:
-        print_command_line_syntax ( sys.argv )
-        exit(1)
-      i += 1  # Increment to get the next option
+  # Scan arguments (excluding program name and last 2 file names)
+  i = 1
+  while (i < len(sys.argv)-2):
+    print ( "Processing option " + sys.argv[i])
+    if sys.argv[i] == '-master':
+      run_as_master = True
+      # No need to increment i because no additional arguments were taken
+    elif sys.argv [i] == '-worker':
+      run_as_worker = True
+      # No need to increment i because no additional arguments were taken
+    elif sys.argv[i] == '-scale':
+      i += 1  # Increment to get the argument
+      use_scale = int(sys.argv[i])
+    elif sys.argv[i] == '-code':
+      i += 1  # Increment to get the argument
+      # align_swiftir.global_swiftir_mode = str(sys.argv[i+1])
+      swiftir_code_mode = str(sys.argv[i])
+    elif sys.argv [i] == '-alignment_option':
+      i += 1  # Increment to get the argument
+      alignment_option = sys.argv [i]
+    elif sys.argv [i] == '-start':
+      i += 1  # Increment to get the argument
+      start_layer = int(sys.argv [i])
+    elif sys.argv [i] == '-count':
+      i += 1  # Increment to get the argument
+      num_layers = int (sys.argv [i])
+    elif sys.argv [i] == '-debug':
+      i += 1  # Increment to get the argument
+      debug_level = int (sys.argv [i])
+    else:
+      print ( "\nImproper argument list: " + str(argv) + "\n")
+      print_command_line_syntax ( sys.argv )
+      exit(1)
+    i += 1  # Increment to get the next option
 
   #fp = open('/m2scratch/bartol/swift-ir_tests/LM9R5CA1_project.json','r')
   fp = open(proj_ifn,'r')
@@ -920,13 +919,17 @@ if (__name__ == '__main__'):
 
   if run_as_worker:
     # Chop up the JSON project so that the only layer is the one requested
+    print_debug ( 1, "Running as a worker for just one layer.")
     for scale_key in d['data']['scales'].keys():
       scale = d['data']['scales'][scale_key]
       # Set the entire stack equal to the single layer that needs to be aligned (including both ref and base)
-      scale['alignment_stack'] = [ scale['alignment_stack'][args.start] ]
+      scale['alignment_stack'] = [ scale['alignment_stack'][start_layer] ]
 
 
   align_swiftir.debug_level = debug_level
+  print_debug ( 1, "Before RJP: " + str([ d['data']['current_scale'], alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers ]) )
+
+
   d, need_to_write_json = run_json_project ( project=d,
                                              alignment_option=alignment_option,
                                              use_scale=use_scale,
