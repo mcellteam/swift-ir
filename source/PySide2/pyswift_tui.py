@@ -351,6 +351,13 @@ def evaluate_project_status(project):
 def run_json_project ( project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, alone=False ):
   '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
   print_debug_enter (40)
+  first_layer_has_ref = False
+  if project['data']['scales']['scale_5']['alignment_stack'][0]['images']['ref']['filename'] != None:
+    if len(project['data']['scales']['scale_5']['alignment_stack'][0]['images']['ref']['filename']) > 0:
+      first_layer_has_ref = True
+
+  print_debug ( 20, "first_layer_has_ref = " + str(first_layer_has_ref) )
+  print_debug ( 20, "  ref = \"" + str(project['data']['scales']['scale_5']['alignment_stack'][0]['images']['ref']['filename']) + "\"" )
 
   print_debug(10,80*"!" )
   print_debug(10,"run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone]) )
