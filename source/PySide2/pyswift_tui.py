@@ -559,49 +559,15 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     afm_file = open(os.path.join(bias_data_path,'afm_1.dat'),'w')
     c_afm_file = open(os.path.join(bias_data_path,'c_afm_1.dat'),'w')
 
-    if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
-      # Create skew, scale, rot, and translation matrices
-      skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0],[0.0, 1.0, 0.0]])
-      scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0],[0.0, scale_y_bias, 0.0]])
-      rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0],[np.sin(rot_bias), np.cos(rot_bias), 0.0]])
-      trans_bias_mat = np.array([[1.0, 0.0, x_bias],[0.0, 1.0, y_bias]])
-
-      # Compose bias matrix as skew*scale*rot*trans
-      bias_mat = swiftir.identityAffine()
-      bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
-      print_debug(90,"Refine affine using bias mat:\n", bias_mat)
-
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:
         im_sta_fn = s_tbd[i]['images']['ref']['filename']
         im_mov_fn = s_tbd[i]['images']['base']['filename']
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
           atrm = s_tbd[i]['align_to_ref_method']
-          x_bias = atrm['method_data']['bias_x_per_image']
-          y_bias = atrm['method_data']['bias_y_per_image']
-          rot_bias = atrm['method_data']['bias_rot_per_image']
-          scale_x_bias = atrm['method_data']['bias_scale_x_per_image']
-          scale_y_bias = atrm['method_data']['bias_scale_y_per_image']
-          skew_x_bias = atrm['method_data']['bias_skew_x_per_image']
-          # Create skew, scale, rot, and tranlation matrices
-          skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0],[0.0, 1.0, 0.0]])
-          scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0],[0.0, scale_y_bias, 0.0]])
-          rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0],[np.sin(rot_bias), np.cos(rot_bias), 0.0]])
-          trans_bias_mat = np.array([[1.0, 0.0, x_bias],[0.0, 1.0, y_bias]])
-
-          # Compose bias matrix as skew*scale*rot*trans
-          bias_mat = swiftir.identityAffine()
-          bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
 
           # Align Forward Change:
           align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
-          # align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=swiftir.composeAffine(bias_mat,afm_scaled[i]))
         else:
           # Align Forward Change:
           align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
@@ -635,42 +601,11 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       method_results = s_tbd[prev_aligned_index]['align_to_ref_method']['method_results']
       c_afm = method_results['cumulative_afm']  # Note that this might not be the right type (it's a list not a matrix)
 
-    # Setup for no bias
-    rot_bias = 0.0
-    scale_x_bias = 1.0
-    scale_y_bias = 1.0
-    skew_x_bias = 0.0
-    x_bias = 0.0
-    y_bias = 0.0
-
     # Align Forward Change:
     if (range_to_process[0] != 0) and not alone:
       print_debug(10,80 * "@")
       print_debug(10,"Initialize to non-zero biases")
       print_debug(10,80 * "@")
-      # Set the biases from the previously aligned image
-      prev_aligned_index = range_to_process[0] - 1
-      method_data = s_tbd[prev_aligned_index]['align_to_ref_method']['method_data']
-      x_bias = method_data['bias_x_per_image']
-      y_bias = method_data['bias_y_per_image']
-      rot_bias = method_data['bias_rot_per_image']
-      scale_x_bias = method_data['bias_scale_x_per_image']
-      scale_y_bias = method_data['bias_scale_y_per_image']
-      skew_x_bias = method_data['bias_skew_x_per_image']
-
-    '''
-    rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0],[np.sin(rot_bias), np.cos(rot_bias), 0.0]])
-    scale_bias_mat = np.array([[scale_x_bias, 0.0, 0.0],[0.0, scale_y_bias, 0.0]])
-    skew_x_bias_mat = np.array([[1.0, skew_x_bias, 0.0],[0.0, 1.0, 0.0]])
-    trans_bias_mat = np.array([[1.0, 0.0, x_bias],[0.0, 1.0, y_bias]])
-
-    bias_mat = swiftir.identityAffine()
-
-    bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-    bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-    bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-    bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
-    '''
 
     # Align the images
     for item in align_list:
@@ -741,12 +676,12 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
       # Store custom bias values in the dictionary for this stack item
         atrm = s_tbd[align_idx]['align_to_ref_method']
-        atrm['method_data']['bias_x_per_image'] = x_bias
-        atrm['method_data']['bias_y_per_image'] = y_bias
-        atrm['method_data']['bias_rot_per_image'] = rot_bias
-        atrm['method_data']['bias_scale_x_per_image'] = scale_x_bias
-        atrm['method_data']['bias_scale_y_per_image'] = scale_y_bias
-        atrm['method_data']['bias_skew_x_per_image'] = skew_x_bias
+        atrm['method_data']['bias_x_per_image'] = 0  #x_bias
+        atrm['method_data']['bias_y_per_image'] = 0  #y_bias
+        atrm['method_data']['bias_rot_per_image'] = 0  #rot_bias
+        atrm['method_data']['bias_scale_x_per_image'] = 0  #scale_x_bias
+        atrm['method_data']['bias_scale_y_per_image'] = 0  #scale_y_bias
+        atrm['method_data']['bias_skew_x_per_image'] = 0  #skew_x_bias
 
       # Add results to layer dictionary for this stack item
         base_fn = os.path.basename(s_tbd[align_idx]['images']['base']['filename'])
@@ -763,7 +698,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         method_results['affine_matrix'] = afm.tolist()
         method_results['cumulative_afm'] = c_afm.tolist()
 
-        # Compute and save final biases
+        # Compute and save final biases in analysis data files
         rot = np.arctan(c_afm[1,0]/c_afm[0,0])
         scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
         scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
