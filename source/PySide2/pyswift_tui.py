@@ -800,7 +800,7 @@ if (__name__ == '__main__'):
 
   # Scan arguments (excluding program name and last 2 file names)
   i = 1
-  while (i < len(sys.argv)-2):
+  while i < len(sys.argv)-2:
     print ( "Processing option " + sys.argv[i])
     if sys.argv[i] == '-master':
       run_as_master = True
