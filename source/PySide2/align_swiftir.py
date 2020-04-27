@@ -233,7 +233,8 @@ class alignment_process:
         ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht)
         self.recipe.add_ingredient(ingredient_4x4)
       elif alignment_option == 'apply_affine':
-        self.recipe.afm = self.init_affine_matrix
+        ingredient_apply_affine = align_ingredient(afm=self.init_affine_matrix, align_mode='apply_affine_align')
+        self.recipe.add_ingredient(ingredient_apply_affine)
       else:
         # Normal Auto Swim Align - Full Recipe
         ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, wht=wht)
@@ -659,6 +660,15 @@ class align_ingredient:
       (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
       self.ww = (0.0, 0.0)
       self.snr = np.zeros(len(self.psta[0]))
+      snr_array = self.snr
+      self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+      print_debug ( 10, self.snr_report )
+      return self.afm
+    elif self.align_mode == 'apply_affine_align':
+      self.snr = np.zeros(1)
+      snr_array = self.snr
+      self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+      print_debug ( 10, self.snr_report )
       return self.afm
 
     #  Otherwise, this is a swim window match ingredient
