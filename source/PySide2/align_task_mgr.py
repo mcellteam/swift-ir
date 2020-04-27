@@ -7,6 +7,7 @@ import copy
 import errno
 import inspect
 import argparse
+import tempfile
 import psutil
 import numpy as np
 import scipy.stats as sps
@@ -61,8 +62,13 @@ def print_debug_enter (level):
 
 
 class alignment_task_manager:
-  ''' Run an alignment project by splitting it up by layers '''
+  ''' Run an alignment project by splitting it up by scales and/or layers '''
   def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
+
+    if use_scale <= 0:
+      print ( "Error: alignment_task_manager must be given an explicit scale")
+      return
+
     self.project = copy.deepcopy ( project )
     self.alignment_option = alignment_option
     self.use_scale = use_scale
@@ -77,43 +83,49 @@ class alignment_task_manager:
     self.task_queue.start ( psutil.cpu_count(logical=False) )
     self.task_queue.notify = True
 
-    # Chop up the JSON project to only have the first selected layer to be aligned
-    for scale_key in d['data']['scales'].keys():
-      scale = d['data']['scales'][scale_key]
-      # Set the entire stack equal to the single layer that needs to be aligned (including both ref and base)
-      scale['alignment_stack'] = [ scale['alignment_stack'][self.start_layer] ]
+    # Write the entire project as a single JSON file with a unique stable name for this run
 
-      '''
+    # TODO: The "dir" here should be the destination path resolved from the project file:
+    f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=".", delete=False)
+    print ("Temp file is: " + str (f.name))
+    jde = json.JSONEncoder (indent=2, separators=(",", ": "), sort_keys=True)
+    proj_json = jde.encode (proj_copy)
+    f.write (proj_json)
+    f.close ()
+
+    scale_key = "scale_%d" % use_scale
+    alstack = self.project['data']['scales'][scale_key]['alignment_stack']
+    for layer in alstack:
       self.task_queue.add_task (cmd=sys.executable,
-                          args=['pyswift_tui.py',
-                                '-code', swiftir_code_mode,
-                                '-scale', scale_key[6:],
-                                '-start', '0',
-                                '-count', '1',
-                                '-alignment_optionstr (abs_file_name), str (outfile_name)], wd='.')
-      '''
+                                args=['pyswift_tui.py',
+                                      '-code', swiftir_code_mode,
+                                      '-scale', str(use_scale),
+                                      '-start', '0',
+                                      '-count', '1',
+                                      '-alignment_option', str (abs_file_name), str (outfile_name)], wd='.')
+    '''
+    # Command line interface to pyswift_tui:
 
-
-def print_command_line_syntax ( args ):
-  print_debug ( -1, "" )
-  print_debug ( -1, 'Usage: %s [ options ] inproject.json outproject.json' % (args[0]) )
-  print_debug ( -1, 'Description:' )
-  print_debug ( -1, '  Open swiftir project file and perform alignment operations.' )
-  print_debug ( -1, '  Result is written to output project file.' )
-  print_debug ( -1, 'Options:' )
-  print_debug ( -1, '  -code m             : m = c | python' )
-  print_debug ( -1, '  -scale #            : # = first layer number (starting at 0), defaults to 0' )
-  print_debug ( -1, '  -start #            : # = first layer number (starting at 0), defaults to 0' )
-  print_debug ( -1, '  -count #            : # = number of layers (-1 for all remaining), defaults to -1' )
-  print_debug ( -1, '  -debug #            : # = debug level (0-100, larger numbers produce more output)' )
-  print_debug ( -1, '  -alignment_option o : o = init_affine | refine_affine | apply_affine' )
-  print_debug ( -1, '  -master             : Run as master process .. generate sub-data-models and delegate' )
-  print_debug ( -1, '  -worker             : Run as worker process .. work only on this particular data model' )
-  print_debug ( -1, 'Arguments:' )
-  print_debug ( -1, '  inproject.json      : input project file name (opened for reading only)' )
-  print_debug ( -1, '  outproject.json     : output project file name (opened for writing and overwritten)' )
-  print_debug ( -1, "" )
-
+    def print_command_line_syntax ( args ):
+      print_debug ( -1, "" )
+      print_debug ( -1, 'Usage: %s [ options ] inproject.json outproject.json' % (args[0]) )
+      print_debug ( -1, 'Description:' )
+      print_debug ( -1, '  Open swiftir project file and perform alignment operations.' )
+      print_debug ( -1, '  Result is written to output project file.' )
+      print_debug ( -1, 'Options:' )
+      print_debug ( -1, '  -code m             : m = c | python' )
+      print_debug ( -1, '  -scale #            : # = first layer number (starting at 0), defaults to 0' )
+      print_debug ( -1, '  -start #            : # = first layer number (starting at 0), defaults to 0' )
+      print_debug ( -1, '  -count #            : # = number of layers (-1 for all remaining), defaults to -1' )
+      print_debug ( -1, '  -debug #            : # = debug level (0-100, larger numbers produce more output)' )
+      print_debug ( -1, '  -alignment_option o : o = init_affine | refine_affine | apply_affine' )
+      print_debug ( -1, '  -master             : Run as master process .. generate sub-data-models and delegate' )
+      print_debug ( -1, '  -worker             : Run as worker process .. work only on this particular data model' )
+      print_debug ( -1, 'Arguments:' )
+      print_debug ( -1, '  inproject.json      : input project file name (opened for reading only)' )
+      print_debug ( -1, '  outproject.json     : output project file name (opened for writing and overwritten)' )
+      print_debug ( -1, "" )
+    '''
 
 if (__name__ == '__main__'):
   print ("Align Task Manager run as main ... not sure what this should do.")
