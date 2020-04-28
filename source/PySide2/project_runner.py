@@ -139,6 +139,14 @@ class project_runner:
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
       self.task_queue.work_q.join()
+      print ("Tasks completed with these arguments")
+      for k in self.task_queue.task_dict.keys():
+        print ( '  ' + str(self.task_queue.task_dict[k]['args']) + " " + str(self.task_queue.task_dict[k]['status']) )
+      # Sort the tasks by layers rather than by process IDs
+
+      print ("Sorted tasks")
+
+      #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
     else:
 
