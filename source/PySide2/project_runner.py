@@ -146,7 +146,19 @@ class project_runner:
 
       print ("Sorted tasks")
 
-      #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+      secndout = self.task_queue.task_dict[[k for k in self.task_queue.task_dict.keys()][2]]['stdout']
+      parts = secndout.split('---JSON-DELIMITER---')
+      dm_text = None
+      for p in parts:
+        ps = p.strip()
+        if ps.startswith('{') and ps.endswith('}'):
+          dm_text = p
+      if dm_text != None:
+        output_dict = json.loads(dm_text)
+        self.updated_model = output_dict['data_model']
+        self.need_to_write_json = output_dict['need_to_write_json']
+
+      # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
     else:
 

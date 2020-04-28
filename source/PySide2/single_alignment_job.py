@@ -59,6 +59,10 @@ if __name__ == '__main__':
     jde = json.JSONEncoder ( indent=1, separators=(",",": "), sort_keys=True )
     run_output_json = jde.encode ( { 'data_model': updated_model, 'need_to_write_json': need_to_write_json } )
 
+    # Add some markers to separate the JSON from other output
+    print ( "---JSON-DELIMITER---")
     print ( run_output_json )
+    print ( "---JSON-DELIMITER---")
+
     # print ( "\n\n\n JSON DATA MODEL:\n" + str(proj_json) + "\n\n" )
     flush()
