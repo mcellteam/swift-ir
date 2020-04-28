@@ -7,7 +7,7 @@ import signal
 import subprocess as sp
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 0  # A larger value prints more stuff
+debug_level = 10  # A larger value prints more stuff
 
 def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
     global debug_level
@@ -114,6 +114,8 @@ def convert_for_windows ( cmds ):
 
 
 if __name__ == '__main__':
+
+  if debug_level > 4: sys.stdout.write('\n\ntask_wrapper.__main__ ( ' + str(sys.argv) + ' )\n\n')
 
   if is_windows():
 

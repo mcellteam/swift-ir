@@ -15,7 +15,9 @@ import matplotlib.pyplot as plt
 import swiftir
 import align_swiftir
 import task_queue
+import task_wrapper
 import pyswift_tui
+import alignem
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 50  # A larger value prints more stuff
@@ -61,76 +63,106 @@ def print_debug_enter (level):
         print ( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) )
 
 
-class alignment_task_manager:
+class project_runner:
   ''' Run an alignment project by splitting it up by scales and/or layers '''
-  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1 ):
+  # The project_runner starts with a Full Data Model (FDM)
+  # The project_runner may run in either serial or parallel mode
+  # When running in serial mode, the project_runner calls run_json_project directly
+  # When running in parallel mode:
+  #   The project_runner writes the FDM to a temporary file to be read by the worker tasks
+  #   The project_runner breaks up the alignment layers into specific jobs and starts a worker (pyswift_tui) for each job
+  #   Each worker will see the temporary data model file and get command line parameters about which part(s) it must complete
+  #   The project_runner will collect the alignment data from each pyswift_tui run and integrate it into the "master" data model
+  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False ):
 
+    print ( "\n\n\nCreating a project runner...\n\n\n")
     if use_scale <= 0:
-      print ( "Error: alignment_task_manager must be given an explicit scale")
+      print ( "Error: project_runner must be given an explicit scale")
       return
-
     self.project = copy.deepcopy ( project )
     self.alignment_option = alignment_option
     self.use_scale = use_scale
-    self.swifir_code_mode = swiftir_code_mode
+    self.swiftir_code_mode = swiftir_code_mode
     self.start_layer = start_layer
     self.num_layers = num_layers
+    self.run_parallel = run_parallel
+    self.task_queue = None
+    self.updated_model = None
+    self.need_to_write_json = None
 
-    self.task_queue.debug_level = alignem.debug_level
-    self.task_wrapper.debug_level = alignem.debug_level
 
-    self.task_queue = task_queue.TaskQueue(sys.executable)
-    self.task_queue.start ( psutil.cpu_count(logical=False) )
-    self.task_queue.notify = True
+  def start ( self ):
+    print ( "Starting Jobs" )
 
-    # Write the entire project as a single JSON file with a unique stable name for this run
+    #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
-    # TODO: The "dir" here should be the destination path resolved from the project file:
-    f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=".", delete=False)
-    print ("Temp file is: " + str (f.name))
-    jde = json.JSONEncoder (indent=2, separators=(",", ": "), sort_keys=True)
-    proj_json = jde.encode (proj_copy)
-    f.write (proj_json)
-    f.close ()
-
-    scale_key = "scale_%d" % use_scale
+    scale_key = "scale_%d" % self.use_scale
     alstack = self.project['data']['scales'][scale_key]['alignment_stack']
-    for layer in alstack:
-      self.task_queue.add_task (cmd=sys.executable,
-                                args=['pyswift_tui.py',
-                                      '-code', swiftir_code_mode,
-                                      '-scale', str(use_scale),
-                                      '-start', '0',
-                                      '-count', '1',
-                                      '-alignment_option', str (abs_file_name), str (outfile_name)], wd='.')
-    '''
-    # Command line interface to pyswift_tui:
 
-    def print_command_line_syntax ( args ):
-      print_debug ( -1, "" )
-      print_debug ( -1, 'Usage: %s [ options ] inproject.json outproject.json' % (args[0]) )
-      print_debug ( -1, 'Description:' )
-      print_debug ( -1, '  Open swiftir project file and perform alignment operations.' )
-      print_debug ( -1, '  Result is written to output project file.' )
-      print_debug ( -1, 'Options:' )
-      print_debug ( -1, '  -code m             : m = c | python' )
-      print_debug ( -1, '  -scale #            : # = first layer number (starting at 0), defaults to 0' )
-      print_debug ( -1, '  -start #            : # = first layer number (starting at 0), defaults to 0' )
-      print_debug ( -1, '  -count #            : # = number of layers (-1 for all remaining), defaults to -1' )
-      print_debug ( -1, '  -debug #            : # = debug level (0-100, larger numbers produce more output)' )
-      print_debug ( -1, '  -alignment_option o : o = init_affine | refine_affine | apply_affine' )
-      print_debug ( -1, '  -master             : Run as master process .. generate sub-data-models and delegate' )
-      print_debug ( -1, '  -worker             : Run as worker process .. work only on this particular data model' )
-      print_debug ( -1, 'Arguments:' )
-      print_debug ( -1, '  inproject.json      : input project file name (opened for reading only)' )
-      print_debug ( -1, '  outproject.json     : output project file name (opened for writing and overwritten)' )
-      print_debug ( -1, "" )
-    '''
+    if self.run_parallel:
+
+      # Run the project as a series of jobs
+
+      # Write the entire project as a single JSON file with a unique stable name for this run
+
+      f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
+      run_project_name = f.name
+      f.close()
+      print ("Temp file is: " + str (f.name))
+      f = open ( run_project_name, 'w')
+      jde = json.JSONEncoder (indent=2, separators=(",", ": "), sort_keys=True)
+      proj_json = jde.encode (self.project)
+      f.write (proj_json)
+      f.close ()
+
+      # Prepare the task queue
+
+      task_queue.debug_level = alignem.debug_level
+      task_wrapper.debug_level = alignem.debug_level
+
+      self.task_queue = task_queue.TaskQueue(sys.executable)
+      self.task_queue.start ( psutil.cpu_count(logical=False) )
+      self.task_queue.notify = True
+
+      for layer in alstack:
+        lnum = alstack.index(layer)
+        print ( "Starting a task for layer " + str(lnum) )
+        self.task_queue.add_task ( cmd=sys.executable,
+                                   args=['single_alignment_job.py',
+                                          str(run_project_name),
+                                          str(self.alignment_option),
+                                          str(self.use_scale),
+                                          str(self.swiftir_code_mode),
+                                          str(lnum),
+                                          str(1)
+                                          ],
+                                   wd='.' )
+                                   # wd=self.project['data']['destination_path'] )
+      self.task_queue.work_q.join()
+
+    else:
+
+      # Run the project directly as one serial model
+      print ( "Running the project as one serial model")
+      self.updated_model, self.need_to_write_json = pyswift_tui.run_json_project (
+                                             project = self.project,
+                                             alignment_option = self.alignment_option,
+                                             use_scale = self.use_scale,
+                                             swiftir_code_mode = self.swiftir_code_mode,
+                                             start_layer = self.start_layer,
+                                             num_layers = self.num_layers )
+
+
+  def join ( self ):
+    print ( "Waiting for Jobs to finish" )
+
+  def get_updated_data_model ( self ):
+    print ( "Returning the updated data model" )
+    return self.updated_model
 
 if (__name__ == '__main__'):
   print ("Align Task Manager run as main ... not sure what this should do.")
 
-  import psutil
   from argparse import ArgumentParser
   import time
 
