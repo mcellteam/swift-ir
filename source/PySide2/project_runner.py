@@ -163,6 +163,10 @@ class project_runner:
 
       self.updated_model = copy.deepcopy ( self.project )
 
+      cur_scale_new_key = self.updated_model['data']['current_scale']
+      if self.use_scale > 0:
+        cur_scale_new_key = 'scale_' + str(self.use_scale)
+
       for tnum in range(len(tasks_by_start_layer)):
 
         parts = tasks_by_start_layer[tnum]['stdout'].split('---JSON-DELIMITER---')
@@ -176,9 +180,6 @@ class project_runner:
           fdm_new = results_dict['data_model']
 
           # Get the same scale from both the old and new data models
-          cur_scale_new_key = fdm_new['data']['current_scale']
-          if self.use_scale > 0:
-            cur_scale_new_key = 'scale_' + str(self.use_scale)
           cur_scale_new = fdm_new['data']['scales'][cur_scale_new_key]
           cur_scale_old = self.updated_model['data']['scales'][cur_scale_new_key]
 
@@ -189,12 +190,12 @@ class project_runner:
 
           al_stack_old[lnum] = al_stack_new[lnum]
 
-
-          #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-          #self.updated_model =
-          self.need_to_write_json = results_dict['need_to_write_json']
+          self.need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
       # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+
+      # Propagate the AFMs to generate and appropriate CFM at each layer
+      pyswift_tui.SetStackCafm ( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'] )
 
     else:
 
