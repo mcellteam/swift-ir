@@ -138,25 +138,61 @@ class project_runner:
                                           ],
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
+
       self.task_queue.work_q.join()
+
       print ("Tasks completed with these arguments")
       for k in self.task_queue.task_dict.keys():
         print ( '  ' + str(self.task_queue.task_dict[k]['args']) + " " + str(self.task_queue.task_dict[k]['status']) )
+
       # Sort the tasks by layers rather than by process IDs
+      task_dict_by_start_layer = {}
+      for k in self.task_queue.task_dict.keys():
+        t = self.task_queue.task_dict[k]
+        task_dict_by_start_layer[int(t['args'][5])] = t
 
-      print ("Sorted tasks")
+      tasks_by_start_layer = []
+      for k in sorted(task_dict_by_start_layer.keys()):
+        tasks_by_start_layer.append ( task_dict_by_start_layer[k] )
 
-      secndout = self.task_queue.task_dict[[k for k in self.task_queue.task_dict.keys()][2]]['stdout']
-      parts = secndout.split('---JSON-DELIMITER---')
-      dm_text = None
-      for p in parts:
-        ps = p.strip()
-        if ps.startswith('{') and ps.endswith('}'):
-          dm_text = p
-      if dm_text != None:
-        output_dict = json.loads(dm_text)
-        self.updated_model = output_dict['data_model']
-        self.need_to_write_json = output_dict['need_to_write_json']
+      print ("Tasks sorted by layer numbers")
+      for l in tasks_by_start_layer:
+        print ( '  ' + str(l['args']) + '  ' + str(l['status']) )
+
+      # Integrate the output from each task into a new combined data model
+
+      self.updated_model = copy.deepcopy ( self.project )
+
+      for tnum in range(len(tasks_by_start_layer)):
+
+        parts = tasks_by_start_layer[tnum]['stdout'].split('---JSON-DELIMITER---')
+        dm_text = None
+        for p in parts:
+          ps = p.strip()
+          if ps.startswith('{') and ps.endswith('}'):
+            dm_text = p
+        if dm_text != None:
+          results_dict = json.loads(dm_text)
+          fdm_new = results_dict['data_model']
+
+          # Get the same scale from both the old and new data models
+          cur_scale_new_key = fdm_new['data']['current_scale']
+          if self.use_scale > 0:
+            cur_scale_new_key = 'scale_' + str(self.use_scale)
+          cur_scale_new = fdm_new['data']['scales'][cur_scale_new_key]
+          cur_scale_old = self.updated_model['data']['scales'][cur_scale_new_key]
+
+          al_stack_old = cur_scale_old['alignment_stack']
+          al_stack_new = cur_scale_new['alignment_stack']
+
+          lnum = int(tasks_by_start_layer[tnum]['args'][5]) # Note that this may differ from tnum!!
+
+          al_stack_old[lnum] = al_stack_new[lnum]
+
+
+          #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+          #self.updated_model =
+          self.need_to_write_json = results_dict['need_to_write_json']
 
       # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
