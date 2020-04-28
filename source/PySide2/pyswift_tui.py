@@ -77,7 +77,10 @@ def lin_fit(x,y):
 align_swiftir.global_swiftir_mode = 'python'
 
 
-def BiasFuncs(align_list,bias_funcs=None):
+'''
+# Find the bias functions that best fit the trends in c_afm across the whole align_list
+# For now the form of the functions is a 4th-order polynomial
+def BiasFuncs(align_list, bias_funcs=None):
   print_debug_enter (90)
   print_debug(50,50*'B0')
   if type(bias_funcs) == type(None):
@@ -162,10 +165,99 @@ def BiasFuncs(align_list,bias_funcs=None):
   print_debug(50,"\nBias Funcs: \n%s\n" % (str(bias_funcs)))
 
   return bias_funcs
+'''
+
+
+# Find the bias functions that best fit the trends in c_afm across the whole stack
+# For now the form of the functions is a 4th-order polynomial
+def BiasFuncs(al_stack, bias_funcs=None):
+  print_debug_enter (90)
+  print_debug(50,50*'B0')
+  if type(bias_funcs) == type(None):
+    init_scalars = True
+    bias_funcs = {}
+    bias_funcs['skew_x'] = np.zeros((5))
+    bias_funcs['scale_x'] = np.zeros((5))
+    bias_funcs['scale_y'] = np.zeros((5))
+    bias_funcs['rot'] = np.zeros((5))
+    bias_funcs['x'] = np.zeros((5))
+    bias_funcs['y'] = np.zeros((5))
+  else:
+    init_scalars = False
+
+  skew_x_array = np.zeros((len(align_stack),2))
+  scale_x_array = np.zeros((len(align_stack),2))
+  scale_y_array = np.zeros((len(align_stack),2))
+  rot_array = np.zeros((len(align_stack),2))
+  x_array = np.zeros((len(align_stack),2))
+  y_array = np.zeros((len(align_stack),2))
+
+  print_debug(50,50*'B1')
+  i=0
+  for align_idx in range(len(al_stack)):
+
+    c_afm = np.array(al_stack[align_idx]['align_to_ref_method']['method_results']['cumulative_afm'])
+
+    rot = np.arctan(c_afm[1,0]/c_afm[0,0])
+    scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
+    scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
+    skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
+    det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
+
+    skew_x_array[i] = [align_idx,skew_x]
+    scale_x_array[i] = [align_idx,scale_x]
+    scale_y_array[i] = [align_idx,scale_y]
+    rot_array[i] = [align_idx,rot]
+    x_array[i] = [align_idx,c_afm[0,2]]
+    y_array[i] = [align_idx,c_afm[1,2]]
+    i+=1
+
+  print_debug(50,20*'B2 ')
+  p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
+  print_debug(50,10*'B2a ')
+  bias_funcs['skew_x'][:-1] += p[:-1]
+  print_debug(50,10*'B2b ')
+  if init_scalars:
+    print_debug(50,10*'B2c ')
+    bias_funcs['skew_x'][4] = p[4]
+  print_debug(50,50*'B3')
+
+  p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
+  bias_funcs['scale_x'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['scale_x'][4] = p[4]
+  print_debug(50,50*'B4')
+
+  p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
+  bias_funcs['scale_y'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['scale_y'][4] = p[4]
+  print_debug(50,50*'B5')
+
+  p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
+  bias_funcs['rot'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['rot'][4] = p[4]
+  print_debug(50,50*'B6')
+
+  p = np.polyfit(x_array[:,0],x_array[:,1],4)
+  bias_funcs['x'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['x'][4] = p[4]
+
+  p = np.polyfit(y_array[:,0],y_array[:,1],4)
+  bias_funcs['y'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['y'][4] = p[4]
+
+  print_debug(50,"\nBias Funcs: \n%s\n" % (str(bias_funcs)))
+
+  return bias_funcs
 
 
 
-def BiasMat(x,bias_funcs):
+# Return the bias matrix at position x in the stack as given by the bias_funcs
+def BiasMat(x, bias_funcs):
   print_debug_enter (90)
 
   xdot = np.array([4.0,3.0,2.0,1.0])
@@ -217,7 +309,7 @@ def BiasMat(x,bias_funcs):
   return bias_mat
 
 
-
+# Get the initial c_afm from the constant terms of the bias_funcs
 def InitCafm(bias_funcs):
   print_debug_enter (70)
 
@@ -246,6 +338,23 @@ def InitCafm(bias_funcs):
 
 
 
+# Calculate and set the value of the c_afm (with optional bias) for a single layer_dict item
+def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
+  atrm = layer_dict['align_to_ref_method']
+  afm = np.array(atrm['method_results']['affine_matrix'])
+  c_afm = np.array(c_afm)
+  c_afm = swiftir.composeAffine(afm, c_afm)
+
+  # Apply bias_mat if given
+  if type(bias_mat) != type(None):
+    c_afm = swiftir.composeAffine(bias_mat, c_afm)
+
+  atrm['method_results']['cumulative_afm'] = c_afm.tolist()
+
+  return c_afm
+
+
+
 def ApplyBiasFuncs(align_list):
   print_debug_enter (70)
 
@@ -267,7 +376,36 @@ def ApplyBiasFuncs(align_list):
   return c_afm_init
 
 
+# Calculate c_afm across the whole stack with optional bias correction
+def SetStackCafm(al_stack, null_biases=False):
+  print_debug_enter (70)
 
+  print_debug(50,"\nComputing Cafm and Nulling Biases...\n")
+
+  # If null_biases==True, Iteratively determine and null out bias in c_afm
+  bias_mat = None
+  if null_biases:
+    bias_funcs = BiasFuncs(al_stack)
+    c_afm_init = InitCafm(bias_funcs)
+  else:
+    c_afm_init = swiftir.identityAffine()
+  if null_biases:
+    bias_iters = 2
+  else:
+    bias_iters = 1
+  for bi in range(bias_iters):
+    c_afm = c_afm_init
+    for align_idx in range(len(al_stack)):
+      if null_biases:
+        bias_mat = BiasMat(align_idx, bias_funcs)
+      c_afm = SetSingleCafm(al_stack[align_idx], c_afm, bias_mat=bias_mat)
+    if bi < bias_iters-1:
+      bias_funcs = BiasFuncs(al_stack, bias_funcs=bias_funcs)
+
+  return c_afm_init
+
+
+'''
 def BoundingRect(align_list,siz):
   print_debug_enter (70)
 
@@ -286,6 +424,84 @@ def BoundingRect(align_list,siz):
   rect = [-border_width, -border_width, siz[0]+2*border_width, siz[0]+2*border_width]
 
   return rect
+'''
+
+
+# Determine Bounding Rectangle for a stack of images
+def BoundingRect(al_stack,siz):
+  print_debug_enter (70)
+
+  model_bounds = None
+
+  for item in al_stack:
+    c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
+
+    if type(model_bounds) == type(None):
+      model_bounds = swiftir.modelBounds2(c_afm, siz)
+    else:
+      model_bounds = np.append(model_bounds, swiftir.modelBounds2(c_afm, siz), axis=0)
+
+  border_width = max(0 - model_bounds[:,0].min(), 0 - model_bounds[:,1].min(), model_bounds[:,0].max() - siz[0], model_bounds[:,1].max() - siz[0])
+
+  rect = [-border_width, -border_width, siz[0]+2*border_width, siz[0]+2*border_width]
+
+  return rect
+
+
+
+def save_bias_analysis(al_stack, bias_data_path):
+
+  snr_file = open(os.path.join(bias_data_path,'snr_1.dat'),'w')
+  bias_x_file = open(os.path.join(bias_data_path,'bias_x_1.dat'),'w')
+  bias_y_file = open(os.path.join(bias_data_path,'bias_y_1.dat'),'w')
+  bias_rot_file = open(os.path.join(bias_data_path,'bias_rot_1.dat'),'w')
+  bias_scale_x_file = open(os.path.join(bias_data_path,'bias_scale_x_1.dat'),'w')
+  bias_scale_y_file = open(os.path.join(bias_data_path,'bias_scale_y_1.dat'),'w')
+  bias_skew_x_file = open(os.path.join(bias_data_path,'bias_skew_x_1.dat'),'w')
+  bias_det_file = open(os.path.join(bias_data_path,'bias_det_1.dat'),'w')
+  afm_file = open(os.path.join(bias_data_path,'afm_1.dat'),'w')
+  c_afm_file = open(os.path.join(bias_data_path,'c_afm_1.dat'),'w')
+
+  for i in range(len(al_stack)):
+
+    atrm = al_stack[i]['align_to_ref_method']
+    afm = np.array(atrm['method_results']['affine_matrix'])
+    c_afm = np.array(atrm['method_results']['cumulative_afm'])
+    snr = np.array(atrm['method_results']['snr'])
+
+    # Compute and save final biases in analysis data files
+    rot = np.arctan(c_afm[1,0]/c_afm[0,0])
+    scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
+    scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
+    skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
+    det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
+
+    snr_file.write('%d %.6g\n' % (i, snr.mean()))
+    bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
+    bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
+    bias_rot_file.write('%d %.6g\n' % (i, rot))
+    bias_scale_x_file.write('%d %.6g\n' % (i, scale_x))
+    bias_scale_y_file.write('%d %.6g\n' % (i, scale_y))
+    bias_skew_x_file.write('%d %.6g\n' % (i, skew_x))
+    bias_det_file.write('%d %.6g\n' % (i, det))
+
+    afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+    c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+
+    print_debug(12, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+    print_debug(12, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+
+  snr_file.close()
+  bias_x_file.close()
+  bias_y_file.close()
+  bias_rot_file.close()
+  bias_scale_x_file.close()
+  bias_scale_y_file.close()
+  bias_skew_x_file.close()
+  bias_det_file.close()
+  afm_file.close()
+  c_afm_file.close()
+
 
 
 '''
@@ -547,30 +763,20 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         if e.errno != errno.EEXIST:
             raise
 
-    bias_data_path = os.path.join(destination_path,'scale_'+str(scale_tbd),'bias_data')
-    snr_file = open(os.path.join(bias_data_path,'snr_1.dat'),'w')
-    bias_x_file = open(os.path.join(bias_data_path,'bias_x_1.dat'),'w')
-    bias_y_file = open(os.path.join(bias_data_path,'bias_y_1.dat'),'w')
-    bias_rot_file = open(os.path.join(bias_data_path,'bias_rot_1.dat'),'w')
-    bias_scale_x_file = open(os.path.join(bias_data_path,'bias_scale_x_1.dat'),'w')
-    bias_scale_y_file = open(os.path.join(bias_data_path,'bias_scale_y_1.dat'),'w')
-    bias_skew_x_file = open(os.path.join(bias_data_path,'bias_skew_x_1.dat'),'w')
-    bias_det_file = open(os.path.join(bias_data_path,'bias_det_1.dat'),'w')
-    afm_file = open(os.path.join(bias_data_path,'afm_1.dat'),'w')
-    c_afm_file = open(os.path.join(bias_data_path,'c_afm_1.dat'),'w')
-
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:
-        im_sta_fn = s_tbd[i]['images']['ref']['filename']
-        im_mov_fn = s_tbd[i]['images']['base']['filename']
+#        im_sta_fn = s_tbd[i]['images']['ref']['filename']
+#        im_mov_fn = s_tbd[i]['images']['base']['filename']
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
           atrm = s_tbd[i]['align_to_ref_method']
 
           # Align Forward Change:
-          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
+          align_proc = align_swiftir.alignment_process(align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
+#          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
         else:
           # Align Forward Change:
-          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
+          align_proc = align_swiftir.alignment_process(align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
+#          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
         # Align Forward Change:
         align_list.append({'i':i, 'proc':align_proc, 'do':(i in range_to_process)})
 
@@ -607,7 +813,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       print_debug(10,"Initialize to non-zero biases")
       print_debug(10,80 * "@")
 
-    # Align the images
+    # Calculate AFM for each align_item (i.e for each ref-base pair of images)
     for item in align_list:
 
       if item['do']:
@@ -622,12 +828,24 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
 
     c_afm_init = swiftir.identityAffine()
 
-    # Null Trends in c_afm if requested
+    # Compute Cafms across the stack and null trends in c_afm if requested
+    # Note: This is necessarily a serial process
+    null_biases = project['data']['scales']['scale_'+str(scale_tbd)]['null_cafm_trends']
+    c_afm_init = SetStackCafm(s_tbd, null_biases)
+
+    '''
     if project['data']['scales']['scale_'+str(scale_tbd)]['null_cafm_trends']:
       c_afm_init = ApplyBiasFuncs(align_list)
+    '''
+
+    # Save analysis of bias data:
+    bias_data_path = os.path.join(destination_path,'scale_'+str(scale_tbd),'bias_data')
+    save_bias_analysis(s_tbd, bias_data_path)
 
 
     # Save all final aligned images:
+    # Note: This should be parallelized via TaskQueue and image_apply_affine.py
+
     print_debug(50,"\nSaving all aligned images...\n")
 
     # Save possibly unmodified first image into align_dir
@@ -640,7 +858,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     rect = None
     if project['data']['scales']['scale_'+str(scale_tbd)]['use_bounding_rect']:
       siz = im_sta.shape
-      rect = BoundingRect(align_list,siz)
+#      rect = BoundingRect(align_list,siz)
+      rect = BoundingRect(s_tbd, siz)
     print_debug(10,'Bounding Rectangle: %s' % (str(rect)))
 
     print_debug(10,"Applying affine: " + str(c_afm_init))
@@ -652,13 +871,6 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       s_tbd[0]['images']['aligned'] = {}
     s_tbd[0]['images']['aligned']['filename'] = al_fn
 
-    skew_x_array = np.zeros((len(align_list),2))
-    scale_x_array = np.zeros((len(align_list),2))
-    scale_y_array = np.zeros((len(align_list),2))
-    rot_array = np.zeros((len(align_list),2))
-    x_array = np.zeros((len(align_list),2))
-    y_array = np.zeros((len(align_list),2))
-
     i = 0
     for item in align_list:
       if item['do']:
@@ -667,23 +879,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         # Save the image:
         align_item.saveAligned(rect=rect, grayBorder=True)
 
-      # Retrieve alignment result
-        recipe = align_item.recipe
-        snr = recipe.ingredients[-1].snr
-        snr_report = recipe.ingredients[-1].snr_report
-        afm = recipe.ingredients[-1].afm
-        c_afm = align_item.cumulative_afm
-
-      # Store custom bias values in the dictionary for this stack item
-        atrm = s_tbd[align_idx]['align_to_ref_method']
-        atrm['method_data']['bias_x_per_image'] = 0  #x_bias
-        atrm['method_data']['bias_y_per_image'] = 0  #y_bias
-        atrm['method_data']['bias_rot_per_image'] = 0  #rot_bias
-        atrm['method_data']['bias_scale_x_per_image'] = 0  #scale_x_bias
-        atrm['method_data']['bias_scale_y_per_image'] = 0  #scale_y_bias
-        atrm['method_data']['bias_skew_x_per_image'] = 0  #skew_x_bias
-
-      # Add results to layer dictionary for this stack item
+      # Add aligned image record to layer dictionary for this stack item
         base_fn = os.path.basename(s_tbd[align_idx]['images']['base']['filename'])
         al_fn = os.path.join(align_dir,base_fn)
         s_tbd[align_idx]['images']['aligned'] = {}
@@ -691,55 +887,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         s_tbd[align_idx]['images']['aligned']['metadata'] = {}
         s_tbd[align_idx]['images']['aligned']['metadata']['match_points'] = []
         s_tbd[align_idx]['images']['aligned']['metadata']['annotations'] = []
-        method_results = s_tbd[align_idx]['align_to_ref_method']['method_results']
-#        method_results['snr'] = snr[0]
-        method_results['snr'] = list(snr)
-        method_results['snr_report'] = snr_report
-        method_results['affine_matrix'] = afm.tolist()
-        method_results['cumulative_afm'] = c_afm.tolist()
-
-        # Compute and save final biases in analysis data files
-        rot = np.arctan(c_afm[1,0]/c_afm[0,0])
-        scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
-        scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
-        skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
-        det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
-
-        skew_x_array[i] = [align_idx,skew_x]
-        scale_x_array[i] = [align_idx,scale_x]
-        scale_y_array[i] = [align_idx,scale_y]
-        rot_array[i] = [align_idx,rot]
-        x_array[i] = [align_idx,c_afm[0,2]]
-        y_array[i] = [align_idx,c_afm[1,2]]
-
-#        snr_file.write('%d %.6g\n' % (i, snr[0]))
-        snr_file.write('%d %.6g\n' % (i, snr.mean()))
-        bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
-        bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
-        bias_rot_file.write('%d %.6g\n' % (i, rot))
-        bias_scale_x_file.write('%d %.6g\n' % (i, scale_x))
-        bias_scale_y_file.write('%d %.6g\n' % (i, scale_y))
-        bias_skew_x_file.write('%d %.6g\n' % (i, skew_x))
-        bias_det_file.write('%d %.6g\n' % (i, det))
-
-        afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-        c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
-
-        print_debug(12, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-        print_debug(12, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
       i+=1
-
-    snr_file.close()
-    bias_x_file.close()
-    bias_y_file.close()
-    bias_rot_file.close()
-    bias_scale_x_file.close()
-    bias_scale_y_file.close()
-    bias_skew_x_file.close()
-    bias_det_file.close()
-    afm_file.close()
-    c_afm_file.close()
 
     print_debug(1, 30 * "|=|")
     print_debug(1, "Returning True")
@@ -891,27 +1040,6 @@ if (__name__ == '__main__'):
       print_debug(50,"Writing project to file: ", proj_ofn)
       ofp = open(proj_ofn,'w')
       json.dump(d,ofp, sort_keys=True, indent=2, separators=(',', ': '))
-
-      '''
-      p = np.polyfit(skew_x_array[:,0],skew_x_array[:,1],4)
-      print_debug(50,"\n4th degree of Skew_X bias: \n", p)
-
-      p = np.polyfit(scale_x_array[:,0],scale_x_array[:,1],4)
-      print_debug(50,"\n4th degree of Scale_X bias: \n", p)
-
-      p = np.polyfit(scale_y_array[:,0],scale_y_array[:,1],4)
-      print_debug(50,"\n4th degree of Scale_Y bias: \n", p)
-
-      p = np.polyfit(rot_array[:,0],rot_array[:,1],4)
-      print_debug(50,"\n4th degree of Rot bias: \n", p)
-
-      p = np.polyfit(x_array[:,0],x_array[:,1],4)
-      print_debug(50,"\n4th degree of X bias: \n", p)
-
-      p = np.polyfit(y_array[:,0],y_array[:,1],4)
-      print_debug(50,"\n4th degree of Y bias: \n", p)
-      '''
-
 
 
   '''

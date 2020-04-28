@@ -98,27 +98,31 @@ def prefix_lines ( i, s ):
 
 class alignment_process:
 
-  def __init__(self, im_sta_fn, im_mov_fn, align_dir, layer_dict=None, init_affine_matrix = None, x_bias=0.0, y_bias=0.0, cumulative_afm=None):
+  def __init__(self, im_sta_fn=None, im_mov_fn=None, align_dir='./', layer_dict=None, init_affine_matrix = None, cumulative_afm=None):
     self.recipe = None
     self.im_sta_fn = im_sta_fn
     self.im_mov_fn = im_mov_fn
     self.align_dir = align_dir
-    self.x_bias = x_bias
-    self.y_bias = y_bias
 
     if layer_dict != None:
       self.layer_dict = layer_dict
+      self.im_sta_fn = self.layer_dict['images']['ref']['filename']
+      self.im_mov_fn = self.layer_dict['images']['base']['filename']
     else:
       self.layer_dict = {
+         "images":{
+            "ref":{"filename":im_sta_fn},
+            "base":{"filename":im_mov_fn}
+         },
          "align_to_ref_method": {
            "selected_method": "Auto Swim Align",
            "method_options": [
                                  "Auto Swim Align",
                                  "Match Point Align"
                              ],
-				   "method_data": {},
-				   "method_results": {}
-				 }
+	   "method_data": {},
+	   "method_results": {}
+	}
       }
     if type(init_affine_matrix) == type(None):
       self.init_affine_matrix = swiftir.identityAffine()
@@ -263,31 +267,35 @@ class alignment_process:
 
     self.setCafm(c_afm,bias_mat=None)
 
-    '''
-    self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,self.cumulative_afm)
-    self.cumulative_afm[0,2] -= self.x_bias
-    self.cumulative_afm[1,2] -= self.y_bias
-    '''
+
+    # Retrieve alignment result
+    snr = self.recipe.ingredients[-1].snr
+    snr_report = self.recipe.ingredients[-1].snr_report
+    afm = self.recipe.ingredients[-1].afm
+    c_afm = self.cumulative_afm
+
+    # Put alignment results into layer_dict 
+    atrm['method_results']['snr'] = list(snr)
+    atrm['method_results']['snr_report'] = snr_report
+    atrm['method_results']['affine_matrix'] = afm.tolist()
+    atrm['method_results']['cumulative_afm'] = c_afm.tolist()
+
+    atrm['method_data']['bias_x_per_image'] = 0  #x_bias
+    atrm['method_data']['bias_y_per_image'] = 0  #y_bias
+    atrm['method_data']['bias_rot_per_image'] = 0  #rot_bias
+    atrm['method_data']['bias_scale_x_per_image'] = 0  #scale_x_bias
+    atrm['method_data']['bias_scale_y_per_image'] = 0  #scale_y_bias
+    atrm['method_data']['bias_skew_x_per_image'] = 0  #skew_x_bias
 
     if save:
       self.saveAligned()
-
-    '''
-    im_aligned = swiftir.affineImage(self.cumulative_afm,im_mov)
-    ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
-    swiftir.saveImage(im_aligned,ofn)
-    '''
 
     return self.cumulative_afm
 
 
   def setCafm(self,c_afm,bias_mat=None):
     self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,c_afm)
-    '''
-    # Previous method for applying trans bias
-    self.cumulative_afm[0,2] -= self.x_bias
-    self.cumulative_afm[1,2] -= self.y_bias
-    '''
+
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
       self.cumulative_afm = swiftir.composeAffine(bias_mat,self.cumulative_afm)
@@ -903,8 +911,6 @@ if __name__=='__main__':
                                    f2,
                                    out,
                                    layer_dict=layer_dict,
-                                   x_bias=xbias,
-                                   y_bias=ybias,
                                    cumulative_afm=cumulative_afm )
 
   if global_swiftir_mode == 'c':
