@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 import swiftir
 import align_swiftir
 import task_queue
-import align_task_mgr
+# import project_runner  # Not really used yet
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 50  # A larger value prints more stuff
