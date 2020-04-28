@@ -1349,7 +1349,8 @@ if __name__ == "__main__":
       my_path + "task_wrapper.py",
       my_path + "single_scale_job.py",
       my_path + "multi_scale_job.py",
-      my_path + "project_runner.py"
+      my_path + "project_runner.py",
+      my_path + "single_alignment_job.py"
     ]
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )

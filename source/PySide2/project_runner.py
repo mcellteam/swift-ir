@@ -79,7 +79,6 @@ class project_runner:
     if use_scale <= 0:
       print ( "Error: project_runner must be given an explicit scale")
       return
-
     self.project = copy.deepcopy ( project )
     self.alignment_option = alignment_option
     self.use_scale = use_scale
@@ -87,26 +86,9 @@ class project_runner:
     self.start_layer = start_layer
     self.num_layers = num_layers
     self.run_parallel = run_parallel
-
-    task_queue.debug_level = alignem.debug_level
-    task_wrapper.debug_level = alignem.debug_level
-
-    self.task_queue = task_queue.TaskQueue(sys.executable)
-    self.task_queue.start ( psutil.cpu_count(logical=False) )
-    self.task_queue.notify = True
-
-    # Write the entire project as a single JSON file with a unique stable name for this run
-
-    # TODO: The "dir" here (currently ".") should be the destination path resolved from the project file:
-    f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
-    fn = f.name
-    f.close()
-    print ("Temp file is: " + str (f.name))
-    f = open ( fn, 'w')
-    jde = json.JSONEncoder (indent=2, separators=(",", ": "), sort_keys=True)
-    proj_json = jde.encode (self.project)
-    f.write (proj_json)
-    f.close ()
+    self.task_queue = None
+    self.updated_model = None
+    self.need_to_write_json = None
 
 
   def start ( self ):
@@ -119,28 +101,42 @@ class project_runner:
 
     if self.run_parallel:
 
-      # Run the project directly as one serial model
-      for layer in alstack:
-        print ( "Starting a task for layer " + str(layer) )
-        '''
-        self.task_queue.add_task (cmd=sys.executable,
-                                  args=['pyswift_tui.py',
-                                        '-code', swiftir_code_mode,
-                                        '-scale', str(use_scale),
-                                        '-start', '0',
-                                        '-count', '1',
-                                        '-alignment_option', str (abs_file_name), str (outfile_name)], wd='.')
-        '''
+      # Run the project as a series of jobs
 
-      # Run the project directly as one serial model
-      print ( "Running the project as one serial model")
-      self.updated_model, self.need_to_write_json = pyswift_tui.run_json_project (
-                                             project = self.project,
-                                             alignment_option = self.alignment_option,
-                                             use_scale = self.use_scale,
-                                             swiftir_code_mode = self.swifir_code_mode,
-                                             start_layer = self.start_layer,
-                                             num_layers = self.num_layers )
+      # Write the entire project as a single JSON file with a unique stable name for this run
+
+      f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
+      run_project_name = f.name
+      f.close()
+      print ("Temp file is: " + str (f.name))
+      f = open ( run_project_name, 'w')
+      jde = json.JSONEncoder (indent=2, separators=(",", ": "), sort_keys=True)
+      proj_json = jde.encode (self.project)
+      f.write (proj_json)
+      f.close ()
+
+      # Prepare the task queue
+
+      task_queue.debug_level = alignem.debug_level
+      task_wrapper.debug_level = alignem.debug_level
+
+      self.task_queue = task_queue.TaskQueue(sys.executable)
+      self.task_queue.start ( psutil.cpu_count(logical=False) )
+      self.task_queue.notify = True
+
+      for layer in alstack:
+        lnum = alstack.index(layer)
+        print ( "Starting a task for layer " + str(lnum) )
+        self.task_queue.add_task ( cmd=sys.executable,
+                                   args=['single_alignment_job.py',
+                                          str(run_project_name),
+                                          str(self.alignment_option),
+                                          str(self.use_scale),
+                                          str(self.swifir_code_mode),
+                                          str(lnum),
+                                          str(1)
+                                          ] )
+      self.task_queue.work_q.join()
 
     else:
 
@@ -165,7 +161,6 @@ class project_runner:
 if (__name__ == '__main__'):
   print ("Align Task Manager run as main ... not sure what this should do.")
 
-  import psutil
   from argparse import ArgumentParser
   import time
 
