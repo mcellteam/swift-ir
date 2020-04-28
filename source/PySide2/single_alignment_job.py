@@ -7,6 +7,7 @@
 # point this functionality could be added back or refactored other ways.
 
 import sys
+import json
 import pyswift_tui
 
 if __name__ == '__main__':
@@ -17,23 +18,32 @@ if __name__ == '__main__':
     this_file = sys.argv[0]
     project_name = sys.argv[1]
     alignment_option = sys.argv[2]
-    use_scale = sys.argv[3]
+    use_scale = int(sys.argv[3].strip())
     swiftir_code_mode = sys.argv[4]
-    start_layer = sys.argv[5]
-    num_layers = sys.argv[6]
+    start_layer = int(sys.argv[5].strip())
+    num_layers = int(sys.argv[6].strip())
 
-    print ( "Inside single_alignment_job with " +
-                                         str(self.project) +
-                                         str(self.alignment_option) +
-                                         str(self.use_scale) +
-                                         str(self.swifir_code_mode) +
-                                         str(self.start_layer) +
-                                         str(self.num_layers) )
+    print ( "Inside single_alignment_job with: " +
+                                         str(project_name) + ', ' +
+                                         str(alignment_option) + ', ' +
+                                         str(use_scale) + ', ' +
+                                         str(swiftir_code_mode) + ', ' +
+                                         str(start_layer) + ', ' +
+                                         str(num_layers) )
+
+    # Read the project from the JSON file
+    f = open ( project_name, 'r' )
+    text = f.read()
+    f.close()
+    project_dict = json.loads ( text )
+
+    print ( "project_dict.keys() = " + str(project_dict.keys()) )
+    print ( str(project_dict['data']['scales']['scale_%d'%use_scale]['alignment_stack'][0]['images']['ref']['filename']) )
 
     updated_model, need_to_write_json = pyswift_tui.run_json_project (
-                                         project = self.project,
-                                         alignment_option = self.alignment_option,
-                                         use_scale = self.use_scale,
-                                         swiftir_code_mode = self.swifir_code_mode,
-                                         start_layer = self.start_layer,
-                                         num_layers = self.num_layers )
+                                         project = project_dict,
+                                         alignment_option = alignment_option,
+                                         use_scale = use_scale,
+                                         swiftir_code_mode = swiftir_code_mode,
+                                         start_layer = start_layer,
+                                         num_layers = num_layers )
