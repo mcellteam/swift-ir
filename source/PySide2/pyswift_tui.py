@@ -13,6 +13,7 @@ import scipy.stats as sps
 import matplotlib.pyplot as plt
 import swiftir
 import align_swiftir
+from get_image_size import get_image_size
 import task_queue
 # import project_runner  # Not really used yet
 
@@ -42,22 +43,22 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None, p5=None ):
     global debug_level
     if level <= debug_level:
       if p1 == None:
-        print ( "" )
+        sys.stderr.write( "" + '\n' )
       elif p2 == None:
-        print ( str(p1) )
+        sys.stderr.write( str(p1) + '\n' )
       elif p3 == None:
-        print ( str(p1) + str(p2) )
+        sys.stderr.write( str(p1) + str(p2) + '\n' )
       elif p4 == None:
-        print (str (p1) + str (p2) + str (p3))
+        sys.stderr.write(str (p1) + str (p2) + str (p3) + '\n' )
       elif p5 == None:
-        print (str (p1) + str (p2) + str (p3) + str(p4))
+        sys.stderr.write(str (p1) + str (p2) + str (p3) + str(p4) + '\n' )
       else:
-        print ( str(p1) + str(p2) + str(p3) + str(p4) + str(p5) )
+        sys.stderr.write( str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '\n' )
 
 def print_debug_enter (level):
     if level <= debug_level:
         call_stack = inspect.stack()
-        print ( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) )
+        sys.stderr.write( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) + '\n' )
 
 # Do Linear Regression of X,Y data
 def lin_fit(x,y):
@@ -428,10 +429,12 @@ def BoundingRect(align_list,siz):
 
 
 # Determine Bounding Rectangle for a stack of images
-def BoundingRect(al_stack,siz):
+def BoundingRect(al_stack):
   print_debug_enter (70)
 
   model_bounds = None
+
+  siz = get_image_size(al_stack[0]['images']['base']['filename'])
 
   for item in al_stack:
     c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
@@ -612,8 +615,8 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
       allow_scale_climb = proj_status['scales'][next_scale_key]['all_aligned']
 
   if ((not allow_scale_climb) & (alignment_option!='init_affine')):
-      print('AlignEM SWiFT Error: Cannot perform alignment_option: %s at scale: %d' % (alignment_option,scale_tbd))
-      print('                       Because next coarsest scale is not fully aligned')
+      print_debug(-1, 'AlignEM SWiFT Error: Cannot perform alignment_option: %s at scale: %d' % (alignment_option,scale_tbd))
+      print_debug(-1, '                       Because next coarsest scale is not fully aligned')
 
       return (project,False)
 
@@ -859,7 +862,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if project['data']['scales']['scale_'+str(scale_tbd)]['use_bounding_rect']:
       siz = im_sta.shape
 #      rect = BoundingRect(align_list,siz)
-      rect = BoundingRect(s_tbd, siz)
+      rect = BoundingRect(s_tbd)
     print_debug(10,'Bounding Rectangle: %s' % (str(rect)))
 
     print_debug(10,"Applying affine: " + str(c_afm_init))

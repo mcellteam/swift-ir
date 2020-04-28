@@ -17,15 +17,15 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
     global debug_level
     if level <= debug_level:
       if p1 == None:
-        print ( "" )
+        sys.stderr.write( "" + '\n' )
       elif p2 == None:
-        print ( str(p1) )
+        sys.stderr.write( str(p1) + '\n' )
       elif p3 == None:
-        print ( str(p1) + str(p2) )
+        sys.stderr.write( str(p1) + str(p2) + '\n' )
       elif p4 == None:
-        print ( str(p1) + str(p2) + str(p3) )
+        sys.stderr.write( str(p1) + str(p2) + str(p3) + '\n' )
       else:
-        print ( str(p1) + str(p2) + str(p3) + str(p4) )
+        sys.stderr.write( str(p1) + str(p2) + str(p3) + str(p4) + '\n' )
 
 '''
 #################################
@@ -83,29 +83,47 @@ class OutputQueue:
 
   # In passthrough mode, set up threadworkers and queues to manage stdout and stderr of task and send command string and args to task_wrapper.py process
   # Otherwise just do proc.communicate() and capture stdout and stderr upon command completion (possibly broken functionality?)
-  def run_proc(self, proc, arg_in=None, passthrough=True, output_list=None):
+  def run_proc(self, proc, arg_in=None, passthrough_stdout=True, passthrough_stderr=True, output_list=None):
 
-    if passthrough:
+    if passthrough_stdout or passthrough_stderr:
 
       outs, errs = [], []
+
+      reader_threads = []
+      writer_threads = []
+      all_threads = []
+
+      if passthrough_stdout:
+        stdout_f = sys.stdout
+      else:
+        stdout_f = open('/dev/null','w')
+
+      if passthrough_stderr:
+        stderr_f = sys.stderr
+      else:
+        stderr_f = open('/dev/null','w')
 
       stdout_reader_thread = threading.Thread(
           target=self.read_output, args=(proc.stdout, [self.out_q.put, outs.append])
           )
+      stdout_writer_thread = threading.Thread(
+          target=self.write_output, args=(self.out_q.get, stdout_f, output_list)
+          )
+      reader_threads.extend([stdout_reader_thread])
+      writer_threads.extend([stdout_writer_thread])
 
       stderr_reader_thread = threading.Thread(
           target=self.read_output, args=(proc.stderr, [self.err_q.put, errs.append])
           )
-
-      stdout_writer_thread = threading.Thread(
-          target=self.write_output, args=(self.out_q.get, sys.stdout, output_list)
-          )
-
       stderr_writer_thread = threading.Thread(
-          target=self.write_output, args=(self.err_q.get, sys.stderr, output_list)
+          target=self.write_output, args=(self.err_q.get, stderr_f, output_list)
           )
+      reader_threads.extend([stderr_reader_thread])
+      writer_threads.extend([stderr_writer_thread])
+      all_threads.extend(reader_threads)
+      all_threads.extend(writer_threads)
 
-      for t in (stdout_reader_thread, stderr_reader_thread, stdout_writer_thread, stderr_writer_thread):
+      for t in all_threads:
         t.daemon = True
         t.start()
 
@@ -133,13 +151,13 @@ class OutputQueue:
           proc.stdin.flush()
       proc.wait()
 
-      for t in (stdout_reader_thread, stderr_reader_thread):
+      for t in reader_threads:
         t.join()
 
       self.out_q.put(None)
       self.err_q.put(None)
 
-      for t in (stdout_writer_thread, stderr_writer_thread):
+      for t in writer_threads:
         t.join()
 
       outs = ' '.join(outs)
@@ -169,6 +187,8 @@ class TaskQueue:
     module_file_path = os.path.join(self.module_dir_path, 'task_wrapper.py')
     self.task_wrapper = module_file_path
     self.notify = False
+    self.passthrough_stdout = False
+    self.passthrough_stderr = False
 
   def start(self,n_threads):
     if n_threads > self.n_threads:
@@ -202,7 +222,7 @@ class TaskQueue:
 #      if debug_level > 4: sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
       task['status'] = 'running'
       self.task_dict[pid]['output'] = []
-      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough=self.notify, output_list=self.task_dict[pid]['output'])
+      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough_stdout=self.passthrough_stdout, passthrough_stderr=self.passthrough_stderr, output_list=self.task_dict[pid]['output'])
       self.task_dict[pid]['stdout'] = res[0]
       self.task_dict[pid]['stderr'] = res[1]
       process.stdin.close()
@@ -348,6 +368,8 @@ if (__name__ == '__main__'):
 
   my_q.start(cpus)
   my_q.notify=True
+  my_q.passthrough_stdout = False
+  my_q.passthrough_stderr = False
 
   begin = time.time()
 
@@ -395,6 +417,9 @@ if (__name__ == '__main__'):
 #  my_q.task_dict[a_pid]['process'].terminate()
 
   my_q.work_q.join()
+
+#  sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
+#  sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])
 
 #  if debug_level > 4: sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
 #  if debug_level > 4: sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])

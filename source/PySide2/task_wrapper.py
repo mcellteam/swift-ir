@@ -169,7 +169,7 @@ if __name__ == '__main__':
       signal.signal(signal.SIGTERM, sig_handler)
 
       output_q = OutputQueue()
-      rc, res = output_q.run_proc(proc,passthrough=True)
+      rc, res = output_q.run_proc(proc,passthrough_stdout=True,passthrough_stderr=True)
 
       exit(abs(rc))
 
@@ -226,7 +226,7 @@ if __name__ == '__main__':
       signal.signal(signal.SIGTERM, sig_handler)
 
       output_q = OutputQueue()
-      rc, res = output_q.run_proc(proc,passthrough=True)
+      rc, res = output_q.run_proc(proc,passthrough_stdout=True,passthrough_stderr=True)
 
       exit(abs(rc))
 
