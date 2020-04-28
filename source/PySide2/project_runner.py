@@ -98,7 +98,7 @@ class project_runner:
     # Write the entire project as a single JSON file with a unique stable name for this run
 
     # TODO: The "dir" here (currently ".") should be the destination path resolved from the project file:
-    f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=".", delete=False)
+    f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
     fn = f.name
     f.close()
     print ("Temp file is: " + str (f.name))
@@ -111,6 +111,8 @@ class project_runner:
 
   def start ( self ):
     print ( "Starting Jobs" )
+
+    #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
     scale_key = "scale_%d" % self.use_scale
     alstack = self.project['data']['scales'][scale_key]['alignment_stack']
