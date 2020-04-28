@@ -82,7 +82,7 @@ class project_runner:
     self.project = copy.deepcopy ( project )
     self.alignment_option = alignment_option
     self.use_scale = use_scale
-    self.swifir_code_mode = swiftir_code_mode
+    self.swiftir_code_mode = swiftir_code_mode
     self.start_layer = start_layer
     self.num_layers = num_layers
     self.run_parallel = run_parallel
@@ -132,10 +132,12 @@ class project_runner:
                                           str(run_project_name),
                                           str(self.alignment_option),
                                           str(self.use_scale),
-                                          str(self.swifir_code_mode),
+                                          str(self.swiftir_code_mode),
                                           str(lnum),
                                           str(1)
-                                          ] )
+                                          ],
+                                   wd='.' )
+                                   # wd=self.project['data']['destination_path'] )
       self.task_queue.work_q.join()
 
     else:
@@ -146,7 +148,7 @@ class project_runner:
                                              project = self.project,
                                              alignment_option = self.alignment_option,
                                              use_scale = self.use_scale,
-                                             swiftir_code_mode = self.swifir_code_mode,
+                                             swiftir_code_mode = self.swiftir_code_mode,
                                              start_layer = self.start_layer,
                                              num_layers = self.num_layers )
 
