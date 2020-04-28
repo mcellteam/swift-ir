@@ -21,6 +21,7 @@ import platform
 import psutil
 import task_queue
 import task_wrapper # Only needed to set the debug level for that module
+import project_runner
 
 import time
 
@@ -879,12 +880,25 @@ def align_layers ( first_layer=0, num_layers=-1 ):
 
       # Run the project via pyswift_tui
       pyswift_tui.debug_level = alignem.debug_level
-      updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
-                                                                         alignment_option = this_scale['method_data']['alignment_option'],
-                                                                         use_scale = alignem.get_scale_val(scale_to_run_text),
-                                                                         swiftir_code_mode = code_mode,
-                                                                         start_layer = first_layer,
-                                                                         num_layers = num_layers )
+      if global_parallel_mode:
+        running_project = project_runner.project_runner ( project=dm,
+                                                          alignment_option=this_scale['method_data']['alignment_option'],
+                                                          use_scale=alignem.get_scale_val(scale_to_run_text),
+                                                          swiftir_code_mode=code_mode,
+                                                          start_layer=first_layer,
+                                                          num_layers=num_layers,
+                                                          run_parallel=True)
+        running_project.start()
+        running_project.join()
+        updated_model = running_project.get_updated_data_model()
+        need_to_write_json = running_project.need_to_write_json
+      else:
+        updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
+                                                                           alignment_option = this_scale['method_data']['alignment_option'],
+                                                                           use_scale = alignem.get_scale_val(scale_to_run_text),
+                                                                           swiftir_code_mode = code_mode,
+                                                                           start_layer = first_layer,
+                                                                           num_layers = num_layers )
 
       if need_to_write_json:
           alignem.project_data = updated_model
@@ -1298,6 +1312,7 @@ from source_tracker import get_hash_and_rev
 
 global_source_rev = ""
 global_source_hash = ""
+global_parallel_mode = False
 
 if __name__ == "__main__":
 
@@ -1305,6 +1320,7 @@ if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
+    options.add_argument("-p", "--parallel", type=int, required=False, default=0, help="Run in parallel")
     args = options.parse_args()
 
     if args.debug != None:
@@ -1315,6 +1331,9 @@ if __name__ == "__main__":
         align_swiftir.debug_level = int(args.debug)
     except:
         pass
+
+    if args.parallel != None:
+      global_parallel_mode = args.parallel != 0
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     source_list = [
@@ -1330,7 +1349,8 @@ if __name__ == "__main__":
       my_path + "task_wrapper.py",
       my_path + "single_scale_job.py",
       my_path + "multi_scale_job.py",
-      my_path + "align_task_mgr.py"
+      my_path + "project_runner.py",
+      my_path + "single_alignment_job.py"
     ]
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
