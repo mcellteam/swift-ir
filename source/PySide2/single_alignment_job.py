@@ -65,4 +65,4 @@ if __name__ == '__main__':
     print ( "---JSON-DELIMITER---")
 
     # print ( "\n\n\n JSON DATA MODEL:\n" + str(proj_json) + "\n\n" )
-    flush()
+    # flush()
