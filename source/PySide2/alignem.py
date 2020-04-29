@@ -78,6 +78,7 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
 
 
 app = None
+use_c_version = True
 
 preloading_range = 10
 max_image_file_size = 1000000000
@@ -1405,7 +1406,7 @@ class MainWindow(QMainWindow):
                   [ 'Update CFMs', None, self.not_yet, True, None, None ],
                   [ 'Generate Images', None, self.not_yet, True, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Use C Version', None, self.do_nothing, True, None, None ],
+                  [ 'Use C Version', None, self.do_nothing, use_c_version, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
                   [ 'Reverse Arrow Keys', None, self.toggle_arrow_direction, False, None, None ],
