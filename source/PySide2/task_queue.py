@@ -85,7 +85,8 @@ class OutputQueue:
   # Otherwise just do proc.communicate() and capture stdout and stderr upon command completion (possibly broken functionality?)
   def run_proc(self, proc, arg_in=None, passthrough_stdout=True, passthrough_stderr=True, output_list=None):
 
-    if passthrough_stdout or passthrough_stderr:
+#    if passthrough_stdout or passthrough_stderr:
+    if True:
 
       outs, errs = [], []
 
@@ -164,16 +165,19 @@ class OutputQueue:
       errs = ' '.join(errs)
 
     else:
+
       arg_in_stream = b''
       for arg in arg_in:
         arg_in_stream += bytes(arg + '\n','utf-8')
       outs, errs = proc.communicate(input=arg_in_stream)
+
       outs = '' if outs == None else outs.decode('utf-8')
       errs = '' if errs == None else errs.decode('utf-8')
 
     rc = proc.returncode
 
     return (rc, (outs, errs))
+      
 
 
 class TaskQueue:
@@ -418,8 +422,8 @@ if (__name__ == '__main__'):
 
   my_q.work_q.join()
 
-#  sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
-#  sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])
+  sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
+  sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])
 
 #  if debug_level > 4: sys.stdout.write(my_q.task_dict[pids[0]]['stdout'])
 #  if debug_level > 4: sys.stdout.write(my_q.task_dict[pids[0]]['stderr'])
