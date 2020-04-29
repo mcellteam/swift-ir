@@ -1325,7 +1325,8 @@ if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
-    options.add_argument("-p", "--parallel", type=int, required=False, default=0, help="Run in parallel")
+    options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
+    options.add_argument("-c", "--use_c_version", type=int, required=False, default=1, help="Run the C versions of SWiFT tools")
     args = options.parse_args()
 
     if args.debug != None:
@@ -1339,6 +1340,9 @@ if __name__ == "__main__":
 
     if args.parallel != None:
       global_parallel_mode = args.parallel != 0
+
+    if args.use_c_version != None:
+      alignem.use_c_version = args.use_c_version != 0
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     source_list = [
