@@ -841,11 +841,6 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     null_biases = project['data']['scales']['scale_'+str(scale_tbd)]['null_cafm_trends']
     c_afm_init = SetStackCafm(s_tbd, null_biases)
 
-    '''
-    if project['data']['scales']['scale_'+str(scale_tbd)]['null_cafm_trends']:
-      c_afm_init = ApplyBiasFuncs(align_list)
-    '''
-
     # Save analysis of bias data:
     bias_data_path = os.path.join(destination_path,'scale_'+str(scale_tbd),'bias_data')
     save_bias_analysis(s_tbd, bias_data_path)
