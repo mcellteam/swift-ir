@@ -1320,7 +1320,7 @@ if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
-    options.add_argument("-p", "--parallel", type=int, required=False, default=0, help="Run in parallel")
+    options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
     args = options.parse_args()
 
     if args.debug != None:
