@@ -60,7 +60,7 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None, p5=None ):
 def print_debug_enter (level):
     if level <= debug_level:
         call_stack = inspect.stack()
-        print ( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) )
+        # print ( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) )
 
 
 class project_runner:
@@ -75,9 +75,9 @@ class project_runner:
   #   The project_runner will collect the alignment data from each pyswift_tui run and integrate it into the "master" data model
   def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False ):
 
-    print ( "\n\n\nCreating a project runner...\n\n\n")
+    # print ( "\n\n\nCreating a project runner...\n\n\n")
     if use_scale <= 0:
-      print ( "Error: project_runner must be given an explicit scale")
+      # print ( "Error: project_runner must be given an explicit scale")
       return
     self.project = copy.deepcopy ( project )
     self.alignment_option = alignment_option
@@ -92,7 +92,7 @@ class project_runner:
 
 
   def start ( self ):
-    print ( "Starting Jobs" )
+    # print ( "Starting Jobs" )
 
     #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
@@ -105,10 +105,11 @@ class project_runner:
 
       # Write the entire project as a single JSON file with a unique stable name for this run
 
-      f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
-      run_project_name = f.name
-      f.close()
-      print ("Temp file is: " + str (f.name))
+      # f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
+      #run_project_name = f.name
+      #f.close()
+      # print ("Temp file is: " + str (f.name))
+      run_project_name = os.path.join(self.project['data']['destination_path'], "project_runner_job_file.json")
       f = open ( run_project_name, 'w')
       jde = json.JSONEncoder (indent=2, separators=(",", ": "), sort_keys=True)
       proj_json = jde.encode (self.project)
@@ -126,7 +127,7 @@ class project_runner:
 
       for layer in alstack:
         lnum = alstack.index(layer)
-        print ( "Starting a task for layer " + str(lnum) )
+        # print ( "Starting a task for layer " + str(lnum) )
         self.task_queue.add_task ( cmd=sys.executable,
                                    args=['single_alignment_job.py',
                                           str(run_project_name),
@@ -141,9 +142,10 @@ class project_runner:
 
       self.task_queue.work_q.join()
 
-      print ("Tasks completed with these arguments")
+      # print ("Tasks completed with these arguments")
       for k in self.task_queue.task_dict.keys():
-        print ( '  ' + str(self.task_queue.task_dict[k]['args']) + " " + str(self.task_queue.task_dict[k]['status']) )
+        #print ( '  ' + str(self.task_queue.task_dict[k]['args']) + " " + str(self.task_queue.task_dict[k]['status']) )
+        pass
 
       # Sort the tasks by layers rather than by process IDs
       task_dict_by_start_layer = {}
@@ -155,9 +157,10 @@ class project_runner:
       for k in sorted(task_dict_by_start_layer.keys()):
         tasks_by_start_layer.append ( task_dict_by_start_layer[k] )
 
-      print ("Tasks sorted by layer numbers")
+      # print ("Tasks sorted by layer numbers")
       for l in tasks_by_start_layer:
-        print ( '  ' + str(l['args']) + '  ' + str(l['status']) )
+        # print ( '  ' + str(l['args']) + '  ' + str(l['status']) )
+        pass
 
       # Integrate the output from each task into a new combined data model
 
@@ -223,7 +226,7 @@ class project_runner:
         cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
 
 
-        print_debug ( -1, 'Run processes for: python image_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
+        # print_debug ( -1, 'Run processes for: python image_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
 
         if use_bounding_rect:
           args=[ 'image_apply_affine.py',
@@ -269,7 +272,7 @@ class project_runner:
     else:
 
       # Run the project directly as one serial model
-      print ( "Running the project as one serial model")
+      # print ( "Running the project as one serial model")
       self.updated_model, self.need_to_write_json = pyswift_tui.run_json_project (
                                              project = self.project,
                                              alignment_option = self.alignment_option,
@@ -280,14 +283,15 @@ class project_runner:
 
 
   def join ( self ):
-    print ( "Waiting for Jobs to finish" )
+    # print ( "Waiting for Jobs to finish" )
+    pass
 
   def get_updated_data_model ( self ):
-    print ( "Returning the updated data model" )
+    # print ( "Returning the updated data model" )
     return self.updated_model
 
 if (__name__ == '__main__'):
-  print ("Align Task Manager run as main ... not sure what this should do.")
+  # print ("Align Task Manager run as main ... not sure what this should do.")
 
   from argparse import ArgumentParser
   import time
