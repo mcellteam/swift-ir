@@ -116,3 +116,6 @@ if (__name__ == '__main__'):
 
   image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)
 
+  sys.stdout.close()
+  sys.stderr.close()
+

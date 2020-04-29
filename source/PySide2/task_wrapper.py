@@ -156,7 +156,7 @@ if __name__ == '__main__':
 
       if debug_level > 4: sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
 
-      proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
+      proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=True, stdout=sp.PIPE, stderr=sp.PIPE)
 
       def sig_handler(signum, frame):
         if debug_level > 4: sys.stdout.write('\nSending signal: {0} to child PID: {1}\n'.format(signum, proc.pid))
@@ -170,6 +170,9 @@ if __name__ == '__main__':
 
       output_q = OutputQueue()
       rc, res = output_q.run_proc(proc,passthrough_stdout=True,passthrough_stderr=True)
+
+      sys.stdout.close()
+      sys.stderr.close()
 
       exit(abs(rc))
 
@@ -211,7 +214,7 @@ if __name__ == '__main__':
 
       if debug_level > 4: sys.stdout.write('\nMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMMM\n\n\n')
 
-      proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
+      proc = sp.Popen(cmd_list, cwd=wd, bufsize=1, shell=False, close_fds=True, stdout=sp.PIPE, stderr=sp.PIPE)
 
 #      proc = sp.Popen(['echo "this is it" > foo_5.txt'], cwd=wd, bufsize=1, shell=True, close_fds=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
@@ -227,6 +230,9 @@ if __name__ == '__main__':
 
       output_q = OutputQueue()
       rc, res = output_q.run_proc(proc,passthrough_stdout=True,passthrough_stderr=True)
+
+      sys.stdout.close()
+      sys.stderr.close()
 
       exit(abs(rc))
 

@@ -359,11 +359,13 @@ if (__name__ == '__main__'):
   from argparse import ArgumentParser
   import time
 
+  debug_level = 5  # A larger value prints more stuff
+
   parser = ArgumentParser()
   parser.add_argument('--cpus', help='number of CPUs to use.  If omitted, use the number of hyperthreads available.')
   ns=parser.parse_args()
 
-  my_q = TaskQueue('python')
+  my_q = TaskQueue(sys.executable)
 
   if ns.cpus:
     cpus = int(ns.cpus)
@@ -393,12 +395,12 @@ if (__name__ == '__main__'):
 #  my_q.add_task('cp', 'foo.txt foo_3.txt', wd)
 #  my_q.add_task('cp', 'foo.txt foo_4.txt', wd)
 
-  my_q.add_task(cmd='cp foo.txt foo_1.txt', wd=wd)
-  my_q.add_task(cmd='cp foo.txt foo_2.txt', wd=wd)
-  my_q.add_task(cmd='cp foo.txt foo_3.txt', wd=wd)
-  my_q.add_task(cmd='cp foo.txt foo_4.txt', wd=wd)
+#  my_q.add_task(cmd='cp foo.txt foo_1.txt', wd=wd)
+#  my_q.add_task(cmd='cp foo.txt foo_2.txt', wd=wd)
+#  my_q.add_task(cmd='cp foo.txt foo_3.txt', wd=wd)
+#  my_q.add_task(cmd='cp foo.txt foo_4.txt', wd=wd)
   my_q.add_task(cmd='pwd', wd=wd)
-  my_q.add_task(cmd='ls', args='.', wd=wd)
+  my_q.add_task(cmd='ls', args='.', wd='./')
   my_q.add_task(cmd='echo', args='Hello World!!!', wd=wd)
 #  my_hello = os.path.join(my_q.module_dir_path,'hello_world.py')
 #  my_q.add_task(cmd='python', args=my_hello, wd=wd)
@@ -413,7 +415,7 @@ if (__name__ == '__main__'):
 #  my_q.add_task('mcell3.2.1 -iterations 5000 -seed 3 Scene.main.mdl',wd)
 #  my_q.add_task('mcell3.2.1 -iterations 5000 -seed 4 Scene.main.mdl',wd)
 
-  time.sleep(2.)
+  time.sleep(1.)
 
   pids = list(my_q.task_dict.keys())
   pids.sort()
@@ -430,6 +432,9 @@ if (__name__ == '__main__'):
 
 #  time.sleep(0.5)
 
+  my_q.shutdown()
+
   if debug_level > 4: sys.stdout.write('\n\nTook {0:0.2f} seconds.\n\n'.format(time.time() - begin))
+
 
 

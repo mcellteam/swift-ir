@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import sys
 import time
 import random
 
@@ -18,3 +19,6 @@ if __name__ == '__main__':
 
   img = align_swiftir.swiftir.scaleImage (align_swiftir.swiftir.loadImage(arg_space.infile), fac=arg_space.scale)
   align_swiftir.swiftir.saveImage (img, arg_space.outfile)
+
+  sys.stdout.close()
+  sys.stderr.close()
