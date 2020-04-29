@@ -213,7 +213,7 @@ class project_runner:
         print_debug ( -1, 'Run processes for: python image_align_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
 
         self.task_queue.add_task ( cmd=sys.executable,
-                                   args=[ 'image_align_affine.py',
+                                   args=[ 'image_apply_affine.py',
                                           '-afm',
                                           str(cafm[0][0]),
                                           str(cafm[0][1]),
