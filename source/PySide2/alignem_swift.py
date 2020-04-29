@@ -545,6 +545,8 @@ def generate_scales_queue ():
       cpus = psutil.cpu_count (logical=False)
       scaling_queue.start (cpus)
       scaling_queue.notify = True
+      scaling_queue.passthrough_stdout = True
+      scaling_queue.passthrough_stderr = True
 
       for scale in sorted(image_scales_to_run):
 
@@ -652,6 +654,9 @@ def generate_scales_queue ():
       ### Join the queue here to ensure that all have been generated before returning
       alignem.print_debug (1, "Waiting for TaskQueue.join to return")
       scaling_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+
+      # Stop the queue
+      scaling_queue.shutdown()
 
     #main_win.status.showMessage("Done Generating Scales ...")
 
