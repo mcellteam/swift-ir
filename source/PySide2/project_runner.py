@@ -192,10 +192,44 @@ class project_runner:
 
           self.need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
-      # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-
       # Propagate the AFMs to generate and appropriate CFM at each layer
       pyswift_tui.SetStackCafm ( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'] )
+
+      # Finally generate the images with a parallel run of image_apply_affine.py
+
+      for tnum in range(len(tasks_by_start_layer)):
+        tdata = tasks_by_start_layer[tnum]
+        layer_index = int(tdata['args'][5])  # Note the hard-coded index of 5 here is not the best way to go!!
+        layer = self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'][layer_index]
+
+        base_name = layer['images']['base']['filename']
+        ref_name = layer['images']['ref']['filename']
+
+        al_path,fn = os.path.split(base_name)
+        al_name = os.path.join(os.path.split(al_path)[0],'img_aligned',fn)
+
+        cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
+
+        print_debug ( -1, 'Run processes for: python image_align_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
+
+        self.task_queue.add_task ( cmd=sys.executable,
+                                   args=[ 'image_align_affine.py',
+                                          '-afm',
+                                          str(cafm[0][0]),
+                                          str(cafm[0][1]),
+                                          str(cafm[0][2]),
+                                          str(cafm[1][0]),
+                                          str(cafm[1][1]),
+                                          str(cafm[1][2]),
+                                          base_name,
+                                          al_name
+                                          ],
+                                   wd='.' )
+                                   # wd=self.project['data']['destination_path'] )
+
+      # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+
+      self.task_queue.work_q.join()
 
     else:
 
