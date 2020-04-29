@@ -121,14 +121,20 @@ class project_runner:
       task_wrapper.debug_level = alignem.debug_level
 
       self.task_queue = task_queue.TaskQueue(sys.executable)
-      self.task_queue.start ( psutil.cpu_count(logical=False) )
-      self.task_queue.notify = True
+      cpus = psutil.cpu_count(logical=False)
+      print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
+      self.task_queue.start (cpus)
+      self.task_queue.notify = False
+      self.task_queue.passthrough_stdout = False
+      self.task_queue.passthrough_stderr = False
+      my_path = os.path.split(os.path.realpath(__file__))[0]
+      align_job = os.path.join(my_path,'single_alignment_job.py')
 
       for layer in alstack:
         lnum = alstack.index(layer)
         print ( "Starting a task for layer " + str(lnum) )
         self.task_queue.add_task ( cmd=sys.executable,
-                                   args=['single_alignment_job.py',
+                                   args=[ align_job,
                                           str(run_project_name),
                                           str(self.alignment_option),
                                           str(self.use_scale),
@@ -206,6 +212,9 @@ class project_runner:
 
       # Finally generate the images with a parallel run of image_apply_affine.py
 
+      my_path = os.path.split(os.path.realpath(__file__))[0]
+      apply_affine_job = os.path.join(my_path,'image_apply_affine.py')
+
       for tnum in range(len(tasks_by_start_layer)):
         tdata = tasks_by_start_layer[tnum]
         layer_index = int(tdata['args'][5])  # Note the hard-coded index of 5 here is not the best way to go!!
@@ -226,7 +235,7 @@ class project_runner:
         print_debug ( -1, 'Run processes for: python image_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
 
         if use_bounding_rect:
-          args=[ 'image_apply_affine.py',
+          args=[ apply_affine_job,
                  '-gray',
                  '-rect',
                  str(rect[0]),
@@ -244,7 +253,7 @@ class project_runner:
                  al_name
                ]
         else:
-          args=[ 'image_apply_affine.py',
+          args=[ apply_affine_job,
                  '-gray',
                  '-afm',
                  str(cafm[0][0]),
@@ -265,6 +274,7 @@ class project_runner:
       # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
       self.task_queue.work_q.join()
+      self.task_queue.shutdown()
 
     else:
 
