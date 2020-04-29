@@ -17,7 +17,7 @@ import threading
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
-from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox
+from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
@@ -321,6 +321,9 @@ class ZoomPanWidget(QWidget):
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
+        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+
+
     def get_settings ( self ):
         settings_dict = {}
         for key in [ "floatBased", "antialiased", "wheel_index", "scroll_factor", "zoom_scale", "last_button", "mdx", "mdy", "ldx", "ldy", "dx", "dy", "draw_border", "draw_annotations", "draw_full_paths" ]:
@@ -484,6 +487,14 @@ class ZoomPanWidget(QWidget):
 
 
     def mousePressEvent(self, event):
+        ### New Rubber Band Code
+        self.origin = event.pos()
+        if not self.rubberBand:
+            self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+        self.rubberBand.setGeometry(QRect(self.origin,QSize()))
+        self.rubberBand.show()
+        ### New Rubber Band Code
+
         event_handled = False
 
         ex = event.x()
@@ -511,6 +522,10 @@ class ZoomPanWidget(QWidget):
         self.update_zpa_self()
 
     def mouseMoveEvent(self, event):
+        ### New Rubber Band Code
+        self.rubberBand.setGeometry(QRect(self.origin,event.pos()).normalized())
+        ### New Rubber Band Code
+
         event_handled = False
 
         if main_window.mouse_move_callback != None:
@@ -524,6 +539,9 @@ class ZoomPanWidget(QWidget):
                 self.update_zpa_self()
 
     def mouseReleaseEvent(self, event):
+        ### New Rubber Band Code
+        self.rubberBand.hide()
+        ### New Rubber Band Code
         if event.button() == Qt.MouseButton.LeftButton:
             self.ldx = self.ldx + self.dx
             self.ldy = self.ldy + self.dy
