@@ -193,7 +193,16 @@ class project_runner:
           self.need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
       # Propagate the AFMs to generate and appropriate CFM at each layer
-      pyswift_tui.SetStackCafm ( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'] )
+      null_biases = self.updated_model['data']['scales'][cur_scale_new_key]['null_cafm_trends']
+      pyswift_tui.SetStackCafm ( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'], null_biases )
+
+      destination_path = self.project['data']['destination_path']
+      bias_data_path = os.path.join(destination_path,cur_scale_new_key,'bias_data')
+      pyswift_tui.save_bias_analysis(self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'], bias_data_path)
+
+      use_bounding_rect = self.updated_model['data']['scales'][cur_scale_new_key]['use_bounding_rect']
+      if use_bounding_rect:
+        rect = pyswift_tui.BoundingRect( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'] )
 
       # Finally generate the images with a parallel run of image_apply_affine.py
 
@@ -208,22 +217,48 @@ class project_runner:
         al_path,fn = os.path.split(base_name)
         al_name = os.path.join(os.path.split(al_path)[0],'img_aligned',fn)
 
+        layer['images']['aligned'] = {}
+        layer['images']['aligned']['filename'] = al_name
+
         cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
 
-        print_debug ( -1, 'Run processes for: python image_align_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
+
+        print_debug ( -1, 'Run processes for: python image_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
+
+        if use_bounding_rect:
+          args=[ 'image_apply_affine.py',
+                 '-gray',
+                 '-rect',
+                 str(rect[0]),
+                 str(rect[1]),
+                 str(rect[2]),
+                 str(rect[3]),
+                 '-afm',
+                 str(cafm[0][0]),
+                 str(cafm[0][1]),
+                 str(cafm[0][2]),
+                 str(cafm[1][0]),
+                 str(cafm[1][1]),
+                 str(cafm[1][2]),
+                 base_name,
+                 al_name
+               ]
+        else:
+          args=[ 'image_apply_affine.py',
+                 '-gray',
+                 '-afm',
+                 str(cafm[0][0]),
+                 str(cafm[0][1]),
+                 str(cafm[0][2]),
+                 str(cafm[1][0]),
+                 str(cafm[1][1]),
+                 str(cafm[1][2]),
+                 base_name,
+                 al_name
+               ]
 
         self.task_queue.add_task ( cmd=sys.executable,
-                                   args=[ 'image_apply_affine.py',
-                                          '-afm',
-                                          str(cafm[0][0]),
-                                          str(cafm[0][1]),
-                                          str(cafm[0][2]),
-                                          str(cafm[1][0]),
-                                          str(cafm[1][1]),
-                                          str(cafm[1][2]),
-                                          base_name,
-                                          al_name
-                                          ],
+                                   args=args,
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
 
