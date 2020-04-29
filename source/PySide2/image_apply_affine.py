@@ -89,21 +89,19 @@ if (__name__ == '__main__'):
   while (i < len(sys.argv)-2):
     print ( "Processing option " + sys.argv[i])
     if sys.argv[i] == '-afm':
-      i += 1  # Increment to get the argument
       afm_list = []
       # Extend afm_list using the next 6 args
       for n in range(6):
-        afm_list.extend([float(sys.argv [i])])
         i += 1  # Increment to get the argument
+        afm_list.extend([float(sys.argv [i])])
       afm = np.array(afm_list,dtype='float64').reshape((-1,3))
     elif sys.argv [i] == '-rect':
-      i += 1  # Increment to get the argument
       rect_list = []
       # Extend rect_list using the next 4 args
       for n in range(4):
-        rect_list.extend([float(sys.argv [i])])
         i += 1  # Increment to get the argument
-      rect = np.array(rect_list,dtype='float64').reshape((-1,2))
+        rect_list.extend([int(sys.argv [i])])
+      rect = np.array(rect_list,dtype='int')
     elif sys.argv[i] == '-gray':
       grayBorder = True
       # No need to increment i because no additional arguments were taken

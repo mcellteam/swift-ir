@@ -186,12 +186,12 @@ def BiasFuncs(al_stack, bias_funcs=None):
   else:
     init_scalars = False
 
-  skew_x_array = np.zeros((len(align_stack),2))
-  scale_x_array = np.zeros((len(align_stack),2))
-  scale_y_array = np.zeros((len(align_stack),2))
-  rot_array = np.zeros((len(align_stack),2))
-  x_array = np.zeros((len(align_stack),2))
-  y_array = np.zeros((len(align_stack),2))
+  skew_x_array = np.zeros((len(al_stack),2))
+  scale_x_array = np.zeros((len(al_stack),2))
+  scale_y_array = np.zeros((len(al_stack),2))
+  rot_array = np.zeros((len(al_stack),2))
+  x_array = np.zeros((len(al_stack),2))
+  y_array = np.zeros((len(al_stack),2))
 
   print_debug(50,50*'B1')
   i=0
@@ -382,6 +382,10 @@ def SetStackCafm(al_stack, null_biases=False):
   print_debug_enter (70)
 
   print_debug(50,"\nComputing Cafm and Nulling Biases...\n")
+
+  # To perform bias correction, first initialize Cafms without bias correction 
+  if null_biases==True:
+    SetStackCafm(al_stack, null_biases=False)
 
   # If null_biases==True, Iteratively determine and null out bias in c_afm
   bias_mat = None
@@ -829,6 +833,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         print_debug(4,'\nNot Aligning: %s %s' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
 
 
+    '''
     c_afm_init = swiftir.identityAffine()
 
     # Compute Cafms across the stack and null trends in c_afm if requested
@@ -892,6 +897,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         s_tbd[align_idx]['images']['aligned']['metadata']['annotations'] = []
 
       i+=1
+    '''
 
     print_debug(1, 30 * "|=|")
     print_debug(1, "Returning True")
