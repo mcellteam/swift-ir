@@ -66,3 +66,6 @@ if __name__ == '__main__':
 
     # print ( "\n\n\n JSON DATA MODEL:\n" + str(proj_json) + "\n\n" )
     # flush()
+    sys.stdout.close()
+    sys.stderr.close()
+
