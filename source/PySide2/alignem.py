@@ -90,6 +90,16 @@ crop_mode_disp_rect = None
 crop_mode_corners = None
 # current_scale = 'scale_1'
 
+def clear_crop_settings():
+    global crop_mode_role
+    global crop_mode_orgin
+    global crop_mode_disp_rect
+    global crop_mode_corners
+    crop_mode_role = None
+    crop_mode_orgin = None
+    crop_mode_disp_rect = None
+    crop_mode_corners = None
+
 def get_cur_scale():
     global project_data
     return ( project_data['data']['current_scale'] )
@@ -365,7 +375,7 @@ class ZoomPanWidget(QWidget):
         self.ldy = 0
         self.wheel_index = 0
         self.zoom_to_wheel_at ( 0, 0 )
-
+        clear_crop_settings()
 
     def center_image ( self, all_images_in_stack = True ):
         print_debug ( 30, "Centering image for " + str(self.role) )
@@ -449,6 +459,7 @@ class ZoomPanWidget(QWidget):
                                 extra_y = 1.7 * extra_y
                                 self.ldx = (extra_x / 2) / self.zoom_scale
                                 self.ldy = (extra_y / 2) / self.zoom_scale
+        clear_crop_settings()
         print_debug ( 30, "Done centering image for " + str(self.role) )
 
 
@@ -634,6 +645,7 @@ class ZoomPanWidget(QWidget):
 
 
     def zoom_to_wheel_at ( self, mouse_win_x, mouse_win_y ):
+        clear_crop_settings()
         old_scale = self.zoom_scale
         new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
 
