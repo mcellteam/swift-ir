@@ -142,7 +142,7 @@ class project_runner:
                                           str(self.swiftir_code_mode),   # Python or C mode
                                           str(lnum),                     # First layer number to run from Project file
                                           str(1),                        # Number of layers to run
-                                          str(1)                         # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
+                                          str(0)                         # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
                                           ],
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
