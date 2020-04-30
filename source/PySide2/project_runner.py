@@ -300,6 +300,7 @@ class project_runner:
     # print ( "Returning the updated data model" )
     return self.updated_model
 
+'''
 if (__name__ == '__main__'):
   # print ("Align Task Manager run as main ... not sure what this should do.")
 
@@ -333,6 +334,7 @@ if (__name__ == '__main__'):
   my_q.work_q.join ()
 
   if debug_level > 4: sys.stdout.write ('\n\nTook {0:0.2f} seconds.\n\n'.format (time.time () - begin))
+'''
 
 '''
 
