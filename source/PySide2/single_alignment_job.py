@@ -12,7 +12,7 @@ import pyswift_tui
 
 if __name__ == '__main__':
 
-  if len(sys.argv) != 7:
+  if len(sys.argv) != 8:
     # print ( "Error: " + sys.argv[0] + " requires 7 arguments (only got " + str(len(sys.argv)) + ")" )
     pass
   else:
@@ -23,6 +23,7 @@ if __name__ == '__main__':
     swiftir_code_mode = sys.argv[4]
     start_layer = int(sys.argv[5].strip())
     num_layers = int(sys.argv[6].strip())
+    use_file_io = ( int(sys.argv[7].strip()) != 0 )
 
     '''
     print ( "Inside single_alignment_job with: " +
@@ -59,13 +60,18 @@ if __name__ == '__main__':
     jde = json.JSONEncoder ( indent=1, separators=(",",": "), sort_keys=True )
     run_output_json = jde.encode ( { 'data_model': updated_model, 'need_to_write_json': need_to_write_json } )
 
-    # Add some markers to separate the JSON from other output
-    print ( "---JSON-DELIMITER---")
-    print ( run_output_json )
-    print ( "---JSON-DELIMITER---")
+    if use_file_io:
+      # Write the output JSOM to a file
+      f = open ( "single_alignment_out_%d.json" % start_layer, 'w' )
+      f.write ( run_output_json )
+      f.close()
+    else:
+      # Write the output JSON to stdout with some markers to separate it from any other reasonable output
+      print ( "---JSON-DELIMITER---")
+      print ( run_output_json )
+      print ( "---JSON-DELIMITER---")
 
     # print ( "\n\n\n JSON DATA MODEL:\n" + str(proj_json) + "\n\n" )
     # flush()
     sys.stdout.close()
     sys.stderr.close()
-

@@ -135,13 +135,14 @@ class project_runner:
         lnum = alstack.index(layer)
         # print ( "Starting a task for layer " + str(lnum) )
         self.task_queue.add_task ( cmd=sys.executable,
-                                   args=[ align_job,
-                                          str(run_project_name),
-                                          str(self.alignment_option),
-                                          str(self.use_scale),
-                                          str(self.swiftir_code_mode),
-                                          str(lnum),
-                                          str(1)
+                                   args=[ align_job,                     # Python program to run (single_alignment_job)
+                                          str(run_project_name),         # Project file name
+                                          str(self.alignment_option),    # Init, Refine, or Apply
+                                          str(self.use_scale),           # Scale to use or 0
+                                          str(self.swiftir_code_mode),   # Python or C mode
+                                          str(lnum),                     # First layer number to run from Project file
+                                          str(1),                        # Number of layers to run
+                                          str(1)                         # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
                                           ],
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
