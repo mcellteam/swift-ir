@@ -86,7 +86,8 @@ max_image_file_size = 1000000000
 crop_mode_callback = None
 crop_mode_role = None
 crop_mode_origin = None
-crop_mode_rect = None
+crop_mode_disp_rect = None
+crop_mode_corners = None
 # current_scale = 'scale_1'
 
 def get_cur_scale():
@@ -493,9 +494,9 @@ class ZoomPanWidget(QWidget):
     def mousePressEvent(self, event):
         global crop_mode_origin
         global crop_mode_role
-        global crop_mode_rect
+        global crop_mode_disp_rect
         crop_mode_role = None
-        crop_mode_rect = None
+        crop_mode_disp_rect = None
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -507,7 +508,7 @@ class ZoomPanWidget(QWidget):
                 if crop_mode_origin != None:
                     # Remove the box and force a redraw
                     crop_mode_origin = None
-                    crop_mode_rect = None
+                    crop_mode_disp_rect = None
                     crop_mode_role = None
                     self.update_zpa_self()
                     self.update_siblings()
@@ -555,7 +556,7 @@ class ZoomPanWidget(QWidget):
     def mouseMoveEvent(self, event):
         global crop_mode_origin
         global crop_mode_role
-        global crop_mode_rect
+        global crop_mode_disp_rect
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -568,7 +569,7 @@ class ZoomPanWidget(QWidget):
                 if crop_mode_origin != None:
                     # Remove the box and force a redraw
                     crop_mode_origin = None
-                    crop_mode_rect = None
+                    crop_mode_disp_rect = None
                     crop_mode_role = None
                     self.update_zpa_self()
                     self.update_siblings()
@@ -594,7 +595,8 @@ class ZoomPanWidget(QWidget):
     def mouseReleaseEvent(self, event):
         global crop_mode_origin
         global crop_mode_role
-        global crop_mode_rect
+        global crop_mode_disp_rect
+        global crop_mode_corners
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -605,12 +607,17 @@ class ZoomPanWidget(QWidget):
             self.rubberBand.hide()
             if crop_mode_origin != None:
                 #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                print_debug ( 60, "Rectangle drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
+                print_debug ( 2, "Rectangle drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
                 crop_start_x = self.image_x(crop_mode_origin.x())
                 crop_start_y = self.image_y(crop_mode_origin.y())
-                crop_end_x = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
-                crop_end_y = crop_start_y + self.image_y(event.y() - crop_mode_origin.y())
-                crop_mode_rect = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
+                crop_end_x = self.image_x(event.x())
+                crop_end_y = self.image_y(event.y())
+                crop_mode_corners = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
+                print_debug ( 2, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+                crop_w = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
+                crop_h = crop_start_y + self.image_y(event.y() - crop_mode_origin.y())
+                crop_mode_disp_rect = [ [ crop_start_x, crop_start_y ], [ crop_w, crop_h ] ]
+                print_debug ( 2, "Crop Rectangle: " + str(crop_mode_disp_rect) )
                 self.update_zpa_self()
                 self.update_siblings()
         else:
@@ -722,7 +729,7 @@ class ZoomPanWidget(QWidget):
 
     def paintEvent(self, event):
         global crop_mode_role
-        global crop_mode_rect
+        global crop_mode_disp_rect
 
         painter = QPainter(self)
 
@@ -838,9 +845,9 @@ class ZoomPanWidget(QWidget):
                                     painter.drawText(midw,20,method_results['snr_report'])
 
         if self.role == crop_mode_role:
-            if crop_mode_rect != None:
+            if crop_mode_disp_rect != None:
                 painter.setPen(QPen(QColor(255,100,100,255), 3))
-                painter.drawRect ( QRectF ( self.win_x(crop_mode_rect[0][0]), self.win_y(crop_mode_rect[0][1]), self.win_x(crop_mode_rect[1][0]-crop_mode_rect[0][0]), self.win_y(crop_mode_rect[1][1]-crop_mode_rect[0][1]) ) )
+                painter.drawRect ( QRectF ( self.win_x(crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[0][1]), self.win_x(crop_mode_disp_rect[1][0]-crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[1][1]-crop_mode_disp_rect[0][1]) ) )
 
 
         # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
@@ -1425,8 +1432,9 @@ class MainWindow(QMainWindow):
                   [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
                   #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
-                  [ 'Save Project &As', 'Ctrl+A', self.save_project_as, None, None, None ],
-                  [ 'Save &Cropped As', 'Ctrl+A', self.save_cropped_as, None, None, None ],
+                  [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Save &Cropped As...', None, self.save_cropped_as, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Set Project Destination', None, self.set_def_proj_dest, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1907,16 +1915,46 @@ class MainWindow(QMainWindow):
     def save_cropped_as(self):
         print_debug ( 1, "\n\nSaving Cropped Images\n\n" )
 
-        options = QFileDialog.Options()
-        options |= QFileDialog.Directory
-        options |= QFileDialog.DontUseNativeDialog
+        if crop_mode_role == None:
+            show_warning ( "Warning", "Cannot save cropped images without a cropping region" )
 
-        cropped_path = QFileDialog.getExistingDirectory ( parent=None, caption="Select Directory for Cropped Images", dir=project_data['data']['destination_path'], options=options)
-        print_debug ( 1, "Cropped Destination is: " + str(cropped_path) )
+        else:
 
-        if cropped_path != None:
-            if len(cropped_path) > 0:
-                print ( "Crop and save images ...")
+            options = QFileDialog.Options()
+            options |= QFileDialog.Directory
+            options |= QFileDialog.DontUseNativeDialog
+
+            cropped_path = QFileDialog.getExistingDirectory ( parent=None, caption="Select Directory for Cropped Images", dir=project_data['data']['destination_path'], options=options)
+            print_debug ( 1, "Cropped Destination is: " + str(cropped_path) )
+
+            if cropped_path != None:
+                if len(cropped_path) > 0:
+                    print ( "Crop and save images from role " + str(crop_mode_role) + " to " + str(cropped_path) )
+                    scale_key = project_data['data']['current_scale']
+                    for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
+                        infile_name = layer['images'][crop_mode_role]['filename']
+                        name_part = os.path.split(infile_name)[1]
+                        if '.' in name_part:
+                            npp = name_part.rsplit('.')
+                            name_part = npp[0] + "_crop." + npp[1]
+                        else:
+                            name_part = name_part + "_crop"
+                        outfile_name = os.path.join(cropped_path, name_part)
+                        print ( "Cropping image " + infile_name )
+                        print ( "Saving cropped " + outfile_name )
+
+                        # Use the "extractStraightWindow" function which takes a center and a rectangle
+                        crop_cx = int((crop_mode_corners[0][0] + crop_mode_corners[1][0]) / 2)
+                        crop_cy = int((crop_mode_corners[0][1] + crop_mode_corners[1][1]) / 2)
+                        crop_w = abs(int(crop_mode_corners[1][0] - crop_mode_corners[0][0]))
+                        crop_h = abs(int(crop_mode_corners[1][1] - crop_mode_corners[0][1]))
+                        print ( "x,y = " + str((crop_cx,crop_cy)) + ", w,h = " + str((crop_w,crop_h)) )
+
+                        img = align_swiftir.swiftir.extractStraightWindow ( align_swiftir.swiftir.loadImage(infile_name), xy=(crop_cx,crop_cy), siz=(crop_w,crop_h) )
+                        align_swiftir.swiftir.saveImage ( img, outfile_name )
+
+                        #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+
 
 
     @Slot()
