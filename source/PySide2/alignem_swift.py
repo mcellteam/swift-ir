@@ -1263,7 +1263,7 @@ jump_to_cb    = CallbackButton('Jump To:', jump_to_layer)
 jump_to_val   = IntField("#",1,1)
 rem_algn_cb   = CallbackButton('Remove Aligned', remove_aligned)
 skip          = BoolField("Skip",False)
-match_pt_mode = BoolField("Match",False)
+# match_pt_mode = BoolField("Match",False)
 clear_match   = CallbackButton("Clear Match", clear_match_points)
 progress_cb   = CallbackButton('Prog Bar', run_progress)
 gen_scales_thread_cb = CallbackButton('Gen Scales (thread)', gen_scales_with_thread)
@@ -1298,7 +1298,7 @@ control_model = [
       " ", center_cb,
       "  ", rem_algn_cb,
       "    ", skip,
-      "  ", match_pt_mode,
+      # "  ", match_pt_mode,
       " ", view_match_crop,
       " ", clear_match,
       "    "
