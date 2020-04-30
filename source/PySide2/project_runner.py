@@ -105,10 +105,11 @@ class project_runner:
 
       # Write the entire project as a single JSON file with a unique stable name for this run
 
-      f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
-      run_project_name = f.name
-      f.close()
-      print ("Temp file is: " + str (f.name))
+#      f = tempfile.NamedTemporaryFile (prefix="temp_proj_", suffix=".json", dir=self.project['data']['destination_path'], delete=False)
+#      run_project_name = f.name
+#      f.close()
+#      print ("Temp file is: " + str (f.name))
+      run_project_name = os.path.join(self.project['data']['destination_path'],'temp_project.json')
       f = open ( run_project_name, 'w')
       jde = json.JSONEncoder (indent=2, separators=(",", ": "), sort_keys=True)
       proj_json = jde.encode (self.project)

@@ -257,18 +257,20 @@ class TaskQueue:
     #   The template will be used to create the actual task process
     #   only when a thread worker grabs it from the work_q 
 
-    process_template = "sp.Popen(['%s', '%s', '%s'], env=None, bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)" % (self.python_exec, self.task_wrapper, wd)
+#    process_template = "sp.Popen(['%s', '%s', '%s'], env=None, bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)" % (self.python_exec, self.task_wrapper, wd)
 
     work = {}
-    work['process_template'] = process_template
+#    work['process_template'] = process_template
     work['cmd'] = cmd
     work['args'] = args
+    work['wd'] = wd
+    work['env'] = env
     self.work_q.put(work)
 
+    '''
     # Disable previous working method for adding task
     #   Disadvantage is that it creates the process here
     #   and this consumes valuable resources in the os process table
-    '''
     process = sp.Popen([self.python_exec, self.task_wrapper, wd], env=env, bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
     pid = process.pid
     self.task_dict[pid] = {}
@@ -284,7 +286,13 @@ class TaskQueue:
     '''
 
   def create_process(self,work):
-    process = eval(work['process_template'])
+# changing this up due to possible interpeter bug in 'eval' seems to cause blocking in the process
+#    process = eval(work['process_template'])
+
+    # Let's create the process this way instead:
+    popen_args = [ self.python_exec, self.task_wrapper, work['wd'] ]
+    process = sp.Popen(popen_args, env=work['env'], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+
     pid = process.pid
     self.task_dict[pid] = {}
     self.task_dict[pid]['process'] = process
@@ -295,6 +303,7 @@ class TaskQueue:
     self.task_dict[pid]['stderr'] = b''
     self.task_dict[pid]['output'] = []
     return process
+
 
   def kill_task(self,pid):
     if self.task_dict.get(pid):
@@ -399,9 +408,16 @@ if (__name__ == '__main__'):
 #  my_q.add_task(cmd='cp foo.txt foo_2.txt', wd=wd)
 #  my_q.add_task(cmd='cp foo.txt foo_3.txt', wd=wd)
 #  my_q.add_task(cmd='cp foo.txt foo_4.txt', wd=wd)
-  my_q.add_task(cmd='pwd', wd=wd)
-  my_q.add_task(cmd='ls', args='.', wd='./')
-  my_q.add_task(cmd='echo', args='Hello World!!!', wd=wd)
+
+#  my_q.add_task(cmd='pwd', wd=wd)
+#  my_q.add_task(cmd='ls', args='.', wd='./')
+#  my_q.add_task(cmd='echo', args='Hello World!!!', wd=wd)
+
+  my_q.add_task(cmd='sleep', args='5', wd=wd)
+  my_q.add_task(cmd='sleep', args='5', wd=wd)
+  my_q.add_task(cmd='sleep', args='5', wd=wd)
+  my_q.add_task(cmd='sleep', args='5', wd=wd)
+
 #  my_hello = os.path.join(my_q.module_dir_path,'hello_world.py')
 #  my_q.add_task(cmd='python', args=my_hello, wd=wd)
 
