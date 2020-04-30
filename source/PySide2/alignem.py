@@ -1403,6 +1403,7 @@ class MainWindow(QMainWindow):
                   #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ 'Save Project &As', 'Ctrl+A', self.save_project_as, None, None, None ],
+                  [ 'Save &Cropped As', 'Ctrl+A', self.save_cropped_as, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Set Project Destination', None, self.set_def_proj_dest, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1878,6 +1879,21 @@ class MainWindow(QMainWindow):
                   self.setWindowTitle("Project: " + self.current_project_file_name )
                 else:
                   self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
+
+    @Slot()
+    def save_cropped_as(self):
+        print_debug ( 1, "\n\nSaving Cropped Images\n\n" )
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.Directory
+        options |= QFileDialog.DontUseNativeDialog
+
+        cropped_path = QFileDialog.getExistingDirectory ( parent=None, caption="Select Directory for Cropped Images", dir=project_data['data']['destination_path'], options=options)
+        print_debug ( 1, "Cropped Destination is: " + str(cropped_path) )
+
+        if cropped_path != None:
+            if len(cropped_path) > 0:
+                print ( "Crop and save images ...")
 
 
     @Slot()
