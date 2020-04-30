@@ -84,6 +84,9 @@ preloading_range = 10
 max_image_file_size = 1000000000
 
 crop_mode_callback = None
+crop_mode_role = None
+crop_mode_origin = None
+crop_mode_rect = None
 # current_scale = 'scale_1'
 
 def get_cur_scale():
@@ -324,8 +327,6 @@ class ZoomPanWidget(QWidget):
 
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
-        self.crop_rect = None
-
 
     def get_settings ( self ):
         settings_dict = {}
@@ -490,22 +491,25 @@ class ZoomPanWidget(QWidget):
 
 
     def mousePressEvent(self, event):
+        global crop_mode_origin
+        global crop_mode_role
+        global crop_mode_rect
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
             if mode == 'Crop':
                 crop_mode = True
-
         if crop_mode:
-            print ( "Current Mode = " + str(mode) )
-            if mode == 'Crop':
-                ### New Rubber Band Code
-                self.origin = event.pos()
-                if not self.rubberBand:
-                    self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
-                self.rubberBand.setGeometry(QRect(self.origin,QSize()))
-                self.rubberBand.show()
-                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            crop_mode_role = self.role
+            ### New Rubber Band Code
+            crop_mode_origin = event.pos()
+            print ( "Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) )
+            if not self.rubberBand:
+                self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+            self.rubberBand.setGeometry(QRect(crop_mode_origin,QSize()))
+            self.rubberBand.show()
+            self.update_siblings()
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         else:
             event_handled = False
 
@@ -534,6 +538,9 @@ class ZoomPanWidget(QWidget):
             self.update_zpa_self()
 
     def mouseMoveEvent(self, event):
+        global crop_mode_origin
+        global crop_mode_role
+        global crop_mode_rect
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -541,7 +548,9 @@ class ZoomPanWidget(QWidget):
                 crop_mode = True
         if crop_mode:
             ### New Rubber Band Code
-            self.rubberBand.setGeometry(QRect(self.origin,event.pos()).normalized())
+            print ( "Move: Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) + ", mouse is " + str(event.pos()) )
+            if crop_mode_origin != None:
+                self.rubberBand.setGeometry(QRect(crop_mode_origin,event.pos()).normalized())
         else:
             event_handled = False
 
@@ -556,6 +565,9 @@ class ZoomPanWidget(QWidget):
                     self.update_zpa_self()
 
     def mouseReleaseEvent(self, event):
+        global crop_mode_origin
+        global crop_mode_role
+        global crop_mode_rect
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -564,18 +576,17 @@ class ZoomPanWidget(QWidget):
         if crop_mode:
             ### New Rubber Band Code
             self.rubberBand.hide()
-            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-            print ( "Rectangle drawn from (" + str(self.origin.x()) + "," + str(self.origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
-            crop_start_x = self.image_x(self.origin.x())
-            crop_start_y = self.image_y(self.origin.y())
-            crop_end_x = crop_start_x + self.image_x(event.x() - self.origin.x())
-            crop_end_y = crop_start_y + self.image_y(event.y() - self.origin.y())
-            self.crop_rect = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
-            self.update_zpa_self()
+            if crop_mode_origin != None:
+                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                print ( "Rectangle drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
+                crop_start_x = self.image_x(crop_mode_origin.x())
+                crop_start_y = self.image_y(crop_mode_origin.y())
+                crop_end_x = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
+                crop_end_y = crop_start_y + self.image_y(event.y() - crop_mode_origin.y())
+                crop_mode_rect = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
+                self.update_zpa_self()
+                self.update_siblings()
         else:
-            if main_window.mouse_down_callback != None:
-                event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)), int(event.button()) )
-
             if event.button() == Qt.MouseButton.LeftButton:
                 self.ldx = self.ldx + self.dx
                 self.ldy = self.ldy + self.dy
@@ -683,6 +694,9 @@ class ZoomPanWidget(QWidget):
 
 
     def paintEvent(self, event):
+        global crop_mode_role
+        global crop_mode_rect
+
         painter = QPainter(self)
 
         role_text = self.role
@@ -796,8 +810,9 @@ class ZoomPanWidget(QWidget):
 #                                    painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
                                     painter.drawText(midw,20,method_results['snr_report'])
 
-        if self.crop_rect != None:
-           painter.drawRect ( QRectF ( self.crop_rect[0][0], self.crop_rect[0][1], self.crop_rect[0][0], self.crop_rect[0][1] ) )
+        if self.role == crop_mode_role:
+            if crop_mode_rect != None:
+                painter.drawRect ( QRectF ( crop_mode_rect[0][0], crop_mode_rect[0][1], crop_mode_rect[0][0], crop_mode_rect[0][1] ) )
 
 
         # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
