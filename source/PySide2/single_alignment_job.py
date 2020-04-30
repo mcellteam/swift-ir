@@ -16,14 +16,14 @@ if __name__ == '__main__':
     # print ( "Error: " + sys.argv[0] + " requires 7 arguments (only got " + str(len(sys.argv)) + ")" )
     pass
   else:
-    this_file = sys.argv[0]
-    project_name = sys.argv[1]
-    alignment_option = sys.argv[2]
-    use_scale = int(sys.argv[3].strip())
-    swiftir_code_mode = sys.argv[4]
-    start_layer = int(sys.argv[5].strip())
-    num_layers = int(sys.argv[6].strip())
-    use_file_io = ( int(sys.argv[7].strip()) != 0 )
+    this_file =          sys.argv[0]
+    project_name =       sys.argv[1]
+    alignment_option =   sys.argv[2]
+    use_scale =      int(sys.argv[3].strip())
+    swiftir_code_mode =  sys.argv[4]
+    start_layer =    int(sys.argv[5].strip())
+    num_layers =     int(sys.argv[6].strip())
+    use_file_io =  ( int(sys.argv[7].strip()) != 0 )
 
     '''
     print ( "Inside single_alignment_job with: " +
@@ -62,10 +62,14 @@ if __name__ == '__main__':
 
     if use_file_io:
       # Write the output JSOM to a file
-      f = open ( "single_alignment_out_%d.json" % start_layer, 'w' )
-      f.write ( run_output_json )
-      f.close()
-    else:
+      # The job file name will already be located in the project directory, so use its path
+      out_name = os.path.join ( os.path.split(project_name)[0], "single_alignment_out_%d.json" % start_layer )
+      out_name = "single_alignment_out_%d.json" % start_layer
+      #fout = open ( out_name, 'w' )
+      #fout.write ( run_output_json )
+      #fout.close()
+    #else:
+    if True:
       # Write the output JSON to stdout with some markers to separate it from any other reasonable output
       print ( "---JSON-DELIMITER---")
       print ( run_output_json )
