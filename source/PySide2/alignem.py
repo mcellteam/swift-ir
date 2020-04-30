@@ -501,6 +501,17 @@ class ZoomPanWidget(QWidget):
             mode = crop_mode_callback()
             if mode == 'Crop':
                 crop_mode = True
+            else:
+                # Note: since we don't currently have a callback from a mode change,
+                #  remove the crop box upon any mouse click.
+                if crop_mode_origin != None:
+                    # Remove the box and force a redraw
+                    crop_mode_origin = None
+                    crop_mode_rect = None
+                    crop_mode_role = None
+                    self.update_zpa_self()
+                    self.update_siblings()
+
         if crop_mode:
             crop_mode_role = self.role
             ### New Rubber Band Code
@@ -550,6 +561,18 @@ class ZoomPanWidget(QWidget):
             mode = crop_mode_callback()
             if mode == 'Crop':
                 crop_mode = True
+            else:
+                # Note: since we don't currently have a callback from a mode change,
+                #  try to remove the crop box upon mouse motion. However, this will
+                #  require enabling all mouse motion events (not just with buttons).
+                if crop_mode_origin != None:
+                    # Remove the box and force a redraw
+                    crop_mode_origin = None
+                    crop_mode_rect = None
+                    crop_mode_role = None
+                    self.update_zpa_self()
+                    self.update_siblings()
+
         if crop_mode:
             ### New Rubber Band Code
             print_debug ( 60, "Move: Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) + ", mouse is " + str(event.pos()) )

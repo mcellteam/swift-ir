@@ -1053,7 +1053,7 @@ def notyet():
 
 
 def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False ):
-    alignem.print_debug ( 3, "\nView changed from scale,layer " + str((prev_scale_key,prev_layer_num)) + " to " + str((next_scale_key,next_layer_num)) )
+    alignem.print_debug ( 25, "\nView changed from scale,layer " + str((prev_scale_key,prev_layer_num)) + " to " + str((next_scale_key,next_layer_num)) )
 
     if alignem.project_data != None:
 
@@ -1097,8 +1097,8 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
           alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
           alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
 
-          alignem.print_debug ( 5, "In DM: Null Bias = " + str (alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends']) )
-          alignem.print_debug ( 5, "In DM: Use Bound = " + str (alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect']) )
+          alignem.print_debug ( 25, "In DM: Null Bias = " + str (alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends']) )
+          alignem.print_debug ( 25, "In DM: Use Bound = " + str (alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect']) )
 
           # Next copy the layer-level items
           if prev_layer != None:
