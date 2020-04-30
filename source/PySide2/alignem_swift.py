@@ -1246,6 +1246,7 @@ align_all_cb  = CallbackButton('Align All', align_all_or_some)
 center_cb     = CallbackButton('Center', center_all)
 align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 init_ref_app  = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
+view_match_crop  = ComboBoxControl(['View', 'Match', 'Crop'])
 
 poly_order   = IntField("Poly Order:",4,1)
 
@@ -1291,6 +1292,7 @@ control_model = [
       "  ", rem_algn_cb,
       "    ", skip,
       "  ", match_pt_mode,
+      " ", view_match_crop,
       " ", clear_match,
       "    "
     ],
@@ -1371,7 +1373,7 @@ if __name__ == "__main__":
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
 
-    main_win.resize(1400,640)  # This value is typically chosen to show all widget text
+    main_win.resize(1420,640)  # This value is typically chosen to show all widget text
 
     #main_win.register_project_open ( open_json_project )
     #main_win.register_project_save ( save_json_project )
