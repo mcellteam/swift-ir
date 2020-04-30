@@ -85,8 +85,8 @@ class OutputQueue:
   # Otherwise just do proc.communicate() and capture stdout and stderr upon command completion (possibly broken functionality?)
   def run_proc(self, proc, arg_in=None, passthrough_stdout=True, passthrough_stderr=True, output_list=None):
 
-#    if passthrough_stdout or passthrough_stderr:
-    if True:
+    if passthrough_stdout or passthrough_stderr:
+#    if True:
 
       outs, errs = [], []
 
@@ -166,9 +166,29 @@ class OutputQueue:
 
     else:
 
+#      arg_in_stream = b''
+#      for arg in arg_in:
+#        arg_in_stream += bytes(arg + '\n','utf-8')
+#      outs, errs = proc.communicate(input=arg_in_stream)
+
+
       arg_in_stream = b''
       for arg in arg_in:
-        arg_in_stream += bytes(arg + '\n','utf-8')
+        char_stream = ''
+        if type(arg) == type([]):
+          # Convert the list to quoted argument format
+          flat_arg = []
+          self.flatten_list ( arg, flat_arg );
+          for a in flat_arg:
+            char_stream += '"' + a + '" '
+          if len(char_stream) > 0:
+            char_stream = char_stream[0:-1]
+          # Convert the list to a string (for now) by joining
+          # char_stream = ' '.join ( arg )
+        else:
+          # Use previous string format
+          char_stream = arg
+        arg_in_stream += bytes(char_stream + '\n','utf-8')
       outs, errs = proc.communicate(input=arg_in_stream)
 
       outs = '' if outs == None else outs.decode('utf-8')
@@ -382,7 +402,7 @@ if (__name__ == '__main__'):
     cpus = psutil.cpu_count(logical=False)
 
   my_q.start(cpus)
-  my_q.notify=True
+  my_q.notify=False
   my_q.passthrough_stdout = False
   my_q.passthrough_stderr = False
 
@@ -413,10 +433,10 @@ if (__name__ == '__main__'):
 #  my_q.add_task(cmd='ls', args='.', wd='./')
 #  my_q.add_task(cmd='echo', args='Hello World!!!', wd=wd)
 
-  my_q.add_task(cmd='sleep', args='5', wd=wd)
-  my_q.add_task(cmd='sleep', args='5', wd=wd)
-  my_q.add_task(cmd='sleep', args='5', wd=wd)
-  my_q.add_task(cmd='sleep', args='5', wd=wd)
+  my_q.add_task(cmd='sleep', args=['5'], wd=wd)
+#  my_q.add_task(cmd='sleep', args='5', wd=wd)
+#  my_q.add_task(cmd='sleep', args='5', wd=wd)
+#  my_q.add_task(cmd='sleep', args='5', wd=wd)
 
 #  my_hello = os.path.join(my_q.module_dir_path,'hello_world.py')
 #  my_q.add_task(cmd='python', args=my_hello, wd=wd)
