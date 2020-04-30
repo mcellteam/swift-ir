@@ -83,6 +83,7 @@ use_c_version = True
 preloading_range = 10
 max_image_file_size = 1000000000
 
+crop_mode_callback = None
 # current_scale = 'scale_1'
 
 def get_cur_scale():
@@ -323,6 +324,8 @@ class ZoomPanWidget(QWidget):
 
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
+        self.crop_rect = None
+
 
     def get_settings ( self ):
         settings_dict = {}
@@ -487,67 +490,98 @@ class ZoomPanWidget(QWidget):
 
 
     def mousePressEvent(self, event):
-        ### New Rubber Band Code
-        self.origin = event.pos()
-        if not self.rubberBand:
-            self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
-        self.rubberBand.setGeometry(QRect(self.origin,QSize()))
-        self.rubberBand.show()
-        ### New Rubber Band Code
+        crop_mode = False
+        if crop_mode_callback != None:
+            mode = crop_mode_callback()
+            if mode == 'Crop':
+                crop_mode = True
 
-        event_handled = False
+        if crop_mode:
+            print ( "Current Mode = " + str(mode) )
+            if mode == 'Crop':
+                ### New Rubber Band Code
+                self.origin = event.pos()
+                if not self.rubberBand:
+                    self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+                self.rubberBand.setGeometry(QRect(self.origin,QSize()))
+                self.rubberBand.show()
+                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        else:
+            event_handled = False
 
-        ex = event.x()
-        ey = event.y()
+            ex = event.x()
+            ey = event.y()
 
-        if main_window.mouse_down_callback != None:
-            event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)), int(event.button()) )
+            if main_window.mouse_down_callback != None:
+                event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)), int(event.button()) )
 
-        if not event_handled:
+            if not event_handled:
 
-            self.last_button = event.button()
-            if event.button() == Qt.MouseButton.RightButton:
-                # Resest the pan and zoom
-                self.dx = self.mdx = self.ldx = 0
-                self.dy = self.mdy = self.ldy = 0
-                self.wheel_index = 0
-                self.zoom_scale = 1.0
-            elif event.button() == Qt.MouseButton.MiddleButton:
-                self.dump()
-            else:
-                # Set the Mouse Down position to be the screen location of the mouse
-                self.mdx = ex
-                self.mdy = ey
+                self.last_button = event.button()
+                if event.button() == Qt.MouseButton.RightButton:
+                    # Resest the pan and zoom
+                    self.dx = self.mdx = self.ldx = 0
+                    self.dy = self.mdy = self.ldy = 0
+                    self.wheel_index = 0
+                    self.zoom_scale = 1.0
+                elif event.button() == Qt.MouseButton.MiddleButton:
+                    self.dump()
+                else:
+                    # Set the Mouse Down position to be the screen location of the mouse
+                    self.mdx = ex
+                    self.mdy = ey
 
-        self.update_zpa_self()
+            self.update_zpa_self()
 
     def mouseMoveEvent(self, event):
-        ### New Rubber Band Code
-        self.rubberBand.setGeometry(QRect(self.origin,event.pos()).normalized())
-        ### New Rubber Band Code
+        crop_mode = False
+        if crop_mode_callback != None:
+            mode = crop_mode_callback()
+            if mode == 'Crop':
+                crop_mode = True
+        if crop_mode:
+            ### New Rubber Band Code
+            self.rubberBand.setGeometry(QRect(self.origin,event.pos()).normalized())
+        else:
+            event_handled = False
 
-        event_handled = False
+            if main_window.mouse_move_callback != None:
+                event_handled = main_window.mouse_move_callback ( self.role, (0,0), (0,0), int(event.button()) )  # These will be ignored anyway for now
 
-        if main_window.mouse_move_callback != None:
-            event_handled = main_window.mouse_move_callback ( self.role, (0,0), (0,0), int(event.button()) )  # These will be ignored anyway for now
+            if not event_handled:
 
-        if not event_handled:
-
-            if self.last_button == Qt.MouseButton.LeftButton:
-                self.dx = (event.x() - self.mdx) / self.zoom_scale
-                self.dy = (event.y() - self.mdy) / self.zoom_scale
-                self.update_zpa_self()
+                if self.last_button == Qt.MouseButton.LeftButton:
+                    self.dx = (event.x() - self.mdx) / self.zoom_scale
+                    self.dy = (event.y() - self.mdy) / self.zoom_scale
+                    self.update_zpa_self()
 
     def mouseReleaseEvent(self, event):
-        ### New Rubber Band Code
-        self.rubberBand.hide()
-        ### New Rubber Band Code
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.ldx = self.ldx + self.dx
-            self.ldy = self.ldy + self.dy
-            self.dx = 0
-            self.dy = 0
+        crop_mode = False
+        if crop_mode_callback != None:
+            mode = crop_mode_callback()
+            if mode == 'Crop':
+                crop_mode = True
+        if crop_mode:
+            ### New Rubber Band Code
+            self.rubberBand.hide()
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            print ( "Rectangle drawn from (" + str(self.origin.x()) + "," + str(self.origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
+            crop_start_x = self.image_x(self.origin.x())
+            crop_start_y = self.image_y(self.origin.y())
+            crop_end_x = crop_start_x + self.image_x(event.x() - self.origin.x())
+            crop_end_y = crop_start_y + self.image_y(event.y() - self.origin.y())
+            self.crop_rect = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
             self.update_zpa_self()
+        else:
+            if main_window.mouse_down_callback != None:
+                event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)), int(event.button()) )
+
+            if event.button() == Qt.MouseButton.LeftButton:
+                self.ldx = self.ldx + self.dx
+                self.ldy = self.ldy + self.dy
+                self.dx = 0
+                self.dy = 0
+                self.update_zpa_self()
 
     def mouseDoubleClickEvent(self, event):
         print_debug ( 50, "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
@@ -761,6 +795,10 @@ class ZoomPanWidget(QWidget):
                                     midw = painter.viewport().width() / 3
 #                                    painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
                                     painter.drawText(midw,20,method_results['snr_report'])
+
+        if self.crop_rect != None:
+           painter.drawRect ( QRectF ( self.crop_rect[0][0], self.crop_rect[0][1], self.crop_rect[0][0], self.crop_rect[0][1] ) )
+
 
         # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})

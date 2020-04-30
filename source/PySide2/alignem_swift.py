@@ -1149,8 +1149,9 @@ def view_change_callback ( prev_scale_key, next_scale_key, prev_layer_num, next_
 
 
 def mouse_down_callback ( role, screen_coords, image_coords, button ):
-    global match_pt_mode
-    if match_pt_mode.get_value():
+    #global match_pt_mode
+    #if match_pt_mode.get_value():
+    if view_match_crop.get_value() == 'Match':
         alignem.print_debug ( 20, "Adding a match point for role \"" + str(role) + "\" at " + str(screen_coords) + " == " + str(image_coords) )
         scale_key = alignem.project_data['data']['current_scale']
         layer_num = alignem.project_data['data']['current_layer']
@@ -1189,15 +1190,21 @@ def mouse_down_callback ( role, screen_coords, image_coords, button ):
         return ( False ) # Lets the framework know that the click has not been handled
 
 def mouse_move_callback ( role, screen_coords, image_coords, button ):
-    global match_pt_mode
-    if match_pt_mode.get_value():
+    #global match_pt_mode
+    #if match_pt_mode.get_value():
+    if view_match_crop.get_value() == 'Match':
         return ( True )  # Lets the framework know that the move has been handled
     else:
         return ( False ) # Lets the framework know that the move has not been handled
 
+def crop_mode_callback():
+    return ( view_match_crop.get_value() )
+
+
 def clear_match_points():
-    global match_pt_mode
-    if not match_pt_mode.get_value():
+    #global match_pt_mode
+    #if not match_pt_mode.get_value():
+    if view_match_crop.get_value() != 'Match':
         alignem.print_debug ( 1, "\nMust be in \"Match\" mode to delete all match points." )
     else:
         alignem.print_debug ( 20, "Deleting all match points for this layer" )
@@ -1372,6 +1379,7 @@ if __name__ == "__main__":
     main_win.register_view_change_callback ( view_change_callback )
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
+    alignem.crop_mode_callback = crop_mode_callback
 
     main_win.resize(1420,640)  # This value is typically chosen to show all widget text
 
