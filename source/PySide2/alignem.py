@@ -494,6 +494,8 @@ class ZoomPanWidget(QWidget):
         global crop_mode_origin
         global crop_mode_role
         global crop_mode_rect
+        crop_mode_role = None
+        crop_mode_rect = None
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -503,7 +505,9 @@ class ZoomPanWidget(QWidget):
             crop_mode_role = self.role
             ### New Rubber Band Code
             crop_mode_origin = event.pos()
-            print ( "Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) )
+            ex = event.x()
+            ey = event.y()
+            print_debug ( 60, "Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) + ", (x,y) is " + str([ex, ey]) + ", wxy is " + str([self.image_x(ex), self.image_y(ey)]) )
             if not self.rubberBand:
                 self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
             self.rubberBand.setGeometry(QRect(crop_mode_origin,QSize()))
@@ -548,7 +552,7 @@ class ZoomPanWidget(QWidget):
                 crop_mode = True
         if crop_mode:
             ### New Rubber Band Code
-            print ( "Move: Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) + ", mouse is " + str(event.pos()) )
+            print_debug ( 60, "Move: Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) + ", mouse is " + str(event.pos()) )
             if crop_mode_origin != None:
                 self.rubberBand.setGeometry(QRect(crop_mode_origin,event.pos()).normalized())
         else:
@@ -578,7 +582,7 @@ class ZoomPanWidget(QWidget):
             self.rubberBand.hide()
             if crop_mode_origin != None:
                 #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                print ( "Rectangle drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
+                print_debug ( 60, "Rectangle drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
                 crop_start_x = self.image_x(crop_mode_origin.x())
                 crop_start_y = self.image_y(crop_mode_origin.y())
                 crop_end_x = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
@@ -812,7 +816,8 @@ class ZoomPanWidget(QWidget):
 
         if self.role == crop_mode_role:
             if crop_mode_rect != None:
-                painter.drawRect ( QRectF ( crop_mode_rect[0][0], crop_mode_rect[0][1], crop_mode_rect[0][0], crop_mode_rect[0][1] ) )
+                painter.setPen(QPen(QColor(255,100,100,255), 3))
+                painter.drawRect ( QRectF ( self.win_x(crop_mode_rect[0][0]), self.win_y(crop_mode_rect[0][1]), self.win_x(crop_mode_rect[1][0]-crop_mode_rect[0][0]), self.win_y(crop_mode_rect[1][1]-crop_mode_rect[0][1]) ) )
 
 
         # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
