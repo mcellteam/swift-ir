@@ -14,13 +14,14 @@ import scipy.stats as sps
 import matplotlib.pyplot as plt
 import swiftir
 import align_swiftir
-import task_queue
+#import task_queue as task_queue
+import task_queue2 as task_queue
 import task_wrapper
 import pyswift_tui
 import alignem
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 50  # A larger value prints more stuff
+debug_level = 0  # A larger value prints more stuff
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the
@@ -278,6 +279,8 @@ class project_runner:
 
       self.task_queue.work_q.join()
       self.task_queue.shutdown()
+      del self.task_queue
+      self.task_queue=None
 
     else:
 

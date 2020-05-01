@@ -43,23 +43,23 @@ int main(int argc, char *argv[]) {
     goto again;
   } else if (strncmp (argv[0],"of=", 3) == 0) {
     strcpy ( outfile, &argv[0][3] );
-    fprintf (stderr, "Output filename = %s\n", outfile );
+//    fprintf (stderr, "Output filename = %s\n", outfile );
     argv++;
     argc--;
     goto again;
   } else if (strncmp (argv[0],"p=", 2) == 0) {
     strcpy ( outpath, &argv[0][2] );
-    fprintf (stderr, "Output path = %s\n", outpath );
+//    fprintf (stderr, "Output path = %s\n", outpath );
     argv++;
     argc--;
     goto again;
   }
-  fprintf(stderr, "iscale %d  contr %d var %d\n", iscale, contr, variance);
+//  fprintf(stderr, "iscale %d  contr %d var %d\n", iscale, contr, variance);
   while (argc > 0) {
     int owid, oht, R, G, B, av = 0;
     unsigned char *ip;
     char outname[32767];
-    fprintf(stderr, "reading image %s\n", argv[0]);
+//    fprintf(stderr, "reading image %s\n", argv[0]);
     im0 = read_img(argv[0]);
     owid = im0->wid / iscale;
     oht = im0->ht / iscale;
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
           av += *ip++;
       av /= im0->ht * im0->wid;
     }
-    fprintf(stderr, "sc %d   contr %d   av %d   cav %d\n", iscale, contr, av, contr * av);
+//    fprintf(stderr, "sc %d   contr %d   av %d   cav %d\n", iscale, contr, av, contr * av);
     for (no = y = 0; y + iscale <= im0->ht; y += iscale) {
       ip = im0->pp + (long)y *im0->wid * im0->bpp;
       if (im0->bpp == 1)
@@ -122,16 +122,17 @@ int main(int argc, char *argv[]) {
           im1->pp[no++] = G;
           im1->pp[no++] = B;
       } else
-        fprintf(stderr, "not gray or RGB\n");
+//        fprintf(stderr, "not gray or RGB\n");
+        continue;
     }
     if (strlen(outfile) > 0) {
       // Use the "of=" filename
       sprintf(outname, "%s", outfile);
-      fprintf (stderr, "Outname = %s\n", outname );
+//      fprintf (stderr, "Outname = %s\n", outname );
     }
     else if (strlen(outpath) > 0) {
       // Use the "p=" path
-      fprintf(stderr, "outpath: parsing argv[0]  %s\n",argv[0]);
+//      fprintf(stderr, "outpath: parsing argv[0]  %s\n",argv[0]);
       char *pre, *post, *lasts = NULL;
       pre = argv[0];
       for (post = pre; *post; post++) {
@@ -145,11 +146,11 @@ int main(int argc, char *argv[]) {
       else {
         post = pre;
       }
-      fprintf(stderr, "outpath: parsing argv[0]: %s  ->  got: %s\n",pre,post);
-      fprintf (stderr, "Outpath = %s\n", outpath );
+//      fprintf(stderr, "outpath: parsing argv[0]: %s  ->  got: %s\n",pre,post);
+//      fprintf (stderr, "Outpath = %s\n", outpath );
 //      sprintf(outname, "%s/S%d%s", outpath, iscale, post);
       sprintf(outname, "%s/%s", outpath, post);
-      fprintf (stderr, "Outname = %s\n", outname );
+//      fprintf (stderr, "Outname = %s\n", outname );
     }
     else {
       // Use the existing logic unchanged

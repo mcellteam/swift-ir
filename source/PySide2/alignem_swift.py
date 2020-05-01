@@ -19,7 +19,8 @@ import align_swiftir
 
 import platform
 import psutil
-import task_queue
+#import task_queue as task_queue
+import task_queue2 as task_queue
 import task_wrapper # Only needed to set the debug level for that module
 import project_runner
 
@@ -544,9 +545,9 @@ def generate_scales_queue ():
       scaling_queue = task_queue.TaskQueue (sys.executable)
       cpus = psutil.cpu_count (logical=False)
       scaling_queue.start (cpus)
-      scaling_queue.notify = True
-      scaling_queue.passthrough_stdout = True
-      scaling_queue.passthrough_stderr = True
+      scaling_queue.notify = False
+      scaling_queue.passthrough_stdout = False
+      scaling_queue.passthrough_stderr = False
 
       for scale in sorted(image_scales_to_run):
 
@@ -657,6 +658,7 @@ def generate_scales_queue ():
 
       # Stop the queue
       scaling_queue.shutdown()
+      del scaling_queue
 
     #main_win.status.showMessage("Done Generating Scales ...")
 
@@ -681,7 +683,9 @@ def generate_scales_optimized ():
     scaling_queue = task_queue.TaskQueue (sys.executable)
     cpus = psutil.cpu_count (logical=False)
     scaling_queue.start (cpus)
-    scaling_queue.notify = True
+    scaling_queue.notify = False
+    scaling_queue.passthrough_stdout = False
+    scaling_queue.passthrough_stderr = False
 
     # Create a list of scaling jobs to be built by looping through scales and layers
     scaling_jobs_by_input_file = {}
@@ -795,6 +799,9 @@ def generate_scales_optimized ():
     ### Join the queue here to ensure that all have been generated before returning
     alignem.print_debug (1, "Waiting for TaskQueue.join to return")
     scaling_queue.work_q.join ()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+
+    scaling_queue.shutdown()
+    del scaling_queue
 
   # main_win.status.showMessage("Done Generating Scales ...")
 
@@ -1364,6 +1371,7 @@ if __name__ == "__main__":
       my_path + "align_swiftir.py",
       my_path + "source_tracker.py",
       my_path + "task_queue.py",
+      my_path + "task_queue2.py",
       my_path + "task_wrapper.py",
       my_path + "single_scale_job.py",
       my_path + "multi_scale_job.py",

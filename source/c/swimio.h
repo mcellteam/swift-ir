@@ -416,8 +416,10 @@ void write_img(char *fname, struct image *ip) {
 	long qw, tqw = 0, want;
 	unlink(fname);
 	//fd = creat(fname, 0666);
+/*
 fprintf(stderr, "write_img %d %s  %d %d %d %d\n",
 fd, fname, ip->wid, ip->ht, ip->bpp, ip->trans);
+*/
 	if(strstr(fname, "png") || strstr(fname, "PNG")) {
 		int i;
 		//unsigned char transparent[] = { 56 };
