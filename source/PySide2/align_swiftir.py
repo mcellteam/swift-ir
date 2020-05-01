@@ -22,7 +22,7 @@ Together these ingredients comprise a procedure, or "recipe".
 '''
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 10  # A larger value prints more stuff
+debug_level = 0  # A larger value prints more stuff
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the

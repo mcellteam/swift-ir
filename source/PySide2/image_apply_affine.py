@@ -8,7 +8,7 @@ import numpy as np
 import swiftir
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 50  # A larger value prints more stuff
+debug_level = 0  # A larger value prints more stuff
 
 # For now, always use the limited argument version
 def print_debug ( level, p1=None, p2=None, p3=None, p4=None, p5=None ):
@@ -17,22 +17,22 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None, p5=None ):
     global debug_level
     if level <= debug_level:
       if p1 == None:
-        print ( "" )
+        sys.stderr.write ( "" + '\n' )
       elif p2 == None:
-        print ( str(p1) )
+        sys.stderr.write ( str(p1) + '\n' )
       elif p3 == None:
-        print ( str(p1) + str(p2) )
+        sys.stderr.write ( str(p1) + str(p2) + '\n' )
       elif p4 == None:
-        print (str (p1) + str (p2) + str (p3))
+        sys.stderr.write (str (p1) + str (p2) + str (p3) + '\n' )
       elif p5 == None:
-        print (str (p1) + str (p2) + str (p3) + str(p4))
+        sys.stderr.write (str (p1) + str (p2) + str (p3) + str(p4) + '\n' )
       else:
-        print ( str(p1) + str(p2) + str(p3) + str(p4) + str(p5) )
+        sys.stderr.write ( str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '\n' )
 
 def print_debug_enter (level):
     if level <= debug_level:
         call_stack = inspect.stack()
-        print ( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) )
+        sys.stderr.write ( "Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) + '\n' )
 
 
 
@@ -87,7 +87,7 @@ if (__name__ == '__main__'):
   # Scan arguments (excluding program name and last 2 file names)
   i = 1
   while (i < len(sys.argv)-2):
-    print ( "Processing option " + sys.argv[i])
+    print_debug (10, "Processing option " + sys.argv[i])
     if sys.argv[i] == '-afm':
       afm_list = []
       # Extend afm_list using the next 6 args
@@ -109,7 +109,7 @@ if (__name__ == '__main__'):
       i += 1  # Increment to get the argument
       debug_level = int (sys.argv [i])
     else:
-      print ( "\nImproper argument list: " + str(argv) + "\n")
+      print_debug (-1, "\nImproper argument list: " + str(argv) + "\n")
       print_command_line_syntax ( sys.argv )
       exit(1)
     i += 1  # Increment to get the next option
