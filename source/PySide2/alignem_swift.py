@@ -3,6 +3,7 @@ import os
 import argparse
 import cv2
 import copy
+import time
 
 import json
 
@@ -20,7 +21,8 @@ import align_swiftir
 import platform
 import psutil
 #import task_queue as task_queue
-import task_queue2 as task_queue
+#import task_queue2 as task_queue
+import task_queue_mp as task_queue
 import task_wrapper # Only needed to set the debug level for that module
 import project_runner
 
@@ -540,14 +542,19 @@ def generate_scales_queue ():
     else:
 
       ### Create the queue here
-      task_queue.debug_level = alignem.debug_level
-      task_wrapper.debug_level = alignem.debug_level
-      scaling_queue = task_queue.TaskQueue (sys.executable)
+#      task_queue.debug_level = alignem.debug_level
+#      task_wrapper.debug_level = alignem.debug_level
+#      scaling_queue = task_queue.TaskQueue (sys.executable)
+#      cpus = psutil.cpu_count (logical=False)
+#      scaling_queue.start (cpus)
+#      scaling_queue.notify = False
+#      scaling_queue.passthrough_stdout = False
+#      scaling_queue.passthrough_stderr = False
+
+      # Use task_queue_mp
+      scaling_queue = task_queue.TaskQueue ()
       cpus = psutil.cpu_count (logical=False)
       scaling_queue.start (cpus)
-      scaling_queue.notify = False
-      scaling_queue.passthrough_stdout = False
-      scaling_queue.passthrough_stderr = False
 
       for scale in sorted(image_scales_to_run):
 
@@ -635,7 +642,8 @@ def generate_scales_queue ():
                         scale_arg = '+%d' % (scale)
                         outfile_arg = 'of=%s' % (outfile_name)
                         infile_arg = '%s' % (abs_file_name)
-                        scaling_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
+#                        scaling_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
+                        scaling_queue.add_task ( [iscale2_c, scale_arg, outfile_arg, infile_arg] )
 
                       # These two lines generate the scales directly rather than through the queue
                       #img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
@@ -653,11 +661,17 @@ def generate_scales_queue ():
                   alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
 
       ### Join the queue here to ensure that all have been generated before returning
-      alignem.print_debug (1, "Waiting for TaskQueue.join to return")
-      scaling_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+      alignem.print_debug (1, "Waiting for Generate Scales to Complete...")
+#      scaling_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+      t0 = time.time()
+      scaling_queue.collect_results() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+      dt = time.time() - t0
+      alignem.print_debug ( 1, "Generate Scales Completed in %.2f seconds" % (dt) )
 
       # Stop the queue
-      scaling_queue.shutdown()
+#      scaling_queue.shutdown()
+      scaling_queue.stop()
+      scaling_queue.clear_tasks()
       del scaling_queue
 
     #main_win.status.showMessage("Done Generating Scales ...")
