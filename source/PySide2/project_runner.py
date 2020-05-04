@@ -2,6 +2,7 @@
 
 import sys
 import os
+import time
 import json
 import copy
 import errno
@@ -15,7 +16,8 @@ import matplotlib.pyplot as plt
 import swiftir
 import align_swiftir
 #import task_queue as task_queue
-import task_queue2 as task_queue
+#import task_queue2 as task_queue
+import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
 import alignem
@@ -119,22 +121,29 @@ class project_runner:
 
       # Prepare the task queue
 
-      task_queue.debug_level = alignem.debug_level
-      task_wrapper.debug_level = alignem.debug_level
+#      task_queue.debug_level = alignem.debug_level
+#      task_wrapper.debug_level = alignem.debug_level
+#      self.task_queue = task_queue.TaskQueue(sys.executable)
+#      cpus = psutil.cpu_count(logical=False)
+#      print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
+#      self.task_queue.start (cpus)
+#      self.task_queue.notify = False
+#      self.task_queue.passthrough_stdout = False
+#      self.task_queue.passthrough_stderr = False
 
-      self.task_queue = task_queue.TaskQueue(sys.executable)
+      self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       self.task_queue.start (cpus)
-      self.task_queue.notify = False
-      self.task_queue.passthrough_stdout = False
-      self.task_queue.passthrough_stderr = False
+
       my_path = os.path.split(os.path.realpath(__file__))[0]
       align_job = os.path.join(my_path,'single_alignment_job.py')
 
       for layer in alstack:
         lnum = alstack.index(layer)
-        # print ( "Starting a task for layer " + str(lnum) )
+
+        print_debug ( 1, "Starting a task for layer " + str(lnum) )
+        '''
         self.task_queue.add_task ( cmd=sys.executable,
                                    args=[ align_job,                     # Python program to run (single_alignment_job)
                                           str(run_project_name),         # Project file name
@@ -147,8 +156,27 @@ class project_runner:
                                           ],
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
+        '''
 
-      self.task_queue.work_q.join()
+        # Use task_queue_mp
+        self.task_queue.add_task ( [ sys.executable,
+                                     align_job,                     # Python program to run (single_alignment_job)
+                                     str(run_project_name),         # Project file name
+                                     str(self.alignment_option),    # Init, Refine, or Apply
+                                     str(self.use_scale),           # Scale to use or 0
+                                     str(self.swiftir_code_mode),   # Python or C mode
+                                     str(lnum),                     # First layer number to run from Project file
+                                     str(1),                        # Number of layers to run
+                                     str(0)                         # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
+                                     ] )
+
+#      self.task_queue.work_q.join()
+
+      t0 = time.time()
+      print_debug ( -1, 'Waiting for Alignement Tasks to Complete...' )
+      self.task_queue.collect_results()
+      dt = time.time() - t0
+      print_debug ( -1, 'Alignement Tasks Completed in %.2f seconds' % (dt) )
 
       # print ("Tasks completed with these arguments")
       for k in self.task_queue.task_dict.keys():
@@ -215,7 +243,18 @@ class project_runner:
       if use_bounding_rect:
         rect = pyswift_tui.BoundingRect( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'] )
 
+
+      # Reset task_queue
+      self.task_queue.stop()
+      del self.task_queue
+      self.task_queue=None
+
       # Finally generate the images with a parallel run of image_apply_affine.py
+
+      self.task_queue = task_queue.TaskQueue()
+      cpus = psutil.cpu_count(logical=False)
+      print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
+      self.task_queue.start (cpus)
 
       my_path = os.path.split(os.path.realpath(__file__))[0]
       apply_affine_job = os.path.join(my_path,'image_apply_affine.py')
@@ -240,7 +279,8 @@ class project_runner:
         # print_debug ( -1, 'Run processes for: python image_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' )
 
         if use_bounding_rect:
-          args=[ apply_affine_job,
+          args=[ sys.executable,
+                 apply_affine_job,
                  '-gray',
                  '-rect',
                  str(rect[0]),
@@ -258,7 +298,8 @@ class project_runner:
                  al_name
                ]
         else:
-          args=[ apply_affine_job,
+          args=[ sys.executable,
+                 apply_affine_job,
                  '-gray',
                  '-afm',
                  str(cafm[0][0]),
@@ -271,15 +312,31 @@ class project_runner:
                  al_name
                ]
 
+        '''
         self.task_queue.add_task ( cmd=sys.executable,
                                    args=args,
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
+        '''
+
+        self.task_queue.add_task ( args )
 
       # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
-      self.task_queue.work_q.join()
-      self.task_queue.shutdown()
+#      self.task_queue.work_q.join()
+#      self.task_queue.shutdown()
+
+      print_debug ( -1, 'Waiting for ImageApplyAffine Tasks to Complete...' )
+      t1 = time.time()
+      self.task_queue.collect_results()
+      t3 = time.time()
+      dt = t3 - t1
+      tt = t3 - t0
+      print_debug ( -1, 'ImageApplyAffine Tasks Completed in %.2f seconds' % (dt) )
+      print_debug ( -1, 'Total Alignment Time: %.2f seconds' % (tt) )
+
+      self.task_queue.stop()
+
       del self.task_queue
       self.task_queue=None
 
