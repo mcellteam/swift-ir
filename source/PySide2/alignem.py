@@ -1475,6 +1475,11 @@ class MainWindow(QMainWindow):
                   [ 'Actual Size', None, self.all_images_actual_size, None, None, None ],
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
+                  [ 'Clear Role',
+                    [
+                      # Empty list to hold the dynamic roles as defined above
+                    ]
+                  ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
                   [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
                   # [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
@@ -2219,6 +2224,16 @@ class MainWindow(QMainWindow):
                         item = QAction ( role, self )
                         item.triggered.connect ( self.empty_into_role )
                         mm.addAction(item)
+                    if 'Clear Role' in text_label:
+                      print_debug ( 30, "Found Clear Role Menu" )
+                      # Remove all the old actions:
+                      while len(mm.actions()) > 0:
+                        mm.removeAction(mm.actions()[-1])
+                      # Add the new actions
+                      for role in roles_list:
+                        item = QAction ( role, self )
+                        item.triggered.connect ( self.remove_all_from_role )
+                        mm.addAction(item)
 
     def register_view_change_callback ( self, callback_function ):
         self.view_change_callback = callback_function
@@ -2285,6 +2300,54 @@ class MainWindow(QMainWindow):
 
         self.update_win_self()
 
+    @Slot()
+    def remove_all_from_role(self, checked):
+        role_to_remove = str ( self.sender().text() )
+        print_debug ( 10, "Remove role: " + str(role_to_remove) )
+        self.remove_from_role ( role_to_remove )
+
+    @Slot()
+    def empty_into_role(self, checked):
+        #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
+        pass
+
+
+    def remove_from_role ( self, role, starting_layer=0, prompt=True):
+        print_debug ( 5, "Removing " + role + " from scale " + str(get_cur_scale()) + " forward from layer " + str(starting_layer) + "  (remove_from_role)" )
+        actually_remove = True
+        if prompt:
+            actually_remove = request_confirmation ("Note", "Do you want to remove all " + role + " images?")
+        if actually_remove:
+            print_debug ( 5, "Removing " + role + " images ..." )
+
+            delete_list = []
+
+            layer_index = 0
+            for layer in project_data['data']['scales'][get_cur_scale()]['alignment_stack']:
+              if layer_index >= starting_layer:
+                print_debug ( 5, "Removing " + role + " from Layer " + str(layer_index) )
+                if role in layer['images'].keys():
+                  delete_list.append ( layer['images'][role]['filename'] )
+                  print_debug (5, "  Removing " + str (layer['images'][role]['filename']))
+                  layer['images'].pop(role)
+                  # Remove the method results since they are no longer applicable
+                  if role == 'aligned':
+                    if 'align_to_ref_method' in layer.keys():
+                      if 'method_results' in layer['align_to_ref_method']:
+                        # Set the "method_results" to an empty dictionary to signify no results:
+                        layer['align_to_ref_method']['method_results'] = {}
+              layer_index += 1
+
+            #image_library.remove_all_images()
+
+            for fname in delete_list:
+              if fname != None:
+                if os.path.exists(fname):
+                  os.remove(fname)
+                  image_library.remove_image_reference ( fname )
+
+            main_window.update_panels()
+            main_window.refresh_all()
 
     def define_scales_menu ( self, scales_list ):
         # Set the Scales menu from this scales_list
