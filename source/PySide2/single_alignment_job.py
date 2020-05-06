@@ -6,6 +6,7 @@
 # reasons, it makes sense to have a separate runner stub. At some
 # point this functionality could be added back or refactored other ways.
 
+import os
 import sys
 import json
 import pyswift_tui
@@ -60,14 +61,24 @@ if __name__ == '__main__':
     jde = json.JSONEncoder ( indent=1, separators=(",",": "), sort_keys=True )
     run_output_json = jde.encode ( { 'data_model': updated_model, 'need_to_write_json': need_to_write_json } )
 
-    if use_file_io:
-      # Write the output JSOM to a file
+    if True or use_file_io:
+      # Write the output JSON to a file
       # The job file name will already be located in the project directory, so use its path
-      out_name = os.path.join ( os.path.split(project_name)[0], "single_alignment_out_%d.json" % start_layer )
-      out_name = "single_alignment_out_%d.json" % start_layer
-      #fout = open ( out_name, 'w' )
-      #fout.write ( run_output_json )
-      #fout.close()
+      # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+
+      #fout.write ( "Scale = " + str(use_scale) + "\n" )
+      # Set default path in the project directory (in case no scale is given)
+      out_name = os.path.join ( project_dict['data']['destination_path'], "single_alignment_out_%d.json" % start_layer )
+      if use_scale > 0:
+        # Set path for the selected scale:
+        out_name = os.path.join ( project_dict['data']['destination_path'], "scale_%d"%use_scale, "single_alignment_out_%d.json"%start_layer )
+      # out_name = "single_alignment_out_%d.json" % start_layer
+      fout = open ( out_name, 'w' )
+      #fout.write("project_name: " + str(project_name) + '\n')
+      #fout.write("project_name: " + str(os.path.split(project_name)[0]) + '\n')
+      #fout.write ( "Scale = " + str(use_scale) + "\n" )
+      fout.write ( run_output_json )
+      fout.close()
     #else:
     if True:
       # Write the output JSON to stdout with some markers to separate it from any other reasonable output

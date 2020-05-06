@@ -92,6 +92,7 @@ class project_runner:
     self.task_queue = None
     self.updated_model = None
     self.need_to_write_json = None
+    self.use_file_not_pipe = 0
 
 
   def start ( self ):
@@ -154,7 +155,7 @@ class project_runner:
                                           str(self.swiftir_code_mode),   # Python or C mode
                                           str(lnum),                     # First layer number to run from Project file
                                           str(1),                        # Number of layers to run
-                                          str(0)                         # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
+                                          str(self.use_file_not_pipe)    # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
                                           ],
                                    wd='.' )
                                    # wd=self.project['data']['destination_path'] )
@@ -180,6 +181,7 @@ class project_runner:
       dt = time.time() - t0
       print_debug ( -1, 'Alignement Tasks Completed in %.2f seconds' % (dt) )
 
+
       # print ("Tasks completed with these arguments")
       for k in self.task_queue.task_dict.keys():
         #print ( '  ' + str(self.task_queue.task_dict[k]['args']) + " " + str(self.task_queue.task_dict[k]['status']) )
@@ -190,6 +192,9 @@ class project_runner:
       for k in self.task_queue.task_dict.keys():
         t = self.task_queue.task_dict[k]
         task_dict_by_start_layer[int(t['args'][5])] = t
+
+      # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+
 
       tasks_by_start_layer = []
       for k in sorted(task_dict_by_start_layer.keys()):
