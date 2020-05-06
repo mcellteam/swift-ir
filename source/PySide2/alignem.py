@@ -1950,6 +1950,9 @@ class MainWindow(QMainWindow):
                 else:
                   self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
+                self.set_def_proj_dest()
+
+
     @Slot()
     def save_cropped_as(self):
         print_debug ( 1, "\n\nSaving Cropped Images\n\n" )
