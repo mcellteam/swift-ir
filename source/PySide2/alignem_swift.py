@@ -1311,7 +1311,7 @@ control_model = [
       # gen_scales_cb,
       " ", gen_scalesq_cb,
       # " ", gen_scales_opt_cb,
-      " ", link_stacks_cb,
+      # " ", link_stacks_cb,
       " ", poly_order,
       " ", null_cafm_trends,
       " ", use_bounding_rect,
@@ -1329,7 +1329,7 @@ control_model = [
     [
       # "Test: ",
       # gen_scales_thread_cb,
-      " ", link_stack_cb,
+      # " ", link_stack_cb,
       " ", init_ref_app,
       #" ", do_thing_cb,
       #" ", refine_aff_cb,
@@ -1338,9 +1338,9 @@ control_model = [
       " ", clear_skips_cb,
       " ", skips_to_all_cb,
       " ", whitening_factor,
-      " ", win_scale_factor,
+      " ", win_scale_factor
       # " ", progress_cb,
-      " ", debug_cb
+      # " ", debug_cb
     ]
   ] # End first pane
 ]
