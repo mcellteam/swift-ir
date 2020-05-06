@@ -1049,6 +1049,26 @@ def bounding_rect_changed_callback ( state ):
             project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = False
         print_debug ( 50, "bounding_rec_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect']) + ")")
 
+def skip_changed_callback ( state ):
+    global ignore_changes
+    print ( "Skip changed!!" )
+    if update_linking_callback != None:
+        update_linking_callback()
+        main_window.update_win_self()
+        main_window.update_panels()
+        main_window.refresh_all_images()
+        '''
+        # This doesn't work to force a redraw of the panels
+        if project_data != None:
+            if 'data' in project_data:
+                if 'current_layer' in project_data['data']:
+                    layer_num = project_data['data']['current_layer']
+                    ignore_changes = True
+                    main_window.view_change_callback ( None, None, layer_num, layer_num )
+                    ignore_changes = False
+        '''
+
+
 def bool_changed_callback ( state ):
     global ignore_changes
     print_debug ( 50, 100*'+' )
@@ -1108,6 +1128,8 @@ class ControlPanelWidget(QWidget):
                           val_widget.stateChanged.connect(null_bias_changed_callback)
                       elif item.text == "Bounding Rect":
                           val_widget.stateChanged.connect(bounding_rect_changed_callback)
+                      elif item.text == "Skip":
+                          val_widget.stateChanged.connect(skip_changed_callback)
                       else:
                           val_widget.stateChanged.connect(bool_changed_callback)
                       item.widget = val_widget
