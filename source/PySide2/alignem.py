@@ -79,9 +79,13 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
 
 app = None
 use_c_version = True
+show_skipped_images = True
 
 preloading_range = 3
 max_image_file_size = 1000000000
+
+update_linking_callback = None
+update_skips_callback = None
 
 crop_mode_callback = None
 crop_mode_role = None
@@ -727,6 +731,21 @@ class ZoomPanWidget(QWidget):
             # Unshifted Scroll Wheel moves through layers
 
             layer_delta = int(event.delta()/120)
+            if not show_skipped_images:
+
+                # Try to juggle the layer delta to avoid any skipped images
+
+                scale_key = project_data['data']['current_scale']
+                stack = project_data['data']['scales'][scale_key]['alignment_stack']
+
+                layer_index = project_data['data']['current_layer']
+                new_layer_index = layer_index + layer_delta
+                while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    if stack[new_layer_index]['skip'] == False:
+                        break
+                    new_layer_index += layer_delta
+                if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    layer_delta = new_layer_index - layer_index
 
             self.change_layer ( layer_delta )
 
@@ -1046,6 +1065,28 @@ def bounding_rect_changed_callback ( state ):
             project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = False
         print_debug ( 50, "bounding_rec_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect']) + ")")
 
+def skip_changed_callback ( state ):
+    global ignore_changes
+    print ( "Skip changed!!" )
+    if update_skips_callback != None:
+        update_skips_callback()
+
+    if update_linking_callback != None:
+        update_linking_callback()
+        main_window.update_win_self()
+        main_window.update_panels()
+        main_window.refresh_all_images()
+        '''
+        # This doesn't work to force a redraw of the panels
+        if project_data != None:
+            if 'data' in project_data:
+                if 'current_layer' in project_data['data']:
+                    layer_num = project_data['data']['current_layer']
+                    ignore_changes = True
+                    main_window.view_change_callback ( None, None, layer_num, layer_num )
+                    ignore_changes = False
+        '''
+
 def bool_changed_callback ( state ):
     global ignore_changes
     print_debug ( 50, 100*'+' )
@@ -1105,6 +1146,8 @@ class ControlPanelWidget(QWidget):
                           val_widget.stateChanged.connect(null_bias_changed_callback)
                       elif item.text == "Bounding Rect":
                           val_widget.stateChanged.connect(bounding_rect_changed_callback)
+                      elif item.text == "Skip":
+                          val_widget.stateChanged.connect(skip_changed_callback)
                       else:
                           val_widget.stateChanged.connect(bool_changed_callback)
                       item.widget = val_widget
@@ -1372,7 +1415,7 @@ import pyswift_tui
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
-    def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM"):
+    def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM", simple_mode=True):
 
         global app
         if app == None:
@@ -1414,6 +1457,8 @@ class MainWindow(QMainWindow):
 
         self.control_panel = ControlPanelWidget(self.control_model)
 
+        self.simple_mode = simple_mode
+
         self.main_panel = QWidget()
 
         self.main_panel_layout = QVBoxLayout()
@@ -1442,7 +1487,6 @@ class MainWindow(QMainWindow):
                 [
                   [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
                   [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
-                  #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1475,6 +1519,11 @@ class MainWindow(QMainWindow):
                   [ 'Actual Size', None, self.all_images_actual_size, None, None, None ],
                   [ 'Refresh', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
+                  [ 'Clear Role',
+                    [
+                      # Empty list to hold the dynamic roles as defined above
+                    ]
+                  ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
                   [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
                   # [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
@@ -1540,7 +1589,7 @@ class MainWindow(QMainWindow):
                   [ 'Borders', None, self.toggle_border, False, None, None ],
                   [ 'Window Centers', None, self.not_yet, False, None, None ],
                   [ 'Affines', None, self.not_yet, False, None, None ],
-                  [ 'Skipped Images', None, self.not_yet, True, None, None ],
+                  [ 'Skipped Images', None, self.toggle_show_skipped, show_skipped_images, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Plot', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1598,6 +1647,24 @@ class MainWindow(QMainWindow):
                 ]
               ]
             ]
+
+        # This could be used to optionally simplify menus:
+        '''
+        if simple_mode:
+            ml[0] = [ '&File',
+                [
+                  [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
+                  [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Save &Cropped As...', None, self.save_cropped_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
+                ]
+              ]
+        '''
+
         self.build_menu_from_list ( self.menu, ml )
 
         # Status Bar
@@ -1682,6 +1749,13 @@ class MainWindow(QMainWindow):
     @Slot()
     def toggle_full_paths(self, checked):
         print_debug ( 30, "Toggling Full Paths" )
+
+    @Slot()
+    def toggle_show_skipped(self, checked):
+        print_debug ( 30, "Toggling Show Skipped" )
+        global show_skipped_images
+        show_skipped_images = checked
+
 
     @Slot()
     def set_debug_level(self, checked):
@@ -1922,6 +1996,9 @@ class MainWindow(QMainWindow):
                   self.setWindowTitle("Project: " + self.current_project_file_name )
                 else:
                   self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
+
+                self.set_def_proj_dest()
+
 
     @Slot()
     def save_cropped_as(self):
@@ -2219,6 +2296,16 @@ class MainWindow(QMainWindow):
                         item = QAction ( role, self )
                         item.triggered.connect ( self.empty_into_role )
                         mm.addAction(item)
+                    if 'Clear Role' in text_label:
+                      print_debug ( 30, "Found Clear Role Menu" )
+                      # Remove all the old actions:
+                      while len(mm.actions()) > 0:
+                        mm.removeAction(mm.actions()[-1])
+                      # Add the new actions
+                      for role in roles_list:
+                        item = QAction ( role, self )
+                        item.triggered.connect ( self.remove_all_from_role )
+                        mm.addAction(item)
 
     def register_view_change_callback ( self, callback_function ):
         self.view_change_callback = callback_function
@@ -2253,6 +2340,9 @@ class MainWindow(QMainWindow):
 
     def import_base_images ( self ):
         self.import_images_dialog ( 'base' )
+        if update_linking_callback != None:
+            update_linking_callback()
+            self.update_win_self()
 
     @Slot()
     def empty_into_role(self, checked):
@@ -2285,6 +2375,54 @@ class MainWindow(QMainWindow):
 
         self.update_win_self()
 
+    @Slot()
+    def remove_all_from_role(self, checked):
+        role_to_remove = str ( self.sender().text() )
+        print_debug ( 10, "Remove role: " + str(role_to_remove) )
+        self.remove_from_role ( role_to_remove )
+
+    @Slot()
+    def empty_into_role(self, checked):
+        #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
+        pass
+
+
+    def remove_from_role ( self, role, starting_layer=0, prompt=True):
+        print_debug ( 5, "Removing " + role + " from scale " + str(get_cur_scale()) + " forward from layer " + str(starting_layer) + "  (remove_from_role)" )
+        actually_remove = True
+        if prompt:
+            actually_remove = request_confirmation ("Note", "Do you want to remove all " + role + " images?")
+        if actually_remove:
+            print_debug ( 5, "Removing " + role + " images ..." )
+
+            delete_list = []
+
+            layer_index = 0
+            for layer in project_data['data']['scales'][get_cur_scale()]['alignment_stack']:
+              if layer_index >= starting_layer:
+                print_debug ( 5, "Removing " + role + " from Layer " + str(layer_index) )
+                if role in layer['images'].keys():
+                  delete_list.append ( layer['images'][role]['filename'] )
+                  print_debug (5, "  Removing " + str (layer['images'][role]['filename']))
+                  layer['images'].pop(role)
+                  # Remove the method results since they are no longer applicable
+                  if role == 'aligned':
+                    if 'align_to_ref_method' in layer.keys():
+                      if 'method_results' in layer['align_to_ref_method']:
+                        # Set the "method_results" to an empty dictionary to signify no results:
+                        layer['align_to_ref_method']['method_results'] = {}
+              layer_index += 1
+
+            #image_library.remove_all_images()
+
+            for fname in delete_list:
+              if fname != None:
+                if os.path.exists(fname):
+                  os.remove(fname)
+                  image_library.remove_image_reference ( fname )
+
+            main_window.update_panels()
+            main_window.refresh_all()
 
     def define_scales_menu ( self, scales_list ):
         # Set the Scales menu from this scales_list

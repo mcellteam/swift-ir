@@ -193,7 +193,11 @@ def link_all_stacks():
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+def update_linking_callback():
+    link_all_stacks()
 
+def update_skips_callback():
+    copy_skips_to_all_scales()
 
 class RunProgressDialog(QDialog):
     """
@@ -1310,7 +1314,7 @@ control_model = [
       # gen_scales_cb,
       " ", gen_scalesq_cb,
       # " ", gen_scales_opt_cb,
-      " ", link_stacks_cb,
+      # " ", link_stacks_cb,
       " ", poly_order,
       " ", null_cafm_trends,
       " ", use_bounding_rect,
@@ -1328,7 +1332,7 @@ control_model = [
     [
       # "Test: ",
       # gen_scales_thread_cb,
-      " ", link_stack_cb,
+      # " ", link_stack_cb,
       " ", init_ref_app,
       #" ", do_thing_cb,
       #" ", refine_aff_cb,
@@ -1337,9 +1341,9 @@ control_model = [
       " ", clear_skips_cb,
       " ", skips_to_all_cb,
       " ", whitening_factor,
-      " ", win_scale_factor,
+      " ", win_scale_factor
       # " ", progress_cb,
-      " ", debug_cb
+      # " ", debug_cb
     ]
   ] # End first pane
 ]
@@ -1403,6 +1407,8 @@ if __name__ == "__main__":
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
     alignem.crop_mode_callback = crop_mode_callback
+    alignem.update_linking_callback = update_linking_callback
+    alignem.update_skips_callback = update_skips_callback
 
     main_win.resize(1420,640)  # This value is typically chosen to show all widget text
 
