@@ -133,6 +133,8 @@ class project_runner:
 
       self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
+      if cpus > 32:
+        cpus = 32
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       self.task_queue.start (cpus)
 
@@ -254,6 +256,8 @@ class project_runner:
       self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
+      if cpus > 32:
+        cpus = 32
       self.task_queue.start (cpus)
 
       my_path = os.path.split(os.path.realpath(__file__))[0]
