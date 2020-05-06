@@ -841,6 +841,13 @@ class ZoomPanWidget(QWidget):
                                         painter.drawEllipse ( x-r, y-r, r*2, r*2 )
                                     if cmd == 'square':
                                         painter.drawRect ( QRectF ( x-r, y-r, r*2, r*2 ) )
+                                    if cmd == 'skipped':
+                                        # color_to_use = colors[color_index+1%len(colors)]
+                                        color_to_use = [255,50,50]
+                                        painter.setPen(QPen(QColor(*color_to_use),5))
+                                        # painter.drawEllipse ( x-(r*2), y-(r*2), r*4, r*4 )
+                                        painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
+                                        painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
                                     color_index += 1
 
 
