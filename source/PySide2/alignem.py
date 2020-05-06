@@ -80,7 +80,7 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
 app = None
 use_c_version = True
 
-preloading_range = 10
+preloading_range = 3
 max_image_file_size = 1000000000
 
 crop_mode_callback = None

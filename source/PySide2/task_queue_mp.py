@@ -9,45 +9,63 @@ import time
 
 class TaskQueue:
 
-  def __init__(self):
-    self.work_queue = mp.JoinableQueue()
-    self.result_queue = mp.Queue()
-    self.task_dict = {}
-    self.task_id = 0
+  def __init__(self, start_method='forkserver'):
+    self.ctx = mp.get_context(start_method)
 
 
   def start(self, n_workers):
+    self.work_queue = self.ctx.JoinableQueue()
+    self.result_queue = self.ctx.Queue()
+    self.task_dict = {}
+    self.task_id = 0
+
     self.n_workers = n_workers
     for i in range(self.n_workers):
-      mp.Process(target=self.worker, args=(self.work_queue, self.result_queue)).start()
+      self.ctx.Process(target=self.worker, args=(i, self.work_queue, self.result_queue)).start()
 
 
   def stop(self):
     # Tell child processes to stop
     for i in range(self.n_workers):
         self.work_queue.put('STOP')
+#    for i in range(self.n_workers):
+#        worker_id, dt = self.result_queue.get()
+#        print('TaskQueue worker: %d  total time: %.2f' % (worker_id, dt))
 
   #
   # Function run by worker processes
   #
-  def worker(self, task_q, result_q):
+  def worker(self, worker_id, task_q, result_q):
+    t_start = time.time()
     for task_id, task in iter(task_q.get, 'STOP'):
 
-#      process = sp.Popen(task, cwd=work['wd'], env=work['env'], bufsize=1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
-
-      task_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
-
       t0 = time.time()
-      outs, errs = task_proc.communicate()
-      dt = time.time() - t0
+      try: 
+#        process = sp.Popen(task, cwd=work['wd'], env=work['env'], bufsize=1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
-      outs = '' if outs == None else outs.decode('utf-8')
-      errs = '' if errs == None else errs.decode('utf-8')
-      rc = task_proc.returncode
+        task_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+
+        outs, errs = task_proc.communicate()
+
+        outs = '' if outs == None else outs.decode('utf-8')
+        errs = '' if errs == None else errs.decode('utf-8')
+        rc = task_proc.returncode
+      except:
+        outs = ''
+        errs = 'TaskQueue worker %d : task exception: %s' % (worker_id, str(sys.exc_info()[0]))
+        print(errs)
+        rc = 1
 
       task_q.task_done()
+      dt = time.time() - t0
 
       result_q.put((task_id, outs, errs, rc, dt))
+
+    task_q.task_done()
+
+#    t_stop = time.time()
+#    dt = t_stop - t_start
+#    result_q.put((worker_id, dt))
 
 
   def add_task(self, task):
@@ -67,7 +85,10 @@ class TaskQueue:
     self.task_id = 0
 
  
-  def collect_results(self):
+  def collect_results(self, stop=True):
+
+    if stop:
+      self.stop()
 
     self.work_queue.join()
 
@@ -83,9 +104,8 @@ class TaskQueue:
         self.task_dict[task_id]['dt'] = dt
 
 
-
 if __name__ == '__main__':
-    mp.freeze_support()
+#    mp.freeze_support()
 
     tq = TaskQueue()
     cpus = psutil.cpu_count(logical=False)
@@ -130,5 +150,26 @@ if __name__ == '__main__':
         print('\n%s\n' % (tq.task_dict[task_id]['stdout']))
 
 
-    tq.stop()
+    '''
+    tq.start(cpus)
+
+    print('\n>>>>>> Submitting Tasks Again: <<<<<<\n')
+    for task in tasks:
+      tq.add_task(task)
+
+    print('\n>>>>>> Collecting Results Again: <<<<<<\n')
+    tq.collect_results()
+
+    print('\n>>>>>> More Task Results: <<<<<<\n')
+    for task_id in tq.task_dict:
+        print( '[task %s]: %s %s %s %s %s' % 
+               (str(task_id),
+               str(tq.task_dict[task_id]['cmd']),
+               str(tq.task_dict[task_id]['args']),
+               str(tq.task_dict[task_id]['rc']),
+               str(tq.task_dict[task_id]['status']),
+               str(tq.task_dict[task_id]['dt']) ))
+
+        print('\n%s\n' % (tq.task_dict[task_id]['stdout']))
+    '''
 
