@@ -1372,7 +1372,7 @@ import pyswift_tui
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
-    def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM"):
+    def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM", simple_mode=True):
 
         global app
         if app == None:
@@ -1414,6 +1414,8 @@ class MainWindow(QMainWindow):
 
         self.control_panel = ControlPanelWidget(self.control_model)
 
+        self.simple_mode = simple_mode
+
         self.main_panel = QWidget()
 
         self.main_panel_layout = QVBoxLayout()
@@ -1442,7 +1444,6 @@ class MainWindow(QMainWindow):
                 [
                   [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
                   [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
-                  #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
                   [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1603,6 +1604,24 @@ class MainWindow(QMainWindow):
                 ]
               ]
             ]
+
+        # This could be used to optionally simplify menus:
+        '''
+        if simple_mode:
+            ml[0] = [ '&File',
+                [
+                  [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
+                  [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Save &Cropped As...', None, self.save_cropped_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
+                ]
+              ]
+        '''
+
         self.build_menu_from_list ( self.menu, ml )
 
         # Status Bar
