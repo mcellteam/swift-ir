@@ -79,6 +79,7 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
 
 app = None
 use_c_version = True
+show_skipped_images = True
 
 preloading_range = 10
 max_image_file_size = 1000000000
@@ -730,6 +731,21 @@ class ZoomPanWidget(QWidget):
             # Unshifted Scroll Wheel moves through layers
 
             layer_delta = int(event.delta()/120)
+            if not show_skipped_images:
+
+                # Try to juggle the layer delta to avoid any skipped images
+
+                scale_key = project_data['data']['current_scale']
+                stack = project_data['data']['scales'][scale_key]['alignment_stack']
+
+                layer_index = project_data['data']['current_layer']
+                new_layer_index = layer_index + layer_delta
+                while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    if stack[new_layer_index]['skip'] == False:
+                        break
+                    new_layer_index += layer_delta
+                if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    layer_delta = new_layer_index - layer_index
 
             self.change_layer ( layer_delta )
 
@@ -1573,7 +1589,7 @@ class MainWindow(QMainWindow):
                   [ 'Borders', None, self.toggle_border, False, None, None ],
                   [ 'Window Centers', None, self.not_yet, False, None, None ],
                   [ 'Affines', None, self.not_yet, False, None, None ],
-                  [ 'Skipped Images', None, self.not_yet, True, None, None ],
+                  [ 'Skipped Images', None, self.toggle_show_skipped, show_skipped_images, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Plot', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
@@ -1733,6 +1749,13 @@ class MainWindow(QMainWindow):
     @Slot()
     def toggle_full_paths(self, checked):
         print_debug ( 30, "Toggling Full Paths" )
+
+    @Slot()
+    def toggle_show_skipped(self, checked):
+        print_debug ( 30, "Toggling Show Skipped" )
+        global show_skipped_images
+        show_skipped_images = checked
+
 
     @Slot()
     def set_debug_level(self, checked):
