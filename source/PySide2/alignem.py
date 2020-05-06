@@ -83,6 +83,9 @@ use_c_version = True
 preloading_range = 10
 max_image_file_size = 1000000000
 
+update_linking_callback = None
+
+
 crop_mode_callback = None
 crop_mode_role = None
 crop_mode_origin = None
@@ -2287,6 +2290,9 @@ class MainWindow(QMainWindow):
 
     def import_base_images ( self ):
         self.import_images_dialog ( 'base' )
+        if update_linking_callback != None:
+            update_linking_callback()
+            self.update_win_self()
 
     @Slot()
     def empty_into_role(self, checked):

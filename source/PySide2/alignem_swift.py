@@ -193,6 +193,8 @@ def link_all_stacks():
     #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
+def update_linking_callback():
+    link_all_stacks()
 
 
 class RunProgressDialog(QDialog):
@@ -1402,6 +1404,7 @@ if __name__ == "__main__":
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
     alignem.crop_mode_callback = crop_mode_callback
+    alignem.update_linking_callback = update_linking_callback
 
     main_win.resize(1420,640)  # This value is typically chosen to show all widget text
 
