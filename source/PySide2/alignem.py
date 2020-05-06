@@ -84,7 +84,7 @@ preloading_range = 10
 max_image_file_size = 1000000000
 
 update_linking_callback = None
-
+update_skips_callback = None
 
 crop_mode_callback = None
 crop_mode_role = None
@@ -1052,6 +1052,9 @@ def bounding_rect_changed_callback ( state ):
 def skip_changed_callback ( state ):
     global ignore_changes
     print ( "Skip changed!!" )
+    if update_skips_callback != None:
+        update_skips_callback()
+
     if update_linking_callback != None:
         update_linking_callback()
         main_window.update_win_self()
@@ -1067,7 +1070,6 @@ def skip_changed_callback ( state ):
                     main_window.view_change_callback ( None, None, layer_num, layer_num )
                     ignore_changes = False
         '''
-
 
 def bool_changed_callback ( state ):
     global ignore_changes
