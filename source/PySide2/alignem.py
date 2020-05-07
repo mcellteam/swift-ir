@@ -42,6 +42,17 @@ from alignem_data_model import new_project_template, new_layer_template, new_ima
 
 project_data = None
 
+def print_all_skips():
+    scale_keys = project_data['data']['scales'].keys()
+    for scale_key in sorted(scale_keys):
+        print ( " Scale: " + scale_key )
+        scale = project_data['data']['scales'][scale_key]
+        layers = scale['alignment_stack']
+        for layer in layers:
+            print ( "  Layer: " + str(layers.index(layer)) + ", skip = " + str(layer['skip']) )
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
 
@@ -1937,6 +1948,8 @@ class MainWindow(QMainWindow):
                     self.center_all_images()
 
                 ignore_changes = False
+
+        print_all_skips()
 
 
     def save_project_to_current_file(self):
