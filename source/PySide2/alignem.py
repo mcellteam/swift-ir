@@ -833,8 +833,9 @@ class ZoomPanWidget(QWidget):
                         painter.drawRect(painter.viewport())
 
                         if self.draw_annotations:
-                            painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
-                            painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width (), pixmap.height ()))
+                            if (pixmap.width() > 0) or (pixmap.height() > 0):
+                                painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
+                                painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width(), pixmap.height()))
 
                         if self.draw_annotations and 'metadata' in ann_image:
                             colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
