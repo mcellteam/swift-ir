@@ -90,6 +90,7 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
 
 app = None
 use_c_version = True
+use_file_io = False
 show_skipped_images = True
 
 preloading_range = 3
@@ -1621,6 +1622,7 @@ class MainWindow(QMainWindow):
                   [ 'Generate Images', None, self.not_yet, True, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Use C Version', None, self.do_nothing, use_c_version, None, None ],
+                  [ 'Use File I/O', None, self.do_nothing, use_file_io, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
                   [ 'Reverse Arrow Keys', None, self.toggle_arrow_direction, False, None, None ],
