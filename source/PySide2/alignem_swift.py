@@ -836,7 +836,7 @@ def generate_scales_optimized ():
 
 
 def get_code_mode():
-    ### All of this code is just trying to find the right menu item for the Use C Version check box:
+    ### All of this code is just trying to find the right menu item for the "Use C Version" check box:
     code_mode = 'python'
     menubar = alignem.main_window.menu
     menubar_items = [ menubar.children()[x].title() for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
@@ -861,6 +861,33 @@ def get_code_mode():
     return ( code_mode )
 
 
+def get_file_io_mode():
+    ### All of this code is just trying to find the right menu item for the "Use File I/O" check box:
+    file_io_mode = False
+    menubar = alignem.main_window.menu
+    menubar_items = [ menubar.children()[x].title() for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
+    submenus = [ menubar.children()[x] for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
+    alignem.print_debug ( 40, "Menubar contains: " + str(menubar_items) )
+    setmenu_index = -1
+    for m in menubar_items:
+      if "Set" in m:
+        setmenu_index = menubar_items.index(m)
+    alignem.print_debug ( 40, "Set menu is item " + str(setmenu_index) )
+    if setmenu_index >= 0:
+      set_menu = submenus[setmenu_index]
+      set_menu_actions = set_menu.actions()
+      use_file_io = None  # This will be the widget (menu item)
+      for action in set_menu_actions:
+        if "Use File I/O" in action.text():
+          use_file_io = action
+          break
+      if use_file_io != None:
+        # Then we've found the actual widget, so get its value
+        if use_file_io.isChecked():
+          file_io_mode = True
+    return ( file_io_mode )
+
+
 def align_layers ( first_layer=0, num_layers=-1 ):
     alignem.print_debug ( 30, 100*'=' )
     if num_layers < 0:
@@ -874,6 +901,8 @@ def align_layers ( first_layer=0, num_layers=-1 ):
     ensure_proper_data_structure()
 
     code_mode = get_code_mode()
+
+    global_use_file_io = get_file_io_mode()
 
     # Check that there is a place to put the aligned images
     if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
