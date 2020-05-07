@@ -33,6 +33,13 @@ main_win = None
 
 ## project_data = None  # Use from alignem
 
+
+global_source_rev = ""
+global_source_hash = ""
+global_parallel_mode = False
+global_use_file_io = False
+
+
 swift_roles = ['ref','base','aligned']
 
 def print_exception():
@@ -921,7 +928,8 @@ def align_layers ( first_layer=0, num_layers=-1 ):
                                                           swiftir_code_mode=code_mode,
                                                           start_layer=first_layer,
                                                           num_layers=num_layers,
-                                                          run_parallel=True)
+                                                          run_parallel=True,
+                                                          use_file_io=global_use_file_io)
         running_project.start()
         running_project.join()
         updated_model = running_project.get_updated_data_model()
@@ -1390,10 +1398,6 @@ control_model = [
 
 from source_tracker import get_hash_and_rev
 
-global_source_rev = ""
-global_source_hash = ""
-global_parallel_mode = False
-
 if __name__ == "__main__":
 
     alignem.debug_level = 10
@@ -1402,6 +1406,7 @@ if __name__ == "__main__":
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1, help="Run the C versions of SWiFT tools")
+    options.add_argument("-f", "--use_file_io", type=int, required=False, default=0, help="Use files to gather output from tasks")
     args = options.parse_args()
 
     if args.debug != None:
@@ -1418,6 +1423,10 @@ if __name__ == "__main__":
 
     if args.use_c_version != None:
       alignem.use_c_version = args.use_c_version != 0
+
+    if args.use_file_io != None:
+      global_use_file_io = args.use_file_io != 0
+
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     source_list = [
