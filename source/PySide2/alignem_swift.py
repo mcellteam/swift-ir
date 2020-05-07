@@ -196,8 +196,11 @@ def link_all_stacks():
 def update_linking_callback():
     link_all_stacks()
 
-def update_skips_callback():
+def update_skips_callback(new_state):
+    # Update all of the annotations based on the skip values
     copy_skips_to_all_scales()
+    update_skip_annotations()
+
 
 class RunProgressDialog(QDialog):
     """
@@ -1269,6 +1272,34 @@ def copy_skips_to_all_scales():
                 if l < len(scales[scale_key]['alignment_stack']):
                     scales[scale_key]['alignment_stack'][l]['skip'] = scales[source_scale_key]['alignment_stack'][l]['skip']
     # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][alignem.project_data['data']['current_layer']]['skip']
+
+def update_skip_annotations():
+    print ( "update_skip_annotations called")
+    # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+    for sk,scale in alignem.project_data['data']['scales'].items():
+      for layer in scale['alignment_stack']:
+        for ik,im in layer['images'].items():
+          if not 'metadata' in im:
+            im['metadata'] = {}
+          if not 'annotations' in im['metadata']:
+            im['metadata']['annotations'] = []
+          ann = im['metadata']['annotations']
+          if layer['skip']:
+            # Check and set as needed
+            already_skipped = False
+            for a in ann:
+              if a.startswith('skipped'):
+                already_skipped = True
+                break
+            if not already_skipped:
+              print ( "Add annotation" )
+              ann.append('skipped(1)')
+          else:
+            # Remove all "skipped"
+            print ( "Remove annotation" )
+            for a in ann:
+              if a.startswith('skipped'):
+                ann.remove(a)
 
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
