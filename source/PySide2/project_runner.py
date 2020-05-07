@@ -176,16 +176,39 @@ class project_runner:
 #      self.task_queue.work_q.join()
 
       t0 = time.time()
-      print_debug ( -1, 'Waiting for Alignement Tasks to Complete...' )
+      print_debug ( -1, 'Waiting for Alignment Tasks to Complete...' )
       self.task_queue.collect_results()
       dt = time.time() - t0
-      print_debug ( -1, 'Alignement Tasks Completed in %.2f seconds' % (dt) )
+#      print_debug ( -1, 'Alignment Tasks Completed in %.2f seconds' % (dt) )
 
 
+      # Check status of all tasks and report final tally
       # print ("Tasks completed with these arguments")
+      n_tasks = len(self.task_queue.task_dict.keys())
+      n_success = 0
+      n_queued = 0
+      n_failed = 0
       for k in self.task_queue.task_dict.keys():
+        task_item = self.task_queue.task_dict[k]
+        status = task_item['status']
+        if status == 'completed':
+          n_success += 1
+        elif status == 'queued':
+          n_queued += 1
+        elif status == 'task_error':
+          print_debug ( -1, '\nTask Error:' )
+          print_debug ( -1, '   CMD:    %s' % (str(task_item['cmd'])) )
+          print_debug ( -1, '   ARGS:   %s' % (str(task_item['args'])) )
+          print_debug ( -1, '   STDERR: %s\n' % (str(task_item['stderr'])) )
+          n_failed += 1
         #print ( '  ' + str(self.task_queue.task_dict[k]['args']) + " " + str(self.task_queue.task_dict[k]['status']) )
+#        if self.task_queue.task_dict[k]['status'] == 'task_error':
+#          print_debug ( -1, '  ' + str(self.task_queue.task_dict[k]['cmd']) + " " + str(self.task_queue.task_dict[k]['args']) )
         pass
+      print_debug ( -1, '%d Alignment Tasks Completed in %.2f seconds' % (n_tasks, dt) )
+      print_debug ( -1, '    Num Successful:   %d' % (n_success) )
+      print_debug ( -1, '    Num Still Queued: %d' % (n_queued) )
+      print_debug ( -1, '    Num Failed:       %d' % (n_failed) )
 
       # Sort the tasks by layers rather than by process IDs
       task_dict_by_start_layer = {}
@@ -236,6 +259,14 @@ class project_runner:
 
           al_stack_old[lnum] = al_stack_new[lnum]
 
+          if tasks_by_start_layer[tnum]['status'] == 'task_error':
+            ref_fn = al_stack_old[lnum]['images']['ref']['filename']
+            base_fn = al_stack_old[lnum]['images']['base']['filename']
+            print_debug ( -1, 'Alignment Task Error at: ' + str(task_by_start_layer[tnum]['cmd']) + " " + str(task_by_start_layer[tnum]['args']) )
+            print_debug ( -1, 'Automatically Skipping Layer %d' % (lnum))
+            print_debug ( -1, 'ref image: %s   base image: %s' % (ref_fn, base_fn) )
+            al_stack_old[lnum]['skip'] = True
+
           self.need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
       # Propagate the AFMs to generate and appropriate CFM at each layer
@@ -260,9 +291,9 @@ class project_runner:
 
       self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
-      print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       if cpus > 32:
         cpus = 32
+      print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       self.task_queue.start (cpus)
 
       my_path = os.path.split(os.path.realpath(__file__))[0]

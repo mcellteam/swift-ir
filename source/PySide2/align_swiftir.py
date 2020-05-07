@@ -45,15 +45,15 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
     global debug_level
     if level <= debug_level:
       if p1 == None:
-        print ( "" )
+        sys.stderr.write ( '' + '\n' )
       elif p2 == None:
-        print ( str(p1) )
+        sys.stderr.write ( str(p1) + '\n' )
       elif p3 == None:
-        print ( str(p1) + str(p2) )
+        sys.stderr.write ( str(p1) + str(p2) + '\n' )
       elif p4 == None:
-        print ( str(p1) + str(p2) + str(p3) )
+        sys.stderr.write ( str(p1) + str(p2) + str(p3) + '\n' )
       else:
-        print ( str(p1) + str(p2) + str(p3) + str(p4) )
+        sys.stderr.write ( str(p1) + str(p2) + str(p3) + str(p4) + '\n' )
 
 
 global_swiftir_mode = 'python'   # Either 'python' or 'c'

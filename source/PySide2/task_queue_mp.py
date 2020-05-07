@@ -75,7 +75,7 @@ class TaskQueue:
     self.task_dict[self.task_id]['stdout'] = None
     self.task_dict[self.task_id]['stderr'] = None
     self.task_dict[self.task_id]['rc'] = None
-    self.task_dict[self.task_id]['status'] = 'queueud'
+    self.task_dict[self.task_id]['status'] = 'queued'
     self.work_queue.put((self.task_id, task))
     self.task_id += 1
 

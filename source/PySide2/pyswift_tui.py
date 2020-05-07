@@ -18,7 +18,7 @@ import task_queue
 # import project_runner  # Not really used yet
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 50  # A larger value prints more stuff
+debug_level = 0  # A larger value prints more stuff
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the
@@ -342,7 +342,16 @@ def InitCafm(bias_funcs):
 # Calculate and set the value of the c_afm (with optional bias) for a single layer_dict item
 def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
   atrm = layer_dict['align_to_ref_method']
-  afm = np.array(atrm['method_results']['affine_matrix'])
+  try:
+    afm = np.array(atrm['method_results']['affine_matrix'])
+  except:
+    print_debug (-1, 'SetSingleCafm error: empty affine_matrix in base image: %s' % (layer_dict['images']['base']['filename']) )
+    print_debug (-1, 'Automatically skipping base image: %s' % (layer_dict['images']['base']['filename']) )
+    layer_dict['skip'] = True
+    afm = swiftir.identityAffine()
+    atrm['method_results']['affine_matrix'] = afm.tolist()
+#    atrm['method_results']['snr'] = [0.0]
+#    atrm['method_results']['snr_report'] = 'SNR: --'
   c_afm = np.array(c_afm)
   c_afm = swiftir.composeAffine(afm, c_afm)
 
@@ -495,8 +504,8 @@ def save_bias_analysis(al_stack, bias_data_path):
     afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
     c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
-    print_debug(12, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-    print_debug(12, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+    print_debug(50, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+    print_debug(50, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
   snr_file.close()
   bias_x_file.close()
@@ -750,12 +759,12 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
     if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
       # Copy the affine_matrices from s_tbd and scale the translation part to use as the initial guess for s_tbd
       afm_tmp = np.array([ al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd ])
-      print_debug(12, '\n>>>>>>> Original affine matrices: \n\n')
-      print_debug(12, str(afm_tmp))
+      print_debug(50, '\n>>>>>>> Original affine matrices: \n\n')
+      print_debug(50, str(afm_tmp))
       afm_scaled = afm_tmp.copy()
       afm_scaled[:,:,2] = afm_scaled[:,:,2]*upscale
-      print_debug(12, '\n>>>>>>> Scaled affine matrices: \n\n')
-      print_debug(12, str(afm_scaled))
+      print_debug(50, '\n>>>>>>> Scaled affine matrices: \n\n')
+      print_debug(50, str(afm_scaled))
 #      exit(0)
     else:
       afm_scaled = None
@@ -830,7 +839,7 @@ def run_json_project ( project=None, alignment_option='init_affine', use_scale=0
         c_afm = align_item.align(c_afm,save=False)
       else:
         align_item = item ['proc']
-        print_debug(4,'\nNot Aligning: %s %s' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
+        print_debug(50,'\nNot Aligning: %s %s' % (os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
 
 
     '''
