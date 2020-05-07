@@ -1353,7 +1353,7 @@ control_model = [
       # gen_scales_cb,
       " ", gen_scalesq_cb,
       # " ", gen_scales_opt_cb,
-      " ", link_stacks_cb,
+      # " ", link_stacks_cb,
       " ", poly_order,
       " ", null_cafm_trends,
       " ", use_bounding_rect,
