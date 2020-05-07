@@ -1073,13 +1073,15 @@ def bounding_rect_changed_callback ( state ):
         print_debug ( 50, "bounding_rec_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect']) + ")")
 
 def skip_changed_callback ( state ):
+    global ignore_changes
     new_skip = bool(state)
     print ( "Skip changed!! New value: " + str(new_skip) )
-    scale = project_data['data']['scales'][project_data['data']['current_scale']]
-    layer = scale['alignment_stack'][project_data['data']['current_layer']]
-    layer['skip'] = new_skip
+    #scale = project_data['data']['scales'][project_data['data']['current_scale']]
+    #layer = scale['alignment_stack'][project_data['data']['current_layer']]
+    #layer['skip'] = new_skip
     if update_skips_callback != None:
-        update_skips_callback(bool(state))
+        update_skips_callback()
+        # update_skips_callback(bool(state))
 
     if update_linking_callback != None:
         update_linking_callback()

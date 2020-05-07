@@ -199,7 +199,7 @@ def update_linking_callback():
 def update_skips_callback(new_state):
     # Update all of the annotations based on the skip values
     copy_skips_to_all_scales()
-    update_skip_annotations()
+    # update_skip_annotations()
 
 
 class RunProgressDialog(QDialog):
