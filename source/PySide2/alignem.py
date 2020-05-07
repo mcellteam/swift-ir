@@ -81,7 +81,7 @@ app = None
 use_c_version = True
 show_skipped_images = True
 
-preloading_range = 10
+preloading_range = 3
 max_image_file_size = 1000000000
 
 update_linking_callback = None
