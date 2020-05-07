@@ -934,6 +934,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
                                                                            start_layer = first_layer,
                                                                            num_layers = num_layers )
 
+      alignem.print_debug ( 30, "Return from pyswift_tui.run_json_project: need_to_write_json = " + str(need_to_write_json) )
       if need_to_write_json:
           alignem.project_data = updated_model
       else:
@@ -1439,7 +1440,9 @@ if __name__ == "__main__":
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
 
-    print ("\n\nRunning with source hash: " + str (global_source_hash) + ", tagged as revision: " + str (global_source_rev)+"\n\n")
+    print ("\n\nRunning with source hash: " + str (global_source_hash) +
+           ", tagged as revision: " + str (global_source_rev) +
+           ", parllel mode = " + str(global_parallel_mode) + "\n\n")
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_view_change_callback ( view_change_callback )
