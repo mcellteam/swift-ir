@@ -701,6 +701,8 @@ def generate_scales_optimized ():
     task_wrapper.debug_level = alignem.debug_level
     scaling_queue = task_queue.TaskQueue (sys.executable)
     cpus = psutil.cpu_count (logical=False)
+#    if cpus > 32:
+#      cpus = 32
     scaling_queue.start (cpus)
     scaling_queue.notify = False
     scaling_queue.passthrough_stdout = False
