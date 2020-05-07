@@ -752,6 +752,7 @@ class ZoomPanWidget(QWidget):
                 layer_index = project_data['data']['current_layer']
                 new_layer_index = layer_index + layer_delta
                 while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    print_debug ( 30, "Looking for next non-skipped image")
                     if stack[new_layer_index]['skip'] == False:
                         break
                     new_layer_index += layer_delta
@@ -1084,9 +1085,10 @@ def bounding_rect_changed_callback ( state ):
         print_debug ( 50, "bounding_rec_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect']) + ")")
 
 def skip_changed_callback ( state ):
+    # This function gets called whether it's changed by the user or by another part of the program!!!
     global ignore_changes
     new_skip = bool(state)
-    print ( "Skip changed!! New value: " + str(new_skip) )
+    print_debug ( 3, "Skip changed!! New value: " + str(new_skip) )
     scale = project_data['data']['scales'][project_data['data']['current_scale']]
     layer = scale['alignment_stack'][project_data['data']['current_layer']]
     layer['skip'] = new_skip
@@ -1165,13 +1167,17 @@ class ControlPanelWidget(QWidget):
                       row_box_layout.addWidget ( val_widget )
                       # Hard code a few special callbacks ...
                       if item.text == "Null Bias":
-                          val_widget.stateChanged.connect(null_bias_changed_callback)
+                          #val_widget.stateChanged.connect(null_bias_changed_callback)
+                          val_widget.clicked.connect(null_bias_changed_callback)
                       elif item.text == "Bounding Rect":
-                          val_widget.stateChanged.connect(bounding_rect_changed_callback)
+                          #val_widget.stateChanged.connect(bounding_rect_changed_callback)
+                          val_widget.clicked.connect(bounding_rect_changed_callback)
                       elif item.text == "Skip":
-                          val_widget.stateChanged.connect(skip_changed_callback)
+                          #val_widget.stateChanged.connect(skip_changed_callback)
+                          val_widget.clicked.connect(skip_changed_callback)
                       else:
-                          val_widget.stateChanged.connect(bool_changed_callback)
+                          #val_widget.stateChanged.connect(bool_changed_callback)
+                          val_widget.clicked.connect(bool_changed_callback)
                       item.widget = val_widget
                   elif isinstance(item, TextField):
                       if item.text != None:

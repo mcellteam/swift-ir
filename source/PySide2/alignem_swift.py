@@ -1277,8 +1277,11 @@ def copy_skips_to_all_scales():
 def update_skip_annotations():
     print ( "update_skip_annotations called")
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+    remove_list = []
+    add_list = []
     for sk,scale in alignem.project_data['data']['scales'].items():
       for layer in scale['alignment_stack']:
+        layer_num = scale['alignment_stack'].index(layer)
         for ik,im in layer['images'].items():
           if not 'metadata' in im:
             im['metadata'] = {}
@@ -1293,14 +1296,18 @@ def update_skip_annotations():
                 already_skipped = True
                 break
             if not already_skipped:
-              print ( "Add annotation" )
+              add_list.append ( (sk, layer_num, ik) )
               ann.append('skipped(1)')
           else:
             # Remove all "skipped"
-            print ( "Remove annotation" )
             for a in ann:
               if a.startswith('skipped'):
+                remove_list.append ( (sk, layer_num, ik) )
                 ann.remove(a)
+    for item in remove_list:
+      print ( "Removed skip from " + str(item) )
+    for item in add_list:
+      print ( "Added skip to " + str(item) )
 
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
