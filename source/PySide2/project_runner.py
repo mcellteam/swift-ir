@@ -175,9 +175,9 @@ class project_runner:
                        str(1),                        # Number of layers to run
                        str(self.use_file_not_pipe)    # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
                        ]
-        print ( "Starting task_queue_mp with args:" )
+        print_debug (50, "Starting task_queue_mp with args:" )
         for p in task_args:
-          print ( "  " + str(p) )
+          print_debug (50, "  " + str(p) )
 
         self.task_queue.add_task ( task_args )
 
@@ -259,7 +259,7 @@ class project_runner:
           # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
         else:
-          print ( '\n\n' + (80*'#') + '\nUsing Pipe I/O\n' + (80*'#') + '\n\n' )
+          print_debug (50, '\n\n' + (80*'#') + '\nUsing Pipe I/O\n' + (80*'#') + '\n\n' )
           # Get the updated data model from stdout for the task
           parts = tasks_by_start_layer[tnum]['stdout'].split('---JSON-DELIMITER---')
           dm_text = None

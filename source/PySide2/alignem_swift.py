@@ -1482,7 +1482,7 @@ if __name__ == "__main__":
 
     print ("\n\nRunning with source hash: " + str (global_source_hash) +
            ", tagged as revision: " + str (global_source_rev) +
-           ", parllel mode = " + str(global_parallel_mode) + "\n\n")
+           ", parallel mode = " + str(global_parallel_mode) + "\n\n")
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_view_change_callback ( view_change_callback )
