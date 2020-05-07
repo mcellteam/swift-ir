@@ -61,7 +61,7 @@ if __name__ == '__main__':
     jde = json.JSONEncoder ( indent=1, separators=(",",": "), sort_keys=True )
     run_output_json = jde.encode ( { 'data_model': updated_model, 'need_to_write_json': need_to_write_json } )
 
-    if True or use_file_io:
+    if use_file_io:
       # Write the output JSON to a file
       # The job file name will already be located in the project directory, so use its path
       # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
@@ -79,8 +79,7 @@ if __name__ == '__main__':
       #fout.write ( "Scale = " + str(use_scale) + "\n" )
       fout.write ( run_output_json )
       fout.close()
-    #else:
-    if True:
+    else:
       # Write the output JSON to stdout with some markers to separate it from any other reasonable output
       print ( "---JSON-DELIMITER---")
       print ( run_output_json )

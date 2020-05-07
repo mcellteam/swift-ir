@@ -33,6 +33,13 @@ main_win = None
 
 ## project_data = None  # Use from alignem
 
+
+global_source_rev = ""
+global_source_hash = ""
+global_parallel_mode = False
+global_use_file_io = False
+
+
 swift_roles = ['ref','base','aligned']
 
 def print_exception():
@@ -77,7 +84,7 @@ def link_stack():
       if alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]['skip']==True:
         skip_list.append(layer_index)
 
-    alignem.print_debug ( 10, '\nSkip List = \n' + str(skip_list) + '\n')
+    alignem.print_debug ( 50, '\nSkip List = \n' + str(skip_list) + '\n')
 
     for layer_index in range(len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])):
       base_layer = alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]
@@ -157,7 +164,7 @@ def link_all_stacks():
           if alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip']==True:
             skip_list.append(layer_index)
 
-        alignem.print_debug ( 10, '\nSkip List = \n' + str(skip_list) + '\n')
+        alignem.print_debug ( 50, '\nSkip List = \n' + str(skip_list) + '\n')
 
         for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
           base_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
@@ -196,8 +203,11 @@ def link_all_stacks():
 def update_linking_callback():
     link_all_stacks()
 
-def update_skips_callback():
+def update_skips_callback(new_state):
+    # Update all of the annotations based on the skip values
     copy_skips_to_all_scales()
+    update_skip_annotations()
+
 
 class RunProgressDialog(QDialog):
     """
@@ -828,7 +838,7 @@ def generate_scales_optimized ():
 
 
 def get_code_mode():
-    ### All of this code is just trying to find the right menu item for the Use C Version check box:
+    ### All of this code is just trying to find the right menu item for the "Use C Version" check box:
     code_mode = 'python'
     menubar = alignem.main_window.menu
     menubar_items = [ menubar.children()[x].title() for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
@@ -853,6 +863,33 @@ def get_code_mode():
     return ( code_mode )
 
 
+def get_file_io_mode():
+    ### All of this code is just trying to find the right menu item for the "Use File I/O" check box:
+    file_io_mode = False
+    menubar = alignem.main_window.menu
+    menubar_items = [ menubar.children()[x].title() for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
+    submenus = [ menubar.children()[x] for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x]) ]
+    alignem.print_debug ( 40, "Menubar contains: " + str(menubar_items) )
+    setmenu_index = -1
+    for m in menubar_items:
+      if "Set" in m:
+        setmenu_index = menubar_items.index(m)
+    alignem.print_debug ( 40, "Set menu is item " + str(setmenu_index) )
+    if setmenu_index >= 0:
+      set_menu = submenus[setmenu_index]
+      set_menu_actions = set_menu.actions()
+      use_file_io = None  # This will be the widget (menu item)
+      for action in set_menu_actions:
+        if "Use File I/O" in action.text():
+          use_file_io = action
+          break
+      if use_file_io != None:
+        # Then we've found the actual widget, so get its value
+        if use_file_io.isChecked():
+          file_io_mode = True
+    return ( file_io_mode )
+
+
 def align_layers ( first_layer=0, num_layers=-1 ):
     alignem.print_debug ( 30, 100*'=' )
     if num_layers < 0:
@@ -866,6 +903,8 @@ def align_layers ( first_layer=0, num_layers=-1 ):
     ensure_proper_data_structure()
 
     code_mode = get_code_mode()
+
+    global_use_file_io = get_file_io_mode()
 
     # Check that there is a place to put the aligned images
     if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
@@ -920,7 +959,8 @@ def align_layers ( first_layer=0, num_layers=-1 ):
                                                           swiftir_code_mode=code_mode,
                                                           start_layer=first_layer,
                                                           num_layers=num_layers,
-                                                          run_parallel=True)
+                                                          run_parallel=True,
+                                                          use_file_io=global_use_file_io)
         running_project.start()
         running_project.join()
         updated_model = running_project.get_updated_data_model()
@@ -933,6 +973,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
                                                                            start_layer = first_layer,
                                                                            num_layers = num_layers )
 
+      alignem.print_debug ( 30, "Return from pyswift_tui.run_json_project: need_to_write_json = " + str(need_to_write_json) )
       if need_to_write_json:
           alignem.project_data = updated_model
       else:
@@ -1210,11 +1251,12 @@ def mouse_down_callback ( role, screen_coords, image_coords, button ):
         match_point_data.append ( color_index )
 
         metadata['annotations'].append ( "circle(%f,%f,10,%d)" % tuple(match_point_data) )
+        metadata['annotations'].append ( "skipped(1)" )
         for ann in metadata['annotations']:
           alignem.print_debug ( 20, "   Annotation: " + str(ann) )
         return ( True )  # Lets the framework know that the click has been handled
     else:
-        # print_debug ( 10, "Do Normal Processing" )
+        # alignem.print_debug ( 10, "Do Normal Processing" )
         return ( False ) # Lets the framework know that the click has not been handled
 
 def mouse_move_callback ( role, screen_coords, image_coords, button ):
@@ -1271,6 +1313,41 @@ def copy_skips_to_all_scales():
                 if l < len(scales[scale_key]['alignment_stack']):
                     scales[scale_key]['alignment_stack'][l]['skip'] = scales[source_scale_key]['alignment_stack'][l]['skip']
     # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][alignem.project_data['data']['current_layer']]['skip']
+
+def update_skip_annotations():
+    alignem.print_debug ( 80, "update_skip_annotations called")
+    # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+    remove_list = []
+    add_list = []
+    for sk,scale in alignem.project_data['data']['scales'].items():
+      for layer in scale['alignment_stack']:
+        layer_num = scale['alignment_stack'].index(layer)
+        for ik,im in layer['images'].items():
+          if not 'metadata' in im:
+            im['metadata'] = {}
+          if not 'annotations' in im['metadata']:
+            im['metadata']['annotations'] = []
+          ann = im['metadata']['annotations']
+          if layer['skip']:
+            # Check and set as needed
+            already_skipped = False
+            for a in ann:
+              if a.startswith('skipped'):
+                already_skipped = True
+                break
+            if not already_skipped:
+              add_list.append ( (sk, layer_num, ik) )
+              ann.append('skipped(1)')
+          else:
+            # Remove all "skipped"
+            for a in ann:
+              if a.startswith('skipped'):
+                remove_list.append ( (sk, layer_num, ik) )
+                ann.remove(a)
+    for item in remove_list:
+      alignem.print_debug ( 80, "Removed skip from " + str(item) )
+    for item in add_list:
+      alignem.print_debug ( 80, "Added skip to " + str(item) )
 
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
@@ -1352,10 +1429,6 @@ control_model = [
 
 from source_tracker import get_hash_and_rev
 
-global_source_rev = ""
-global_source_hash = ""
-global_parallel_mode = False
-
 if __name__ == "__main__":
 
     alignem.debug_level = 10
@@ -1364,6 +1437,7 @@ if __name__ == "__main__":
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1, help="Run the C versions of SWiFT tools")
+    options.add_argument("-f", "--use_file_io", type=int, required=False, default=0, help="Use files to gather output from tasks")
     args = options.parse_args()
 
     if args.debug != None:
@@ -1380,6 +1454,10 @@ if __name__ == "__main__":
 
     if args.use_c_version != None:
       alignem.use_c_version = args.use_c_version != 0
+
+    if args.use_file_io != None:
+      global_use_file_io = args.use_file_io != 0
+
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     source_list = [
@@ -1402,7 +1480,9 @@ if __name__ == "__main__":
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
 
-    print ("\n\nRunning with source hash: " + str (global_source_hash) + ", tagged as revision: " + str (global_source_rev)+"\n\n")
+    print ("\n\nRunning with source hash: " + str (global_source_hash) +
+           ", tagged as revision: " + str (global_source_rev) +
+           ", parllel mode = " + str(global_parallel_mode) + "\n\n")
 
     main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
     main_win.register_view_change_callback ( view_change_callback )

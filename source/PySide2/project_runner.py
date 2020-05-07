@@ -76,7 +76,7 @@ class project_runner:
   #   The project_runner breaks up the alignment layers into specific jobs and starts a worker (pyswift_tui) for each job
   #   Each worker will see the temporary data model file and get command line parameters about which part(s) it must complete
   #   The project_runner will collect the alignment data from each pyswift_tui run and integrate it into the "master" data model
-  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False ):
+  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False, use_file_io=True ):
 
     # print ( "\n\n\nCreating a project runner...\n\n\n")
     if use_scale <= 0:
@@ -93,6 +93,8 @@ class project_runner:
     self.updated_model = None
     self.need_to_write_json = None
     self.use_file_not_pipe = 0
+    if use_file_io:
+      self.use_file_not_pipe = 1
 
 
   def start ( self ):
@@ -161,17 +163,23 @@ class project_runner:
                                    # wd=self.project['data']['destination_path'] )
         '''
 
+
         # Use task_queue_mp
-        self.task_queue.add_task ( [ sys.executable,
-                                     align_job,                     # Python program to run (single_alignment_job)
-                                     str(run_project_name),         # Project file name
-                                     str(self.alignment_option),    # Init, Refine, or Apply
-                                     str(self.use_scale),           # Scale to use or 0
-                                     str(self.swiftir_code_mode),   # Python or C mode
-                                     str(lnum),                     # First layer number to run from Project file
-                                     str(1),                        # Number of layers to run
-                                     str(0)                         # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
-                                     ] )
+        task_args =  [ sys.executable,
+                       align_job,                     # Python program to run (single_alignment_job)
+                       str(run_project_name),         # Project file name
+                       str(self.alignment_option),    # Init, Refine, or Apply
+                       str(self.use_scale),           # Scale to use or 0
+                       str(self.swiftir_code_mode),   # Python or C mode
+                       str(lnum),                     # First layer number to run from Project file
+                       str(1),                        # Number of layers to run
+                       str(self.use_file_not_pipe)    # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
+                       ]
+        print ( "Starting task_queue_mp with args:" )
+        for p in task_args:
+          print ( "  " + str(p) )
+
+        self.task_queue.add_task ( task_args )
 
 #      self.task_queue.work_q.join()
 
@@ -238,12 +246,28 @@ class project_runner:
 
       for tnum in range(len(tasks_by_start_layer)):
 
-        parts = tasks_by_start_layer[tnum]['stdout'].split('---JSON-DELIMITER---')
-        dm_text = None
-        for p in parts:
-          ps = p.strip()
-          if ps.startswith('{') and ps.endswith('}'):
-            dm_text = p
+        if self.use_file_not_pipe:
+          print ( '\n\n' + (80*'#') + '\nUsing File I/O\n' + (80*'#') + '\n\n' )
+          # Get the updated data model from the file written by single_alignment_job
+          # Start by getting the location of the project's output files:
+          output_dir = os.path.join ( os.path.split(run_project_name)[0], scale_key )
+          # Get the name of the file for this task number
+          # NOTE / TODO : This uses the TASK NUMBER and NOT the LAYER NUMBER ... THEY MAY BE DIFFERENT!!
+          output_file = "single_alignment_out_" + str(tnum) + ".json"
+          job_output_file = open ( os.path.join(output_dir,output_file), 'r' )
+          dm_text = job_output_file.read()
+          # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+
+        else:
+          print ( '\n\n' + (80*'#') + '\nUsing Pipe I/O\n' + (80*'#') + '\n\n' )
+          # Get the updated data model from stdout for the task
+          parts = tasks_by_start_layer[tnum]['stdout'].split('---JSON-DELIMITER---')
+          dm_text = None
+          for p in parts:
+            ps = p.strip()
+            if ps.startswith('{') and ps.endswith('}'):
+              dm_text = p
+
         if dm_text != None:
           results_dict = json.loads(dm_text)
           fdm_new = results_dict['data_model']
