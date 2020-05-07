@@ -561,6 +561,8 @@ def generate_scales_queue ():
       # Use task_queue_mp
       scaling_queue = task_queue.TaskQueue ()
       cpus = psutil.cpu_count (logical=False)
+      if cpus > 32:
+        cpus = 32
       scaling_queue.start (cpus)
 
       for scale in sorted(image_scales_to_run):
@@ -678,7 +680,6 @@ def generate_scales_queue ():
       # Stop the queue
 #      scaling_queue.shutdown()
       scaling_queue.stop()
-      scaling_queue.clear_tasks()
       del scaling_queue
 
     #main_win.status.showMessage("Done Generating Scales ...")
