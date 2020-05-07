@@ -757,7 +757,23 @@ class ZoomPanWidget(QWidget):
                         break
                     new_layer_index += layer_delta
                 if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    # Found a layer that's not skipped, so set the layer delta for the move
                     layer_delta = new_layer_index - layer_index
+                else:
+                    # Could not find a layer that's not skipped in that direction, try going the other way
+                    layer_index = project_data['data']['current_layer']
+                    new_layer_index = layer_index
+                    while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                        print_debug ( 30, "Looking for next non-skipped image")
+                        if stack[new_layer_index]['skip'] == False:
+                            break
+                        new_layer_index += -layer_delta
+                    if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                        # Found a layer that's not skipped, so set the layer delta for the move
+                        layer_delta = new_layer_index - layer_index
+                    else:
+                        # Could not find a layer that's not skipped in either direction, stay here
+                        layer_delta = 0
 
             self.change_layer ( layer_delta )
 
