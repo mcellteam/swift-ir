@@ -45,11 +45,11 @@ project_data = None
 def print_all_skips():
     scale_keys = project_data['data']['scales'].keys()
     for scale_key in sorted(scale_keys):
-        print ( " Scale: " + scale_key )
+        print_debug ( 50, " Scale: " + scale_key )
         scale = project_data['data']['scales'][scale_key]
         layers = scale['alignment_stack']
         for layer in layers:
-            print ( "  Layer: " + str(layers.index(layer)) + ", skip = " + str(layer['skip']) )
+            print_debug ( 50, "  Layer: " + str(layers.index(layer)) + ", skip = " + str(layer['skip']) )
             #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 

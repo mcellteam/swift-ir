@@ -77,7 +77,7 @@ def link_stack():
       if alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]['skip']==True:
         skip_list.append(layer_index)
 
-    alignem.print_debug ( 10, '\nSkip List = \n' + str(skip_list) + '\n')
+    alignem.print_debug ( 50, '\nSkip List = \n' + str(skip_list) + '\n')
 
     for layer_index in range(len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])):
       base_layer = alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]
@@ -157,7 +157,7 @@ def link_all_stacks():
           if alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip']==True:
             skip_list.append(layer_index)
 
-        alignem.print_debug ( 10, '\nSkip List = \n' + str(skip_list) + '\n')
+        alignem.print_debug ( 50, '\nSkip List = \n' + str(skip_list) + '\n')
 
         for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
           base_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
@@ -1216,7 +1216,7 @@ def mouse_down_callback ( role, screen_coords, image_coords, button ):
           alignem.print_debug ( 20, "   Annotation: " + str(ann) )
         return ( True )  # Lets the framework know that the click has been handled
     else:
-        # print_debug ( 10, "Do Normal Processing" )
+        # alignem.print_debug ( 10, "Do Normal Processing" )
         return ( False ) # Lets the framework know that the click has not been handled
 
 def mouse_move_callback ( role, screen_coords, image_coords, button ):
@@ -1275,7 +1275,7 @@ def copy_skips_to_all_scales():
     # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][alignem.project_data['data']['current_layer']]['skip']
 
 def update_skip_annotations():
-    print ( "update_skip_annotations called")
+    alignem.print_debug ( 80, "update_skip_annotations called")
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
     remove_list = []
     add_list = []
@@ -1305,9 +1305,9 @@ def update_skip_annotations():
                 remove_list.append ( (sk, layer_num, ik) )
                 ann.remove(a)
     for item in remove_list:
-      print ( "Removed skip from " + str(item) )
+      alignem.print_debug ( 80, "Removed skip from " + str(item) )
     for item in add_list:
-      print ( "Added skip to " + str(item) )
+      alignem.print_debug ( 80, "Added skip to " + str(item) )
 
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
