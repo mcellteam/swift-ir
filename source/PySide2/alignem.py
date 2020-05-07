@@ -42,6 +42,17 @@ from alignem_data_model import new_project_template, new_layer_template, new_ima
 
 project_data = None
 
+def print_all_skips():
+    scale_keys = project_data['data']['scales'].keys()
+    for scale_key in sorted(scale_keys):
+        print_debug ( 50, " Scale: " + scale_key )
+        scale = project_data['data']['scales'][scale_key]
+        layers = scale['alignment_stack']
+        for layer in layers:
+            print_debug ( 50, "  Layer: " + str(layers.index(layer)) + ", skip = " + str(layer['skip']) )
+            #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
 
@@ -79,6 +90,7 @@ def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
 
 app = None
 use_c_version = True
+use_file_io = False
 show_skipped_images = True
 
 preloading_range = 3
@@ -741,11 +753,28 @@ class ZoomPanWidget(QWidget):
                 layer_index = project_data['data']['current_layer']
                 new_layer_index = layer_index + layer_delta
                 while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    print_debug ( 30, "Looking for next non-skipped image")
                     if stack[new_layer_index]['skip'] == False:
                         break
                     new_layer_index += layer_delta
                 if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    # Found a layer that's not skipped, so set the layer delta for the move
                     layer_delta = new_layer_index - layer_index
+                else:
+                    # Could not find a layer that's not skipped in that direction, try going the other way
+                    layer_index = project_data['data']['current_layer']
+                    new_layer_index = layer_index
+                    while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                        print_debug ( 30, "Looking for next non-skipped image")
+                        if stack[new_layer_index]['skip'] == False:
+                            break
+                        new_layer_index += -layer_delta
+                    if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                        # Found a layer that's not skipped, so set the layer delta for the move
+                        layer_delta = new_layer_index - layer_index
+                    else:
+                        # Could not find a layer that's not skipped in either direction, stay here
+                        layer_delta = 0
 
             self.change_layer ( layer_delta )
 
@@ -805,8 +834,9 @@ class ZoomPanWidget(QWidget):
                         painter.drawRect(painter.viewport())
 
                         if self.draw_annotations:
-                            painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
-                            painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width (), pixmap.height ()))
+                            if (pixmap.width() > 0) or (pixmap.height() > 0):
+                                painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
+                                painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width(), pixmap.height()))
 
                         if self.draw_annotations and 'metadata' in ann_image:
                             colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
@@ -841,6 +871,13 @@ class ZoomPanWidget(QWidget):
                                         painter.drawEllipse ( x-r, y-r, r*2, r*2 )
                                     if cmd == 'square':
                                         painter.drawRect ( QRectF ( x-r, y-r, r*2, r*2 ) )
+                                    if cmd == 'skipped':
+                                        # color_to_use = colors[color_index+1%len(colors)]
+                                        color_to_use = [255,50,50]
+                                        painter.setPen(QPen(QColor(*color_to_use),5))
+                                        # painter.drawEllipse ( x-(r*2), y-(r*2), r*4, r*4 )
+                                        painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
+                                        painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
                                     color_index += 1
 
 
@@ -1066,10 +1103,15 @@ def bounding_rect_changed_callback ( state ):
         print_debug ( 50, "bounding_rec_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect']) + ")")
 
 def skip_changed_callback ( state ):
+    # This function gets called whether it's changed by the user or by another part of the program!!!
     global ignore_changes
-    print ( "Skip changed!!" )
+    new_skip = bool(state)
+    print_debug ( 3, "Skip changed!! New value: " + str(new_skip) )
+    scale = project_data['data']['scales'][project_data['data']['current_scale']]
+    layer = scale['alignment_stack'][project_data['data']['current_layer']]
+    layer['skip'] = new_skip
     if update_skips_callback != None:
-        update_skips_callback()
+        update_skips_callback(bool(state))
 
     if update_linking_callback != None:
         update_linking_callback()
@@ -1143,13 +1185,17 @@ class ControlPanelWidget(QWidget):
                       row_box_layout.addWidget ( val_widget )
                       # Hard code a few special callbacks ...
                       if item.text == "Null Bias":
-                          val_widget.stateChanged.connect(null_bias_changed_callback)
+                          #val_widget.stateChanged.connect(null_bias_changed_callback)
+                          val_widget.clicked.connect(null_bias_changed_callback)
                       elif item.text == "Bounding Rect":
-                          val_widget.stateChanged.connect(bounding_rect_changed_callback)
+                          #val_widget.stateChanged.connect(bounding_rect_changed_callback)
+                          val_widget.clicked.connect(bounding_rect_changed_callback)
                       elif item.text == "Skip":
-                          val_widget.stateChanged.connect(skip_changed_callback)
+                          #val_widget.stateChanged.connect(skip_changed_callback)
+                          val_widget.clicked.connect(skip_changed_callback)
                       else:
-                          val_widget.stateChanged.connect(bool_changed_callback)
+                          #val_widget.stateChanged.connect(bool_changed_callback)
+                          val_widget.clicked.connect(bool_changed_callback)
                       item.widget = val_widget
                   elif isinstance(item, TextField):
                       if item.text != None:
@@ -1576,6 +1622,7 @@ class MainWindow(QMainWindow):
                   [ 'Generate Images', None, self.not_yet, True, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Use C Version', None, self.do_nothing, use_c_version, None, None ],
+                  [ 'Use File I/O', None, self.do_nothing, use_file_io, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
                   [ 'Reverse Arrow Keys', None, self.toggle_arrow_direction, False, None, None ],
@@ -1752,7 +1799,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def toggle_show_skipped(self, checked):
-        print_debug ( 30, "Toggling Show Skipped" )
+        print_debug ( 30, "Toggling Show Skipped with checked = " + str(checked) )
         global show_skipped_images
         show_skipped_images = checked
 
@@ -1926,6 +1973,8 @@ class MainWindow(QMainWindow):
                     self.center_all_images()
 
                 ignore_changes = False
+
+        print_all_skips()
 
 
     def save_project_to_current_file(self):
