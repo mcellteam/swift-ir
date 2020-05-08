@@ -15,7 +15,8 @@
 * **modified** “qiv” - fast image review & markup
 * **Iscale** – produce scaled image hierarchies
 
+###  SWiFT-IR Resources
 
 * **[SWiFT-IR Examples](examples/README.md)**
 * **[SWiFT-IR Commands](commands/README.md)**
-* **[Manual Pages](man-src)
+* **[Manual Pages](man-src)**
