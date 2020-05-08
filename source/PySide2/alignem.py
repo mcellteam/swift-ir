@@ -2056,6 +2056,12 @@ class MainWindow(QMainWindow):
         if crop_mode_role == None:
             show_warning ( "Warning", "Cannot save cropped images without a cropping region" )
 
+        elif project_data['data']['destination_path'] == None:
+            show_warning ( "Warning", "Cannot save cropped images without a destination path" )
+
+        elif len(project_data['data']['destination_path']) <= 0:
+            show_warning ( "Warning", "Cannot save cropped images without a valid destination path" )
+
         else:
 
             options = QFileDialog.Options()
