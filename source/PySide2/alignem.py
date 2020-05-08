@@ -12,6 +12,7 @@ import json
 import numpy
 import scipy
 import scipy.ndimage
+import psutil
 
 import threading
 
@@ -22,6 +23,7 @@ from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 import align_swiftir
+import task_queue_mp as task_queue
 
 # Get the path of ../python
 #alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
@@ -2053,6 +2055,8 @@ class MainWindow(QMainWindow):
     def save_cropped_as(self):
         print_debug ( 1, "\n\nSaving Cropped Images\n\n" )
 
+        crop_parallel = False
+
         if crop_mode_role == None:
             show_warning ( "Warning", "Cannot save cropped images without a cropping region" )
 
@@ -2075,6 +2079,17 @@ class MainWindow(QMainWindow):
                 if len(cropped_path) > 0:
                     print ( "Crop and save images from role " + str(crop_mode_role) + " to " + str(cropped_path) )
                     scale_key = project_data['data']['current_scale']
+                    cropping_queue = None
+                    if crop_parallel:
+                        cropping_queue = task_queue.TaskQueue ( sys.executable )
+                        cpus = psutil.cpu_count (logical=False)
+                        if cpus > 32:
+                            cpus = 32
+                        cropping_queue.start (cpus)
+                        cropping_queue.notify = False
+                        cropping_queue.passthrough_stdout = False
+                        cropping_queue.passthrough_stderr = False
+
                     for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
                         infile_name = layer['images'][crop_mode_role]['filename']
                         name_part = os.path.split(infile_name)[1]
@@ -2094,11 +2109,51 @@ class MainWindow(QMainWindow):
                         crop_h = abs(int(crop_mode_corners[1][1] - crop_mode_corners[0][1]))
                         print ( "x,y = " + str((crop_cx,crop_cy)) + ", w,h = " + str((crop_w,crop_h)) )
 
-                        img = align_swiftir.swiftir.extractStraightWindow ( align_swiftir.swiftir.loadImage(infile_name), xy=(crop_cx,crop_cy), siz=(crop_w,crop_h) )
-                        align_swiftir.swiftir.saveImage ( img, outfile_name )
+                        if crop_parallel:
+                            #504  1276  1273   0  4:01PM ttys001    0:00.95
+                            #   /opt/local/Library/Frameworks/Python.framework/Versions/3.5/Resources/Python.app/Contents/MacOS/Python
+                            #      -c from multiprocessing.forkserver import main; main(32, 33, ['__main__'], **{'sys_path': ['.../source/PySide2', '/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python35.zip', '/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5', '/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/plat-darwin', '/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/lib-dynload', '/Users/bob/Library/Python/3.5/lib/python/site-packages', '/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/site-packages']})
+
+                            cropping_queue.add_task ( [sys.executable, 'single_crop_job.py', str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )
+
+                        else:
+                            img = align_swiftir.swiftir.extractStraightWindow ( align_swiftir.swiftir.loadImage(infile_name), xy=(crop_cx,crop_cy), siz=(crop_w,crop_h) )
+                            align_swiftir.swiftir.saveImage ( img, outfile_name )
 
                         #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
+                    if crop_parallel:
+                        cropping_queue.shutdown() # It might be good to have an explicit "join" function, but this seems to do so internally.
+
+                        '''
+                        When run in parallel mode, these errors are printed:
+                        
+                        Rectangle drawn from (165,199) to (291,312)
+                        Crop Corners: [[1806.1965776681902, 1943.6338667511939], [3273.0296326875687, 3259.1270033955575]]
+                        Crop Rectangle: [[1806.1965776681902, 1943.6338667511939], [3158.3734002113342, 2886.0959657907483]]
+                        
+                        Saving Cropped Images
+                        
+                        Cropped Destination is: .../source/PySide2/2020_05_08_4k_test_1_skip4/scale_1/cropped
+                        Crop and save images from role aligned to .../source/PySide2/2020_05_08_4k_test_1_skip4/scale_1/cropped
+                        Traceback (most recent call last):
+                          File "/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/multiprocessing/context.py", line 189, in get_context
+                            ctx = _concrete_contexts[method]
+                        KeyError: '/opt/local/bin/python3.5'
+                        
+                        During handling of the above exception, another exception occurred:
+                        
+                        Traceback (most recent call last):
+                          File ".../source/PySide2/alignem.py", line 2084, in save_cropped_as
+                            cropping_queue = task_queue.TaskQueue ( sys.executable )
+                          File ".../source/PySide2/task_queue_mp.py", line 13, in __init__
+                            self.ctx = mp.get_context(start_method)
+                          File "/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/multiprocessing/context.py", line 227, in get_context
+                            return super().get_context(method)
+                          File "/opt/local/Library/Frameworks/Python.framework/Versions/3.5/lib/python3.5/multiprocessing/context.py", line 191, in get_context
+                            raise ValueError('cannot find context for %r' % method)
+                        ValueError: cannot find context for '/opt/local/bin/python3.5'
+                        '''
 
 
     @Slot()
