@@ -6,7 +6,7 @@
 
 * **[User Documentation](docs/user/README.md)**
 * **[Development Documentation](docs/development/README.md)**
-* **[Running on TACC](docs/tacc/README.md)
+* **[Running on TACC](docs/tacc/README.md)**
 
 ### Original unaligned images:
 
