@@ -4,29 +4,16 @@
 
 ### Developed by Art Wetzel, Pittsburgh Supercomputing Center
 
+* **[User Documentation](docs/user/README.md)**
+* **[Development Documentation](docs/development/README.md)**
+* **[Running on TACC](docs/tacc/README.md)
 
-### SWiFT-IR Components
-
-* **swim** – Adaptive signal Whitened Image Matching
-* **PSC-VB** - for arbitrary 3D cut-plane viewing
-* **iavg** – average image sets and make VB stacks
-* **mir** – Multi Image Rendering generates output
-* **remod** – produces “models” from image stacks
-* **modified** “qiv” - fast image review & markup
-* **Iscale** – produce scaled image hierarchies
-
-
-* **[SWiFT-IR Examples](docs/examples)**
-* **[SWiFT-IR Commands](docs/commands)**
-* **[SWiFT-IR Tests](tests)**
-
-
-### Testing: Unaligned:
+### Original unaligned images:
 
 ![Unaligned Images](tests/unaligned.gif?raw=true "Unaligned Images")
 
 
-### Testing: Aligned:
+### Images aligned with SWiFT-IR:
 
 ![Aligned Images](tests/aligned.gif?raw=true "Aligned Images")
 
