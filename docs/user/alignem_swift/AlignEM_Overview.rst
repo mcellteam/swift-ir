@@ -14,8 +14,8 @@ an alignment alogorithm to generate aligned images. The following images
 show a stack of original (unaligned) images on the left, and a stack of
 aligned images on the right.
 
-.. image:: ./images/unaligned_small.gif
-.. image:: ./images/aligned_small.gif
+.. image:: ../../images/unaligned_small.gif
+.. image:: ../../mages/aligned_small.gif
 
 ===============
 AlignEM
