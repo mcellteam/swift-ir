@@ -1228,7 +1228,7 @@ def mouse_down_callback ( role, screen_coords, image_coords, button ):
         layer = stack[layer_num]
 
         if not 'metadata' in layer['images'][role]:
-            layer['images'][role]['match_points'] = {}
+            layer['images'][role]['metadata'] = {}
 
         metadata = layer['images'][role]['metadata']
 
