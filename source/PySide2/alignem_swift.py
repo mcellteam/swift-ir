@@ -1485,7 +1485,7 @@ if __name__ == "__main__":
            ", tagged as revision: " + str (global_source_rev) +
            ", parallel mode = " + str(global_parallel_mode) + "\n\n")
 
-    main_win = alignem.MainWindow ( control_model=control_model, title="Align SWiFT-IR" )
+    main_win = alignem.MainWindow ( control_model=control_model, title="AlignEM using SWiFT-IR  (alignem_swift.py)" )
     main_win.register_view_change_callback ( view_change_callback )
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
