@@ -107,6 +107,7 @@ update_skips_callback = None
 crop_mode_callback = None
 crop_mode_role = None
 crop_mode_origin = None
+mouse_release_coords = None
 crop_mode_disp_rect = None
 crop_mode_corners = None
 # current_scale = 'scale_1'
@@ -627,6 +628,7 @@ class ZoomPanWidget(QWidget):
     def mouseReleaseEvent(self, event):
         global crop_mode_origin
         global crop_mode_role
+        global mouse_release_coords
         global crop_mode_disp_rect
         global crop_mode_corners
 
@@ -647,8 +649,11 @@ class ZoomPanWidget(QWidget):
                 print_debug ( 2, "Rectangle drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
                 crop_start_x = self.image_x(crop_mode_origin.x())
                 crop_start_y = self.image_y(crop_mode_origin.y())
+                mouse_release_coords = [event.x(), event.y()]
                 crop_end_x = self.image_x(event.x())
                 crop_end_y = self.image_y(event.y())
+                print ( "Mouse [start,end]: [" + str((crop_mode_origin.x(),crop_mode_origin.y())) + ", " + str((event.x(),event.y())) + "]" )
+                print ( "Image [start,end]: [" + str((crop_start_x,crop_start_y)) + ", " + str((crop_end_x,crop_end_y)) + "]" )
                 if crop_window_mode == 'square':
                     # Convert to a square
                     w = abs(crop_end_x-crop_start_x)
@@ -848,6 +853,10 @@ class ZoomPanWidget(QWidget):
         global crop_mode_role
         global crop_mode_disp_rect
 
+
+        global crop_mode_origin  # Only needed for debug
+        global crop_mode_corners # Only needed for debug
+
         painter = QPainter(self)
 
         role_text = self.role
@@ -972,7 +981,9 @@ class ZoomPanWidget(QWidget):
         if self.role == crop_mode_role:
             if crop_mode_disp_rect != None:
                 painter.setPen(QPen(QColor(255,100,100,255), 3))
-                painter.drawRect ( QRectF ( self.win_x(crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[0][1]), self.win_x(crop_mode_disp_rect[1][0]-crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[1][1]-crop_mode_disp_rect[0][1]) ) )
+                rect_to_draw = QRectF ( self.win_x(crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[0][1]), self.win_x(crop_mode_disp_rect[1][0]-crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[1][1]-crop_mode_disp_rect[0][1]) )
+                print ( "Plot: # " + str(self.zoom_scale) + " # " + str(crop_mode_origin) + " # " + str(mouse_release_coords) + " # " + str(crop_mode_corners) + " # " + str(crop_mode_disp_rect) + " # " + str(rect_to_draw) )
+                painter.drawRect ( rect_to_draw )
 
 
         # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
