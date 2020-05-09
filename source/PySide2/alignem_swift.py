@@ -1251,7 +1251,6 @@ def mouse_down_callback ( role, screen_coords, image_coords, button ):
         match_point_data.append ( color_index )
 
         metadata['annotations'].append ( "circle(%f,%f,10,%d)" % tuple(match_point_data) )
-        metadata['annotations'].append ( "skipped(1)" )
         for ann in metadata['annotations']:
           alignem.print_debug ( 20, "   Annotation: " + str(ann) )
         return ( True )  # Lets the framework know that the click has been handled
