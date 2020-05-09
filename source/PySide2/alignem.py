@@ -97,6 +97,9 @@ show_skipped_images = True
 
 preloading_range = 3
 max_image_file_size = 1000000000
+crop_window_mode = 'rectangle' # rectangle or square or fixed
+crop_window_width = 1024
+crop_window_height = 1024
 
 update_linking_callback = None
 update_skips_callback = None
@@ -626,6 +629,11 @@ class ZoomPanWidget(QWidget):
         global crop_mode_role
         global crop_mode_disp_rect
         global crop_mode_corners
+
+        global crop_window_mode  # rectangle or square or fixed
+        global crop_window_width
+        global crop_window_height
+
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -641,12 +649,43 @@ class ZoomPanWidget(QWidget):
                 crop_start_y = self.image_y(crop_mode_origin.y())
                 crop_end_x = self.image_x(event.x())
                 crop_end_y = self.image_y(event.y())
-                crop_mode_corners = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
-                print_debug ( 2, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+                if crop_window_mode == 'square':
+                    # Convert to a square
+                    wq = abs(crop_end_x-crop_start_x)
+                    hq = abs(crop_end_y-crop_start_y)
+                    sq = (wq + hq) / 2 # Make it the average of both
+                    xq = ((crop_start_x+crop_end_x)/2) - (sq/2)
+                    yq = ((crop_start_y+crop_end_y)/2) - (sq/2)
+                    crop_start_xq = xq
+                    crop_start_yq = yq
+                    crop_end_xq = xq + sq
+                    crop_end_yq = yq + sq
+                elif crop_window_mode == 'rectangle':
+                    # Nothing to do in this case
+                    pass
+                elif crop_window_mode == 'fixed':
+                    # Convert to fixed about the coordinates
+                    pass
+
+                crop_mode_corners =    [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
+                crop_mode_corners_sq = [ [ crop_start_xq, crop_start_yq ], [ crop_end_xq, crop_end_yq ] ]
+                print_debug ( 2, "Crop Corners:         " + str(crop_mode_corners) ) ### These appear to be correct
+                print_debug ( 2, "Crop Corners Squared: " + str(crop_mode_corners_sq) ) ### These also appear to be correct
+
                 crop_w = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
                 crop_h = crop_start_y + self.image_y(event.y() - crop_mode_origin.y())
+                print ( "Before squaring: " + str((crop_w,crop_h)) )
+                if crop_window_mode == 'square':
+                    sq = (crop_w + crop_h) / 2
+                    crop_wq = sq
+                    crop_hq = sq
                 crop_mode_disp_rect = [ [ crop_start_x, crop_start_y ], [ crop_w, crop_h ] ]
-                print_debug ( 2, "Crop Rectangle: " + str(crop_mode_disp_rect) )
+                print ( "After squaring:         " + str((crop_w,crop_h)) )
+                print ( "After squaring Squared: " + str((crop_wq,crop_hq)) )
+                print_debug ( 2, "Crop Rectangle:         " + str(crop_mode_disp_rect) )
+                print_debug ( 2, "Crop Rectangle Squared: " + str([ [ crop_start_xq, crop_start_yq ], [ crop_wq, crop_hq ] ]) )
+                crop_mode_disp_rect = [ [ crop_start_xq, crop_start_yq ], [ crop_wq, crop_hq ] ]
+                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
                 self.update_zpa_self()
                 self.update_siblings()
         else:
@@ -1612,6 +1651,13 @@ class MainWindow(QMainWindow):
               [ '&Set',
                 [
                   [ '&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None ],
+                  [ 'Crop Size',
+                    [
+                      [ 'Square', None, self.set_crop_square, False, "CropSize", None ],
+                      [ 'Rectangular', None, self.set_crop_rect, True, "CropSize", None ],
+                      [ 'Fixed Size', None, self.set_crop_fixed, False, "CropSize", None ]
+                    ]
+                  ],
                   [ '-', None, None, None, None, None ],
                   [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
                   [ 'Threaded Loading', None, self.toggle_threaded_loading, False, None, None ],
@@ -2709,6 +2755,46 @@ class MainWindow(QMainWindow):
         input_val, ok = QInputDialog().getInt ( None, "Enter Max Image File Size", "Max Image Size:", max_image_file_size )
         if ok:
           max_image_file_size = input_val
+
+    @Slot()
+    def set_crop_square(self):
+        global crop_window_mode
+        crop_window_mode = 'square'
+        print_debug ( 10, "Crop window will be square" )
+
+    @Slot()
+    def set_crop_rect(self):
+        global crop_window_mode
+        crop_window_mode = 'rectangle'
+        print_debug ( 10, "Crop window will be rectangular" )
+
+    @Slot()
+    def set_crop_fixed(self):
+        global crop_window_mode
+        global crop_window_width
+        global crop_window_height
+
+        crop_window_mode = 'fixed'
+        current = str(crop_window_width)+'x'+str(crop_window_height)
+        input_str, ok = QInputDialog().getText ( None, "Set Crop Window Size", "Current: "+current, echo=QLineEdit.Normal, text=current )
+        if ok:
+            wh = input_str.strip()
+            if len(wh) > 0:
+                w_h = []
+                if 'x' in wh:
+                    w_h = [ f.strip() for f in wh.split('x') ]
+                elif ' ' in wh:
+                    w_h = [ f.strip() for f in wh.split(' ') ]
+                if len(w_h) > 0:
+                    if len(w_h) >= 2:
+                        # Set independently
+                        crop_window_width = w_h[0]
+                        crop_window_height = w_h[1]
+                    else:
+                        # Set together
+                        crop_window_width = w_h[0]
+                        crop_window_height = w_h[0]
+                    print_debug ( 10, "Crop Window will be " + str(crop_window_width) + "x" + str(crop_window_height) )
 
     @Slot()
     def set_bg_color(self):
