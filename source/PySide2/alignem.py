@@ -651,41 +651,57 @@ class ZoomPanWidget(QWidget):
                 crop_end_y = self.image_y(event.y())
                 if crop_window_mode == 'square':
                     # Convert to a square
-                    wq = abs(crop_end_x-crop_start_x)
-                    hq = abs(crop_end_y-crop_start_y)
-                    sq = (wq + hq) / 2 # Make it the average of both
-                    xq = ((crop_start_x+crop_end_x)/2) - (sq/2)
-                    yq = ((crop_start_y+crop_end_y)/2) - (sq/2)
-                    crop_start_xq = xq
-                    crop_start_yq = yq
-                    crop_end_xq = xq + sq
-                    crop_end_yq = yq + sq
+                    w = abs(crop_end_x-crop_start_x)
+                    h = abs(crop_end_y-crop_start_y)
+                    s = (w + h) / 2 # Make it the average of both
+                    x = ((crop_start_x+crop_end_x)/2) - (s/2)
+                    y = ((crop_start_y+crop_end_y)/2) - (s/2)
+                    crop_start_x = x
+                    crop_start_y = y
+                    crop_end_x = x + s
+                    crop_end_y = y + s
                 elif crop_window_mode == 'rectangle':
                     # Nothing to do in this case
                     pass
                 elif crop_window_mode == 'fixed':
-                    # Convert to fixed about the coordinates
-                    pass
+                    # Convert to fixed about the center of the selected coordinates
+                    center_x = (crop_end_x + crop_start_x) / 2
+                    center_y = (crop_end_y + crop_start_y) / 2
+                    crop_start_x = center_x - (int(crop_window_width) / 2)
+                    crop_start_y = center_y - (int(crop_window_height) / 2)
+                    crop_end_x = center_x + (int(crop_window_width) / 2)
+                    crop_end_y = center_y + (int(crop_window_height) / 2)
 
-                crop_mode_corners =    [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
-                crop_mode_corners_sq = [ [ crop_start_xq, crop_start_yq ], [ crop_end_xq, crop_end_yq ] ]
-                print_debug ( 2, "Crop Corners:         " + str(crop_mode_corners) ) ### These appear to be correct
-                print_debug ( 2, "Crop Corners Squared: " + str(crop_mode_corners_sq) ) ### These also appear to be correct
+                crop_mode_corners = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
+                print_debug ( 2, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+
+                # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
 
                 crop_w = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
                 crop_h = crop_start_y + self.image_y(event.y() - crop_mode_origin.y())
                 print ( "Before squaring: " + str((crop_w,crop_h)) )
                 if crop_window_mode == 'square':
-                    sq = (crop_w + crop_h) / 2
-                    crop_wq = sq
-                    crop_hq = sq
+                    s = (crop_w + crop_h) / 2
+                    crop_w = s
+                    crop_h = s
+                elif crop_window_mode == 'rectangle':
+                    # Nothing to do in this case
+                    pass
+                elif crop_window_mode == 'fixed':
+                    crop_w = int(crop_window_width)
+                    crop_h = int(crop_window_height)
+                print ( "After squaring: " + str((crop_w,crop_h)) )
                 crop_mode_disp_rect = [ [ crop_start_x, crop_start_y ], [ crop_w, crop_h ] ]
-                print ( "After squaring:         " + str((crop_w,crop_h)) )
-                print ( "After squaring Squared: " + str((crop_wq,crop_hq)) )
-                print_debug ( 2, "Crop Rectangle:         " + str(crop_mode_disp_rect) )
-                print_debug ( 2, "Crop Rectangle Squared: " + str([ [ crop_start_xq, crop_start_yq ], [ crop_wq, crop_hq ] ]) )
-                crop_mode_disp_rect = [ [ crop_start_xq, crop_start_yq ], [ crop_wq, crop_hq ] ]
-                #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                #crop_mode_disp_rect = [ [ 10, 5 ], [ 10, 5 ] ]
+                #crop_mode_disp_rect = [ [ 10, 5 ], [ 20, 20 ] ]
+
+                # Try a new algorithm
+                # Crop Mode Display Corners:
+                #cmdc = [ [ self.win_x(crop_start_x), self.win_y(crop_start_y) ], [ self.win_x(crop_end_x), self.win_y(crop_end_y) ] ]
+                #crop_mode_disp_rect = [ [ cmdc[0][0], cmdc[0][1] ], [ cmdc[1][0]-cmdc[0][0], cmdc[1][1]-cmdc[0][1] ] ]
+
+                print_debug ( 2, "Crop Display Rectangle: " + str(crop_mode_disp_rect) )
+                # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
                 self.update_zpa_self()
                 self.update_siblings()
         else:
