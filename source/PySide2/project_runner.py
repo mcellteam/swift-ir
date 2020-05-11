@@ -146,48 +146,54 @@ class project_runner:
 
       for layer in alstack:
         lnum = alstack.index(layer)
+        skip = False
+        if 'skip' in layer:
+          skip = layer['skip']
+        if not skip:
+          print_debug ( -1, "\n\n" + (20*'Skip') + '\n   Skipping layer ' + str(lnum) + '\n' + (20*'Skip') +"\n\n" )
+        else:
 
-        print_debug ( 1, "Starting a task for layer " + str(lnum) )
-        '''
-        self.task_queue.add_task ( cmd=sys.executable,
-                                   args=[ align_job,                     # Python program to run (single_alignment_job)
-                                          str(run_project_name),         # Project file name
-                                          str(self.alignment_option),    # Init, Refine, or Apply
-                                          str(self.use_scale),           # Scale to use or 0
-                                          str(self.swiftir_code_mode),   # Python or C mode
-                                          str(lnum),                     # First layer number to run from Project file
-                                          str(1),                        # Number of layers to run
-                                          str(self.use_file_not_pipe)    # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
-                                          ],
-                                   wd='.' )
-                                   # wd=self.project['data']['destination_path'] )
-        '''
+          print_debug ( 1, "Starting a task for layer " + str(lnum) )
+          '''
+          self.task_queue.add_task ( cmd=sys.executable,
+                                     args=[ align_job,                     # Python program to run (single_alignment_job)
+                                            str(run_project_name),         # Project file name
+                                            str(self.alignment_option),    # Init, Refine, or Apply
+                                            str(self.use_scale),           # Scale to use or 0
+                                            str(self.swiftir_code_mode),   # Python or C mode
+                                            str(lnum),                     # First layer number to run from Project file
+                                            str(1),                        # Number of layers to run
+                                            str(self.use_file_not_pipe)    # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
+                                            ],
+                                     wd='.' )
+                                     # wd=self.project['data']['destination_path'] )
+          '''
 
 
-        # Use task_queue_mp
-        task_args =  [ sys.executable,
-                       align_job,                     # Python program to run (single_alignment_job)
-                       str(run_project_name),         # Project file name
-                       str(self.alignment_option),    # Init, Refine, or Apply
-                       str(self.use_scale),           # Scale to use or 0
-                       str(self.swiftir_code_mode),   # Python or C mode
-                       str(lnum),                     # First layer number to run from Project file
-                       str(1),                        # Number of layers to run
-                       str(self.use_file_not_pipe)    # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
-                       ]
-        print_debug (50, "Starting task_queue_mp with args:" )
-        for p in task_args:
-          print_debug (50, "  " + str(p) )
+          # Use task_queue_mp
+          task_args =  [ sys.executable,
+                         align_job,                     # Python program to run (single_alignment_job)
+                         str(run_project_name),         # Project file name
+                         str(self.alignment_option),    # Init, Refine, or Apply
+                         str(self.use_scale),           # Scale to use or 0
+                         str(self.swiftir_code_mode),   # Python or C mode
+                         str(lnum),                     # First layer number to run from Project file
+                         str(1),                        # Number of layers to run
+                         str(self.use_file_not_pipe)    # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
+                         ]
+          print_debug (50, "Starting task_queue_mp with args:" )
+          for p in task_args:
+            print_debug (50, "  " + str(p) )
 
-        self.task_queue.add_task ( task_args )
+          self.task_queue.add_task ( task_args )
 
-#      self.task_queue.work_q.join()
+      # self.task_queue.work_q.join()
 
       t0 = time.time()
       print_debug ( -1, 'Waiting for Alignment Tasks to Complete...' )
       self.task_queue.collect_results()
       dt = time.time() - t0
-#      print_debug ( -1, 'Alignment Tasks Completed in %.2f seconds' % (dt) )
+      #  print_debug ( -1, 'Alignment Tasks Completed in %.2f seconds' % (dt) )
 
 
       # Check status of all tasks and report final tally

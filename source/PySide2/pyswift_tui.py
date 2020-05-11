@@ -480,32 +480,33 @@ def save_bias_analysis(al_stack, bias_data_path):
 
   for i in range(len(al_stack)):
 
-    atrm = al_stack[i]['align_to_ref_method']
-    afm = np.array(atrm['method_results']['affine_matrix'])
-    c_afm = np.array(atrm['method_results']['cumulative_afm'])
-    snr = np.array(atrm['method_results']['snr'])
+    if not al_stack[i]['skip']:
+      atrm = al_stack[i]['align_to_ref_method']
+      afm = np.array(atrm['method_results']['affine_matrix'])
+      c_afm = np.array(atrm['method_results']['cumulative_afm'])
+      snr = np.array(atrm['method_results']['snr'])
 
-    # Compute and save final biases in analysis data files
-    rot = np.arctan(c_afm[1,0]/c_afm[0,0])
-    scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
-    scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
-    skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
-    det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
+      # Compute and save final biases in analysis data files
+      rot = np.arctan(c_afm[1,0]/c_afm[0,0])
+      scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
+      scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
+      skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
+      det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
 
-    snr_file.write('%d %.6g\n' % (i, snr.mean()))
-    bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
-    bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
-    bias_rot_file.write('%d %.6g\n' % (i, rot))
-    bias_scale_x_file.write('%d %.6g\n' % (i, scale_x))
-    bias_scale_y_file.write('%d %.6g\n' % (i, scale_y))
-    bias_skew_x_file.write('%d %.6g\n' % (i, skew_x))
-    bias_det_file.write('%d %.6g\n' % (i, det))
+      snr_file.write('%d %.6g\n' % (i, snr.mean()))
+      bias_x_file.write('%d %.6g\n' % (i, c_afm[0,2]))
+      bias_y_file.write('%d %.6g\n' % (i, c_afm[1,2]))
+      bias_rot_file.write('%d %.6g\n' % (i, rot))
+      bias_scale_x_file.write('%d %.6g\n' % (i, scale_x))
+      bias_scale_y_file.write('%d %.6g\n' % (i, scale_y))
+      bias_skew_x_file.write('%d %.6g\n' % (i, skew_x))
+      bias_det_file.write('%d %.6g\n' % (i, det))
 
-    afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-    c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+      afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+      c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
-    print_debug(50, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
-    print_debug(50, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
+      print_debug(50, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, afm[0,0], afm[0,1], afm[0,2], afm[1,0], afm[1,1], afm[1,2]))
+      print_debug(50, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (i, c_afm[0,0], c_afm[0,1], c_afm[0,2], c_afm[1,0], c_afm[1,1], c_afm[1,2]))
 
   snr_file.close()
   bias_x_file.close()
