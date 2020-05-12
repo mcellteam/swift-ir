@@ -11,7 +11,7 @@ def upgrade_data_model(data_model):
     # Begin the upgrade process:
 
     if data_model['version'] <= 0.26:
-      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.27) )
+      print ( "\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.27) )
       # Need to modify the data model from 0.26 or lower up to 0.27
       # The "alignment_option" had been in the method_data at each layer
       # This new version defines it only at the scale level
@@ -47,7 +47,7 @@ def upgrade_data_model(data_model):
       data_model ['version'] = 0.27
 
     if data_model ['version'] == 0.27:
-      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.28) )
+      print ( "\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.28) )
       # Need to modify the data model from 0.27 up to 0.28
       # The "alignment_option" had been left in the method_data at each layer
       # This new version removes that option from the layer method data
@@ -66,7 +66,7 @@ def upgrade_data_model(data_model):
       data_model ['version'] = 0.28
 
     if data_model ['version'] == 0.28:
-      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.29) )
+      print ( "\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.29) )
       # Need to modify the data model from 0.28 up to 0.29
       # The "use_c_version" was added to the "user_settings" dictionary
       data_model['user_settings']['use_c_version'] = True
@@ -74,7 +74,7 @@ def upgrade_data_model(data_model):
       data_model ['version'] = 0.29
 
     if data_model ['version'] == 0.29:
-      print ( "Upgrading data model from " + str(data_model['version']) + " to " + str(0.30) )
+      print ( "\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.30) )
       # Need to modify the data model from 0.29 up to 0.30
       # The "poly_order" was added to the "scales" dictionary
       for scale_key in data_model['data']['scales'].keys():
@@ -82,6 +82,27 @@ def upgrade_data_model(data_model):
         scale['poly_order'] = 4
       # Now the data model is at 0.30, so give it the appropriate version
       data_model ['version'] = 0.30
+
+    if data_model ['version'] == 0.30:
+      print ( "\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.31) )
+      # Need to modify the data model from 0.30 up to 0.31
+      # The "skipped(1)" annotation is currently unused (now hard-coded in alignem.py)
+      # Remove alll "skipped(1)" annotations since they can not otherwise be removed
+      for scale_key in data_model['data']['scales'].keys():
+        scale = data_model['data']['scales'][scale_key]
+        stack = scale['alignment_stack']
+        for layer in stack:
+          for role in layer['images'].keys():
+            image = layer['images'][role]
+            print ("Checking for annotations in image...")
+            if 'metadata' in image.keys():
+              print ("Checking for annotations in metadata...")
+              m = image['metadata']
+              if 'annotations' in m.keys():
+                print ( "Removing any \"skipped()\" annotations ... ")
+                m['annotations'] = [ a for a in m['annotations'] if not a.startswith('skipped') ]
+      # Now the data model is at 0.31, so give it the appropriate version
+      data_model ['version'] = 0.31
 
     # Make the final test
     if data_model ['version'] != new_project_template['version']:
@@ -93,7 +114,7 @@ def upgrade_data_model(data_model):
 
 new_project_template = \
 {
-  "version": 0.30,
+  "version": 0.31,
   "method": "None",
   "user_settings": {
     "max_image_file_size": 100000000,
