@@ -149,8 +149,10 @@ class project_runner:
         skip = False
         if 'skip' in layer:
           skip = layer['skip']
-        if not skip:
+        if False and not skip:
+
           print_debug ( -1, "\n\n" + (20*'Skip') + '\n   Skipping layer ' + str(lnum) + '\n' + (20*'Skip') +"\n\n" )
+
         else:
 
           print_debug ( 1, "Starting a task for layer " + str(lnum) )
