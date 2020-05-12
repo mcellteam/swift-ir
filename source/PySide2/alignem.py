@@ -873,6 +873,7 @@ class ZoomPanWidget(QWidget):
                 if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
 
                     image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                    is_skipped = project_data['data']['scales'][s]['alignment_stack'][l]['skip']
 
                     if self.role in image_dict.keys():
                         ann_image = image_dict[self.role]
@@ -888,7 +889,8 @@ class ZoomPanWidget(QWidget):
                                 painter.setPen(QPen(QColor(255, 255, 255, 255),4))
                                 painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
                             # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                            painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+                            if (not is_skipped) or self.role == 'base':
+                                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
 
                             # Draw any items that should scale with the image
 
@@ -903,6 +905,7 @@ class ZoomPanWidget(QWidget):
                             if (pixmap.width() > 0) or (pixmap.height() > 0):
                                 painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
                                 painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width(), pixmap.height()))
+
 
                         if self.draw_annotations and 'metadata' in ann_image:
                             colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
@@ -946,6 +949,12 @@ class ZoomPanWidget(QWidget):
                                         painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
                                     color_index += 1
 
+                        if is_skipped:
+                            # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
+                            color_to_use = [255,50,50]
+                            painter.setPen(QPen(QColor(*color_to_use),5))
+                            painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
+                            painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
 
 
         if self.draw_annotations:
