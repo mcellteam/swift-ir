@@ -480,7 +480,7 @@ def save_bias_analysis(al_stack, bias_data_path):
 
   for i in range(len(al_stack)):
 
-    if not al_stack[i]['skip']:
+    if True or not al_stack[i]['skip']:
       atrm = al_stack[i]['align_to_ref_method']
       afm = np.array(atrm['method_results']['affine_matrix'])
       c_afm = np.array(atrm['method_results']['cumulative_afm'])
