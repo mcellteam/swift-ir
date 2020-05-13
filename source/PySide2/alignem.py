@@ -760,6 +760,39 @@ class ZoomPanWidget(QWidget):
         global main_window
         global preloading_range
 
+        if not show_skipped_images:
+
+            # Try to juggle the layer delta to avoid any skipped images
+
+            scale_key = project_data['data']['current_scale']
+            stack = project_data['data']['scales'][scale_key]['alignment_stack']
+
+            layer_index = project_data['data']['current_layer']
+            new_layer_index = layer_index + layer_delta
+            while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                print_debug ( 30, "Looking for next non-skipped image")
+                if stack[new_layer_index]['skip'] == False:
+                    break
+                new_layer_index += layer_delta
+            if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                # Found a layer that's not skipped, so set the layer delta for the move
+                layer_delta = new_layer_index - layer_index
+            else:
+                # Could not find a layer that's not skipped in that direction, try going the other way
+                layer_index = project_data['data']['current_layer']
+                new_layer_index = layer_index
+                while (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    print_debug ( 30, "Looking for next non-skipped image")
+                    if stack[new_layer_index]['skip'] == False:
+                        break
+                    new_layer_index += -layer_delta
+                if (new_layer_index >= 0) and (new_layer_index < len(stack)):
+                    # Found a layer that's not skipped, so set the layer delta for the move
+                    layer_delta = new_layer_index - layer_index
+                else:
+                    # Could not find a layer that's not skipped in either direction, stay here
+                    layer_delta = 0
+
         if project_data != None:
 
           if main_window.view_change_callback != None:
@@ -829,38 +862,6 @@ class ZoomPanWidget(QWidget):
             # Unshifted Scroll Wheel moves through layers
 
             layer_delta = int(event.delta()/120)
-            if not show_skipped_images:
-
-                # Try to juggle the layer delta to avoid any skipped images
-
-                scale_key = project_data['data']['current_scale']
-                stack = project_data['data']['scales'][scale_key]['alignment_stack']
-
-                layer_index = project_data['data']['current_layer']
-                new_layer_index = layer_index + layer_delta
-                while (new_layer_index >= 0) and (new_layer_index < len(stack)):
-                    print_debug ( 30, "Looking for next non-skipped image")
-                    if stack[new_layer_index]['skip'] == False:
-                        break
-                    new_layer_index += layer_delta
-                if (new_layer_index >= 0) and (new_layer_index < len(stack)):
-                    # Found a layer that's not skipped, so set the layer delta for the move
-                    layer_delta = new_layer_index - layer_index
-                else:
-                    # Could not find a layer that's not skipped in that direction, try going the other way
-                    layer_index = project_data['data']['current_layer']
-                    new_layer_index = layer_index
-                    while (new_layer_index >= 0) and (new_layer_index < len(stack)):
-                        print_debug ( 30, "Looking for next non-skipped image")
-                        if stack[new_layer_index]['skip'] == False:
-                            break
-                        new_layer_index += -layer_delta
-                    if (new_layer_index >= 0) and (new_layer_index < len(stack)):
-                        # Found a layer that's not skipped, so set the layer delta for the move
-                        layer_delta = new_layer_index - layer_index
-                    else:
-                        # Could not find a layer that's not skipped in either direction, stay here
-                        layer_delta = 0
 
             self.change_layer ( layer_delta )
 
