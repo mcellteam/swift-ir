@@ -1422,23 +1422,19 @@ control_model = [
   # Panes
   [ # Begin first pane of rows
     [
-      # gen_scales_cb,
       " ", gen_scalesq_cb,
-      # " ", gen_scales_opt_cb,
-      # " ", link_stacks_cb,
+      " ", align_all_cb,
       " ", poly_order,
       " ", null_cafm_trends,
       " ", use_bounding_rect,
-      " ", align_all_cb,
       " ", align_fwd_cb, num_fwd,
       " ", jump_to_cb, jump_to_val,
       " ", center_cb,
-      "  ", rem_algn_cb,
       "    ", skip,
       # "  ", match_pt_mode,
       " ", view_match_crop,
       " ", clear_match,
-      "    "
+      " "
     ],
     [
       # "Test: ",
@@ -1449,15 +1445,18 @@ control_model = [
       #" ", refine_aff_cb,
       #" ", apply_aff_cb,
       " ", regen_aligned_cb,
+      " ", rem_algn_cb,
+      " ", whitening_factor,
+      " ", win_scale_factor,
       " ", clear_skips_cb,
       " ", skips_to_all_cb,
-      " ", whitening_factor,
-      " ", win_scale_factor
       # " ", progress_cb,
       # " ", debug_cb
+      " "
     ]
   ] # End first pane
 ]
+
 
 from source_tracker import get_hash_and_rev
 
