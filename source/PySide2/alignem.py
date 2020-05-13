@@ -2050,6 +2050,13 @@ class MainWindow(QMainWindow):
                     # Replace the current version with the copy
                     project_data = copy.deepcopy ( proj_copy )
 
+                    # Get the roles from the JSON project:
+                    if project_data != None:
+                        if 'data' in project_data:
+                            if 'panel_roles' in project_data['data']:
+                                if len(project_data['data']['panel_roles']) > 0:
+                                    self.define_roles ( project_data['data']['panel_roles'] )
+
                     # Update the scales menu
                     self.define_scales_menu ( sorted(project_data['data']['scales'].keys()) )
                     self.image_panel.update_multi_self()
