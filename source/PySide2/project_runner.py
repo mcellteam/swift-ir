@@ -149,7 +149,7 @@ class project_runner:
         skip = False
         if 'skip' in layer:
           skip = layer['skip']
-        if False and not skip:
+        if False and skip:
 
           print_debug ( -1, "\n\n" + (20*'Skip') + '\n   Skipping layer ' + str(lnum) + '\n' + (20*'Skip') +"\n\n" )
 
@@ -319,6 +319,8 @@ class project_runner:
       del self.task_queue
       self.task_queue=None
 
+
+#  def generate_aligned(self):
       # Finally generate the images with a parallel run of image_apply_affine.py
 
       self.task_queue = task_queue.TaskQueue()

@@ -1052,8 +1052,41 @@ def align_forward():
     align_all_or_some (first_layer,num_layers,prompt=True)
     refresh_all()
 
-def regenerate_aligned():
+
+def regenerate_aligned (first_layer=0, num_layers=-1, prompt=True):
     print ( "Regenerate Aligned ... not working yet.")
+    return
+
+    actually_remove = True
+    if prompt:
+        actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images from " + str(first_layer) + "?")
+
+    if actually_remove:
+        alignem.print_debug ( 5, "Removing aligned from scale " + str (alignem.get_cur_scale()) + " forward from layer " + str (first_layer) + "  (align_all_or_some)" )
+
+        remove_aligned (starting_layer=first_layer,prompt=False)
+        alignem.print_debug ( 30, "Regenerating Aligned Images from layer " + str(first_layer) + " ..." )
+        alignem.print_debug ( 70, "Control Model = " + str(control_model) )
+
+        thing_to_do = init_ref_app.get_value ()
+        scale_to_run_text = alignem.project_data['data']['current_scale']
+        this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
+        this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
+        alignem.print_debug ( 5, '')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, 40 * '=@' + '=')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, '')
+        alignem.print_debug ( 5, "Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do]))
+        alignem.print_debug ( 5, '')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, 40 * '=@' + '=')
+        alignem.print_debug ( 5, 40 * '@=' + '@')
+        alignem.print_debug ( 5, '')
+        align_layers(first_layer, num_layers)
+        refresh_all()
+
+
 
 def jump_to_layer():
     requested_layer = jump_to_val.get_value()
