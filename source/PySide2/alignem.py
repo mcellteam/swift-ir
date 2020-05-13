@@ -108,7 +108,6 @@ update_skips_callback = None
 crop_mode_callback = None
 crop_mode_role = None
 crop_mode_origin = None
-mouse_release_coords = None
 crop_mode_disp_rect = None
 crop_mode_corners = None
 # current_scale = 'scale_1'
@@ -629,7 +628,6 @@ class ZoomPanWidget(QWidget):
     def mouseReleaseEvent(self, event):
         global crop_mode_origin
         global crop_mode_role
-        global mouse_release_coords
         global crop_mode_disp_rect
         global crop_mode_corners
 
@@ -646,59 +644,43 @@ class ZoomPanWidget(QWidget):
             self.rubberBand.hide()
             if crop_mode_origin != None:
                 #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-                print_debug ( 2, "Mouse drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
-                print ( "Cropping with mode: " + str(crop_window_mode) )
+                print_debug ( 50, "Mouse drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
+                print_debug ( 50, "Cropping with mode: " + str(crop_window_mode) )
 
                 if crop_window_mode == 'mouse_rectangle':
 
-                    # This works properly
-
                     crop_start_x = self.image_x(crop_mode_origin.x())
                     crop_start_y = self.image_y(crop_mode_origin.y())
-                    mouse_release_coords = [event.x(), event.y()]
                     crop_end_x = self.image_x(event.x())
                     crop_end_y = self.image_y(event.y())
-                    print ( "Mouse [start,end]: [" + str((crop_mode_origin.x(),crop_mode_origin.y())) + ", " + str((event.x(),event.y())) + "]" )
-                    print ( "Image [start,end]: [" + str((crop_start_x,crop_start_y)) + ", " + str((crop_end_x,crop_end_y)) + "]" )
 
                     crop_mode_corners = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
-                    print_debug ( 2, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+                    print_debug ( 50, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
 
                     # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
 
                     crop_w = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
                     crop_h = crop_start_y + self.image_y(event.y() - crop_mode_origin.y())
-                    print ( "Before squaring: " + str((crop_w,crop_h)) )
+
                     crop_mode_disp_rect = [ [ crop_start_x, crop_start_y ], [ crop_w, crop_h ] ]
 
                 elif crop_window_mode == 'mouse_square':
 
-                    # This needs to be fixed yet.
-
-                    print ( "Mouse Origin:  " + str((crop_mode_origin.x(),crop_mode_origin.y())) )
-                    print ( "Mouse Release: " + str((event.x(),event.y())) )
-
                     # Convert to image coordinates:
                     img_orig_x = self.image_x(crop_mode_origin.x())
                     img_orig_y = self.image_y(crop_mode_origin.y())
-
                     img_rel_x = self.image_x(event.x())
                     img_rel_y = self.image_y(event.y())
 
-                    print ( "Image Origin:  " + str((img_orig_x, img_orig_y)) )
-                    print ( "Image Release: " + str((img_rel_x, img_rel_y)) )
-
                     img_ctr_x = (img_orig_x + img_rel_x) / 2.0
                     img_ctr_y = (img_orig_y + img_rel_y) / 2.0
-
-                    print ( "Image Center: " + str((img_ctr_x, img_ctr_y)) )
 
                     img_width = abs(img_rel_x - img_orig_x)
                     img_height = abs(img_rel_y - img_orig_y)
                     area = img_width * img_height
                     img_side = int ( round(math.sqrt ( area )) )
 
-                    print ( "Cropped image will be " + str(img_side) + "x" + str(img_side) )
+                    print_debug ( 30, "Cropped image will be " + str(img_side) + "x" + str(img_side) )
 
                     img_p0_x = img_ctr_x - (img_side/2)
                     img_p0_y = img_ctr_y - (img_side/2)
@@ -706,16 +688,13 @@ class ZoomPanWidget(QWidget):
                     img_p1_x = img_p0_x + img_side
                     img_p1_y = img_p0_y + img_side
 
-                    print ( "Image P0: " + str((img_p0_x, img_p0_y)) )
-                    print ( "Image P1: " + str((img_p1_x, img_p1_y)) )
-
                     crop_start_x = self.image_x(self.win_x(img_p0_x))
                     crop_start_y = self.image_y(self.win_y(img_p0_y))
                     crop_end_x = self.image_x(self.win_x(img_p1_x))
                     crop_end_y = self.image_y(self.win_y(img_p1_y))
 
                     crop_mode_corners = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
-                    print_debug ( 2, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+                    print_debug ( 50, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
 
                     # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
 
@@ -725,28 +704,15 @@ class ZoomPanWidget(QWidget):
 
                 elif crop_window_mode == 'mouse_center_fixed':
 
-                    # This works properly
-
-                    print ( "Mouse Origin:  " + str((crop_mode_origin.x(),crop_mode_origin.y())) )
-                    print ( "Mouse Release: " + str((event.x(),event.y())) )
-
                     # Convert to image coordinates:
                     img_orig_x = self.image_x(crop_mode_origin.x())
                     img_orig_y = self.image_y(crop_mode_origin.y())
-
                     img_rel_x = self.image_x(event.x())
                     img_rel_y = self.image_y(event.y())
-
-                    print ( "Image Origin:  " + str((img_orig_x, img_orig_y)) )
-                    print ( "Image Release: " + str((img_rel_x, img_rel_y)) )
 
                     img_ctr_x = (img_orig_x + img_rel_x) / 2.0
                     img_ctr_y = (img_orig_y + img_rel_y) / 2.0
 
-                    print ( "Image Center: " + str((img_ctr_x, img_ctr_y)) )
-
-                    img_width = abs(img_rel_x - img_orig_x)
-                    img_height = abs(img_rel_y - img_orig_y)
                     img_width = float(crop_window_width)
                     img_height = float(crop_window_height)
 
@@ -756,16 +722,13 @@ class ZoomPanWidget(QWidget):
                     img_p1_x = img_p0_x + img_width
                     img_p1_y = img_p0_y + img_height
 
-                    print ( "Image P0: " + str((img_p0_x, img_p0_y)) )
-                    print ( "Image P1: " + str((img_p1_x, img_p1_y)) )
-
                     crop_start_x = self.image_x(self.win_x(img_p0_x))
                     crop_start_y = self.image_y(self.win_y(img_p0_y))
                     crop_end_x = self.image_x(self.win_x(img_p1_x))
                     crop_end_y = self.image_y(self.win_y(img_p1_y))
 
                     crop_mode_corners = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
-                    print_debug ( 2, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+                    print_debug ( 50, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
 
                     # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
 
@@ -1052,14 +1015,12 @@ class ZoomPanWidget(QWidget):
                                 if method_results['snr_report'] != None:
                                     painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
                                     midw = painter.viewport().width() / 3
-#                                    painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
                                     painter.drawText(midw,20,method_results['snr_report'])
 
         if self.role == crop_mode_role:
             if crop_mode_disp_rect != None:
                 painter.setPen(QPen(QColor(255,100,100,255), 3))
                 rect_to_draw = QRectF ( self.win_x(crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[0][1]), self.win_x(crop_mode_disp_rect[1][0]-crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[1][1]-crop_mode_disp_rect[0][1]) )
-                # print ( "Plot: # " + str(self.zoom_scale) + " # " + str(crop_mode_origin) + " # " + str(mouse_release_coords) + " # " + str(crop_mode_corners) + " # " + str(crop_mode_disp_rect) + " # " + str(rect_to_draw) )
                 painter.drawRect ( rect_to_draw )
 
 
