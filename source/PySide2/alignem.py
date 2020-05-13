@@ -2508,8 +2508,8 @@ class MainWindow(QMainWindow):
           roles_list = project_data['data']['panel_roles']
           if len(input_val) > 0:
             roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          if not (roles_list == project_data['data']['panel_roles']):
-            self.define_roles (roles_list)
+          #if not (roles_list == project_data['data']['panel_roles']):
+          self.define_roles (roles_list)
         else:
           print_debug ( 30, "Cancel: Roles not changed" )
 
