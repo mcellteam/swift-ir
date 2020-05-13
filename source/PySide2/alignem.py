@@ -7,6 +7,7 @@ using any number of technologies.
 import sys, traceback
 import os
 import copy
+import math
 import cv2
 import json
 import numpy
@@ -674,38 +675,52 @@ class ZoomPanWidget(QWidget):
 
                     # This needs to be fixed yet.
 
-                    crop_start_x = self.image_x(crop_mode_origin.x())
-                    crop_start_y = self.image_y(crop_mode_origin.y())
-                    mouse_release_coords = [event.x(), event.y()]
-                    crop_end_x = self.image_x(event.x())
-                    crop_end_y = self.image_y(event.y())
-                    print ( "Mouse [start,end]: [" + str((crop_mode_origin.x(),crop_mode_origin.y())) + ", " + str((event.x(),event.y())) + "]" )
-                    print ( "Image [start,end]: [" + str((crop_start_x,crop_start_y)) + ", " + str((crop_end_x,crop_end_y)) + "]" )
-                    if crop_window_mode == 'mouse_square':
-                        # Convert to a square
-                        w = abs(crop_end_x-crop_start_x)
-                        h = abs(crop_end_y-crop_start_y)
-                        s = (w + h) / 2 # Make it the average of both
-                        x = ((crop_start_x+crop_end_x)/2) - (s/2)
-                        y = ((crop_start_y+crop_end_y)/2) - (s/2)
-                        crop_start_x = x
-                        crop_start_y = y
-                        crop_end_x = x + s
-                        crop_end_y = y + s
+                    print ( "Mouse Origin:  " + str((crop_mode_origin.x(),crop_mode_origin.y())) )
+                    print ( "Mouse Release: " + str((event.x(),event.y())) )
+
+                    # Convert to image coordinates:
+                    img_orig_x = self.image_x(crop_mode_origin.x())
+                    img_orig_y = self.image_y(crop_mode_origin.y())
+
+                    img_rel_x = self.image_x(event.x())
+                    img_rel_y = self.image_y(event.y())
+
+                    print ( "Image Origin:  " + str((img_orig_x, img_orig_y)) )
+                    print ( "Image Release: " + str((img_rel_x, img_rel_y)) )
+
+                    img_ctr_x = (img_orig_x + img_rel_x) / 2.0
+                    img_ctr_y = (img_orig_y + img_rel_y) / 2.0
+
+                    print ( "Image Center: " + str((img_ctr_x, img_ctr_y)) )
+
+                    img_width = abs(img_rel_x - img_orig_x)
+                    img_height = abs(img_rel_y - img_orig_y)
+                    area = img_width * img_height
+                    img_side = int ( round(math.sqrt ( area )) )
+
+                    print ( "Cropped image will be " + str(img_side) + "x" + str(img_side) )
+
+                    img_p0_x = img_ctr_x - (img_side/2)
+                    img_p0_y = img_ctr_y - (img_side/2)
+
+                    img_p1_x = img_p0_x + img_side
+                    img_p1_y = img_p0_y + img_side
+
+                    print ( "Image P0: " + str((img_p0_x, img_p0_y)) )
+                    print ( "Image P1: " + str((img_p1_x, img_p1_y)) )
+
+                    crop_start_x = self.image_x(self.win_x(img_p0_x))
+                    crop_start_y = self.image_y(self.win_y(img_p0_y))
+                    crop_end_x = self.image_x(self.win_x(img_p1_x))
+                    crop_end_y = self.image_y(self.win_y(img_p1_y))
 
                     crop_mode_corners = [ [ crop_start_x, crop_start_y ], [ crop_end_x, crop_end_y ] ]
                     print_debug ( 2, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
 
                     # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
 
-                    crop_w = crop_start_x + self.image_x(event.x() - crop_mode_origin.x())
-                    crop_h = crop_start_y + self.image_y(event.y() - crop_mode_origin.y())
-                    print ( "Before squaring: " + str((crop_w,crop_h)) )
-                    if crop_window_mode == 'mouse_square':
-                        s = (crop_w + crop_h) / 2
-                        crop_w = s
-                        crop_h = s
-                    print ( "After squaring: " + str((crop_w,crop_h)) )
+                    crop_w = crop_start_x + self.image_x(self.win_x(img_p1_x) - self.win_x(img_p0_x))
+                    crop_h = crop_start_y + self.image_y(self.win_y(img_p1_y) - self.win_y(img_p0_y))
                     crop_mode_disp_rect = [ [ crop_start_x, crop_start_y ], [ crop_w, crop_h ] ]
 
                 elif crop_window_mode == 'mouse_center_fixed':
@@ -743,8 +758,6 @@ class ZoomPanWidget(QWidget):
 
                     print ( "Image P0: " + str((img_p0_x, img_p0_y)) )
                     print ( "Image P1: " + str((img_p1_x, img_p1_y)) )
-
-                    # This works properly in mouse rectangle mode
 
                     crop_start_x = self.image_x(self.win_x(img_p0_x))
                     crop_start_y = self.image_y(self.win_y(img_p0_y))
