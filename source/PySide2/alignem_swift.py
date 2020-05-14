@@ -1404,7 +1404,7 @@ align_fwd_cb  = CallbackButton('Align Forward', align_forward)
 init_ref_app  = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
 view_match_crop  = ComboBoxControl(['View', 'Match', 'Crop'])
 
-poly_order   = IntField("Poly Order:",4,1)
+poly_order   = IntField("Poly Order:",1,1)
 
 regen_aligned_cb = CallbackButton('Regenerate Aligned', regenerate_aligned)
 num_fwd       = IntField("#",1,1)
