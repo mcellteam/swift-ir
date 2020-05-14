@@ -312,7 +312,7 @@ class project_runner:
       '''
       # Propagate the AFMs to generate and appropriate CFM at each layer
       null_biases = self.updated_model['data']['scales'][cur_scale_new_key]['null_cafm_trends']
-      pyswift_tui.SetStackCafm ( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'], null_biases )
+      pyswift_tui.SetStackCafm ( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'], null_biases=null_biases )
 
       destination_path = self.project['data']['destination_path']
       bias_data_path = os.path.join(destination_path,cur_scale_new_key,'bias_data')
@@ -357,7 +357,8 @@ class project_runner:
 
       # Propagate the AFMs to generate and appropriate CFM at each layer
       null_biases = self.project['data']['scales'][cur_scale]['null_cafm_trends']
-      pyswift_tui.SetStackCafm ( self.project['data']['scales'][cur_scale]['alignment_stack'], null_biases )
+#      pyswift_tui.SetStackCafm ( self.project['data']['scales'][cur_scale]['alignment_stack'], null_biases )
+      pyswift_tui.SetStackCafm ( self.project['data']['scales'][cur_scale], null_biases=null_biases )
 
       destination_path = self.project['data']['destination_path']
       bias_data_path = os.path.join(destination_path,cur_scale,'bias_data')

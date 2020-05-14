@@ -168,9 +168,10 @@ def BiasFuncs(align_list, bias_funcs=None):
   return bias_funcs
 '''
 
-
+'''
+# BACKUP 
 # Find the bias functions that best fit the trends in c_afm across the whole stack
-# For now the form of the functions is a 4th-order polynomial
+# For now the form of the functions is hard-coded as a 4th-order polynomial
 def BiasFuncs(al_stack, bias_funcs=None):
   print_debug_enter (90)
   print_debug(50,50*'B0')
@@ -254,6 +255,96 @@ def BiasFuncs(al_stack, bias_funcs=None):
   print_debug(50,"\nBias Funcs: \n%s\n" % (str(bias_funcs)))
 
   return bias_funcs
+'''
+
+
+# NEW
+# Find the bias functions that best fit the trends in c_afm across the whole stack
+# For now the form of the functions is an Nth-order polynomial
+def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
+  print_debug_enter (90)
+  print_debug(50,50*'B0')
+  if type(bias_funcs) == type(None):
+    init_scalars = True
+    bias_funcs = {}
+    bias_funcs['skew_x'] = np.zeros((poly_order+1))
+    bias_funcs['scale_x'] = np.zeros((poly_order+1))
+    bias_funcs['scale_y'] = np.zeros((poly_order+1))
+    bias_funcs['rot'] = np.zeros((poly_order+1))
+    bias_funcs['x'] = np.zeros((poly_order+1))
+    bias_funcs['y'] = np.zeros((poly_order+1))
+  else:
+    init_scalars = False
+    poly_order = len(bias_funcs['x'])-1
+
+  skew_x_array = np.zeros((len(al_stack),2))
+  scale_x_array = np.zeros((len(al_stack),2))
+  scale_y_array = np.zeros((len(al_stack),2))
+  rot_array = np.zeros((len(al_stack),2))
+  x_array = np.zeros((len(al_stack),2))
+  y_array = np.zeros((len(al_stack),2))
+
+  print_debug(50,50*'B1')
+  i=0
+  for align_idx in range(len(al_stack)):
+
+    c_afm = np.array(al_stack[align_idx]['align_to_ref_method']['method_results']['cumulative_afm'])
+
+    rot = np.arctan(c_afm[1,0]/c_afm[0,0])
+    scale_x = np.sqrt(c_afm[0,0]**2 + c_afm[1,0]**2)
+    scale_y = (c_afm[1,1]*np.cos(rot))-(c_afm[0,1]*np.sin(rot))
+    skew_x = ((c_afm[0,1]*np.cos(rot))+(c_afm[1,1]*np.sin(rot)))/scale_y
+    det = (c_afm[0,0]*c_afm[1,1])-(c_afm[0,1]*c_afm[1,0])
+
+    skew_x_array[i] = [align_idx,skew_x]
+    scale_x_array[i] = [align_idx,scale_x]
+    scale_y_array[i] = [align_idx,scale_y]
+    rot_array[i] = [align_idx,rot]
+    x_array[i] = [align_idx,c_afm[0,2]]
+    y_array[i] = [align_idx,c_afm[1,2]]
+    i+=1
+
+  print_debug(50,20*'B2 ')
+  p = np.polyfit(skew_x_array[:,0], skew_x_array[:,1], poly_order)
+  print_debug(50,10*'B2a ')
+  bias_funcs['skew_x'][:-1] += p[:-1]
+  print_debug(50,10*'B2b ')
+  if init_scalars:
+    print_debug(50,10*'B2c ')
+    bias_funcs['skew_x'][poly_order] = p[poly_order]
+  print_debug(50,50*'B3')
+
+  p = np.polyfit(scale_x_array[:,0], scale_x_array[:,1], poly_order)
+  bias_funcs['scale_x'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['scale_x'][poly_order] = p[poly_order]
+  print_debug(50,50*'B4')
+
+  p = np.polyfit(scale_y_array[:,0], scale_y_array[:,1], poly_order)
+  bias_funcs['scale_y'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['scale_y'][poly_order] = p[poly_order]
+  print_debug(50,50*'B5')
+
+  p = np.polyfit(rot_array[:,0], rot_array[:,1], poly_order)
+  bias_funcs['rot'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['rot'][poly_order] = p[poly_order]
+  print_debug(50,50*'B6')
+
+  p = np.polyfit(x_array[:,0], x_array[:,1], poly_order)
+  bias_funcs['x'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['x'][poly_order] = p[poly_order]
+
+  p = np.polyfit(y_array[:,0], y_array[:,1], poly_order)
+  bias_funcs['y'][:-1] += p[:-1]
+  if init_scalars:
+    bias_funcs['y'][poly_order] = p[poly_order]
+
+  print_debug(50,"\nBias Funcs: \n%s\n" % (str(bias_funcs)))
+
+  return bias_funcs
 
 
 
@@ -261,7 +352,10 @@ def BiasFuncs(al_stack, bias_funcs=None):
 def BiasMat(x, bias_funcs):
   print_debug_enter (90)
 
-  xdot = np.array([4.0,3.0,2.0,1.0])
+#  xdot = np.array([4.0,3.0,2.0,1.0])
+
+  poly_order = len(bias_funcs['x'])-1
+  xdot = np.arange(poly_order, 0, -1, dtype='float64')
 
   p = bias_funcs['skew_x']
   dp = p[:-1]*xdot
@@ -314,12 +408,12 @@ def BiasMat(x, bias_funcs):
 def InitCafm(bias_funcs):
   print_debug_enter (70)
 
-  init_skew_x = -bias_funcs['skew_x'][4]
-  init_scale_x = 1.0/bias_funcs['scale_x'][4]
-  init_scale_y = 1.0/bias_funcs['scale_y'][4]
-  init_rot = -bias_funcs['rot'][4]
-  init_x = -bias_funcs['x'][4]
-  init_y = -bias_funcs['y'][4]
+  init_skew_x = -bias_funcs['skew_x'][-1]
+  init_scale_x = 1.0/bias_funcs['scale_x'][-1]
+  init_scale_y = 1.0/bias_funcs['scale_y'][-1]
+  init_rot = -bias_funcs['rot'][-1]
+  init_x = -bias_funcs['x'][-1]
+  init_y = -bias_funcs['y'][-1]
 
   # Create skew, scale, rot, and tranlation matrices
   init_skew_x_mat = np.array([[1.0, init_skew_x, 0.0],[0.0, 1.0, 0.0]])
@@ -387,19 +481,21 @@ def ApplyBiasFuncs(align_list):
 
 
 # Calculate c_afm across the whole stack with optional bias correction
-def SetStackCafm(al_stack, null_biases=False):
+def SetStackCafm(scale_dict, null_biases=False):
   print_debug_enter (70)
 
   print_debug(50,"\nComputing Cafm and Nulling Biases...\n")
 
   # To perform bias correction, first initialize Cafms without bias correction 
   if null_biases==True:
-    SetStackCafm(al_stack, null_biases=False)
+    SetStackCafm(scale_dict, null_biases=False)
+
+  al_stack = scale_dict['alignment_stack']
 
   # If null_biases==True, Iteratively determine and null out bias in c_afm
   bias_mat = None
   if null_biases:
-    bias_funcs = BiasFuncs(al_stack)
+    bias_funcs = BiasFuncs(al_stack, poly_order=scale_dict['poly_order'])
     c_afm_init = InitCafm(bias_funcs)
   else:
     c_afm_init = swiftir.identityAffine()
