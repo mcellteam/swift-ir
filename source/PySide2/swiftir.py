@@ -269,8 +269,8 @@ def saveImage(img, ofn, qual=None):
         if (ext == '.tif') or (ext == '.tiff') or (ext == '.TIF') or (ext == '.TIFF'):
           # code 1 means uncompressed tif
           # code 5 means LZW compressed tif
-#          cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, 1))
-          cv2.imwrite(ofn, img)
+          cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, 1))
+#          cv2.imwrite(ofn, img)
         else:
           cv2.imwrite(ofn, img)
     else:
