@@ -76,29 +76,37 @@ class project_runner:
   #   The project_runner breaks up the alignment layers into specific jobs and starts a worker (pyswift_tui) for each job
   #   Each worker will see the temporary data model file and get command line parameters about which part(s) it must complete
   #   The project_runner will collect the alignment data from each pyswift_tui run and integrate it into the "master" data model
-  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False, use_file_io=True ):
+#  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False, use_file_io=True ):
+  def __init__ ( self, project=None, use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, use_file_io=True ):
 
     # print ( "\n\n\nCreating a project runner...\n\n\n")
     if use_scale <= 0:
       # print ( "Error: project_runner must be given an explicit scale")
       return
     self.project = copy.deepcopy ( project )
-    self.alignment_option = alignment_option
+    self.alignment_option = 'init_affine'
     self.use_scale = use_scale
     self.swiftir_code_mode = swiftir_code_mode
     self.start_layer = start_layer
     self.num_layers = num_layers
-    self.run_parallel = run_parallel
+    self.generate_images = True
+    self.run_parallel = True
     self.task_queue = None
     self.updated_model = None
     self.need_to_write_json = None
     self.use_file_not_pipe = 0
+    self.t0 = 0
     if use_file_io:
       self.use_file_not_pipe = 1
 
 
-  def start ( self ):
-    # print ( "Starting Jobs" )
+  # Class Method to Align the Stack
+#  def start ( self ):
+  def do_alignment ( self, alignment_option='init_affine', generate_images=True ):
+    self.alignment_option = alignment_option
+    self.generate_images = generate_images
+
+    # print ( "Starting Alignment Jobs" )
 
     #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
@@ -149,7 +157,7 @@ class project_runner:
         skip = False
         if 'skip' in layer:
           skip = layer['skip']
-        if False and not skip:
+        if False and skip:
 
           print_debug ( -1, "\n\n" + (20*'Skip') + '\n   Skipping layer ' + str(lnum) + '\n' + (20*'Skip') +"\n\n" )
 
@@ -191,10 +199,10 @@ class project_runner:
 
       # self.task_queue.work_q.join()
 
-      t0 = time.time()
+      self.t0 = time.time()
       print_debug ( -1, 'Waiting for Alignment Tasks to Complete...' )
       self.task_queue.collect_results()
-      dt = time.time() - t0
+      dt = time.time() - self.t0
       #  print_debug ( -1, 'Alignment Tasks Completed in %.2f seconds' % (dt) )
 
 
@@ -301,6 +309,7 @@ class project_runner:
 
           self.need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
+      '''
       # Propagate the AFMs to generate and appropriate CFM at each layer
       null_biases = self.updated_model['data']['scales'][cur_scale_new_key]['null_cafm_trends']
       pyswift_tui.SetStackCafm ( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'], null_biases )
@@ -312,12 +321,51 @@ class project_runner:
       use_bounding_rect = self.updated_model['data']['scales'][cur_scale_new_key]['use_bounding_rect']
       if use_bounding_rect:
         rect = pyswift_tui.BoundingRect( self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'] )
-
+      '''
 
       # Reset task_queue
       self.task_queue.stop()
       del self.task_queue
       self.task_queue=None
+
+      self.project = self.updated_model
+
+      if self.generate_images:
+        self.generate_aligned_images()
+
+
+#   Run Project in Serial Mode:
+#   Note: does not generate aligned images here
+    else:
+
+      # Run the project directly as one serial model
+      # print ( "Running the project as one serial model")
+      self.updated_model, self.need_to_write_json = pyswift_tui.run_json_project (
+                                             project = self.project,
+                                             alignment_option = self.alignment_option,
+                                             use_scale = self.use_scale,
+                                             swiftir_code_mode = self.swiftir_code_mode,
+                                             start_layer = self.start_layer,
+                                             num_layers = self.num_layers )
+      self.project = self.updated_model
+
+
+  # Class Method to Generate the Aligned Images
+  def generate_aligned_images(self):
+
+      cur_scale = self.project['data']['current_scale']
+
+      # Propagate the AFMs to generate and appropriate CFM at each layer
+      null_biases = self.project['data']['scales'][cur_scale]['null_cafm_trends']
+      pyswift_tui.SetStackCafm ( self.project['data']['scales'][cur_scale]['alignment_stack'], null_biases )
+
+      destination_path = self.project['data']['destination_path']
+      bias_data_path = os.path.join(destination_path,cur_scale,'bias_data')
+      pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path)
+
+      use_bounding_rect = self.project['data']['scales'][cur_scale]['use_bounding_rect']
+      if use_bounding_rect:
+        rect = pyswift_tui.BoundingRect( self.project['data']['scales'][cur_scale]['alignment_stack'] )
 
       # Finally generate the images with a parallel run of image_apply_affine.py
 
@@ -331,10 +379,22 @@ class project_runner:
       my_path = os.path.split(os.path.realpath(__file__))[0]
       apply_affine_job = os.path.join(my_path,'image_apply_affine.py')
 
-      for tnum in range(len(tasks_by_start_layer)):
-        tdata = tasks_by_start_layer[tnum]
-        layer_index = int(tdata['args'][5])  # Note the hard-coded index of 5 here is not the best way to go!!
-        layer = self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'][layer_index]
+      scale_key = "scale_%d" % self.use_scale
+      alstack = self.project['data']['scales'][scale_key]['alignment_stack']
+
+      if self.num_layers == -1:
+        end_layer = len(alstack)
+      else:
+        end_layer = self.start_layer+self.num_layers
+
+# Previous code at top of main loop:
+#      for tnum in range(len(tasks_by_start_layer)):
+#        tdata = tasks_by_start_layer[tnum]
+#        layer_index = int(tdata['args'][5])  # Note the hard-coded index of 5 here is not the best way to go!!
+#        layer = self.updated_model['data']['scales'][cur_scale_new_key]['alignment_stack'][layer_index]
+
+      #  Loop over the stack:
+      for layer in alstack[self.start_layer:end_layer+1]:
 
         base_name = layer['images']['base']['filename']
         ref_name = layer['images']['ref']['filename']
@@ -395,43 +455,28 @@ class project_runner:
 
       # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
-#      self.task_queue.work_q.join()
-#      self.task_queue.shutdown()
-
       print_debug ( -1, 'Waiting for ImageApplyAffine Tasks to Complete...' )
       t1 = time.time()
       self.task_queue.collect_results()
       t3 = time.time()
       dt = t3 - t1
-      tt = t3 - t0
       print_debug ( -1, 'ImageApplyAffine Tasks Completed in %.2f seconds' % (dt) )
-      print_debug ( -1, 'Total Alignment Time: %.2f seconds' % (tt) )
+
+      if self.t0 != 0:
+        tt = t3 - self.t0
+        print_debug ( -1, 'Total Alignment Time: %.2f seconds' % (tt) )
 
       self.task_queue.stop()
 
       del self.task_queue
       self.task_queue=None
 
-    else:
 
-      # Run the project directly as one serial model
-      # print ( "Running the project as one serial model")
-      self.updated_model, self.need_to_write_json = pyswift_tui.run_json_project (
-                                             project = self.project,
-                                             alignment_option = self.alignment_option,
-                                             use_scale = self.use_scale,
-                                             swiftir_code_mode = self.swiftir_code_mode,
-                                             start_layer = self.start_layer,
-                                             num_layers = self.num_layers )
-
-
-  def join ( self ):
-    # print ( "Waiting for Jobs to finish" )
-    pass
 
   def get_updated_data_model ( self ):
     # print ( "Returning the updated data model" )
-    return self.updated_model
+#    return self.updated_model
+    return self.project
 
 '''
 if (__name__ == '__main__'):

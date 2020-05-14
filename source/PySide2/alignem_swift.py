@@ -954,15 +954,13 @@ def align_layers ( first_layer=0, num_layers=-1 ):
       pyswift_tui.debug_level = alignem.debug_level
       if global_parallel_mode:
         running_project = project_runner.project_runner ( project=dm,
-                                                          alignment_option=this_scale['method_data']['alignment_option'],
                                                           use_scale=alignem.get_scale_val(scale_to_run_text),
                                                           swiftir_code_mode=code_mode,
                                                           start_layer=first_layer,
                                                           num_layers=num_layers,
-                                                          run_parallel=True,
                                                           use_file_io=global_use_file_io)
-        running_project.start()
-        running_project.join()
+#        running_project.start()
+        running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'], generate_images=True)
         updated_model = running_project.get_updated_data_model()
         need_to_write_json = running_project.need_to_write_json
       else:
@@ -977,40 +975,47 @@ def align_layers ( first_layer=0, num_layers=-1 ):
       if need_to_write_json:
           alignem.project_data = updated_model
       else:
-          alignem.print_debug ( 1, 100*"+" )
-          alignem.print_debug ( 1, "run_json_project returned with need_to_write_json=false" )
-          alignem.print_debug ( 1, 100*"+" )
-          # Load the alignment stack after the alignment has completed
-          aln_image_stack = []
-          stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
+          update_datamodel(updated_model)
 
-          for layer in stack_at_this_scale:
 
-            image_name = None
-            if 'base' in layer['images'].keys():
-              image_name = layer['images']['base']['filename']
+# Call this function when run_json_project returns with need_to_write_json=false
+def update_datamodel(updated_model):
+      alignem.print_debug ( 1, 100*"+" )
+      alignem.print_debug ( 1, "run_json_project returned with need_to_write_json=false" )
+      alignem.print_debug ( 1, 100*"+" )
+      # Load the alignment stack after the alignment has completed
+      aln_image_stack = []
+      scale_to_run_text = alignem.project_data['data']['current_scale']
+      stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
 
-            # Convert from the base name to the standard aligned name:
-            aligned_name = None
-            if image_name != None:
-              # The first scale is handled differently now, but it might be better to unify if possible
-              if scale_to_run_text == "scale_1":
-                aligned_name = os.path.join ( os.path.abspath(alignem.project_data['data']['destination_path']), scale_to_run_text, 'img_aligned', os.path.split(image_name)[-1] )
-              else:
-                name_parts = os.path.split(image_name)
-                if len(name_parts) >= 2:
-                  aligned_name = os.path.join ( os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]) )
-            aln_image_stack.append ( aligned_name )
-            alignem.print_debug ( 30, "Adding aligned image " + aligned_name )
-            layer['images']['aligned'] = {}
-            layer['images']['aligned']['filename'] = aligned_name
-          try:
-            main_win.load_images_in_role ( 'aligned', aln_image_stack )
-          except:
-            alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
-            print_exception()
-            pass
+      for layer in stack_at_this_scale:
+
+        image_name = None
+        if 'base' in layer['images'].keys():
+          image_name = layer['images']['base']['filename']
+
+        # Convert from the base name to the standard aligned name:
+        aligned_name = None
+        if image_name != None:
+          # The first scale is handled differently now, but it might be better to unify if possible
+          if scale_to_run_text == "scale_1":
+            aligned_name = os.path.join ( os.path.abspath(alignem.project_data['data']['destination_path']), scale_to_run_text, 'img_aligned', os.path.split(image_name)[-1] )
+          else:
+            name_parts = os.path.split(image_name)
+            if len(name_parts) >= 2:
+              aligned_name = os.path.join ( os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]) )
+        aln_image_stack.append ( aligned_name )
+        alignem.print_debug ( 30, "Adding aligned image " + aligned_name )
+        layer['images']['aligned'] = {}
+        layer['images']['aligned']['filename'] = aligned_name
+      try:
+        main_win.load_images_in_role ( 'aligned', aln_image_stack )
+      except:
+        alignem.print_debug ( 1, "Error from main_win.load_images_in_role." )
+        print_exception()
+        pass
       refresh_all()
+
 
 combo_name_to_dm_name = {'Init Affine':'init_affine', 'Refine Affine':'refine_affine', 'Apply Affine':'apply_affine'}
 dm_name_to_combo_name = {'init_affine':'Init Affine', 'refine_affine':'Refine Affine', 'apply_affine':'Apply Affine'}
@@ -1052,8 +1057,46 @@ def align_forward():
     align_all_or_some (first_layer,num_layers,prompt=True)
     refresh_all()
 
-def regenerate_aligned():
-    print ( "Regenerate Aligned ... not working yet.")
+
+def regenerate_aligned (first_layer=0, num_layers=-1, prompt=True):
+#    print ( "Regenerate Aligned ... not working yet.")
+#    return
+
+    actually_remove = True
+    if prompt:
+        actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images from " + str(first_layer) + "?")
+
+    if actually_remove:
+        alignem.print_debug ( 5, "Removing aligned from scale " + str (alignem.get_cur_scale()) + " forward from layer " + str (first_layer) + "  (align_all_or_some)" )
+
+        remove_aligned (starting_layer=first_layer,prompt=False,clear_results=False)
+        alignem.print_debug ( 30, "Regenerating Aligned Images from layer " + str(first_layer) + " ..." )
+        alignem.print_debug ( 70, "Control Model = " + str(control_model) )
+
+        scale_to_run_text = alignem.project_data['data']['current_scale']
+
+        dm = copy.deepcopy ( alignem.project_data )
+
+        code_mode = get_code_mode()
+
+        running_project = project_runner.project_runner ( project=dm,
+                                                          use_scale=alignem.get_scale_val(scale_to_run_text),
+                                                          swiftir_code_mode=code_mode,
+                                                          start_layer=first_layer,
+                                                          num_layers=num_layers,
+                                                          use_file_io=global_use_file_io)
+        running_project.generate_aligned_images()
+        updated_model = running_project.get_updated_data_model()
+        need_to_write_json = running_project.need_to_write_json
+
+        if need_to_write_json:
+            alignem.project_data = updated_model
+        else:
+            update_datamodel(updated_model)
+
+        refresh_all()
+
+
 
 def jump_to_layer():
     requested_layer = jump_to_val.get_value()
@@ -1076,7 +1119,7 @@ def refresh_all ():
     main_win.refresh_all_images ()
 
 
-def remove_aligned(starting_layer=0, prompt=True):
+def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
     alignem.print_debug ( 5, "Removing aligned from scale " + str(alignem.get_cur_scale()) + " forward from layer " + str(starting_layer) + "  (remove_aligned)" )
     actually_remove = True
     if prompt:
@@ -1094,11 +1137,13 @@ def remove_aligned(starting_layer=0, prompt=True):
               delete_list.append ( layer['images']['aligned']['filename'] )
               alignem.print_debug (5, "  Removing " + str (layer['images']['aligned']['filename']))
               layer['images'].pop('aligned')
-              # Remove the method results since they are no longer applicable
-              if 'align_to_ref_method' in layer.keys():
-                if 'method_results' in layer['align_to_ref_method']:
-                  # Set the "method_results" to an empty dictionary to signify no results:
-                  layer['align_to_ref_method']['method_results'] = {}
+
+              if clear_results:
+                # Remove the method results since they are no longer applicable
+                if 'align_to_ref_method' in layer.keys():
+                  if 'method_results' in layer['align_to_ref_method']:
+                    # Set the "method_results" to an empty dictionary to signify no results:
+                    layer['align_to_ref_method']['method_results'] = {}
           layer_index += 1
 
         #alignem.image_library.remove_all_images()
