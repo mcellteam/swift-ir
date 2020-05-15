@@ -378,7 +378,7 @@ class ZoomPanWidget(QWidget):
         # This will cause the normal "update_self" function to be called on each sibling
         print_debug ( 30, "Update_siblings called, calling siblings.update_self" )
         if type(self.parent) == MultiImagePanel:
-            print_debug ( 30, "Child of MultiImagePanel" )
+            print_debug ( 60, "Child of MultiImagePanel" )
             self.parent.update_multi_self(exclude=[self])
 
     def update_zpa_self ( self ):
@@ -1536,7 +1536,7 @@ class ComboBoxControl(GenericWidget):
     def get_value ( self ):
         return self.widget.currentText()
     def set_value ( self, value ):
-        print_debug ( 20, "ComboBoxControl.set_value ( " + str(value) + ")")
+        print_debug ( 50, "ComboBoxControl.set_value ( " + str(value) + ")")
         self.widget.setCurrentText(value)
         #print ( "Setting value")
         #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
@@ -1715,7 +1715,7 @@ class MainWindow(QMainWindow):
                   ],
                   [ '-', None, None, None, None, None ],
                   [ 'Num to Preload', None, self.set_preloading_range, None, None, None ],
-                  [ 'Threaded Loading', None, self.toggle_threaded_loading, False, None, None ],
+                  [ 'Threaded Loading', None, self.toggle_threaded_loading, image_library.threaded_loading_enabled, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Background Color', None, self.set_bg_color, None, None, None ],
                   [ 'Border Color', None, self.set_border_color, None, None, None ],
@@ -2262,7 +2262,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def toggle_threaded_loading(self, checked):
-        print_debug ( 90, "toggle_border called with checked = " + str(checked) )
+        print_debug ( 90, "toggle_threaded_loading called with checked = " + str(checked) )
         image_library.threaded_loading_enabled = checked
 
     @Slot()
