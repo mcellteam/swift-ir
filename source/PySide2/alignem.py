@@ -213,6 +213,18 @@ class ImageLibrary:
             return None
         return os.path.abspath(os.path.normpath(file_path))
 
+    def __str__ (self):
+        s = "ImageLibrary contains %d images\n" % len(self._images)
+        for k,v in self._images.items():
+            s += "  " + k + "\n"
+            s += "    loaded:  " + str(v['loaded']) + "\n"
+            s += "    loading: " + str(v['loading']) + "\n"
+            s += "    task:    " + str(v['task']) + "\n"
+            s += "    image:   " + str(v['image']) + "\n"
+        print ( s )
+        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        return ( "ImageLibrary contains ...")
+
     def get_image_reference ( self, file_path ):
         image_ref = None
         real_norm_path = self.pathkey(file_path)
@@ -528,9 +540,11 @@ class ZoomPanWidget(QWidget):
         global crop_mode_origin
         global crop_mode_role
         global crop_mode_disp_rect
+        global crop_mode_callback
         crop_mode_role = None
         crop_mode_disp_rect = None
         crop_mode = False
+        mode = None
         if crop_mode_callback != None:
             mode = crop_mode_callback()
             if mode == 'Crop':
@@ -590,6 +604,7 @@ class ZoomPanWidget(QWidget):
         global crop_mode_origin
         global crop_mode_role
         global crop_mode_disp_rect
+        global crop_mode_callback
         crop_mode = False
         if crop_mode_callback != None:
             mode = crop_mode_callback()
@@ -630,6 +645,7 @@ class ZoomPanWidget(QWidget):
         global crop_mode_role
         global crop_mode_disp_rect
         global crop_mode_corners
+        global crop_mode_callback
 
         global crop_window_mode  # mouse_rectangle or mouse_square or fixed
         global crop_window_width
@@ -1753,6 +1769,8 @@ class MainWindow(QMainWindow):
                   [ '-', None, None, None, None, None ],
                   [ 'Print Structures', None, self.print_structures, None, None, None ],
                   [ '-', None, None, None, None, None ],
+                  [ 'Print Image Library', None, self.print_image_library, None, None, None ],
+                  [ '-', None, None, None, None, None ],
                   [ 'Print Affine',     None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Define Waves', None, self.not_yet, None, None, None ],
@@ -1953,6 +1971,10 @@ class MainWindow(QMainWindow):
               print_debug ( 2, "      " + str(role) + ": " + str(layer['images'][role]['filename']) )
 
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    @Slot()
+    def print_image_library(self, checked):
+        print ( str(image_library))
 
     def make_relative ( self, file_path, proj_path ):
         print_debug ( 20, "Proj path: " + str(proj_path) )
