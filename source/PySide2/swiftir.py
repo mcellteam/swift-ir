@@ -258,7 +258,7 @@ def loadImage(ifn, stretch=False):
         img = ((img-vlo) * nrm).astype('uint8')
     return img
 
-def saveImage(img, ofn, qual=None):
+def saveImage(img, ofn, qual=None, comp=None):
     '''SAVEIMAGE - Save an image
     SAVEIMAGE(img, ofn) saves the image IMG to the file named OFN.
     Optional third argument specifies jpeg quality as a number between
@@ -267,12 +267,15 @@ def saveImage(img, ofn, qual=None):
     if qual is None:
         ext = os.path.splitext(ofn)[-1]
         if (ext == '.tif') or (ext == '.tiff') or (ext == '.TIF') or (ext == '.TIFF'):
-          # code 1 means uncompressed tif
-          # code 5 means LZW compressed tif
-          # cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, 1))
-          cv2.imwrite(ofn, img)
+            if comp != None:
+                # code 1 means uncompressed tif
+                # code 5 means LZW compressed tif
+                cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
+            else:
+                # Use default
+                cv2.imwrite(ofn, img)
         else:
-          cv2.imwrite(ofn, img)
+            cv2.imwrite(ofn, img)
     else:
         cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
 
@@ -811,6 +814,7 @@ if __name__=='__main__':
 
     import time
     import matplotlib.pyplot as plt
+    import sys
 
     def simpleTest(img, im2):
         cut1 = extractStraightWindow(img)
@@ -870,6 +874,27 @@ if __name__=='__main__':
         remod(ifns, ofnbase, 3, 0, True, True)
 
 
+    f = os.path.join('..','..','tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
+    print('Loading ' + f)
+    t = time.time()
+    img = loadImage(f,.1)
+    print('Load time = ', time.time() - t)
+
+    print('Saving ' + 'junk.tif')
+    t = time.time()
+    saveImage(img, 'junk.tif')
+    print('Save time = ', time.time() - t)
+
+    try:
+        print('Saving ' + 'junku.tif')
+        t = time.time()
+        saveImage(img, 'junku.tif', comp=1)
+        print('Save time = ', time.time() - t)
+    except:
+        print ( "Exception: " + str(sys.exc_info()))
+        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    '''
     t = time.time()
     print('Loading image 1')
     img = loadImage(os.path.join('eric-sbem-test-190519','3-day_Ganglion2','Image1.tif'),.1)
@@ -889,5 +914,6 @@ if __name__=='__main__':
     print('Running iterative test with 4 patches')
     multiTest(img, im2)
     print('dt = ', time.time() - t)
+    '''
 
 
