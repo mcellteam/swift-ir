@@ -1536,7 +1536,7 @@ if __name__ == "__main__":
     alignem.update_linking_callback = update_linking_callback
     alignem.update_skips_callback = update_skips_callback
 
-    main_win.resize(1420,640)  # This value is typically chosen to show all widget text
+    main_win.resize(1420,655)  # This value is typically chosen to show all widget text
 
     #main_win.register_project_open ( open_json_project )
     #main_win.register_project_save ( save_json_project )
