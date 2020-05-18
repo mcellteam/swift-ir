@@ -963,6 +963,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
         running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'], generate_images=True)
         updated_model = running_project.get_updated_data_model()
         need_to_write_json = running_project.need_to_write_json
+        alignem.print_debug ( 30, "Return from project_runner.project_runner: need_to_write_json = " + str(need_to_write_json) )
       else:
         updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
                                                                            alignment_option = this_scale['method_data']['alignment_option'],
@@ -971,7 +972,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
                                                                            start_layer = first_layer,
                                                                            num_layers = num_layers )
 
-      alignem.print_debug ( 30, "Return from pyswift_tui.run_json_project: need_to_write_json = " + str(need_to_write_json) )
+        alignem.print_debug ( 30, "Return from pyswift_tui.run_json_project: need_to_write_json = " + str(need_to_write_json) )
       if need_to_write_json:
           alignem.project_data = updated_model
       else:
