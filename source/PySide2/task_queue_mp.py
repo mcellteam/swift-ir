@@ -13,13 +13,19 @@ class TaskQueue:
     self.ctx = mp.get_context(start_method)
 
 
-  def start(self, n_workers):
+  def start(self, n_workers, retries=3):
     self.work_queue = self.ctx.JoinableQueue()
     self.result_queue = self.ctx.Queue()
     self.task_dict = {}
     self.task_id = 0
+    self.retries = retries
 
     self.n_workers = n_workers
+    for i in range(self.n_workers):
+      self.ctx.Process(target=self.worker, args=(i, self.work_queue, self.result_queue)).start()
+
+
+  def restart(self):
     for i in range(self.n_workers):
       self.ctx.Process(target=self.worker, args=(i, self.work_queue, self.result_queue)).start()
 
@@ -76,8 +82,21 @@ class TaskQueue:
     self.task_dict[self.task_id]['stderr'] = None
     self.task_dict[self.task_id]['rc'] = None
     self.task_dict[self.task_id]['status'] = 'queued'
+    self.task_dict[self.task_id]['retries'] = 0
     self.work_queue.put((self.task_id, task))
     self.task_id += 1
+
+
+  def requeue_task(self, task_id):
+    task = []
+    task.append(self.task_dict[task_id]['cmd'])
+    task.extend(self.task_dict[task_id]['args'])
+    self.task_dict[self.task_id]['stdout'] = None
+    self.task_dict[self.task_id]['stderr'] = None
+    self.task_dict[self.task_id]['rc'] = None
+    self.task_dict[self.task_id]['status'] = 'queued'
+    self.task_dict[self.task_id]['retries'] += 1
+    self.work_queue.put((task_id, task))
 
 
   def clear_tasks(self):
@@ -87,12 +106,18 @@ class TaskQueue:
  
   def collect_results(self, stop=True):
 
-    if stop:
-      self.stop()
+    n_pending = len(self.task_dict)
+    retries_tot = 0
+#    for i in range(self.retries+1):
+    while (retries_tot < self.retries+1) and n_pending:
+      if stop:
+        self.stop()
 
-    self.work_queue.join()
+      self.work_queue.join()
 
-    for i in range(len(self.task_dict)):
+#      for i in range(len(self.task_dict)):
+      retry_list = []
+      for j in range(n_pending):
         task_id, outs, errs, rc, dt = self.result_queue.get()
         self.task_dict[task_id]['stdout'] = outs
         self.task_dict[task_id]['stderr'] = errs
@@ -101,7 +126,20 @@ class TaskQueue:
           self.task_dict[task_id]['status'] = 'completed'
         else:
           self.task_dict[task_id]['status'] = 'task_error'
+          retry_list.append(task_id)
         self.task_dict[task_id]['dt'] = dt
+
+      n_pending = len(retry_list)
+      if (retries_tot < self.retries) and n_pending:
+        self.restart()
+        for task_id in retry_list:
+          sys.stderr.write('Requeuing Failed Task: %d   Retries: %d\n' % (task_id, retries_tot+1))
+          self.requeue_task(task_id)
+      retries_tot += 1
+
+    sys.stderr.write('\nFinished Colleting Results for %d Tasks\n' % (len(self.task_dict)))
+    sys.stderr.write('    Failed Tasks: %d\n' % (n_pending))
+    sys.stderr.write('    Retries: %d\n\n' % (retries_tot-1))
 
 
 if __name__ == '__main__':
