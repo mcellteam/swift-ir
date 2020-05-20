@@ -234,6 +234,7 @@ class project_runner:
       print_debug ( -1, '    Num Still Queued: %d' % (n_queued) )
       print_debug ( -1, '    Num Failed:       %d' % (n_failed) )
 
+
       # Sort the tasks by layers rather than by process IDs
       task_dict_by_start_layer = {}
       for k in self.task_queue.task_dict.keys():
