@@ -327,8 +327,14 @@ class ImageLibrary:
           self.remove_image_reference ( k )
         self._images = {}
 
+class SmartImageLibrary ( ImageLibrary ):
+    """A class containing multiple images keyed by their file name."""
+    def __init__ ( self ):
+        self._images = {}  # { image_key: { "task": task, "loading": bool, "loaded": bool, "image": image }
+        self.threaded_loading_enabled = True
+        self.memory = psutil.virtual_memory()
 
-image_library = ImageLibrary()
+image_library = SmartImageLibrary()
 
 
 class ZoomPanWidget(QWidget):

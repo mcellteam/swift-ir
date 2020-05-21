@@ -435,8 +435,8 @@ class MainWindow(QMainWindow):
         # Window dimensions
         geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumWidth(1400)
-        self.setMinimumHeight(1024)
+        self.setMinimumWidth(600)
+        self.setMinimumHeight(600)
 
         self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
