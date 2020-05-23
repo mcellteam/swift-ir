@@ -14,7 +14,9 @@ import numpy
 import scipy
 import scipy.ndimage
 import psutil
+import argparse
 
+import concurrent.futures
 import threading
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
@@ -197,9 +199,12 @@ def get_scale_key ( scale_val ):
 def load_image_worker ( real_norm_path, image_dict ):
     # Load the image
     print_debug ( 25, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
+    m = psutil.virtual_memory()
+    print_debug ( 30, "    memory available before loading = " + str(m.available) )
     image_dict['image'] = QPixmap(real_norm_path)
     image_dict['loaded'] = True
     print_debug ( 25, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
+    print_debug ( 30, "    memory available after loading = " + str(m.available) )
 
 
 class ImageLibrary:
@@ -326,13 +331,157 @@ class ImageLibrary:
         for k in keys:
           self.remove_image_reference ( k )
         self._images = {}
+    def update ( self ):
+        # Do nothing - needed to be plug replacable with SmartImageLibrary
+        pass
 
-class SmartImageLibrary ( ImageLibrary ):
+
+def image_loader ( real_norm_path, image_dict ):
+    # Load the image
+    print_debug ( 25, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
+    m = psutil.virtual_memory()
+    print_debug ( 30, "    memory available before loading = " + str(m.available) )
+    image_dict['image'] = QPixmap(real_norm_path)
+    image_dict['loaded'] = True
+    print_debug ( 25, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
+    print_debug ( 30, "    memory available after loading = " + str(m.available) )
+
+class SmartImageLibrary:
     """A class containing multiple images keyed by their file name."""
     def __init__ ( self ):
         self._images = {}  # { image_key: { "task": task, "loading": bool, "loaded": bool, "image": image }
         self.threaded_loading_enabled = True
-        self.memory = psutil.virtual_memory()
+        self.initial_memory = psutil.virtual_memory()
+        self.prev_scale_val = None
+        self.prev_layer_index = None
+        self.executors = concurrent.futures.ThreadPoolExecutor(max_workers=None) # Should default to 5 times number of processors
+
+    def pathkey ( self, file_path ):
+        if file_path == None:
+            return None
+        return os.path.abspath(os.path.normpath(file_path))
+
+    def __str__ (self):
+        s = "ImageLibrary contains %d images\n" % len(self._images)
+        for k,v in self._images.items():
+            s += "  " + k + "\n"
+            s += "    loaded:  " + str(v['loaded']) + "\n"
+            s += "    loading: " + str(v['loading']) + "\n"
+            s += "    task:    " + str(v['task']) + "\n"
+            s += "    image:   " + str(v['image']) + "\n"
+        print ( s )
+        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        return ( "ImageLibrary contains ...")
+
+    def remove_image_reference ( self, file_path ):
+        # Do nothing since the smart image library now makes this decision internally
+        pass
+
+    def remove_all_images ( self ):
+        # Do nothing since the smart image library now makes this decision internally
+        pass
+
+    def get_image_reference ( self, file_path ):
+        image_ref = None
+        real_norm_path = self.pathkey(file_path)
+        if real_norm_path != None:
+            # This is an actual path
+            if real_norm_path in self._images:
+                # This file is already in the library ... it may be complete or still loading
+                if self._images[real_norm_path]['loaded']:
+                    # The image is already loaded, so return it
+                    image_ref = self._images[real_norm_path]['image']
+                elif self._images[real_norm_path]['loading']:
+                    # The image is still loading, so wait for it to complete
+                    self._images[real_norm_path]['task'].join()
+                    self._images[real_norm_path]['task'] = None
+                    self._images[real_norm_path]['loaded'] = True
+                    self._images[real_norm_path]['loading'] = False
+                    image_ref = self._images[real_norm_path]['image']
+                else:
+                    print_debug ( 5, "  Load Warning for: \"" + str(real_norm_path) + "\"" )
+                    image_ref = self._images[real_norm_path]['image']
+            else:
+                # The image is not in the library at all, so force a load now (and wait)
+                print_debug ( 25, "  Forced load of image: \"" + str(real_norm_path) + "\"" )
+                self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'loading': False, 'task':None }
+                image_ref = self._images[real_norm_path]['image']
+        return image_ref
+
+    def get_image_reference_if_loaded ( self, file_path ):
+        image_ref = None
+        real_norm_path = self.pathkey(file_path)
+        if real_norm_path != None:
+            # This is an actual path
+            if real_norm_path in self._images:
+                # This file is already in the library ... it may be complete or still loading
+                if self._images[real_norm_path]['loaded']:
+                    # The image is already loaded, so return it
+                    image_ref = self._images[real_norm_path]['image']
+                elif self._images[real_norm_path]['loading']:
+                    # The image is still loading, so wait for it to complete
+                    self._images[real_norm_path]['task'].join()
+                    self._images[real_norm_path]['task'] = None
+                    self._images[real_norm_path]['loaded'] = True
+                    self._images[real_norm_path]['loading'] = False
+                    image_ref = self._images[real_norm_path]['image']
+                else:
+                    print_debug ( 5, "  Load Warning for: \"" + str(real_norm_path) + "\"" )
+                    image_ref = self._images[real_norm_path]['image']
+        return image_ref
+
+    def queue_image_read ( self, file_path ):
+        real_norm_path = self.pathkey(file_path)
+        self._images[real_norm_path] = { 'image': None, 'loaded': False, 'loading': True, 'task':None }
+        t = threading.Thread ( target = load_image_worker, args = (real_norm_path,self._images[real_norm_path]) )
+        t.start()
+        self._images[real_norm_path]['task'] = t
+
+    def make_available ( self, requested ):
+        """
+        SOMETHING TO LOOK AT:
+
+        Note that the threaded loading sometimes loads the same image multiple
+        times. This may be due to an uncertainty about whether an image has been
+        scheduled for loading or not.
+
+        Right now, the current check is whether it is actually loaded before
+        scheduling it to be loaded. However, a load may be in progress from an
+        earlier request. This may cause images to be loaded multiple times.
+        """
+
+        print_debug ( 25, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
+        already_loaded = set(self._images.keys())
+        normalized_requested = set ( [self.pathkey(f) for f in requested] )
+        need_to_load = normalized_requested - already_loaded
+        need_to_unload = already_loaded - normalized_requested
+        for f in need_to_unload:
+            self.remove_image_reference ( f )
+        for f in need_to_load:
+            if self.threaded_loading_enabled:
+                self.queue_image_read ( f )   # Using this will enable threaded reading behavior
+            else:
+                self.get_image_reference ( f )   # Using this will force sequential reading behavior
+
+        print_debug ( 25, "Library has " + str(len(self._images.keys())) + " images" )
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+    def update ( self ):
+        cur_scale_key = project_data['data']['current_scale']
+        cur_scale_val = get_scale_val(cur_scale_key)
+        cur_layer_index = project_data['data']['current_layer']
+        scale_keys = sorted ( project_data['data']['scales'].keys() )
+        scale_vals = sorted ( get_scale_val(scale_key) for scale_key in scale_keys )
+        cur_stack = project_data['data']['scales'][cur_scale_key]['alignment_stack']
+        layer_nums = range ( len(cur_stack) )
+        amem = psutil.virtual_memory().available
+        print ( "Looking at: scale " + str(cur_scale_val) + " in " + str(scale_vals) + ", layer " + str(cur_layer_index) + " in " + str(layer_nums) +
+                ", Available Memory = " + str(amem) + " out of " + str(self.initial_memory.available) )
+
+        self.prev_scale_val = cur_scale_val
+        self.prev_layer_index = cur_layer_index
+
 
 image_library = SmartImageLibrary()
 
@@ -469,24 +618,24 @@ class ZoomPanWidget(QWidget):
 
                                 # Enlarge the image (scaling up) while it is within the size of the window
                                 while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
-                                  print_debug ( 40, "Enlarging image to fit in center.")
+                                  print_debug ( 70, "Enlarging image to fit in center.")
                                   self.zoom_to_wheel_at ( 0, 0 )
                                   self.wheel_index += 1
-                                  print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
-                                  print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                                  print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                                  print_debug ( 80, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
+                                  print_debug ( 80, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                                  print_debug ( 80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
                                   if abs(self.wheel_index) > 100:
                                     print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
                                     break
 
                                 # Shrink the image (scaling down) while it is larger than the size of the window
                                 while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
-                                  print_debug ( 40, "Shrinking image to fit in center.")
+                                  print_debug ( 70, "Shrinking image to fit in center.")
                                   self.zoom_to_wheel_at ( 0, 0 )
                                   self.wheel_index += -1
-                                  print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
-                                  print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                                  print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                                  print_debug ( 80, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
+                                  print_debug ( 80, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                                  print_debug ( 80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
                                   if abs(self.wheel_index) > 100:
                                     print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
                                     break
@@ -866,6 +1015,8 @@ class ZoomPanWidget(QWidget):
           #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
           # if len(project_data['data']['scales'][local_current_layer]
+
+          image_library.update()
 
           self.update_zpa_self()
           self.update_siblings()
@@ -2112,6 +2263,8 @@ class MainWindow(QMainWindow):
 
                 ignore_changes = False
 
+        image_library.update()
+
         print_all_skips()
 
 
@@ -2794,6 +2947,8 @@ class MainWindow(QMainWindow):
         local_cur_scale = new_scale
         project_data['data']['current_scale'] = local_cur_scale
         print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
+
+        image_library.update()
 
         for p in self.panel_list:
             p.update_zpa_self()
