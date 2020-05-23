@@ -868,7 +868,7 @@ import pyswift_tui
 # MainWindow contains the Menu Bar and the Status Bar
 class MainWindow(QMainWindow):
 
-    def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM"):
+    def __init__(self, fname=None, panel_roles=None, title="Align EM"):
 
         global app
         if app == None:
@@ -894,19 +894,6 @@ class MainWindow(QMainWindow):
         self.draw_full_paths = False
 
         self.panel_list = []
-
-        self.control_model = control_model
-
-        if self.control_model == None:
-          # Use the default control model
-          self.control_model = [
-            # Panes
-            [ # Begin first pane
-              [ "Program:", 6*" ", __file__ ],
-              [ IntField("Integer:",55), 6*" ", FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
-              [ TextField("String:","Default text"), 20*" ", CallbackButton('Align Forward', align_forward), 5*" ", "# Forward", 1, 20*" ", CallbackButton('Console', console) ]
-            ] # End first pane
-          ]
 
         self.main_panel = QWidget()
 
@@ -1036,9 +1023,9 @@ class MainWindow(QMainWindow):
         # Window dimensions
         # geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
-        self.setMinimumWidth(600)
-        self.setMinimumHeight(400)
-        self.resize(2000,1000)
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(200)
+        self.resize(800,600)
 
         # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -1895,12 +1882,6 @@ def run_app(main_win=None):
     sys.exit(app.exec_())
 
 
-control_model = None
-
-# This provides default command line parameters if none are given (as with "Idle")
-#if len(sys.argv) <= 1:
-#    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
-
 if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
@@ -1912,16 +1893,8 @@ if __name__ == "__main__":
     except:
         pass
 
-    control_model = [
-      # Panes
-      [ # Begin first pane
-        [ "Program: " + __file__ ],
-        [ "No Control Panel Data Defined." ]
-      ] # End first pane
-    ]
-
-    main_window = MainWindow ( control_model=control_model )
-    main_window.resize(2200,1000)
+    main_window = MainWindow()
+    main_window.resize(800,600)
 
     main_window.define_roles ( ['Stack'] )
 
