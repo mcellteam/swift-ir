@@ -43,6 +43,7 @@ import align_swiftir
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 
 project_data = None
+current_image_info_list = []
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
@@ -594,6 +595,10 @@ class ZoomPanWidget(QWidget):
 
         role_text = self.role
         img_text = None
+
+        for f in current_image_info_list:
+            print ( "Image List contains: " + str(f) )
+
 
         if project_data != None:
 
@@ -1268,36 +1273,9 @@ class MainWindow(QMainWindow):
         self.menu = self.menuBar()
         ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
         ml = [
-              [ '&File',
-                [
-                  #[ '&New Project', 'Ctrl+N', self.not_yet, None, None, None ],
-                  [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
-                  #[ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
-                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
-                  [ 'Save Project &As', 'Ctrl+A', self.save_project_as, None, None, None ],
-                  [ '-', None, None, None, None, None ],
-                  [ 'Set Project Destination', None, self.set_def_proj_dest, None, None, None ],
-                  [ '-', None, None, None, None, None ],
-                  [ 'Set Custom Destination...', None, self.set_destination, None, None, None ],
-                  [ '-', None, None, None, None, None ],
-                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
-                ]
-              ],
               [ '&Images',
                 [
-                  [ 'Define Roles', None, self.define_roles_callback, None, None, None ],
-                  [ 'Import &Base Images', None, self.import_base_images, None, None, None ],
-                  [ '-', None, None, None, None, None ],
-                  [ '&Import into',
-                    [
-                      # Empty list to hold the dynamic roles as defined above
-                    ]
-                  ],
-                  [ '&Empty into',
-                    [
-                      # Empty list to hold the dynamic roles as defined above
-                    ]
-                  ],
+                  [ 'Import &Images', None, self.import_base_images, None, None, None ],
                   [ '-', None, None, None, None, None ],
                   [ 'Center', None, self.center_all_images, None, None, None ],
                   [ 'Actual Size', None, self.all_images_actual_size, None, None, None ],
@@ -1305,39 +1283,8 @@ class MainWindow(QMainWindow):
                   [ '-', None, None, None, None, None ],
                   [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
                   [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
-                  # [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
-                  [ 'Remove ALL Panels', None, self.not_yet, None, None, None ]
-                ]
-              ],
-              [ '&Scaling',  # Note that this can NOT contain the string "Scale". "Scaling" is OK.
-                [
-                  [ '&Define Scales', None, self.define_scales_callback, None, None, None ],
-                  # [ '&Generate Scales', None, self.generate_scales_callback, None, None, None ],
-                  [ '&Generate Scales', None, self.not_yet, None, None, None ],
-                  [ '&Import All Scales', None, self.not_yet, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ '&Generate Tiled', None, self.not_yet, False, None, None ],
-                  [ '&Import Tiled', None, self.not_yet, False, None, None ],
-                  [ '&Show Tiled', None, self.not_yet, False, None, None ]
-                ]
-              ],
-              [ '&Scale',
-                [
-                  [ '&Scale 1', None, self.do_nothing, True, "Scales", None ]
-                ]
-              ],
-              [ '&Points',
-                [
-                  [ '&Alignment Point Mode', None, self.not_yet, False, None, None ],
-                  [ '&Delete Points', None, self.not_yet, False, None, None ],
-                  [ '&Clear All Alignment Points', None, self.not_yet, None, None, None ],
-                  [ '-', None, None, None, None, None ],
-                  [ '&Point Cursor',
-                    [
-                      [ 'Crosshair', None, self.not_yet, True, "Cursor", None ],
-                      [ 'Target', None, self.not_yet, False, "Cursor", None ]
-                    ]
-                  ]
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
                 ]
               ],
               [ '&Set',
@@ -1350,17 +1297,9 @@ class MainWindow(QMainWindow):
                   [ 'Background Color', None, self.set_bg_color, None, None, None ],
                   [ 'Border Color', None, self.set_border_color, None, None, None ],
                   [ '-', None, None, None, None, None ],
-                  [ 'Perform Swims', None, self.not_yet, True, None, None ],
-                  [ 'Update CFMs', None, self.not_yet, True, None, None ],
-                  [ 'Generate Images', None, self.not_yet, True, None, None ],
-                  [ '-', None, None, None, None, None ],
-                  [ 'Use C Version', None, self.do_nothing, True, None, None ],
-                  [ '-', None, None, None, None, None ],
                   [ 'Unlimited Zoom', None, self.not_yet, False, None, None ],
                   [ 'Reverse Arrow Keys', None, self.toggle_arrow_direction, False, None, None ],
-                  [ '-', None, None, None, None, None ],
-                  [ 'Default Plot Code', None, self.not_yet, None, None, None ],
-                  [ 'Custom Plot Code', None, self.not_yet, None, None, None ]
+                  [ '-', None, None, None, None, None ]
                 ]
               ],
               [ '&Show',
@@ -1876,6 +1815,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def import_images_dialog(self, import_role_name):
 
+        global current_image_info_list
+
         print_debug ( 5, "Importing images dialog for role: " + str(import_role_name) )
 
         options = QFileDialog.Options()
@@ -1889,6 +1830,8 @@ class MainWindow(QMainWindow):
                                                                "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
 
         print_debug ( 60, "import_images_dialog ( " + str(import_role_name) + ", " + str(file_name_list) + ")" )
+
+        current_image_info_list = [ {'file_name':f, 'loaded':False, 'image':None} for f in file_name_list ]
 
         # Attempt to hide the file dialog before opening ...
         for p in self.panel_list:
@@ -2008,7 +1951,7 @@ class MainWindow(QMainWindow):
         self.import_images_dialog ( import_role_name )
 
     def import_base_images ( self ):
-        self.import_images_dialog ( 'base' )
+        self.import_images_dialog ( 'Stack' )
 
     @Slot()
     def empty_into_role(self, checked):
