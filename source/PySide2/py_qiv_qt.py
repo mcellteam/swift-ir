@@ -44,6 +44,7 @@ from alignem_data_model import new_project_template, new_layer_template, new_ima
 
 project_data = None
 current_image_info_list = []
+current_image_index = 0
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
@@ -508,6 +509,7 @@ class ZoomPanWidget(QWidget):
         global project_data
         global main_window
         global preloading_range
+        global current_image_index
 
         if project_data != None:
 
@@ -534,6 +536,7 @@ class ZoomPanWidget(QWidget):
                   local_stack = local_scale['alignment_stack']
                   if len(local_stack) <= 0:
                       project_data['data']['current_layer'] = 0
+                      current_image_index = 0
                   else:
                       # Adjust the current layer
                       local_current_layer = project_data['data']['current_layer']
@@ -545,6 +548,7 @@ class ZoomPanWidget(QWidget):
                           local_current_layer = 0
                       # Store the final value in the shared "JSON"
                       project_data['data']['current_layer'] = local_current_layer
+                      current_image_index = local_current_layer
 
                       # Define the images needed
                       needed_images = set()
@@ -598,6 +602,7 @@ class ZoomPanWidget(QWidget):
 
         for f in current_image_info_list:
             print ( "Image List contains: " + str(f) )
+        print ( "Current image index = " + str(current_image_index) )
 
 
         if project_data != None:
@@ -607,75 +612,35 @@ class ZoomPanWidget(QWidget):
 
             role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
 
-            if len(project_data['data']['scales']) > 0:
-                if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
+            if len(current_image_info_list) > 0:
 
-                    image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                pixmap = image_library.get_image_reference(current_image_info_list[current_image_index]['file_name'])
+                # img_text = ann_image['filename']
+                img_text = current_image_info_list[current_image_index]['file_name']
 
-                    if self.role in image_dict.keys():
-                        ann_image = image_dict[self.role]
-                        pixmap = image_library.get_image_reference(ann_image['filename'])
-                        img_text = ann_image['filename']
+                # Scale the painter to draw the image as the background
+                painter.scale ( self.zoom_scale, self.zoom_scale )
 
-                        # Scale the painter to draw the image as the background
-                        painter.scale ( self.zoom_scale, self.zoom_scale )
+                if pixmap != None:
+                    if self.draw_border:
+                        # Draw an optional border around the image
+                        painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                        painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                    # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
 
-                        if pixmap != None:
-                            if self.draw_border:
-                                # Draw an optional border around the image
-                                painter.setPen(QPen(QColor(255, 255, 255, 255),4))
-                                painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                            # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                            painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+                    # Draw any items that should scale with the image
 
-                            # Draw any items that should scale with the image
+                # Rescale the painter to draw items at screen resolution
+                painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
 
-                        # Rescale the painter to draw items at screen resolution
-                        painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+                # Draw the borders of the viewport for each panel to separate panels
+                painter.setPen(QPen(self.border_color,4))
+                painter.drawRect(painter.viewport())
 
-                        # Draw the borders of the viewport for each panel to separate panels
-                        painter.setPen(QPen(self.border_color,4))
-                        painter.drawRect(painter.viewport())
-
-                        if self.draw_annotations:
-                            painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
-                            painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width (), pixmap.height ()))
-
-                        if self.draw_annotations and 'metadata' in ann_image:
-                            colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
-                            if 'colors' in ann_image['metadata']:
-                                colors = ann_image['metadata']['colors']
-                                print_debug ( 95, "Colors in metadata = " + str(colors) )
-                            if 'annotations' in ann_image['metadata']:
-                                # Draw the application-specific annotations from the metadata
-                                color_index = 0
-                                ann_list = ann_image['metadata']['annotations']
-                                for ann in ann_list:
-                                    print_debug ( 50, "Drawing " + ann )
-                                    cmd = ann[:ann.find('(')].strip().lower()
-                                    pars = [ float(n.strip()) for n in ann [ ann.find('(')+1: -1 ].split(',') ]
-                                    print_debug ( 50, "Command: " + cmd + " with pars: " + str(pars) )
-                                    if len(pars) >= 4:
-                                        color_index = int(pars[3])
-                                    else:
-                                        color_index = 0
-
-                                    color_to_use = colors[color_index%len(colors)]
-                                    print_debug ( 50, " Color to use: " + str(color_to_use) )
-                                    painter.setPen(QPen(QColor(*color_to_use),5))
-                                    x = 0
-                                    y = 0
-                                    r = 0
-                                    if cmd in ['circle', 'square']:
-                                        x = self.win_x(pars[0])
-                                        y = self.win_y(pars[1])
-                                        r = pars[2]
-                                    if cmd == 'circle':
-                                        painter.drawEllipse ( x-r, y-r, r*2, r*2 )
-                                    if cmd == 'square':
-                                        painter.drawRect ( QRectF ( x-r, y-r, r*2, r*2 ) )
-                                    color_index += 1
-
+                if self.draw_annotations:
+                    painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
+                    painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width (), pixmap.height ()))
 
 
         if self.draw_annotations:
@@ -693,19 +658,6 @@ class ZoomPanWidget(QWidget):
                         painter.drawText(10, 40, os.path.split(img_text)[-1])
                     else:
                         painter.drawText(10, 40, img_text)
-
-            if len(project_data['data']['scales']) > 0:
-                scale = project_data['data']['scales'][s]
-                if len(scale['alignment_stack']) > 0:
-                    layer =  scale['alignment_stack'][l]
-                    if 'align_to_ref_method' in layer:
-                        if 'method_results' in layer['align_to_ref_method']:
-                            method_results = layer['align_to_ref_method']['method_results']
-                            if 'snr' in method_results:
-                                if method_results['snr'] != None:
-                                    painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
-                                    midw = painter.viewport().width() / 2
-                                    painter.drawText(midw,20,"SNR: %.1f" % method_results['snr'])
 
         # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
