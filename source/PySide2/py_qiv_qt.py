@@ -17,44 +17,13 @@ from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
-# Get the path of ../python
-#alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
-#alignem_p    = os.path.dirname( alignem_file )               # path/PySide2
-#alignem_pp   = os.path.dirname( alignem_p )                  # path
-#alignem_shared_path = os.path.join ( alignem_pp, 'python' )  # path/python
-
-#if len(sys.path) <= 0:
-#  # Add the path to the currently empty path (this would be an unusual case)
-#  sys.path.append ( alignem_shared_path )
-#else:
-#  # Add the path in the second position (after the default current directory of "")
-#  sys.path.insert ( 1, alignem_shared_path )
-
-# Import project and alignment support from SWiFT-IR:
-
-from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
-
 current_image_info_list = []
 current_image_index = 0
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
 
-# Using the Python version does not work because the Python 3 code can't
-# even be parsed by Python2. It could be dynamically compiled, or use the
-# alternate syntax, but that's more work than it's worth for now.
-if sys.version_info >= (3, 0):
-    print ( "Python 3: Supports arbitrary arguments via print")
-    #def print_debug ( level, *ds ):
-    #  # print_debug ( 1, "This is really important!!" )
-    #  # print_debug ( 99, "This isn't very important." )
-    #  global debug_level
-    #  if level <= debug_level:
-    #    print ( *ds )
-else:
-    print ("Python 2: Use default parameters for limited support of arbitrary arguments via print")
-
-# For now, always use the limited argument version
+# Use the limited argument version to be compatible with Python 2
 def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
     # print_debug ( 1, "This is really important!!" )
     # print_debug ( 99, "This isn't very important." )
@@ -77,8 +46,6 @@ app = None
 preloading_range = 10
 max_image_file_size = 1000000000
 
-current_scale = 'scale_1'
-
 main_window = None
 
 
@@ -91,36 +58,6 @@ def request_confirmation ( title, text ):
     print ( "Returning " + str(button == QMessageBox.StandardButton.Yes))
     return ( button == QMessageBox.StandardButton.Yes )
 
-def get_scale_val ( scale_of_any_type ):
-    # This should return an integer value from any reasonable input (string or int)
-    scale = scale_of_any_type
-    try:
-        if type(scale) == type(1):
-            # It's already an integer, so return it
-            return scale
-        else: #elif type(scale) in [ str, unicode ]:
-            # It's a string, so remove any optional "scale_" prefix(es) and return as int
-            while scale.startswith('scale_'):
-              scale = scale[len('scale_'):]
-            return int(scale)
-        #else:
-        #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
-        #    traceback.print_stack()
-    except:
-        print_debug ( 1, "Error converting " + str(scale_of_any_type) + " to a value." )
-        exi = sys.exc_info()
-        print_debug ( 1, "  Exception type = " + str(exi[0]) )
-        print_debug ( 1, "  Exception value = " + str(exi[1]) )
-        print_debug ( 1, "  Exception traceback:" )
-        traceback.print_tb(exi[2])
-        return -1
-
-def get_scale_key ( scale_val ):
-    # Create a key like "scale_#" from either an integer or a string
-    s = str(scale_val)
-    while s.startswith ( 'scale_' ):
-        s = s[len('scale_'):]
-    return 'scale_' + s
 
 
 def load_image_worker ( real_norm_path, image_dict ):
@@ -580,13 +517,6 @@ class MultiImagePanel(QWidget):
 
     def __init__(self):
         super(MultiImagePanel, self).__init__()
-
-        # None of these attempts to auto-fill worked, so a paintEvent handler was added
-        #self.setStyleSheet("background-color:black;")
-        #p = self.palette()
-        #p.setColor(self.backgroundRole(), Qt.black)
-        #self.setPalette(p)
-        #self.setAutoFillBackground(True)
 
         self.current_margin = 0
 
