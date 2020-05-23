@@ -9,11 +9,6 @@ import sys, traceback
 import os
 import argparse
 import copy
-import cv2
-import json
-import numpy
-import scipy
-import scipy.ndimage
 
 import threading
 
@@ -22,8 +17,6 @@ from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, 
 from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
 from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF
-
-import align_swiftir
 
 # Get the path of ../python
 #alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
@@ -89,30 +82,6 @@ max_image_file_size = 1000000000
 current_scale = 'scale_1'
 
 main_window = None
-
-
-def makedirs_exist_ok ( path_to_build, exist_ok=False ):
-    # Needed for old python which doesn't have the exist_ok option!!!
-    print_debug ( 30, " Make dirs for " + path_to_build )
-    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    full = ""
-    if len(parts[0]) == 0:
-      # This happens with an absolute PosixPath
-      full = os.sep
-    else:
-      # This may be a Windows drive or the start of a non-absolute path
-      if ":" in parts[0]:
-        # Assume a Windows drive
-        full = parts[0] + os.sep
-      else:
-        # This is a non-absolute path which will be handled naturally with full=""
-        pass
-    for p in parts:
-      full = os.path.join(full,p)
-      if not os.path.exists(full):
-        os.makedirs ( full )
-      elif not exist_ok:
-        print_debug ( 1, "Warning: Attempt to create existing directory: " + full)
 
 
 def show_warning ( title, text ):
@@ -546,7 +515,6 @@ class ZoomPanWidget(QWidget):
                           local_current_layer =  len(local_stack)-1
                       elif local_current_layer < 0:
                           local_current_layer = 0
-                      # Store the final value in the shared "JSON"
                       project_data['data']['current_layer'] = local_current_layer
                       current_image_index = local_current_layer
 
@@ -814,55 +782,10 @@ class MultiImagePanel(QWidget):
 
 
 
-ignore_changes = True  # Default for first change which happens on file open?
-
-def null_bias_changed_callback ( state ):
-    global ignore_changes
-    print_debug ( 50, 100*'+' )
-    print_debug ( 50, "Null Bias changed to " + str(state) )
-    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
-    print_debug ( 50, 100*'+' )
-    project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = state
-
-def bounding_rect_changed_callback ( state ):
-    global ignore_changes
-    print_debug ( 50, 100*'+' )
-    print_debug ( 50, "Bounding Rect changed to " + str(state) )
-    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
-    print_debug ( 50, 100*'+' )
-    project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = state
-
-
-def bool_changed_callback ( state ):
-    global ignore_changes
-    print_debug ( 50, 100*'+' )
-    print_debug ( 50, "Bool changed to " + str(state) )
-    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
-    print_debug ( 50, 100*'+' )
-    if not ignore_changes:
-        if main_window != None:
-            if main_window.view_change_callback != None:
-                layer_num = 0
-                if project_data != None:
-                    if 'data' in project_data:
-                        if 'current_layer' in project_data['data']:
-                            layer_num = project_data['data']['current_layer']
-                ignore_changes = True
-                main_window.view_change_callback ( -1, -1, layer_num, layer_num )
-                ignore_changes = False
-
-
-
-
-def align_forward():
-    print_debug ( 30, "Aligning Forward ..." )
-
 def console():
     print_debug ( 0, "\n\n\nPython Console:\n" )
     __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-
-import pyswift_tui
 
 
 # MainWindow contains the Menu Bar and the Status Bar
@@ -1103,18 +1026,6 @@ class MainWindow(QMainWindow):
             value = int(action_text.split(' ')[1])
             print_debug ( 5, "Changing Debug Level from " + str(debug_level) + " to " + str(value) )
             debug_level = value
-            try:
-                print_debug (5, "Changing TUI Debug Level from " + str (pyswift_tui.debug_level) + " to " + str (value))
-                pyswift_tui.debug_level = value
-                try:
-                    print_debug (5, "Changing SWIFT Debug Level from " + str (align_swiftir.debug_level) + " to " + str (value))
-                    align_swiftir.debug_level = value
-                except:
-                    print_debug (1, "Unable to change SWIFT Debug Level")
-                    pass
-            except:
-                print_debug (1, "Unable to change TUI Debug Level" )
-                pass
         except:
             print_debug ( 1, "Invalid debug value in: \"" + str(action_text) )
 
@@ -1159,154 +1070,6 @@ class MainWindow(QMainWindow):
         print_debug ( 20, "Absolute path: " + str(abs_path) )
         print_debug ( 20, "" )
         return abs_path
-
-
-    @Slot()
-    def open_project(self):
-        print_debug ( 20, "\n\nOpening Project\n\n" )
-
-        options = QFileDialog.Options()
-        file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
-                                                          caption="Open Project",
-                                                          filter="Projects (*.json);;All Files (*)",
-                                                          selectedFilter="",
-                                                          options=options)
-        print_debug ( 60, "open_project ( " + str(file_name) + ")" )
-
-        if file_name != None:
-            if len(file_name) > 0:
-
-                ignore_changes = True
-
-                f = open ( file_name, 'r' )
-                text = f.read()
-                f.close()
-
-                # Read the JSON file from the text
-                global project_data
-                proj_copy = json.loads ( text )
-
-                # Upgrade the "Data Model"
-                proj_copy = upgrade_data_model(proj_copy)
-                if proj_copy == None:
-                    # There was an unknown error loading the data model
-                    print ( "Unable to load project" )
-                elif type(proj_copy) == type('abc'):
-                    # There was a known error loading the data model
-                    print ( "Error loading project:" )
-                    print ( "  " + proj_copy )
-                else:
-                    # The data model loaded fine, so initialize the application with the data
-
-                    self.current_project_file_name = file_name
-                    self.status.showMessage ("Project File: " + self.current_project_file_name
-                                             + "   Destination: " + str(proj_copy ['data'] ['destination_path']))
-
-                    # Modifiy the copy to use absolute paths internally
-                    if len(proj_copy['data']['destination_path']) > 0:
-                      proj_copy['data']['destination_path'] = self.make_absolute ( proj_copy['data']['destination_path'], self.current_project_file_name )
-                    for scale_key in proj_copy['data']['scales'].keys():
-                      scale_dict = proj_copy['data']['scales'][scale_key]
-                      for layer in scale_dict['alignment_stack']:
-                        for role in layer['images'].keys():
-                          if layer['images'][role]['filename'] != None:
-                            if len(layer['images'][role]['filename']) > 0:
-                              layer['images'][role]['filename'] = self.make_absolute ( layer['images'][role]['filename'], self.current_project_file_name )
-
-                    # Replace the current version with the copy
-                    project_data = copy.deepcopy ( proj_copy )
-
-                    # Update the scales menu
-                    self.define_scales_menu ( sorted(project_data['data']['scales'].keys()) )
-                    self.image_panel.update_multi_self()
-
-                    # Set the currently selected scale from the JSON project data
-                    print_debug ( 30, "Set current Scale to " + str(project_data['data']['current_scale']) )
-                    self.set_selected_scale ( project_data['data']['current_scale'] )
-
-                    # Force the currently displayed fields to reflect the newly loaded data
-                    if self.view_change_callback != None:
-                        if project_data != None:
-                            if 'data' in project_data:
-                                if 'current_layer' in project_data['data']:
-                                    layer_num = project_data['data']['current_layer']
-                                    scale_key = project_data['data']['current_scale']
-                                    self.view_change_callback ( scale_key, scale_key, layer_num, layer_num, True )
-
-                    if self.draw_full_paths:
-                      self.setWindowTitle("Project: " + self.current_project_file_name )
-                    else:
-                      self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
-
-                    self.center_all_images()
-
-                ignore_changes = False
-
-
-    def save_project_to_current_file(self):
-        # Save to current file and make known file paths relative to the project file name
-        if self.current_project_file_name != None:
-          if len(self.current_project_file_name) > 0:
-              # Write out the project
-              print_debug ( 0, "Saving to: \"" + str(self.current_project_file_name) + "\"" )
-              proj_copy = copy.deepcopy ( project_data )
-              if len(proj_copy['data']['destination_path']) > 0:
-                proj_copy['data']['destination_path'] = self.make_relative ( proj_copy['data']['destination_path'], self.current_project_file_name )
-              for scale_key in proj_copy['data']['scales'].keys():
-                scale_dict = proj_copy['data']['scales'][scale_key]
-                for layer in scale_dict['alignment_stack']:
-                  for role in layer['images'].keys():
-                    if layer['images'][role]['filename'] != None:
-                      if len(layer['images'][role]['filename']) > 0:
-                        layer['images'][role]['filename'] = self.make_relative ( layer['images'][role]['filename'], self.current_project_file_name )
-              f = open ( self.current_project_file_name, 'w' )
-              jde = json.JSONEncoder ( indent=2, separators=(",",": "), sort_keys=True )
-              proj_json = jde.encode ( proj_copy )
-              f.write ( proj_json )
-              f.close()
-
-              if self.draw_full_paths:
-                self.setWindowTitle("Project: " + self.current_project_file_name )
-              else:
-                self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
-              self.status.showMessage ("Project File: " + self.current_project_file_name
-                                       + "   Destination: " + str(proj_copy['data']['destination_path']))
-
-    @Slot()
-    def save_project(self):
-        if self.current_project_file_name is None:
-            # Force the choosing of a name
-            self.save_project_as()
-        else:
-            print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
-            self.save_project_to_current_file()
-
-    @Slot()
-    def save_project_as(self):
-        print_debug ( 1, "\n\nSaving Project\n\n" )
-
-        options = QFileDialog.Options()
-        file_name, filter = QFileDialog.getSaveFileName ( parent=None,  # None was self
-                                                          caption="Save Project",
-                                                          filter="Projects (*.json);;All Files (*)",
-                                                          selectedFilter="",
-                                                          options=options)
-        print_debug ( 60, "save_project_dialog ( " + str(file_name) + ")" )
-
-        if file_name != None:
-            if len(file_name) > 0:
-                self.current_project_file_name = file_name
-
-                # Attempt to hide the file dialog before opening ...
-                for p in self.panel_list:
-                    p.update_zpa_self()
-                # self.update_win_self()
-                self.save_project_to_current_file()
-
-                if self.draw_full_paths:
-                  self.setWindowTitle("Project: " + self.current_project_file_name )
-                else:
-                  self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
 
     @Slot()
@@ -1365,18 +1128,7 @@ class MainWindow(QMainWindow):
         else:
             self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
-    @Slot()
-    def opt_n(self, option_name, option_action):
-        if 'num' in dir(option_action):
-          print_debug ( 50, "Dynamic Option[" + str(option_action.num) + "]: \"" + option_name + "\"" )
-        else:
-          print_debug ( 50, "Dynamic Option: \"" + option_name + "\"" )
-        print_debug ( 50, "  Action: " + str(option_action) )
-
-
     def add_image_to_role ( self, image_file_name, role_name ):
-        #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
-
         print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
         if image_file_name != None:
           if len(image_file_name) > 0:
@@ -1487,277 +1239,17 @@ class MainWindow(QMainWindow):
         self.import_images( import_role_name, file_name_list )
 
 
-    @Slot()
-    def set_destination ( self ):
-        print_debug ( 1, "Set Destination" )
-
-        options = QFileDialog.Options()
-        options |= QFileDialog.Directory
-        #if False:  # self.native.isChecked():
-        #    options |= QFileDialog.DontUseNativeDialog
-
-        project_data['data']['destination_path'] = QFileDialog.getExistingDirectory ( parent=None, caption="Select Destination Directory", dir=project_data['data']['destination_path'], options=options)
-        print_debug ( 1, "Destination is: " + str(project_data['data']['destination_path']) )
-
-        self.status.showMessage ("Project File: " + self.current_project_file_name
-                             + "   Destination: " + str (project_data['data']['destination_path']))
-
-    @Slot()
-    def set_def_proj_dest ( self ):
-        print_debug ( 1, "Set Default Project Destination to " + str(self.current_project_file_name) )
-        if self.current_project_file_name == None:
-          show_warning ( "No Project File", "Unable to set a project destination without a project file.\nPlease save the project file first." )
-        elif len(self.current_project_file_name) == 0:
-          show_warning ( "No Legal Project File", "Unable to set a project destination without a project file.\nPlease save the project file first." )
-        else:
-          p,e = os.path.splitext(self.current_project_file_name)
-          if not (e.lower() == '.json'):
-            show_warning ( "Not JSON File Extension", 'Project file must be of type "JSON".\nPlease save the project file as ".JSON" first.' )
-          else:
-            project_data['data']['destination_path'] = p
-            #os.makedirs(project_data['data']['destination_path'])
-            makedirs_exist_ok ( project_data['data']['destination_path'], exist_ok=True )
-            print_debug ( 5, "Destination path is : " + str(project_data['data']['destination_path']) )
-            self.status.showMessage ("Project File: " + self.current_project_file_name
-                                 + "   Destination: " + str (project_data['data']['destination_path']))
-
-
-    def load_images_in_role ( self, role, file_names ):
-        print_debug ( 60, "load_images_in_role ( " + str(role) + ", " + str(file_names) + ")" )
-        self.import_images ( role, file_names, clear_role=True )
-
-
-    def define_roles ( self, roles_list ):
-
-        # Set the image panels according to the roles
-        self.image_panel.set_roles ( roles_list )
-
-        # Set the Roles menu from this roles_list
-        mb = self.menuBar()
-        if not (mb is None):
-          for m in mb.children():
-            if type(m) == QMenu:
-              text_label = ''.join(m.title().split('&'))
-              if 'Images' in text_label:
-                print_debug ( 30, "Found Images Menu" )
-                for mm in m.children():
-                  if type(mm) == QMenu:
-                    text_label = ''.join(mm.title().split('&'))
-                    if 'Import into' in text_label:
-                      print_debug ( 30, "Found Import Into Menu" )
-                      # Remove all the old actions:
-                      while len(mm.actions()) > 0:
-                        mm.removeAction(mm.actions()[-1])
-                      # Add the new actions
-                      for role in roles_list:
-                        item = QAction ( role, self )
-                        item.triggered.connect ( self.import_into_role )
-                        mm.addAction(item)
-                    if 'Empty into' in text_label:
-                      print_debug ( 30, "Found Empty Into Menu" )
-                      # Remove all the old actions:
-                      while len(mm.actions()) > 0:
-                        mm.removeAction(mm.actions()[-1])
-                      # Add the new actions
-                      for role in roles_list:
-                        item = QAction ( role, self )
-                        item.triggered.connect ( self.empty_into_role )
-                        mm.addAction(item)
-
-    def register_view_change_callback ( self, callback_function ):
-        self.view_change_callback = callback_function
-
-    def register_mouse_down_callback ( self, callback_function ):
-        self.mouse_down_callback = callback_function
-
-    def register_mouse_move_callback ( self, callback_function ):
-        self.mouse_move_callback = callback_function
-
-    @Slot()
-    def define_roles_callback(self):
-        default_roles = ['Stack']
-        if len(project_data['data']['panel_roles']) > 0:
-          default_roles = project_data['data']['panel_roles']
-        input_val, ok = QInputDialog().getText ( None, "Define Roles", "Current: "+str(' '.join(default_roles)), echo=QLineEdit.Normal, text=' '.join(default_roles) )
-        if ok:
-          input_val = input_val.strip()
-          roles_list = project_data['data']['panel_roles']
-          if len(input_val) > 0:
-            roles_list = [ str(v) for v in input_val.split(' ') if len(v) > 0 ]
-          if not (roles_list == project_data['data']['panel_roles']):
-            self.define_roles (roles_list)
-        else:
-          print_debug ( 30, "Cancel: Roles not changed" )
-
-
-    @Slot()
-    def import_into_role(self, checked):
-        import_role_name = str ( self.sender().text() )
-        self.import_images_dialog ( import_role_name )
-
     def import_base_images ( self ):
         self.import_images_dialog ( 'Stack' )
-
-    @Slot()
-    def empty_into_role(self, checked):
-        #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
-
-        role_to_import = str ( self.sender().text() )
-
-        print_debug ( 30, "Adding empty for role: " + str(role_to_import) )
-
-        used_for_this_role = [ role_to_import in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
-        print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
-        layer_index_for_new_role = -1
-        if False in used_for_this_role:
-          # This means that there is an unused slot for this role. Find the first:
-          layer_index_for_new_role = used_for_this_role.index(False)
-          print_debug ( 60, "Inserting <empty> in role " + str(role_to_import) + " into existing layer " + str(layer_index_for_new_role) )
-        else:
-          # This means that there are no unused slots for this role. Add a new layer
-          print_debug ( 60, "Making a new layer for <empty> in role " + str(role_to_import) + " at layer " + str(layer_index_for_new_role) )
-          project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-          layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-        image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
-        image_dict[role_to_import] = copy.deepcopy(new_image_template)
-
-        # Draw the panels ("windows")
-        for p in self.panel_list:
-            p.force_center = True
-            p.update_zpa_self()
-
-        self.update_win_self()
-
-
-    def define_scales_menu ( self, scales_list ):
-        # Set the Scales menu from this scales_list
-        mb = self.menuBar()
-        if not (mb is None):
-          for m in mb.children():
-            if type(m) == QMenu:
-              text_label = ''.join(m.title().split('&'))
-              if 'Scale' in text_label:
-                print_debug ( 30, "Found Scale Menu" )
-                # Remove all the old actions:
-                while len(m.actions()) > 0:
-                  m.removeAction(m.actions()[-1])
-                # Add the new actions
-                first = True
-                for scale in sorted([ get_scale_val(s) for s in scales_list ]):
-                  item = QAction ( str(scale), self )
-                  item.setCheckable(True)
-                  item.setChecked(first)
-                  self.action_groups['Scales'].addAction(item)
-                  item.triggered.connect ( self.set_current_scale )
-                  m.addAction(item)
-                  first = False
-
-    def set_selected_scale ( self, scale_str ):
-        # Set the Scales menu from this scales_list
-        mb = self.menuBar()
-        if not (mb is None):
-          for m in mb.children():
-            if type(m) == QMenu:
-              text_label = ''.join(m.title().split('&'))
-              if 'Scale' in text_label:
-                print_debug ( 30, "Found Scale Menu" )
-                global current_scale
-                scale_to_match = int(str(project_data['data']['current_scale'].split('_')[1]))
-                for a in m.actions():
-                  if int(a.text()) == scale_to_match:
-                    a.setChecked ( True )
-                    project_data['data']['current_scale'] = 'scale_' + str(scale_to_match)
-                    current_scale = project_data['data']['current_scale']
-                  else:
-                    a.setChecked ( False )
-
-
-    @Slot()
-    def define_scales_callback(self):
-        default_scales = ['1']
-
-        cur_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in project_data['data']['scales'].keys() ] ) ]
-        if len(cur_scales) > 0:
-            default_scales = cur_scales
-
-        input_val, ok = QInputDialog().getText ( None, "Define Scales", "Current: "+str(' '.join(default_scales)), echo=QLineEdit.Normal, text=' '.join(default_scales) )
-        if ok:
-            input_val = input_val.strip()
-            if len(input_val) > 0:
-                input_scales = []
-                try:
-                    input_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in input_val.strip().split(' ') ] ) ]
-                except:
-                    print_debug ( 1, "Bad input: (" + str(input_val) + "), Scales not changed" )
-                    input_scales = []
-
-                if not (input_scales == cur_scales):
-                    # The scales have changed!!
-                    self.define_scales_menu (input_scales)
-                    cur_scale_keys = [ get_scale_key(v) for v in cur_scales ]
-                    input_scale_keys = [ get_scale_key(v) for v in input_scales ]
-
-                    # Remove any scales not in the new list (except always leave 1)
-                    scales_to_remove = []
-                    for scale_key in project_data['data']['scales'].keys():
-                      if not (scale_key in input_scale_keys):
-                        if get_scale_val(scale_key) != 1:
-                          scales_to_remove.append ( scale_key )
-                    for scale_key in scales_to_remove:
-                      project_data['data']['scales'].pop ( scale_key )
-
-                    # Add any scales not in the new list
-                    scales_to_add = []
-                    for scale_key in input_scale_keys:
-                      if not (scale_key in project_data['data']['scales'].keys()):
-                        scales_to_add.append ( scale_key )
-                    for scale_key in scales_to_add:
-                      new_stack = []
-                      scale_1_stack = project_data['data']['scales'][get_scale_key(1)]['alignment_stack']
-                      for l in scale_1_stack:
-                        new_layer = copy.deepcopy ( l )
-                        new_stack.append ( new_layer )
-                      project_data['data']['scales'][scale_key] = { 'alignment_stack': new_stack, 'method_data': {'alignment_option': 'init_affine'} }
-            else:
-                print_debug ( 30, "No input: Scales not changed" )
-        else:
-            print_debug ( 30, "Cancel: Scales not changed" )
-
-    @Slot()
-    def set_current_scale(self, checked):
-        global current_scale
-        print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
-        old_scale = current_scale
-        new_scale = get_scale_key ( str ( self.sender().text() ) )
-        if self.view_change_callback != None:
-          leaving_layer = project_data['data']['current_layer']
-          entering_layer = project_data['data']['current_layer']
-          try:
-            # This guards against errors in "user code"
-            main_window.view_change_callback ( old_scale, new_scale, leaving_layer, entering_layer )
-          except:
-            print_debug ( 0, "Exception in set_current_scale: " + str(sys.exc_info()) )
-        current_scale = new_scale
-        project_data['data']['current_scale'] = current_scale
-        print_debug ( 30, "Set current_scale key to " + str(project_data['data']['current_scale']) )
-
-        for p in self.panel_list:
-            p.update_zpa_self()
-        self.update_win_self()
-
-
-    @Slot()
-    def generate_scales_callback(self):
-        print_debug ( 5, "Generating scales is now handled via control panel buttons in subclass alignem_swift." )
 
 
     @Slot()
     def remove_this_layer(self):
-        local_current_layer = project_data['data']['current_layer']
-        project_data['data']['scales'][current_scale]['alignment_stack'].pop(local_current_layer)
-        if local_current_layer >= len(project_data['data']['scales'][current_scale]['alignment_stack']):
-          local_current_layer = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-        project_data['data']['current_layer'] = local_current_layer
+        global current_image_info_list
+        global current_image_index
+        current_image_info_list.pop ( current_image_index )
+        if current_image_index >= len(current_image_info_list):
+            current_image_index = len(current_image_info_list) - 1
 
         for p in self.panel_list:
             p.update_zpa_self()
@@ -1765,10 +1257,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def remove_all_layers(self):
-        global project_data
-        project_data['data']['current_layer'] = 0
-        while len ( project_data['data']['scales'][current_scale]['alignment_stack'] ) > 0:
-          project_data['data']['scales'][current_scale]['alignment_stack'].pop(0)
+        global current_image_info_list
+        global current_image_index
+        current_image_index = 0
+        current_image_info_list = []
         self.update_win_self()
 
     @Slot()
@@ -1779,7 +1271,8 @@ class MainWindow(QMainWindow):
             self.image_panel.remove_all_panels()
         else:
             print_debug ( 30, "image_panel does not exit!!" )
-        self.define_roles ( [] )
+        self.image_panel.set_roles ( [] )
+
         self.update_win_self()
 
 
@@ -1896,7 +1389,7 @@ if __name__ == "__main__":
     main_window = MainWindow()
     main_window.resize(800,600)
 
-    main_window.define_roles ( ['Stack'] )
+    main_window.image_panel.set_roles ( ['Stack'] )
 
     main_window.show()
     sys.exit(app.exec_())
