@@ -4,7 +4,6 @@ AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
 
-
 import sys, traceback
 import os
 import argparse
@@ -309,68 +308,61 @@ class ZoomPanWidget(QWidget):
 
         if project_data != None:
 
-            s = project_data['data']['current_scale']
-            l = project_data['data']['current_layer']
+            if len(current_image_info_list) > 0:
 
-            if len(project_data['data']['scales']) > 0:
-                if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
+                pixmap = image_library.get_image_reference(current_image_info_list[current_image_index]['file_name'])
+                if pixmap != None:
+                    img_w = pixmap.width()
+                    img_h = pixmap.height()
+                    win_w = self.width()
+                    win_h = self.height()
 
-                    image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                    if (img_w<=0) or (img_h<=0) or (win_w<=0) or (win_h<=0):  # Zero or negative dimensions might lock up?
 
-                    if self.role in image_dict.keys():
-                        ann_image = image_dict[self.role]
-                        pixmap = image_library.get_image_reference(ann_image['filename'])
-                        if pixmap != None:
-                            img_w = pixmap.width()
-                            img_h = pixmap.height()
-                            win_w = self.width()
-                            win_h = self.height()
+                        print_debug ( 11, "Warning: Image or Window dimension is zero - cannot center image for role \"" + str(self.role) + "\"" )
 
-                            if (img_w<=0) or (img_h<=0) or (win_w<=0) or (win_h<=0):  # Zero or negative dimensions might lock up?
+                    else:
 
-                                print_debug ( 11, "Warning: Image or Window dimension is zero - cannot center image for role \"" + str(self.role) + "\"" )
+                        # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
+                        self.zoom_scale = 1.0
+                        self.ldx = 0
+                        self.ldy = 0
+                        self.wheel_index = 0
+                        # self.zoom_to_wheel_at ( 0, 0 )
 
-                            else:
+                        # Enlarge the image (scaling up) while it is within the size of the window
+                        while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
+                          print_debug ( 40, "Enlarging image to fit in center.")
+                          self.zoom_to_wheel_at ( 0, 0 )
+                          self.wheel_index += 1
+                          print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
+                          print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                          print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                          if abs(self.wheel_index) > 100:
+                            print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
+                            break
 
-                                # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
-                                self.zoom_scale = 1.0
-                                self.ldx = 0
-                                self.ldy = 0
-                                self.wheel_index = 0
-                                # self.zoom_to_wheel_at ( 0, 0 )
+                        # Shrink the image (scaling down) while it is larger than the size of the window
+                        while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
+                          print_debug ( 40, "Shrinking image to fit in center.")
+                          self.zoom_to_wheel_at ( 0, 0 )
+                          self.wheel_index += -1
+                          print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
+                          print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                          print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                          if abs(self.wheel_index) > 100:
+                            print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
+                            break
 
-                                # Enlarge the image (scaling up) while it is within the size of the window
-                                while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
-                                  print_debug ( 40, "Enlarging image to fit in center.")
-                                  self.zoom_to_wheel_at ( 0, 0 )
-                                  self.wheel_index += 1
-                                  print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
-                                  print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                                  print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
-                                  if abs(self.wheel_index) > 100:
-                                    print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
-                                    break
+                        # Adjust the offsets to center
+                        extra_x = win_w - self.win_x(img_w)
+                        extra_y = win_h - self.win_y(img_h)
 
-                                # Shrink the image (scaling down) while it is larger than the size of the window
-                                while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
-                                  print_debug ( 40, "Shrinking image to fit in center.")
-                                  self.zoom_to_wheel_at ( 0, 0 )
-                                  self.wheel_index += -1
-                                  print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
-                                  print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                                  print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
-                                  if abs(self.wheel_index) > 100:
-                                    print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
-                                    break
+                        # Bias the y value downward to make room for text at top
+                        extra_y = 1.7 * extra_y
+                        self.ldx = (extra_x / 2) / self.zoom_scale
+                        self.ldy = (extra_y / 2) / self.zoom_scale
 
-                                # Adjust the offsets to center
-                                extra_x = win_w - self.win_x(img_w)
-                                extra_y = win_h - self.win_y(img_h)
-
-                                # Bias the y value downward to make room for text at top
-                                extra_y = 1.7 * extra_y
-                                self.ldx = (extra_x / 2) / self.zoom_scale
-                                self.ldy = (extra_y / 2) / self.zoom_scale
         print_debug ( 30, "Done centering image for " + str(self.role) )
 
 
@@ -540,7 +532,6 @@ class ZoomPanWidget(QWidget):
 
     def wheelEvent(self, event):
 
-        global project_data
         global main_window
         global preloading_range
 
@@ -565,55 +556,43 @@ class ZoomPanWidget(QWidget):
     def paintEvent(self, event):
         painter = QPainter(self)
 
-        role_text = self.role
         img_text = None
 
         for f in current_image_info_list:
             print ( "Image List contains: " + str(f) )
         print ( "Current image index = " + str(current_image_index) )
 
+        if len(current_image_info_list) > 0:
 
-        if project_data != None:
+            pixmap = image_library.get_image_reference(current_image_info_list[current_image_index]['file_name'])
+            # img_text = ann_image['filename']
+            img_text = current_image_info_list[current_image_index]['file_name']
 
-            s = project_data['data']['current_scale']
-            l = project_data['data']['current_layer']
+            # Scale the painter to draw the image as the background
+            painter.scale ( self.zoom_scale, self.zoom_scale )
 
-            role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
+            if pixmap != None:
+                if self.draw_border:
+                    # Draw an optional border around the image
+                    painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                    painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
 
-            if len(current_image_info_list) > 0:
+                # Draw any items that should scale with the image
 
-                pixmap = image_library.get_image_reference(current_image_info_list[current_image_index]['file_name'])
-                # img_text = ann_image['filename']
-                img_text = current_image_info_list[current_image_index]['file_name']
+            # Rescale the painter to draw items at screen resolution
+            painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
 
-                # Scale the painter to draw the image as the background
-                painter.scale ( self.zoom_scale, self.zoom_scale )
+            # Draw the borders of the viewport for each panel to separate panels
+            painter.setPen(QPen(self.border_color,4))
+            painter.drawRect(painter.viewport())
 
-                if pixmap != None:
-                    if self.draw_border:
-                        # Draw an optional border around the image
-                        painter.setPen(QPen(QColor(255, 255, 255, 255),4))
-                        painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                    # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
-
-                    # Draw any items that should scale with the image
-
-                # Rescale the painter to draw items at screen resolution
-                painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
-
-                # Draw the borders of the viewport for each panel to separate panels
-                painter.setPen(QPen(self.border_color,4))
-                painter.drawRect(painter.viewport())
-
-                if self.draw_annotations:
-                    painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
-                    painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width (), pixmap.height ()))
+            if self.draw_annotations:
+                painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
+                painter.drawText (painter.viewport().width()-100, 20, "%dx%d" % (pixmap.width (), pixmap.height ()))
 
         if self.draw_annotations:
-            # Draw the role
-            painter.setPen(QPen(QColor(255,100,100,255), 5))
-            painter.drawText(10, 20, role_text)
             if img_text != None:
                 # Draw the image name
                 painter.setPen(QPen(QColor(100,100,255,255), 5))
@@ -622,12 +601,9 @@ class ZoomPanWidget(QWidget):
                 else:
                     if os.path.sep in img_text:
                         # Only split the path if it's splittable
-                        painter.drawText(10, 40, os.path.split(img_text)[-1])
+                        painter.drawText(10, 20, os.path.split(img_text)[-1])
                     else:
-                        painter.drawText(10, 40, img_text)
-
-        # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+                        painter.drawText(10, 20, img_text)
 
         painter.end()
         del painter
