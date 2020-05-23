@@ -34,7 +34,6 @@ from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF
 
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 
-project_data = None
 current_image_info_list = []
 current_image_index = 0
 
@@ -222,6 +221,8 @@ class ImageLibrary:
           self.remove_image_reference ( k )
         self._images = {}
 
+    def update ( self ):
+        pass
 
 image_library = ImageLibrary()
 
@@ -667,7 +668,6 @@ class MultiImagePanel(QWidget):
           if type(w) == ZoomPanWidget:
             role_settings[w.role] = w.get_settings()
 
-        project_data['data']['panel_roles'] = roles_list
         # Remove all the image panels (to be replaced)
         try:
             self.remove_all_panels()
@@ -738,9 +738,6 @@ class MainWindow(QMainWindow):
         if app == None:
                 app = QApplication([])
 
-        global project_data
-        project_data = copy.deepcopy ( new_project_template )
-
         QMainWindow.__init__(self)
         self.setWindowTitle(title)
 
@@ -748,9 +745,6 @@ class MainWindow(QMainWindow):
 
         self.mouse_down_callback = None
         self.mouse_move_callback = None
-
-        if panel_roles != None:
-            project_data['data']['panel_roles'] = panel_roles
 
         self.draw_border = False
         self.draw_annotations = True
@@ -1034,62 +1028,6 @@ class MainWindow(QMainWindow):
         else:
             self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
 
-    def add_image_to_role ( self, image_file_name, role_name ):
-        print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
-        if image_file_name != None:
-          if len(image_file_name) > 0:
-            used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
-            print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
-            layer_index_for_new_role = -1
-            if False in used_for_this_role:
-              # This means that there is an unused slot for this role. Find the first:
-              layer_index_for_new_role = used_for_this_role.index(False)
-              print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
-            else:
-              # This means that there are no unused slots for this role. Add a new layer
-              print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
-              project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-              layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-            image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
-            image_dict[role_name] = copy.deepcopy(new_image_template)
-            image_dict[role_name]['filename'] = image_file_name
-
-
-    def import_images(self, file_name_list, clear_role=False ):
-        global preloading_range
-        global current_image_info_list
-        global current_image_index
-        global preloading_range
-        role_to_import = "Stack"
-
-        print_debug ( 60, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
-
-        print_debug ( 30, "Importing images for role: " + str(role_to_import) )
-        for f in file_name_list:
-          print_debug ( 30, "   " + str(f) )
-        print_debug ( 10, "Importing images for role: " + str(role_to_import) )
-
-        if clear_role:
-          current_image_info_list = []
-          current_image_index = 0
-
-        if file_name_list != None:
-          if len(file_name_list) > 0:
-            print_debug ( 40, "Selected Files: " + str(file_name_list) )
-            print_debug ( 40, "" )
-            for f in file_name_list:
-              # Find next layer with an empty role matching the requested role_to_import
-              print_debug ( 50, "Role " + str(role_to_import) + ", Importing file: " + str(f) )
-              if f != None:
-                self.add_image_to_role ( f, role_to_import )
-            # Draw the panel's ("windows")
-            for p in self.panel_list:
-              p.force_center = True
-              p.update_zpa_self()
-
-        self.update_win_self()
-
-
     def update_panels(self):
         for p in self.panel_list:
             p.update_zpa_self()
@@ -1100,12 +1038,15 @@ class MainWindow(QMainWindow):
     def import_images_dialog(self):
 
         global current_image_info_list
+        global current_image_index
 
         print_debug ( 5, "Import images dialog" )
 
+        view_at_0 = False
+        if len(current_image_info_list) == 0:
+            view_at_0 = True
+
         options = QFileDialog.Options()
-        #if False:  # self.native.isChecked():
-        #    options |= QFileDialog.DontUseNativeDialog
 
         file_name_list, filtr = QFileDialog.getOpenFileNames ( None,  # None was self
                                                                "Select Images to Import",
@@ -1115,15 +1056,22 @@ class MainWindow(QMainWindow):
 
         print_debug ( 60, "import_images_dialog ( " + str(file_name_list) + ")" )
 
-        current_image_info_list = [ {'file_name':f, 'loaded':False, 'image':None} for f in file_name_list ]
+        if current_image_index >= len(current_image_info_list):
+            current_image_index = len(current_image_info_list) - 1
 
-        # Attempt to hide the file dialog before opening ...
+        for f in file_name_list:
+            current_image_info_list.insert ( current_image_index+1, {'file_name':f, 'loaded':False, 'image':None} )
+            current_image_index += 1
+
+        if view_at_0:
+            current_image_index = 0
+
         for p in self.panel_list:
-            p.update_zpa_self()
+          p.force_center = True
+          p.update_zpa_self()
 
-        # self.update_win_self()
+        self.update_win_self()
 
-        self.import_images( file_name_list )
 
 
     def import_base_images ( self ):
@@ -1212,28 +1160,7 @@ class MainWindow(QMainWindow):
         input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
         if ok:
           preloading_range = input_val
-
-          if project_data != None:
-
-            local_scales = project_data['data']['scales']
-            local_current_scale = project_data['data']['current_scale']
-            if local_current_scale in local_scales:
-                local_scale = local_scales[local_current_scale]
-                if 'alignment_stack' in local_scale:
-                    local_stack = local_scale['alignment_stack']
-                    if len(local_stack) > 0:
-                        local_current_layer = project_data['data']['current_layer']
-
-                        # Define the images needed
-                        needed_images = set()
-                        for i in range(len(local_stack)):
-                          if abs(i-local_current_layer) < preloading_range:
-                            for role,local_image in local_stack[i]['images'].items():
-                              if local_image['filename'] != None:
-                                if len(local_image['filename']) > 0:
-                                  needed_images.add ( local_image['filename'] )
-                        # Ask the library to keep only those images
-                        image_library.make_available ( needed_images )
+          image_library.update()
 
 
     @Slot()
