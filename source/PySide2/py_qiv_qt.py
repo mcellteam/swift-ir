@@ -306,62 +306,60 @@ class ZoomPanWidget(QWidget):
     def center_image ( self ):
         print_debug ( 30, "Centering image for " + str(self.role) )
 
-        if project_data != None:
+        if len(current_image_info_list) > 0:
 
-            if len(current_image_info_list) > 0:
+            pixmap = image_library.get_image_reference(current_image_info_list[current_image_index]['file_name'])
+            if pixmap != None:
+                img_w = pixmap.width()
+                img_h = pixmap.height()
+                win_w = self.width()
+                win_h = self.height()
 
-                pixmap = image_library.get_image_reference(current_image_info_list[current_image_index]['file_name'])
-                if pixmap != None:
-                    img_w = pixmap.width()
-                    img_h = pixmap.height()
-                    win_w = self.width()
-                    win_h = self.height()
+                if (img_w<=0) or (img_h<=0) or (win_w<=0) or (win_h<=0):  # Zero or negative dimensions might lock up?
 
-                    if (img_w<=0) or (img_h<=0) or (win_w<=0) or (win_h<=0):  # Zero or negative dimensions might lock up?
+                    print_debug ( 11, "Warning: Image or Window dimension is zero - cannot center image for role \"" + str(self.role) + "\"" )
 
-                        print_debug ( 11, "Warning: Image or Window dimension is zero - cannot center image for role \"" + str(self.role) + "\"" )
+                else:
 
-                    else:
+                    # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
+                    self.zoom_scale = 1.0
+                    self.ldx = 0
+                    self.ldy = 0
+                    self.wheel_index = 0
+                    # self.zoom_to_wheel_at ( 0, 0 )
 
-                        # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
-                        self.zoom_scale = 1.0
-                        self.ldx = 0
-                        self.ldy = 0
-                        self.wheel_index = 0
-                        # self.zoom_to_wheel_at ( 0, 0 )
+                    # Enlarge the image (scaling up) while it is within the size of the window
+                    while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
+                      print_debug ( 40, "Enlarging image to fit in center.")
+                      self.zoom_to_wheel_at ( 0, 0 )
+                      self.wheel_index += 1
+                      print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
+                      print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                      print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                      if abs(self.wheel_index) > 100:
+                        print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
+                        break
 
-                        # Enlarge the image (scaling up) while it is within the size of the window
-                        while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
-                          print_debug ( 40, "Enlarging image to fit in center.")
-                          self.zoom_to_wheel_at ( 0, 0 )
-                          self.wheel_index += 1
-                          print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
-                          print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                          print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
-                          if abs(self.wheel_index) > 100:
-                            print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
-                            break
+                    # Shrink the image (scaling down) while it is larger than the size of the window
+                    while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
+                      print_debug ( 40, "Shrinking image to fit in center.")
+                      self.zoom_to_wheel_at ( 0, 0 )
+                      self.wheel_index += -1
+                      print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
+                      print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
+                      print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
+                      if abs(self.wheel_index) > 100:
+                        print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
+                        break
 
-                        # Shrink the image (scaling down) while it is larger than the size of the window
-                        while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
-                          print_debug ( 40, "Shrinking image to fit in center.")
-                          self.zoom_to_wheel_at ( 0, 0 )
-                          self.wheel_index += -1
-                          print_debug ( 40, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
-                          print_debug ( 40, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
-                          print_debug ( 40, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)) )
-                          if abs(self.wheel_index) > 100:
-                            print_debug ( -1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index) )
-                            break
+                    # Adjust the offsets to center
+                    extra_x = win_w - self.win_x(img_w)
+                    extra_y = win_h - self.win_y(img_h)
 
-                        # Adjust the offsets to center
-                        extra_x = win_w - self.win_x(img_w)
-                        extra_y = win_h - self.win_y(img_h)
-
-                        # Bias the y value downward to make room for text at top
-                        extra_y = 1.7 * extra_y
-                        self.ldx = (extra_x / 2) / self.zoom_scale
-                        self.ldy = (extra_y / 2) / self.zoom_scale
+                    # Bias the y value downward to make room for text at top
+                    extra_y = 1.7 * extra_y
+                    self.ldx = (extra_x / 2) / self.zoom_scale
+                    self.ldy = (extra_y / 2) / self.zoom_scale
 
         print_debug ( 30, "Done centering image for " + str(self.role) )
 
@@ -467,64 +465,31 @@ class ZoomPanWidget(QWidget):
 
 
     def change_layer ( self, layer_delta ):
-        global project_data
         global main_window
         global preloading_range
+        global current_image_info_list
         global current_image_index
 
-        if project_data != None:
+        if len(current_image_info_list) <= 0:
+          current_image_index = 0
+        else:
+          # Adjust the current layer
+          local_current_layer = current_image_index
+          local_current_layer += layer_delta
+          # Apply limits (top and bottom of stack)
+          if local_current_layer >= len(current_image_info_list):
+              local_current_layer =  len(current_image_info_list)-1
+          elif local_current_layer < 0:
+              local_current_layer = 0
+          current_image_index = local_current_layer
 
-          if main_window.view_change_callback != None:
-
-            leaving_layer = project_data['data']['current_layer']
-            entering_layer = project_data['data']['current_layer'] + layer_delta
-
-            if entering_layer < 0:
-                entering_layer = 0
-
-            try:
-              leaving_scale = project_data['data']['current_scale']
-              entering_scale = project_data['data']['current_scale']
-              main_window.view_change_callback ( get_scale_key(leaving_scale), get_scale_key(entering_scale), leaving_layer, entering_layer )
-            except:
-              print_debug ( 0, "Exception in change_layer: " + str (sys.exc_info ()) )
-
-          local_scales = project_data['data']['scales']   # This will be a dictionary keyed with "scale_#" keys
-          local_current_scale = project_data['data']['current_scale']  # Get it from the data model
-          if local_current_scale in local_scales:
-              local_scale = local_scales[local_current_scale]
-              if 'alignment_stack' in local_scale:
-                  local_stack = local_scale['alignment_stack']
-                  if len(local_stack) <= 0:
-                      project_data['data']['current_layer'] = 0
-                      current_image_index = 0
-                  else:
-                      # Adjust the current layer
-                      local_current_layer = project_data['data']['current_layer']
-                      local_current_layer += layer_delta
-                      # Apply limits (top and bottom of stack)
-                      if local_current_layer >= len(local_stack):
-                          local_current_layer =  len(local_stack)-1
-                      elif local_current_layer < 0:
-                          local_current_layer = 0
-                      project_data['data']['current_layer'] = local_current_layer
-                      current_image_index = local_current_layer
-
-                      # Define the images needed
-                      needed_images = set()
-                      for i in range(len(local_stack)):
-                        if abs(i-local_current_layer) < preloading_range:
-                          for role,local_image in local_stack[i]['images'].items():
-                            if local_image['filename'] != None:
-                              if len(local_image['filename']) > 0:
-                                needed_images.add ( local_image['filename'] )
-                      # Ask the library to keep only those images
-                      image_library.make_available ( needed_images )
-
-          #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-          # if len(project_data['data']['scales'][local_current_layer]
-
+          # Define the images needed
+          needed_images = set()
+          for i in range(len(current_image_info_list)):
+            if abs(i-local_current_layer) < preloading_range:
+                needed_images.add ( current_image_info_list[current_image_index]['file_name'] )
+          # Ask the library to keep only those images
+          image_library.make_available ( needed_images )
           self.update_zpa_self()
           self.update_siblings()
 
@@ -781,7 +746,6 @@ class MainWindow(QMainWindow):
 
         self.current_project_file_name = None
 
-        self.view_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
 
@@ -1146,6 +1110,9 @@ class MainWindow(QMainWindow):
 
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
         global preloading_range
+        global current_image_info_list
+        global current_image_index
+        global preloading_range
 
         print_debug ( 60, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
 
@@ -1155,10 +1122,8 @@ class MainWindow(QMainWindow):
         print_debug ( 10, "Importing images for role: " + str(role_to_import) )
 
         if clear_role:
-          # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-          for layer in project_data['data']['scales'][current_scale]['alignment_stack']:
-            if role_to_import in layer['images'].keys():
-              layer['images'].pop(role_to_import)
+          current_image_info_list = []
+          current_image_index = 0
 
         if file_name_list != None:
           if len(file_name_list) > 0:
