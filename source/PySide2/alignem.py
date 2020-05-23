@@ -335,16 +335,26 @@ class ImageLibrary:
         # Do nothing - needed to be plug replacable with SmartImageLibrary
         pass
 
+def image_completed_loading(par):
+    print ( '\n' + 100*'$' + '\n' + 100*'$' )
+    print ( "Got: " + str(par) )
+    print ( "Image completed loading, check if showing and repaint as needed." )
+    ## The following is needed to auto repaint, but it crashes instantly.
+    ## main_window.image_panel.refresh_all_images()
+    print ( '\n' + 100*'$' + '\n' + 100*'$' )
 
 def image_loader ( real_norm_path, image_dict ):
-    # Load the image
-    print_debug ( 25, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
-    m = psutil.virtual_memory()
-    print_debug ( 30, "    memory available before loading = " + str(m.available) )
-    image_dict['image'] = QPixmap(real_norm_path)
-    image_dict['loaded'] = True
-    print_debug ( 25, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
-    print_debug ( 30, "    memory available after loading = " + str(m.available) )
+    try:
+        # Load the image
+        print_debug ( 5, "  image_loader started with: \"" + str(real_norm_path) + "\"" )
+        m = psutil.virtual_memory()
+        print_debug ( 5, "    memory available before loading = " + str(m.available) )
+        image_dict['image'] = QPixmap(real_norm_path)
+        image_dict['loaded'] = True
+        print_debug ( 5, "  image_loader finished for: \"" + str(real_norm_path) + "\"" )
+        print_debug ( 5, "    memory available after loading = " + str(m.available) )
+    except:
+        print ( "Got an exception in image_loader")
 
 class SmartImageLibrary:
     """A class containing multiple images keyed by their file name."""
@@ -391,51 +401,28 @@ class SmartImageLibrary:
                 if self._images[real_norm_path]['loaded']:
                     # The image is already loaded, so return it
                     image_ref = self._images[real_norm_path]['image']
-                elif self._images[real_norm_path]['loading']:
-                    # The image is still loading, so wait for it to complete
-                    self._images[real_norm_path]['task'].join()
-                    self._images[real_norm_path]['task'] = None
-                    self._images[real_norm_path]['loaded'] = True
-                    self._images[real_norm_path]['loading'] = False
-                    image_ref = self._images[real_norm_path]['image']
                 else:
-                    print_debug ( 5, "  Load Warning for: \"" + str(real_norm_path) + "\"" )
-                    image_ref = self._images[real_norm_path]['image']
+                    # The image is still loading, so return None
+                    image_ref = None
             else:
-                # The image is not in the library at all, so force a load now (and wait)
-                print_debug ( 25, "  Forced load of image: \"" + str(real_norm_path) + "\"" )
-                self._images[real_norm_path] = { 'image': QPixmap(real_norm_path), 'loaded': True, 'loading': False, 'task':None }
+                # The image is not in the library at all, so start loading it now (but don't wait)
+                print_debug ( 5, "  Begin loading image: \"" + str(real_norm_path) + "\"" )
+                self.queue_image_read(real_norm_path)
                 image_ref = self._images[real_norm_path]['image']
         return image_ref
 
     def get_image_reference_if_loaded ( self, file_path ):
-        image_ref = None
-        real_norm_path = self.pathkey(file_path)
-        if real_norm_path != None:
-            # This is an actual path
-            if real_norm_path in self._images:
-                # This file is already in the library ... it may be complete or still loading
-                if self._images[real_norm_path]['loaded']:
-                    # The image is already loaded, so return it
-                    image_ref = self._images[real_norm_path]['image']
-                elif self._images[real_norm_path]['loading']:
-                    # The image is still loading, so wait for it to complete
-                    self._images[real_norm_path]['task'].join()
-                    self._images[real_norm_path]['task'] = None
-                    self._images[real_norm_path]['loaded'] = True
-                    self._images[real_norm_path]['loading'] = False
-                    image_ref = self._images[real_norm_path]['image']
-                else:
-                    print_debug ( 5, "  Load Warning for: \"" + str(real_norm_path) + "\"" )
-                    image_ref = self._images[real_norm_path]['image']
-        return image_ref
+        return self.get_image_reference ( file_path )
 
     def queue_image_read ( self, file_path ):
+        print ( "top of queue_image_read ( " + file_path + ")" )
         real_norm_path = self.pathkey(file_path)
         self._images[real_norm_path] = { 'image': None, 'loaded': False, 'loading': True, 'task':None }
-        t = threading.Thread ( target = load_image_worker, args = (real_norm_path,self._images[real_norm_path]) )
-        t.start()
-        self._images[real_norm_path]['task'] = t
+        print ( "submit with (" + real_norm_path + ", " + str(self._images[real_norm_path]) + ")" )
+        task_future = self.executors.submit ( image_loader, real_norm_path, self._images[real_norm_path] )
+        task_future.add_done_callback ( image_completed_loading )
+        print ( "  task_future: " + str(task_future) )
+        self._images[real_norm_path]['task'] = task_future
 
     def make_available ( self, requested ):
         """
@@ -479,6 +466,21 @@ class SmartImageLibrary:
         print ( "Looking at: scale " + str(cur_scale_val) + " in " + str(scale_vals) + ", layer " + str(cur_layer_index) + " in " + str(layer_nums) +
                 ", Available Memory = " + str(amem) + " out of " + str(self.initial_memory.available) )
 
+        try:
+            stack = project_data['data']['scales'][project_data['data']['current_scale']]['alignment_stack']
+            layer = stack[project_data['data']['current_layer']]
+            for k in layer['images'].keys():
+                print ( "Loading role " + k )
+                try:
+                    fn = layer['images'][k]['filename']
+                    if (fn != None) and (len(fn) > 0):
+                        print ( "Loading file " + fn )
+                        self.queue_image_read ( fn )
+                except:
+                    pass
+        except:
+            pass
+
         self.prev_scale_val = cur_scale_val
         self.prev_layer_index = cur_layer_index
 
@@ -492,6 +494,7 @@ class ZoomPanWidget(QWidget):
         super(ZoomPanWidget, self).__init__(parent)
         self.role = role
         self.parent = None
+        self.already_painting = False
 
         self.floatBased = False
         self.antialiased = False
@@ -1051,147 +1054,156 @@ class ZoomPanWidget(QWidget):
         global crop_mode_role
         global crop_mode_disp_rect
 
-        painter = QPainter(self)
+        print ( "Top of paintEvent")
 
-        role_text = self.role
-        img_text = None
+        if not self.already_painting:
+            self.already_painting = True
 
-        if project_data != None:
+            painter = QPainter(self)
 
-            s = project_data['data']['current_scale']
-            l = project_data['data']['current_layer']
+            role_text = self.role
+            img_text = None
 
-            role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
+            if project_data != None:
 
-            if len(project_data['data']['scales']) > 0:
-                if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
+                s = project_data['data']['current_scale']
+                l = project_data['data']['current_layer']
 
-                    image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
-                    is_skipped = project_data['data']['scales'][s]['alignment_stack'][l]['skip']
+                role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
 
-                    if self.role in image_dict.keys():
-                        ann_image = image_dict[self.role]
-                        pixmap = image_library.get_image_reference(ann_image['filename'])
-                        img_text = ann_image['filename']
+                if len(project_data['data']['scales']) > 0:
+                    if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
 
-                        # Scale the painter to draw the image as the background
-                        painter.scale ( self.zoom_scale, self.zoom_scale )
+                        image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                        is_skipped = project_data['data']['scales'][s]['alignment_stack'][l]['skip']
 
-                        if pixmap != None:
-                            if self.draw_border:
-                                # Draw an optional border around the image
-                                painter.setPen(QPen(QColor(255, 255, 255, 255),4))
-                                painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
-                            # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                            if (not is_skipped) or self.role == 'base':
-                                painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
+                        if self.role in image_dict.keys():
+                            ann_image = image_dict[self.role]
+                            pixmap = image_library.get_image_reference(ann_image['filename'])
+                            img_text = ann_image['filename']
 
-                            # Draw any items that should scale with the image
+                            # Scale the painter to draw the image as the background
+                            painter.scale ( self.zoom_scale, self.zoom_scale )
 
-                        # Rescale the painter to draw items at screen resolution
-                        painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+                            if pixmap != None:
+                                if self.draw_border:
+                                    # Draw an optional border around the image
+                                    painter.setPen(QPen(QColor(255, 255, 255, 255),4))
+                                    painter.drawRect ( QRectF ( self.ldx+self.dx, self.ldy+self.dy, pixmap.width(), pixmap.height() ) )
+                                # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                                if (not is_skipped) or self.role == 'base':
+                                    painter.drawPixmap ( QPointF(self.ldx+self.dx,self.ldy+self.dy), pixmap )
 
-                        # Draw the borders of the viewport for each panel to separate panels
-                        painter.setPen(QPen(self.border_color,4))
-                        painter.drawRect(painter.viewport())
+                                # Draw any items that should scale with the image
 
-                        if self.draw_annotations:
-                            if (pixmap.width() > 0) or (pixmap.height() > 0):
-                                painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
-                                painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width(), pixmap.height()))
+                            # Rescale the painter to draw items at screen resolution
+                            painter.scale ( 1.0/self.zoom_scale, 1.0/self.zoom_scale )
+
+                            # Draw the borders of the viewport for each panel to separate panels
+                            painter.setPen(QPen(self.border_color,4))
+                            painter.drawRect(painter.viewport())
+
+                            if self.draw_annotations and (pixmap != None):
+                                if (pixmap.width() > 0) or (pixmap.height() > 0):
+                                    painter.setPen (QPen (QColor (128, 255, 128, 255), 5))
+                                    painter.drawText (painter.viewport().width()-100, 40, "%dx%d" % (pixmap.width(), pixmap.height()))
 
 
-                        if self.draw_annotations and 'metadata' in ann_image:
-                            colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
-                            if 'colors' in ann_image['metadata']:
-                                colors = ann_image['metadata']['colors']
-                                print_debug ( 95, "Colors in metadata = " + str(colors) )
-                            if 'annotations' in ann_image['metadata']:
-                                # Draw the application-specific annotations from the metadata
-                                color_index = 0
-                                ann_list = ann_image['metadata']['annotations']
-                                for ann in ann_list:
-                                    print_debug ( 50, "Drawing " + ann )
-                                    cmd = ann[:ann.find('(')].strip().lower()
-                                    pars = [ float(n.strip()) for n in ann [ ann.find('(')+1: -1 ].split(',') ]
-                                    print_debug ( 50, "Command: " + cmd + " with pars: " + str(pars) )
-                                    if len(pars) >= 4:
-                                        color_index = int(pars[3])
-                                    else:
-                                        color_index = 0
+                            if self.draw_annotations and 'metadata' in ann_image:
+                                colors = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
+                                if 'colors' in ann_image['metadata']:
+                                    colors = ann_image['metadata']['colors']
+                                    print_debug ( 95, "Colors in metadata = " + str(colors) )
+                                if 'annotations' in ann_image['metadata']:
+                                    # Draw the application-specific annotations from the metadata
+                                    color_index = 0
+                                    ann_list = ann_image['metadata']['annotations']
+                                    for ann in ann_list:
+                                        print_debug ( 50, "Drawing " + ann )
+                                        cmd = ann[:ann.find('(')].strip().lower()
+                                        pars = [ float(n.strip()) for n in ann [ ann.find('(')+1: -1 ].split(',') ]
+                                        print_debug ( 50, "Command: " + cmd + " with pars: " + str(pars) )
+                                        if len(pars) >= 4:
+                                            color_index = int(pars[3])
+                                        else:
+                                            color_index = 0
 
-                                    color_to_use = colors[color_index%len(colors)]
-                                    print_debug ( 50, " Color to use: " + str(color_to_use) )
-                                    painter.setPen(QPen(QColor(*color_to_use),5))
-                                    x = 0
-                                    y = 0
-                                    r = 0
-                                    if cmd in ['circle', 'square']:
-                                        x = self.win_x(pars[0])
-                                        y = self.win_y(pars[1])
-                                        r = pars[2]
-                                    if cmd == 'circle':
-                                        painter.drawEllipse ( x-r, y-r, r*2, r*2 )
-                                    if cmd == 'square':
-                                        painter.drawRect ( QRectF ( x-r, y-r, r*2, r*2 ) )
-                                    if cmd == 'skipped':
-                                        # color_to_use = colors[color_index+1%len(colors)]
-                                        color_to_use = [255,50,50]
+                                        color_to_use = colors[color_index%len(colors)]
+                                        print_debug ( 50, " Color to use: " + str(color_to_use) )
                                         painter.setPen(QPen(QColor(*color_to_use),5))
-                                        # painter.drawEllipse ( x-(r*2), y-(r*2), r*4, r*4 )
-                                        painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
-                                        painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
-                                    color_index += 1
+                                        x = 0
+                                        y = 0
+                                        r = 0
+                                        if cmd in ['circle', 'square']:
+                                            x = self.win_x(pars[0])
+                                            y = self.win_y(pars[1])
+                                            r = pars[2]
+                                        if cmd == 'circle':
+                                            painter.drawEllipse ( x-r, y-r, r*2, r*2 )
+                                        if cmd == 'square':
+                                            painter.drawRect ( QRectF ( x-r, y-r, r*2, r*2 ) )
+                                        if cmd == 'skipped':
+                                            # color_to_use = colors[color_index+1%len(colors)]
+                                            color_to_use = [255,50,50]
+                                            painter.setPen(QPen(QColor(*color_to_use),5))
+                                            # painter.drawEllipse ( x-(r*2), y-(r*2), r*4, r*4 )
+                                            painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
+                                            painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
+                                        color_index += 1
 
-                        if is_skipped:
-                            # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
-                            color_to_use = [255,50,50]
-                            painter.setPen(QPen(QColor(*color_to_use),5))
-                            painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
-                            painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
+                            if is_skipped:
+                                # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
+                                color_to_use = [255,50,50]
+                                painter.setPen(QPen(QColor(*color_to_use),5))
+                                painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
+                                painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
 
 
-        if self.draw_annotations:
-            # Draw the role
-            painter.setPen(QPen(QColor(255,100,100,255), 5))
-            painter.drawText(10, 20, role_text)
-            if img_text != None:
-                # Draw the image name
-                painter.setPen(QPen(QColor(100,100,255,255), 5))
-                if self.draw_full_paths:
-                    painter.drawText(10, 40, img_text)
-                else:
-                    if os.path.sep in img_text:
-                        # Only split the path if it's splittable
-                        painter.drawText(10, 40, os.path.split(img_text)[-1])
-                    else:
+            if self.draw_annotations:
+                # Draw the role
+                painter.setPen(QPen(QColor(255,100,100,255), 5))
+                painter.drawText(10, 20, role_text)
+                if img_text != None:
+                    # Draw the image name
+                    painter.setPen(QPen(QColor(100,100,255,255), 5))
+                    if self.draw_full_paths:
                         painter.drawText(10, 40, img_text)
+                    else:
+                        if os.path.sep in img_text:
+                            # Only split the path if it's splittable
+                            painter.drawText(10, 40, os.path.split(img_text)[-1])
+                        else:
+                            painter.drawText(10, 40, img_text)
 
-            if len(project_data['data']['scales']) > 0:
-                scale = project_data['data']['scales'][s]
-                if len(scale['alignment_stack']) > 0:
-                    layer =  scale['alignment_stack'][l]
-                    if 'align_to_ref_method' in layer:
-                        if 'method_results' in layer['align_to_ref_method']:
-                            method_results = layer['align_to_ref_method']['method_results']
-                            if 'snr_report' in method_results:
-                                if method_results['snr_report'] != None:
-                                    painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
-                                    midw = painter.viewport().width() / 3
-                                    painter.drawText(midw,20,method_results['snr_report'])
+                if len(project_data['data']['scales']) > 0:
+                    scale = project_data['data']['scales'][s]
+                    if len(scale['alignment_stack']) > 0:
+                        layer =  scale['alignment_stack'][l]
+                        if 'align_to_ref_method' in layer:
+                            if 'method_results' in layer['align_to_ref_method']:
+                                method_results = layer['align_to_ref_method']['method_results']
+                                if 'snr_report' in method_results:
+                                    if method_results['snr_report'] != None:
+                                        painter.setPen (QPen (QColor (255, 255, 255, 255), 5))
+                                        midw = painter.viewport().width() / 3
+                                        painter.drawText(midw,20,method_results['snr_report'])
 
-        if self.role == crop_mode_role:
-            if crop_mode_disp_rect != None:
-                painter.setPen(QPen(QColor(255,100,100,255), 3))
-                rect_to_draw = QRectF ( self.win_x(crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[0][1]), self.win_x(crop_mode_disp_rect[1][0]-crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[1][1]-crop_mode_disp_rect[0][1]) )
-                painter.drawRect ( rect_to_draw )
+            if self.role == crop_mode_role:
+                if crop_mode_disp_rect != None:
+                    painter.setPen(QPen(QColor(255,100,100,255), 3))
+                    rect_to_draw = QRectF ( self.win_x(crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[0][1]), self.win_x(crop_mode_disp_rect[1][0]-crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[1][1]-crop_mode_disp_rect[0][1]) )
+                    painter.drawRect ( rect_to_draw )
 
 
-        # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+            # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
+            # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-        painter.end()
-        del painter
+            painter.end()
+            del painter
+
+            self.already_painting = False
+
+        print ( "Bottom of paintEvent")
 
 
 
