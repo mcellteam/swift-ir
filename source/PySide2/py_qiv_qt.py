@@ -972,45 +972,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def print_structures(self, checked):
         global debug_level
-        print_debug ( 2, "Data Structures:" )
-        print_debug ( 2, "  project_data['version'] = " + str(project_data['version']) )
-        print_debug ( 2, "  project_data.keys() = " + str(project_data.keys()) )
-        print_debug ( 2, "  project_data['data'].keys() = " + str(project_data['data'].keys()) )
-        print_debug ( 2, "  project_data['data']['panel_roles'] = " + str(project_data['data']['panel_roles']) )
-        scale_keys = list(project_data['data']['scales'].keys())
-        print_debug ( 2, "  list(project_data['data']['scales'].keys()) = " + str(scale_keys) )
-        print_debug ( 2, "Scales, Layers, and Images:" )
-        for k in sorted(scale_keys):
-          print_debug ( 2, "  Scale key: " + str(k) +
-                        ", NullBias: " + str(project_data['data']['scales'][k]['null_cafm_trends']) +
-                        ", Bounding Rect: " + str(project_data['data']['scales'][k]['use_bounding_rect']) )
-          scale = project_data['data']['scales'][k]
-          for layer in scale['alignment_stack']:
-            print_debug ( 2, "    Layer: " + str([ k for k in layer['images'].keys()]) )
-            for role in layer['images'].keys():
-              im = layer['images'][role]
-              print_debug ( 2, "      " + str(role) + ": " + str(layer['images'][role]['filename']) )
-
-        __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-    def make_relative ( self, file_path, proj_path ):
-        print_debug ( 20, "Proj path: " + str(proj_path) )
-        print_debug ( 20, "File path: " + str(file_path) )
-        rel_path = os.path.relpath(file_path,start=os.path.split(proj_path)[0])
-        print_debug ( 20, "Full path: " + str(file_path) )
-        print_debug ( 20, "Relative path: " + str(rel_path) )
-        print_debug ( 20, "" )
-        return rel_path
-
-    def make_absolute ( self, file_path, proj_path ):
-        print_debug ( 20, "Proj path: " + str(proj_path) )
-        print_debug ( 20, "File path: " + str(file_path) )
-        abs_path = os.path.join ( os.path.split(proj_path)[0], file_path )
-        print_debug ( 20, "Full path: " + str(file_path) )
-        print_debug ( 20, "Absolute path: " + str(abs_path) )
-        print_debug ( 20, "" )
-        return abs_path
-
+        global current_image_info_list
+        global current_image_index
+        print ( "\n\nInternal Structures:")
+        for f in current_image_info_list:
+            print ( "  Image List contains: " + str(f) )
+        print ( "  Current image index = " + str(current_image_index) )
 
     @Slot()
     def actual_size(self):
@@ -1021,7 +988,6 @@ class MainWindow(QMainWindow):
             p.wheel_index = 0
             p.zoom_scale = 1.0
             p.update_zpa_self()
-
 
     @Slot()
     def toggle_border(self, checked):
@@ -1089,30 +1055,12 @@ class MainWindow(QMainWindow):
             image_dict[role_name]['filename'] = image_file_name
 
 
-    def add_empty_to_role ( self, role_name ):
-
-        used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][current_scale]['alignment_stack'] ]
-        print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
-        layer_index_for_new_role = -1
-        if False in used_for_this_role:
-          # This means that there is an unused slot for this role. Find the first:
-          layer_index_for_new_role = used_for_this_role.index(False)
-          print_debug ( 60, "Inserting empty in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
-        else:
-          # This means that there are no unused slots for this role. Add a new layer
-          print_debug ( 60, "Making a new layer for empty in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
-          project_data['data']['scales'][current_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
-          layer_index_for_new_role = len(project_data['data']['scales'][current_scale]['alignment_stack']) - 1
-        image_dict = project_data['data']['scales'][current_scale]['alignment_stack'][layer_index_for_new_role]['images']
-        image_dict[role_name] = copy.deepcopy(new_image_template)
-        image_dict[role_name]['filename'] = None
-
-
-    def import_images(self, role_to_import, file_name_list, clear_role=False ):
+    def import_images(self, file_name_list, clear_role=False ):
         global preloading_range
         global current_image_info_list
         global current_image_index
         global preloading_range
+        role_to_import = "Stack"
 
         print_debug ( 60, "import_images ( " + str(role_to_import) + ", " + str(file_name_list) + ")" )
 
@@ -1132,9 +1080,7 @@ class MainWindow(QMainWindow):
             for f in file_name_list:
               # Find next layer with an empty role matching the requested role_to_import
               print_debug ( 50, "Role " + str(role_to_import) + ", Importing file: " + str(f) )
-              if f is None:
-                self.add_empty_to_role ( role_to_import )
-              else:
+              if f != None:
                 self.add_image_to_role ( f, role_to_import )
             # Draw the panel's ("windows")
             for p in self.panel_list:
@@ -1151,11 +1097,11 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def import_images_dialog(self, import_role_name):
+    def import_images_dialog(self):
 
         global current_image_info_list
 
-        print_debug ( 5, "Importing images dialog for role: " + str(import_role_name) )
+        print_debug ( 5, "Import images dialog" )
 
         options = QFileDialog.Options()
         #if False:  # self.native.isChecked():
@@ -1167,7 +1113,7 @@ class MainWindow(QMainWindow):
                                                                "Select Images",
                                                                "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)", "", options)
 
-        print_debug ( 60, "import_images_dialog ( " + str(import_role_name) + ", " + str(file_name_list) + ")" )
+        print_debug ( 60, "import_images_dialog ( " + str(file_name_list) + ")" )
 
         current_image_info_list = [ {'file_name':f, 'loaded':False, 'image':None} for f in file_name_list ]
 
@@ -1177,11 +1123,11 @@ class MainWindow(QMainWindow):
 
         # self.update_win_self()
 
-        self.import_images( import_role_name, file_name_list )
+        self.import_images( file_name_list )
 
 
     def import_base_images ( self ):
-        self.import_images_dialog ( 'Stack' )
+        self.import_images_dialog()
 
 
     @Slot()
