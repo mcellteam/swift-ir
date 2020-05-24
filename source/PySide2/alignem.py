@@ -3310,12 +3310,18 @@ if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
+    options.add_argument("-l", "--preload", type=int, required=False, default=7, help="Preload +/-, total to preload = 2n-1")
     # options.add_argument("-t", "--test", type=int, required=False, help="Run test case: TEST")
     args = options.parse_args()
     try:
         debug_level = int(args.debug)
     except:
         pass
+
+    if args.preload != None:
+      preloading_range = int(args.preload)
+      if preloading_range < 1:
+        preloading_range = 1
 
     control_model = [
       # Panes
