@@ -1480,6 +1480,7 @@ if __name__ == "__main__":
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
+    options.add_argument("-l", "--preload", type=int, required=False, default=7, help="Preload +/-, total to preload = 2n-1")
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1, help="Run the C versions of SWiFT tools")
     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0, help="Use files to gather output from tasks")
     args = options.parse_args()
@@ -1501,6 +1502,11 @@ if __name__ == "__main__":
 
     if args.use_file_io != None:
       global_use_file_io = args.use_file_io != 0
+
+    if args.preload != None:
+      alignem.preloading_range = int(args.preload)
+      if alignem.preloading_range < 1:
+        alignem.preloading_range = 1
 
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
