@@ -367,13 +367,15 @@ class ImageLibrary:
 
     def __str__ (self):
         s = "ImageLibrary contains %d images\n" % len(self._images)
-        for k,v in self._images.items():
+        keys = sorted(self._images.keys())
+        for k in keys:
+            v = self._images[k]
             s += "  " + k + "\n"
             s += "    loaded:  " + str(v['loaded']) + "\n"
             s += "    loading: " + str(v['loading']) + "\n"
             s += "    task:    " + str(v['task']) + "\n"
             s += "    image:   " + str(v['image']) + "\n"
-        print ( s )
+        # print ( s )
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         return ( s )
 
