@@ -147,7 +147,7 @@ class project_runner:
       if cpus > 32:
         cpus = 32
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
-      self.task_queue.start (cpus)
+      self.task_queue.start(cpus)
 
       my_path = os.path.split(os.path.realpath(__file__))[0]
       align_job = os.path.join(my_path,'single_alignment_job.py')
@@ -376,7 +376,7 @@ class project_runner:
       if cpus > 32:
         cpus = 32
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
-      self.task_queue.start (cpus)
+      self.task_queue.start(cpus)
 
       my_path = os.path.split(os.path.realpath(__file__))[0]
       apply_affine_job = os.path.join(my_path,'image_apply_affine.py')
@@ -491,7 +491,7 @@ if (__name__ == '__main__'):
 
   cpus = 3
 
-  my_q.start (cpus)
+  my_q.start(cpus)
   my_q.notify = True
 
   begin = time.time ()
