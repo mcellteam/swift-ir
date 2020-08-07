@@ -144,8 +144,8 @@ class project_runner:
 
       self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
-      if cpus > 32:
-        cpus = 32
+      if cpus > 48:
+        cpus = 48
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       self.task_queue.start(cpus)
 
@@ -373,8 +373,8 @@ class project_runner:
 
       self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
-      if cpus > 32:
-        cpus = 32
+      if cpus > 48:
+        cpus = 48
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       self.task_queue.start(cpus)
 
