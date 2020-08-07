@@ -58,7 +58,7 @@ class TaskQueue:
       self.close_worker = True
 
 
-  def start(self, n_workers, retries=3):
+  def start(self, n_workers, retries=10):
     self.work_queue = self.ctx.JoinableQueue()
     self.result_queue = self.ctx.Queue()
     self.task_dict = {}

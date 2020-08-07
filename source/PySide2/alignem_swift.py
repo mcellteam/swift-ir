@@ -568,8 +568,8 @@ def generate_scales_queue ():
       # Use task_queue_mp
       scaling_queue = task_queue.TaskQueue ()
       cpus = psutil.cpu_count (logical=False)
-      if cpus > 32:
-        cpus = 32
+      if cpus > 48:
+        cpus = 48
       scaling_queue.start (cpus)
 
       for scale in sorted(image_scales_to_run):
@@ -1480,7 +1480,7 @@ if __name__ == "__main__":
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
-    options.add_argument("-l", "--preload", type=int, required=False, default=7, help="Preload +/-, total to preload = 2n-1")
+    options.add_argument("-l", "--preload", type=int, required=False, default=3, help="Preload +/-, total to preload = 2n-1")
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1, help="Run the C versions of SWiFT tools")
     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0, help="Use files to gather output from tasks")
     args = options.parse_args()
