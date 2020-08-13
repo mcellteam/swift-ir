@@ -21,9 +21,10 @@ AVERAGEIMAGENOBLACK, REMOD, SAVEIMAGE.
 Example scripts that implement the most common use cases of the original
 programs are planned.'''
 
+import os
+os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
 import numpy as np
 import cv2
-import os
 
 apo = []
 apo0 = []

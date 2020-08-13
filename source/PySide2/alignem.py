@@ -2544,8 +2544,8 @@ class MainWindow(QMainWindow):
                         #cropping_queue = task_queue.TaskQueue ( sys.executable )
                         cropping_queue = task_queue.TaskQueue()
                         cpus = psutil.cpu_count (logical=False)
-                        if cpus > 32:
-                            cpus = 32
+                        if cpus > 48:
+                            cpus = 48
                         cropping_queue.start (cpus)
                         cropping_queue.notify = False
                         cropping_queue.passthrough_stdout = False
@@ -2571,9 +2571,11 @@ class MainWindow(QMainWindow):
                         print ( "x,y = " + str((crop_cx,crop_cy)) + ", w,h = " + str((crop_w,crop_h)) )
 
                         if crop_parallel:
-                            print ( "cropping_queue.add_task ( [sys.executable, 'single_crop_job.py', str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )" )
+                            my_path = os.path.split(os.path.realpath(__file__))[0]
+                            crop_job = os.path.join(my_path,'single_crop_job.py')
+                            print ( "cropping_queue.add_task ( [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )" )
                             # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-                            cropping_queue.add_task ( [sys.executable, 'single_crop_job.py', str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )
+                            cropping_queue.add_task ( [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )
 
                         else:
                             img = align_swiftir.swiftir.extractStraightWindow ( align_swiftir.swiftir.loadImage(infile_name), xy=(crop_cx,crop_cy), siz=(crop_w,crop_h) )
