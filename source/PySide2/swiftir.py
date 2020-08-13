@@ -258,7 +258,7 @@ def loadImage(ifn, stretch=False):
         img = ((img-vlo) * nrm).astype('uint8')
     return img
 
-def saveImage(img, ofn, qual=None, comp=None):
+def saveImage(img, ofn, qual=None, comp=1):
     '''SAVEIMAGE - Save an image
     SAVEIMAGE(img, ofn) saves the image IMG to the file named OFN.
     Optional third argument specifies jpeg quality as a number between
