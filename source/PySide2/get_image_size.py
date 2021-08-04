@@ -95,7 +95,7 @@ def get_image_size(file_path):
             # BigTIFF and other different but TIFF-like formats are not
             # supported currently
             byteOrder = data[:2]
-            boChar = ">" if byteOrder == "MM" else "<"
+            boChar = '>' if byteOrder == b'MM' else "<"
             # maps TIFF type id to size (in bytes)
             # and python format char for struct
             tiffTypes = {
@@ -147,7 +147,8 @@ def get_image_size(file_path):
                     if width > -1 and height > -1:
                         break
             except Exception as e:
-                raise UnknownImageFormat(str(e))
+                msg = ' in filename: ' + str(file_path)
+                raise UnknownImageFormat(str(e)+msg)
         elif size >= 2:
             # ICO
                 # see http://en.wikipedia.org/wiki/ICO_(file_format)

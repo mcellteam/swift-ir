@@ -145,7 +145,7 @@ class project_runner:
       self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
       if cpus > 48:
-        cpus = 48
+        cpus = 48 
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       self.task_queue.start(cpus)
 
@@ -225,6 +225,8 @@ class project_runner:
           print_debug ( -1, '   ARGS:   %s' % (str(task_item['args'])) )
           print_debug ( -1, '   STDERR: %s\n' % (str(task_item['stderr'])) )
           n_failed += 1
+#        print_debug ( -1, 'Task STDOUT: \n%s\n' % (task_item['stdout']))
+#        print_debug ( -1, 'Task STDERR: \n%s\n' % (task_item['stderr']))
         #print ( '  ' + str(self.task_queue.task_dict[k]['args']) + " " + str(self.task_queue.task_dict[k]['status']) )
 #        if self.task_queue.task_dict[k]['status'] == 'task_error':
 #          print_debug ( -1, '  ' + str(self.task_queue.task_dict[k]['cmd']) + " " + str(self.task_queue.task_dict[k]['args']) )
@@ -374,7 +376,7 @@ class project_runner:
       self.task_queue = task_queue.TaskQueue()
       cpus = psutil.cpu_count(logical=False)
       if cpus > 48:
-        cpus = 48
+        cpus = 48 
       print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
       self.task_queue.start(cpus)
 
