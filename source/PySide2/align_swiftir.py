@@ -581,6 +581,15 @@ class align_ingredient:
     swim_err_lines = o['err'].strip().split('\n')
     swim_results.append ( { 'out':swim_out_lines, 'err':swim_err_lines } )
 
+    '''
+    swim_log = open('swim_log.txt','a')
+    swim_log.write('\n---------------------------------\n')
+    swim_log.write('swim_cmd: \n  %s %s %s\n\n' % (self.swim_c, str(swim_ww_arg), str(multi_swim_arg_string)))
+    swim_log.write('swim_stdout: \n%s\n\n' % (o['out']))
+    swim_log.write('swim_stderr: \n%s\n\n' % (o['err']))
+    '''
+      
+
     mir_script = ""
     snr_list = []
     dx = dy = 0.0
@@ -611,6 +620,14 @@ class align_ingredient:
     mir_err_lines = o['err'].strip().split('\n')
     print_debug ( 60, str(mir_out_lines) )
     print_debug ( 60, str(mir_err_lines) )
+
+    '''
+    swim_log.write('\n\nmir_cmd: \n  %s %s\n\n' % (self.mir_c, str(mir_script)))
+    swim_log.write('mir_stdout: \n%s\n\n' % (o['out']))
+    swim_log.write('mir_stderr: \n%s\n\n' % (o['err']))
+    swim_log.write('\n---------------------------------\n\n')
+    swim_log.close()
+    '''
 
     # Separate the results into a list of token lists
 
