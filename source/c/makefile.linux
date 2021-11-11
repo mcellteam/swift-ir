@@ -32,7 +32,7 @@ sha1sum.txt: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)mir $(BINDIR)r
 	sha1sum $(BINDIR)remod >> sha1sum.txt
 
 clean:
-	rm -f $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)mir $(BINDIR)remod $(BINDIR)sxox
+	rm -f $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod $(BINDIR)sxoxf
 	rm -f *.jar
 	rm -f *.class
 	rm -f *.o

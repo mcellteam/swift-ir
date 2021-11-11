@@ -170,6 +170,7 @@ class TaskQueue:
         self.restart()
         for task_id in retry_list:
           sys.stderr.write('Requeuing Failed Task_ID: %d   Retries: %d\n' % (task_id, retries_tot+1))
+          sys.stderr.write('  Task: %s\n' % (str(self.task_dict[task_id])))
           self.requeue_task(task_id)
       retries_tot += 1
 

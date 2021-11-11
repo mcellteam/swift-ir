@@ -103,6 +103,28 @@ def upgrade_data_model(data_model):
                 m['annotations'] = [ a for a in m['annotations'] if not a.startswith('skipped') ]
       # Now the data model is at 0.31, so give it the appropriate version
       data_model ['version'] = 0.31
+    if data_model ['version'] == 0.31:
+      print ( "\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.32) )
+      # Need to modify the data model from 0.31 up to 0.32
+      #   1) change name of method_results key "affine_matrix" to "afm"
+      #   2) change name of method_results key "cumulative_afm" to "c_afm"
+      #   3) add new method_results key, "aim" and compute/store this value
+      #   4) add new method_results key, "c_aim" and compute/store this value
+      #   5) add new method_results key, "reconstruct_x_coeff" and compute/store this value
+      #   6) add new method_results key, "reconstruct_y_coeff" and compute/store this value
+      #   7) add new scale key, "bounding_rect_x" and compute/store this value
+      #   8) add new scale key, "bounding_rect_y" and compute/store this value
+      # Note, aim and c_aim are the inverse of afm and c_afm
+      # Note, c_afm and c_aim are the now the cumulative matrices not including
+      #       the bounding rect.
+      # Note, reconstruct_x_coeff and _y_coeff are the coefficients of the 
+      #       dim 3 polynomial basis transforms used by RECONSTRUCT.
+      #       These coefficients do not include the bounding rect terms.
+      #  
+
+      # FIXME: leave this commented out until we have finished 1-8 above
+      # Now the data model is at 0.32, so give it the appropriate version
+      # data_model ['version'] = 0.32
 
     # Make the final test
     if data_model ['version'] != new_project_template['version']:

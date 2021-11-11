@@ -94,7 +94,7 @@ fprintf(stderr, "main %d %s\n", argc, argv[0]);
 		if(argv[0][1] == 'a')
 			adapt = 1; // adaptive min max like iavg -a
 		else {
-			if(span == 0)
+			if(span == 20)
 				span = atoi(argv[0]+1); // half # to avg
 			else
 				skip = atoi(argv[0]+1); // # to skip min middle
