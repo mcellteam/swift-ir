@@ -1,3 +1,4 @@
+// fix missing triangle bug
 // MIR: Multiple Image Rendering
 // playing with mir
 
@@ -79,6 +80,8 @@ int oxmin = 1000000, oxmax, oymin = 1000000, oymax;
 #define	NTRI	20000
 int tri[NTRI][3];
 int ntris;
+int dotris;
+int doquads;
 /* float v0[] = { 18028, 17936, 18127, 19040 }; */
 unsigned char lut[512];
 int Zval;
@@ -305,6 +308,60 @@ void hrect(int minx, int miny, int maxx, int maxy) {
   }
   //fprintf(stderr, "hrect done\n");
 }
+// Art's old Pitt IS2780 graphics class 2D elementary matrix arith with Stu
+float mdet(float *a) {
+	float d =
+	a[1]*a[5] - a[2]*a[4] - a[3]*a[1] + a[3]*a[2] + a[0]*a[4] - a[0]*a[5];
+	return(d);
+}
+
+void minv(float *v, float *a) {
+	float d = mdet(a), rd = 1/d;
+	v[0] = (a[4]*a[8]-a[5]*a[7]);
+	v[1] = -(a[1]*a[8]-a[2]*a[7]);
+	v[2] = (a[1]*a[5]-a[2]*a[4]);
+	v[3] = -(a[3]*a[8]-a[5]*a[6]);
+	v[4] = (a[0]*a[8]-a[2]*a[6]);
+	v[5] = -(a[0]*a[5]-a[2]*a[3]);
+	v[6] = (a[3]*a[7]-a[4]*a[6]);
+	v[7] = -(a[0]*a[7]-a[1]*a[6]);
+	v[8] = (a[0]*a[4]-a[1]*a[3]);
+}
+
+void mznorm(float *o, float *i) {
+	float s = 1./i[8];
+	int j;
+	for(j = 0; j < 9; j++)
+		o[j] = i[j] * s;
+}
+
+void mmul(float *r, float *a, float *b) {
+	int i, j, k;
+	for(i = 0; i < 3; i++) {
+		for(j = 0; j < 3; j++) {
+			r[3*i+j] = 0;
+			for(k = 0; k < 3; k++)
+				r[3*i+j] += a[3*i+k] * b[j+3*k];
+		}
+	}
+}
+
+void mprint(char s, float *fp, int n) {
+	int i;
+	printf("%c:", s);
+	for(i = 0; i < 9; i++)
+		//printf(" %g", fp[i]);
+		printf(" %7.4f", fp[i]);
+	printf("\n");
+}
+//
+
+#define	STRLENS 1024
+char prefix[STRLENS];
+char fname[STRLENS];
+char fullname[STRLENS];
+char outname[STRLENS];
+char line[STRLENS];
 
 void dtri(float *v0, float *v1, float *v2) {
   float *tp, x0, y0, x1, y1;
@@ -312,6 +369,7 @@ void dtri(float *v0, float *v1, float *v2) {
   float afargs[3][4];
   double f0, f1, dx0, dx1, dx2, dy0, dy1, dy2;
   int i;
+  float A[9], B[9], I[9], M[9], R[9];
   /*
   fprintf(stderr, "dtri %d: %g %g  %g %g  %g %g\n", trival,
   v0[0], v0[1], v1[0], v1[1], v2[0], v2[1]);
@@ -324,7 +382,42 @@ void dtri(float *v0, float *v1, float *v2) {
     afargs[1][i] = v1[i];
     afargs[2][i] = v2[i];
   }
-  affine(3, &afargs[0][0], ethresh, leastpts);
+  A[0] = v0[0];
+  A[1] = v1[0];
+  A[2] = v2[0];
+  A[3] = v0[1];
+  A[4] = v1[1];
+  A[5] = v2[1];
+  A[6] = 1;
+  A[7] = 1;
+  A[8] = 1;
+  mprint('A', A, 9);
+  B[0] = v0[2];
+  B[1] = v1[2];
+  B[2] = v2[2];
+  B[3] = v0[3];
+  B[4] = v1[3];
+  B[5] = v2[3];
+  B[6] = 1;
+  B[7] = 1;
+  B[8] = 1;
+  mprint('B', B, 9);
+  minv(I, A);
+  mprint('I', I, 9);
+  mmul(M, B, I);
+  mprint('M', M, 9);
+  mznorm(R, M);
+  mprint('R', R, 9);
+  mf[0][0] = R[0];
+  mf[0][1] = R[1];
+  mf[0][2] = R[2];
+  mf[1][0] = R[3];
+  mf[1][1] = R[4];
+  mf[1][2] = R[5];
+  affine_inverse(&mi[0][0], &mf[0][0]);
+  printf("%s AF  %g %g %g  %g %g %g\n", fname, mi[0][0], mi[0][1], mi[0][2], mi[1][0], mi[1][1], mi[1][2]);
+  printf("%s AI  %g %g %g  %g %g %g\n", fname, mf[0][0], mf[0][1], mf[0][2], mf[1][0], mf[1][1], mf[1][2]);
+  //affine(3, &afargs[0][0], ethresh, leastpts); // previous AWW
   if (v1[1] < v0[1]) {
     tp = v0;
     v0 = v1;
@@ -551,12 +644,7 @@ double eval_expr(char *s) {
   // fprintf(stderr, "fallout p <%s>\n", p);
 }
 
-#define	STRLENS 1024
-char prefix[STRLENS];
-char fname[STRLENS];
-char fullname[STRLENS];
-char outname[STRLENS];
-char line[STRLENS];
+
 int ndraw, nwrite;
 
 int prompt = 0;
@@ -1201,13 +1289,17 @@ void main(int argc, char *argv[]) {
       }
       ungetc(i, stdin);
       if (!isdigit(i) && i != '-' && i != '+') {
-        //fprintf(stderr, "+++++++break nondig %c %d\n", i, i);
-        // Does T for triangulation hit here???
+		fprintf(stderr, "+++++++break nondig %c %d\n", i, i);
+	if(i == 'T')
+		dotris++;
+	else if(i == 'Q')
+		doquads++;
+	else fprintf(stderr, "unknown mode char <%c>\n", i);
         break;
       }
       i = scanf("%s %s %s %s\n", str0, str1, str2, str3);
-      //    fprintf(stderr, "i %d <%s> <%s> <%s> <%s>\n",
-      //      i, str0, str1, str2, str3);
+      fprintf(stderr, "i %d <%s> <%s> <%s> <%s>\n",
+      i, str0, str1, str2, str3);
       if (exchange) {
         vp[2] = eval_expr(str0);
         vp[3] = eval_expr(str1);
@@ -1219,7 +1311,7 @@ void main(int argc, char *argv[]) {
         vp[2] = eval_expr(str2);
         vp[3] = eval_expr(str3);
       }
-      //fprintf(stderr, "vp %f %f %f %f\n", vp[0], vp[1], vp[2], vp[3]);
+      fprintf(stderr, "vp %f %f %f %f\n", vp[0], vp[1], vp[2], vp[3]);
       /*
 		      if(exchange)
 			      i = scanf("%f %f %f %f\n", vp+2, vp+3, vp, vp+1);
@@ -1362,7 +1454,7 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
     reject[i] = 0;
   nreject = 0;
  repeat:
-  fprintf(stderr, "repeat\n");  // XXX Jan 2016
+  fprintf(stderr, "repeat inpts %d \n", inpts);  // XXX Jan 2016
   minus = 0;
   for (i = 0; i < neqn; i++)
     for (j = 0; j < rowlen; j++)
@@ -1407,6 +1499,7 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
   }
 
   /*
+*/
   fprintf(stderr, "aug %d %d\n", neqn, rowlen);
 	  for(j = 0; j < rowlen; j++)
 		  fprintf(stderr, " %g", aug[0][j]);
@@ -1417,6 +1510,7 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
 	  for(j = 0; j < rowlen; j++)
 		  fprintf(stderr, " %g", aug[2][j]);
 	  fprintf(stderr, "\n");
+/*
   */
 
   // put augmented matrix into diagonal form
@@ -1424,9 +1518,14 @@ void affine(int inpts, float *v, float ethresh, int leastpts) {
     temp = j;
 
     // find MAX coefficient of Xj in last (neqn-j) equations
-    for (i = j + 1; i < neqn; i++)
-      if (aug[i][j] > aug[temp][j])
+//    for (i = j + 1; i < neqn; i++) {
+    for (i = j; i < neqn; i++) {
+fprintf(stderr, "cmp i j t  %d %d %d  %g %g\n", i, j, temp, aug[i][j], aug[temp][j]);
+      if (aug[i][j] > aug[temp][j]) {
         temp = i;
+fprintf(stderr, "ne %d  j %d  temp %d  aug %g\n", neqn, j, i, aug[temp][j]);
+	}
+}
 
     if (fabs(aug[temp][j]) < MINVAL) {
       fprintf(stderr, "\n Coefficients too small !!!\n");
