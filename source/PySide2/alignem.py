@@ -1961,8 +1961,6 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.main_panel)
 
-        #jy
-        #self.setStyleSheet('QPushButton {background-color: #2774AE; color: black;}')
 
         # Menu Bar
         self.action_groups = {}
