@@ -1395,70 +1395,6 @@ def update_skip_annotations():
       alignem.print_debug ( 80, "Added skip to " + str(item) )
 
 
-#jy
-def export_zarr():
-    destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
-    print("destination_path= ",destination_path)
-
-    cwd = os.getcwd()
-    print("\ncwd=",cwd)
-
-    #print("\nproject_data...\n",alignem.project_data)
-    scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1') # scale_1_path= scale_1
-    aligned_path = os.path.join(scale_1_path, 'img_aligned') #aligned_path= scale_1/img_aligned
-
-    aligned_path_full = os.path.join(cwd, aligned_path)
-    print("aligned_path_full= ", aligned_path_full)
-
-    clevel = str(clevel_val.get_value())
-    cname = str(cname_type.get_value())
-    n_scales = str(n_scales_val.get_value())
-    print("cname:",cname)
-    print("type(cname):", type(cname))
-    # cname: none
-    # type(cname): <class 'str'>
-
-    if cname == "none":
-        print("cname is none.")
-        os.system("./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + n_scales + " -nC 1 -d " + destination_path)
-    else:
-        #os.system("./make_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
-        os.system("./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + n_scales + " -cN " + cname + " -cL " + clevel + " -d " + destination_path)
-
-#jy
-def neuroglancer_view():
-    destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
-
-    zarr_project_path = os.path.join(destination_path, "project.zarr")
-    # zarray_path =  os.path.join(destination_path, "project.zarr", "img_aligned_zarr", "s0", ".zarray")
-
-    # with open(zarray_path) as f:
-    #     zarray_keys = json.load(f)
-
-    # chunks = zarray_keys["chunks"]
-    # cname = zarray_keys["compressor"]["cname"]
-    # clevel = zarray_keys["compressor"]["clevel"]
-
-    demo_bool.get_value()
-    if not demo_bool.get_value():
-        os.system("./glanceem_ng.py " + zarr_project_path + " --view single")
-
-    if demo_bool.get_value():
-        example_path = '/Users/joelyancey/glanceem_feb/glanceem_demo_1/project.zarr'
-        os.system("./glanceem_ng.py " + example_path + " --view row")
-
-
-#jy
-
-demo_bool = BoolField("Multiview Demo", False)
-export_zarr_cb = CallbackButton("Export to Zarr", export_zarr)
-neuroglancer_view_cb = CallbackButton("Neuroglancer View", neuroglancer_view)
-#cname_type  = ComboBoxControl(['zstd  ', 'zlib  ', 'blosclz  ', 'lz4hc  ','gzip  '])
-cname_type  = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ',  'none' ])
-# note - check for string comparison of 'none' later, do not add whitespace fill
-clevel_val   = IntField("clevel (1-9):",2)
-n_scales_val = IntField("scales:",4)
-
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 #gen_scales_cb = CallbackButton('Gen Scales Ser', generate_scales)
 gen_scalesq_cb = CallbackButton('Gen Scales', generate_scales_queue)
@@ -1530,35 +1466,7 @@ control_model = [
       # " ", progress_cb,
       # " ", debug_cb
       " "
-    ],
-      [
-          " "
-          "                                          "
-          "                                          "
-          "                                          "
-          "                                          "
-          "                                          "
-#          "                  "
-          " ", n_scales_val, clevel_val, cname_type, export_zarr_cb,
-          " ", neuroglancer_view_cb, demo_bool,
-          " "
-      ]
-      #,
-      # [
-      #     " "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                  "
-      #     " ",
-      #     " "
-      #
-      # ]
+    ]
   ] # End first pane
 ]
 
@@ -1618,29 +1526,16 @@ if __name__ == "__main__":
       my_path + "multi_scale_job.py",
       my_path + "project_runner.py",
       my_path + "single_alignment_job.py",
-      my_path + "single_crop_job.py",
-
-      # jy
-      my_path + "make_zarr.py",
-      my_path + "glanceem_ng.py",
-      my_path + "glanceem_utils.py"
+      my_path + "single_crop_job.py"
     ]
     global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
-    control_model[0].append ( [ "                                              "
-                                "                                              "
-                                "                                              "
-                                "                                              "
-                                "                                              "
-                                "Source Tag: " + str(global_source_rev) + "   /   "
-                                "Source Hash: " + str(global_source_hash) ] )
-    print("type(control_model)=", type(control_model))
-    print("control_model=\n", control_model)
+    control_model[0].append ( [ "Source Tag: " + str(global_source_rev), " ", "Source Hash: " + str(global_source_hash) ] )
 
     print ("\n\nRunning with source hash: " + str (global_source_hash) +
            ", tagged as revision: " + str (global_source_rev) +
            ", parallel mode = " + str(global_parallel_mode) + "\n\n")
 
-    main_win = alignem.MainWindow ( control_model=control_model, title="glanceEM_SWiFT" )
+    main_win = alignem.MainWindow ( control_model=control_model, title="AlignEM using SWiFT-IR  (alignem_swift.py)" )
     main_win.register_view_change_callback ( view_change_callback )
     main_win.register_mouse_move_callback ( mouse_move_callback )
     main_win.register_mouse_down_callback ( mouse_down_callback )
