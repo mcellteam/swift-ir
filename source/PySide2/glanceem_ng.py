@@ -18,8 +18,18 @@ from glob import glob
 from numcodecs import Blosc, Delta, LZMA, Zstd
 import json
 import multiprocessing
-from io import BytesIO
 
+class RequestHandler(SimpleHTTPRequestHandler):
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        SimpleHTTPRequestHandler.end_headers(self)
+
+
+class Server(HTTPServer):
+    protocol_version = 'HTTP/1.1'
+
+    def __init__(self, server_address):
+        HTTPServer.__init__(self, server_address, RequestHandler)
 
 
 # ^ necessary because pillow is stupid
