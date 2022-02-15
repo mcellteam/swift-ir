@@ -3,6 +3,7 @@
 AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
+from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr
 
 import sys, traceback
 import os
@@ -15,15 +16,17 @@ import scipy
 import scipy.ndimage
 import psutil
 import argparse
+import pyswift_tui
 
 import concurrent.futures
 import threading
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy
-from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox
-from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand
-from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor
-from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QStackedWidget, QStackedLayout
+from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, QSpacerItem
+from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame
+from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon
+from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream
+from PySide2.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
 
 import align_swiftir
 import task_queue_mp as task_queue
@@ -44,8 +47,8 @@ import task_queue_mp as task_queue
 # Import project and alignment support from SWiFT-IR:
 
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
-
 project_data = None
+
 
 def print_all_skips():
     scale_keys = project_data['data']['scales'].keys()
@@ -67,8 +70,6 @@ debug_level = 0  # A larger value prints more stuff
 if sys.version_info >= (3, 0):
     if debug_level > 10: print ( "Python 3: Supports arbitrary arguments via print")
     #def print_debug ( level, *ds ):
-    #  # print_debug ( 1, "This is really important!!" )
-    #  # print_debug ( 99, "This isn't very important." )
     #  global debug_level
     #  if level <= debug_level:
     #    print ( *ds )
@@ -77,8 +78,6 @@ else:
 
 # For now, always use the limited argument version
 def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
-    # print_debug ( 1, "This is really important!!" )
-    # print_debug ( 99, "This isn't very important." )
     global debug_level
     if level <= debug_level:
       if p1 == None:
@@ -198,13 +197,13 @@ def get_scale_key ( scale_val ):
 
 def old_load_image_worker ( real_norm_path, image_dict ):
     # Load the image
-    print_debug ( 25, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
+    print_debug ( 50, "  load_image_worker started with: \"" + str(real_norm_path) + "\"" )
     m = psutil.virtual_memory()
-    print_debug ( 30, "    memory available before loading = " + str(m.available) )
+    print_debug ( 50, "    memory available before loading = " + str(m.available) )
     image_dict['image'] = QPixmap(real_norm_path)
     image_dict['loaded'] = True
-    print_debug ( 25, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
-    print_debug ( 30, "    memory available after loading = " + str(m.available) )
+    print_debug ( 50, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
+    print_debug ( 50, "    memory available after loading = " + str(m.available) )
 
 
 class OldImageLibrary:
@@ -226,7 +225,8 @@ class OldImageLibrary:
             s += "    loading: " + str(v['loading']) + "\n"
             s += "    task:    " + str(v['task']) + "\n"
             s += "    image:   " + str(v['image']) + "\n"
-        print ( s )
+
+        print_debug(4, s)
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
         return ( "ImageLibrary contains ...")
 
@@ -337,14 +337,13 @@ class OldImageLibrary:
 
 
 
-
+# Load the image
 def load_image_worker ( real_norm_path, image_dict ):
-    # Load the image
-    print ( "load_image_worker started with: \"" + str(real_norm_path) + "\"" )
+    print_debug(50, "load_image_worker started with:", str(real_norm_path))
     image_dict['image'] = QPixmap(real_norm_path)
     image_dict['loaded'] = True
     image_dict['loading'] = False
-    print ( "load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
+    print_debug(50, "load_image_worker finished for:" + str(real_norm_path))
     image_library.print_load_status()
 
 
@@ -360,10 +359,10 @@ class ImageLibrary:
         return os.path.abspath(os.path.normpath(file_path))
 
     def print_load_status ( self ):
-        print_debug ( 4, " Library has " + str(len(self._images.keys())) + " images" )
-        print_debug ( 30, "  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])) )
-        print_debug ( 6, "  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])) )
-        print_debug ( 6, "  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])) )
+        print_debug ( 50, " Library has " + str(len(self._images.keys())) + " images" )
+        print_debug ( 50, "  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])) )
+        print_debug ( 50, "  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])) )
+        print_debug ( 50, "  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])) )
 
     def __str__ (self):
         s = "ImageLibrary contains %d images\n" % len(self._images)
@@ -380,7 +379,7 @@ class ImageLibrary:
         return ( s )
 
     def get_image_reference ( self, file_path ):
-        print_debug ( 4, "get_image_reference ( " + str(file_path) + " )" )
+        print_debug ( 50, "get_image_reference ( " + str(file_path) + " )" )
         self.print_load_status()
         image_ref = None
         real_norm_path = self.pathkey(file_path)
@@ -388,10 +387,10 @@ class ImageLibrary:
             # This is an actual path
             if real_norm_path in self._images:
                 # This file is already in the library ... it may be complete or still loading
-                print_debug ( 4, "  Image name is in the library" )
+                print_debug ( 50, "  Image name is in the library" )
                 if self._images[real_norm_path]['loaded']:
                     # The image is already loaded, so return it
-                    print_debug ( 4, "  Image was already loaded" )
+                    print_debug ( 50, "  Image was already loaded" )
                     image_ref = self._images[real_norm_path]['image']
                 elif self._images[real_norm_path]['loading']:
                     # The image is still loading, so wait for it to complete
@@ -445,12 +444,12 @@ class ImageLibrary:
 
     def queue_image_read ( self, file_path ):
         real_norm_path = self.pathkey(file_path)
-        print_debug ( 4, "  start queue_image_read with: \"" + str(real_norm_path) + "\"" )
+        print_debug ( 30, "  start queue_image_read with: \"" + str(real_norm_path) + "\"" )
         self._images[real_norm_path] = { 'image': None, 'loaded': False, 'loading': True, 'task':None }
         t = threading.Thread ( target = load_image_worker, args = (real_norm_path,self._images[real_norm_path]) )
         t.start()
         self._images[real_norm_path]['task'] = t
-        print_debug ( 4, "  finished queue_image_read with: \"" + str(real_norm_path) + "\"" )
+        print_debug ( 30, "  finished queue_image_read with: \"" + str(real_norm_path) + "\"" )
 
     def make_available ( self, requested ):
         """
@@ -465,7 +464,7 @@ class ImageLibrary:
         earlier request. This may cause images to be loaded multiple times.
         """
 
-        print_debug ( 4, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
+        print_debug ( 50, "make_available: " + str(sorted([str(s[-7:]) for s in requested])) )
         already_loaded = set(self._images.keys())
         normalized_requested = set ( [self.pathkey(f) for f in requested] )
         need_to_load = normalized_requested - already_loaded
@@ -671,11 +670,8 @@ class ZoomPanWidget(QWidget):
         self.draw_annotations = True
         self.draw_full_paths = False
 
-        self.setStyleSheet("background-color:black;")
         self.setAutoFillBackground(True)
         self.setContentsMargins(0,0,0,0)
-
-        self.setStyleSheet("background-color:black;")
 
         self.setPalette(QPalette(QColor(250, 250, 200)))
         self.setAutoFillBackground(True)
@@ -844,8 +840,10 @@ class ZoomPanWidget(QWidget):
         self.antialiased = antialiased
         self.update_zpa_self()
 
+    #minimum #windowsize #qsize
     def minimumSizeHint(self):
-        return QSize(50, 50)
+        #return QSize(50, 50)
+        return QSize(250, 250)
 
     def sizeHint(self):
         return QSize(180, 180)
@@ -1211,7 +1209,7 @@ class ZoomPanWidget(QWidget):
         global crop_mode_role
         global crop_mode_disp_rect
 
-        print ( "Top of paintEvent")
+        print_debug(50, "Bob: Top of paintEvent")
 
         if not self.already_painting:
             self.already_painting = True
@@ -1360,7 +1358,7 @@ class ZoomPanWidget(QWidget):
 
             self.already_painting = False
 
-        print ( "Bottom of paintEvent")
+        print_debug(50, "Bob: Bottom of paintEvent")
 
 
 
@@ -1370,7 +1368,7 @@ class MultiImagePanel(QWidget):
         super(MultiImagePanel, self).__init__()
 
         # None of these attempts to auto-fill worked, so a paintEvent handler was added
-        #self.setStyleSheet("background-color:black;")
+        self.setStyleSheet("background-color:black;")
         #p = self.palette()
         #p.setColor(self.backgroundRole(), Qt.black)
         #self.setPalette(p)
@@ -1386,7 +1384,8 @@ class MultiImagePanel(QWidget):
         self.draw_border = False
         self.draw_annotations = True
         self.draw_full_paths = False
-        self.bg_color = QColor(40,50,50,255)
+        self.bg_color = QColor(40,50,50,255) #tag
+
         self.border_color = QColor(0,0,0,255)
         # QWidgets don't get the keyboard focus by default
         # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
@@ -1674,7 +1673,7 @@ class ControlPanelWidget(QWidget):
               self.control_panel_layout.addWidget ( row_box )
 
     def dump ( self ):
-        pprint_debug ( 1, "Control Panel:" )
+        print_debug ( 1, "Control Panel:" )
         for p in self.cm:
           print_debug ( 1, "  Panel:" )
           for r in p:
@@ -1893,29 +1892,600 @@ def console():
     __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-import pyswift_tui
+
+#utils
+from PySide2.QtCore import QRunnable, Signal, Slot, QThreadPool, QThread
+from glanceem_utils import open_ds, add_layer
+from http.server import SimpleHTTPRequestHandler, HTTPServer
+import webbrowser
+import neuroglancer
+import operator
+import logging, json
+import numpy as np
+import zarr
+import daisy
+import skimage.measure
+import tifffile, imagecodecs
+import dask.array as da
+
+import multiprocessing
+import os, time
+import neuroglancer as ng
+from glob import glob
+from PIL import Image
 
 
-# MainWindow contains the Menu Bar and the Status Bar
-class MainWindow(QMainWindow):
+def unchunk(s):
+    print("'u' key press detected. Executing unchunk function...")
+    # this is parallel
+    path = src
+    scale = 0
+    n_unchunk = int(s.mouse_voxel_coordinates[2])
+    #img_scale = da.from_zarr(path + '/img_aligned_zarr/s' + str(scale))
+    img_scale = da.from_zarr(path + '/' + ds_aligned + '/s0')
+    curr_img = img_scale[n_unchunk, :, :]
+    skimage.io.imsave('image_' + str(n_unchunk) + '_scale' + str(scale) + '.tif', curr_img)
+
+    print("Callback complete.")
+
+# def unchunk_all_scale(s, scale):
+#     # this can be parallel
+
+def blend(s):
+    print("'b' key press detected. Executing blend function...")
+    blend_scale = 0
+    n_blend = int(s.mouse_voxel_coordinates[2])
+    blend_name = 'blended_' + str(n_blend) + '-' + str(n_blend + 1) + '.tif'
+
+    print("Creating blended TIF of images " + str(n_blend) + " and " + str(n_blend+1) + " using PIL.Image...")
+
+    #img_scale = da.from_zarr(src + '/img_aligned_zarr/s0')
+    img_scale = da.from_zarr(src + '/' + ds_aligned + '/s' + str(blend_scale))
+    curr_img = img_scale[n_blend, :, :]
+    next_img = img_scale[n_blend+1, :, :]
+    out1 = 'temp_image_' + str(n_blend) + '.tif'
+    out2 = 'temp_image_' + str(n_blend+1) + '.tif'
+    skimage.io.imsave(out1, curr_img)
+    skimage.io.imsave(out2, next_img)
+
+    img1 = Image.open(out1)
+    img2 = Image.open(out2)
+
+    result = Image.blend(img1, img2, 0.5)
+    print('Removing temporary TIF files...')
+    os.remove(out1)
+    os.remove(out2)
+
+    print('Saving image blend as temporary TIF ' + blend_name + '...')
+    result.save(blend_name)
+
+    copy_json = json.loads(open(os.path.join(src, ds_aligned, 's0', '.zattrs')).read())
+
+    print('Reading .zarray for ...')
+
+    print('Adding blend to Zarr group ' + ds_blended + '...')
+    """ NOTE **kawgs is passed to zarr.creation.create """
+    """ https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create """
+    #tiffs2zarr(blend_name, os.path.join(src, ds_blended), tuple(chunks), compressor=Blosc(cname=cname, clevel=clevel), overwrite=True)
+    tiffs2zarr(blend_name, os.path.join(src, ds_blended), tuple(chunks), compressor=Blosc(cname='zstd', clevel=1), overwrite=True) #jy
+    print('Removing temporary TIF: ' + blend_name + '...')
+    os.remove(blend_name)
+    print('Copying json for appropriate scale...')
+    ds = zarr.open(os.path.join(src,ds_blended), mode='a')
+    copy_json = json.loads(open(os.path.join(src, ds_aligned, 's' + str(blend_scale), '.zattrs')).read())
+    ds.attrs['offset'] = copy_json['offset']
+    #ds.attrs['resolution'] = copy_json['resolution']
+    #ds.attrs['resolution'] = [50,.00000001,.00000001]
+
+    copy_json = json.loads(open(os.path.join(src, ds_aligned, 's0', '.zattrs')).read())
+    ds.attrs['units'] = copy_json['units']
+    ds.attrs['_ARRAY_DIMENSIONS'] = copy_json['_ARRAY_DIMENSIONS']
+    # ds.attrs['_ARRAY_DIMENSIONS'] = copy_json['_ARRAY_DIMENSIONS']
+
+    #compressor = {'id': cname, 'level': clevel}
+    #create_scale_pyramid(src, ds_blended, scales, chunks, compressor)
+
+
+    # z = zarr.open(os.path.join(src, ds_blended))
+    # print("Creating blend ng.LocalVolume...")
+    # try:
+    #     blend_vol = ng.LocalVolume(
+    #         data=z,
+    #         dimensions=dimensions)
+    # except:
+    #     print("  ERROR creating blend ng.LocalVolume")
+
+    s.layers['focus'].visible = True
+    print("Updating viewer.txn()...")
+    with viewer.txn() as s:
+        try:
+            s.layers['focus'] = ng.ManagedLayer(source="zarr://http://localhost:9000/img_blended_zarr", voxel_size=[i * .00000001 for i in resolution])
+        except:
+            print("  ERROR updating viewer.txn() with blend_vol ImageLayer")
+
+    print("Callback complete.")
+
+    # im = Image.open(f_result)
+    # im.show()
+
+    # POSSIBLE WORKFLOW FOR VIEWING SINGLE BLEND IN NEUROGLANCER VIEWER
+    # 1. Create blended image
+    # 2. If project.zarr/img_blended_zarr group does not exist, create it
+    # 3. Converted blended image to Zarr using tiffs2zarr utility function (from glanceem_utils.py).
+    # 4. Blended image array is appended to project.zarr/img_blended_zarr
+    # 5. Neuroglancer viewer top panel is updated to display Zarr group img_blended_zarr
+
+
+# example keypress callback
+def get_mouse_coords(s):
+    print('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
+    print('  Layer selected values: %s' % (s.selected_values,))
+
+
+#server #runnable
+class RunnableServerThread(QRunnable):
+#    def __init__(self, fn, *args, **kwargs):
+    def __init__(self):
+        super(RunnableServerThread, self).__init__()
+        print("RunnableServerThread(QRunnable):")
+
+        """
+        # Store constructor arguments (re-used for processing)
+        self.fn = fn
+        self.args = args
+        self.kwargs = kwargs
+        """
+
+        """
+        self.signals = WorkerSignals()
+        # Add the callback to our kwargs
+        self.kwargs['progress_callback'] = self.signals.progress
+        """
+    @Slot()
+    def run(self):
+        destination_path = os.path.abspath(project_data['data']['destination_path'])
+        print("destination_path: ", destination_path)
+        zarr_project_path = os.path.join(destination_path, "project.zarr")
+        print("zarr_project_dir: ", zarr_project_path)
+        os.chdir(zarr_project_path)
+        src = zarr_project_path
+
+        bind = '127.0.0.1'
+        port = 9000
+
+        print("Preparing browser view of " + src + "...")
+        print("bind                       :", bind)
+        print("port                       :", port)
+        # os.chdir(src)
+        server = Server((bind, port))
+        server.allow_reuse_address = True
+
+        if 'server' in locals():
+            print('\nserver was found in local namespace. Shutting it down...')
+            print('\nClosing server...')
+            server.server_close()
+            print('\nShutting down server...')
+            server.shutdown()
+
+
+        sa = server.socket.getsockname()
+        host = str("http://%s:%d" % (sa[0], sa[1]))
+        print("Serving                         :", host)
+        viewer_source = str("zarr://" + host)
+        print("Viewer source                   :", viewer_source)
+        print("Protocol version                :", server.protocol_version)
+        print("Server name                     :", server.server_name)
+        print("Server type                     :", server.socket_type)
+        # print("allow reuse address= ", server.allow_reuse_address)
+
+
+        MAX_RETRIES = 10
+        attempt = 0
+        for _ in range(MAX_RETRIES):
+            attempt = attempt + 1
+            print("Trying to serve forever... attempt(" + attempt + ")...")
+            try:
+                server.serve_forever()
+            except:
+                print("\nServer connection temporarily lost.\nAttempting to reconnect...\n")
+                continue
+            else:
+                break
+        else:
+            print("\nMaximum reconnection attempts reached. Disconnecting...\n")
+            server.server_close()
+            sys.exit(0)
+
+
+#webpage
+class CustomWebEnginePage(QWebEnginePage):
+    """ Custom WebEnginePage to customize how we handle link navigation """
+    """ https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/ """
+    """ refer to section: Conditionally popping up a new window """
+    # Store external windows.
+    external_windows = []
+
+    def acceptNavigationRequest(self, url,  _type, isMainFrame):
+        if (_type == QWebEnginePage.NavigationTypeLinkClicked and
+            url.host() != 'www.mfitzp.com'):
+            # Pop up external links into a new window.
+            w = QWebEngineView()
+            w.setUrl(url)
+            w.show()
+
+            # Keep reference to external window, so it isn't cleared up.
+            self.external_windows.append(w)
+            return False
+        return super().acceptNavigationRequest(url,  _type, isMainFrame)
+
+# def render(source_html):
+#     """Fully render HTML, JavaScript and all."""
+#     from PySide2.QtCore import QEventLoop
+#     class Render(QWebEngineView):
+#         def __init__(self, html):
+#             self.html = None
+#             QWebEngineView.__init__(self)
+#             self.loadFinished.connect(self._loadFinished)
+#             self.setHtml(html)
+#             while self.html is None:
+#                 self.app.processEvents(QEventLoop.ExcludeUserInputEvents | QEventLoop.ExcludeSocketNotifiers | QEventLoop.WaitForMoreEvents)
+#             self.app.quit()
+#
+#         def _callable(self, data):
+#             self.html = data
+#
+#         def _loadFinished(self, result):
+#             self.page().toHtml(self._callable)
+#
+#     return Render(source_html).html
+#
+# import requests
+# sample_html = requests.get("https://github.com/google/neuroglancer").text
+# print(render(sample_html))
+
+
+
+#mainwindow contains the Menu Bar and the Status Bar
+class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, etc.)
 
     def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM", simple_mode=True):
 
         global app
         if app == None:
-                app = QApplication([])
+            app = QApplication([]) #jy note call to QApplication
 
         global project_data
         project_data = copy.deepcopy ( new_project_template )
 
         QMainWindow.__init__(self)
         self.setWindowTitle(title)
-
         self.current_project_file_name = None
-
         self.view_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
+
+        #self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+
+
+        # must be called after QMainWindow.__init__(self)
+        self.setStyleSheet(open('stylesheet.qss').read())
+
+        #titlebar resource
+        # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
+
+        def changeEvent(self, event):
+            if event.type() == event.WindowStateChange:
+                self.titleBar.windowStateChanged(self.windowState())
+
+        def resizeEvent(self, event):
+            self.titleBar.resize(self.width(), self.titleBar.height())
+
+        # # set stylesheet
+        # file = QFile(":/dark/stylesheet.qss")
+        # file.open(QFile.ReadOnly | QFile.Text)
+        # stream = QTextStream(file)
+        # app.setStyleSheet(stream.readAll())
+
+        print("\nSetting up thread pool...\n")
+        # jy set up thread pool (QThreadPool)... must be inside of __init__ but not totally sure which one
+        self.threadpool = QThreadPool()
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
+
+        # jy Call the RunnableServerThread class to start background CORS web server
+        # def start_server():
+        #     print("\nstart_server() was called...\n")
+        #     print("Creating RunnableServerThread() worker...")
+        #     worker = RunnableServerThread()
+        #     print("Setting up thread pool...")
+        #     self.threadpool.start(worker)
+
+
+        print("Calling QWebEngineView()...")
+        self.browser = QWebEngineView()
+
+
+        #homepage #browserview #webview
+        print("Running browser.load(QUrl(url)...")
+        # self.browser.load(QUrl("https://neuroglancer-demo.appspot.com/#!%7B%22dimensions%22:%7B%22x%22:%5B8e-9%2C%22m%22%5D%2C%22y%22:%5B8e-9%2C%22m%22%5D%2C%22z%22:%5B8e-9%2C%22m%22%5D%7D%2C%22position%22:%5B2914.500732421875%2C3088.243408203125%2C4045%5D%2C%22crossSectionScale%22:3.762185354999915%2C%22projectionOrientation%22:%5B0.31435418128967285%2C0.8142172694206238%2C0.4843378961086273%2C-0.06040274351835251%5D%2C%22projectionScale%22:4593.980956070108%2C%22layers%22:%5B%7B%22type%22:%22image%22%2C%22source%22:%22precomputed://gs://neuroglancer-public-data/flyem_fib-25/image%22%2C%22tab%22:%22source%22%2C%22name%22:%22image%22%7D%2C%7B%22type%22:%22segmentation%22%2C%22source%22:%22precomputed://gs://neuroglancer-public-data/flyem_fib-25/ground_truth%22%2C%22tab%22:%22source%22%2C%22segments%22:%5B%22158571%22%2C%2221894%22%2C%2222060%22%2C%2224436%22%2C%222515%22%5D%2C%22name%22:%22ground-truth%22%7D%5D%2C%22showSlices%22:false%2C%22layout%22:%224panel%22%7D"))
+        self.browser.setPage(CustomWebEnginePage(self))
+        #self.browser.load(QUrl("https://github.com/google/neuroglancer"))
+        #self.browser.load(QUrl("https://neuroglancer-demo.appspot.com/#!{'layers':{'original-image':{'type':'image'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/image'_'visible':false}_'corrected-image':{'type':'image'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/image_color_corrected'}_'ground_truth':{'type':'segmentation'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/ground_truth'_'selectedAlpha':0.63_'notSelectedAlpha':0.14_'segments':['3208'_'4901'_'13'_'4965'_'4651'_'2282'_'3189'_'3758'_'15'_'4027'_'3228'_'444'_'3207'_'3224'_'3710']}}_'navigation':{'pose':{'position':{'voxelSize':[6_6_30]_'voxelCoordinates':[5523.99072265625_8538.9384765625_1198.0423583984375]}}_'zoomFactor':22.573112129999547}_'perspectiveOrientation':[-0.004047565162181854_-0.9566211104393005_-0.2268827110528946_-0.1827099621295929]_'perspectiveZoom':340.35867907175077}"))
+        #self.browser.setUrl(QUrl()) # empty/blank URL (white screen)
+        self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+        #self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
+
+        # Force the style to be the same on all OSs:
+        app.setStyle("Fusion")
+
+
+        def documentation_view(): #documentationview
+            self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
+            self.stacked_widget.setCurrentIndex(1)
+
+        def cloud_view():
+            self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+            self.stacked_widget.setCurrentIndex(1)
+
+        def go_back():
+            print("GO Back button press detected.")
+            self.stacked_widget.setCurrentIndex(0)
+
+        def reload_ng():
+            print("\nReloading the viewer state and restarting local server...")
+            ng_view()
+
+
+        def ng_view(): # ng_view #ngview #neuroglancer
+            self.stacked_widget.setCurrentIndex(1)
+            destination_path = os.path.abspath(project_data['data']['destination_path'])
+            print("\ndestination_path: ", destination_path)
+            zarr_project_path = os.path.join(destination_path, "project.zarr")
+
+            if not os.path.isdir(zarr_project_path):
+                print("No Zarr project file not found.")
+                self.status.showMessage("No Zarr project found.")
+                return
+
+            self.browser.setUrl(QUrl())
+            worker = RunnableServerThread()
+            print("Setting up thread pool...")
+            self.threadpool.start(worker)
+
+            time.sleep(1)
+
+
+            print("\nzarr_project_dir: ", zarr_project_path)
+
+            os.chdir(zarr_project_path) #tag
+
+            Image.MAX_IMAGE_PIXELS = None
+
+            if not self.multiview_bool.isChecked():
+                view = 'single'
+            elif self.multiview_bool.isChecked():
+                view = 'row'
+
+            bind = '127.0.0.1'
+            port = 9000
+
+            res_x = 2
+            res_y = 2
+            res_z = 50
+
+            src = zarr_project_path
+
+            print("Setting multiprocessing.set_start_method('fork', force=True)...")
+            multiprocessing.set_start_method("fork", force=True)
+
+            # LOAD METADATA - .zarray
+            print("Loading metadata from .zarray")
+            zarray_path = os.path.join(src, "img_aligned_zarr", "s0", ".zarray")
+            print("zarray_path : ", zarray_path)
+            with open(zarray_path) as f:
+                zarray_keys = json.load(f)
+            chunks = zarray_keys["chunks"]
+
+            # cname = zarray_keys["compressor"]["cname"] #jy
+            # clevel = zarray_keys["compressor"]["clevel"] #jy
+
+            shape = zarray_keys["shape"]
+
+            # LOAD META DATA - .zattrs
+            print("Loading metadata from .zattrs")
+            zattrs_path = os.path.join(src, "img_aligned_zarr", "s0", ".zattrs")
+            with open(zattrs_path) as f:
+                zattrs_keys = json.load(f)
+            print("zattrs_path : ", zattrs_path)
+            resolution = zattrs_keys["resolution"]
+            scales = zattrs_keys["scales"]
+
+            print("scales : ", scales)
+
+            ds_ref = "img_ref_zarr"
+            ds_base = "img_base_zarr"
+            ds_aligned = "img_aligned_zarr"
+            ds_blended = "img_blended_zarr"
+
+            print("Creating neuroglancer.Viewer()...")
+            viewer = ng.Viewer()
+
+            print("img_unaligned_zarr exists in source.")
+            print("Looking for REF scale directories...")
+            data_ref = []
+            ref_scale_paths = glob(os.path.join(src, ds_ref) + "/s*")
+            for s in ref_scale_paths:
+                scale = os.path.join(ds_ref, os.path.basename(s))
+                print("Daisy is opening scale ", s, ". Appending ref data...")
+                data_ref.append(open_ds(src, scale))
+
+            print("img_unaligned_zarr exists in source.")
+            print("Looking for BASE scale directories...")
+            data_base = []
+            base_scale_paths = glob(os.path.join(src, ds_base) + "/s*")
+            for s in base_scale_paths:
+                scale = os.path.join(ds_base, os.path.basename(s))
+                print("Daisy is opening scale ", s, ". Appending base data...")
+                data_base.append(open_ds(src, scale))
+
+            print("img_aligned_zarr data set exists in source.")
+            print("Looking for ALIGNED scale directories...")
+            data_aligned = []
+            aligned_scale_paths = glob(os.path.join(src, ds_aligned) + "/s*")
+            for s in aligned_scale_paths:
+                scale = os.path.join(ds_aligned, os.path.basename(s))
+                print("Daisy is opening scale ", s, ". Appending aligned data...")
+                data_aligned.append(open_ds(src, scale))
+
+            print("Defining coordinate space...")
+            dimensions = ng.CoordinateSpace(
+                names=['x', 'y', 'z'],
+                units='nm',
+                # scales=scales, #jy
+                scales=[res_x, res_y, res_z],
+            )
+
+            # https://github.com/google/neuroglancer/blob/master/src/neuroglancer/viewer.ts
+            print("Updating viewer.txn()...")
+            with viewer.txn() as s:
+
+                #s.cross_section_background_color = "#ffffff"
+                s.cross_section_background_color = "#000000"
+                s.dimensions = dimensions
+                # s.perspective_zoom = 300
+                # s.position = [0.24, 0.095, 0.14]
+                # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
+
+                # temp = np.zeros_like(data_ref)
+                # layer = ng.Layer(temp)
+
+                # only for 3 pane view
+                if view == 'row':
+                    add_layer(s, data_ref, 'ref')
+                    add_layer(s, data_base, 'base')
+
+                add_layer(s, data_aligned, 'aligned')
+
+                ###data_panel_layout_types: frozenset(['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'])
+
+                # s.selectedLayer.visible = False
+                # s.layers['focus'].visible = False
+
+                # view = "single"
+
+                if view == "row":
+                    print("view= row")
+
+                    s.layers['focus'].visible = True
+
+                    # [
+                    #     ng.LayerGroupViewer(layers=["focus"], layout='xy'),
+
+                    # temp = np.zeros_like(data_ref)
+                    # #layer = ng.Layer()
+                    # #layer = ng.ManagedLayer
+                    # s.layers['focus'] = ng.LocalVolume(temp)
+
+                    # s.layers['focus'] = ng.ManagedLayer(source="zarr://http://localhost:9000/img_blended_zarr",voxel_size=[i * .00000001 for i in resolution])
+                    s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
+                    s.layout = ng.column_layout(
+                        [
+                            ng.row_layout(
+                                [
+                                    ng.LayerGroupViewer(layers=["focus"], layout='xy'),
+                                ]
+                            ),
+
+                            ng.row_layout(
+                                [
+                                    ng.LayerGroupViewer(layers=['ref'], layout='xy'),
+                                    ng.LayerGroupViewer(layers=['base'], layout='xy'),
+                                    ng.LayerGroupViewer(layers=['aligned'], layout='xy'),
+                                ]
+                            ),
+                        ]
+                    )
+
+                    # s.layout = ng.column_layout(
+                    #
+                    #     [
+                    #         ng.LayerGroupViewer(layers=["focus"], layout='xy'),
+                    #
+                    # s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
+                    #
+                    # ng.row_layout(
+                    #     [
+                    #         ng.LayerGroupViewer(layers=["ref"], layout='xy'),
+                    #         ng.LayerGroupViewer(layers=["base"], layout='xy'),
+                    #         ng.LayerGroupViewer(layers=["aligned"], layout='xy'),
+                    #     ]
+                    # )
+                    #
+                    #
+                    #
+                    #
+                    #     ]
+                    #
+                    # ]
+                    # # )
+
+                # single image view
+                if view == "single":
+                    print('view= single')
+                    s.layout = ng.column_layout(
+                        [
+                            ng.LayerGroupViewer(
+                                layout='xy',
+                                layers=["aligned"]),
+                        ]
+                    )
+
+            viewer.actions.add('get_mouse_coords_', get_mouse_coords)
+            viewer.actions.add('unchunk_', unchunk)
+            viewer.actions.add('blend_', blend)
+            with viewer.config_state.txn() as s:
+                s.input_event_bindings.viewer['keyt'] = 'get_mouse_coords_'
+                s.input_event_bindings.viewer['keyu'] = 'unchunk_'
+                s.input_event_bindings.viewer['keyb'] = 'blend_'
+                #s.status_messages['message'] = 'Welcome to glanceEM_SWiFT!'
+
+                s.show_ui_controls = True
+                s.show_panel_borders = True
+                s.viewer_size = None
+
+
+            print("Done making viewer.")
+            viewer_url = str(viewer)
+            self.browser.setUrl(QUrl(viewer_url))
+
+            print("zarr_project_path: ", zarr_project_path)
+
+            print("viewer state:")
+            print(viewer.state)
+            # print("\nNeuroglancer view (remote viewer)    :\n", ng.to_url(viewer.state))
+            print("\nNeuroglancer view (local viewer)     :\n", viewer, "\n")
+
+            self.stacked_widget.setCurrentIndex(1)
+            #self.main_panel.setLayout(self.ng_panel_layout)
+            # self.setCentralWidget(self.ng_panel)
+            # self.main_panel_layout.addWidget(self.control_panel)
+            # self.main_panel_layout.addWidget(self.browser)
+
+            #self.image_panel.hide()
+            #self.browser.visible = True
+
+
+
+        #self.browser.setUrl(QUrl("https://www.mfitzp.com"))
+        #self.setCentralWidget(self.browser)
+
+        # ref: https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/
+
+        # sys.exit(app.exec_())
+
+
+        ####
+
+
 
         if panel_roles != None:
             project_data['data']['panel_roles'] = panel_roles
@@ -1939,6 +2509,9 @@ class MainWindow(QMainWindow):
             ] # End first pane
           ]
 
+        #buttons
+
+
         self.control_panel = ControlPanelWidget(self.control_model)
 
         self.simple_mode = simple_mode
@@ -1946,23 +2519,164 @@ class MainWindow(QMainWindow):
         self.main_panel = QWidget()
 
         self.main_panel_layout = QVBoxLayout()
+
         self.main_panel.setLayout ( self.main_panel_layout )
-        self.main_panel.setAutoFillBackground(False)
+        # self.main_panel.setAutoFillBackground(False)
 
         self.image_panel = MultiImagePanel()
         self.image_panel.draw_border = self.draw_border
         self.image_panel.draw_annotations = self.draw_annotations
         self.image_panel.draw_full_paths = self.draw_full_paths
-        self.image_panel.setStyleSheet("background-color:black;")
         self.image_panel.setAutoFillBackground(True)
 
-        self.main_panel_layout.addWidget ( self.image_panel )
+        self.main_panel_layout.addWidget ( self.image_panel ) #jy instantiate image panel
         self.main_panel_layout.addWidget ( self.control_panel )
 
-        self.setCentralWidget(self.main_panel)
+        self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none'])
+        # note - check for string comparison of 'none' later, do not add whitespace fill
+        self.clevel_val = IntField("clevel (1-9):", 5)
+        self.n_scales_val = IntField("scales:", 4)
 
-        #jy
-        #self.setStyleSheet('QPushButton {background-color: #2774AE; color: black;}')
+        # shoehorn extra UI elements
+        # self.server_button = QPushButton("Launch Server...")
+        # self.server_button.clicked.connect(start_server)
+        # self.main_panel_layout.addWidget(self.server_button)
+
+
+        self.main_panel_layout.addWidget(self.browser) #tag
+
+        # Bottom configuration panel
+
+        self.documentation_button = QPushButton("Documentation")
+        self.documentation_button.clicked.connect(documentation_view)
+
+        n_scales_label = QLabel("# scales:")
+        n_scales_label.setAlignment(Qt.AlignRight)
+        self.n_scales_input = QLineEdit(self)
+        self.n_scales_input.setText("4")
+        self.n_scales_input.setFixedWidth(35)
+        self.n_scales_valid = QIntValidator(1, 20, self)
+        self.n_scales_input.setValidator(self.n_scales_valid)
+
+        clevel_label = QLabel("clevel (1-9):")
+        clevel_label.setAlignment(Qt.AlignRight)
+        self.clevel_input = QLineEdit(self)
+        self.clevel_input.setText("5")
+        self.clevel_input.setFixedWidth(35)
+        self.clevel_valid = QIntValidator(1, 9, self)
+        self.clevel_input.setValidator(self.clevel_valid)
+
+        cname_label = QLabel("compression:")
+        self.cname_combobox = QComboBox(self)
+        self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
+
+
+        self.cloud_button = QPushButton("Remote View")
+        self.cloud_button.clicked.connect(cloud_view)
+
+        self.ng_button = QPushButton("Neuroglancer View")
+        #self.ng_button.resize(350,350) #not working?
+        self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
+
+        self.multiview_bool = QCheckBox("Multiview Demo")
+        self.multiview_bool.setChecked(False)
+
+        def export_zarr():
+            destination_path = os.path.abspath(project_data['data']['destination_path'])
+            print("destination_path= ", destination_path)
+            cwd = os.getcwd()
+            print("\ncwd=", cwd)
+            # print("\nproject_data...\n",alignem.project_data)
+            scale_1_path = os.path.join(project_data['data']['destination_path'], 'scale_1')  # scale_1_path= scale_1
+            aligned_path = os.path.join(scale_1_path, 'img_aligned')  # aligned_path= scale_1/img_aligned
+            aligned_path_full = os.path.join(cwd, aligned_path)
+            print("aligned_path_full= ", aligned_path_full)
+
+            self.clevel = self.clevel_input.text()
+            self.cname = self.cname_combobox.currentText()
+            self.n_scales = self.n_scales_input.text()
+
+            if self.cname == "none":
+                print("cname is none.")
+                os.system(
+                    "./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + str(
+                        self.n_scales) + " -nC 1 -d " + destination_path)
+            else:
+                # os.system("./make_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
+                os.system(
+                    "./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + str(self.n_scales) + " -cN " + str(
+                        self.cname) + " -cL " + str(self.clevel) + " -d " + destination_path)
+
+
+        self.export_zarr_button = QPushButton("Export to Zarr")
+        self.export_zarr_button.clicked.connect(export_zarr)
+
+        self.h_layout = QHBoxLayout()
+        self.h_layout.addWidget(self.documentation_button)
+        self.h_layout.addWidget(n_scales_label)
+        self.h_layout.addWidget(self.n_scales_input)
+        self.h_layout.addWidget(clevel_label)
+        self.h_layout.addWidget(self.clevel_input)
+        self.h_layout.addWidget(cname_label)
+        self.h_layout.addWidget(self.cname_combobox)
+        self.h_layout.addWidget(self.export_zarr_button)
+        self.h_layout.addWidget(self.cloud_button)
+        self.h_layout.addWidget(self.ng_button)
+        self.h_layout.addWidget(self.multiview_bool)
+        self.h_layout.setContentsMargins(400, 0, 0, 0)
+
+        self.main_panel_layout.addLayout(self.h_layout)
+        # self.setCentralWidget(self.main_panel) #!!!!!!!!
+
+        self.go_back_button = QPushButton("Back")
+        self.go_back_button.clicked.connect(go_back)
+
+        self.reload_ng_button = QPushButton("Reload")
+        self.reload_ng_button.clicked.connect(reload_ng)
+
+        #ngpanel NEUROGLANCER CONTROLS PANEL
+        self.ng_panel = QWidget()
+        self.ng_panel_layout = QVBoxLayout()
+        self.ng_panel_layout.addWidget(self.browser)
+
+        #self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) # not working
+
+        self.ng_panel_controls_layout = QHBoxLayout()
+        #margins
+        # layout.setContentsMargins(left, top, right, bottom)
+        #self.ng_panel_controls_layout.setContentsMargins(500, 0, 0, 0)
+        #self.ng_panel_controls_layout.addWidget(self.spacerItem)
+        self.ng_panel_controls_layout.addWidget(self.go_back_button)
+        self.ng_panel_controls_layout.addWidget(self.reload_ng_button)
+
+        #self.ng_panel_layout.addWidget(self.go_back_button)
+        self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)
+
+        self.ng_panel.setLayout(self.ng_panel_layout)
+
+
+        #stack GUI elements
+        #stackedlayout STACKED WIDGET
+        self.stacked_widget = QStackedWidget(self)
+        self.stacked_widget.addWidget(self.main_panel)
+        self.stacked_widget.addWidget(self.ng_panel)
+
+        #This can be invisible, will still use to organize QStackedWidget
+        pageComboBox = QComboBox()
+        pageComboBox.addItem("Page 1")
+        pageComboBox.addItem("Page 2")
+        pageComboBox.activated[int].connect(self.stacked_widget.setCurrentIndex)
+
+        self.stacked_layout = QVBoxLayout()
+        self.stacked_layout.addWidget(self.stacked_widget)
+
+
+        verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        #self.stacked_widget.setCurrentIndex(1)
+
+        #setcentralwidget
+        self.setCentralWidget(self.stacked_widget)
 
         # Menu Bar
         self.action_groups = {}
@@ -2159,7 +2873,9 @@ class MainWindow(QMainWindow):
                   [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
                 ]
               ]
+              
         '''
+
 
         self.build_menu_from_list ( self.menu, ml )
 
@@ -2174,12 +2890,18 @@ class MainWindow(QMainWindow):
         # Window dimensions
         # geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
+        # self.setMinimumWidth(600) # original #jy
+        # self.setMinimumHeight(400) # original #jy
+        # self.resize(2000,1000) # original #jy
         self.setMinimumWidth(600)
         self.setMinimumHeight(400)
         self.resize(2000,1000)
 
         # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+
 
 
     def update_win_self ( self ):
@@ -2422,7 +3144,7 @@ class MainWindow(QMainWindow):
                                 if 'current_layer' in project_data['data']:
                                     layer_num = project_data['data']['current_layer']
                                     scale_key = project_data['data']['current_scale']
-                                    print_debug(3, "\nOpen Project forcing values into fields with view_change_callback()\n")
+                                    print_debug(3, "Open Project forcing values into fields with view_change_callback()")
                                     self.view_change_callback ( scale_key, scale_key, layer_num, layer_num, True )
 
                     if self.draw_full_paths:
@@ -2477,12 +3199,12 @@ class MainWindow(QMainWindow):
             # Force the choosing of a name
             self.save_project_as()
         else:
-            print_debug ( 1, "\n\n\nSaving Project\n\n\n" )
+            print_debug ( 1, "Saving Project..." )
             self.save_project_to_current_file()
 
     @Slot()
     def save_project_as(self):
-        print_debug ( 1, "\n\nSaving Project\n\n" )
+        print_debug ( 1, "Saving Project..." )
 
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -2513,7 +3235,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def save_cropped_as(self):
-        print_debug ( 1, "\n\nSaving Cropped Images\n\n" )
+        print("Saving Cropped Images...")
 
         crop_parallel = True
 
@@ -2586,6 +3308,7 @@ class MainWindow(QMainWindow):
 
                     if crop_parallel:
                         cropping_queue.collect_results() # It might be good to have an explicit "join" function, but this seems to do so internally.
+
 
 
     @Slot()
@@ -3312,6 +4035,7 @@ control_model = None
 #if len(sys.argv) <= 1:
 #    sys.argv = [ __file__, "-f", "vj_097_1k1k_1.jpg" ]
 
+#main
 if __name__ == "__main__":
 
     options = argparse.ArgumentParser()
