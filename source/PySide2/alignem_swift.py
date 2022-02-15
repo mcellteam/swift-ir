@@ -1,37 +1,61 @@
-import sys, traceback
-import os
-import argparse
-import cv2
-import copy
-import time
+import sys, traceback, os, time, shutil, psutil, copy, argparse
+import cv2, json
+from source_tracker import get_hash_and_rev
 
-import json
-
-import shutil
+from PySide2.QtWebEngineWidgets import QWebEngineView
 
 import alignem
 from alignem import IntField, BoolField, FloatField, CallbackButton, ComboBoxControl, MainWindow
 
 from PySide2.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar
-from PySide2.QtCore import QThread, Signal, QObject
+from PySide2.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
 
 import pyswift_tui
 import align_swiftir
 
 import platform
-import psutil
 #import task_queue as task_queue
 #import task_queue2 as task_queue
 import task_queue_mp as task_queue
 import task_wrapper # Only needed to set the debug level for that module
 import project_runner
 
-import time
+
+# QtWebEngine imports
+#from PyQt5.Qt import *
+#from PySide2.QWebEngine import *
+from PySide2.QtWebEngineWidgets import QWebEngineView
+
+from glanceem_utils import RequestHandler, Server, get_viewer_url
+
+#from PyQt5.QtCore import (QCoreApplication, QRunnable, QThread, QThreadPool, QProcess, pyqtSignal)
+
+
+# from PyQt5.QtCore import QProcess
+# process = QProcess()
+
+# app = QApplication([])
+# window = MainWindow()
+# app.exec_()
+# ^ The event loop is started by calling .exec_() on your QApplication object
+
+# https://gist.github.com/acdha/925e9ffc3d74ad59c3ea
+
+# options for threading:
+# https://stackoverflow.com/questions/6783194/background-thread-with-qthread-in-pyqt
+
+# Using a QRunnable
+# http://qt-project.org/doc/latest/qthreadpool.html
+# Note that a QRunnable isn't a subclass of QObject and therefore does
+# not provide signals and slots.
 
 
 main_win = None
 
 ## project_data = None  # Use from alignem
+
+#QWebSocketCorsAuthenticator¶
+#https://doc.qt.io/qtforpython/PySide6/QtWebSockets/QWebSocketCorsAuthenticator.html?highlight=cors
 
 
 global_source_rev = ""
@@ -68,7 +92,7 @@ def link_stack_orig():
           fn = prev_layer['images']['base']['filename']
         main_win.add_image_to_role ( fn, 'ref' )
 
-    alignem.print_debug ( 10, "Loading images: " + str(ref_image_stack) )
+    alignem.print_debug(50, "Loading images: " + str(ref_image_stack))
     #main_win.load_images_in_role ( 'ref', ref_image_stack )
 
     main_win.update_panels()
@@ -1394,70 +1418,125 @@ def update_skip_annotations():
     for item in add_list:
       alignem.print_debug ( 80, "Added skip to " + str(item) )
 
+#
+# #jy
+# def export_zarr():
+#     destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
+#     print("destination_path= ",destination_path)
+#
+#     cwd = os.getcwd()
+#     print("\ncwd=",cwd)
+#
+#     #print("\nproject_data...\n",alignem.project_data)
+#     scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1') # scale_1_path= scale_1
+#     aligned_path = os.path.join(scale_1_path, 'img_aligned') #aligned_path= scale_1/img_aligned
+#
+#     aligned_path_full = os.path.join(cwd, aligned_path)
+#     print("aligned_path_full= ", aligned_path_full)
+#
+#     clevel = str(clevel_val.get_value())
+#     cname = str(cname_type.get_value())
+#     n_scales = str(n_scales_val.get_value())
+#     print("cname:",cname)
+#     print("type(cname):", type(cname))
+#     # cname: none
+#     # type(cname): <class 'str'>
+#
+#     if cname == "none":
+#         print("cname is none.")
+#         os.system("./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + n_scales + " -nC 1 -d " + destination_path)
+#     else:
+#         #os.system("./make_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
+#         os.system("./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + n_scales + " -cN " + cname + " -cL " + clevel + " -d " + destination_path)
+#
+# #jy
+# def neuroglancer_view():
+#     destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
+#     zarr_project_path = os.path.join(destination_path, "project.zarr")
+#     os.chdir(zarr_project_path)
+#
+#     # zarray_path =  os.path.join(destination_path, "project.zarr", "img_aligned_zarr", "s0", ".zarray")
+#
+#     # with open(zarray_path) as f:
+#     #     zarray_keys = json.load(f)
+#
+#     # chunks = zarray_keys["chunks"]
+#     # cname = zarray_keys["compressor"]["cname"]
+#     # clevel = zarray_keys["compressor"]["clevel"]
+#
+#     """
+#     if not demo_bool.get_value():
+#         os.system("./glanceem_ng.py " + zarr_project_path + " --view single")
+#
+#     if demo_bool.get_value():
+#         example_path = '/Users/joelyancey/glanceem_feb/glanceem_demo_1/project.zarr'
+#         os.system("./glanceem_ng.py " + example_path + " --view row")
+#     """
+#
+#     # from PyQt5.QtCore import QProcess
+#     # process = QProcess()
+#     # process.start("./glanceem_ng.py " + zarr_project_path + " --view single")
+#     # process.waitForStarted()
+#     # process.waitForFinished()
+#     # process.readAll()
+#     # process.close()
+#
+#     # def message(self, s):
+#     #     self.text.appendPlainText(s)
+#     #
+#     # def start_process(self):
+#     #     self.message("Executing process.")
+#     #     self.p = QProcess()  # Keep a reference to the QProcess (e.g. on self) while it's running.
+#     #     self.p.start("python3", ["./glanceem_ng.py ", zarr_project_path, "--view single"])
+#     #
+#     # start_process(self)
+#
+#     bind = '127.0.0.1'
+#     port = 9000
+#     view = 'single'
+#
+#     #http-server -p 3000 --cors
+#     # p = QProcess()
+#     # p.start("http-server", ["-p",3000, "--cors"])
+#
+#
+#
+#
+#     # print("neuroglancer_view(): Calling get_viewer_url(zarr_project_path)...")
+#     # viewer_url = get_viewer_url(zarr_project_path)
+#     # print("viewer_url: ", viewer_url)
+#     #
+#     # print("neuroglancer_view(): Calling web = QWebEngineView()...")
+#     # web = QWebEngineView()
+#     #
+#     # print("neuroglancer_view(): Calling os.chdir(zarr_project_path)...")
+#     # os.chdir(zarr_project_path)
+#     # print("neuroglancer_view(): zarr_project_path: ",zarr_project_path)
+#     #
+#     # print("neuroglancer_view(): Running web.load(QUrl(viewer_url)...")
+#     # web.load(QUrl(viewer_url))
+#     #
+#     # print("neuroglancer_view(): Running web.show()...")
+#     # web.show()
+#     #
+#     # sys.exit(app.exec_())
+#
+#     # p = QProcess()
+#     # #p.start("python3", ["./glanceem_ng.py " + zarr_project_path + " --view single"])
+#     # p.start("python3", ["./glanceem_ng.py ", zarr_project_path, "--view single"])
 
-#jy
-def export_zarr():
-    destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
-    print("destination_path= ",destination_path)
-
-    cwd = os.getcwd()
-    print("\ncwd=",cwd)
-
-    #print("\nproject_data...\n",alignem.project_data)
-    scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1') # scale_1_path= scale_1
-    aligned_path = os.path.join(scale_1_path, 'img_aligned') #aligned_path= scale_1/img_aligned
-
-    aligned_path_full = os.path.join(cwd, aligned_path)
-    print("aligned_path_full= ", aligned_path_full)
-
-    clevel = str(clevel_val.get_value())
-    cname = str(cname_type.get_value())
-    n_scales = str(n_scales_val.get_value())
-    print("cname:",cname)
-    print("type(cname):", type(cname))
-    # cname: none
-    # type(cname): <class 'str'>
-
-    if cname == "none":
-        print("cname is none.")
-        os.system("./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + n_scales + " -nC 1 -d " + destination_path)
-    else:
-        #os.system("./make_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
-        os.system("./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + n_scales + " -cN " + cname + " -cL " + clevel + " -d " + destination_path)
-
-#jy
-def neuroglancer_view():
-    destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
-
-    zarr_project_path = os.path.join(destination_path, "project.zarr")
-    # zarray_path =  os.path.join(destination_path, "project.zarr", "img_aligned_zarr", "s0", ".zarray")
-
-    # with open(zarray_path) as f:
-    #     zarray_keys = json.load(f)
-
-    # chunks = zarray_keys["chunks"]
-    # cname = zarray_keys["compressor"]["cname"]
-    # clevel = zarray_keys["compressor"]["clevel"]
-
-    demo_bool.get_value()
-    if not demo_bool.get_value():
-        os.system("./glanceem_ng.py " + zarr_project_path + " --view single")
-
-    if demo_bool.get_value():
-        example_path = '/Users/joelyancey/glanceem_feb/glanceem_demo_1/project.zarr'
-        os.system("./glanceem_ng.py " + example_path + " --view row")
 
 
-#jy
-
-demo_bool = BoolField("Multiview Demo", False)
-export_zarr_cb = CallbackButton("Export to Zarr", export_zarr)
-neuroglancer_view_cb = CallbackButton("Neuroglancer View", neuroglancer_view)
-#cname_type  = ComboBoxControl(['zstd  ', 'zlib  ', 'blosclz  ', 'lz4hc  ','gzip  '])
-cname_type  = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ',  'none' ])
-# note - check for string comparison of 'none' later, do not add whitespace fill
-clevel_val   = IntField("clevel (1-9):",2)
-n_scales_val = IntField("scales:",4)
+#tag
+#callbackbuttons
+# demo_bool = BoolField("Multiview Demo", False)
+# export_zarr_cb = CallbackButton("Export to Zarr", export_zarr)
+# neuroglancer_view_cb = CallbackButton("Neuroglancer View", neuroglancer_view)
+# #cname_type  = ComboBoxControl(['zstd  ', 'zlib  ', 'blosclz  ', 'lz4hc  ','gzip  '])
+# cname_type  = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ',  'none' ])
+# # note - check for string comparison of 'none' later, do not add whitespace fill
+# clevel_val   = IntField("clevel (1-9):",5)
+# n_scales_val = IntField("scales:",4)
 
 link_stack_cb = CallbackButton('Link Stack', link_stack)
 #gen_scales_cb = CallbackButton('Gen Scales Ser', generate_scales)
@@ -1531,40 +1610,12 @@ control_model = [
       # " ", debug_cb
       " "
     ],
-      [
-          " "
-          "                                          "
-          "                                          "
-          "                                          "
-          "                                          "
-          "                                          "
-          "                  "
-          " ", n_scales_val, clevel_val, cname_type, export_zarr_cb,
-          " ", neuroglancer_view_cb, #demo_bool,
-          " "
-      ]
-      #,
-      # [
-      #     " "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                                          "
-      #     "                  "
-      #     " ",
-      #     " "
-      #
-      # ]
-  ] # End first pane
+  ]
 ]
 
 
-from source_tracker import get_hash_and_rev
 
+#main
 if __name__ == "__main__":
 
     alignem.debug_level = 10
@@ -1621,24 +1672,25 @@ if __name__ == "__main__":
       my_path + "single_crop_job.py",
 
       # jy
+      my_path + "stylesheet.qss",
       my_path + "make_zarr.py",
-      my_path + "glanceem_ng.py",
+      #my_path + "glanceem_ng.py",
       my_path + "glanceem_utils.py"
     ]
-    global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
-    control_model[0].append ( [ "                                              "
-                                "                                              "
-                                "                                              "
-                                "                                              "
-                                "                                              "
-                                "Source Tag: " + str(global_source_rev) + "   /   "
-                                "Source Hash: " + str(global_source_hash) ] )
+    # global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
+    # control_model[0].append ( [ "                                              "
+    #                             "                                              "
+    #                             "                                              "
+    #                             "                                              "
+    #                             "                                              "
+    #                             "Source Tag: " + str(global_source_rev) + "   /   "
+    #                             "Source Hash: " + str(global_source_hash) ] )
     print("type(control_model)=", type(control_model))
     print("control_model=\n", control_model)
 
-    print ("\n\nRunning with source hash: " + str (global_source_hash) +
+    print ("\nRunning with source hash: " + str (global_source_hash) +
            ", tagged as revision: " + str (global_source_rev) +
-           ", parallel mode = " + str(global_parallel_mode) + "\n\n")
+           ", parallel mode = " + str(global_parallel_mode) + "\n")
 
     main_win = alignem.MainWindow ( control_model=control_model, title="glanceEM_SWiFT" )
     main_win.register_view_change_callback ( view_change_callback )

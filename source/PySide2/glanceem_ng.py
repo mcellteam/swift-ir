@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 from glanceem_utils import RequestHandler, Server, add_layer, tiffs2zarr, create_scale_pyramid
 import neuroglancer as ng
 import zarr
@@ -18,6 +19,18 @@ from numcodecs import Blosc, Delta, LZMA, Zstd
 import json
 import multiprocessing
 from io import BytesIO
+
+# QtWebEngine imports
+import sys
+from PyQt5.Qt import *
+from PyQt5.QtWebEngineWidgets import *
+from PyQt5.QtWidgets import QApplication
+from PySide2.QtCore import QUrl
+
+#web.load(QUrl("https://neuroglancer-demo.appspot.com"))
+#web.load(QUrl("https://ara.viz.neurodata.io/#!%7B%22dimensions%22:%7B%22x%22:%5B0.00001%2C%22m%22%5D%2C%22y%22:%5B0.00001%2C%22m%22%5D%2C%22z%22:%5B0.00001%2C%22m%22%5D%7D%2C%22position%22:%5B696.1801147460938%2C414.9307556152344%2C512%5D%2C%22crossSectionScale%22:1.822118800390506%2C%22projectionScale%22:2048%2C%22layers%22:%5B%7B%22type%22:%22image%22%2C%22source%22:%7B%22url%22:%22precomputed://https://open-neurodata.s3.amazonaws.com/ara_2016/sagittal_25um/nissl_25um%22%7D%2C%22shaderControls%22:%7B%22color%22:%22#ef3030%22%2C%22max%22:0.31%7D%2C%22opacity%22:1%2C%22blend%22:%22additive%22%2C%22name%22:%22nissl_25um%22%2C%22visible%22:false%7D%2C%7B%22type%22:%22image%22%2C%22source%22:%7B%22url%22:%22precomputed://https://open-neurodata.s3.amazonaws.com/ara_2016/sagittal_25um/average_25um%22%7D%2C%22shaderControls%22:%7B%22max%22:0.007%7D%2C%22opacity%22:1%2C%22blend%22:%22additive%22%2C%22name%22:%22average_25um%22%7D%2C%7B%22type%22:%22segmentation%22%2C%22source%22:%7B%22url%22:%22precomputed://https://open-neurodata.s3.amazonaws.com/ara_2016/sagittal_25um/annotation_25um_2017%22%7D%2C%22selectedAlpha%22:0.3%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22annotation_25um_2017%22%7D%5D%2C%22selectedLayer%22:%7B%22layer%22:%22nissl_25um%22%2C%22visible%22:true%7D%2C%22layout%22:%22xy%22%7D"))
+
+
 
 
 
@@ -401,11 +414,26 @@ if __name__ == '__main__':
 
 
     viewer_url = str(viewer)
-    webbrowser.open(viewer_url)
+    #webbrowser.open(viewer_url)
     print("Printing viewer state...")
     print(viewer.state)
     #print("\nNeuroglancer view (remote viewer)    :\n", ng.to_url(viewer.state))
-    print("\nNeuroglancer view (local viewer)     :\n", viewer, "\n")\
+    print("\nNeuroglancer view (local viewer)     :\n", viewer, "\n")
+
+
+
+    app = QApplication(sys.argv)
+
+    web = QWebEngineView()
+
+    #web.load(QUrl(viewer_url))
+
+    web.load(QUrl("https://www.google.com/"))
+
+
+    web.show()
+
+    #sys.exit(app.exec_())
 
     try:
         server.serve_forever()
@@ -416,3 +444,9 @@ if __name__ == '__main__':
 
     print("Running ng.stop()...")
     ng.stop()
+
+
+
+
+
+
