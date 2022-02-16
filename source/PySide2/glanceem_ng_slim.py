@@ -582,7 +582,7 @@ if __name__ == '__main__':
     args = ap.parse_args()
     src = args.path
 
-    # src = os.path.abspath(args.path) # probably overkill
+    src = os.path.abspath(args.path) # probably overkill
     # src = "project.zarr" # probably underkill
     view = args.view
 
@@ -592,6 +592,7 @@ if __name__ == '__main__':
 
     # LOAD METADATA - .zarray
     print("Loading metadata from .zarray")
+    print("src : ", src)
     zarray_path = os.path.join(src, "img_aligned_zarr", "s0", ".zarray")
     print("zarray_path : ", zarray_path)
     with open(zarray_path) as f:
@@ -626,7 +627,6 @@ if __name__ == '__main__':
 
 
     if 'server' in locals():
-        server.allow_reuse_address = True
         server.shutdown()
         server.server_close()
         server = Server((args.bind, args.port))
@@ -649,11 +649,13 @@ if __name__ == '__main__':
     print("Creating neuroglancer.Viewer()...")
     viewer = ng.Viewer()
 
-    print("img_aligned_zarr data set exists in source.")
-    print("Looking for ALIGNED scale directories...")
     data_aligned = []
     aligned_scale_paths = glob(os.path.join(src,ds_aligned) + "/s*")
+    print("\n\n\n\n")
+    print(glob(os.path.join(src,ds_aligned) + "/s*"))
+    print("aligned_scale_paths : ", aligned_scale_paths)
     for s in aligned_scale_paths:
+        print("\n\ns is now: ", s)
         scale = os.path.join(ds_aligned, os.path.basename(s))
         print("Daisy is opening scale ", s, ". Appending aligned data...")
         data_aligned.append(open_ds(src, scale))
@@ -716,4 +718,3 @@ if __name__ == '__main__':
         print("An exception occurred related to server.serve_forever()")
         server.server_close()
         sys.exit(0)
-
