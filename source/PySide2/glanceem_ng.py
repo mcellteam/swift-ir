@@ -19,6 +19,8 @@ from numcodecs import Blosc, Delta, LZMA, Zstd
 import json
 import multiprocessing
 
+#sudo lsof -i:9000
+
 class RequestHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')
