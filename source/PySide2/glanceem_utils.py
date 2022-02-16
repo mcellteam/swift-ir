@@ -20,9 +20,6 @@ from PIL import Image
 logger = logging.getLogger(__name__)
 
 
-
-
-
 class RequestHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
         self.send_header('Access-Control-Allow-Origin', '*')

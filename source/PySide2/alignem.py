@@ -23,10 +23,11 @@ import threading
 
 from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QStackedWidget, QStackedLayout
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, QSpacerItem
-from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame
+from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, QStyleFactory
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon
 from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream
 from PySide2.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+
 
 import align_swiftir
 import task_queue_mp as task_queue
@@ -285,7 +286,7 @@ class OldImageLibrary:
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)
             if real_norm_path in self._images:
-                print_debug ( 25, "Unloading image: \"" + real_norm_path + "\"" )
+                print_debug ( 50, "Unloading image: \"" + real_norm_path + "\"" )
                 image_ref = self._images.pop(real_norm_path)['image']
         # This returned value may not be valid when multi-threading is implemented
         return image_ref
@@ -2027,7 +2028,7 @@ class RunnableServerThread(QRunnable):
 #    def __init__(self, fn, *args, **kwargs):
     def __init__(self):
         super(RunnableServerThread, self).__init__()
-        print("RunnableServerThread(QRunnable):")
+        print("\nRunnableServerThread(QRunnable):\n")
 
         """
         # Store constructor arguments (re-used for processing)
@@ -2043,47 +2044,36 @@ class RunnableServerThread(QRunnable):
         """
     @Slot()
     def run(self):
+        #time.sleep(1)
         destination_path = os.path.abspath(project_data['data']['destination_path'])
         print("destination_path: ", destination_path)
         zarr_project_path = os.path.join(destination_path, "project.zarr")
-        print("zarr_project_dir: ", zarr_project_path)
         os.chdir(zarr_project_path)
-        src = zarr_project_path
 
         bind = '127.0.0.1'
         port = 9000
 
-        print("Preparing browser view of " + src + "...")
+        print("Preparing browser view of " + zarr_project_path + "...")
         print("bind                       :", bind)
         print("port                       :", port)
-        # os.chdir(src)
+
         server = Server((bind, port))
-        server.allow_reuse_address = True
-
-        if 'server' in locals():
-            print('\nserver was found in local namespace. Shutting it down...')
-            print('\nClosing server...')
-            server.server_close()
-            print('\nShutting down server...')
-            server.shutdown()
-
-
+        # server.allow_reuse_address = True
         sa = server.socket.getsockname()
         host = str("http://%s:%d" % (sa[0], sa[1]))
-        print("Serving                         :", host)
         viewer_source = str("zarr://" + host)
-        print("Viewer source                   :", viewer_source)
+        print("\nServing directory %s at http://%s:%d" % (os.getcwd(), sa[0], sa[1]))
+        print("\nViewer source                   :", viewer_source)
         print("Protocol version                :", server.protocol_version)
         print("Server name                     :", server.server_name)
         print("Server type                     :", server.socket_type)
         # print("allow reuse address= ", server.allow_reuse_address)
 
-
         MAX_RETRIES = 10
         attempt = 0
         for _ in range(MAX_RETRIES):
             attempt = attempt + 1
-            print("Trying to serve forever... attempt(" + attempt + ")...")
+            print("Trying to serve forever... attempt(" + str(attempt) + ")...")
             try:
                 server.serve_forever()
             except:
@@ -2098,16 +2088,34 @@ class RunnableServerThread(QRunnable):
 
 
 #webpage
+# class CustomWebEnginePage(QWebEnginePage):
+#     """ Custom WebEnginePage to customize how we handle link navigation """
+#     """ https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/ """
+#     """ refer to section: Conditionally popping up a new window """
+#     # Store external windows.
+#     external_windows = []
+#
+#     def acceptNavigationRequest(self, url,  _type, isMainFrame):
+#         if (_type == QWebEnginePage.NavigationTypeLinkClicked and
+#             url.host() != 'www.mfitzp.com'):
+#             # Pop up external links into a new window.
+#             w = QWebEngineView()
+#             w.setUrl(url)
+#             w.show()
+#
+#             # Keep reference to external window, so it isn't cleared up.
+#             self.external_windows.append(w)
+#             return False
+#         return super().acceptNavigationRequest(url,  _type, isMainFrame)
+#
+#
 class CustomWebEnginePage(QWebEnginePage):
     """ Custom WebEnginePage to customize how we handle link navigation """
-    """ https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/ """
-    """ refer to section: Conditionally popping up a new window """
     # Store external windows.
     external_windows = []
 
     def acceptNavigationRequest(self, url,  _type, isMainFrame):
-        if (_type == QWebEnginePage.NavigationTypeLinkClicked and
-            url.host() != 'www.mfitzp.com'):
+        if (_type == QWebEnginePage.NavigationTypeLinkClicked and url.host() != 'github.com'):
             # Pop up external links into a new window.
             w = QWebEngineView()
             w.setUrl(url)
@@ -2150,6 +2158,12 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM", simple_mode=True):
 
+        print("Setting up thread pool...")
+        self.threadpool = QThreadPool()
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
+
+        self.init_dir = os.getcwd()
+
         global app
         if app == None:
             app = QApplication([]) #jy note call to QApplication
@@ -2168,7 +2182,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
         # must be called after QMainWindow.__init__(self)
-        self.setStyleSheet(open('stylesheet.qss').read())
+        #self.setStyleSheet(open('stylesheet.qss').read())
+        #self.setStyleSheet(open('qdarkstylesheet.qss').read())
+        #self.setStyleSheet(open('stylesheet-ElegantDark.qss').read())
+        self.setStyleSheet(open('temp.qss').read())
 
         #titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
@@ -2186,11 +2203,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # stream = QTextStream(file)
         # app.setStyleSheet(stream.readAll())
 
-        print("\nSetting up thread pool...\n")
-        # jy set up thread pool (QThreadPool)... must be inside of __init__ but not totally sure which one
-        self.threadpool = QThreadPool()
-        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
-
         # jy Call the RunnableServerThread class to start background CORS web server
         # def start_server():
         #     print("\nstart_server() was called...\n")
@@ -2200,69 +2212,104 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #     self.threadpool.start(worker)
 
 
-        print("Calling QWebEngineView()...")
         self.browser = QWebEngineView()
+        self.browser_docs = QWebEngineView()
+        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
 
+        self.browser_remote = QWebEngineView()
+        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+
+        #self.browser.setPage(CustomWebEnginePage(self)) # This is necessary. Clicked links will never open new window.
+        #self.browser.setPage(CustomWebEnginePage(self))
 
         #homepage #browserview #webview
-        print("Running browser.load(QUrl(url)...")
         # self.browser.load(QUrl("https://neuroglancer-demo.appspot.com/#!%7B%22dimensions%22:%7B%22x%22:%5B8e-9%2C%22m%22%5D%2C%22y%22:%5B8e-9%2C%22m%22%5D%2C%22z%22:%5B8e-9%2C%22m%22%5D%7D%2C%22position%22:%5B2914.500732421875%2C3088.243408203125%2C4045%5D%2C%22crossSectionScale%22:3.762185354999915%2C%22projectionOrientation%22:%5B0.31435418128967285%2C0.8142172694206238%2C0.4843378961086273%2C-0.06040274351835251%5D%2C%22projectionScale%22:4593.980956070108%2C%22layers%22:%5B%7B%22type%22:%22image%22%2C%22source%22:%22precomputed://gs://neuroglancer-public-data/flyem_fib-25/image%22%2C%22tab%22:%22source%22%2C%22name%22:%22image%22%7D%2C%7B%22type%22:%22segmentation%22%2C%22source%22:%22precomputed://gs://neuroglancer-public-data/flyem_fib-25/ground_truth%22%2C%22tab%22:%22source%22%2C%22segments%22:%5B%22158571%22%2C%2221894%22%2C%2222060%22%2C%2224436%22%2C%222515%22%5D%2C%22name%22:%22ground-truth%22%7D%5D%2C%22showSlices%22:false%2C%22layout%22:%224panel%22%7D"))
-        self.browser.setPage(CustomWebEnginePage(self))
         #self.browser.load(QUrl("https://github.com/google/neuroglancer"))
         #self.browser.load(QUrl("https://neuroglancer-demo.appspot.com/#!{'layers':{'original-image':{'type':'image'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/image'_'visible':false}_'corrected-image':{'type':'image'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/image_color_corrected'}_'ground_truth':{'type':'segmentation'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/ground_truth'_'selectedAlpha':0.63_'notSelectedAlpha':0.14_'segments':['3208'_'4901'_'13'_'4965'_'4651'_'2282'_'3189'_'3758'_'15'_'4027'_'3228'_'444'_'3207'_'3224'_'3710']}}_'navigation':{'pose':{'position':{'voxelSize':[6_6_30]_'voxelCoordinates':[5523.99072265625_8538.9384765625_1198.0423583984375]}}_'zoomFactor':22.573112129999547}_'perspectiveOrientation':[-0.004047565162181854_-0.9566211104393005_-0.2268827110528946_-0.1827099621295929]_'perspectiveZoom':340.35867907175077}"))
         #self.browser.setUrl(QUrl()) # empty/blank URL (white screen)
-        self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+        #self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         #self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
 
         # Force the style to be the same on all OSs:
         app.setStyle("Fusion")
 
+        # def demos_view(): #documentationview
+        #     print("\ndocumentation_view():\n")
+        #     self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
+        #     time.sleep(2)
+        #     self.stacked_widget.setCurrentIndex(2)
+
 
         def documentation_view(): #documentationview
-            self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
-            self.stacked_widget.setCurrentIndex(1)
+            print("\ndocumentation_view():\n")
+            self.stacked_widget.setCurrentIndex(2)
+            self.status.showMessage("GlanceEM_SWiFT Documentation")
 
-        def cloud_view():
-            self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-            self.stacked_widget.setCurrentIndex(1)
-
-        def go_back():
-            print("GO Back button press detected.")
-            self.stacked_widget.setCurrentIndex(0)
+        def remote_view():
+            print("\nremote_view():\n")
+            self.stacked_widget.setCurrentIndex(4)
+            self.status.showMessage("Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
 
         def reload_ng():
-            print("\nReloading the viewer state and restarting local server...")
+            print("\nreload_ng():\n")
             ng_view()
 
+        def exit_ng():
+            print("\nexit_ng():\n")
+            self.stacked_widget.setCurrentIndex(0)
+            self.status.showMessage("")
 
+        def exit_docs():
+            print("\nexit_docs():\n")
+            self.stacked_widget.setCurrentIndex(0)
+            self.status.showMessage("")
+
+        def exit_remote():
+            print("\nexit_remote():\n")
+            self.stacked_widget.setCurrentIndex(0)
+            self.status.showMessage("")
+
+        def exit_demos():
+            print("\nexit_demos():\n")
+            self.stacked_widget.setCurrentIndex(0)
+            self.status.showMessage("")
+
+        #ng_view #ngview
         def ng_view(): # ng_view #ngview #neuroglancer
-            self.stacked_widget.setCurrentIndex(1)
+            print("\nng_view():\n")
+
+            if not self.current_project_file_name:
+                print("There is no open project. Canceling Neuroglancer view...")
+                self.status.showMessage("There is no project open,  nothing to view.")
+                return
+
             destination_path = os.path.abspath(project_data['data']['destination_path'])
-            print("\ndestination_path: ", destination_path)
             zarr_project_path = os.path.join(destination_path, "project.zarr")
 
             if not os.path.isdir(zarr_project_path):
                 print("No Zarr project file not found.")
-                self.status.showMessage("No Zarr project found.")
+                self.status.showMessage("Project must be exported to Zarr before it can be viewed in Neuroglancer.")
                 return
 
-            self.browser.setUrl(QUrl())
-            worker = RunnableServerThread()
-            print("Setting up thread pool...")
-            self.threadpool.start(worker)
+            if 'server' in locals():
+                print("\nServer is already running. Continuing...\n")
+            else:
+                #self.browser.setUrl(QUrl()) #empty page
+                print("\nNo server found in local namespace. Starting RunnableServerThread() worker...\n")
+                worker = RunnableServerThread()
+                self.threadpool.start(worker)
 
-            time.sleep(1)
+            #time.sleep(1)
 
-
-            print("\nzarr_project_dir: ", zarr_project_path)
+            print("destination_path: ", destination_path)
+            print("zarr_project_dir: ", zarr_project_path)
 
             os.chdir(zarr_project_path) #tag
 
             Image.MAX_IMAGE_PIXELS = None
 
-            if not self.multiview_bool.isChecked():
-                view = 'single'
-            elif self.multiview_bool.isChecked():
+            view = 'single'
+            if self.multiview_bool.isChecked():
                 view = 'row'
 
             bind = '127.0.0.1'
@@ -2274,11 +2321,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
             src = zarr_project_path
 
-            print("Setting multiprocessing.set_start_method('fork', force=True)...")
-            multiprocessing.set_start_method("fork", force=True)
-
             # LOAD METADATA - .zarray
-            print("Loading metadata from .zarray")
+            print("Loading metadata from .zarray (array details) file...")
             zarray_path = os.path.join(src, "img_aligned_zarr", "s0", ".zarray")
             print("zarray_path : ", zarray_path)
             with open(zarray_path) as f:
@@ -2289,16 +2333,16 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             # clevel = zarray_keys["compressor"]["clevel"] #jy
 
             shape = zarray_keys["shape"]
+            print("shape : ", shape)
 
             # LOAD META DATA - .zattrs
-            print("Loading metadata from .zattrs")
+            print("Loading metadata from .zattrs (attributes) file...")
             zattrs_path = os.path.join(src, "img_aligned_zarr", "s0", ".zattrs")
             with open(zattrs_path) as f:
                 zattrs_keys = json.load(f)
             print("zattrs_path : ", zattrs_path)
             resolution = zattrs_keys["resolution"]
             scales = zattrs_keys["scales"]
-
             print("scales : ", scales)
 
             ds_ref = "img_ref_zarr"
@@ -2306,28 +2350,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             ds_aligned = "img_aligned_zarr"
             ds_blended = "img_blended_zarr"
 
-            print("Creating neuroglancer.Viewer()...")
-            viewer = ng.Viewer()
+            print("\nInitializing neuroglancer.Viewer()...\n")
+            #viewer = ng.Viewer()
+            self.viewer = ng.Viewer()
 
-            print("img_unaligned_zarr exists in source.")
-            print("Looking for REF scale directories...")
-            data_ref = []
-            ref_scale_paths = glob(os.path.join(src, ds_ref) + "/s*")
-            for s in ref_scale_paths:
-                scale = os.path.join(ds_ref, os.path.basename(s))
-                print("Daisy is opening scale ", s, ". Appending ref data...")
-                data_ref.append(open_ds(src, scale))
-
-            print("img_unaligned_zarr exists in source.")
-            print("Looking for BASE scale directories...")
-            data_base = []
-            base_scale_paths = glob(os.path.join(src, ds_base) + "/s*")
-            for s in base_scale_paths:
-                scale = os.path.join(ds_base, os.path.basename(s))
-                print("Daisy is opening scale ", s, ". Appending base data...")
-                data_base.append(open_ds(src, scale))
-
-            print("img_aligned_zarr data set exists in source.")
             print("Looking for ALIGNED scale directories...")
             data_aligned = []
             aligned_scale_paths = glob(os.path.join(src, ds_aligned) + "/s*")
@@ -2335,6 +2361,24 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                 scale = os.path.join(ds_aligned, os.path.basename(s))
                 print("Daisy is opening scale ", s, ". Appending aligned data...")
                 data_aligned.append(open_ds(src, scale))
+
+            if view == 'row':
+                print("Looking for REF scale directories...")
+                data_ref = []
+                ref_scale_paths = glob(os.path.join(src, ds_ref) + "/s*")
+                for s in ref_scale_paths:
+                    scale = os.path.join(ds_ref, os.path.basename(s))
+                    print("Daisy is opening scale ", s, ". Appending ref data...")
+                    data_ref.append(open_ds(src, scale))
+
+                print("Looking for BASE scale directories...")
+                data_base = []
+                base_scale_paths = glob(os.path.join(src, ds_base) + "/s*")
+                for s in base_scale_paths:
+                    scale = os.path.join(ds_base, os.path.basename(s))
+                    print("Daisy is opening scale ", s, ". Appending base data...")
+                    data_base.append(open_ds(src, scale))
+
 
             print("Defining coordinate space...")
             dimensions = ng.CoordinateSpace(
@@ -2346,7 +2390,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
             # https://github.com/google/neuroglancer/blob/master/src/neuroglancer/viewer.ts
             print("Updating viewer.txn()...")
-            with viewer.txn() as s:
+            with self.viewer.txn() as s:
 
                 #s.cross_section_background_color = "#ffffff"
                 s.cross_section_background_color = "#000000"
@@ -2439,10 +2483,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                         ]
                     )
 
-            viewer.actions.add('get_mouse_coords_', get_mouse_coords)
-            viewer.actions.add('unchunk_', unchunk)
-            viewer.actions.add('blend_', blend)
-            with viewer.config_state.txn() as s:
+            self.viewer.actions.add('get_mouse_coords_', get_mouse_coords)
+            self.viewer.actions.add('unchunk_', unchunk)
+            self.viewer.actions.add('blend_', blend)
+            with self.viewer.config_state.txn() as s:
                 s.input_event_bindings.viewer['keyt'] = 'get_mouse_coords_'
                 s.input_event_bindings.viewer['keyu'] = 'unchunk_'
                 s.input_event_bindings.viewer['keyb'] = 'blend_'
@@ -2453,39 +2497,30 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                 s.viewer_size = None
 
 
-            print("Done making viewer.")
-            viewer_url = str(viewer)
+            # To modify the state, use the viewer.txn() function, or viewer.set_state
+
+            print("viewer.get_viewer_url(): ", self.viewer.get_viewer_url())
+
+            print("\nDone making viewer.\n")
+            viewer_url = str(self.viewer)
             self.browser.setUrl(QUrl(viewer_url))
 
-            print("zarr_project_path: ", zarr_project_path)
-
             print("viewer state:")
-            print(viewer.state)
+            print(self.viewer.state)
             # print("\nNeuroglancer view (remote viewer)    :\n", ng.to_url(viewer.state))
-            print("\nNeuroglancer view (local viewer)     :\n", viewer, "\n")
+            print("\nNeuroglancer view (local viewer)     :\n", self.viewer, "\n")
+
+            # #self.browser.setUrl(QUrl()) #empty page
+            # worker = RunnableServerThread()
+            # print("Setting up thread pool...")
+            # self.threadpool.start(worker)
 
             self.stacked_widget.setCurrentIndex(1)
-            #self.main_panel.setLayout(self.ng_panel_layout)
-            # self.setCentralWidget(self.ng_panel)
-            # self.main_panel_layout.addWidget(self.control_panel)
-            # self.main_panel_layout.addWidget(self.browser)
+            self.status.showMessage("Viewing aligned images in Neuroglancer.")
 
-            #self.image_panel.hide()
-            #self.browser.visible = True
-
-
-
-        #self.browser.setUrl(QUrl("https://www.mfitzp.com"))
-        #self.setCentralWidget(self.browser)
-
-        # ref: https://www.pythonguis.com/faq/qwebengineview-open-links-new-window/
-
-        # sys.exit(app.exec_())
 
 
         ####
-
-
 
         if panel_roles != None:
             project_data['data']['panel_roles'] = panel_roles
@@ -2513,13 +2548,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
         self.control_panel = ControlPanelWidget(self.control_model)
-
         self.simple_mode = simple_mode
-
         self.main_panel = QWidget()
-
         self.main_panel_layout = QVBoxLayout()
-
         self.main_panel.setLayout ( self.main_panel_layout )
         # self.main_panel.setAutoFillBackground(False)
 
@@ -2542,8 +2573,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.server_button.clicked.connect(start_server)
         # self.main_panel_layout.addWidget(self.server_button)
 
-
-        self.main_panel_layout.addWidget(self.browser) #tag
+        #self.main_panel_layout.addWidget(self.browser) #tag
 
         # Bottom configuration panel
 
@@ -2571,112 +2601,179 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
 
 
-        self.cloud_button = QPushButton("Remote View")
-        self.cloud_button.clicked.connect(cloud_view)
+        self.remote_viewer_button = QPushButton("Remote Viewer")
+        self.remote_viewer_button.clicked.connect(remote_view)
 
         self.ng_button = QPushButton("Neuroglancer View")
         #self.ng_button.resize(350,350) #not working?
         self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
 
+
         self.multiview_bool = QCheckBox("Multiview Demo")
         self.multiview_bool.setChecked(False)
 
         def export_zarr():
+
+            if not self.current_project_file_name:
+                print("There is no project open. Canceling export....")
+                self.status.showMessage("There is no project open,  nothing to export.")
+                return
+
+
+            self.status.showMessage("Exporting project to Zarr...")
             destination_path = os.path.abspath(project_data['data']['destination_path'])
             print("destination_path= ", destination_path)
-            cwd = os.getcwd()
-            print("\ncwd=", cwd)
             # print("\nproject_data...\n",alignem.project_data)
             scale_1_path = os.path.join(project_data['data']['destination_path'], 'scale_1')  # scale_1_path= scale_1
             aligned_path = os.path.join(scale_1_path, 'img_aligned')  # aligned_path= scale_1/img_aligned
-            aligned_path_full = os.path.join(cwd, aligned_path)
-            print("aligned_path_full= ", aligned_path_full)
+            # aligned_path_full = os.path.join(cwd, aligned_path) ???
+            # print("aligned_path_full= ", aligned_path_full) ???
+            print("aligned_path= ", aligned_path)
 
             self.clevel = self.clevel_input.text()
             self.cname = self.cname_combobox.currentText()
             self.n_scales = self.n_scales_input.text()
 
+            # I don't like this workaround
+            print("\ncwd=", os.getcwd())
+            os.chdir(self.init_dir)
+            print("Resetting working dir...")
+            print("\ncwd=", os.getcwd())
+
+            # why was this using aligned_path_full... odd
             if self.cname == "none":
                 print("cname is none.")
                 os.system(
-                    "./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + str(
+                    "python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(
                         self.n_scales) + " -nC 1 -d " + destination_path)
             else:
                 # os.system("./make_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
                 os.system(
-                    "./make_zarr.py " + aligned_path_full + " -c '64,64,64' -nS " + str(self.n_scales) + " -cN " + str(
+                    "python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(self.n_scales) + " -cN " + str(
                         self.cname) + " -cL " + str(self.clevel) + " -d " + destination_path)
+
+            self.status.showMessage("Export complete.")
 
 
         self.export_zarr_button = QPushButton("Export to Zarr")
         self.export_zarr_button.clicked.connect(export_zarr)
 
+        ############main window lower controls panel
+
         self.h_layout = QHBoxLayout()
-        self.h_layout.addWidget(self.documentation_button)
-        self.h_layout.addWidget(n_scales_label)
-        self.h_layout.addWidget(self.n_scales_input)
-        self.h_layout.addWidget(clevel_label)
-        self.h_layout.addWidget(self.clevel_input)
-        self.h_layout.addWidget(cname_label)
-        self.h_layout.addWidget(self.cname_combobox)
-        self.h_layout.addWidget(self.export_zarr_button)
-        self.h_layout.addWidget(self.cloud_button)
-        self.h_layout.addWidget(self.ng_button)
-        self.h_layout.addWidget(self.multiview_bool)
-        self.h_layout.setContentsMargins(400, 0, 0, 0)
+        self.quit_app_button = QPushButton("Exit")
+        self.quit_app_button.clicked.connect(self.close)
+        self.h_layout.addWidget(self.quit_app_button, alignment=Qt.AlignLeft)
+        self.h_layout.addWidget(self.documentation_button, alignment=Qt.AlignLeft)
+        self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.h_layout.addItem(self.spacerItem)
+        self.h_layout.addWidget(n_scales_label, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(self.n_scales_input, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(clevel_label, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(self.clevel_input, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(cname_label, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(self.cname_combobox, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(self.export_zarr_button, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(self.ng_button, alignment=Qt.AlignRight)
+        self.h_layout.addWidget(self.multiview_bool, alignment=Qt.AlignRight)
+        #self.h_layout.setContentsMargins(400, 0, 0, 0)
 
         self.main_panel_layout.addLayout(self.h_layout)
         # self.setCentralWidget(self.main_panel) #!!!!!!!!
 
-        self.go_back_button = QPushButton("Back")
-        self.go_back_button.clicked.connect(go_back)
 
+
+        ##########docs_panel DOCUMENTATION PANEL
+        self.exit_docs_button = QPushButton("Back")
+        self.exit_docs_button.resize(200,50)
+        self.exit_docs_button.clicked.connect(exit_docs)
+        self.docs_panel = QWidget()                                            # create QWidget()
+        self.docs_panel_layout = QVBoxLayout()                                 # create QVBoxLayout()
+        self.docs_panel_layout.addWidget(self.browser_docs)                    # add widgets
+        self.docs_panel_controls_layout = QHBoxLayout()
+        #self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignLeft | Qt.AlignBottom)   # go back button
+        self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignLeft)   # go back button
+        # layout.setContentsMargins(left, top, right, bottom)
+        #self.docs_panel_controls_layout.setContentsMargins(0, 0, 1300, 0)
+        self.docs_panel_layout.addLayout(self.docs_panel_controls_layout)      # add horizontal layout
+        self.docs_panel.setLayout(self.docs_panel_layout)                      # set layout
+
+
+        ##########remote_viewer_panel REMOTE VIEWER PANEL
+        self.exit_remote_button = QPushButton("Back")
+        self.exit_remote_button.resize(200,50)
+        self.exit_remote_button.clicked.connect(exit_remote)
+        self.remote_viewer_panel = QWidget()                                              # create QWidget()
+        self.remote_viewer_panel_layout = QVBoxLayout()                                   # create QVBoxLayout()
+        self.remote_viewer_panel_layout.addWidget(self.browser_remote)                    # add widgets
+        self.remote_viewer_panel_controls_layout = QHBoxLayout()
+        self.remote_viewer_panel_controls_layout.addWidget(self.exit_remote_button, alignment=Qt.AlignLeft)   # go back button
+        self.remote_viewer_panel_layout.addLayout(self.remote_viewer_panel_controls_layout)        # add horizontal layout
+        self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)                      # set layout
+
+
+        ##########demos_panel DEMOS PANEL
+        self.exit_demos_button = QPushButton("Back")
+        self.exit_demos_button.clicked.connect(exit_demos)
+        self.demos_panel = QWidget()                                          # create QWidget()
+        self.demos_panel_layout = QVBoxLayout()                               # create QVBoxLayout()
+        self.demos_panel_controls_layout = QHBoxLayout()
+        self.demos_panel_controls_layout.addWidget(self.exit_demos_button)    # go back button
+        self.demos_panel_layout.addLayout(self.demos_panel_controls_layout)   # add horizontal layout
+        self.demos_panel.setLayout(self.demos_panel_layout)                   # set layout
+
+        #self.demos_panel_layout.addWidget(self.browser)            # add widgets
+        self.demos_panel_layout.addWidget(self.exit_demos_button)     # go back button
+
+
+
+        ##########ngpanel NEUROGLANCER CONTROLS PANEL
+        self.exit_ng_button = QPushButton("Back")
+        self.exit_ng_button.clicked.connect(exit_ng)
         self.reload_ng_button = QPushButton("Reload")
         self.reload_ng_button.clicked.connect(reload_ng)
-
-        #ngpanel NEUROGLANCER CONTROLS PANEL
-        self.ng_panel = QWidget()
-        self.ng_panel_layout = QVBoxLayout()
-        self.ng_panel_layout.addWidget(self.browser)
-
-        #self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) # not working
-
-        self.ng_panel_controls_layout = QHBoxLayout()
-        #margins
+        self.ng_panel = QWidget()                                      # create QWidget()
+        self.ng_panel_layout = QVBoxLayout()                           # create QVBoxLayout()
+        self.ng_panel_layout.addWidget(self.browser)                   # add widgets
         # layout.setContentsMargins(left, top, right, bottom)
         #self.ng_panel_controls_layout.setContentsMargins(500, 0, 0, 0)
         #self.ng_panel_controls_layout.addWidget(self.spacerItem)
-        self.ng_panel_controls_layout.addWidget(self.go_back_button)
-        self.ng_panel_controls_layout.addWidget(self.reload_ng_button)
+        self.ng_panel_controls_layout = QHBoxLayout()
+        self.ng_panel_controls_layout.addWidget(self.exit_ng_button)      # back button
+        self.ng_panel_controls_layout.addWidget(self.reload_ng_button)    # reload button
+        self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)     # add horizontal layout
+        self.ng_panel.setLayout(self.ng_panel_layout)                     # set layout
 
-        #self.ng_panel_layout.addWidget(self.go_back_button)
-        self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)
-
-        self.ng_panel.setLayout(self.ng_panel_layout)
-
+        #self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) # not working
 
         #stack GUI elements
         #stackedlayout STACKED WIDGET
-        self.stacked_widget = QStackedWidget(self)
-        self.stacked_widget.addWidget(self.main_panel)
-        self.stacked_widget.addWidget(self.ng_panel)
+        self.stacked_widget = QStackedWidget(self)                    # create QStackedWidget
+        self.stacked_widget.addWidget(self.main_panel)                # add main_panel (0)
+        self.stacked_widget.addWidget(self.ng_panel)                  # add ng_panel (1)
+        self.stacked_widget.addWidget(self.docs_panel)                # add docs_panel (2)
+        self.stacked_widget.addWidget(self.demos_panel)               # add demos_panel (3)
+        self.stacked_widget.addWidget(self.remote_viewer_panel)       # add docs_panel (4)
 
         #This can be invisible, will still use to organize QStackedWidget
-        pageComboBox = QComboBox()
-        pageComboBox.addItem("Page 1")
-        pageComboBox.addItem("Page 2")
-        pageComboBox.activated[int].connect(self.stacked_widget.setCurrentIndex)
+        self.pageComboBox = QComboBox()
+        self.pageComboBox.addItem("Main")
+        self.pageComboBox.addItem("Neuroglancer Local")
+        self.pageComboBox.addItem("Documentation")
+        self.pageComboBox.addItem("Demos")
+        self.pageComboBox.addItem("Remote Viewer")
+        self.pageComboBox.activated[int].connect(self.stacked_widget.setCurrentIndex)
+        #self.pageComboBox.activated.connect(self.stackedLayout.setCurrentIndex)
 
         self.stacked_layout = QVBoxLayout()
         self.stacked_layout.addWidget(self.stacked_widget)
+        self.setCentralWidget(self.stacked_widget)               # setCentralWidget to QStackedWidget
 
 
-        verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+        #verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
-        #self.stacked_widget.setCurrentIndex(1)
 
-        #setcentralwidget
-        self.setCentralWidget(self.stacked_widget)
 
         # Menu Bar
         self.action_groups = {}
