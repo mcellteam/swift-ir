@@ -111,6 +111,7 @@ def blend(s):
     print('Saving image blend as temporary TIF ' + blend_name + '...')
     result.save(blend_name)
 
+
     copy_json = json.loads(open(os.path.join(src, ds_aligned, 's0', '.zattrs')).read())
 
     print('Reading .zarray for ...')

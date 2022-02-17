@@ -18,15 +18,18 @@ import psutil
 import argparse
 import pyswift_tui
 
+from pynput.keyboard import Key, Controller
+import pyautogui
+
 import concurrent.futures
 import threading
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QStackedWidget, QStackedLayout
+from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QStackedWidget, QStackedLayout, QGridLayout
 from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, QSpacerItem
 from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, QStyleFactory
 from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon
 from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream
-from PySide2.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+from PySide2.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineSettings
 
 
 import align_swiftir
@@ -1894,6 +1897,43 @@ def console():
 
 
 
+import collections
+#### Neuroglancer Python Utils ####
+# JSON Utils - https://github.com/google/neuroglancer/blob/a2c98640f8adb2e024acaf4e3dcbfb341b9ca42f/python/neuroglancer/json_utils.py#L53
+def decode_json(x):
+
+    return json.loads(x, object_pairs_hook=collections.OrderedDict)
+
+
+class ScreenshotSaver(object):
+    def __init__(self, viewer, directory):
+        self.viewer = viewer
+        self.directory = directory
+
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+        self.index = 0
+
+    def get_path(self, index):
+        return os.path.join(self.directory, '%07d.png' % index)
+
+    def get_next_path(self, index=None):
+        if index is None:
+            index = self.index
+        return index, self.get_path(index)
+
+    def capture(self, index=None):
+        s = self.viewer.screenshot()
+        increment_index = index is None
+        index, path = self.get_next_path(index)
+        with open(path, 'wb') as f:
+            f.write(s.screenshot.image)
+        if increment_index:
+            self.index += 1
+        return index, path
+
+
 #utils
 from PySide2.QtCore import QRunnable, Signal, Slot, QThreadPool, QThread
 from glanceem_utils import open_ds, add_layer
@@ -1915,11 +1955,15 @@ import neuroglancer as ng
 from glob import glob
 from PIL import Image
 
-
+#unchunk
 def unchunk(s):
+    print("\n'u' key press detected. Executing unchunk callback function...\n")
+    destination_path = os.path.abspath(project_data['data']['destination_path'])
+    path = zarr_project_path = os.path.join(destination_path, "project.zarr")
+    ds_aligned = "img_aligned_zarr"
     print("'u' key press detected. Executing unchunk function...")
     # this is parallel
-    path = src
+    path = zarr_project_path
     scale = 0
     n_unchunk = int(s.mouse_voxel_coordinates[2])
     #img_scale = da.from_zarr(path + '/img_aligned_zarr/s' + str(scale))
@@ -1927,25 +1971,34 @@ def unchunk(s):
     curr_img = img_scale[n_unchunk, :, :]
     skimage.io.imsave('image_' + str(n_unchunk) + '_scale' + str(scale) + '.tif', curr_img)
 
+    img = Image.open(curr_img)
+    img.show()
+
     print("Callback complete.")
 
 # def unchunk_all_scale(s, scale):
 #     # this can be parallel
 
+
+# blend
 def blend(s):
-    print("'b' key press detected. Executing blend function...")
+    print("\n'b' key press detected. Executing blend callback function...\n")
+    print("current working dir :", os.getcwd())
+    destination_path = os.path.abspath(project_data['data']['destination_path'])
+    src = zarr_project_path = os.path.join(destination_path, "project.zarr")
+    ds_aligned = "img_aligned_zarr"
     blend_scale = 0
     n_blend = int(s.mouse_voxel_coordinates[2])
     blend_name = 'blended_' + str(n_blend) + '-' + str(n_blend + 1) + '.tif'
 
-    print("Creating blended TIF of images " + str(n_blend) + " and " + str(n_blend+1) + " using PIL.Image...")
+    print("Creating blended TIF of images " + str(n_blend) + " and " + str(n_blend + 1) + " using PIL.Image...")
 
-    #img_scale = da.from_zarr(src + '/img_aligned_zarr/s0')
+    # img_scale = da.from_zarr(src + '/img_aligned_zarr/s0')
     img_scale = da.from_zarr(src + '/' + ds_aligned + '/s' + str(blend_scale))
     curr_img = img_scale[n_blend, :, :]
-    next_img = img_scale[n_blend+1, :, :]
+    next_img = img_scale[n_blend + 1, :, :]
     out1 = 'temp_image_' + str(n_blend) + '.tif'
-    out2 = 'temp_image_' + str(n_blend+1) + '.tif'
+    out2 = 'temp_image_' + str(n_blend + 1) + '.tif'
     skimage.io.imsave(out1, curr_img)
     skimage.io.imsave(out2, next_img)
 
@@ -1960,51 +2013,12 @@ def blend(s):
     print('Saving image blend as temporary TIF ' + blend_name + '...')
     result.save(blend_name)
 
-    copy_json = json.loads(open(os.path.join(src, ds_aligned, 's0', '.zattrs')).read())
-
-    print('Reading .zarray for ...')
-
-    print('Adding blend to Zarr group ' + ds_blended + '...')
-    """ NOTE **kawgs is passed to zarr.creation.create """
-    """ https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create """
-    #tiffs2zarr(blend_name, os.path.join(src, ds_blended), tuple(chunks), compressor=Blosc(cname=cname, clevel=clevel), overwrite=True)
-    tiffs2zarr(blend_name, os.path.join(src, ds_blended), tuple(chunks), compressor=Blosc(cname='zstd', clevel=1), overwrite=True) #jy
-    print('Removing temporary TIF: ' + blend_name + '...')
-    os.remove(blend_name)
-    print('Copying json for appropriate scale...')
-    ds = zarr.open(os.path.join(src,ds_blended), mode='a')
-    copy_json = json.loads(open(os.path.join(src, ds_aligned, 's' + str(blend_scale), '.zattrs')).read())
-    ds.attrs['offset'] = copy_json['offset']
-    #ds.attrs['resolution'] = copy_json['resolution']
-    #ds.attrs['resolution'] = [50,.00000001,.00000001]
-
-    copy_json = json.loads(open(os.path.join(src, ds_aligned, 's0', '.zattrs')).read())
-    ds.attrs['units'] = copy_json['units']
-    ds.attrs['_ARRAY_DIMENSIONS'] = copy_json['_ARRAY_DIMENSIONS']
-    # ds.attrs['_ARRAY_DIMENSIONS'] = copy_json['_ARRAY_DIMENSIONS']
-
-    #compressor = {'id': cname, 'level': clevel}
-    #create_scale_pyramid(src, ds_blended, scales, chunks, compressor)
-
-
-    # z = zarr.open(os.path.join(src, ds_blended))
-    # print("Creating blend ng.LocalVolume...")
-    # try:
-    #     blend_vol = ng.LocalVolume(
-    #         data=z,
-    #         dimensions=dimensions)
-    # except:
-    #     print("  ERROR creating blend ng.LocalVolume")
-
-    s.layers['focus'].visible = True
-    print("Updating viewer.txn()...")
-    with viewer.txn() as s:
-        try:
-            s.layers['focus'] = ng.ManagedLayer(source="zarr://http://localhost:9000/img_blended_zarr", voxel_size=[i * .00000001 for i in resolution])
-        except:
-            print("  ERROR updating viewer.txn() with blend_vol ImageLayer")
+    result.show()
 
     print("Callback complete.")
+
+
+
 
     # im = Image.open(f_result)
     # im.show()
@@ -2126,6 +2140,26 @@ class CustomWebEnginePage(QWebEnginePage):
             return False
         return super().acceptNavigationRequest(url,  _type, isMainFrame)
 
+# https://stackoverflow.com/questions/5671354/how-to-programmatically-make-a-horizontal-line-in-qt
+class QHLine(QFrame):
+    def __init__(self):
+        super(QHLine, self).__init__()
+        self.setFrameShape(QFrame.HLine)
+        self.setFrameShadow(QFrame.Sunken)
+
+
+# def closeEvent(self, event):
+#
+#     quit_msg = "Are you sure you want to exit the program?"
+#     reply = QMessageBox.question(self, 'Message',
+#                      quit_msg, QMessageBox.Yes, QMessageBox.No)
+#
+#     if reply == QMessageBox.Yes:
+#         event.accept()
+#     else:
+#         event.ignore()
+
+
 # def render(source_html):
 #     """Fully render HTML, JavaScript and all."""
 #     from PySide2.QtCore import QEventLoop
@@ -2179,23 +2213,27 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.mouse_move_callback = None
 
         #self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        #self.setWindowFlag(Qt.FramelessWindowHint)
 
 
-        # must be called after QMainWindow.__init__(self)
+        # stylesheet must be after QMainWindow.__init__(self)
         #self.setStyleSheet(open('stylesheet.qss').read())
-        #self.setStyleSheet(open('qdarkstylesheet.qss').read())
-        #self.setStyleSheet(open('stylesheet-ElegantDark.qss').read())
-        self.setStyleSheet(open('temp.qss').read())
 
         #titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
 
-        def changeEvent(self, event):
-            if event.type() == event.WindowStateChange:
-                self.titleBar.windowStateChanged(self.windowState())
+        self.web_settings = QWebEngineSettings.defaultSettings()
+        self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
-        def resizeEvent(self, event):
-            self.titleBar.resize(self.width(), self.titleBar.height())
+
+        #!!!
+        # def changeEvent(self, event):
+        #     if event.type() == event.WindowStateChange:
+        #         self.titleBar.windowStateChanged(self.windowState())
+        #
+        # def resizeEvent(self, event):
+        #     self.titleBar.resize(self.width(), self.titleBar.height())
+
 
         # # set stylesheet
         # file = QFile(":/dark/stylesheet.qss")
@@ -2210,14 +2248,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #     worker = RunnableServerThread()
         #     print("Setting up thread pool...")
         #     self.threadpool.start(worker)
-
-
-        self.browser = QWebEngineView()
-        self.browser_docs = QWebEngineView()
-        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
-
-        self.browser_remote = QWebEngineView()
-        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
 
         #self.browser.setPage(CustomWebEnginePage(self)) # This is necessary. Clicked links will never open new window.
         #self.browser.setPage(CustomWebEnginePage(self))
@@ -2242,13 +2272,28 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         def documentation_view(): #documentationview
             print("\ndocumentation_view():\n")
+            # don't force the reload, add home button instead
+            #self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
+            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
             self.stacked_widget.setCurrentIndex(2)
             self.status.showMessage("GlanceEM_SWiFT Documentation")
+
+        def documentation_view_home():
+            #self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
+            self.status.showMessage("GlanceEM_SWiFT Documentation")
+
 
         def remote_view():
             print("\nremote_view():\n")
             self.stacked_widget.setCurrentIndex(4)
+            self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
             self.status.showMessage("Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
+
+        # def microns_view():
+        #     print("\nmicrons_view():\n")
+        #     self.stacked_widget.setCurrentIndex(5)
+        #     self.browser_microns.setUrl(QUrl('https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
+        #     self.status.showMessage("MICrONS (http://layer23.microns-explorer.org)")
 
         def reload_ng():
             print("\nreload_ng():\n")
@@ -2258,6 +2303,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             print("\nexit_ng():\n")
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
+
 
         def exit_docs():
             print("\nexit_docs():\n")
@@ -2274,12 +2320,54 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
 
+        # def exit_microns():
+        #     print("\nexit_microns():\n")
+        #     self.stacked_widget.setCurrentIndex(0)
+        #     self.status.showMessage("")
+
+        def print_state_ng():
+            self.status.showMessage("Printing viewer state...")
+            #viewer_state = json.loads(str(self.viewer.state))
+            print("\n")
+            print(self.viewer.state)
+            print("\n")
+
+            # print("Viewer.url : ", self.viewer.get_viewer_url)
+            # print("Viewer.screenshot : ", self.viewer.screenshot)
+            # print("Viewer.txn : ", self.viewer.txn)
+            # print("Viewer.actions : ", self.viewer.actions)
+            #time.sleep(1)
+            #self.status.showMessage("Viewing aligned images in Neuroglancer.")
+
+        def print_url_ng():
+            self.status.showMessage("Printing viewer URL...")
+            print("\nURL : " + self.viewer.get_viewer_url() + "\n")
+
+            # print("Viewer.url : ", self.viewer.get_viewer_url)
+            # print("Viewer.screenshot : ", self.viewer.screenshot)
+            # print("Viewer.txn : ", self.viewer.txn)
+            # print("Viewer.actions : ", self.viewer.actions)
+            #time.sleep(1)
+            #self.status.showMessage("Viewing aligned images in Neuroglancer.")
+
+
+        # def screenshot_ng():
+        #     self.status.showMessage("Taking screenshot...")
+        #     ScreenshotSaver.capture(self)
+        from pynput.keyboard import Key, Controller
+        self.keyboard = Controller()
+        def blend_ng():
+            print("blend_ng() : ")
+            #self.status.showMessage("Making blended image...")
+
+
+
         #ng_view #ngview
         def ng_view(): # ng_view #ngview #neuroglancer
             print("\nng_view():\n")
 
             if not self.current_project_file_name:
-                print("There is no open project. Canceling Neuroglancer view...")
+                print("There is no open project. Not opening viewer.")
                 self.status.showMessage("There is no project open,  nothing to view.")
                 return
 
@@ -2309,8 +2397,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             Image.MAX_IMAGE_PIXELS = None
 
             view = 'single'
-            if self.multiview_bool.isChecked():
-                view = 'row'
+            # if self.multiview_bool.isChecked():
+            #     view = 'row'
 
             bind = '127.0.0.1'
             port = 9000
@@ -2505,8 +2593,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             viewer_url = str(self.viewer)
             self.browser.setUrl(QUrl(viewer_url))
 
-            print("viewer state:")
-            print(self.viewer.state)
+            print("Viewer.config_state : ", self.viewer.config_state)
             # print("\nNeuroglancer view (remote viewer)    :\n", ng.to_url(viewer.state))
             print("\nNeuroglancer view (local viewer)     :\n", self.viewer, "\n")
 
@@ -2576,23 +2663,32 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.main_panel_layout.addWidget(self.browser) #tag
 
         # Bottom configuration panel
-
         self.documentation_button = QPushButton("Documentation")
         self.documentation_button.clicked.connect(documentation_view)
+        self.documentation_button.setFixedSize(QSize(130, 32))
+        # self.microns_button = QPushButton("MICrONS")
+        # self.microns_button.clicked.connect(microns_view)
+        # self.microns_button.setFixedSize(QSize(130, 32))
+        self.remote_viewer_button = QPushButton("Remote Viewer")
+        self.remote_viewer_button.clicked.connect(remote_view)
+        self.remote_viewer_button.setFixedSize(QSize(130, 32))
+        self.ng_button = QPushButton("Neuroglancer View")
+        self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
+        self.ng_button.setFixedSize(QSize(130, 32))
 
         n_scales_label = QLabel("# scales:")
-        n_scales_label.setAlignment(Qt.AlignRight)
+        #n_scales_label.setAlignment(Qt.AlignRight)
         self.n_scales_input = QLineEdit(self)
         self.n_scales_input.setText("4")
-        self.n_scales_input.setFixedWidth(35)
+        self.n_scales_input.setFixedWidth(40)
         self.n_scales_valid = QIntValidator(1, 20, self)
         self.n_scales_input.setValidator(self.n_scales_valid)
 
         clevel_label = QLabel("clevel (1-9):")
-        clevel_label.setAlignment(Qt.AlignRight)
+        #clevel_label.setAlignment(Qt.AlignRight)
         self.clevel_input = QLineEdit(self)
         self.clevel_input.setText("5")
-        self.clevel_input.setFixedWidth(35)
+        self.clevel_input.setFixedWidth(40)
         self.clevel_valid = QIntValidator(1, 9, self)
         self.clevel_input.setValidator(self.clevel_valid)
 
@@ -2600,17 +2696,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.cname_combobox = QComboBox(self)
         self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
 
-
-        self.remote_viewer_button = QPushButton("Remote Viewer")
-        self.remote_viewer_button.clicked.connect(remote_view)
-
-        self.ng_button = QPushButton("Neuroglancer View")
-        #self.ng_button.resize(350,350) #not working?
-        self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
-
-
-        self.multiview_bool = QCheckBox("Multiview Demo")
-        self.multiview_bool.setChecked(False)
+        # self.multiview_bool = QCheckBox("Multiview Demo")
+        # self.multiview_bool.setChecked(False)
 
         def export_zarr():
 
@@ -2655,16 +2742,30 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             self.status.showMessage("Export complete.")
 
 
-        self.export_zarr_button = QPushButton("Export to Zarr")
-        self.export_zarr_button.clicked.connect(export_zarr)
+        # def close_all(self):
+        #     # if 'server' in locals():
+        #     #     print("\server appears alive. Killing it...\n")
+        #     #     server.server_close()
+        #     print("\nQuitting application...\n")
+        #     QApplication.quit()
+
 
         ############main window lower controls panel
-
+        self.export_zarr_button = QPushButton("Export to Zarr")
+        self.export_zarr_button.clicked.connect(export_zarr)
+        self.export_zarr_button.setFixedSize(QSize(130, 32))
         self.h_layout = QHBoxLayout()
-        self.quit_app_button = QPushButton("Exit")
+        self.quit_app_button = QPushButton("Exit")                                          #quit/exit app button
+        #self.quit_app_button.clicked.connect(close_all)
         self.quit_app_button.clicked.connect(self.close)
+        self.quit_app_button.setFixedSize(QSize(130, 32))
+        #self.quit_app_button.resize(50,50) #not working could be .css
+        #self.quit_app_button.setGeometry(100, 100, 600, 400) #not working could be .css
+        #setfixedsize is necessary to force pushbutton size
+        #self.quit_app_button.setFixedSize(QSize(100,32))
         self.h_layout.addWidget(self.quit_app_button, alignment=Qt.AlignLeft)
         self.h_layout.addWidget(self.documentation_button, alignment=Qt.AlignLeft)
+        # self.h_layout.addWidget(self.microns_button, alignment=Qt.AlignLeft)
         self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.h_layout.addItem(self.spacerItem)
         self.h_layout.addWidget(n_scales_label, alignment=Qt.AlignRight)
@@ -2676,24 +2777,41 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.h_layout.addWidget(self.export_zarr_button, alignment=Qt.AlignRight)
         self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignRight)
         self.h_layout.addWidget(self.ng_button, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(self.multiview_bool, alignment=Qt.AlignRight)
+        # self.h_layout.addWidget(self.multiview_bool, alignment=Qt.AlignRight)
         #self.h_layout.setContentsMargins(400, 0, 0, 0)
 
-        self.main_panel_layout.addLayout(self.h_layout)
-        # self.setCentralWidget(self.main_panel) #!!!!!!!!
+        self.layout = QGridLayout()
+        self.layout.addWidget(QHLine(), 0, 0, 1, 2)
+        self.layout.addWidget(QLabel("New features:"), 1, 0, 1, 1)
+        self.layout.addWidget(QHLine(), 2, 0, 1, 2)
+        self.main_panel_layout.addLayout(self.layout)
 
+
+        self.main_panel_layout.addLayout(self.h_layout)
+        # self.setCentralWidget(self.main_panel) #!!!
 
 
         ##########docs_panel DOCUMENTATION PANEL
+        self.browser = QWebEngineView()
+        self.browser_docs = QWebEngineView()
+        #self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
+        #self.browser_docs.setUrl(QUrl('https://github1s.com/mcellteam/swift-ir/blob/development/README.md'))
+
         self.exit_docs_button = QPushButton("Back")
-        self.exit_docs_button.resize(200,50)
+        self.exit_docs_button.setFixedSize(QSize(100, 32))
         self.exit_docs_button.clicked.connect(exit_docs)
+        self.readme_button = QPushButton("README.md")
+        self.readme_button.setFixedSize(QSize(100, 32))
+        self.readme_button.clicked.connect(documentation_view_home)
         self.docs_panel = QWidget()                                            # create QWidget()
         self.docs_panel_layout = QVBoxLayout()                                 # create QVBoxLayout()
         self.docs_panel_layout.addWidget(self.browser_docs)                    # add widgets
         self.docs_panel_controls_layout = QHBoxLayout()
         #self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignLeft | Qt.AlignBottom)   # go back button
         self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignLeft)   # go back button
+        self.docs_panel_controls_layout.addWidget(self.readme_button, alignment=Qt.AlignLeft)  # go back button
+        self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.docs_panel_controls_layout.addSpacerItem(self.spacer_item_docs)
         # layout.setContentsMargins(left, top, right, bottom)
         #self.docs_panel_controls_layout.setContentsMargins(0, 0, 1300, 0)
         self.docs_panel_layout.addLayout(self.docs_panel_controls_layout)      # add horizontal layout
@@ -2701,8 +2819,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
         ##########remote_viewer_panel REMOTE VIEWER PANEL
+        self.browser_remote = QWebEngineView()
+        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.exit_remote_button = QPushButton("Back")
-        self.exit_remote_button.resize(200,50)
+        self.exit_remote_button.setFixedSize(QSize(100, 32))
         self.exit_remote_button.clicked.connect(exit_remote)
         self.remote_viewer_panel = QWidget()                                              # create QWidget()
         self.remote_viewer_panel_layout = QVBoxLayout()                                   # create QVBoxLayout()
@@ -2713,8 +2833,24 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)                      # set layout
 
 
+        # ##########remote_viewer_panel MICRONS DATA SET VIEWER PANEL
+        # self.browser_microns = QWebEngineView()
+        # self.browser_microns.setUrl(QUrl('https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
+        # self.exit_microns_button = QPushButton("Back")
+        # self.exit_microns_button.setFixedSize(QSize(100, 32))
+        # self.exit_microns_button.clicked.connect(exit_microns)
+        # self.microns_panel = QWidget()                                              # create QWidget()
+        # self.microns_panel_layout = QVBoxLayout()                                   # create QVBoxLayout()
+        # self.microns_panel_layout.addWidget(self.browser_microns)                    # add widgets
+        # self.microns_panel_controls_layout = QHBoxLayout()
+        # self.microns_panel_controls_layout.addWidget(self.exit_microns_button, alignment=Qt.AlignLeft)   # go back button
+        # self.microns_panel_layout.addLayout(self.microns_panel_controls_layout)        # add horizontal layout
+        # self.microns_panel.setLayout(self.microns_panel_layout)                      # set layout
+
+
         ##########demos_panel DEMOS PANEL
         self.exit_demos_button = QPushButton("Back")
+        self.exit_demos_button.setFixedSize(QSize(100, 32))
         self.exit_demos_button.clicked.connect(exit_demos)
         self.demos_panel = QWidget()                                          # create QWidget()
         self.demos_panel_layout = QVBoxLayout()                               # create QVBoxLayout()
@@ -2722,17 +2858,28 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.demos_panel_controls_layout.addWidget(self.exit_demos_button)    # go back button
         self.demos_panel_layout.addLayout(self.demos_panel_controls_layout)   # add horizontal layout
         self.demos_panel.setLayout(self.demos_panel_layout)                   # set layout
-
         #self.demos_panel_layout.addWidget(self.browser)            # add widgets
-        self.demos_panel_layout.addWidget(self.exit_demos_button)     # go back button
-
 
 
         ##########ngpanel NEUROGLANCER CONTROLS PANEL
         self.exit_ng_button = QPushButton("Back")
+        self.exit_ng_button.setFixedSize(QSize(100, 32))
         self.exit_ng_button.clicked.connect(exit_ng)
         self.reload_ng_button = QPushButton("Reload")
+        self.reload_ng_button.setFixedSize(QSize(100, 32))
         self.reload_ng_button.clicked.connect(reload_ng)
+        self.print_state_ng_button = QPushButton("Print State")
+        self.print_state_ng_button.setFixedSize(QSize(100, 32))
+        self.print_state_ng_button.clicked.connect(print_state_ng)
+        self.print_url_ng_button = QPushButton("Print URL")
+        self.print_url_ng_button.setFixedSize(QSize(100, 32))
+        self.print_url_ng_button.clicked.connect(print_url_ng)
+        # self.screenshot_ng_button = QPushButton("Screenshot")
+        # self.screenshot_ng_button.setFixedSize(QSize(100, 32))
+        # self.screenshot_ng_button.clicked.connect(screenshot_ng)
+        # self.blend_ng_button = QPushButton("Blend (b)")
+        # self.blend_ng_button.setFixedSize(QSize(100, 32))
+        # self.blend_ng_button.clicked.connect(blend_ng)
         self.ng_panel = QWidget()                                      # create QWidget()
         self.ng_panel_layout = QVBoxLayout()                           # create QVBoxLayout()
         self.ng_panel_layout.addWidget(self.browser)                   # add widgets
@@ -2740,8 +2887,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.ng_panel_controls_layout.setContentsMargins(500, 0, 0, 0)
         #self.ng_panel_controls_layout.addWidget(self.spacerItem)
         self.ng_panel_controls_layout = QHBoxLayout()
-        self.ng_panel_controls_layout.addWidget(self.exit_ng_button)      # back button
-        self.ng_panel_controls_layout.addWidget(self.reload_ng_button)    # reload button
+        self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignLeft)      # back button
+        self.ng_panel_controls_layout.addWidget(self.reload_ng_button, alignment=Qt.AlignLeft)    # reload button
+        self.ng_panel_controls_layout.addWidget(self.print_state_ng_button, alignment=Qt.AlignLeft)  # reload button
+        self.ng_panel_controls_layout.addWidget(self.print_url_ng_button, alignment=Qt.AlignLeft)  # reload button
+        # self.ng_panel_controls_layout.addWidget(self.screenshot_ng_button, alignment=Qt.AlignLeft)  # reload button
+        #self.ng_panel_controls_layout.addWidget(self.blend_ng_button, alignment=Qt.AlignLeft)  # reload button
+        self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.ng_panel_controls_layout.addSpacerItem(self.spacer_item_ng_panel)
         self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)     # add horizontal layout
         self.ng_panel.setLayout(self.ng_panel_layout)                     # set layout
 
