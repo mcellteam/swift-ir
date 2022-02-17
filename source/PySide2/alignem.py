@@ -4,6 +4,10 @@ AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
 from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr
+from caveclient import CAVEclient
+
+
+
 
 import sys, traceback
 import os
@@ -1964,7 +1968,8 @@ def unchunk(s):
     print("'u' key press detected. Executing unchunk function...")
     # this is parallel
     path = zarr_project_path
-    scale = 0
+    #scale = 0
+    scale = 2
     n_unchunk = int(s.mouse_voxel_coordinates[2])
     #img_scale = da.from_zarr(path + '/img_aligned_zarr/s' + str(scale))
     img_scale = da.from_zarr(path + '/' + ds_aligned + '/s0')
@@ -1987,7 +1992,8 @@ def blend(s):
     destination_path = os.path.abspath(project_data['data']['destination_path'])
     src = zarr_project_path = os.path.join(destination_path, "project.zarr")
     ds_aligned = "img_aligned_zarr"
-    blend_scale = 0
+    #blend_scale = 0
+    blend_scale = 2
     n_blend = int(s.mouse_voxel_coordinates[2])
     blend_name = 'blended_' + str(n_blend) + '-' + str(n_blend + 1) + '.tif'
 
@@ -2273,13 +2279,12 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         def documentation_view(): #documentationview
             print("\ndocumentation_view():\n")
             # don't force the reload, add home button instead
-            #self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
-            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
+            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
             self.stacked_widget.setCurrentIndex(2)
             self.status.showMessage("GlanceEM_SWiFT Documentation")
 
         def documentation_view_home():
-            #self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
+            exiself.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
             self.status.showMessage("GlanceEM_SWiFT Documentation")
 
 
@@ -2341,7 +2346,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         def print_url_ng():
             self.status.showMessage("Printing viewer URL...")
-            print("\nURL : " + self.viewer.get_viewer_url() + "\n")
+            print(neuroglancer.to_url(self.viewer.state))
+            #print("\nURL : " + self.viewer.get_viewer_url() + "\n")
 
             # print("Viewer.url : ", self.viewer.get_viewer_url)
             # print("Viewer.screenshot : ", self.viewer.screenshot)
@@ -2604,6 +2610,18 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
             self.stacked_widget.setCurrentIndex(1)
             self.status.showMessage("Viewing aligned images in Neuroglancer.")
+
+            # client = CAVEclient()
+            # #EMsource = client.info.get_datastacks()
+            # print("\n\n")
+            # #print(str(print(EMsource)))
+            # print(client.state)
+            # print("\n\n")
+            # #print(EMsource)
+            # print("\n\n")
+
+            #print(neuroglancer.to_url(self.viewer.state))
+
 
 
 
