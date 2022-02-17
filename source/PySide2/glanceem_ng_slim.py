@@ -582,8 +582,8 @@ if __name__ == '__main__':
     args = ap.parse_args()
     src = args.path
 
-    src = os.path.abspath(args.path) # probably overkill
-    # src = "project.zarr" # probably underkill
+    src = os.path.abspath(args.path)
+    # src = "project.zarr"
     view = args.view
 
     res_x = 2
