@@ -7,8 +7,6 @@ from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr
 from caveclient import CAVEclient
 
 
-
-
 import sys, traceback
 import os
 import copy
@@ -21,9 +19,6 @@ import scipy.ndimage
 import psutil
 import argparse
 import pyswift_tui
-
-from pynput.keyboard import Key, Controller
-import pyautogui
 
 import concurrent.futures
 import threading
@@ -2360,8 +2355,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # def screenshot_ng():
         #     self.status.showMessage("Taking screenshot...")
         #     ScreenshotSaver.capture(self)
-        from pynput.keyboard import Key, Controller
-        self.keyboard = Controller()
+
         def blend_ng():
             print("blend_ng() : ")
             #self.status.showMessage("Making blended image...")

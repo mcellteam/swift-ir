@@ -508,6 +508,13 @@ def add_layer(
     h=[0.0, 0.0, 1.0],
 ):
 
+    print('\nadd_layer:')
+    print('context:', context)
+    print('type(array):', type(array))
+    print('name:', name)
+
+
+
     """Add a layer to a neuroglancer context.
 
     Args:
@@ -561,7 +568,8 @@ def add_layer(
         channel_dim_names = ["b^", "c^"]
 
         dims = len(a.data.shape)
-        spatial_dims = a.roi.dims()
+        #spatial_dims = a.roi.dims()
+        spatial_dims = a.roi.dims
         channel_dims = dims - spatial_dims
 
         attrs = {
@@ -585,7 +593,8 @@ def add_layer(
             channel_dim_names = ["b^", "c^"]
 
             dims = len(a.data.shape)
-            spatial_dims = a.roi.dims()
+            # spatial_dims = a.roi.dims()
+            spatial_dims = a.roi.dims
             channel_dims = dims - spatial_dims
 
             attrs = {
@@ -610,7 +619,8 @@ def add_layer(
 
     if shader is None:
         a = array if not is_multiscale else array[0]
-        dims = a.roi.dims()
+        #dims = a.roi.dims()
+        dims = a.roi.dims
         if dims < len(a.data.shape):
             channels = a.data.shape[0]
             if channels > 1:
