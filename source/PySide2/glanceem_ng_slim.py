@@ -5,6 +5,10 @@ neuroglancer - pip install neuroglancer
 zarr - pip install zarr
 daisy - pip install daisy
 
+daisy 1.0 installation:
+pip install git+git://github.com/funkelab/daisy.git
+pip install git+git://github.com/funkelab/funlib.math.git
+pip install git+git://github.com/funkelab/funlib.geometry
 
 
 """
