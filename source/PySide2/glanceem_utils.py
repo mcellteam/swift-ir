@@ -456,7 +456,6 @@ class ScalePyramid(neuroglancer.LocalVolume):
 
         reference_layer = self.volume_layers[(1,) * self.dims]
         # return reference_layer.info()
-
         reference_info = reference_layer.info()
 
         info = {
@@ -568,8 +567,8 @@ def add_layer(
         channel_dim_names = ["b^", "c^"]
 
         dims = len(a.data.shape)
-        #spatial_dims = a.roi.dims()
-        spatial_dims = a.roi.dims
+        spatial_dims = a.roi.dims() #old
+        #spatial_dims = a.roi.dims #daisy1
         channel_dims = dims - spatial_dims
 
         attrs = {
@@ -593,8 +592,8 @@ def add_layer(
             channel_dim_names = ["b^", "c^"]
 
             dims = len(a.data.shape)
-            # spatial_dims = a.roi.dims()
-            spatial_dims = a.roi.dims
+            spatial_dims = a.roi.dims() #old
+            #spatial_dims = a.roi.dims #daisy1
             channel_dims = dims - spatial_dims
 
             attrs = {
@@ -619,8 +618,8 @@ def add_layer(
 
     if shader is None:
         a = array if not is_multiscale else array[0]
-        #dims = a.roi.dims()
-        dims = a.roi.dims
+        dims = a.roi.dims() #old
+        #dims = a.roi.dims #daisy1
         if dims < len(a.data.shape):
             channels = a.data.shape[0]
             if channels > 1:
@@ -754,7 +753,8 @@ def downscale(in_array, out_array, factor, write_size):
 
     print("Downsampling by factor %s" % (factor,))
 
-    dims = in_array.roi.dims()
+    dims = in_array.roi.dims() #old
+    #dims = in_array.roi.dims #daisy1
     block_roi = daisy.Roi((0,)*dims, write_size)
 
     print("Processing ROI %s with blocks %s" % (out_array.roi, block_roi))

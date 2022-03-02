@@ -2279,7 +2279,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             self.status.showMessage("GlanceEM_SWiFT Documentation")
 
         def documentation_view_home():
-            exiself.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
+            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
             self.status.showMessage("GlanceEM_SWiFT Documentation")
 
 
@@ -2832,7 +2832,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         ##########remote_viewer_panel REMOTE VIEWER PANEL
         self.browser_remote = QWebEngineView()
-        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+        #self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/')) #tacctacc
+        self.browser_remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.exit_remote_button = QPushButton("Back")
         self.exit_remote_button.setFixedSize(QSize(100, 32))
         self.exit_remote_button.clicked.connect(exit_remote)
