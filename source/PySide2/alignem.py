@@ -23,20 +23,24 @@ import pyswift_tui
 import concurrent.futures
 import threading
 
-from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QStackedWidget, QStackedLayout, QGridLayout
-from PySide2.QtWidgets import QAction, QActionGroup, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, QSpacerItem
-from PySide2.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, QStyleFactory
-from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon
-from PySide2.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream
-from PySide2.QtWebEngineWidgets import QWebEngineView, QWebEnginePage, QWebEngineSettings
-
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QStackedWidget, QStackedLayout, QGridLayout
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, QSpacerItem
+#from PySide6.QtWidgets import QOpenGLWidget
+from PySide6.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, QStyleFactory
+from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat
+from PySide6.QtGui import QAction, QActionGroup
+#from PySide6.QtGui import QOpenGLContext, QOpenGLVersionProfile
+from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, QCoreApplication
+from PySide6.QtWebEngineWidgets import QWebEngineView
+#import PySide6.QtOpenGL
+from PySide6.QtWebEngineCore import QWebEnginePage,QWebEngineSettings
 
 import align_swiftir
 import task_queue_mp as task_queue
 
 # Get the path of ../python
-#alignem_file = os.path.abspath(__file__)                     # path/PySide2/alignem.py
-#alignem_p    = os.path.dirname( alignem_file )               # path/PySide2
+#alignem_file = os.path.abspath(__file__)                     # path/PySide6/alignem.py
+#alignem_p    = os.path.dirname( alignem_file )               # path/PySide6
 #alignem_pp   = os.path.dirname( alignem_p )                  # path
 #alignem_shared_path = os.path.join ( alignem_pp, 'python' )  # path/python
 
@@ -1431,7 +1435,8 @@ class MultiImagePanel(QWidget):
 
     def update_spacing ( self ):
         print_debug ( 30, "Setting Spacing to " + str(self.current_margin) )
-        self.hb_layout.setMargin(self.current_margin)    # This sets margins around the outer edge of all panels
+        #self.hb_layout.setContentsMargin(self.current_margin)    #pyside6 This sets margins around the outer edge of all panels
+        #self.hb_layout.setMargin(self.current_margin)    #pyside2 This sets margins around the outer edge of all panels
         self.hb_layout.setSpacing(self.current_margin)    # This sets margins around the outer edge of all panels
         self.repaint()
 
@@ -1596,7 +1601,8 @@ class ControlPanelWidget(QWidget):
         #self.control_panel = QWidget()
         self.control_panel_layout = QVBoxLayout()
         self.setLayout(self.control_panel_layout)
-        self.control_panel_layout.setMargin(0)
+        #self.control_panel_layout.setContentsMargin(0) #pyside6
+        #self.control_panel_layout.setMargin(0) #pyside2
         self.control_panel_layout.setSpacing(0)
 
         if self.cm != None:
@@ -1607,7 +1613,8 @@ class ControlPanelWidget(QWidget):
             for row in rows:
               row_box = QWidget()
               row_box_layout = QHBoxLayout()
-              row_box_layout.setMargin(2)
+              #row_box_layout.setContentsMargin(2) #pyside6
+              #row_box_layout.setMargin(2) #pyside2
               row_box_layout.setSpacing(2)
               row_box.setLayout ( row_box_layout )
               print_debug ( 30, "Row contains " + str(len(row)) + " items" )
@@ -1934,7 +1941,7 @@ class ScreenshotSaver(object):
 
 
 #utils
-from PySide2.QtCore import QRunnable, Signal, Slot, QThreadPool, QThread
+from PySide6.QtCore import QRunnable, Signal, Slot, QThreadPool, QThread
 from glanceem_utils import open_ds, add_layer
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 import webbrowser
@@ -2163,7 +2170,7 @@ class QHLine(QFrame):
 
 # def render(source_html):
 #     """Fully render HTML, JavaScript and all."""
-#     from PySide2.QtCore import QEventLoop
+#     from PySide6.QtCore import QEventLoop
 #     class Render(QWebEngineView):
 #         def __init__(self, html):
 #             self.html = None
@@ -2193,15 +2200,35 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM", simple_mode=True):
 
+        print('Setting MESA_GL_VERSION_OVERRIDE=4.5...')
+        os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+        print('MESA_GL_VERSION_OVERRIDE = ', os.environ.get('MESA_GL_VERSION_OVERRIDE'))
+
+        print('Setting default_format using QSurfaceFormat...')
+        self.default_format = QSurfaceFormat.defaultFormat()
+
         print("Setting up thread pool...")
         self.threadpool = QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         self.init_dir = os.getcwd()
 
+
+        # # NOTE: You must set the AA_ShareOpenGLContexts flag on QGuiApplication before creating the QGuiApplication
+        # # object, otherwise Qt may not create a global shared context.
+        # # https://doc.qt.io/qtforpython-5/PySide2/QtGui/QOpenGLContext.html
+        # print('Current QOpenGLContext = ', QOpenGLContext.currentContext())
+        #
+        # print('Setting OpenGL attribute AA_ShareOpenGLContexts...')
+        #
+        # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
+        # # QtCore.QProcessEnvironment.systemEnvironment() ???
+        # print('Current QOpenGLContext = ', QOpenGLContext.currentContext())
+
         global app
         if app == None:
             app = QApplication([]) #jy note call to QApplication
+
 
         global project_data
         project_data = copy.deepcopy ( new_project_template )
@@ -2223,9 +2250,18 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
 
-        self.web_settings = QWebEngineSettings.defaultSettings()
-        self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        #pyside2... pyside6 deprecated the 'defaultSettings()' attribute of QWebEngineSettings. These two lines were uncommented.
+        #self.web_settings = QWebEngineSettings.defaultSettings()
+        #self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
+        #pyside6
+        self.view = QWebEngineView()
+        # PySide6 available options
+        # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        # self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        # self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         #!!!
         # def changeEvent(self, event):
@@ -2289,11 +2325,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
             self.status.showMessage("Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
 
-        # def microns_view():
-        #     print("\nmicrons_view():\n")
-        #     self.stacked_widget.setCurrentIndex(5)
-        #     self.browser_microns.setUrl(QUrl('https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
-        #     self.status.showMessage("MICrONS (http://layer23.microns-explorer.org)")
+        #webgl2
+        def microns_view():
+            print("\nmicrons_view():\n")
+            self.stacked_widget.setCurrentIndex(5)
+            self.browser_microns.setUrl(QUrl('https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
+            self.status.showMessage("MICrONS (http://layer23.microns-explorer.org)")
+            #self.browser_microns.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+            #self.status.showMessage("Checking WebGL2.0 support.")
 
         def reload_ng():
             print("\nreload_ng():\n")
@@ -2320,6 +2359,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
 
+        #webgl2
         # def exit_microns():
         #     print("\nexit_microns():\n")
         #     self.stacked_widget.setCurrentIndex(0)
