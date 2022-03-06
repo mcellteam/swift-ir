@@ -2,13 +2,13 @@ import sys, traceback, os, time, shutil, psutil, copy, argparse
 import cv2, json
 from source_tracker import get_hash_and_rev
 
-from PySide2.QtWebEngineWidgets import QWebEngineView
 
 import alignem
+from glanceem_utils import RequestHandler, Server, get_viewer_url
 from alignem import IntField, BoolField, FloatField, CallbackButton, ComboBoxControl, MainWindow
 
-from PySide2.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar
-from PySide2.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
+from PySide6.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar
+from PySide6.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
 
 import pyswift_tui
 import align_swiftir
@@ -21,25 +21,8 @@ import task_wrapper # Only needed to set the debug level for that module
 import project_runner
 
 
-# QtWebEngine imports
-#from PyQt5.Qt import *
-#from PySide2.QWebEngine import *
-from PySide2.QtWebEngineWidgets import QWebEngineView
+#from PySide6.QtWebEngineWidgets import QWebEngineView
 
-from glanceem_utils import RequestHandler, Server, get_viewer_url
-
-#from PyQt5.QtCore import (QCoreApplication, QRunnable, QThread, QThreadPool, QProcess, pyqtSignal)
-
-
-# from PyQt5.QtCore import QProcess
-# process = QProcess()
-
-# app = QApplication([])
-# window = MainWindow()
-# app.exec_()
-# ^ The event loop is started by calling .exec_() on your QApplication object
-
-# https://gist.github.com/acdha/925e9ffc3d74ad59c3ea
 
 # options for threading:
 # https://stackoverflow.com/questions/6783194/background-thread-with-qthread-in-pyqt
