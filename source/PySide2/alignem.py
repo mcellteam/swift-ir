@@ -2884,6 +2884,10 @@ class MainWindow(QMainWindow):
             update_linking_callback()
             self.update_win_self()
 
+        #patch center all images after importing
+        self.center_all_images()
+        self.update_win_self()
+
     @Slot()
     def empty_into_role(self, checked):
         #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
