@@ -2728,6 +2728,9 @@ class MainWindow(QMainWindow):
               p.force_center = True
               p.update_zpa_self()
 
+        #center images after importing
+        self.center_all_images()
+
         self.update_win_self()
 
 
@@ -2884,7 +2887,7 @@ class MainWindow(QMainWindow):
             update_linking_callback()
             self.update_win_self()
 
-        #patch center all images after importing
+        #center images after importing
         self.center_all_images()
         self.update_win_self()
 
