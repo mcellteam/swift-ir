@@ -3982,7 +3982,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.import_images_dialog ( 'base' )
         if update_linking_callback != None:
             update_linking_callback()
-            self.update_win_self():
+            self.update_win_self()
 
         #patch center all images after importing
         self.center_all_images()
