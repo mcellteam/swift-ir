@@ -2895,7 +2895,7 @@ class MainWindow(QMainWindow):
 
         role_to_import = str ( self.sender().text() )
 
-        print_debug ( 30, "Adding empty for role: " + str(role_to_import) )
+        print_debug ( 30, "Adding empty for rle: " + str(role_to_import) )
 
         used_for_this_role = [ role_to_import in l['images'].keys() for l in project_data['data']['scales'][local_cur_scale]['alignment_stack'] ]
         print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
