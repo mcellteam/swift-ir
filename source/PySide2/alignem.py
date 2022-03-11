@@ -726,7 +726,8 @@ class ZoomPanWidget(QWidget):
         self.ldx = 0
         self.ldy = 0
         self.wheel_index = 0
-        self.zoom_to_wheel_at ( 0, 0 )
+        #self.zoom_to_wheel_at ( 0, 0 ) #pyside2
+        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
         clear_crop_settings()
 
     def center_image ( self, all_images_in_stack = True ):
@@ -782,7 +783,8 @@ class ZoomPanWidget(QWidget):
                                 # Enlarge the image (scaling up) while it is within the size of the window
                                 while ( self.win_x(img_w) <= win_w ) and ( self.win_y(img_h) <= win_h ):
                                   print_debug ( 70, "Enlarging image to fit in center.")
-                                  self.zoom_to_wheel_at ( 0, 0 )
+                                  #self.zoom_to_wheel_at ( 0, 0 ) #pyside2
+                                  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                   self.wheel_index += 1
                                   print_debug ( 80, "  Wheel index = " + str(self.wheel_index) + " while enlarging" )
                                   print_debug ( 80, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
@@ -794,7 +796,8 @@ class ZoomPanWidget(QWidget):
                                 # Shrink the image (scaling down) while it is larger than the size of the window
                                 while ( self.win_x(img_w) > win_w ) or ( self.win_y(img_h) > win_h ):
                                   print_debug ( 70, "Shrinking image to fit in center.")
-                                  self.zoom_to_wheel_at ( 0, 0 )
+                                  #self.zoom_to_wheel_at ( 0, 0 ) #pyside2
+                                  self.zoom_to_wheel_at(QPointF(0.0,0.0))  # pyside6
                                   self.wheel_index += -1
                                   print_debug ( 80, "  Wheel index = " + str(self.wheel_index) + " while shrinking" )
                                   print_debug ( 80, "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h) )
@@ -1082,13 +1085,17 @@ class ZoomPanWidget(QWidget):
         self.update_zpa_self()
 
 
-    def zoom_to_wheel_at ( self, mouse_win_x, mouse_win_y ):
+    #def zoom_to_wheel_at ( self, mouse_win_x, mouse_win_y ): #pyside2
+    def zoom_to_wheel_at(self, position):  #pyside6, position has type PySide6.QtCore.QPoint
         clear_crop_settings()
         old_scale = self.zoom_scale
         new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
 
-        self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
-        self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+        # self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale) #pyside2
+        # self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale) #pyside2
+
+        self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
+        self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
 
 
     def change_layer ( self, layer_delta ):
@@ -1189,6 +1196,40 @@ class ZoomPanWidget(QWidget):
 
 
     def wheelEvent(self, event):
+        """
+        AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'delta'
+
+        PySide6 error with scroll. PySide6 has angleDelta() and pixelDelta() - in place of delta()
+
+        I think delta() is comparable to angleDelta()
+
+        PySide2.QtGui.QWheelEvent.delta() has been deprecated, use pixelDelta() or angleDelta() instead
+        PySide2.QtGui.QWheelEvent.delta() returns 'int'
+
+        PySide6.QtGui.QWheelEvent.angleDelta() returns PySide6.QtCore.QPoint
+        PySide6.QtGui.QWheelEvent.pixelDelta() returns PySide6.QtCore.QPoint
+
+        PySide6 Ref: https://doc.qt.io/qtforpython/PySide6/QtGui/QWheelEvent.html
+        Wheel events are sent to the widget under the mouse cursor, but if that widget does not handle the event they
+        are sent to the focus widget. Wheel events are generated for both mouse wheels and trackpad scroll gestures. T
+        There are two ways to read the wheel event delta:
+          angleDelta() returns the deltas in wheel degrees (wheel rotation angle)
+          pixelDelta() returns the deltas in screen pixels, (scrolling distance) and is available on platforms that have high-resolution trackpads, such as macOS
+        PySide6.QtCore.QPoint
+
+
+        other QWheelEvent notes:
+          position() and globalPosition() return the mouse cursor’s location at the time of the event
+          You should call ignore() if you do not handle the wheel event; this ensures that it will be sent to the parent widget
+          The setEnabled() function can be used to enable or disable mouse and keyboard events for a widget.
+
+        # Ref on resolving deprecation issue:
+        https://stackoverflow.com/questions/66268136/how-to-replace-the-deprecated-function-qwheeleventdelta-in-the-zoom-in-z
+        # zoom: want use angleDelta().y() for vertical scrolling
+
+        """
+
+
 
         global project_data
         global main_window
@@ -1199,15 +1240,34 @@ class ZoomPanWidget(QWidget):
 
             # Unshifted Scroll Wheel moves through layers
 
-            layer_delta = int(event.delta()/120)
+            #layer_delta = int(event.delta()/120)    #pyside2
+            layer_delta = int(event.angleDelta().y() / 120)    #pyside6
 
             self.change_layer ( layer_delta )
+
+            #Ref: https://stackoverflow.com/questions/35508711/how-to-enable-pan-and-zoom-in-a-qgraphicsview
+            #_zoom is equivalent to wheel_index
+            # if event.angleDelta().y() > 0:
+            #     factor = 1.25
+            #     self.wheel_index += 1
+            # else:
+            #     factor = 0.8
+            #     self.wheel_index -= 1
+            # if self.wheel_index > 0:
+            #     self.scale(factor, factor)
+            # elif self.wheel_index == 0:
+            #     self.fitInView()
+            # else:
+            #     self.wheel_index = 0
 
         else:
             # Shifted Scroll Wheel zooms
 
-            self.wheel_index += event.delta()/120
-            self.zoom_to_wheel_at(event.x(), event.y())
+            #self.wheel_index += event.delta()/120    #pyside2
+            self.wheel_index += event.angleDelta().y() / 120    #pyside6
+            #self.zoom_to_wheel_at(event.x(), event.y())
+            #AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'x'
+            self.zoom_to_wheel_at(event.position()) # return type: PySide6.QtCore.QPointF
 
         self.update_zpa_self()
 
@@ -1399,6 +1459,7 @@ class MultiImagePanel(QWidget):
         self.setFocusPolicy(Qt.StrongFocus)
         self.arrow_direction = 1
 
+    #keypress
     def keyPressEvent(self, event):
 
         print_debug ( 80, "Got a key press event: " + str(event) )
@@ -2245,7 +2306,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
         # stylesheet must be after QMainWindow.__init__(self)
-        #self.setStyleSheet(open('stylesheet.qss').read())
+        self.setStyleSheet(open('stylesheet.qss').read())
 
         #titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
@@ -2872,8 +2933,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         ##########remote_viewer_panel REMOTE VIEWER PANEL
         self.browser_remote = QWebEngineView()
-        #self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/')) #tacctacc
-        self.browser_remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/')) #tacctacc
+        #self.browser_remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.exit_remote_button = QPushButton("Back")
         self.exit_remote_button.setFixedSize(QSize(100, 32))
         self.exit_remote_button.clicked.connect(exit_remote)
@@ -3202,8 +3263,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-
-
 
 
 
@@ -3756,7 +3815,16 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
               p.force_center = True
               p.update_zpa_self()
 
+        #center images after importing #jy
+        self.center_all_images()
+        #self.refresh_all_images()
+        #might need:
+        #self.update_panels()
+
+        # instead, try approaching this from the import dialog code block
+
         self.update_win_self()
+
 
 
     def update_panels(self):
@@ -3787,6 +3855,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.update_win_self()
 
         self.import_images( import_role_name, file_name_list )
+
+        # self.center_all_images() #center does not work
+        # self.update_win_self()
 
 
     @Slot()
@@ -3906,11 +3977,16 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( import_role_name )
 
+    #center try center code from here
     def import_base_images ( self ):
         self.import_images_dialog ( 'base' )
         if update_linking_callback != None:
             update_linking_callback()
-            self.update_win_self()
+            self.update_win_self():
+
+        #patch center all images after importing
+        self.center_all_images()
+        self.update_win_self()
 
     @Slot()
     def empty_into_role(self, checked):
