@@ -3132,6 +3132,9 @@ class MainWindow(QMainWindow):
             p.update_zpa_self()
         self.update_win_self()
 
+        self.center_all_images() #center
+        self.update_win_self() #center
+
 
     @Slot()
     def generate_scales_callback(self):
