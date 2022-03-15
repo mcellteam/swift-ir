@@ -3822,7 +3822,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.update_panels()
 
         # instead, try approaching this from the import dialog code block
-
         self.update_win_self()
 
 
@@ -4228,6 +4227,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         for p in self.panel_list:
             p.update_zpa_self()
         self.update_win_self()
+
+        self.center_all_images() #center
+        self.update_win_self() #center
 
 
     @Slot()
