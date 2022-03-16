@@ -61,6 +61,8 @@ def get_best_path ( file_path ):
     return os.path.abspath(os.path.normpath(file_path))
 
 def link_stack_orig():
+    print('\nCalling link_stack_orig() in alignem_swift.py:\n')
+
     alignem.print_debug ( 10, "Linking stack" )
 
     ref_image_stack = []
@@ -84,6 +86,8 @@ def link_stack_orig():
 
 
 def link_stack():
+    print('\nCalling link_stack() in alignem_swift.py:\n')
+
     alignem.print_debug ( 10, "Linking stack" )
 
     skip_list = []
@@ -134,6 +138,8 @@ def make_bool(thing):
     return False
 
 def ensure_proper_data_structure ():
+    print('\nCalling ensure_proper_data_structure() in alignem_swift.py:\n')
+
     ''' Try to ensure that the data model is usable. '''
     scales_dict = alignem.project_data['data']['scales']
     for scale_key in scales_dict.keys():
@@ -162,6 +168,7 @@ def ensure_proper_data_structure ():
 
 
 def link_all_stacks():
+    print('\nCalling link_all_stacks() in alignem_swift.py:\n')
     alignem.print_debug ( 10, "Linking all stacks" )
     ensure_proper_data_structure()
 
@@ -208,9 +215,12 @@ def link_all_stacks():
 
 
 def update_linking_callback():
+    print('\nCalling update_linking_callback() in alignem_swift.py:\n')
     link_all_stacks()
 
 def update_skips_callback(new_state):
+    print('\nCalling update_skips_callback(new_state) in alignem_swift.py:\n')
+
     # Update all of the annotations based on the skip values
     copy_skips_to_all_scales()
     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into alignem.py
@@ -311,6 +321,8 @@ class GenScalesDialog(QDialog):
         self.progress.setValue(value)
 
 def create_project_structure_directories ( subdir_path ):
+  print('\nCalling create_project_structure_directories(subdir_path) in alignem_swift.py:\n')
+
   alignem.print_debug (70, "Creating a subdirectory named " + subdir_path)
   try:
     os.mkdir (subdir_path)
@@ -345,6 +357,8 @@ def create_project_structure_directories ( subdir_path ):
 
 
 class GenScalesThread ( QThread ):
+  print('\nCalling GenScalesThread(QThread) in alignem_swift.py:\n')
+
 
   countChanged = Signal(int)
 
@@ -445,6 +459,8 @@ class GenScalesThread ( QThread ):
 
 gen_scales_dialog = None
 def gen_scales_with_thread():
+    print('\nCalling generate_scales_with_thread() in alignem_swift.py:\n')
+
     global gen_scales_dialog
     if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
       alignem.show_warning ( "Note", "Scales can not be generated without a destination (use File/Set Destination)" )
@@ -455,6 +471,8 @@ def gen_scales_with_thread():
 
 
 def generate_scales ():
+    print('\nCalling generate_scales() in alignem_swift.py:\n')
+
     alignem.print_debug ( 10, "generate_scales inside alignem_swift called" )
     #main_win.status.showMessage("Generating Scales ...")
 
@@ -550,6 +568,8 @@ def generate_scales ():
 
 
 def generate_scales_queue ():
+    print('\nCalling generate_scales_queue() in alignem_swift.py:\n')
+
     alignem.print_debug ( 1, "generate_scales_queue inside alignem_swift called" )
 
     image_scales_to_run = [ alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys()) ]
@@ -696,10 +716,15 @@ def generate_scales_queue ():
       scaling_queue.stop()
       del scaling_queue
 
+    #center
+    alignem.main_window.center_all_images()
+    alignem.main_window.update_win_self()
+
     #main_win.status.showMessage("Done Generating Scales ...")
 
 
 def generate_scales_optimized ():
+  print('\nCalling generate_scales_optimized() in alignem_swift.py:\n')
   alignem.print_debug (1, "generate_scales_optimized inside alignem_swift called")
 
   image_scales_to_run = [alignem.get_scale_val (s) for s in sorted (alignem.project_data ['data'] ['scales'].keys ())]
@@ -845,6 +870,7 @@ def generate_scales_optimized ():
 
 
 def get_code_mode():
+    print('\nCalling get_code_mode() in alignem_swift.py:\n')
     ### All of this code is just trying to find the right menu item for the "Use C Version" check box:
     code_mode = 'python'
     menubar = alignem.main_window.menu
@@ -871,6 +897,7 @@ def get_code_mode():
 
 
 def get_file_io_mode():
+    print('\nCalling get_file_io_mode() in alignem_swift.py:\n')
     ### All of this code is just trying to find the right menu item for the "Use File I/O" check box:
     file_io_mode = False
     menubar = alignem.main_window.menu
@@ -898,6 +925,7 @@ def get_file_io_mode():
 
 
 def align_layers ( first_layer=0, num_layers=-1 ):
+    print('\nCalling align_layers() in alignem_swift.py:\n')
     alignem.print_debug ( 30, 100*'=' )
     if num_layers < 0:
       alignem.print_debug ( 30, "Aligning all layers starting with " + str(first_layer) + " using SWiFT-IR ..." )
@@ -988,6 +1016,7 @@ def align_layers ( first_layer=0, num_layers=-1 ):
 
 # Call this function when run_json_project returns with need_to_write_json=false
 def update_datamodel(updated_model):
+      print('\nCalling update_datamodel() in alignem_swift.py:\n')
       alignem.print_debug ( 1, 100*"+" )
       alignem.print_debug ( 1, "run_json_project returned with need_to_write_json=false" )
       alignem.print_debug ( 1, 100*"+" )
@@ -1024,11 +1053,16 @@ def update_datamodel(updated_model):
         pass
       refresh_all()
 
+      # center
+      main_win.center_all_images()
+      main_win.update_win_self()
 
+#affine
 combo_name_to_dm_name = {'Init Affine':'init_affine', 'Refine Affine':'refine_affine', 'Apply Affine':'apply_affine'}
 dm_name_to_combo_name = {'init_affine':'Init Affine', 'refine_affine':'Refine Affine', 'apply_affine':'Apply Affine'}
 
 def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
+    print('\nCalling align_all_or_some() in alignem_swift.py:\n')
     actually_remove = True
     if prompt:
         actually_remove = alignem.request_confirmation ("Note", "Do you want to delete aligned images from " + str(first_layer) + "?")
@@ -1040,7 +1074,11 @@ def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
         alignem.print_debug ( 30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ..." )
         alignem.print_debug ( 70, "Control Model = " + str(control_model) )
 
-        thing_to_do = init_ref_app.get_value ()
+        #thing_to_do is doing what, exactly?
+        # thing_to_do = init_ref_app.get_value () #jy #mod #change #march #wtf
+        print('Reading affine combo box...')
+        thing_to_do = alignem.main_window.affine_combobox.currentText()  # jy #mod #change #march #wtf #combobox
+        print('thing_to_do=', thing_to_do)
         scale_to_run_text = alignem.project_data['data']['current_scale']
         this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
         this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
@@ -1049,7 +1087,7 @@ def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
         alignem.print_debug ( 5, 40 * '=@' + '=')
         alignem.print_debug ( 5, 40 * '@=' + '@')
         alignem.print_debug ( 5, '')
-        alignem.print_debug ( 5, "Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do]))
+        #alignem.print_debug ( 5, "Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do])) #jy
         alignem.print_debug ( 5, '')
         alignem.print_debug ( 5, 40 * '@=' + '@')
         alignem.print_debug ( 5, 40 * '=@' + '=')
@@ -1058,7 +1096,13 @@ def align_all_or_some (first_layer=0, num_layers=-1, prompt=True):
         align_layers(first_layer, num_layers)
         refresh_all()
 
+    #center
+    alignem.main_window.center_all_images()
+    alignem.main_window.update_win_self()
+
+
 def align_forward():
+    print('\nCalling align_forward() in alignem_swift.py:\n')
     num_layers = num_fwd.get_value ()
     first_layer = alignem.project_data['data']['current_layer']
     alignem.print_debug ( 5, "Inside 'align_forward' with first_layer=" + str(first_layer))
@@ -1067,6 +1111,7 @@ def align_forward():
 
 
 def regenerate_aligned (first_layer=0, num_layers=-1, prompt=True):
+    print('\nCalling regenerate_aligned() in alignem_swift.py:\n')
 #    print ( "Regenerate Aligned ... not working yet.")
 #    return
 
@@ -1104,9 +1149,15 @@ def regenerate_aligned (first_layer=0, num_layers=-1, prompt=True):
 
         refresh_all()
 
+    #center
+    alignem.main_window.center_all_images()
+    alignem.main_window.update_win_self()
+
+
 
 
 def jump_to_layer():
+    print('\nCalling jump_to_layer() in alignem_swift.py:\n')
     requested_layer = jump_to_val.get_value()
     alignem.print_debug ( 3, "Jump to layer " + str(requested_layer) )
     num_layers = len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])
@@ -1120,14 +1171,18 @@ def jump_to_layer():
     main_win.image_panel.update_multi_self()
 
 def center_all():
+    print('\nCalling center_all() in alignem_swift.py:\n')
     main_win.center_all_images()
 
 
 def refresh_all ():
-    main_win.refresh_all_images ()
+    print('\nCalling refresh_all() in alignem_swift.py:\n')
+    #main_win.refresh_all_images () #bug
+    alignem.main_window.refresh_all_images() #fix
 
 
 def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
+    print('\nCalling remove_aligned() in alignem_swift.py:\n')
     alignem.print_debug ( 5, "Removing aligned from scale " + str(alignem.get_cur_scale()) + " forward from layer " + str(starting_layer) + "  (remove_aligned)" )
     actually_remove = True
     if prompt:
@@ -1162,8 +1217,10 @@ def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
               os.remove(fname)
               alignem.image_library.remove_image_reference ( fname )
 
-        main_win.update_panels()
-        refresh_all ()
+
+        #main_win.update_panels() #bug
+        alignem.main_window.update_panels() #fix
+        refresh_all()
 
 
 def method_debug():
@@ -1324,6 +1381,8 @@ def crop_mode_callback():
 
 
 def clear_match_points():
+    print('\nCalling clear_match_points() in alignem_swift.py:\n')
+
     #global match_pt_mode
     #if not match_pt_mode.get_value():
     if view_match_crop.get_value() != 'Match':
@@ -1343,6 +1402,7 @@ def clear_match_points():
         main_win.refresh_all_images ()
 
 def clear_all_skips():
+    print('\nCalling clear_all_skips() in alignem_swift.py:\n')
     image_scale_keys = [ s for s in sorted(alignem.project_data['data']['scales'].keys()) ]
     for scale in image_scale_keys:
         scale_key = str(scale)
@@ -1351,6 +1411,7 @@ def clear_all_skips():
     skip.set_value(False)
 
 def copy_skips_to_all_scales():
+    print('\nCalling copy_skips_to_all_scales() in alignem_swift.py:\n')
     source_scale_key = alignem.project_data['data']['current_scale']
     if not 'scale_' in str(source_scale_key):
         source_scale_key = 'scale_' + str(source_scale_key)
@@ -1367,6 +1428,7 @@ def copy_skips_to_all_scales():
     # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][alignem.project_data['data']['current_layer']]['skip']
 
 def update_skip_annotations():
+    print('\nCalling update_skip_annotations() in alignem_swift.py:\n')
     alignem.print_debug ( 80, "update_skip_annotations called")
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
     remove_list = []
@@ -1675,6 +1737,7 @@ if __name__ == "__main__":
            ", tagged as revision: " + str (global_source_rev) +
            ", parallel mode = " + str(global_parallel_mode) + "\n")
 
+
     main_win = alignem.MainWindow ( control_model=control_model, title="GlanceEM_SWiFT" )
     main_win.register_view_change_callback ( view_change_callback )
     main_win.register_mouse_move_callback ( mouse_move_callback )
@@ -1683,7 +1746,8 @@ if __name__ == "__main__":
     alignem.update_linking_callback = update_linking_callback
     alignem.update_skips_callback = update_skips_callback
 
-    main_win.resize(1420,655)  # This value is typically chosen to show all widget text
+    #main_win.resize(1420,655)  #original This value is typically chosen to show all widget text
+    main_win.resize(1420, 700)  # This value is typically chosen to show all widget text
 
     #main_win.register_project_open ( open_json_project )
     #main_win.register_project_save ( save_json_project )
