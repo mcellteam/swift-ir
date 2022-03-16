@@ -43,7 +43,8 @@ main_win = None
 
 global_source_rev = ""
 global_source_hash = ""
-global_parallel_mode = False
+# global_parallel_mode = False #jy
+global_parallel_mode = True #jy
 global_use_file_io = False
 
 
@@ -357,12 +358,11 @@ def create_project_structure_directories ( subdir_path ):
 
 
 class GenScalesThread ( QThread ):
-  print('\nCalling GenScalesThread(QThread) in alignem_swift.py:\n')
-
 
   countChanged = Signal(int)
 
   def run(self):
+    print("Calling 'run' member function of GenScalesThread(QThread) class:")
     # Note: all printed output has been suppressed for testing
     #alignem.print_debug ( 10, "GenScalesThread.run inside alignem_swift called" )
     #main_win.status.showMessage("Generating Scales ...")
@@ -870,7 +870,7 @@ def generate_scales_optimized ():
 
 
 def get_code_mode():
-    print('\nCalling get_code_mode() in alignem_swift.py:\n')
+    print('Calling get_code_mode() in alignem_swift.py:')
     ### All of this code is just trying to find the right menu item for the "Use C Version" check box:
     code_mode = 'python'
     menubar = alignem.main_window.menu
@@ -942,52 +942,59 @@ def align_layers ( first_layer=0, num_layers=-1 ):
     global_use_file_io = get_file_io_mode()
 
     # Check that there is a place to put the aligned images
-    if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
 
-      alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
-      alignem.show_warning ( "Note", "Projects can not be aligned without a destination (use File/Set Destination)" )
+    print("\nif (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):")
+    print("alignem.project_data['data']['destination_path'] == None...", alignem.project_data['data']['destination_path'] == None)
+    print("len(alignem.project_data['data']['destination_path']) <= 0...", len(alignem.project_data['data']['destination_path']) <= 0)
+
+    if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
+        print("...if statement was TRUE...")
+        alignem.print_debug ( 1, "Error: Cannot align without destination set (use File/Set Destination)" )
+        alignem.show_warning ( "Note", "Projects can not be aligned without a destination (use File/Set Destination)" )
 
     else:
+        print("...ELSE statement was run...")
+        alignem.print_debug ( 10, "Aligning with output in " + alignem.project_data['data']['destination_path'] )
+        scale_to_run_text = alignem.project_data['data']['current_scale']
+        alignem.print_debug ( 10, "Aligning scale " + str(scale_to_run_text) )
 
-      alignem.print_debug ( 10, "Aligning with output in " + alignem.project_data['data']['destination_path'] )
-      scale_to_run_text = alignem.project_data['data']['current_scale']
-      alignem.print_debug ( 10, "Aligning scale " + str(scale_to_run_text) )
+        # Create the expected directory structure for pyswift_tui.py
+        source_dir = os.path.join ( alignem.project_data['data']['destination_path'], scale_to_run_text, "img_src" )
+        alignem.makedirs_exist_ok ( source_dir, exist_ok=True )
+        target_dir = os.path.join ( alignem.project_data['data']['destination_path'], scale_to_run_text, "img_aligned" )
+        alignem.makedirs_exist_ok ( target_dir, exist_ok=True )
 
-      # Create the expected directory structure for pyswift_tui.py
-      source_dir = os.path.join ( alignem.project_data['data']['destination_path'], scale_to_run_text, "img_src" )
-      alignem.makedirs_exist_ok ( source_dir, exist_ok=True )
-      target_dir = os.path.join ( alignem.project_data['data']['destination_path'], scale_to_run_text, "img_aligned" )
-      alignem.makedirs_exist_ok ( target_dir, exist_ok=True )
+        # Create links or copy files in the expected directory structure
+        # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
+        this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
+        stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
 
-      # Create links or copy files in the expected directory structure
-      # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
-      this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
-      stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
-
-      if False:
+    if False:
         for layer in stack_at_this_scale:
-          image_name = None
-          if 'base' in layer['images'].keys():
-            image = layer['images']['base']
-            try:
-              image_name = os.path.basename(image['filename'])
-              destination_image_name = os.path.join(source_dir,image_name)
-              shutil.copyfile(image.image_file_name, destination_image_name)
-            except:
-              pass
+            image_name = None
+            if 'base' in layer['images'].keys():
+                image = layer['images']['base']
+                try:
+                    image_name = os.path.basename(image['filename'])
+                    destination_image_name = os.path.join(source_dir,image_name)
+                    shutil.copyfile(image.image_file_name, destination_image_name)
+                except:
+                    pass
 
-      # Copy the data model for this project to add local fields
-      dm = copy.deepcopy ( alignem.project_data )
-      # Add fields needed for SWiFT:
-      stack_at_this_scale = dm['data']['scales'][scale_to_run_text]['alignment_stack']
-      for layer in stack_at_this_scale:
+    # Copy the data model for this project to add local fields
+    dm = copy.deepcopy ( alignem.project_data )
+    # Add fields needed for SWiFT:
+    stack_at_this_scale = dm['data']['scales'][scale_to_run_text]['alignment_stack']
+    for layer in stack_at_this_scale:
         layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
-      # Run the project via pyswift_tui
-      pyswift_tui.debug_level = alignem.debug_level
-      if global_parallel_mode:
+    print('Run the project via pyswift_tui...')
+    # Run the project via pyswift_tui
+    # pyswift_tui.debug_level = alignem.debug_level
+    if global_parallel_mode:
+        print("  if global_parallel_mode:", global_parallel_mode)
         running_project = project_runner.project_runner ( project=dm,
                                                           use_scale=alignem.get_scale_val(scale_to_run_text),
                                                           swiftir_code_mode=code_mode,
@@ -999,7 +1006,9 @@ def align_layers ( first_layer=0, num_layers=-1 ):
         updated_model = running_project.get_updated_data_model()
         need_to_write_json = running_project.need_to_write_json
         alignem.print_debug ( 30, "Return from project_runner.project_runner: need_to_write_json = " + str(need_to_write_json) )
-      else:
+    else:
+        print("  Doing the else...")
+        #bug #conditional #else # this conditional appears only to activate with new control panel
         updated_model, need_to_write_json = pyswift_tui.run_json_project ( project = dm,
                                                                            alignment_option = this_scale['method_data']['alignment_option'],
                                                                            use_scale = alignem.get_scale_val(scale_to_run_text),
@@ -1008,10 +1017,11 @@ def align_layers ( first_layer=0, num_layers=-1 ):
                                                                            num_layers = num_layers )
 
         alignem.print_debug ( 30, "Return from pyswift_tui.run_json_project: need_to_write_json = " + str(need_to_write_json) )
-      if need_to_write_json:
-          alignem.project_data = updated_model
-      else:
-          update_datamodel(updated_model)
+
+    if need_to_write_json:
+        alignem.project_data = updated_model
+    else:
+        update_datamodel(updated_model)
 
 
 # Call this function when run_json_project returns with need_to_write_json=false
@@ -1152,6 +1162,7 @@ def regenerate_aligned (first_layer=0, num_layers=-1, prompt=True):
     #center
     alignem.main_window.center_all_images()
     alignem.main_window.update_win_self()
+    refresh_all()
 
 
 
@@ -1672,6 +1683,9 @@ if __name__ == "__main__":
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1, help="Run the C versions of SWiFT tools")
     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0, help="Use files to gather output from tasks")
     args = options.parse_args()
+    print("args:")
+    print(args)
+
 
     if args.debug != None:
       alignem.debug_level = args.debug
