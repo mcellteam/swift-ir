@@ -1,3 +1,5 @@
+source/PySide6/_stylesheet.qss
+
 Cross_Platform/*
 .idea/*
 Image_Libs/*
