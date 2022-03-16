@@ -733,7 +733,7 @@ class ZoomPanWidget(QWidget):
         clear_crop_settings()
 
     def center_image ( self, all_images_in_stack = True ):
-        print("\nCalling center_image(self,all_images_in_stack = True) in alignem.py:\n")
+        print("Calling center_image(self,all_images_in_stack = True) in alignem.py:")
         print_debug ( 30, "Centering image for " + str(self.role) )
 
         if project_data != None:
@@ -1102,7 +1102,7 @@ class ZoomPanWidget(QWidget):
 
 
     def change_layer ( self, layer_delta ):
-        print("\nCalling change_layer(self,layer_delta) in alignem.py:\n")
+        print("Calling change_layer(self,layer_delta) in alignem.py:")
         global project_data
         global main_window
         global preloading_range
@@ -3803,7 +3803,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def add_image_to_role ( self, image_file_name, role_name ):
-        print("\nCalling add_image_to_role(self,image_file_name,role_name) in alignem.py:\n")
+        print("Calling add_image_to_role(self,image_file_name,role_name) in alignem.py:")
 
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
         local_cur_scale = get_cur_scale()
