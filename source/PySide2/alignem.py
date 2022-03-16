@@ -2795,17 +2795,17 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # Bottom configuration panel
         self.documentation_button = QPushButton("Documentation")
         self.documentation_button.clicked.connect(documentation_view)
-        self.documentation_button.setFixedSize(QSize(130, 32))
+        self.documentation_button.setFixedSize(QSize(130, 28))
 
         # self.microns_button = QPushButton("MICrONS")
         # self.microns_button.clicked.connect(microns_view)
-        # self.microns_button.setFixedSize(QSize(130, 32))
+        # self.microns_button.setFixedSize(QSize(130, 28))
         self.remote_viewer_button = QPushButton("Remote Viewer")
         self.remote_viewer_button.clicked.connect(remote_view)
-        self.remote_viewer_button.setFixedSize(QSize(130, 32))
+        self.remote_viewer_button.setFixedSize(QSize(130, 28))
         self.ng_button = QPushButton("Neuroglancer View")
         self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
-        self.ng_button.setFixedSize(QSize(130, 32))
+        self.ng_button.setFixedSize(QSize(130, 28))
 
         n_scales_label = QLabel("# scales:")
         #n_scales_label.setAlignment(Qt.AlignRight)
@@ -2885,12 +2885,12 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         ############main window lower controls panel
         self.export_zarr_button = QPushButton("Export to Zarr")
         self.export_zarr_button.clicked.connect(export_zarr)
-        self.export_zarr_button.setFixedSize(QSize(130, 32))
+        self.export_zarr_button.setFixedSize(QSize(130, 28))
         self.h_layout = QHBoxLayout()
         self.quit_app_button = QPushButton("Exit")                                          #quit/exit app button
         #self.quit_app_button.clicked.connect(close_all)
         self.quit_app_button.clicked.connect(self.close)
-        self.quit_app_button.setFixedSize(QSize(130, 32))
+        self.quit_app_button.setFixedSize(QSize(130, 28))
         #self.quit_app_button.resize(50,50) #not working could be .css
         #self.quit_app_button.setGeometry(100, 100, 600, 400) #not working could be .css
         #setfixedsize is necessary to force pushbutton size
@@ -2920,12 +2920,12 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #horizontal #newcontrols #controlslayout
         self.center_button = QPushButton('Center')
         self.center_button.clicked.connect(self.center_all_images)    #center
-        self.center_button.setFixedSize(QSize(130, 32))
+        self.center_button.setFixedSize(QSize(130, 28))
 
         from alignem_swift import generate_scales_queue
         self.generate_scales_button = QPushButton('Generate Scales')
         self.generate_scales_button.clicked.connect(generate_scales_queue)    #generate_scales
-        self.generate_scales_button.setFixedSize(QSize(130, 32))
+        self.generate_scales_button.setFixedSize(QSize(130, 28))
 
         self.affine_combobox = QComboBox(self)
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
@@ -2933,7 +2933,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         from alignem_swift import align_all_or_some
         self.align_all_button = QPushButton('Align All')
         self.align_all_button.clicked.connect(align_all_or_some)    #align_all_or_some
-        self.align_all_button.setFixedSize(QSize(130, 32))
+        self.align_all_button.setFixedSize(QSize(130, 28))
 
         self.improved_controls_layout = QHBoxLayout()
         self.improved_controls_layout.addWidget(self.center_button, alignment=Qt.AlignLeft)  #center
