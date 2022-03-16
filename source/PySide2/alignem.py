@@ -721,6 +721,8 @@ class ZoomPanWidget(QWidget):
 
 
     def show_actual_size ( self ):
+        print("\nCalling show_actual_size(self) in alignem.py:\n")
+
         print_debug ( 30, "Showing actual size image for role " + str(self.role) )
         self.zoom_scale = 1.0
         self.ldx = 0
@@ -731,6 +733,7 @@ class ZoomPanWidget(QWidget):
         clear_crop_settings()
 
     def center_image ( self, all_images_in_stack = True ):
+        print("\nCalling center_image(self,all_images_in_stack = True) in alignem.py:\n")
         print_debug ( 30, "Centering image for " + str(self.role) )
 
         if project_data != None:
@@ -1099,6 +1102,7 @@ class ZoomPanWidget(QWidget):
 
 
     def change_layer ( self, layer_delta ):
+        print("\nCalling change_layer(self,layer_delta) in alignem.py:\n")
         global project_data
         global main_window
         global preloading_range
@@ -1517,31 +1521,33 @@ class MultiImagePanel(QWidget):
             self.repaint()
 
     def set_roles (self, roles_list):
-      if len(roles_list) > 0:
-        # Save these roles
-        role_settings = {}
-        for w in self.actual_children:
-          if type(w) == ZoomPanWidget:
-            role_settings[w.role] = w.get_settings()
+        print("\nCalling set_roles(self,roles_list) in alignem.py:\n")
+        if len(roles_list) > 0:
+            # Save these roles
+            role_settings = {}
+            for w in self.actual_children:
+              if type(w) == ZoomPanWidget:
+                role_settings[w.role] = w.get_settings()
 
-        project_data['data']['panel_roles'] = roles_list
-        # Remove all the image panels (to be replaced)
-        try:
-            self.remove_all_panels()
-        except:
-            pass
-        # Create the new panels
-        for role in roles_list:
-          zpw = ZoomPanWidget(role=role, parent=self)
-          # Restore the settings from the previous zpw
-          if role in role_settings:
-            zpw.set_settings ( role_settings[role] )
-          zpw.draw_border = self.draw_border
-          zpw.draw_annotations = self.draw_annotations
-          zpw.draw_full_paths = self.draw_full_paths
-          self.add_panel ( zpw )
+            project_data['data']['panel_roles'] = roles_list
+            # Remove all the image panels (to be replaced)
+            try:
+                self.remove_all_panels()
+            except:
+                pass
+            # Create the new panels
+            for role in roles_list:
+              zpw = ZoomPanWidget(role=role, parent=self)
+              # Restore the settings from the previous zpw
+              if role in role_settings:
+                zpw.set_settings ( role_settings[role] )
+              zpw.draw_border = self.draw_border
+              zpw.draw_annotations = self.draw_annotations
+              zpw.draw_full_paths = self.draw_full_paths
+              self.add_panel ( zpw )
 
     def remove_all_panels ( self ):
+        print("\nCalling remove_all_panels(self) in alignem.py:\n")
         print_debug ( 30, "In remove_all_panels" )
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget ( self.actual_children[-1] )
@@ -1550,6 +1556,8 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def refresh_all_images ( self ):
+        print("\nCalling refresh_all_images(self) in alignem.py:\n")
+
         print_debug ( 30, "In MultiImagePanel.refresh_all_images" )
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
@@ -1559,6 +1567,8 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def center_all_images ( self, all_images_in_stack=True ):
+        print("\nCalling center_all_images(self,all_images_in_stack=True) in alignem.py\n")
+
         print_debug ( 30, "In MultiImagePanel.center_all_images" )
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
@@ -1569,6 +1579,8 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def all_images_actual_size ( self ):
+        print("\nCalling all_images_actual_size(self) in alignem.py:\n")
+
         print_debug ( 30, "In MultiImagePanel.all_images_actual_size" )
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
@@ -1947,6 +1959,7 @@ class ComboBoxControl(GenericWidget):
         self.choices = choices
     def get_value ( self ):
         return self.widget.currentText()
+        # AttributeError: 'ComboBoxControl' object has no attribute 'widget'
     def set_value ( self, value ):
         print_debug ( 50, "ComboBoxControl.set_value ( " + str(value) + ")")
         self.widget.setCurrentText(value)
@@ -2380,6 +2393,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             self.status.showMessage("GlanceEM_SWiFT Documentation")
 
 
+
+
+
+
         def remote_view():
             print("\nremote_view():\n")
             self.stacked_widget.setCurrentIndex(4)
@@ -2465,7 +2482,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         #ng_view #ngview
         def ng_view(): # ng_view #ngview #neuroglancer
-            print("\nng_view():\n")
+            print("\nCalling ng_view() in alignem.py:\n")
 
             if not self.current_project_file_name:
                 print("There is no open project. Not opening viewer.")
@@ -2763,7 +2780,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.main_panel_layout.addWidget ( self.image_panel ) #jy instantiate image panel
         self.main_panel_layout.addWidget ( self.control_panel )
 
-        self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none'])
+        self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none']) #?? why
         # note - check for string comparison of 'none' later, do not add whitespace fill
         self.clevel_val = IntField("clevel (1-9):", 5)
         self.n_scales_val = IntField("scales:", 4)
@@ -2779,6 +2796,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.documentation_button = QPushButton("Documentation")
         self.documentation_button.clicked.connect(documentation_view)
         self.documentation_button.setFixedSize(QSize(130, 32))
+
         # self.microns_button = QPushButton("MICrONS")
         # self.microns_button.clicked.connect(microns_view)
         # self.microns_button.setFixedSize(QSize(130, 32))
@@ -2813,6 +2831,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.multiview_bool.setChecked(False)
 
         def export_zarr():
+            print('\nCalling export_zarr() in alignem.py:\n')
 
             if not self.current_project_file_name:
                 print("There is no project open. Canceling export....")
@@ -2893,10 +2912,51 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.h_layout.addWidget(self.multiview_bool, alignment=Qt.AlignRight)
         #self.h_layout.setContentsMargins(400, 0, 0, 0)
 
+        ##################################
+        ########## NEW CONTROLS ##########
+        ##################################
+
+        #controls #controlpanel #newcontrols
+        #horizontal #newcontrols #controlslayout
+        self.center_button = QPushButton('Center')
+        self.center_button.clicked.connect(self.center_all_images)    #center
+        self.center_button.setFixedSize(QSize(130, 32))
+
+        from alignem_swift import generate_scales_queue
+        self.generate_scales_button = QPushButton('Generate Scales')
+        self.generate_scales_button.clicked.connect(generate_scales_queue)    #generate_scales
+        self.generate_scales_button.setFixedSize(QSize(130, 32))
+
+        self.affine_combobox = QComboBox(self)
+        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
+
+        from alignem_swift import align_all_or_some
+        self.align_all_button = QPushButton('Align All')
+        self.align_all_button.clicked.connect(align_all_or_some)    #align_all_or_some
+        self.align_all_button.setFixedSize(QSize(130, 32))
+
+        self.improved_controls_layout = QHBoxLayout()
+        self.improved_controls_layout.addWidget(self.center_button, alignment=Qt.AlignLeft)  #center
+        self.improved_controls_layout.addWidget(self.generate_scales_button, alignment=Qt.AlignLeft)  #scales
+        self.improved_controls_layout.addWidget(self.affine_combobox, alignment=Qt.AlignLeft)  # scales
+        self.improved_controls_layout.addWidget(self.align_all_button, alignment=Qt.AlignLeft)  #align_all
+        self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.improved_controls_layout.addItem(self.spacerItem2)
+
+        #divider
+        self.divider = QGridLayout()
+        self.divider.addWidget(QHLine(), 0, 0, 1, 2)
+        self.divider.addWidget(QLabel("New Control Panel:"), 1, 0, 1, 1)
+        #self.divider.addWidget(QHLine(), 2, 0, 1, 2)
+        self.main_panel_layout.addLayout(self.divider)
+
+        self.main_panel_layout.addLayout(self.improved_controls_layout)
+
+        #divider
         self.layout = QGridLayout()
         self.layout.addWidget(QHLine(), 0, 0, 1, 2)
-        self.layout.addWidget(QLabel("New features:"), 1, 0, 1, 1)
-        self.layout.addWidget(QHLine(), 2, 0, 1, 2)
+        self.layout.addWidget(QLabel("New Features:"), 1, 0, 1, 1)
+        #self.layout.addWidget(QHLine(), 2, 0, 1, 2)
         self.main_panel_layout.addLayout(self.layout)
 
 
@@ -3039,7 +3099,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
         #verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
 
 
         # Menu Bar
@@ -3257,9 +3316,13 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.setMinimumWidth(600) # original #jy
         # self.setMinimumHeight(400) # original #jy
         # self.resize(2000,1000) # original #jy
-        self.setMinimumWidth(600)
+        # self.setMinimumWidth(600)
+        # self.setMinimumHeight(400)
+        # self.resize(2000,1000)
+        self.setMinimumWidth(800)
         self.setMinimumHeight(400)
-        self.resize(2000,1000)
+        self.resize(2000, 1200)
+
 
         # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -3675,6 +3738,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def actual_size(self):
+        print("\nCalling actual_size(self) in alignem.py:\n")
         print_debug ( 90, "Setting images to actual size" )
         for p in self.panel_list:
             p.dx = p.mdx = p.ldx = 0
@@ -3739,6 +3803,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def add_image_to_role ( self, image_file_name, role_name ):
+        print("\nCalling add_image_to_role(self,image_file_name,role_name) in alignem.py:\n")
+
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
         local_cur_scale = get_cur_scale()
 
@@ -3763,6 +3829,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def add_empty_to_role ( self, role_name ):
+        print("\nCalling add_empty_to_role(self,role_name) in alignem.py:\n")
+
         local_cur_scale = get_cur_scale()
 
         used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][local_cur_scale]['alignment_stack'] ]
@@ -3782,7 +3850,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         image_dict[role_name]['filename'] = None
 
 
+
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
+        print("\nCalling import_images(self,role_to_import,file_name_list,clear_role=False) in alignem.py:\n")
         global preloading_range
         local_cur_scale = get_cur_scale()
 
@@ -3815,18 +3885,20 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
               p.force_center = True
               p.update_zpa_self()
 
-        #center images after importing #jy
+        #center images after importing
         self.center_all_images()
-        #self.refresh_all_images()
+        self.update_win_self()
+
         #might need:
         #self.update_panels()
 
         # instead, try approaching this from the import dialog code block
-        self.update_win_self()
+
 
 
 
     def update_panels(self):
+        print("\nCalling update_panels(self) in alignem.py:\n")
         for p in self.panel_list:
             p.update_zpa_self()
         self.update_win_self()
@@ -3861,6 +3933,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def set_destination ( self ):
+        print("\nCalling set_destination(self) in alignem.py:\n")
         print_debug ( 1, "Set Destination" )
 
         options = QFileDialog.Options()
@@ -3875,6 +3948,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def set_def_proj_dest ( self ):
+        print("\nCalling set_def_proj_dest(self) in alignem.py:\n")
         print_debug ( 1, "Set Default Project Destination to " + str(self.current_project_file_name) )
         if self.current_project_file_name == None:
           show_warning ( "No Project File", "Unable to set a project destination without a project file.\nPlease save the project file first." )
@@ -3899,6 +3973,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def define_roles ( self, roles_list ):
+        print("\nCalling define_roles(self,roles_list) in alignem.py:\n")
 
         # Set the image panels according to the roles
         self.image_panel.set_roles ( roles_list )
@@ -3956,6 +4031,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def define_roles_callback(self):
+        print("\nCalling define_rolls_callback(self) in alignem.py:\n")
+
         default_roles = ['Stack']
         if len(project_data['data']['panel_roles']) > 0:
           default_roles = project_data['data']['panel_roles']
@@ -3973,11 +4050,15 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def import_into_role(self, checked):
+        print("\nCalling import_into_role(self,checked) in alignem.py:\n")
+
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( import_role_name )
 
     #center try center code from here
     def import_base_images ( self ):
+        print("\nCalling import_base_images(self) in alignem.py:\n")
+
         self.import_images_dialog ( 'base' )
         if update_linking_callback != None:
             update_linking_callback()
@@ -4067,7 +4148,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             main_window.update_panels()
             main_window.refresh_all()
 
+    #scales #scales_list
     def define_scales_menu ( self, scales_list ):
+        print("\nCalling define_scales_menu(self,scales_list) in alignem.py:\n")
+
         # Set the Scales menu from this scales_list
         mb = self.menuBar()
         if not (mb is None):
@@ -4090,7 +4174,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                   m.addAction(item)
                   first = False
 
+    #scales #setscales #scales_list
     def set_selected_scale ( self, scale_str ):
+        print("\nCalling set_selected_scale(self,scale_str) in alignem.py:\n")
         # Set the Scales menu from this scales_list
         mb = self.menuBar()
         if not (mb is None):
@@ -4107,7 +4193,11 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                   else:
                     a.setChecked ( False )
 
+        # self.center_all_images() #center
+        # self.update_win_self()
+
     def set_scales_from_string(self, scale_string):
+        print("\nCalling set_scales_from_string(self, scale_string) in alignem.py:\n")
         cur_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in project_data['data']['scales'].keys() ] ) ]
         scale_string = scale_string.strip ()
         if len (scale_string) > 0:
@@ -4152,6 +4242,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def define_scales_callback(self):
+        print("\nCalling define_scales_callback(self) in alignem.py:\n")
+
         default_scales = ['1']
 
         cur_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in project_data['data']['scales'].keys() ] ) ]
@@ -4204,8 +4296,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         else:
             print_debug ( 30, "Cancel: Scales not changed" )
 
+    #scales #setscale
     @Slot()
     def set_current_scale(self, checked):
+        print("\nCalling set_current_scale(self, checked) in alignem.py:\n")
         local_cur_scale = get_cur_scale()
         print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
         old_scale = local_cur_scale
@@ -4229,16 +4323,18 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.update_win_self()
 
         self.center_all_images() #center
-        self.update_win_self() #center
+        self.update_win_self()
 
 
     @Slot()
     def generate_scales_callback(self):
+        print("\nCalling generate_scales_callback(self) in alignem.py:\n")
         print_debug ( 5, "Generating scales is now handled via control panel buttons in subclass alignem_swift." )
 
 
     @Slot()
     def remove_this_layer(self):
+        print("\nCalling remove_this_layer(self) in alignem.py:\n")
         local_cur_scale = get_cur_scale()
         local_current_layer = project_data['data']['current_layer']
         project_data['data']['scales'][local_cur_scale]['alignment_stack'].pop(local_current_layer)
@@ -4252,6 +4348,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def remove_all_layers(self):
+        print("\nCalling remove_all_layers(self) in alignem.py:\n")
         global project_data
         local_cur_scale = get_cur_scale()
         project_data['data']['current_layer'] = 0
@@ -4261,6 +4358,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def remove_all_panels(self):
+        print("\nCalling remove_all_panels(self) in alignem.py:\n")
         print_debug ( 30, "Removing all panels" )
         if 'image_panel' in dir(self):
             print_debug ( 30, "image_panel exists" )
@@ -4396,16 +4494,24 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
 def run_app(main_win=None):
+    print('Calling run_app(main_win=none) from alignem.py:')
+
+    print("Defining global: app")
     global app
+    print("Defining global: main_window")
     global main_window
 
+    print('Evaluating conditional statement...')
     if main_win == None:
+        print('    main_win == None')
+        print('    => Setting main_window = MainWindow()')
         main_window = MainWindow()
     else:
+        print('    main_win != None...')
+        print('    => Setting main_window = main_win')
         main_window = main_win
 
     # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
-
     main_window.show()
     sys.exit(app.exec_())
 
@@ -4418,6 +4524,7 @@ control_model = None
 
 #main
 if __name__ == "__main__":
+    print('\n\n\n Entering __main__ of alignem.py... \n\n\n')
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
@@ -4443,10 +4550,10 @@ if __name__ == "__main__":
     ]
 
     main_window = MainWindow ( control_model=control_model )
-    main_window.resize(2200,1000)
+    #main_window.resize(2200,1000)
+    main_window.resize(2200, 1200)
 
     main_window.define_roles ( ['Stack'] )
-
     main_window.show()
     sys.exit(app.exec_())
 
