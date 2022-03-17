@@ -167,7 +167,22 @@ def ensure_proper_data_structure():
             if not 'win_scale_factor' in mdata:
                 mdata['win_scale_factor'] = win_scale_factor.get_value()
             if not 'whitening_factor' in mdata:
-                mdata['whitening_factor'] = whitening_factor.get_value()
+                print("\n\n\n\n\n\n")
+                #whitening
+                print("\nGetting value of whitening factor...\n")
+                print("Old value would have been: ", whitening_factor.get_value())
+                print("Old value would have type: ", type(whitening_factor.get_value()))
+                # mdata['whitening_factor'] = whitening_factor.get_value()
+
+                print("New value will be: ", alignem.main_window.whitening_input.text())
+                print("New value will have type: ", type(alignem.main_window.whitening_input.text()))
+
+                mdata['whitening_factor'] = alignem.main_window.whitening_input.text()
+
+                print(alignem.main_window.whitening_input.text)
+                print(alignem.main_window.whitening_input.text())
+
+                print("\n\n\n\n\n\n")
 
 
 def link_all_stacks():
