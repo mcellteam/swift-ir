@@ -2942,6 +2942,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.align_all_button.clicked.connect(align_all_or_some)    #align_all_or_some
         self.align_all_button.setFixedSize(QSize(130, 28))
 
+        self.skip_bool = QCheckBox('Skip Image')
+        self.skip_bool.setChecked(False)
+
+        from alignem_swift import clear_all_skips
+        self.clear_all_skips_button = QPushButton('Clear All Skips')
+        self.clear_all_skips_button.clicked.connect(clear_all_skips)  #clear_all_skips
+        self.clear_all_skips_button.setFixedSize(QSize(130, 28))
+
         #whitening QLineEdit
         whitening_label = QLabel("Whitening:")
         # n_scales_label.setAlignment(Qt.AlignRight)
@@ -2969,6 +2977,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.improved_controls_layout.addWidget(self.whitening_input, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(swim_label, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(self.swim_input, alignment=Qt.AlignLeft)
+        self.improved_controls_layout.addWidget(self.skip_bool, alignment=Qt.AlignLeft)
+        self.improved_controls_layout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignLeft)
         self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.improved_controls_layout.addItem(self.spacerItem2)
 
@@ -4556,7 +4566,7 @@ control_model = None
 
 #main
 if __name__ == "__main__":
-    print('\n\n\n Entering __main__ of alignem.py... \n\n\n')
+    print('\n\n Entering __main__ of alignem.py... \n\n')
 
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, help="Print more information with larger DEBUG (0 to 100)")
