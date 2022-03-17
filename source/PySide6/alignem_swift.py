@@ -1333,6 +1333,8 @@ def notyet():
 
 
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
+    print('\nCalling view_change_callback in alignem_swift.py:\n')
+
     alignem.print_debug(25, "\nView changed from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str(
         (next_scale_key, next_layer_num)))
 
@@ -1432,7 +1434,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                             print("Attempting to setText of whitening_input QLineEdit...")
                             # whitening_factor.set_value(
                             #     next_layer['align_to_ref_method']['method_data']['whitening_factor'])
-                            alignem.main_window.whitening_input.setText((next_layer['align_to_ref_method']['method_data']['whitening_factor']))
+                            alignem.main_window.whitening_input.setText(str((next_layer['align_to_ref_method']['method_data']['whitening_factor'])))
 
 
                         if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:

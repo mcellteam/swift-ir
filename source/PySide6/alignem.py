@@ -3614,6 +3614,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         print_all_skips()
 
+        alignem.main_window.center_all_images()
+        alignem.main_window.update_win_self()
+
 
     def save_project_to_current_file(self):
         # Save to current file and make known file paths relative to the project file name
