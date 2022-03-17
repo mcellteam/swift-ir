@@ -1,4 +1,64 @@
+Joel Notes
+
+Model-view-controller (software design pattern)
+    Model: The backend that contains all the data logic
+    View: The frontend or graphical user interface (GUI)
+    Controller: The brains of the application that controls how data is displayed
+
+These are the fundamental modules used by Python’s Qt binding, specifically PyQt5.
+    Qt: It combines all the classes/modules mentioned below into a single module. It considerably increases the memory
+      used by the application. However, it’s easier to manage the framework by only importing one module.
+    QtCore: Contains the core non-graphical classes used by other modules. This is where the Qt event loop, signals,
+      and slot-connectivity, etc. are implemented.
+    QtWidgets: Contains most of the widgets available in Pyqt5.
+    QtGui: Contains GUI components and extends the QtCore module.
+    QtNetwork: Contains classes used to implement network programming through Qt. It supports TCP servers, TCP sockets,
+      UDP sockets, SSL handling, network sessions, and DNS lookups.
+    QtMultimedia provides low-level multimedia functionality.
+    QtSql: implements database integration for SQL databases. Supports ODBC, MySQL, Oracle, SQLite, and PostgreSQL.
+
+
+Potentially useful widgets:
+    QSplitter: Splitters are used to separate the contents of a window so that the widgets are grouped properly and do
+      not appear cluttered. QSplitter is one of the primary layout handlers available in PyQt5 and is used to split the
+      content both horizontally and vertically.
+    QDock: A dock widget is a sub-window with two properties:
+      It can be moved within the main window and
+      It can be docked outside the parent window to another location on the screen.
+
+
+On macOS when a push button’s width becomes smaller than 50 or its height becomes smaller than 30, the button’s corners
+are changed from round to square. Use the setMinimumSize() function to prevent this behavior.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 TODO Task list (add date when completed):
+
 
 1) Sort Scales in Menu (Done: March 21st, 2020)
 2) Copy Skip status to other scales? (Done: March 24th, 2020 ... New buttons to clear/copy)

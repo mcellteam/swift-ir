@@ -2420,6 +2420,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             print("\nreload_ng():\n")
             ng_view()
 
+        def reload_remote():
+            print("\nreload_remote():\n")
+            remote_view()
+
         def exit_ng():
             print("\nexit_ng():\n")
             self.stacked_widget.setCurrentIndex(0)
@@ -2808,7 +2812,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.remote_viewer_button = QPushButton("Remote Viewer")
         self.remote_viewer_button.clicked.connect(remote_view)
         self.remote_viewer_button.setFixedSize(QSize(130, 28))
-        self.ng_button = QPushButton("Neuroglancer View")
+        # self.ng_button = QPushButton("Neuroglancer View")
+        self.ng_button = QPushButton("3D View")
         self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
         self.ng_button.setFixedSize(QSize(130, 28))
 
@@ -2905,6 +2910,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.quit_app_button.setFixedSize(QSize(100,32))
         self.h_layout.addWidget(self.quit_app_button, alignment=Qt.AlignLeft)
         self.h_layout.addWidget(self.documentation_button, alignment=Qt.AlignLeft)
+        self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignLeft)
         # self.h_layout.addWidget(self.microns_button, alignment=Qt.AlignLeft)
         self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.h_layout.addItem(self.spacerItem)
@@ -2915,7 +2921,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.h_layout.addWidget(cname_label, alignment=Qt.AlignRight)
         self.h_layout.addWidget(self.cname_combobox, alignment=Qt.AlignRight)
         self.h_layout.addWidget(self.export_zarr_button, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignRight)
+        # self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignRight)
         self.h_layout.addWidget(self.ng_button, alignment=Qt.AlignRight)
         # self.h_layout.addWidget(self.multiview_bool, alignment=Qt.AlignRight)
         #self.h_layout.setContentsMargins(400, 0, 0, 0)
@@ -2926,30 +2932,35 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         #controls #controlpanel #newcontrols
         #horizontal #newcontrols #controlslayout
-        self.center_button = QPushButton('Center')
-        self.center_button.clicked.connect(self.center_all_images)    #center
+        self.center_button = QPushButton('Center') #center
+        self.center_button.clicked.connect(self.center_all_images)
         self.center_button.setFixedSize(QSize(130, 28))
 
-        from alignem_swift import generate_scales_queue
+        from alignem_swift import generate_scales_queue #generate_scales
         self.generate_scales_button = QPushButton('Generate Scales')
-        self.generate_scales_button.clicked.connect(generate_scales_queue)    #generate_scales
+        self.generate_scales_button.clicked.connect(generate_scales_queue)
         self.generate_scales_button.setFixedSize(QSize(130, 28))
 
-        self.affine_combobox = QComboBox(self)
-        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine']) #thing_to_do #init_ref_app
+        self.affine_combobox = QComboBox(self) #thing_to_do #init_ref_app
+        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
 
-        from alignem_swift import align_all_or_some
+        from alignem_swift import align_all_or_some #align_all_or_some
         self.align_all_button = QPushButton('Align All')
-        self.align_all_button.clicked.connect(align_all_or_some)    #align_all_or_some
+        self.align_all_button.clicked.connect(align_all_or_some)
         self.align_all_button.setFixedSize(QSize(130, 28))
 
-        self.skip_bool = QCheckBox('Skip Image')
+        self.skip_bool = QCheckBox('Skip Image') #skip
         self.skip_bool.setChecked(False)
 
-        from alignem_swift import clear_all_skips
+        from alignem_swift import clear_all_skips #clear_all_skips
         self.clear_all_skips_button = QPushButton('Clear All Skips')
-        self.clear_all_skips_button.clicked.connect(clear_all_skips)  #clear_all_skips
+        self.clear_all_skips_button.clicked.connect(clear_all_skips)
         self.clear_all_skips_button.setFixedSize(QSize(130, 28))
+
+        from alignem_swift import copy_skips_to_all_scales #copy_skips_to_all_scales
+        self.copy_skips_to_all_scales_button = QPushButton('Skips -> All Scales')
+        self.copy_skips_to_all_scales_button.clicked.connect(copy_skips_to_all_scales)
+        self.copy_skips_to_all_scales_button.setFixedSize(QSize(130, 28))
 
         #whitening QLineEdit
         whitening_label = QLabel("Whitening:")
@@ -2980,6 +2991,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.improved_controls_layout.addWidget(self.swim_input, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(self.skip_bool, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignLeft)
+        self.improved_controls_layout.addWidget(self.copy_skips_to_all_scales_button, alignment=Qt.AlignLeft)
         self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.improved_controls_layout.addItem(self.spacerItem2)
 
@@ -3038,11 +3050,17 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.exit_remote_button = QPushButton("Back")
         self.exit_remote_button.setFixedSize(QSize(100, 28))
         self.exit_remote_button.clicked.connect(exit_remote)
+        self.reload_remote_button = QPushButton("Reload")
+        self.reload_remote_button.setFixedSize(QSize(100, 28))
+        self.reload_remote_button.clicked.connect(reload_remote)
         self.remote_viewer_panel = QWidget()                                              # create QWidget()
         self.remote_viewer_panel_layout = QVBoxLayout()                                   # create QVBoxLayout()
         self.remote_viewer_panel_layout.addWidget(self.browser_remote)                    # add widgets
         self.remote_viewer_panel_controls_layout = QHBoxLayout()
         self.remote_viewer_panel_controls_layout.addWidget(self.exit_remote_button, alignment=Qt.AlignLeft)   # go back button
+        self.remote_viewer_panel_controls_layout.addWidget(self.reload_remote_button, alignment=Qt.AlignLeft)
+        self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.remote_viewer_panel_controls_layout.addSpacerItem(self.spacer_item_remote_panel)
         self.remote_viewer_panel_layout.addLayout(self.remote_viewer_panel_controls_layout)        # add horizontal layout
         self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)                      # set layout
 
@@ -3141,9 +3159,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
 
-        # Menu Bar
+        #menu Menu Bar
         self.action_groups = {}
         self.menu = self.menuBar()
+        self.menu.setNativeMenuBar(False)
         ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
         ml = [
               [ '&File',

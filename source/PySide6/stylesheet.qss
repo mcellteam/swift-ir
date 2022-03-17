@@ -45,7 +45,11 @@ QPushButton{
 	border-radius: 2px; /*jy was 5px */
 	color: rgb(0,0,0);
 	padding: 2px;
-	background-color: rgb(255,255,255);
+	/*background-color: rgb(255,255,255);*/
+	/*background-color: #3366FF; !*electro blue*!*/
+	/*background-color: #99badd; !*tag*!*/
+	background-color: #bdd73c;
+
 }
 QPushButton::default{
 	border-style: solid;
@@ -131,7 +135,9 @@ QLineEdit {
 	color: #000000;
 	font-weight: bold;
 	/*background:#000000;*/
-	background: #FFFFFF;
+	/*background: #FFFFFF;*/
+	/*background: #99badd; !*tag*!*/
+	background: #bdd73c;
 	selection-background-color:#007b50;
 	selection-color: #FFFFFF;
 }
@@ -350,7 +356,10 @@ QComboBox {
 	/*color: #a9b7c6;*/
 	color: #000000;
 	/*background: #1e1d23;*/
-	background: rgb(255,255,255);
+	/*background: rgb(255,255,255);*/
+	/*background: #3366FF;*/
+	/*background: #99badd; !*tag*!*/
+	background: #bdd73c;
 }
 QComboBox:editable {
 	background: #1e1d23;
