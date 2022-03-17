@@ -2158,8 +2158,8 @@ class RunnableServerThread(QRunnable):
         sa = server.socket.getsockname()
         host = str("http://%s:%d" % (sa[0], sa[1]))
         viewer_source = str("zarr://" + host)
-        print("\nServing directory %s at http://%s:%d" % (os.getcwd(), sa[0], sa[1]))
-        print("\nViewer source                   :", viewer_source)
+        print("Serving directory %s at http://%s:%d" % (os.getcwd(), sa[0], sa[1]))
+        print("Viewer source                   :", viewer_source)
         print("Protocol version                :", server.protocol_version)
         print("Server name                     :", server.server_name)
         print("Server type                     :", server.socket_type)
@@ -2274,6 +2274,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     def __init__(self, fname=None, panel_roles=None, control_model=None, title="Align EM", simple_mode=True):
 
+        self.pyside_path = os.path.dirname(os.path.realpath(__file__))
+        print("pyside_path = ", self.pyside_path)
+
         print('Setting MESA_GL_VERSION_OVERRIDE=4.5...')
         os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
         print('MESA_GL_VERSION_OVERRIDE = ', os.environ.get('MESA_GL_VERSION_OVERRIDE'))
@@ -2286,7 +2289,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         self.init_dir = os.getcwd()
-
 
         # # NOTE: You must set the AA_ShareOpenGLContexts flag on QGuiApplication before creating the QGuiApplication
         # # object, otherwise Qt may not create a global shared context.
@@ -2319,7 +2321,9 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
         # stylesheet must be after QMainWindow.__init__(self)
-        self.setStyleSheet(open('stylesheet.qss').read())
+        #self.setStyleSheet(open('stylesheet.qss').read())
+        self.setStyleSheet(open(os.path.join(self.pyside_path,'stylesheet.qss')).read())
+
 
         #titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
@@ -2854,10 +2858,13 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             self.n_scales = self.n_scales_input.text()
 
             # I don't like this workaround
-            print("\ncwd=", os.getcwd())
-            os.chdir(self.init_dir)
-            print("Resetting working dir...")
-            print("\ncwd=", os.getcwd())
+            # print("cwd=", os.getcwd())
+            # os.chdir(self.init_dir)
+
+            print("cwd=", os.getcwd())
+            print("Changing working dir to pyside_path...")
+            os.chdir(self.pyside_path)
+            print("cwd=", os.getcwd())
 
             # why was this using aligned_path_full... odd
             if self.cname == "none":
@@ -2939,8 +2946,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         whitening_label = QLabel("Whitening:")
         # n_scales_label.setAlignment(Qt.AlignRight)
         self.whitening_input = QLineEdit(self)
-        self.whitening_input.setText("-0.86")
-        self.whitening_input.setFixedWidth(80)
+        self.whitening_input.setText("-0.68")
+        self.whitening_input.setFixedWidth(70)
         # self.whitening_valid = QDoubleValidator(-5.0, 5.0, 2, self)
         self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
 
@@ -2949,7 +2956,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # n_scales_label.setAlignment(Qt.AlignRight)
         self.swim_input = QLineEdit(self)
         self.swim_input.setText("0.8125")
-        self.swim_input.setFixedWidth(80)
+        self.swim_input.setFixedWidth(70)
         # self.n_scales_valid = QDoubleValidator(0.0000, 1.0000, 4, self)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
 

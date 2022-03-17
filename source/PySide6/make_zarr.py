@@ -113,12 +113,9 @@ if __name__ == '__main__':
     resolution = [int(i) for i in args.resolution.split(',')]
     scale_ratio = [int(i) for i in args.scale_ratio.split(',')]
     timestr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    print("type(no_compression)",type(args.no_compression))
-
+    # print("type(no_compression)",type(args.no_compression)) #type = int
     no_compression = bool(int(args.no_compression))
-
-    print("type(no_compression)", type(no_compression))
-
+    #print("type(no_compression)", type(no_compression))  #type = bool
     print("no_compression: ", no_compression)
 
     print("Setting multiprocessing.set_start_method('fork', force=True)...")

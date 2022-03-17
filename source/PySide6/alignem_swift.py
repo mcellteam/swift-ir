@@ -142,7 +142,7 @@ def make_bool(thing):
 
 
 def ensure_proper_data_structure():
-    print('\nCalling ensure_proper_data_structure() in alignem_swift.py:\n')
+    print('\n\nCalling ensure_proper_data_structure() in alignem_swift.py:\n\n')
 
     ''' Try to ensure that the data model is usable. '''
     scales_dict = alignem.project_data['data']['scales']
@@ -165,24 +165,33 @@ def ensure_proper_data_structure():
                 atrm['method_data'] = {}
             mdata = atrm['method_data']
             if not 'win_scale_factor' in mdata:
-                mdata['win_scale_factor'] = win_scale_factor.get_value()
-            if not 'whitening_factor' in mdata:
-                print("\n\n\n\n\n\n")
-                #whitening
-                print("\nGetting value of whitening factor...\n")
-                print("Old value would have been: ", whitening_factor.get_value())
-                print("Old value would have type: ", type(whitening_factor.get_value()))
-                # mdata['whitening_factor'] = whitening_factor.get_value()
+                print("\n\n IF NOT 'win_scale_factor' in mdata was run.")
 
+                #swim window #initial SWIM window
+                print("Getting value of SWIM window...")
+                print("Old value would have been: ", win_scale_factor.get_value())
+                print("Old value would have type: ", type(win_scale_factor.get_value()))
+                print("New value will be: ", alignem.main_window.swim_input.text())
+
+                # mdata['win_scale_factor'] = win_scale_factor.get_value()
+                mdata['win_scale_factor'] = float(alignem.main_window.swim_input.text())
+
+                print("\n\n")
+
+            if not 'whitening_factor' in mdata:
+                print("\n\n IF NOT 'whitening_factor' in mdata was run.")
+
+                #whitening
+                print("Getting value of whitening factor...")
+                print("Old value would have been: ", whitening_factor.get_value())
+                print("Old value would have type: ", type(whitening_factor.get_value())) # type = float
                 print("New value will be: ", alignem.main_window.whitening_input.text())
                 print("New value will have type: ", type(alignem.main_window.whitening_input.text()))
 
-                mdata['whitening_factor'] = alignem.main_window.whitening_input.text()
+                # mdata['whitening_factor'] = whitening_factor.get_value()
+                mdata['whitening_factor'] = float(alignem.main_window.whitening_input.text())
 
-                print(alignem.main_window.whitening_input.text)
-                print(alignem.main_window.whitening_input.text())
-
-                print("\n\n\n\n\n\n")
+                print("\n\n")
 
 
 def link_all_stacks():
@@ -1419,8 +1428,13 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                 if 'align_to_ref_method' in next_layer:
                     if 'method_data' in next_layer['align_to_ref_method']:
                         if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
-                            whitening_factor.set_value(
-                                next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+                            #whitening
+                            print("Attempting to setText of whitening_input QLineEdit...")
+                            # whitening_factor.set_value(
+                            #     next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+                            alignem.main_window.whitening_input.setText((next_layer['align_to_ref_method']['method_data']['whitening_factor']))
+
+
                         if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
                             win_scale_factor.set_value(
                                 next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
