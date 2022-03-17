@@ -354,7 +354,7 @@ class project_runner:
                                              num_layers = self.num_layers )
       self.project = self.updated_model
 
-  print("\nExiting project_runner.do_alignment .\n")
+  print("Exiting project_runner > do_alignment")
 
 
   # Class Method to Generate the Aligned Images
