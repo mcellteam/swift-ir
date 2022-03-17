@@ -1173,9 +1173,9 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         alignem.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
         #alignem.print_debug(70, "Control Model = " + str(control_model))
 
-        # thing_to_do is doing what, exactly?
-        # thing_to_do = init_ref_app.get_value () #jy #mod #change #march #wtf
         print('Reading affine combo box...')
+        #thing_to_do #init_ref_app
+        #thing_to_do = init_ref_app.get_value () #jy #mod #change #march #wtf
         thing_to_do = alignem.main_window.affine_combobox.currentText()  # jy #mod #change #march #wtf #combobox
         print('thing_to_do=', thing_to_do)
         scale_to_run_text = alignem.project_data['data']['current_scale']
@@ -1382,8 +1382,11 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = make_bool(
                 use_bounding_rect.get_value())
             alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
+            #alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
-                combo_name_to_dm_name[init_ref_app.get_value()])
+                combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
+
+
 
             alignem.print_debug(25, "In DM: Null Bias = " + str(
                 alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends']))
@@ -1422,7 +1425,9 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                 if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
                     new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data'][
                         'alignment_option']
-                    init_ref_app.set_value(dm_name_to_combo_name[new_option])
+                    #init_ref_app.set_value(dm_name_to_combo_name[new_option])
+                    alignem.main_window.affine_combobox.setCurrentText(dm_name_to_combo_name[new_option])
+
 
             # Next copy the layer-level items
 
@@ -1752,44 +1757,47 @@ win_scale_factor = FloatField('Initial SWIM Window', 0.8125)  # This was named "
 null_cafm_trends = BoolField("Null Bias", False)
 use_bounding_rect = BoolField("Bounding Rect", False)
 
-control_model = [
-    # Panes
-    [  # Begin first pane of rows
-        [
-            " ", gen_scalesq_cb,
-            " ", align_all_cb,
-            " ", poly_order,
-            " ", null_cafm_trends,
-            " ", use_bounding_rect,
-            " ", align_fwd_cb, num_fwd,
-            " ", jump_to_cb, jump_to_val,
-            " ", center_cb,
-            "    ", skip,
-            # "  ", match_pt_mode,
-            " ", view_match_crop,
-            " ", clear_match,
-            " "
-        ],
-        [
-            # "Test: ",
-            # gen_scales_thread_cb,
-            # " ", link_stack_cb,
-            " ", init_ref_app,
-            # " ", do_thing_cb,
-            # " ", refine_aff_cb,
-            # " ", apply_aff_cb,
-            " ", regen_aligned_cb,
-            " ", rem_algn_cb,
-            " ", whitening_factor,
-            " ", win_scale_factor,
-            " ", clear_skips_cb,
-            " ", skips_to_all_cb,
-            # " ", progress_cb,
-            # " ", debug_cb
-            " "
-        ],
-    ]
-]
+
+# control_model = [""]
+
+# control_model = [
+#     # Panes
+#     [  # Begin first pane of rows
+#         [
+#             " ", gen_scalesq_cb,
+#             " ", align_all_cb,
+#             " ", poly_order,
+#             " ", null_cafm_trends,
+#             " ", use_bounding_rect,
+#             " ", align_fwd_cb, num_fwd,
+#             " ", jump_to_cb, jump_to_val,
+#             " ", center_cb,
+#             "    ", skip,
+#             # "  ", match_pt_mode,
+#             " ", view_match_crop,
+#             " ", clear_match,
+#             " "
+#         ],
+#         [
+#             # "Test: ",
+#             # gen_scales_thread_cb,
+#             # " ", link_stack_cb,
+#             " ", init_ref_app,
+#             # " ", do_thing_cb,
+#             # " ", refine_aff_cb,
+#             # " ", apply_aff_cb,
+#             " ", regen_aligned_cb,
+#             " ", rem_algn_cb,
+#             " ", whitening_factor,
+#             " ", win_scale_factor,
+#             " ", clear_skips_cb,
+#             " ", skips_to_all_cb,
+#             # " ", progress_cb,
+#             # " ", debug_cb
+#             " "
+#         ],
+#     ]
+# ]
 
 # main
 if __name__ == "__main__":
@@ -1871,7 +1879,8 @@ if __name__ == "__main__":
           ", tagged as revision: " + str(global_source_rev) +
           ", parallel mode = " + str(global_parallel_mode) + "\n")
 
-    main_win = alignem.MainWindow(control_model=control_model, title="GlanceEM_SWiFT")
+    # main_win = alignem.MainWindow(control_model=control_model, title="GlanceEM_SWiFT")
+    main_win = alignem.MainWindow(title="GlanceEM_SWiFT")
     main_win.register_view_change_callback(view_change_callback)
     main_win.register_mouse_move_callback(mouse_move_callback)
     main_win.register_mouse_down_callback(mouse_down_callback)
