@@ -2433,8 +2433,10 @@ class MainWindow(QMainWindow):
                 ignore_changes = False
 
         image_library.update()
-
         print_all_skips()
+        alignem.main_window.center_all_images()
+        alignem.main_window.update_win_self()
+
 
 
     def save_project_to_current_file(self):
