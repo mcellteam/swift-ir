@@ -78,8 +78,7 @@ class project_runner:
   #   The project_runner will collect the alignment data from each pyswift_tui run and integrate it into the "master" data model
 #  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False, use_file_io=True ):
   def __init__ ( self, project=None, use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, use_file_io=True ):
-
-    # print ( "\n\n\nCreating a project runner...\n\n\n")
+    #print ( "\nInitializing a project_runner...\n")
     if use_scale <= 0:
       # print ( "Error: project_runner must be given an explicit scale")
       return
@@ -103,6 +102,9 @@ class project_runner:
   # Class Method to Align the Stack
 #  def start ( self ):
   def do_alignment ( self, alignment_option='init_affine', generate_images=True ):
+    print("\nCalling project_runner > do_alignment:")
+    print("alignment_option = " + alignment_option + "\n")
+
     self.alignment_option = alignment_option
     self.generate_images = generate_images
 
@@ -352,9 +354,12 @@ class project_runner:
                                              num_layers = self.num_layers )
       self.project = self.updated_model
 
+  print("\nExiting project_runner.do_alignment .\n")
+
 
   # Class Method to Generate the Aligned Images
   def generate_aligned_images(self):
+      print("\nCalling project_runner > generate_aligned_images:")
 
       cur_scale = self.project['data']['current_scale']
 

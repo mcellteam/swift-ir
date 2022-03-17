@@ -2935,11 +2935,33 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.align_all_button.clicked.connect(align_all_or_some)    #align_all_or_some
         self.align_all_button.setFixedSize(QSize(130, 28))
 
+        #whitening QLineEdit
+        whitening_label = QLabel("Whitening:")
+        # n_scales_label.setAlignment(Qt.AlignRight)
+        self.whitening_input = QLineEdit(self)
+        self.whitening_input.setText("-0.86")
+        self.whitening_input.setFixedWidth(80)
+        # self.whitening_valid = QDoubleValidator(-5.0, 5.0, 2, self)
+        self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
+
+        #swim window QLineEdit
+        swim_label = QLabel("SWIM Window:")
+        # n_scales_label.setAlignment(Qt.AlignRight)
+        self.swim_input = QLineEdit(self)
+        self.swim_input.setText("0.8125")
+        self.swim_input.setFixedWidth(80)
+        # self.n_scales_valid = QDoubleValidator(0.0000, 1.0000, 4, self)
+        self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
+
         self.improved_controls_layout = QHBoxLayout()
         self.improved_controls_layout.addWidget(self.center_button, alignment=Qt.AlignLeft)  #center
         self.improved_controls_layout.addWidget(self.generate_scales_button, alignment=Qt.AlignLeft)  #scales
         self.improved_controls_layout.addWidget(self.affine_combobox, alignment=Qt.AlignLeft)  # scales
         self.improved_controls_layout.addWidget(self.align_all_button, alignment=Qt.AlignLeft)  #align_all
+        self.improved_controls_layout.addWidget(whitening_label, alignment=Qt.AlignLeft)
+        self.improved_controls_layout.addWidget(self.whitening_input, alignment=Qt.AlignLeft)
+        self.improved_controls_layout.addWidget(swim_label, alignment=Qt.AlignLeft)
+        self.improved_controls_layout.addWidget(self.swim_input, alignment=Qt.AlignLeft)
         self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.improved_controls_layout.addItem(self.spacerItem2)
 
@@ -2971,10 +2993,10 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.browser_docs.setUrl(QUrl('https://github1s.com/mcellteam/swift-ir/blob/development/README.md'))
 
         self.exit_docs_button = QPushButton("Back")
-        self.exit_docs_button.setFixedSize(QSize(100, 32))
+        self.exit_docs_button.setFixedSize(QSize(100, 28))
         self.exit_docs_button.clicked.connect(exit_docs)
         self.readme_button = QPushButton("README.md")
-        self.readme_button.setFixedSize(QSize(100, 32))
+        self.readme_button.setFixedSize(QSize(100, 28))
         self.readme_button.clicked.connect(documentation_view_home)
         self.docs_panel = QWidget()                                            # create QWidget()
         self.docs_panel_layout = QVBoxLayout()                                 # create QVBoxLayout()
@@ -2996,7 +3018,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/')) #tacctacc
         #self.browser_remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.exit_remote_button = QPushButton("Back")
-        self.exit_remote_button.setFixedSize(QSize(100, 32))
+        self.exit_remote_button.setFixedSize(QSize(100, 28))
         self.exit_remote_button.clicked.connect(exit_remote)
         self.remote_viewer_panel = QWidget()                                              # create QWidget()
         self.remote_viewer_panel_layout = QVBoxLayout()                                   # create QVBoxLayout()
@@ -3011,7 +3033,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.browser_microns = QWebEngineView()
         # self.browser_microns.setUrl(QUrl('https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
         # self.exit_microns_button = QPushButton("Back")
-        # self.exit_microns_button.setFixedSize(QSize(100, 32))
+        # self.exit_microns_button.setFixedSize(QSize(100, 28))
         # self.exit_microns_button.clicked.connect(exit_microns)
         # self.microns_panel = QWidget()                                              # create QWidget()
         # self.microns_panel_layout = QVBoxLayout()                                   # create QVBoxLayout()
@@ -3024,7 +3046,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         ##########demos_panel DEMOS PANEL
         self.exit_demos_button = QPushButton("Back")
-        self.exit_demos_button.setFixedSize(QSize(100, 32))
+        self.exit_demos_button.setFixedSize(QSize(100, 28))
         self.exit_demos_button.clicked.connect(exit_demos)
         self.demos_panel = QWidget()                                          # create QWidget()
         self.demos_panel_layout = QVBoxLayout()                               # create QVBoxLayout()
@@ -3037,22 +3059,22 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         ##########ngpanel NEUROGLANCER CONTROLS PANEL
         self.exit_ng_button = QPushButton("Back")
-        self.exit_ng_button.setFixedSize(QSize(100, 32))
+        self.exit_ng_button.setFixedSize(QSize(100, 28))
         self.exit_ng_button.clicked.connect(exit_ng)
         self.reload_ng_button = QPushButton("Reload")
-        self.reload_ng_button.setFixedSize(QSize(100, 32))
+        self.reload_ng_button.setFixedSize(QSize(100, 28))
         self.reload_ng_button.clicked.connect(reload_ng)
         self.print_state_ng_button = QPushButton("Print State")
-        self.print_state_ng_button.setFixedSize(QSize(100, 32))
+        self.print_state_ng_button.setFixedSize(QSize(100, 28))
         self.print_state_ng_button.clicked.connect(print_state_ng)
         self.print_url_ng_button = QPushButton("Print URL")
-        self.print_url_ng_button.setFixedSize(QSize(100, 32))
+        self.print_url_ng_button.setFixedSize(QSize(100, 28))
         self.print_url_ng_button.clicked.connect(print_url_ng)
         # self.screenshot_ng_button = QPushButton("Screenshot")
-        # self.screenshot_ng_button.setFixedSize(QSize(100, 32))
+        # self.screenshot_ng_button.setFixedSize(QSize(100, 28))
         # self.screenshot_ng_button.clicked.connect(screenshot_ng)
         # self.blend_ng_button = QPushButton("Blend (b)")
-        # self.blend_ng_button.setFixedSize(QSize(100, 32))
+        # self.blend_ng_button.setFixedSize(QSize(100, 28))
         # self.blend_ng_button.clicked.connect(blend_ng)
         self.ng_panel = QWidget()                                      # create QWidget()
         self.ng_panel_layout = QVBoxLayout()                           # create QVBoxLayout()
