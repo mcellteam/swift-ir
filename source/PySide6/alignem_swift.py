@@ -135,6 +135,7 @@ def link_stack():
 
 
 def make_bool(thing):
+    print("\nCalling make_bool(thing):\n")
     if thing:
         return True
     else:
@@ -142,7 +143,7 @@ def make_bool(thing):
 
 
 def ensure_proper_data_structure():
-    print('\n\nCalling ensure_proper_data_structure() in alignem_swift.py:\n\n')
+    print('\nCalling ensure_proper_data_structure() in alignem_swift.py:\n')
 
     ''' Try to ensure that the data model is usable. '''
     scales_dict = alignem.project_data['data']['scales']
@@ -1170,7 +1171,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
         remove_aligned(starting_layer=first_layer, prompt=False)
         alignem.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
-        alignem.print_debug(70, "Control Model = " + str(control_model))
+        #alignem.print_debug(70, "Control Model = " + str(control_model))
 
         # thing_to_do is doing what, exactly?
         # thing_to_do = init_ref_app.get_value () #jy #mod #change #march #wtf
@@ -1224,7 +1225,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
 
         remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
         alignem.print_debug(30, "Regenerating Aligned Images from layer " + str(first_layer) + " ...")
-        alignem.print_debug(70, "Control Model = " + str(control_model))
+        #alignem.print_debug(70, "Control Model = " + str(control_model))
 
         scale_to_run_text = alignem.project_data['data']['current_scale']
 
@@ -1329,7 +1330,8 @@ def method_debug():
 
 
 def notyet():
-    alignem.print_debug(0, "Function not implemented yet. Skip = " + str(skip.value))
+    #alignem.print_debug(0, "Function not implemented yet. Skip = " + str(skip.value)) #skip
+    alignem.print_debug(0, "Function not implemented yet. Skip = " + alignem.main_window.skip_bool.isChecked())
 
 
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
@@ -1398,7 +1400,8 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                     prev_layer['align_to_ref_method']['method_data'] = {}
 
                 # Copy the layer-level data
-                prev_layer['skip'] = make_bool(skip.get_value())
+                #prev_layer['skip'] = make_bool(skip.get_value()) #skip
+                prev_layer['skip'] = alignem.main_window.skip_bool.isChecked()
                 prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
                 prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
 
@@ -1426,7 +1429,12 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             if next_layer != None:
                 # Copy the layer-level data
                 if 'skip' in next_layer:
-                    skip.set_value(next_layer['skip'])
+                    #skip.set_value(next_layer['skip']) #skip
+                    print("alignem.main_window.skip_bool.isChecked() = ", alignem.main_window.skip_bool.isChecked())
+                    print("Setting checked state of skip_bool...")
+                    alignem.main_window.skip_bool.setChecked(bool(next_layer['skip']))
+                    print("alignem.main_window.skip_bool.isChecked() = ", alignem.main_window.skip_bool.isChecked())
+
                 if 'align_to_ref_method' in next_layer:
                     if 'method_data' in next_layer['align_to_ref_method']:
                         if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
@@ -1529,7 +1537,8 @@ def clear_all_skips():
         scale_key = str(scale)
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
             layer['skip'] = False
-    skip.set_value(False)
+    #skip.set_value(False) #skip
+    alignem.main_window.skip_bool.setChecked(False)
 
 
 def copy_skips_to_all_scales():
@@ -1724,7 +1733,7 @@ num_fwd = IntField("#", 1, 1)
 jump_to_cb = CallbackButton('Jump To:', jump_to_layer)
 jump_to_val = IntField("#", 0, 1)
 rem_algn_cb = CallbackButton('Remove Aligned', remove_aligned)
-skip = BoolField("Skip", False)
+skip = BoolField("Skip", False) #skip
 # match_pt_mode = BoolField("Match",False)
 clear_match = CallbackButton("Clear Match", clear_match_points)
 progress_cb = CallbackButton('Prog Bar', run_progress)
@@ -1857,8 +1866,6 @@ if __name__ == "__main__":
     #                             "                                              "
     #                             "Source Tag: " + str(global_source_rev) + "   /   "
     #                             "Source Hash: " + str(global_source_hash) ] )
-    print("type(control_model)=", type(control_model))
-    print("control_model=\n", control_model)
 
     print("\nRunning with source hash: " + str(global_source_hash) +
           ", tagged as revision: " + str(global_source_rev) +
