@@ -2752,23 +2752,24 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         self.panel_list = []
 
-        self.control_model = control_model
+        # self.control_model = control_model #controlpanel #controlmodel
 
-        if self.control_model == None:
-          # Use the default control model
-          self.control_model = [
-            # Panes
-            [ # Begin first pane
-              [ "Program:", 6*" ", __file__ ],
-              [ IntField("Integer:",55), 6*" ", FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
-              [ TextField("String:","Default text"), 20*" ", CallbackButton('Align Forward', align_forward), 5*" ", "# Forward", 1, 20*" ", CallbackButton('Console', console) ]
-            ] # End first pane
-          ]
+        #controlpanel #controlmodel
+        # if self.control_model == None:
+        #   # Use the default control model
+        #   self.control_model = [
+        #     # Panes
+        #     [ # Begin first pane
+        #       [ "Program:", 6*" ", __file__ ],
+        #       [ IntField("Integer:",55), 6*" ", FloatField("Floating Point:",2.3), 6*" ", BoolField("Boolean",False) ],
+        #       [ TextField("String:","Default text"), 20*" ", CallbackButton('Align Forward', align_forward), 5*" ", "# Forward", 1, 20*" ", CallbackButton('Console', console) ]
+        #     ] # End first pane
+        #   ]
 
         #buttons
 
 
-        self.control_panel = ControlPanelWidget(self.control_model)
+        #self.control_panel = ControlPanelWidget(self.control_model) #controlpanel #controlmodel
         self.simple_mode = simple_mode
         self.main_panel = QWidget()
         self.main_panel_layout = QVBoxLayout()
@@ -2782,7 +2783,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.image_panel.setAutoFillBackground(True)
 
         self.main_panel_layout.addWidget ( self.image_panel ) #jy instantiate image panel
-        self.main_panel_layout.addWidget ( self.control_panel )
+        #self.main_panel_layout.addWidget ( self.control_panel ) #controlpanel #controlmodel
 
         self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none']) #?? why
         # note - check for string comparison of 'none' later, do not add whitespace fill
@@ -2935,7 +2936,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.generate_scales_button.setFixedSize(QSize(130, 28))
 
         self.affine_combobox = QComboBox(self)
-        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
+        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine']) #thing_to_do #init_ref_app
 
         from alignem_swift import align_all_or_some
         self.align_all_button = QPushButton('Align All')
@@ -2984,7 +2985,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         #divider
         self.divider = QGridLayout()
-        self.divider.addWidget(QHLine(), 0, 0, 1, 2)
+        #self.divider.addWidget(QHLine(), 0, 0, 1, 2)
         self.divider.addWidget(QLabel("New Control Panel:"), 1, 0, 1, 1)
         #self.divider.addWidget(QHLine(), 2, 0, 1, 2)
         self.main_panel_layout.addLayout(self.divider)
