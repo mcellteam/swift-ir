@@ -4,7 +4,7 @@ from source_tracker import get_hash_and_rev
 
 import alignem
 from glanceem_utils import RequestHandler, Server, get_viewer_url
-from alignem import IntField, BoolField, FloatField, CallbackButton, ComboBoxControl, MainWindow
+from alignem import IntField, BoolField, FloatField, CallbackButton, MainWindow, ComboBoxControl
 
 from PySide6.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar
 from PySide6.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
@@ -62,7 +62,7 @@ def get_best_path(file_path):
 
 
 def link_stack_orig():
-    print('\nCalling link_stack_orig() in alignem_swift.py:\n')
+    print('Linking stack, original | link_stack_orig...')
 
     alignem.print_debug(10, "Linking stack")
 
@@ -83,12 +83,12 @@ def link_stack_orig():
     # main_win.load_images_in_role ( 'ref', ref_image_stack )
 
     main_win.update_panels()
-
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    print('Exiting link_stack_orij()')
 
 
 def link_stack():
-    print('\nCalling link_stack() in alignem_swift.py:\n')
+    print('Linking stack | link_stack...')
 
     alignem.print_debug(10, "Linking stack")
 
@@ -98,7 +98,7 @@ def link_stack():
             'skip'] == True:
             skip_list.append(layer_index)
 
-    alignem.print_debug(50, '\nSkip List = \n' + str(skip_list) + '\n')
+    print('\nlink_stack(): Skip List = \n' + str(skip_list) + '\n')
 
     for layer_index in range(len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])):
         base_layer = alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'][layer_index]
@@ -130,12 +130,12 @@ def link_stack():
                 base_layer['images']['ref']['filename'] = ref_fn
 
     main_win.update_panels()
-
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    print('\nskip_list =\n', str(skip_list))
+    print('Exiting link_stack()')
 
 
 def make_bool(thing):
-    print("\nCalling make_bool(thing):\n")
     if thing:
         return True
     else:
@@ -143,7 +143,7 @@ def make_bool(thing):
 
 
 def ensure_proper_data_structure():
-    print('\nCalling ensure_proper_data_structure() in alignem_swift.py:\n')
+    print('Ensuring proper data structure | ensure_proper_data_structure...')
 
     ''' Try to ensure that the data model is usable. '''
     scales_dict = alignem.project_data['data']['scales']
@@ -165,8 +165,9 @@ def ensure_proper_data_structure():
             if not 'method_data' in atrm:
                 atrm['method_data'] = {}
             mdata = atrm['method_data']
+            print("Evaluating: if not 'win_scale_factor' in mdata")
             if not 'win_scale_factor' in mdata:
-                print("\n\n IF NOT 'win_scale_factor' in mdata was run.")
+                print("  => True")
 
                 #swim window #initial SWIM window
                 print("Getting value of SWIM window...")
@@ -177,9 +178,12 @@ def ensure_proper_data_structure():
                 # mdata['win_scale_factor'] = win_scale_factor.get_value()
                 mdata['win_scale_factor'] = float(alignem.main_window.swim_input.text())
 
-                print("\n\n")
+            else:
+                print("  => False")
 
+            print("Evaluating: if not 'whitening_factor' in mdata")
             if not 'whitening_factor' in mdata:
+                print("  => True")
                 print("\n\n IF NOT 'whitening_factor' in mdata was run.")
 
                 #whitening
@@ -191,13 +195,14 @@ def ensure_proper_data_structure():
 
                 # mdata['whitening_factor'] = whitening_factor.get_value()
                 mdata['whitening_factor'] = float(alignem.main_window.whitening_input.text())
+            else:
+                print("  => False")
+    print("Exiting ensure_proper_data_structure()\n")
 
-                print("\n\n")
 
 
 def link_all_stacks():
-    print('\nCalling link_all_stacks() in alignem_swift.py:\n')
-    alignem.print_debug(10, "Linking all stacks")
+    print('  Linking all stacks | link_all_stacks...')
     ensure_proper_data_structure()
 
     for scale_key in alignem.project_data['data']['scales'].keys():
@@ -206,7 +211,7 @@ def link_all_stacks():
             if alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
                 skip_list.append(layer_index)
 
-        alignem.print_debug(50, '\nSkip List = \n' + str(skip_list) + '\n')
+        print('link_all_stacks(): Skip List = \n' + str(skip_list) + '\n')
 
         for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
             base_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
@@ -238,22 +243,24 @@ def link_all_stacks():
                     base_layer['images']['ref']['filename'] = ref_fn
 
     main_win.update_panels()
-
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+    print('\nskip_list =\n', skip_list)
+    print("Exiting link_all_stacks()")
 
 
 def update_linking_callback():
-    print('\nCalling update_linking_callback() in alignem_swift.py:\n')
+    print('Updating linking callback | update_linking_callback...')
     link_all_stacks()
+    print('Exiting update_linking_callback()')
 
 
 def update_skips_callback(new_state):
-    print('\nCalling update_skips_callback(new_state) in alignem_swift.py:\n')
+    print('Updating skips callback | update_skips_callback...')
 
     # Update all of the annotations based on the skip values
     copy_skips_to_all_scales()
     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into alignem.py
-
+    print("Exiting update_skips_callback(new_state)")
 
 class RunProgressDialog(QDialog):
     """
@@ -264,7 +271,7 @@ class RunProgressDialog(QDialog):
 
     def __init__(self):
         super().__init__()
-        alignem.print_debug(10, "RunProgressDialog constructor called")
+        print("RunProgressDialog constructor called")
         self.initUI()
 
     def initUI(self):
@@ -289,7 +296,7 @@ class RunProgressDialog(QDialog):
         self.progress.setValue(value)
 
 
-COUNT_LIMIT = 100
+# COUNT_LIMIT = 100 #tag ?
 
 
 class RunnableThread(QThread):
@@ -306,10 +313,11 @@ class RunnableThread(QThread):
             self.countChanged.emit(count)
 
 
-window = None
+# window = None #tag ?
 
 
 def run_progress():
+    print("Running progress | run_progress...")
     global window
     alignem.print_debug(10, "Run started")
     window = RunProgressDialog()
@@ -322,7 +330,7 @@ class GenScalesDialog(QDialog):
 
     def __init__(self):
         super().__init__()
-        alignem.print_debug(10, "GenScalesDialog constructor called")
+        print("GenScalesDialog constructor called")
         self.initUI()
 
     def initUI(self):
@@ -339,7 +347,7 @@ class GenScalesDialog(QDialog):
             total_images_to_scale += len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])
         if total_images_to_scale <= 1:
             total_images_to_scale = 1
-        alignem.print_debug(10, "Total images to scale = " + str(total_images_to_scale))
+        print('Total images to scale = ' + str(total_images_to_scale))
 
         self.progress.setMaximum(total_images_to_scale)
 
@@ -357,38 +365,39 @@ class GenScalesDialog(QDialog):
 
 
 def create_project_structure_directories(subdir_path):
-    print('\nCalling create_project_structure_directories(subdir_path) in alignem_swift.py:\n')
+    print('Creating project structure directories | create_project_structure_directories...')
+    print('subdir_path = ', subdir_path)
 
-    alignem.print_debug(70, "Creating a subdirectory named " + subdir_path)
+    print("Creating a subdirectory named " + subdir_path)
     try:
         os.mkdir(subdir_path)
     except:
         # This catches directories that already exist
-        alignem.print_debug(40, 'Warning: Exception creating scale path (may already exist).')
+        print('Warning: Exception creating scale path (may already exist).')
         pass
     src_path = os.path.join(subdir_path, 'img_src')
-    alignem.print_debug(70, "Creating source subsubdirectory named " + src_path)
+    print('Creating source subsubdirectory named ' + src_path)
     try:
         os.mkdir(src_path)
     except:
         # This catches directories that already exist
-        alignem.print_debug(40, 'Warning: Exception creating "img_src" path (may already exist).')
+        print('Warning: Exception creating "img_src" path (may already exist).')
         pass
     aligned_path = os.path.join(subdir_path, 'img_aligned')
-    alignem.print_debug(70, "Creating aligned subsubdirectory named " + aligned_path)
+    print('Creating aligned subdirectory named ' + aligned_path)
     try:
         os.mkdir(aligned_path)
     except:
         # This catches directories that already exist
-        alignem.print_debug(40, 'Warning: Exception creating "img_aligned" path (may already exist).')
+        print('Warning: Exception creating "img_aligned" path (may already exist).')
         pass
     bias_data_path = os.path.join(subdir_path, 'bias_data')
-    alignem.print_debug(70, "Creating bias subsubdirectory named " + bias_data_path)
+    print('Creating bias subsubdirectory named ' + bias_data_path)
     try:
         os.mkdir(bias_data_path)
     except:
         # This catches directories that already exist
-        alignem.print_debug(40, 'Warning: Exception creating "bias_data" path (may already exist).')
+        print('Warning: Exception creating "bias_data" path (may already exist).')
         pass
 
 
@@ -396,7 +405,7 @@ class GenScalesThread(QThread):
     countChanged = Signal(int)
 
     def run(self):
-        print("Calling 'run' member function of GenScalesThread(QThread) class:")
+        print('GenScalesThread constructor called')
         # Note: all printed output has been suppressed for testing
         # alignem.print_debug ( 10, "GenScalesThread.run inside alignem_swift called" )
         # main_win.status.showMessage("Generating Scales ...")
@@ -510,7 +519,7 @@ def gen_scales_with_thread():
 
 
 def generate_scales():
-    print('\nCalling generate_scales() in alignem_swift.py:\n')
+    print('Generating scales | generate_scales...')
 
     alignem.print_debug(10, "generate_scales inside alignem_swift called")
     # main_win.status.showMessage("Generating Scales ...")
@@ -618,7 +627,7 @@ def generate_scales():
 
 
 def generate_scales_queue():
-    print('\nCalling generate_scales_queue() in alignem_swift.py:\n')
+    print('Generating scales queue | generate_scales_queue...')
 
     alignem.print_debug(1, "generate_scales_queue inside alignem_swift called")
 
@@ -786,7 +795,7 @@ def generate_scales_queue():
 
 
 def generate_scales_optimized():
-    print('\nCalling generate_scales_optimized() in alignem_swift.py:\n')
+    print('Generating scales, optimized | generate_scales_optimized...')
     alignem.print_debug(1, "generate_scales_optimized inside alignem_swift called")
 
     image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
@@ -936,12 +945,13 @@ def generate_scales_optimized():
 
         scaling_queue.shutdown()
         del scaling_queue
+    print("Exiting generate_scales_optimized()")
 
     # main_win.status.showMessage("Done Generating Scales ...")
 
 
 def get_code_mode():
-    print('Calling get_code_mode() in alignem_swift.py:')
+    print('Getting code mode | get_code_mode...')
     ### All of this code is just trying to find the right menu item for the "Use C Version" check box:
     code_mode = 'python'
     menubar = alignem.main_window.menu
@@ -969,7 +979,7 @@ def get_code_mode():
 
 
 def get_file_io_mode():
-    print('\nCalling get_file_io_mode() in alignem_swift.py:\n')
+    print('Getting file IO mode | get_file_io_mode...')
     ### All of this code is just trying to find the right menu item for the "Use File I/O" check box:
     file_io_mode = False
     menubar = alignem.main_window.menu
@@ -998,7 +1008,7 @@ def get_file_io_mode():
 
 
 def align_layers(first_layer=0, num_layers=-1):
-    print('\nCalling align_layers() in alignem_swift.py:\n')
+    print('Aligning layers | align_layers...')
     alignem.print_debug(30, 100 * '=')
     if num_layers < 0:
         alignem.print_debug(30, "Aligning all layers starting with " + str(first_layer) + " using SWiFT-IR ...")
@@ -1106,10 +1116,12 @@ def align_layers(first_layer=0, num_layers=-1):
     else:
         update_datamodel(updated_model)
 
+    print("Exiting align_layers(...)")
+
 
 # Call this function when run_json_project returns with need_to_write_json=false
 def update_datamodel(updated_model):
-    print('\nCalling update_datamodel() in alignem_swift.py:\n')
+    print('Updating data model | update_datamodel...')
     alignem.print_debug(1, 100 * "+")
     alignem.print_debug(1, "run_json_project returned with need_to_write_json=false")
     alignem.print_debug(1, 100 * "+")
@@ -1159,7 +1171,7 @@ dm_name_to_combo_name = {'init_affine': 'Init Affine', 'refine_affine': 'Refine 
 
 
 def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
-    print('\nCalling align_all_or_some() in alignem_swift.py:\n')
+    print('Aligning all or some | align_all_or_some...')
     actually_remove = True
     if prompt:
         actually_remove = alignem.request_confirmation("Note", "Do you want to delete aligned images from " + str(
@@ -1181,16 +1193,16 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         scale_to_run_text = alignem.project_data['data']['current_scale']
         this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
         this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
-        alignem.print_debug(5, '')
+        # alignem.print_debug(5, '')
         alignem.print_debug(5, 40 * '@=' + '@')
-        alignem.print_debug(5, 40 * '=@' + '=')
-        alignem.print_debug(5, 40 * '@=' + '@')
-        alignem.print_debug(5, '')
+        # alignem.print_debug(5, 40 * '=@' + '=')
+        # alignem.print_debug(5, 40 * '@=' + '@')
+        # alignem.print_debug(5, '')
         # alignem.print_debug ( 5, "Doing " + thing_to_do + " which is: " + str(combo_name_to_dm_name[thing_to_do])) #jy
-        alignem.print_debug(5, '')
-        alignem.print_debug(5, 40 * '@=' + '@')
-        alignem.print_debug(5, 40 * '=@' + '=')
-        alignem.print_debug(5, 40 * '@=' + '@')
+        # alignem.print_debug(5, '')
+        # alignem.print_debug(5, 40 * '@=' + '@')
+        # alignem.print_debug(5, 40 * '=@' + '=')
+        # alignem.print_debug(5, 40 * '@=' + '@')
         alignem.print_debug(5, '')
         align_layers(first_layer, num_layers)
         refresh_all()
@@ -1198,10 +1210,11 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     # center
     alignem.main_window.center_all_images()
     alignem.main_window.update_win_self()
+    print("Exiting align_all_or_some(...)")
 
 
 def align_forward():
-    print('\nCalling align_forward() in alignem_swift.py:\n')
+    print('Aligning forward | align_forward...')
     num_layers = num_fwd.get_value()
     first_layer = alignem.project_data['data']['current_layer']
     alignem.print_debug(5, "Inside 'align_forward' with first_layer=" + str(first_layer))
@@ -1210,7 +1223,7 @@ def align_forward():
 
 
 def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
-    print('\nCalling regenerate_aligned() in alignem_swift.py:\n')
+    print('Regenerating aligned | regenerate_aligned...')
     #    print ( "Regenerate Aligned ... not working yet.")
     #    return
 
@@ -1257,7 +1270,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
 
 
 def jump_to_layer():
-    print('\nCalling jump_to_layer() in alignem_swift.py:\n')
+    print('Jumping to layer | jump_to_layer...')
     requested_layer = jump_to_val.get_value()
     alignem.print_debug(3, "Jump to layer " + str(requested_layer))
     num_layers = len(alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack'])
@@ -1272,18 +1285,18 @@ def jump_to_layer():
 
 
 def center_all():
-    print('\nCalling center_all() in alignem_swift.py:\n')
+    print('Centering all | center_all...')
     main_win.center_all_images()
 
 
 def refresh_all():
-    print('\nCalling refresh_all() in alignem_swift.py:\n')
+    print('Refreshing all | refresh_all...')
     # main_win.refresh_all_images () #bug
     alignem.main_window.refresh_all_images()  # fix
 
 
 def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
-    print('\nCalling remove_aligned() in alignem_swift.py:\n')
+    print('Removing alilgned | remove_aligned...')
     alignem.print_debug(5, "Removing aligned from scale " + str(alignem.get_cur_scale()) + " forward from layer " + str(
         starting_layer) + "  (remove_aligned)")
     actually_remove = True
@@ -1325,22 +1338,24 @@ def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
 
 
 def method_debug():
+    print('method_debug() was called...')
     alignem.print_debug(1, "In Method debug for " + str(__name__))
     __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 def notyet():
+    print("notyet() was called...")
     #alignem.print_debug(0, "Function not implemented yet. Skip = " + str(skip.value)) #skip
-    alignem.print_debug(0, "Function not implemented yet. Skip = " + alignem.main_window.skip_bool.isChecked())
+    alignem.print_debug(0, "Function not implemented yet. Skip = " + alignem.main_window.toggle_skip.isChecked())
 
 
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
-    print('\nCalling view_change_callback in alignem_swift.py:\n')
+    print('Viewing change callback | view_change_callback...')
+    print("View changed from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str((next_scale_key, next_layer_num)))
 
-    alignem.print_debug(25, "\nView changed from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str(
-        (next_scale_key, next_layer_num)))
-
+    print("Evaluating: alignem.project_data != None")
     if alignem.project_data != None:
+        print("  True. Continuing...")
 
         copy_from_widgets_to_data_model = True
         copy_from_data_model_to_widgets = True
@@ -1368,7 +1383,9 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
         # Begin the copying
 
         # First copy from the widgets to the previous data model if desired
+        print("  copy_from_widgets_to_data_model = ", copy_from_widgets_to_data_model)
         if copy_from_widgets_to_data_model:
+            print("    Entering conditional block...")
 
             # Start with the scale-level items
 
@@ -1404,12 +1421,14 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
                 # Copy the layer-level data
                 #prev_layer['skip'] = make_bool(skip.get_value()) #skip
-                prev_layer['skip'] = alignem.main_window.skip_bool.isChecked()
+                prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked()
                 prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
                 prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
 
         # Second copy from the data model to the widgets if desired (check each along the way)
+        print("  copy_from_data_model_to_widgets = ", copy_from_data_model_to_widgets)
         if copy_from_data_model_to_widgets:
+            print("    Entering conditional block...")
 
             alignem.ignore_changes = True
 
@@ -1426,40 +1445,69 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                     new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data'][
                         'alignment_option']
                     #init_ref_app.set_value(dm_name_to_combo_name[new_option])
+                    print("    Setting current text of combobox to:", dm_name_to_combo_name[new_option])
                     alignem.main_window.affine_combobox.setCurrentText(dm_name_to_combo_name[new_option])
 
 
             # Next copy the layer-level items
-
+            print("    Evaluating: if next_layer != None")
             if next_layer != None:
+                print("      => True")
                 # Copy the layer-level data
+                print("    Evaluating: if 'skip' in next_layer")
                 if 'skip' in next_layer:
+                    print("      => True")
                     #skip.set_value(next_layer['skip']) #skip
-                    print("alignem.main_window.skip_bool.isChecked() = ", alignem.main_window.skip_bool.isChecked())
-                    print("Setting checked state of skip_bool...")
-                    alignem.main_window.skip_bool.setChecked(bool(next_layer['skip']))
-                    print("alignem.main_window.skip_bool.isChecked() = ", alignem.main_window.skip_bool.isChecked())
+                    print("    alignem.main_window.toggle_skip.isChecked() = ", alignem.main_window.toggle_skip.isChecked())
+                    print("    Setting checked state of toggle_skip...")
+                    print("    Evaluating: not bool(next_layer['skip'])")
+                    print("      => ", not bool(next_layer['skip']))
+                    print("      Type: ", type(not bool(next_layer['skip'])))
+                    print("      next_layer['skip'] = ", next_layer['skip'])
+                    alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip'])) #toggle #toggleskip #setchecked #checked
+                    print("alignem.main_window.toggle_skip.isChecked() = ", alignem.main_window.toggle_skip.isChecked())
+                else:
+                    print("      => False")
 
+                print("    Evaluating: if 'align_to_ref_method' in next_layer")
                 if 'align_to_ref_method' in next_layer:
+                    print("      => True")
+                    print("    Evaluating: if 'method_data' in next_layer['align_to_ref_method']")
                     if 'method_data' in next_layer['align_to_ref_method']:
+                        print("      => True")
+                        print("    Evaluating: if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']]")
                         if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
+                            print("      => True")
                             #whitening
-                            print("Attempting to setText of whitening_input QLineEdit...")
+                            print("    Attempting to setText of whitening_input QLineEdit...")
                             # whitening_factor.set_value(
                             #     next_layer['align_to_ref_method']['method_data']['whitening_factor'])
                             alignem.main_window.whitening_input.setText(str((next_layer['align_to_ref_method']['method_data']['whitening_factor'])))
-
-
+                        else:
+                            print("      => False")
+                        print("    Evaluating: if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']")
                         if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
+                            print("      => True")
                             win_scale_factor.set_value(
                                 next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
+                        else:
+                            print("      => False")
+                else:
+                    print("      => False")
+            else:
+                print("      => False")
 
             alignem.ignore_changes = False
+    else:
+        print("=> False")
+    print("Exiting view_change_callback")
 
 
 def mouse_down_callback(role, screen_coords, image_coords, button):
     # global match_pt_mode
     # if match_pt_mode.get_value():
+    print("Short-circuiting mouse_down_callback. Exiting...")
+    return #monkeypatch
     if view_match_crop.get_value() == 'Match':
         alignem.print_debug(20, "Adding a match point for role \"" + str(role) + "\" at " + str(
             screen_coords) + " == " + str(image_coords))
@@ -1503,6 +1551,8 @@ def mouse_down_callback(role, screen_coords, image_coords, button):
 def mouse_move_callback(role, screen_coords, image_coords, button):
     # global match_pt_mode
     # if match_pt_mode.get_value():
+    return #monkeypatch
+    print("view_match_crop.get_value() = ", view_match_crop.get_value())
     if view_match_crop.get_value() == 'Match':
         return (True)  # Lets the framework know that the move has been handled
     else:
@@ -1510,6 +1560,7 @@ def mouse_move_callback(role, screen_coords, image_coords, button):
 
 
 def crop_mode_callback():
+    print("\nCalling crop_mode_callback() in alignem_swift.py:\n")
     return (view_match_crop.get_value())
 
 
@@ -1536,18 +1587,18 @@ def clear_match_points():
 
 
 def clear_all_skips():
-    print('\nCalling clear_all_skips() in alignem_swift.py:\n')
+    print('Clearing all skips | clear_all_skips...')
     image_scale_keys = [s for s in sorted(alignem.project_data['data']['scales'].keys())]
     for scale in image_scale_keys:
         scale_key = str(scale)
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
             layer['skip'] = False
     #skip.set_value(False) #skip
-    alignem.main_window.skip_bool.setChecked(False)
+    alignem.main_window.toggle.setChecked(False)
 
 
 def copy_skips_to_all_scales():
-    print('\nCalling copy_skips_to_all_scales() in alignem_swift.py:\n')
+    print('Copying skips to all scales | copy_skips_to_all_scales...')
     source_scale_key = alignem.project_data['data']['current_scale']
     if not 'scale_' in str(source_scale_key):
         source_scale_key = 'scale_' + str(source_scale_key)
@@ -1566,7 +1617,7 @@ def copy_skips_to_all_scales():
 
 
 def update_skip_annotations():
-    print('\nCalling update_skip_annotations() in alignem_swift.py:\n')
+    print('Updating skip annotations | update_skip_annotations')
     alignem.print_debug(80, "update_skip_annotations called")
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
     remove_list = []
@@ -1729,7 +1780,8 @@ align_all_cb = CallbackButton('Align All', align_all_or_some)
 center_cb = CallbackButton('Center', center_all)
 align_fwd_cb = CallbackButton('Align Forward', align_forward)
 init_ref_app = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
-view_match_crop = ComboBoxControl(['View', 'Match', 'Crop'])
+#view_match_crop = ComboBoxControl(['View', 'Match', 'Crop'])
+#view_match_crop.set_value('View')
 
 poly_order = IntField("Poly Order:", 0, 1)
 
@@ -1884,7 +1936,7 @@ if __name__ == "__main__":
     main_win.register_view_change_callback(view_change_callback)
     main_win.register_mouse_move_callback(mouse_move_callback)
     main_win.register_mouse_down_callback(mouse_down_callback)
-    alignem.crop_mode_callback = crop_mode_callback
+    #alignem.crop_mode_callback = crop_mode_callback
     alignem.update_linking_callback = update_linking_callback
     alignem.update_skips_callback = update_skips_callback
 
