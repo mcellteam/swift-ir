@@ -2,41 +2,30 @@
 
 AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
+
 """
-from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr
-from caveclient import CAVEclient
-
-
-import sys, traceback
-import os
-import copy
-import math
-import cv2
-import json
-import numpy
-import scipy
-import scipy.ndimage
-import psutil
-import argparse
-import pyswift_tui
-
-import concurrent.futures
-import threading
-
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, QStackedWidget, QStackedLayout, QGridLayout
-from PySide6.QtWidgets import QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, QSpacerItem
-#from PySide6.QtWidgets import QOpenGLWidget
-from PySide6.QtWidgets import QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, QStyleFactory
-from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat
-from PySide6.QtGui import QAction, QActionGroup
-#from PySide6.QtGui import QOpenGLContext, QOpenGLVersionProfile
-from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, QCoreApplication
-from PySide6.QtWebEngineWidgets import QWebEngineView
-#import PySide6.QtOpenGL
-from PySide6.QtWebEngineCore import QWebEnginePage,QWebEngineSettings
-
-import align_swiftir
+import align_swiftir, pyswift_tui
 import task_queue_mp as task_queue
+from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr
+#from caveclient import CAVEclient
+from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
+
+import sys, traceback, os, copy, math, cv2, json, psutil, argparse
+import numpy, scipy, scipy.ndimage, threading, concurrent.futures
+
+#imports #qt
+from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+    QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
+    QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
+    QStyleFactory
+from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
+    QSurfaceFormat, QAction, QActionGroup, QPaintEvent, QBrush, QFont
+from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
+    QCoreApplication, Property
+from PySide6.QtWebEngineWidgets import QWebEngineView
+from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
+
+#project_data = None #jy
 
 # Get the path of ../python
 #alignem_file = os.path.abspath(__file__)                     # path/PySide6/alignem.py
@@ -52,9 +41,6 @@ import task_queue_mp as task_queue
 #  sys.path.insert ( 1, alignem_shared_path )
 
 # Import project and alignment support from SWiFT-IR:
-
-from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
-project_data = None
 
 
 def print_all_skips():
@@ -338,7 +324,10 @@ class OldImageLibrary:
         for k in keys:
           self.remove_image_reference ( k )
         self._images = {}
+
+    #tag What is OldImageLibrary?
     def update ( self ):
+        print("Doing nothing | OldImageLibrary.update...")
         # Do nothing - needed to be plug replacable with SmartImageLibrary
         pass
 
@@ -444,7 +433,7 @@ class ImageLibrary:
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)
             if real_norm_path in self._images:
-                print_debug ( 4, "Unloading image: \"" + real_norm_path + "\"" )
+                #print_debug ( 4, "ImageLibrary > remove_image_reference... Unloading image: \"" + real_norm_path + "\"" )
                 image_ref = self._images.pop(real_norm_path)['image']
         # This returned value may not be valid when multi-threading is implemented
         return image_ref
@@ -712,6 +701,7 @@ class ZoomPanWidget(QWidget):
             self.parent.update_multi_self(exclude=[self])
 
     def update_zpa_self ( self ):
+        print("Updating zpa self | ZoomPanWidget.update_zpa_self...")
         # Call the super "update" function for this panel's QWidget (this "self")
         if self.parent != None:
             self.draw_border = self.parent.draw_border
@@ -721,7 +711,7 @@ class ZoomPanWidget(QWidget):
 
 
     def show_actual_size ( self ):
-        print("\nCalling show_actual_size(self) in alignem.py:\n")
+        print("Showing actual size | ZoomPanWidget.show_actual_size...")
 
         print_debug ( 30, "Showing actual size image for role " + str(self.role) )
         self.zoom_scale = 1.0
@@ -733,7 +723,7 @@ class ZoomPanWidget(QWidget):
         clear_crop_settings()
 
     def center_image ( self, all_images_in_stack = True ):
-        print("Calling center_image(self,all_images_in_stack = True) in alignem.py:")
+        print("Centering image | ZoomPanWidget.center_image...")
         print_debug ( 30, "Centering image for " + str(self.role) )
 
         if project_data != None:
@@ -931,10 +921,22 @@ class ZoomPanWidget(QWidget):
         global crop_mode_role
         global crop_mode_disp_rect
         global crop_mode_callback
+        print("crop_mode_origin:", crop_mode_origin)
+        print("crop_mode_role:", crop_mode_role)
+        print("crop_mode_disp_rect:", crop_mode_disp_rect)
+        print("crop_mode_callback:", crop_mode_callback)
+
         crop_mode = False
+        print("crop_mode = ", crop_mode)
+        print("Evaluating: if crop_mode_callback != None")
         if crop_mode_callback != None:
-            mode = crop_mode_callback()
+            print("  => True")
+            mode = crop_mode_callback() #bug
+            print("mode = ", mode)
+
+            print("  Evaluating: if mode == 'Crop'")
             if mode == 'Crop':
+                print("    => True")
                 crop_mode = True
             else:
                 # Note: since we don't currently have a callback from a mode change,
@@ -947,6 +949,8 @@ class ZoomPanWidget(QWidget):
                     crop_mode_role = None
                     self.update_zpa_self()
                     self.update_siblings()
+        else:
+            print("  => False")
 
         if crop_mode:
             ### New Rubber Band Code
@@ -1102,7 +1106,7 @@ class ZoomPanWidget(QWidget):
 
 
     def change_layer ( self, layer_delta ):
-        print("Calling change_layer(self,layer_delta) in alignem.py:")
+        print("Changing layer | ZoomPanWidget.change_layer...")
         global project_data
         global main_window
         global preloading_range
@@ -1277,10 +1281,9 @@ class ZoomPanWidget(QWidget):
 
 
     def paintEvent(self, event):
-        global crop_mode_role
+        print("Painting | ZoomPanWidget.paintEvent...", end='')
+        global crop_mode_role #tag why repeatedly define these globals on each paint event?
         global crop_mode_disp_rect
-
-        print_debug(50, "Bob: Top of paintEvent")
 
         if not self.already_painting:
             self.already_painting = True
@@ -1429,7 +1432,7 @@ class ZoomPanWidget(QWidget):
 
             self.already_painting = False
 
-        print_debug(50, "Bob: Bottom of paintEvent")
+        print("done")
 
 
 
@@ -1499,29 +1502,33 @@ class MultiImagePanel(QWidget):
         painter.end()
 
     def update_spacing ( self ):
-        print_debug ( 30, "Setting Spacing to " + str(self.current_margin) )
+        print("Setting Spacing to " + str(self.current_margin) + " | MultiImagePanel.update_spacing")
         #self.hb_layout.setContentsMargin(self.current_margin)    #pyside6 This sets margins around the outer edge of all panels
         #self.hb_layout.setMargin(self.current_margin)    #pyside2 This sets margins around the outer edge of all panels
         self.hb_layout.setSpacing(self.current_margin)    # This sets margins around the outer edge of all panels
         self.repaint()
 
     def update_multi_self ( self, exclude=() ):
+        print("Updating multi self | MultiImagePanel.update_multi_self...",end='')
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude)) ]
             for p in panels_to_update:
                 p.border_color = self.border_color
                 p.update_zpa_self()
                 p.repaint()
+        print("done")
 
     def add_panel ( self, panel ):
+        print("Adding panel | MultiImagePanel.add_panel...",end='')
         if not panel in self.actual_children:
             self.actual_children.append ( panel )
             self.hb_layout.addWidget ( panel )
             panel.set_parent ( self )
             self.repaint()
+        print("done")
 
     def set_roles (self, roles_list):
-        print("\nCalling set_roles(self,roles_list) in alignem.py:\n")
+        print("Setting roles | MultiImagePanel.set_roles...",end='')
         if len(roles_list) > 0:
             # Save these roles
             role_settings = {}
@@ -1545,31 +1552,29 @@ class MultiImagePanel(QWidget):
               zpw.draw_annotations = self.draw_annotations
               zpw.draw_full_paths = self.draw_full_paths
               self.add_panel ( zpw )
+        print("done")
 
     def remove_all_panels ( self ):
-        print("\nCalling remove_all_panels(self) in alignem.py:\n")
-        print_debug ( 30, "In remove_all_panels" )
+        print("Removing all panels | MultiImagePanel.remove_all_panels...",end='')
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget ( self.actual_children[-1] )
             self.actual_children[-1].deleteLater()
             self.actual_children = self.actual_children[0:-1]
         self.repaint()
+        print("done")
 
     def refresh_all_images ( self ):
-        print("\nCalling refresh_all_images(self) in alignem.py:\n")
-
-        print_debug ( 30, "In MultiImagePanel.refresh_all_images" )
+        print("Refreshing all images | MultiImagePanel.refresh_all_images...",end='')
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
+        print("done")
 
     def center_all_images ( self, all_images_in_stack=True ):
-        print("\nCalling center_all_images(self,all_images_in_stack=True) in alignem.py\n")
-
-        print_debug ( 30, "In MultiImagePanel.center_all_images" )
+        print("Centering all images | MultiImagePanel.center_all_images...",end='')
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
@@ -1577,11 +1582,10 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
+        print("done")
 
     def all_images_actual_size ( self ):
-        print("\nCalling all_images_actual_size(self) in alignem.py:\n")
-
-        print_debug ( 30, "In MultiImagePanel.all_images_actual_size" )
+        print("Actual-sizing all images | MultiImagePanel.all_images_actual_size...",end='')
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
@@ -1589,6 +1593,7 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
+        print("done")
 
 
 
@@ -1666,173 +1671,173 @@ def bool_changed_callback ( state ):
                 ignore_changes = False
 
 
-class ControlPanelWidget(QWidget):
-    """A widget to hold all of the application data for an alignment method."""
-    def __init__(self, control_model=None):
-        super(ControlPanelWidget, self).__init__()
-        self.cm = control_model
-        #self.control_panel = QWidget()
-        self.control_panel_layout = QVBoxLayout()
-        self.setLayout(self.control_panel_layout)
-        #self.control_panel_layout.setContentsMargin(0) #pyside6
-        #self.control_panel_layout.setMargin(0) #pyside2
-        self.control_panel_layout.setSpacing(0)
-
-        if self.cm != None:
-            # Only show the first pane for now
-            rows = control_model[0]
-            print_debug ( 30, "Pane contains " + str(len(rows)) + " rows" )
-
-            for row in rows:
-              row_box = QWidget()
-              row_box_layout = QHBoxLayout()
-              #row_box_layout.setContentsMargin(2) #pyside6
-              #row_box_layout.setMargin(2) #pyside2
-              row_box_layout.setSpacing(2)
-              row_box.setLayout ( row_box_layout )
-              print_debug ( 30, "Row contains " + str(len(row)) + " items" )
-              for item in row:
-                  print_debug ( 30, "  Item is " + str(item) )
-                  if type(item) == type('a'):
-                      item_widget = QLabel ( str(item) )
-                      item_widget.setAlignment(Qt.AlignHCenter)
-                      row_box_layout.addWidget ( item_widget )
-                  elif type(item) == type([]):
-                      item_widget = QPushButton ( str(item[0]) )
-                      row_box_layout.addWidget ( item_widget )
-                  elif isinstance(item, BoolField):
-                      val_widget = ( QCheckBox ( str(item.text) ) )
-                      row_box_layout.addWidget ( val_widget )
-                      # Hard code a few special callbacks ...
-                      if item.text == "Null Bias":
-                          #val_widget.stateChanged.connect(null_bias_changed_callback)
-                          val_widget.clicked.connect(null_bias_changed_callback)
-                      elif item.text == "Bounding Rect":
-                          #val_widget.stateChanged.connect(bounding_rect_changed_callback)
-                          val_widget.clicked.connect(bounding_rect_changed_callback)
-                      elif item.text == "Skip":
-                          #val_widget.stateChanged.connect(skip_changed_callback)
-                          val_widget.clicked.connect(skip_changed_callback)
-                      else:
-                          #val_widget.stateChanged.connect(bool_changed_callback)
-                          val_widget.clicked.connect(bool_changed_callback)
-                      item.widget = val_widget
-                  elif isinstance(item, TextField):
-                      if item.text != None:
-                          row_box_layout.addWidget ( QLabel ( str(item.text) ) )
-                      val_widget = ( QLineEdit ( str(item.value) ) )
-                      val_widget.setAlignment(Qt.AlignHCenter)
-                      item.widget = val_widget
-                      row_box_layout.addWidget ( val_widget )
-                  elif isinstance(item, IntField):
-                      if item.text != None:
-                          row_box_layout.addWidget ( QLabel ( str(item.text) ) )
-                      val_widget = ( QLineEdit ( str(item.value) ) )
-                      val_widget.setAlignment(Qt.AlignHCenter)
-                      item.widget = val_widget
-                      row_box_layout.addWidget ( val_widget )
-                  elif isinstance(item, FloatField):
-                      if item.text != None:
-                          row_box_layout.addWidget ( QLabel ( str(item.text) ) )
-                      val_widget = ( QLineEdit ( str(item.value) ) )
-                      val_widget.setAlignment(Qt.AlignHCenter)
-                      item.widget = val_widget
-                      row_box_layout.addWidget ( val_widget )
-                  elif isinstance(item, CallbackButton):
-                      item_widget = QPushButton ( str(item.text) )
-                      item_widget.clicked.connect ( item.callback )
-                      item.widget = item_widget
-                      row_box_layout.addWidget ( item_widget )
-                  elif isinstance (item, ComboBoxControl):
-                      item_widget = QComboBox()
-                      item_widget.addItems (item.choices)
-                      #item_widget.clicked.connect ( item.callback )
-                      item.widget = item_widget
-                      row_box_layout.addWidget ( item_widget )
-                  else:
-                      item_widget = QLineEdit ( str(item) )
-                      item_widget.setAlignment(Qt.AlignHCenter)
-                      row_box_layout.addWidget ( item_widget )
-              self.control_panel_layout.addWidget ( row_box )
-
-    def dump ( self ):
-        print_debug ( 1, "Control Panel:" )
-        for p in self.cm:
-          print_debug ( 1, "  Panel:" )
-          for r in p:
-            print_debug ( 1, "    Row:" )
-            for i in r:
-              print_debug ( 1, "      Item: " + str(i) )
-              print_debug ( 1, "          Subclass of GenericWidget: " + str(isinstance(i,GenericWidget)) )
-
-    def copy_self_to_data ( self ):
-        data = []
-        for p in self.cm:
-          new_panel = []
-          for r in p:
-            new_row = []
-            for i in r:
-              if isinstance(i,GenericWidget):
-                # Store as a list to identify as a widget
-                new_row.append ( [ i.get_value() ] )
-              else:
-                # Store as static raw data
-                # new_row.append ( i )  # This data is useless since it's set by the application
-                new_row.append ( '' )   # Save an empty string as a place holder for static data
-            new_panel.append ( new_row )
-          data.append ( new_panel )
-        return data
-
-    def copy_data_to_self ( self, data ):
-        ip = 0
-        for p in self.cm:
-          panel = data[ip]
-          ip += 1
-          ir = 0
-          for r in p:
-            row = panel[ir]
-            ir += 1
-            ii = 0
-            for i in r:
-              item = row[ii]
-              ii += 1
-              if type(item) == type([]):
-                # This was a widget
-                i.set_value ( item[0] )
-              else:
-                # Ignore static raw data
-                pass
-
-    def distribute_all_layer_data ( self, control_panel_layer_list ):
-        # First make a copy of this widget's data
-        this_layers_data = self.copy_self_to_data()
-
-        # Search the widgets for those that should be identical across all layers
-        page_index = 0
-        for p in self.cm:
-          row_index = 0
-          for r in p:
-            item_index = 0
-            for i in r:
-              if isinstance(i,GenericWidget):
-                if 'all_layers' in dir(i):
-                  if i.all_layers:
-                    # Store this value in all layers
-                    for l in control_panel_layer_list:
-                      if l is None:
-                        # There is no data stored for this layer yet.
-                        # Maybe copy the entire nested list to a new layer?
-                        # But the Widget fields might take care of this anyway.
-                        # Pass for now.
-                        pass
-                      else:
-                        # Just set the values that should be identical
-                        l[page_index][row_index][item_index] = this_layers_data[page_index][row_index][item_index]
-              else:
-                pass
-              item_index += 1
-            row_index += 1
-          page_index += 1
+# class ControlPanelWidget(QWidget):
+#     """A widget to hold all of the application data for an alignment method."""
+#     def __init__(self, control_model=None):
+#         super(ControlPanelWidget, self).__init__()
+#         self.cm = control_model
+#         #self.control_panel = QWidget()
+#         self.control_panel_layout = QVBoxLayout()
+#         self.setLayout(self.control_panel_layout)
+#         #self.control_panel_layout.setContentsMargin(0) #pyside6
+#         #self.control_panel_layout.setMargin(0) #pyside2
+#         self.control_panel_layout.setSpacing(0)
+#
+#         if self.cm != None:
+#             # Only show the first pane for now
+#             rows = control_model[0]
+#             print_debug ( 30, "Pane contains " + str(len(rows)) + " rows" )
+#
+#             for row in rows:
+#               row_box = QWidget()
+#               row_box_layout = QHBoxLayout()
+#               #row_box_layout.setContentsMargin(2) #pyside6
+#               #row_box_layout.setMargin(2) #pyside2
+#               row_box_layout.setSpacing(2)
+#               row_box.setLayout ( row_box_layout )
+#               print_debug ( 30, "Row contains " + str(len(row)) + " items" )
+#               for item in row:
+#                   print_debug ( 30, "  Item is " + str(item) )
+#                   if type(item) == type('a'):
+#                       item_widget = QLabel ( str(item) )
+#                       item_widget.setAlignment(Qt.AlignHCenter)
+#                       row_box_layout.addWidget ( item_widget )
+#                   elif type(item) == type([]):
+#                       item_widget = QPushButton ( str(item[0]) )
+#                       row_box_layout.addWidget ( item_widget )
+#                   elif isinstance(item, BoolField):
+#                       val_widget = ( QCheckBox ( str(item.text) ) )
+#                       row_box_layout.addWidget ( val_widget )
+#                       # Hard code a few special callbacks ...
+#                       if item.text == "Null Bias":
+#                           #val_widget.stateChanged.connect(null_bias_changed_callback)
+#                           val_widget.clicked.connect(null_bias_changed_callback)
+#                       elif item.text == "Bounding Rect":
+#                           #val_widget.stateChanged.connect(bounding_rect_changed_callback)
+#                           val_widget.clicked.connect(bounding_rect_changed_callback)
+#                       elif item.text == "Skip":
+#                           #val_widget.stateChanged.connect(skip_changed_callback)
+#                           val_widget.clicked.connect(skip_changed_callback)
+#                       else:
+#                           #val_widget.stateChanged.connect(bool_changed_callback)
+#                           val_widget.clicked.connect(bool_changed_callback)
+#                       item.widget = val_widget
+#                   elif isinstance(item, TextField):
+#                       if item.text != None:
+#                           row_box_layout.addWidget ( QLabel ( str(item.text) ) )
+#                       val_widget = ( QLineEdit ( str(item.value) ) )
+#                       val_widget.setAlignment(Qt.AlignHCenter)
+#                       item.widget = val_widget
+#                       row_box_layout.addWidget ( val_widget )
+#                   elif isinstance(item, IntField):
+#                       if item.text != None:
+#                           row_box_layout.addWidget ( QLabel ( str(item.text) ) )
+#                       val_widget = ( QLineEdit ( str(item.value) ) )
+#                       val_widget.setAlignment(Qt.AlignHCenter)
+#                       item.widget = val_widget
+#                       row_box_layout.addWidget ( val_widget )
+#                   elif isinstance(item, FloatField):
+#                       if item.text != None:
+#                           row_box_layout.addWidget ( QLabel ( str(item.text) ) )
+#                       val_widget = ( QLineEdit ( str(item.value) ) )
+#                       val_widget.setAlignment(Qt.AlignHCenter)
+#                       item.widget = val_widget
+#                       row_box_layout.addWidget ( val_widget )
+#                   elif isinstance(item, CallbackButton):
+#                       item_widget = QPushButton ( str(item.text) )
+#                       item_widget.clicked.connect ( item.callback )
+#                       item.widget = item_widget
+#                       row_box_layout.addWidget ( item_widget )
+#                   elif isinstance (item, ComboBoxControl):
+#                       item_widget = QComboBox()
+#                       item_widget.addItems (item.choices)
+#                       #item_widget.clicked.connect ( item.callback )
+#                       item.widget = item_widget
+#                       row_box_layout.addWidget ( item_widget )
+#                   else:
+#                       item_widget = QLineEdit ( str(item) )
+#                       item_widget.setAlignment(Qt.AlignHCenter)
+#                       row_box_layout.addWidget ( item_widget )
+#               self.control_panel_layout.addWidget ( row_box )
+#
+#     def dump ( self ):
+#         print_debug ( 1, "Control Panel:" )
+#         for p in self.cm:
+#           print_debug ( 1, "  Panel:" )
+#           for r in p:
+#             print_debug ( 1, "    Row:" )
+#             for i in r:
+#               print_debug ( 1, "      Item: " + str(i) )
+#               print_debug ( 1, "          Subclass of GenericWidget: " + str(isinstance(i,GenericWidget)) )
+#
+#     def copy_self_to_data ( self ):
+#         data = []
+#         for p in self.cm:
+#           new_panel = []
+#           for r in p:
+#             new_row = []
+#             for i in r:
+#               if isinstance(i,GenericWidget):
+#                 # Store as a list to identify as a widget
+#                 new_row.append ( [ i.get_value() ] )
+#               else:
+#                 # Store as static raw data
+#                 # new_row.append ( i )  # This data is useless since it's set by the application
+#                 new_row.append ( '' )   # Save an empty string as a place holder for static data
+#             new_panel.append ( new_row )
+#           data.append ( new_panel )
+#         return data
+#
+#     def copy_data_to_self ( self, data ):
+#         ip = 0
+#         for p in self.cm:
+#           panel = data[ip]
+#           ip += 1
+#           ir = 0
+#           for r in p:
+#             row = panel[ir]
+#             ir += 1
+#             ii = 0
+#             for i in r:
+#               item = row[ii]
+#               ii += 1
+#               if type(item) == type([]):
+#                 # This was a widget
+#                 i.set_value ( item[0] )
+#               else:
+#                 # Ignore static raw data
+#                 pass
+#
+#     def distribute_all_layer_data ( self, control_panel_layer_list ):
+#         # First make a copy of this widget's data
+#         this_layers_data = self.copy_self_to_data()
+#
+#         # Search the widgets for those that should be identical across all layers
+#         page_index = 0
+#         for p in self.cm:
+#           row_index = 0
+#           for r in p:
+#             item_index = 0
+#             for i in r:
+#               if isinstance(i,GenericWidget):
+#                 if 'all_layers' in dir(i):
+#                   if i.all_layers:
+#                     # Store this value in all layers
+#                     for l in control_panel_layer_list:
+#                       if l is None:
+#                         # There is no data stored for this layer yet.
+#                         # Maybe copy the entire nested list to a new layer?
+#                         # But the Widget fields might take care of this anyway.
+#                         # Pass for now.
+#                         pass
+#                       else:
+#                         # Just set the values that should be identical
+#                         l[page_index][row_index][item_index] = this_layers_data[page_index][row_index][item_index]
+#               else:
+#                 pass
+#               item_index += 1
+#             row_index += 1
+#           page_index += 1
 
 
 class GenericWidget:
@@ -1957,11 +1962,12 @@ class ComboBoxControl(GenericWidget):
     def __init__ ( self, choices ):
         #super(CallbackButton,self).__init__(text)
         self.choices = choices
+        self.widget = None
     def get_value ( self ):
         return self.widget.currentText()
         # AttributeError: 'ComboBoxControl' object has no attribute 'widget'
     def set_value ( self, value ):
-        print_debug ( 50, "ComboBoxControl.set_value ( " + str(value) + ")")
+        print("ComboBoxControl.set_value ( " + str(value) + ")")
         self.widget.setCurrentText(value)
         #print ( "Setting value")
         #__import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
@@ -2267,6 +2273,124 @@ class QHLine(QFrame):
 # sample_html = requests.get("https://github.com/google/neuroglancer").text
 # print(render(sample_html))
 
+#toggle #switch #skip #reset
+class ToggleSwitch(QCheckBox):
+    _transparent_pen = QPen(Qt.transparent)
+    _light_grey_pen = QPen(Qt.lightGray)
+    _black_pen = QPen(Qt.black)
+
+    def __init__(self,
+                 parent=None,
+                 bar_color=Qt.gray,
+                 # checked_color="#00B0FF",
+                 checked_color="#bdd73c",
+                 handle_color=Qt.white,
+                 h_scale=1.0,
+                 v_scale=1.0,
+                 fontSize=10):
+
+        super().__init__(parent)
+
+        # Save our properties on the object via self, so we can access them later
+        # in the paintEvent.
+        self._bar_brush = QBrush(bar_color)
+        self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
+
+        self._handle_brush = QBrush(handle_color)
+        self._handle_checked_brush = QBrush(QColor(checked_color))
+
+        # Setup the rest of the widget.
+
+        # self.setContentsMargins(8, 0, 8, 0)
+        self.setContentsMargins(8, 0, 8, 0)
+        # self._handle_position = 0
+        self._handle_position = 0
+        self._h_scale = h_scale
+        self._v_scale = v_scale
+        self._fontSize = fontSize
+
+        self.stateChanged.connect(self.handle_state_change)
+
+    def sizeHint(self):
+        # return QSize(58, 45)
+        return QSize(86, 45)
+
+    def hitButton(self, pos: QPoint):
+        return self.contentsRect().contains(pos)
+
+    def paintEvent(self, e: QPaintEvent):
+
+        contRect = self.contentsRect()
+        width = contRect.width() * self._h_scale
+        height = contRect.height() * self._v_scale
+        handleRadius = round(0.24 * height)
+
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+
+        p.setPen(self._transparent_pen)
+        barRect = QRectF(0, 0, width - handleRadius, 0.40 * height)
+        barRect.moveCenter(contRect.center())
+        rounding = barRect.height() / 2
+
+        # the handle will move along this line
+        trailLength = contRect.width() * self._h_scale - 2 * handleRadius
+        xLeft = contRect.center().x() - (trailLength + handleRadius) / 2
+        xPos = xLeft + handleRadius + trailLength * self._handle_position
+
+        if self.isChecked():
+            p.setBrush(self._bar_checked_brush)
+            p.drawRoundedRect(barRect, rounding, rounding)
+            p.setBrush(self._handle_checked_brush)
+
+            p.setPen(self._black_pen)
+            #p.setFont(QFont('Helvetica', self._fontSize, 75))
+            p.drawText(xLeft + handleRadius / 2, contRect.center().y() + handleRadius / 2, "KEEP")
+
+        else:
+            p.setBrush(self._bar_brush)
+            p.drawRoundedRect(barRect, rounding, rounding)
+            p.setPen(self._black_pen)
+            p.setBrush(self._handle_brush)
+            p.drawText(contRect.center().x(), contRect.center().y() + handleRadius / 2, "SKIP")
+
+        p.setPen(self._light_grey_pen)
+        p.drawEllipse(QPointF(xPos, barRect.center().y()), handleRadius, handleRadius)
+        p.end()
+
+    @Slot(int)
+    def handle_state_change(self, value):
+        print("ToggleSwitch is handling state change | ToggleSwitch.handle_state_change...")
+        self._handle_position = 1 if value else 0
+
+    @Property(float)
+    def handle_position(self):
+        print("@Property ToggleSwitch is handling position | ToggleSwitch.handle_position...")
+        print("Note: @Property(float)\n")
+        return self._handle_position
+
+    @handle_position.setter
+    def handle_position(self, pos):
+        print("@handle_position.setter ToggleSwitch is handling position | ToggleSwitch.handle_position...")
+        """change the property
+           we need to trigger QWidget.update() method, either by:
+           1- calling it here [ what we're doing ].
+           2- connecting the QPropertyAnimation.valueChanged() signal to it.
+        """
+        self._handle_position = pos
+        self.update()
+
+    def setH_scale(self, value):
+        self._h_scale = value
+        self.update()
+
+    def setV_scale(self, value):
+        self._v_scale = value
+        self.update()
+
+    def setFontSize(self, value):
+        self._fontSize = value
+        self.update()
 
 
 #mainwindow contains the Menu Bar and the Status Bar
@@ -2303,12 +2427,16 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         global app
         if app == None:
+            print("No pre-existing QApplication instance, defining new global | app = QApplication([])")
             app = QApplication([]) #jy note call to QApplication
+        else:
+            print("Existing QApplication instance found, continuing...")
 
 
         global project_data
         project_data = copy.deepcopy ( new_project_template )
 
+        print("Initializing QMainWindow | QMainWindow.__init__(self)")
         QMainWindow.__init__(self)
         self.setWindowTitle(title)
         self.current_project_file_name = None
@@ -2322,6 +2450,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         # stylesheet must be after QMainWindow.__init__(self)
         #self.setStyleSheet(open('stylesheet.qss').read())
+        print("Applying stylesheet... ",end='')
         self.setStyleSheet(open(os.path.join(self.pyside_path,'stylesheet.qss')).read())
 
 
@@ -2333,12 +2462,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         #pyside6
+        print("Instantiating QWebEngineView... ", end='')
         self.view = QWebEngineView()
         # PySide6 available options
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        print("Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True... ", end='')
         self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         #!!!
@@ -2376,7 +2507,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
 
         # Force the style to be the same on all OSs:
-        app.setStyle("Fusion")
+        print("Setting QApplication.setStyle to 'Fusion'...")
+        app.setStyle('Fusion')
 
         # def demos_view(): #documentationview
         #     print("\ndocumentation_view():\n")
@@ -2386,30 +2518,27 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
         def documentation_view(): #documentationview
-            print("\ndocumentation_view():\n")
+            print("Launching documentation view | MainWindow.documentation_view...")
             # don't force the reload, add home button instead
             self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
             self.stacked_widget.setCurrentIndex(2)
             self.status.showMessage("GlanceEM_SWiFT Documentation")
 
         def documentation_view_home():
+            print("Launching documentation view home | MainWindow.documentation_view_home...")
             self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
             self.status.showMessage("GlanceEM_SWiFT Documentation")
 
 
-
-
-
-
         def remote_view():
-            print("\nremote_view():\n")
+            print("Launching remote viewer | MainWindow.remote_view...")
             self.stacked_widget.setCurrentIndex(4)
             self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
             self.status.showMessage("Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
 
         #webgl2
         def microns_view():
-            print("\nmicrons_view():\n")
+            print("Launching microns viewer | MainWindow.microns_view...")
             self.stacked_widget.setCurrentIndex(5)
             self.browser_microns.setUrl(QUrl('https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
             self.status.showMessage("MICrONS (http://layer23.microns-explorer.org)")
@@ -2417,31 +2546,31 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             #self.status.showMessage("Checking WebGL2.0 support.")
 
         def reload_ng():
-            print("\nreload_ng():\n")
+            print("Reloading Neuroglancer | MainWindow.reload_ng...")
             ng_view()
 
         def reload_remote():
-            print("\nreload_remote():\n")
+            print("Reloading remote viewer | MainWindow.reload_remote...")
             remote_view()
 
         def exit_ng():
-            print("\nexit_ng():\n")
+            print("Exiting Neuroglancer | MainWindow.exit_ng...")
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
 
 
         def exit_docs():
-            print("\nexit_docs():\n")
+            print("Exiting docs | MainWindow.exit_docs...")
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
 
         def exit_remote():
-            print("\nexit_remote():\n")
+            print("Exiting remote viewer | MainWindow.exit_remote...")
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
 
         def exit_demos():
-            print("\nexit_demos():\n")
+            print("Exiting demos | MainWindow.exit_demos...")
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
 
@@ -2452,9 +2581,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #     self.status.showMessage("")
 
         def print_state_ng():
-            self.status.showMessage("Printing viewer state...")
+            self.status.showMessage("\nPrinting viewer state | MainWindow.print_state_ng...")
             #viewer_state = json.loads(str(self.viewer.state))
-            print("\n")
             print(self.viewer.state)
             print("\n")
 
@@ -2466,7 +2594,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             #self.status.showMessage("Viewing aligned images in Neuroglancer.")
 
         def print_url_ng():
-            self.status.showMessage("Printing viewer URL...")
+            self.status.showMessage("\nPrinting viewer URL | MainWindow.print_url_ng...")
             print(neuroglancer.to_url(self.viewer.state))
             #print("\nURL : " + self.viewer.get_viewer_url() + "\n")
 
@@ -2476,6 +2604,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             # print("Viewer.actions : ", self.viewer.actions)
             #time.sleep(1)
             #self.status.showMessage("Viewing aligned images in Neuroglancer.")
+            print("\n")
 
 
         # def screenshot_ng():
@@ -2490,7 +2619,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         #ng_view #ngview
         def ng_view(): # ng_view #ngview #neuroglancer
-            print("\nCalling ng_view() in alignem.py:\n")
+            print("Creating Neuroglancer viewer | MainWindow.ng_view...")
 
             if not self.current_project_file_name:
                 print("There is no open project. Not opening viewer.")
@@ -2789,7 +2918,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.main_panel_layout.addWidget ( self.image_panel ) #jy instantiate image panel
         #self.main_panel_layout.addWidget ( self.control_panel ) #controlpanel #controlmodel
 
-        self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none']) #?? why
+        # self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none']) #?? why
         # note - check for string comparison of 'none' later, do not add whitespace fill
         self.clevel_val = IntField("clevel (1-9):", 5)
         self.n_scales_val = IntField("scales:", 4)
@@ -2952,8 +3081,12 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.skip_bool = QCheckBox('Skip Image') #skip
         self.skip_bool.setChecked(False)
 
-        from alignem_swift import clear_all_skips #clear_all_skips
-        self.clear_all_skips_button = QPushButton('Clear All Skips')
+        self.toggle_skip = ToggleSwitch() #toggleskip
+        self.toggle_skip.setChecked(True)
+
+        from alignem_swift import clear_all_skips #clear_all_skips #skip
+        # self.clear_all_skips_button = QPushButton('Clear All Skips')
+        self.clear_all_skips_button = QPushButton('Reset Skips')
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
         self.clear_all_skips_button.setFixedSize(QSize(130, 28))
 
@@ -2989,7 +3122,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.improved_controls_layout.addWidget(self.whitening_input, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(swim_label, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(self.swim_input, alignment=Qt.AlignLeft)
-        self.improved_controls_layout.addWidget(self.skip_bool, alignment=Qt.AlignLeft)
+        #self.improved_controls_layout.addWidget(self.skip_bool, alignment=Qt.AlignLeft)
+        self.improved_controls_layout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft) #toggleskip
         self.improved_controls_layout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(self.copy_skips_to_all_scales_button, alignment=Qt.AlignLeft)
         self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -3549,8 +3683,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def open_project(self):
-        print_debug ( 20, "\n\nOpening Project\n\n" )
-
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
@@ -3558,7 +3690,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                                                           filter="Projects (*.json);;All Files (*)",
                                                           selectedFilter="",
                                                           options=options)
-        print_debug ( 60, "open_project ( " + str(file_name) + ")" )
+        print("Opening project: " + str(file_name) + "...")
 
         if file_name != None:
             if len(file_name) > 0:
@@ -3644,11 +3776,12 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         print_all_skips()
 
-        alignem.main_window.center_all_images()
-        alignem.main_window.update_win_self()
+        self.center_all_images()
+        self.update_win_self()
 
 
     def save_project_to_current_file(self):
+        print("Saving project to current file | MainWindow.save_project_to_current_file...")
         # Save to current file and make known file paths relative to the project file name
         if self.current_project_file_name != None:
           if len(self.current_project_file_name) > 0:
@@ -3683,15 +3816,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
     @Slot()
     def save_project(self):
         if self.current_project_file_name is None:
-            # Force the choosing of a name
+            print("Current project is not named, forcing 'save as' | MainWindow.save_project...")
             self.save_project_as()
         else:
-            print_debug ( 1, "Saving Project..." )
             self.save_project_to_current_file()
 
     @Slot()
     def save_project_as(self):
-        print_debug ( 1, "Saving Project..." )
+        print("Save project as | MainWindow.save_project_as...")
 
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -3722,7 +3854,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def save_cropped_as(self):
-        print("Saving Cropped Images...")
+        print("Saving cropped as | MainWindow.save_cropped_as...")
 
         crop_parallel = True
 
@@ -3865,24 +3997,24 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def add_image_to_role ( self, image_file_name, role_name ):
-        print("Calling add_image_to_role(self,image_file_name,role_name) in alignem.py:")
+        print("Adding image to role | MainWindow.add_image_to_role...")
 
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
         local_cur_scale = get_cur_scale()
 
-        print_debug ( 60, "Trying to place file " + str(image_file_name) + " in role " + str(role_name) )
+        print("Trying to place file " + str(image_file_name) + " in role " + str(role_name))
         if image_file_name != None:
           if len(image_file_name) > 0:
             used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][local_cur_scale]['alignment_stack'] ]
-            print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+            print("Layers using this role: " + str(used_for_this_role))
             layer_index_for_new_role = -1
             if False in used_for_this_role:
               # This means that there is an unused slot for this role. Find the first:
               layer_index_for_new_role = used_for_this_role.index(False)
-              print_debug ( 60, "Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
+              print("Inserting file " + str(image_file_name) + " in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role))
             else:
               # This means that there are no unused slots for this role. Add a new layer
-              print_debug ( 60, "Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
+              print("Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role))
               project_data['data']['scales'][local_cur_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
               layer_index_for_new_role = len(project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
             image_dict = project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role]['images']
@@ -3891,20 +4023,20 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def add_empty_to_role ( self, role_name ):
-        print("\nCalling add_empty_to_role(self,role_name) in alignem.py:\n")
+        print("Adding empty to role | MainWindow.add_image_to_role...")
 
         local_cur_scale = get_cur_scale()
 
         used_for_this_role = [ role_name in l['images'].keys() for l in project_data['data']['scales'][local_cur_scale]['alignment_stack'] ]
-        print_debug ( 60, "Layers using this role: " + str(used_for_this_role) )
+        print("Layers using this role: " + str(used_for_this_role))
         layer_index_for_new_role = -1
         if False in used_for_this_role:
           # This means that there is an unused slot for this role. Find the first:
           layer_index_for_new_role = used_for_this_role.index(False)
-          print_debug ( 60, "Inserting empty in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role) )
+          print("Inserting empty in role " + str(role_name) + " into existing layer " + str(layer_index_for_new_role))
         else:
           # This means that there are no unused slots for this role. Add a new layer
-          print_debug ( 60, "Making a new layer for empty in role " + str(role_name) + " at layer " + str(layer_index_for_new_role) )
+          print("Making a new layer for empty in role " + str(role_name) + " at layer " + str(layer_index_for_new_role))
           project_data['data']['scales'][local_cur_scale]['alignment_stack'].append ( copy.deepcopy(new_layer_template) )
           layer_index_for_new_role = len(project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
         image_dict = project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role]['images']
@@ -3914,7 +4046,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def import_images(self, role_to_import, file_name_list, clear_role=False ):
-        print("\nCalling import_images(self,role_to_import,file_name_list,clear_role=False) in alignem.py:\n")
+        print("Importing images | MainWindow.import_images...")
         global preloading_range
         local_cur_scale = get_cur_scale()
 
@@ -3960,10 +4092,11 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def update_panels(self):
-        print("\nCalling update_panels(self) in alignem.py:\n")
+        print("Updating panels | MainWindow.update_panels...",end='')
         for p in self.panel_list:
             p.update_zpa_self()
         self.update_win_self()
+        print("done")
 
 
     @Slot()
@@ -4010,7 +4143,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def set_def_proj_dest ( self ):
-        print("\nCalling set_def_proj_dest(self) in alignem.py:\n")
+        print("@Slot Setting default project destination | MainWindow.set_def_proj_dest...")
         print_debug ( 1, "Set Default Project Destination to " + str(self.current_project_file_name) )
         if self.current_project_file_name == None:
           show_warning ( "No Project File", "Unable to set a project destination without a project file.\nPlease save the project file first." )
@@ -4030,12 +4163,13 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     def load_images_in_role ( self, role, file_names ):
-        print_debug ( 60, "load_images_in_role ( " + str(role) + ", " + str(file_names) + ")" )
+        print("Loading images in role | MainWindow.load_images_in_role...")
+        print("load_images_in_role ( " + str(role) + ", " + str(file_names) + ")" )
         self.import_images ( role, file_names, clear_role=True )
 
 
     def define_roles ( self, roles_list ):
-        print("\nCalling define_roles(self,roles_list) in alignem.py:\n")
+        print("Defining roles | MainWindow.define_roles...")
 
         # Set the image panels according to the roles
         self.image_panel.set_roles ( roles_list )
@@ -4093,7 +4227,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def define_roles_callback(self):
-        print("\nCalling define_rolls_callback(self) in alignem.py:\n")
+        print("@Slot Defining roles callback | MainWindow.define_roles_callback...")
 
         default_roles = ['Stack']
         if len(project_data['data']['panel_roles']) > 0:
@@ -4112,14 +4246,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def import_into_role(self, checked):
-        print("\nCalling import_into_role(self,checked) in alignem.py:\n")
+        print("@Slot Importing into role | MainWindow.import_into_role...")
 
         import_role_name = str ( self.sender().text() )
         self.import_images_dialog ( import_role_name )
 
     #center try center code from here
     def import_base_images ( self ):
-        print("\nCalling import_base_images(self) in alignem.py:\n")
+        print("Importing base images | MainWindow.import_base_images...")
 
         self.import_images_dialog ( 'base' )
         if update_linking_callback != None:
@@ -4132,7 +4266,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def empty_into_role(self, checked):
-        #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
+        print("@Slot Emptying into role | MainWindow.empty_into_role...")
+        print("#### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged")
         local_cur_scale = get_cur_scale()
 
         role_to_import = str ( self.sender().text() )
@@ -4163,17 +4298,15 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def remove_all_from_role(self, checked):
+        print("@Slot Removing all from role | MainWindow.remove_all_from_role...")
         role_to_remove = str ( self.sender().text() )
         print_debug ( 10, "Remove role: " + str(role_to_remove) )
         self.remove_from_role ( role_to_remove )
 
-    @Slot()
-    def empty_into_role(self, checked):
-        #### NOTE: TODO: This function is now much closer to add_image_to_role and should be merged
-        pass
 
 
     def remove_from_role ( self, role, starting_layer=0, prompt=True):
+        print("Removing from role | MainWindow.remove_from_role...")
         print_debug ( 5, "Removing " + role + " from scale " + str(get_cur_scale()) + " forward from layer " + str(starting_layer) + "  (remove_from_role)" )
         actually_remove = True
         if prompt:
@@ -4212,7 +4345,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     #scales #scales_list
     def define_scales_menu ( self, scales_list ):
-        print("\nCalling define_scales_menu(self,scales_list) in alignem.py:\n")
+        print("Defining scales menu | MainWindow.define_scales_menu...")
 
         # Set the Scales menu from this scales_list
         mb = self.menuBar()
@@ -4238,7 +4371,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     #scales #setscales #scales_list
     def set_selected_scale ( self, scale_str ):
-        print("\nCalling set_selected_scale(self,scale_str) in alignem.py:\n")
+        print("Setting selected scale | MainWindow.set_selected_scale...")
         # Set the Scales menu from this scales_list
         mb = self.menuBar()
         if not (mb is None):
@@ -4255,11 +4388,11 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                   else:
                     a.setChecked ( False )
 
-        # self.center_all_images() #center
-        # self.update_win_self()
+        self.center_all_images() #center
+        self.update_win_self()
 
     def set_scales_from_string(self, scale_string):
-        print("\nCalling set_scales_from_string(self, scale_string) in alignem.py:\n")
+        print("Setting scales from string | MainWindow.set_scales_from_string...")
         cur_scales = [ str(v) for v in sorted ( [ get_scale_val(s) for s in project_data['data']['scales'].keys() ] ) ]
         scale_string = scale_string.strip ()
         if len (scale_string) > 0:
@@ -4304,7 +4437,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def define_scales_callback(self):
-        print("\nCalling define_scales_callback(self) in alignem.py:\n")
+        print("@Slot Defining scales callback | MainWindow.define_scales_callback...")
 
         default_scales = ['1']
 
@@ -4361,7 +4494,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
     #scales #setscale
     @Slot()
     def set_current_scale(self, checked):
-        print("\nCalling set_current_scale(self, checked) in alignem.py:\n")
+        print("@Slot Setting current scale | MainWindow.set_current_scale...")
         local_cur_scale = get_cur_scale()
         print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
         old_scale = local_cur_scale
@@ -4390,13 +4523,13 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def generate_scales_callback(self):
-        print("\nCalling generate_scales_callback(self) in alignem.py:\n")
+        print("@Slot Generating scales callback | MainWindow.generate_scales_callback...")
         print_debug ( 5, "Generating scales is now handled via control panel buttons in subclass alignem_swift." )
 
 
     @Slot()
     def remove_this_layer(self):
-        print("\nCalling remove_this_layer(self) in alignem.py:\n")
+        print("@Slot Removing this layer | MainWindow.remove_this_layer...")
         local_cur_scale = get_cur_scale()
         local_current_layer = project_data['data']['current_layer']
         project_data['data']['scales'][local_cur_scale]['alignment_stack'].pop(local_current_layer)
@@ -4410,7 +4543,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def remove_all_layers(self):
-        print("\nCalling remove_all_layers(self) in alignem.py:\n")
+        print("@Slot Removing all layers | MainWindow.remove_all_layers...")
         global project_data
         local_cur_scale = get_cur_scale()
         project_data['data']['current_layer'] = 0
@@ -4420,7 +4553,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def remove_all_panels(self):
-        print("\nCalling remove_all_panels(self) in alignem.py:\n")
+        print("@Slot Removing all panels | MainWindow.remove_all_panels...")
         print_debug ( 30, "Removing all panels" )
         if 'image_panel' in dir(self):
             print_debug ( 30, "image_panel exists" )
@@ -4503,18 +4636,22 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def center_all_images(self,all_images_in_stack=True):
+        print("@Slot Centering all images | MainWindow.center_all_images...")
         self.image_panel.center_all_images(all_images_in_stack=all_images_in_stack)
 
     @Slot()
     def refresh_all_images(self):
+        print("@Slot Refreshing all images | MainWindow.refresh_all_images...")
         self.image_panel.refresh_all_images()
 
     @Slot()
     def all_images_actual_size(self):
+        print("@Slot Actual-sizing all images | MainWindow.all_images_actual_size...")
         self.image_panel.all_images_actual_size()
 
     @Slot()
     def set_preloading_range(self):
+        print("@Slot Setting preloading range | MainWindow.set_preloading_range...")
         global preloading_range
 
         input_val, ok = QInputDialog().getInt ( None, "Enter Number of Images to Preload", "Preloading Count:", preloading_range )
@@ -4546,17 +4683,19 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
     @Slot()
     def exit_app(self):
+        print("@Slot Exiting app | MainWindow.exit_app > sys.exit()...")
         sys.exit()
 
     @Slot()
     def py_console(self):
-        print_debug ( 1, "\n\nEntering python console, use Control-D or Control-Z when done.\n" )
+        print("@Slot Entering python console, use Control-D or Control-Z when done | MainWindow.py_console...")
+        print_debug ( 1, "\n\n\n" )
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
 
 def run_app(main_win=None):
-    print('Calling run_app(main_win=none) from alignem.py:')
+    print('Calling run_app from alignem.py...')
 
     print("Defining global: app")
     global app
@@ -4619,3 +4758,8 @@ if __name__ == "__main__":
     main_window.show()
     sys.exit(app.exec_())
 
+"""
+Can OldImageLibrary be discarded?
+Is ControlPanelWidget necessary?
+
+"""

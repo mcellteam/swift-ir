@@ -11,6 +11,7 @@ Available at: https://github.com/GTRONICK/QSS/blob/master/AMOLED.qss
 */
 QMainWindow {
 	background-color:#000000;
+	/*background-color:#FFFFFF;*/
 }
 QDialog {
 	background-color:#000000;
@@ -328,8 +329,10 @@ QRadioButton::indicator:!checked {
 	background-color: transparent;
 }
 QStatusBar {
-    background-color: #000000;
-	color: #FFFFFF;
+    /*background-color: #000000;*/
+    background-color: #bdd73c;
+	/*color: #FFFFFF;*/
+	color: #000000;
 	font-weight: bold;
 }
 QSpinBox {
