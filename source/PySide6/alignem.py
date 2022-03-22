@@ -689,9 +689,19 @@ class ZoomPanWidget(QWidget):
 
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.setFocusPolicy(Qt.StrongFocus) #jy #focus
 
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
+
+
+        #focus
+        QApplication.instance().focusChanged.connect(self.on_focusChanged)
+
+    def on_focusChanged(self):
+        fwidget = QApplication.focusWidget()
+        if fwidget is not None:
+            print("focus widget name = ", fwidget.objectName())
 
     def get_settings ( self ):
         settings_dict = {}
@@ -929,6 +939,7 @@ class ZoomPanWidget(QWidget):
 
             self.update_zpa_self()
 
+
     def mouseMoveEvent(self, event):
         global crop_mode_origin
         global crop_mode_role
@@ -973,6 +984,9 @@ class ZoomPanWidget(QWidget):
                     self.update_zpa_self()
 
     def mouseReleaseEvent(self, event):
+        widget = QApplication.focusWidget()
+        print("!!! FOCUS IS ON: ",widget) #focus
+
         global crop_mode_origin
         global crop_mode_role
         global crop_mode_disp_rect
@@ -1221,16 +1235,13 @@ class ZoomPanWidget(QWidget):
           layer = scale['alignment_stack'][project_data['data']['current_layer']]
           base_file_name = layer['images']['base']['filename']
           print('base file name = ', base_file_name)
-          print("\nsetting toggle to: ", not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+          #print("\nsetting toggle to: ", not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
           main_window.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
 
           scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
           layer = scale['alignment_stack'][project_data['data']['current_layer']]
           main_window.whitening_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor']))
           main_window.swim_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor']))
-
-
-
 
     def wheelEvent(self, event):
         """
@@ -1281,6 +1292,7 @@ class ZoomPanWidget(QWidget):
             layer_delta = int(event.angleDelta().y() / 120)    #pyside6
 
             self.change_layer ( layer_delta )
+
 
             #Ref: https://stackoverflow.com/questions/35508711/how-to-enable-pan-and-zoom-in-a-qgraphicsview
             #_zoom is equivalent to wheel_index
@@ -1519,6 +1531,8 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
 
+        #main_window.update_base_label()
+
     def paintEvent(self, event):
         painter = QPainter(self)
         #painter.setBackgroundMode(Qt.OpaqueMode)
@@ -1533,6 +1547,8 @@ class MultiImagePanel(QWidget):
             # Draw background for panels
             painter.fillRect(0,0,self.width(),self.height(),self.bg_color)
         painter.end()
+
+        #main_window.update_base_label()
 
     def update_spacing ( self ):
         print("Setting Spacing to " + str(self.current_margin) + " | MultiImagePanel.update_spacing...")
@@ -1549,6 +1565,8 @@ class MultiImagePanel(QWidget):
                 p.border_color = self.border_color
                 p.update_zpa_self()
                 p.repaint()
+        main_window.update_base_label()
+        main_window.update_ref_label()
 
     def add_panel ( self, panel ):
         print("  Adding panel | MultiImagePanel.add_panel...")
@@ -1575,7 +1593,7 @@ class MultiImagePanel(QWidget):
                 pass
             # Create the new panels
             for role in roles_list:
-              zpw = ZoomPanWidget(role=role, parent=self)
+              zpw = ZoomPanWidget(role=role, parent=self) #focus #zoompanwidget
               # Restore the settings from the previous zpw
               if role in role_settings:
                 zpw.set_settings ( role_settings[role] )
@@ -1600,6 +1618,8 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
+        main_window.update_base_label()
+        main_window.update_ref_label()
 
     def center_all_images ( self, all_images_in_stack=True ):
         print("Centering all images | MultiImagePanel.center_all_images...")
@@ -1710,6 +1730,7 @@ def skip_changed_callback ( state ): # 'state' is connected to skip toggle
     # main_window.update_win_self()
     # main_window.update_panels()
     # main_window.refresh_all_images()
+    main_window.status_skips_label.setText(str(skip_list))  #settext #status
 
 def bool_changed_callback ( state ):
     global ignore_changes
@@ -2351,6 +2372,8 @@ class ToggleSwitch(QCheckBox):
         super().__init__(parent)
         print('Constructor for ToggleSwitch was called |  Caller: ' + inspect.stack()[1].function)
 
+        self.setFocusPolicy(Qt.NoFocus)  # focus don't steal focus from zoompanwidget
+
         # Save our properties on the object via self, so we can access them later
         # in the paintEvent.
         self._bar_brush = QBrush(bar_color)
@@ -2503,6 +2526,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.view_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
+        #self.setFocusPolicy(Qt.StrongFocus)  # jy #focus
 
         #self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         #self.setWindowFlag(Qt.FramelessWindowHint)
@@ -2674,7 +2698,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         def blend_ng():
             print("blend_ng() : ")
             #self.status.showMessage("Making blended image...")
-
 
 
         #ng_view #ngview
@@ -3167,15 +3190,75 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.h_layout.addWidget(self.multiview_bool, alignment=Qt.AlignRight)
         #self.h_layout.setContentsMargins(400, 0, 0, 0)
 
+        ###################################
+        ############# #STATUS #############
+        ###################################
+        # QGridLayout params: row, column, rowSpan, columnSpan
+
+        def update_skips_label():
+            skip_list = []
+            for layer_index in range(len(project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
+                if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+                    skip_list.append(layer_index)
+            self.status_skips_label.setText(str(skip_list))  # settext #status
+
+        # #@slot()
+        # def update_base_label(self):
+        #     skip_list = []
+        #     scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
+        #     layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        #     base_file_name = layer['images']['base']['filename']
+        #     self.status_base_image_label.setText(str(skip_list))  # settext #status
+
+        self.status_vbox = QVBoxLayout()
+
+        self.status_hbox_skips = QHBoxLayout()
+        self.status_skips_label = QLabel("[]")
+        self.status_skips_label.setObjectName("status_skips_label");
+        self.spacer_item_status_skips = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.status_hbox_skips.addWidget(QLabel("Skips:"), alignment=Qt.AlignLeft)
+        self.status_hbox_skips.addWidget(self.status_skips_label, alignment=Qt.AlignLeft)
+        self.status_hbox_skips.addSpacerItem(self.spacer_item_status_skips)
+
+        self.status_hbox_base_image = QHBoxLayout()
+        self.status_base_image_label = QLabel("[]")
+        self.status_base_image_label.setObjectName("base_image_label")
+        self.spacer_item_status_base_image = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.status_hbox_base_image.addWidget(QLabel("Base Image:"), alignment=Qt.AlignLeft)
+        self.status_hbox_base_image.addWidget(self.status_base_image_label, alignment=Qt.AlignLeft)
+        self.status_hbox_base_image.addSpacerItem(self.spacer_item_status_base_image)
+
+        self.status_hbox_ref_image = QHBoxLayout()
+        self.status_ref_image_label = QLabel("[]")
+        self.status_ref_image_label.setObjectName("ref_image_label")
+        self.spacer_item_status_ref_image = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.status_hbox_ref_image.addWidget(QLabel("Ref Image:"), alignment=Qt.AlignLeft)
+        self.status_hbox_ref_image.addWidget(self.status_ref_image_label, alignment=Qt.AlignLeft)
+        self.status_hbox_ref_image.addSpacerItem(self.spacer_item_status_ref_image)
+
+        self.status_vbox.addLayout(self.status_hbox_skips)
+        self.status_vbox.addLayout(self.status_hbox_base_image)
+        self.status_vbox.addLayout(self.status_hbox_ref_image)
+        self.status_vbox.addWidget(QHLine())
+        self.main_panel_layout.addLayout(self.status_vbox)
+
+        # scale = project_data['data']['scales'][
+        #     project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
+        # layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        # base_file_name = layer['images']['base']['filename']
+        # print("current base image = ", base_file_name)
+
+
         ##################################
         ########## NEW CONTROLS ##########
         ##################################
-
         #controls #controlpanel #newcontrols
         #horizontal #newcontrols #controlslayout
         self.center_button = QPushButton('Center') #center
         self.center_button.clicked.connect(self.center_all_images)
         self.center_button.setFixedSize(QSize(130, 28))
+        self.center_button.setFocusPolicy(Qt.NoFocus)
+
 
         from alignem_swift import generate_scales_queue #generate_scales
         self.generate_scales_button = QPushButton('Generate Scales')
@@ -3184,6 +3267,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         self.affine_combobox = QComboBox(self) #thing_to_do #init_ref_app
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
+        self.affine_combobox.setFocusPolicy(Qt.NoFocus)
 
         from alignem_swift import align_all_or_some #align_all_or_some
         self.align_all_button = QPushButton('Align All')
@@ -3201,7 +3285,22 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         from alignem_swift import clear_all_skips #clear_all_skips #skip
         # self.clear_all_skips_button = QPushButton('Clear All Skips')
         self.clear_all_skips_button = QPushButton('Reset Skips')
+
+        self.clear_all_skips_button.setFocusPolicy(Qt.NoFocus)
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
+        self.clear_all_skips_button.clicked.connect(update_skips_label) #status
+        #from alignem_swift import view_change_callback
+        # self.clear_all_skips_button.clicked.connect(self.update_win_self())
+        # self.clear_all_skips_button.clicked.connect(self.update_panels())
+        # self.clear_all_skips_button.clicked.connect(self.refresh_all_images())
+        #self.clear_all_skips_button.clicked.connect(self.view_change_callback)
+
+
+        # main_window.update_win_self()
+        # main_window.update_panels()
+        # main_window.refresh_all_images()
+
+
         self.clear_all_skips_button.setFixedSize(QSize(130, 28))
 
         # Not necessary for minimal interface. copy_skips_to_all_scales is already run when 'skip' is set.
@@ -3216,6 +3315,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.whitening_input = QLineEdit(self)
         self.whitening_input.setText("-0.68")
         self.whitening_input.setFixedWidth(70)
+        self.whitening_input.setFocusPolicy(Qt.NoFocus)
         # self.whitening_valid = QDoubleValidator(-5.0, 5.0, 2, self)
         self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
 
@@ -3225,6 +3325,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.swim_input = QLineEdit(self)
         self.swim_input.setText("0.8125")
         self.swim_input.setFixedWidth(70)
+        self.swim_input.setFocusPolicy(Qt.NoFocus)
         # self.n_scales_valid = QDoubleValidator(0.0000, 1.0000, 4, self)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
 
@@ -3257,6 +3358,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.layout = QGridLayout()
         self.layout.addWidget(QHLine(), 0, 0, 1, 2)
         self.layout.addWidget(QLabel("New Features:"), 1, 0, 1, 1)
+        self.layout.addWidget(QLabel("Export & View:"), 1, 1, 1, 1)
         #self.layout.addWidget(QHLine(), 2, 0, 1, 2)
         self.main_panel_layout.addLayout(self.layout)
 
@@ -3640,6 +3742,19 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
     def update_win_self ( self ):
         self.update()
 
+    def update_base_label(self):
+        scale = project_data['data']['scales'][
+            project_data['data']['current_scale']]
+        layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        base_file_name = layer['images']['base']['filename']
+        self.status_base_image_label.setText(os.path.basename(base_file_name))  #settext #status
+
+    def update_ref_label(self):
+        scale = project_data['data']['scales'][
+            project_data['data']['current_scale']]
+        layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        ref_file_name = layer['images']['ref']['filename']
+        self.status_ref_image_label.setText(os.path.basename(ref_file_name))  #settext #status
 
     def build_menu_from_list (self, parent, menu_list):
         # Get the group names first
