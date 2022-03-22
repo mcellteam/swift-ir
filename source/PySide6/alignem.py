@@ -1224,6 +1224,12 @@ class ZoomPanWidget(QWidget):
           print("\nsetting toggle to: ", not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
           main_window.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
 
+          scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
+          layer = scale['alignment_stack'][project_data['data']['current_layer']]
+          main_window.whitening_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor']))
+          main_window.swim_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor']))
+
+
 
 
     def wheelEvent(self, event):
@@ -3014,6 +3020,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             base_file_name = layer['images']['base']['filename']
             print("current base image = ",base_file_name)
             print("alignment option = ",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['alignment_option'])
+            print("whitening factor = ",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor'])
+            print("SWIM window = ",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor'])
             #print("layer = \n", pretty(layer)) # dict_keys(['align_to_ref_method', 'images', 'skip']
             print("layer['skip'] = ", layer['skip'])
             print("scale['alignment_stack'][project_data['data']['current_layer']]['skip'] = ", scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
@@ -3023,7 +3031,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                 if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
                     skip_list.append(layer_index)
             print("skip_list = ", skip_list)
-            #print("scale['alignment_stack'][project_data['data']['current_layer']] = \n", scale['alignment_stack'][project_data['data']['current_layer']])
+            print("scale['alignment_stack'][project_data['data']['current_layer']] = \n", scale['alignment_stack'][project_data['data']['current_layer']])
 
             print("\nproject_data.keys() = ", project_data.keys())
             print("layer.keys() = ", layer.keys())
@@ -3196,10 +3204,11 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
         self.clear_all_skips_button.setFixedSize(QSize(130, 28))
 
-        from alignem_swift import copy_skips_to_all_scales #copy_skips_to_all_scales
-        self.copy_skips_to_all_scales_button = QPushButton('Skips -> All Scales')
-        self.copy_skips_to_all_scales_button.clicked.connect(copy_skips_to_all_scales)
-        self.copy_skips_to_all_scales_button.setFixedSize(QSize(130, 28))
+        # Not necessary for minimal interface. copy_skips_to_all_scales is already run when 'skip' is set.
+        # from alignem_swift import copy_skips_to_all_scales #copy_skips_to_all_scales
+        # self.copy_skips_to_all_scales_button = QPushButton('Skips -> All Scales')
+        # self.copy_skips_to_all_scales_button.clicked.connect(copy_skips_to_all_scales)
+        # self.copy_skips_to_all_scales_button.setFixedSize(QSize(130, 28))
 
         #whitening QLineEdit
         whitening_label = QLabel("Whitening:")
@@ -3231,7 +3240,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.improved_controls_layout.addWidget(self.skip_bool, alignment=Qt.AlignLeft)
         self.improved_controls_layout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft) #toggleskip
         self.improved_controls_layout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignLeft)
-        self.improved_controls_layout.addWidget(self.copy_skips_to_all_scales_button, alignment=Qt.AlignLeft)
+        #self.improved_controls_layout.addWidget(self.copy_skips_to_all_scales_button, alignment=Qt.AlignLeft) #not necessary
         self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.improved_controls_layout.addItem(self.spacerItem2)
 
@@ -4864,7 +4873,8 @@ if __name__ == "__main__":
 To do:
 * after selecting 'skip', it should not be necessary to re-focus on images widget
 * spawn new thread to make Zarr 
-# fix affine combo box
+* fix affine combo box
+* automatically focus back on ZoomPanWidget after adjusting control panel
 
 
 Can OldImageLibrary be discarded?
