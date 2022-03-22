@@ -662,7 +662,7 @@ class ZoomPanWidget(QWidget):
         self.already_painting = False
 
         self.floatBased = False
-        self.antialiased = False
+        self.antialiased = False #why
         self.wheel_index = 0
         self.scroll_factor = 1.25
         self.zoom_scale = 1.0
@@ -682,9 +682,7 @@ class ZoomPanWidget(QWidget):
         self.setAutoFillBackground(True)
         self.setContentsMargins(0,0,0,0)
 
-        self.setPalette(QPalette(QColor(250, 250, 200)))
         self.setAutoFillBackground(True)
-
         self.border_color = QColor(100,100,100,255)
 
         self.setBackgroundRole(QPalette.Base)
@@ -693,10 +691,19 @@ class ZoomPanWidget(QWidget):
 
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
+        self.setToolTip('GlanceEM_SWiFT')  # tooltip #settooltip
+        # tooltip.setTargetWidget(btn)
+        #
+        # self.lb = QLabel(self)
+        # self.pixmap = QPixmap("{sims.png}")
+        # self.height_label = 100
+        # self.lb.resize(self.width(), self.height_label)
+        # self.lb.setPixmap(self.pixmap.scaled(self.lb.size(), Qt.IgnoreAspectRatio))
+        # self.show()
 
 
         #focus
-        QApplication.instance().focusChanged.connect(self.on_focusChanged)
+        #QApplication.instance().focusChanged.connect(self.on_focusChanged)
 
     def on_focusChanged(self):
         fwidget = QApplication.focusWidget()
@@ -731,6 +738,8 @@ class ZoomPanWidget(QWidget):
             self.draw_annotations = self.parent.draw_annotations
             self.draw_full_paths = self.parent.draw_full_paths
         super(ZoomPanWidget, self).update()
+
+        self.setToolTip(get_cur_scale())  # tooltip #settooltip
 
 
     def show_actual_size ( self ):
@@ -1426,6 +1435,7 @@ class ZoomPanWidget(QWidget):
 
                             if is_skipped: #skip #redx
                                 # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
+                                self.setWindowOpacity(.5)
                                 color_to_use = [255,50,50]
                                 painter.setPen(QPen(QColor(*color_to_use),5))
                                 painter.drawLine ( 0, 0, painter.viewport().width(), painter.viewport().height() )
@@ -1541,6 +1551,7 @@ class MultiImagePanel(QWidget):
             # Draw background for no panels
             painter.fillRect(0,0,self.width(),self.height(),self.bg_color)
             painter.setPen(QPen(QColor(200,200,200,255), 5))
+            #painter.setPen(QPen(QColor('#000000'), 5)) #jy
             painter.drawEllipse(QRectF(0, 0, self.width(), self.height()))
             painter.drawText((self.width()/2)-140, self.height()/2, " No Image Roles Defined ")
         else:
@@ -2526,6 +2537,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.view_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
+        #self.setAttribute(Qt.WA_TranslucentBackground, True) #translucent #dim #opacity #redx
         #self.setFocusPolicy(Qt.StrongFocus)  # jy #focus
 
         #self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
@@ -3265,7 +3277,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.generate_scales_button.clicked.connect(generate_scales_queue)
         self.generate_scales_button.setFixedSize(QSize(130, 28))
 
-        self.affine_combobox = QComboBox(self) #thing_to_do #init_ref_app
+        self.affine_combobox = QComboBox(self) #thing_to_do #init_ref_app #affine
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
         self.affine_combobox.setFocusPolicy(Qt.NoFocus)
 
@@ -3315,7 +3327,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.whitening_input = QLineEdit(self)
         self.whitening_input.setText("-0.68")
         self.whitening_input.setFixedWidth(70)
-        self.whitening_input.setFocusPolicy(Qt.NoFocus)
+        #self.whitening_input.setFocusPolicy(Qt.NoFocus) #prevents text entry at runtime
         # self.whitening_valid = QDoubleValidator(-5.0, 5.0, 2, self)
         self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
 
@@ -3325,7 +3337,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.swim_input = QLineEdit(self)
         self.swim_input.setText("0.8125")
         self.swim_input.setFixedWidth(70)
-        self.swim_input.setFocusPolicy(Qt.NoFocus)
+        #self.swim_input.setFocusPolicy(Qt.NoFocus) #prevents text entry at runtime
         # self.n_scales_valid = QDoubleValidator(0.0000, 1.0000, 4, self)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
 
@@ -3357,8 +3369,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #divider
         self.layout = QGridLayout()
         self.layout.addWidget(QHLine(), 0, 0, 1, 2)
-        self.layout.addWidget(QLabel("New Features:"), 1, 0, 1, 1)
-        self.layout.addWidget(QLabel("Export & View:"), 1, 1, 1, 1)
+        self.new_feature_label = QLabel("New Features:")
+        self.new_feature_label.setObjectName("new_feature_label")
+        # self.new_feature_label.setGeometry(QRect(70, 80, 100, 100))
+        self.layout.addWidget(self.new_feature_label, 1, 0, 1, 1)
+        self.export_and_view_label = QLabel("Export & View:")
+        self.layout.addWidget(self.export_and_view_label, 1, 1, 1, 1)
+
+        # self.layout.addWidget(QLabel(""), 1, 5, -1, 100)
         #self.layout.addWidget(QHLine(), 2, 0, 1, 2)
         self.main_panel_layout.addLayout(self.layout)
 
@@ -4666,7 +4684,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
     @Slot()
-    def define_scales_callback(self):
+    def define_scales_callback(self): #scales
         print("@Slot Defining scales callback | MainWindow.define_scales_callback...")
 
         default_scales = ['1']
@@ -4986,11 +5004,32 @@ if __name__ == "__main__":
 
 """
 To do:
-* after selecting 'skip', it should not be necessary to re-focus on images widget
-* spawn new thread to make Zarr 
-* fix affine combo box
-* automatically focus back on ZoomPanWidget after adjusting control panel
+[] upgrade 'daisy' from v0.2 to v1.0
+[x] make menu bar attached on macOS
+[x] after selecting 'skip', it should not be necessary to re-focus on images widget
+[] spawn new thread for making Zarr, to not lock up the GUI
+[] fix/improve affine combo box
+[x] automatically focus back on ZoomPanWidget after adjusting control panel
+[] when skips are reset, remove red 'x' annotation immediately
+[] look into Zarr directory store
+[] look into making pre-computed format multithreaded
 
+possible features:
+[] dim out skipped images instead of red 'X'
+[] magnifying glass
+[] use QSplitter for showing additional status info/project details
+[] mouseover-specific tooltips or status information
+
+already done:
+[x] port Python+Qt to PySide6
+[x] enable multithreaded export to Zarr
+[x] spawn new thread for emdedded web browser
+[x] embed neuroglancer viewer
+[x] embed documentation
+[x] remake control panel using more conventional and scalable Python/Qt strategies
+[x] implement QStackedWidget to allow the application to have paging, replete with back buttons, etc.
+[x] apply stylesheet
+[x] replace 'skip' checkbox with toggle button
 
 Can OldImageLibrary be discarded?
 Is ControlPanelWidget necessary?
@@ -5000,7 +5039,7 @@ https://docs.python.org/3/library/inspect.html
 
 print calling function with inspect module:
 print(inspect.stack()[1].function)
- Caller: " + inspect.stack()[1].function + " | 
+ "Caller: " + inspect.stack()[1].function
  Caller: ' + inspect.stack()[1].function + ' | 
  
  

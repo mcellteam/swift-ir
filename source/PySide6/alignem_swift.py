@@ -1373,9 +1373,17 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = make_bool(null_cafm_trends.get_value())
             alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = make_bool(use_bounding_rect.get_value())
             alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
-            #alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
+            #affine #combobox
+            # alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
+            #     combo_name_to_dm_name[init_ref_app.get_value()])
+            print("\n\n\n!!! Attempting to do copy_from_widgets_to_data_model...")
+            print("combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()] = ",  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
+            print("alignem.main_window.affine_combobox.currentText() = ", alignem.main_window.affine_combobox.currentText())
+            print("Caller: " + inspect.stack()[1].function)
+            print("\n")
             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
                 combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
+            print("\n\n\n")
 
 
 
@@ -1411,12 +1419,17 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                 use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
             if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
                 poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
+
+            #affine #combobox
             if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
+                # if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+                #     new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']
+                #     init_ref_app.set_value(dm_name_to_combo_name[new_option])
+
                 if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
-                    new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data'][
-                        'alignment_option']
+                    new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']
                     #init_ref_app.set_value(dm_name_to_combo_name[new_option])
-                    print("\n    Setting combo box to:" + dm_name_to_combo_name[new_option] + "\n")
+                    print("\n    !!! Setting combo box to:" + dm_name_to_combo_name[new_option] + "\n")
                     alignem.main_window.affine_combobox.setCurrentText(dm_name_to_combo_name[new_option])
 
 
@@ -1762,7 +1775,7 @@ gen_scalesq_cb = CallbackButton('Gen Scales', generate_scales_queue)
 align_all_cb = CallbackButton('Align All', align_all_or_some)
 center_cb = CallbackButton('Center', center_all)
 align_fwd_cb = CallbackButton('Align Forward', align_forward)
-init_ref_app = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine'])
+init_ref_app = ComboBoxControl(['Init Affine', 'Refine Affine', 'Apply Affine']) #affine
 #view_match_crop = ComboBoxControl(['View', 'Match', 'Crop'])
 #view_match_crop.set_value('View')
 
@@ -1784,8 +1797,8 @@ debug_cb = CallbackButton('Debug', method_debug)
 clear_skips_cb = CallbackButton("Clear all Skips", clear_all_skips)
 skips_to_all_cb = CallbackButton('Skips -> All Scales', copy_skips_to_all_scales)
 
-refine_aff_cb = CallbackButton('Refine Affine', notyet)
-apply_aff_cb = CallbackButton('Apply Affine', notyet)
+refine_aff_cb = CallbackButton('Refine Affine', notyet) #affine
+apply_aff_cb = CallbackButton('Apply Affine', notyet) #affine
 whitening_factor = FloatField('Whitening', -0.68)
 win_scale_factor = FloatField('Initial SWIM Window', 0.8125)  # This was named "Window Scale Factor"
 
