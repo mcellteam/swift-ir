@@ -165,33 +165,16 @@ def ensure_proper_data_structure():
             if not 'method_data' in atrm:
                 atrm['method_data'] = {}
             mdata = atrm['method_data']
-            #print("Evaluating: if not 'win_scale_factor' in mdata")
             if not 'win_scale_factor' in mdata:
-                print("  => True")
-
-                #swim window #initial SWIM window
-                print("Getting value of SWIM window...")
-                print("Old value would have been: ", win_scale_factor.get_value())
-                print("Old value would have type: ", type(win_scale_factor.get_value()))
-                print("New value will be: ", alignem.main_window.swim_input.text())
-
+                print("  Warning: if NOT 'win_scale_factor' in mdata was run")
                 # mdata['win_scale_factor'] = win_scale_factor.get_value()
-                mdata['win_scale_factor'] = float(alignem.main_window.swim_input.text())
+                mdata['win_scale_factor'] = float(alignem.main_window.swim_input.currentText())
 
             #print("Evaluating: if not 'whitening_factor' in mdata")
             if not 'whitening_factor' in mdata:
-                print("  => True")
-                print("\n\n IF NOT 'whitening_factor' in mdata was run.")
-
-                #whitening
-                print("Getting value of whitening factor...")
-                print("Old value would have been: ", whitening_factor.get_value())
-                print("Old value would have type: ", type(whitening_factor.get_value())) # type = float
-                print("New value will be: ", alignem.main_window.whitening_input.text())
-                print("New value will have type: ", type(alignem.main_window.whitening_input.text()))
-
+                print("  Warning: if NOT 'whitening_factor' in mdata was run")
                 # mdata['whitening_factor'] = whitening_factor.get_value()
-                mdata['whitening_factor'] = float(alignem.main_window.whitening_input.text())
+                mdata['whitening_factor'] = float(alignem.main_window.whitening_input.currentText())
 
     print("  Exiting ensure_proper_data_structure()\n")
 
@@ -1378,6 +1361,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
         # First copy from the widgets to the previous data model if desired
         if copy_from_widgets_to_data_model:
+            print("\nCOPYING FROM WIDGETS TO DATA MODEL\n")
 
             # Start with the scale-level items
 
@@ -1386,10 +1370,8 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                 alignem.project_data['data']['scales'][prev_scale_key]['method_data'] = {}
 
             # Copy the scale-level data
-            alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = make_bool(
-                null_cafm_trends.get_value())
-            alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = make_bool(
-                use_bounding_rect.get_value())
+            alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = make_bool(null_cafm_trends.get_value())
+            alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = make_bool(use_bounding_rect.get_value())
             alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
             #alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(combo_name_to_dm_name[init_ref_app.get_value()])
             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
@@ -1413,9 +1395,10 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
                 # Copy the layer-level data
                 #prev_layer['skip'] = make_bool(skip.get_value()) #skip
-                #prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked() #tag #skip #whyq? this seems not to be necessary
-                prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
-                prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
+                #prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked() #no longer necessary
+
+                prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_input.currentText()
+                prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = swim_input.currentText()
 
         # Second copy from the data model to the widgets if desired (check each along the way)
         if copy_from_data_model_to_widgets:
@@ -1438,7 +1421,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
 
             # Next copy the layer-level items
-            if next_layer != None: #next_layer seems to refer to the current layer
+            if next_layer != None: #next_layer refers to the current layer
                 #print('    next_layer = ',next_layer)
                 # Copy the layer-level data
                 #print("    Evaluating: if 'skip' in next_layer ")
@@ -1454,32 +1437,53 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                     #alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip']))
 
                     #original line of code:
-                    skip.set_value(next_layer['skip'])
+                    #skip.set_value(next_layer['skip'])
 
                 else:
                     print("\nNo skip in next_layer... Continuing...\n")
                     # print("=> False. Continuing...")
 
 
+                #not making it inside of here
                 #print("    Evaluating: if 'align_to_ref_method' in next_layer")
                 if 'align_to_ref_method' in next_layer:
+                    print("\n    inside of if 'align_to_ref_method' in next_layer")
 
                     if 'method_data' in next_layer['align_to_ref_method']:
+                        print("\n    inside of if 'method_data' in next_layer['align_to_ref_method']")
 
                         if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']: #whitening
-                            # whitening_factor.set_value(
-                            #     next_layer['align_to_ref_method']['method_data']['whitening_factor'])
-                            alignem.main_window.whitening_input.setText(str((next_layer['align_to_ref_method']['method_data']['whitening_factor'])))
+                            print("\nSetting 'whitening_input' text box to:", str(next_layer['align_to_ref_method']['method_data']['whitening_factor']))
+                            print("next_layer['align_to_ref_method']['method_data']['whitening_factor'] = ", next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+                            # whitening_factor.set_value(next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+                            alignem.main_window.whitening_input.setText(str(next_layer['align_to_ref_method']['method_data']['whitening_factor']))
 
                         if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
-                            win_scale_factor.set_value(
-                                next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
-
+                            print("\nSetting 'swim_input' text box to:", str((next_layer['align_to_ref_method']['method_data']['win_scale_factor'])))
+                            #win_scale_factor.set_value(next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
+                            alignem.main_window.swim_input.setText(str(next_layer['align_to_ref_method']['method_data']['win_scale_factor']))
 
             alignem.ignore_changes = False
     else:
         print('  alignem.project_data not found')
+
+
+
+    # # THIS MIGHT NOT BE THE BEST PLACE FOR THIS, ARBITRARY LOCATION
+    # scale = alignem.project_data['data']['scales'][alignem.project_data['data']['current_scale']]
+    # layer = scale['alignment_stack'][alignem.project_data['data']['current_layer']]
+    # alignem.main_window.whitening_input.setText(str(
+    #     scale['alignment_stack'][alignem.project_data['data']['current_layer']]['align_to_ref_method'][
+    #         'method_data'][
+    #         'whitening_factor']))
+    # alignem.main_window.swim_input.setText(str(
+    #     scale['alignment_stack'][alignem.project_data['data']['current_layer']]['align_to_ref_method'][
+    #         'method_data'][
+    #         'win_scale_factor']))
+
+
     print("  Exiting view_change_callback\n")
+
 
 
 def mouse_down_callback(role, screen_coords, image_coords, button):
@@ -1573,7 +1577,6 @@ def clear_all_skips():
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
             layer['skip'] = False
     #skip.set_value(False) #skip
-    alignem.main_window.toggle.setChecked(False)
 
 
 def copy_skips_to_all_scales():
