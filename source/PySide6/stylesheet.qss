@@ -27,6 +27,20 @@ QLabel#base_image_label {
     /*border-style: outset;*/
     /*border-width: 2px;*/
     /*border-color: beige;*/
+	/*border-style: solid;*/
+	/*border-top-color: transparent;*/
+	/*border-left-color: transparent;*/
+	/*border-top-color: #ffffff;*/
+	/*border-left-color: #ffffff;*/
+	/*border-right-color: #ffffff;*/
+	/*border-bottom-color: #ffffff;*/
+	/*border-top-width: 1px;*/
+	/*border-bottom-width: 1px;*/
+	/*border-right-width: 1px;*/
+	/*border-left-width: 1px;*/
+	/*border-bottom-left-radius: 6px;*/
+	/*border-bottom-right-radius: 6px;*/
+	/*padding-bottom: 0px;*/
 }
 
 QLabel#ref_image_label {
@@ -38,6 +52,27 @@ QLabel#ref_image_label {
     /*border-width: 2px;*/
     /*border-color: beige;*/
 }
+
+/*QLabel#new_feature_label {*/
+/*    !*background-color: red;*!*/
+/*	font-weight: normal;*/
+/*	!*color: #bdd73c;*!*/
+/*	color: #ffffff;*/
+/*    !*border-style: outset;*!*/
+/*    !*border-width: 2px;*!*/
+/*    !*border-color: beige;*!*/
+/*	border-style: solid;*/
+/*	!*border-top-color: transparent;*!*/
+/*	!*border-left-color: transparent;*!*/
+/*	border-right-color: #ffffff;*/
+/*	border-bottom-color: #ffffff;*/
+/*	border-bottom-width: 1px;*/
+/*	border-right-width: 1px;*/
+/*	border-bottom-left-radius: 6px;*/
+/*	border-bottom-right-radius: 6px;*/
+/*	padding-bottom: 0px;*/
+/*	!*background-color: #333333;*!*/
+/*}*/
 
 QMainWindow {
 	background-color:#000000;
