@@ -1576,6 +1576,8 @@ def clear_all_skips():
         scale_key = str(scale)
         for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
             layer['skip'] = False
+
+    # main_win.status_skips_label.setText(str(skip_list))  # settext #status
     #skip.set_value(False) #skip
 
 
