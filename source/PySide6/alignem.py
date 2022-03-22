@@ -10,7 +10,7 @@ from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr
 #from caveclient import CAVEclient
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 
-import sys, traceback, os, copy, math, cv2, json, psutil, argparse
+import sys, traceback, os, copy, math, cv2, json, psutil, argparse, inspect
 import numpy, scipy, scipy.ndimage, threading, concurrent.futures
 
 #imports #qt
@@ -375,6 +375,7 @@ class ImageLibrary:
         return ( s )
 
     def get_image_reference ( self, file_path ):
+        #print("Getting image reference | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.get_image_reference")
         print_debug ( 50, "get_image_reference ( " + str(file_path) + " )" )
         self.print_load_status()
         image_ref = None
@@ -406,7 +407,9 @@ class ImageLibrary:
                 image_ref = self._images[real_norm_path]['image']
         return image_ref
 
+    # Caller = paintEvent. Loads each image.
     def get_image_reference_if_loaded ( self, file_path ):
+        # print("Getting image reference if loaded | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.get_image_reference_if_loaded")
         image_ref = None
         real_norm_path = self.pathkey(file_path)
         if real_norm_path != None:
@@ -429,6 +432,7 @@ class ImageLibrary:
         return image_ref
 
     def remove_image_reference ( self, file_path ):
+        print("Removing image reference | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.remove_image_reference")
         image_ref = None
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)
@@ -439,6 +443,7 @@ class ImageLibrary:
         return image_ref
 
     def queue_image_read ( self, file_path ):
+        #print("Queuing image read | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.queue_image_read")
         real_norm_path = self.pathkey(file_path)
         print_debug ( 30, "  start queue_image_read with: \"" + str(real_norm_path) + "\"" )
         self._images[real_norm_path] = { 'image': None, 'loaded': False, 'loading': True, 'task':None }
@@ -448,6 +453,8 @@ class ImageLibrary:
         print_debug ( 30, "  finished queue_image_read with: \"" + str(real_norm_path) + "\"" )
 
     def make_available ( self, requested ):
+        print("Making available | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.make_available")
+        #tag #memo
         """
         SOMETHING TO LOOK AT:
 
@@ -477,6 +484,7 @@ class ImageLibrary:
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     def remove_all_images ( self ):
+        print("Removing all images | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.remove_all_images")
         keys = list(self._images.keys())
         for k in keys:
           self.remove_image_reference ( k )
@@ -544,6 +552,7 @@ class SmartImageLibrary:
         pass
 
     def get_image_reference ( self, file_path ):
+        print("Getting image reference | Caller: " + inspect.stack()[1].function + " |  SmartImageLibrary.get_image_reference")
         image_ref = None
         real_norm_path = self.pathkey(file_path)
         if real_norm_path != None:
@@ -564,9 +573,11 @@ class SmartImageLibrary:
         return image_ref
 
     def get_image_reference_if_loaded ( self, file_path ):
+        print("Getting image reference if loaded | Caller: " + inspect.stack()[1].function + " |  SmartImageLibrary.get_image_reference_if_loaded")
         return self.get_image_reference ( file_path )
 
     def queue_image_read ( self, file_path ):
+        print("Queuing image read | Caller: " + inspect.stack()[1].function + " |  SmartImageLibrary.queue_image_read")
         print ( "top of queue_image_read ( " + file_path + ")" )
         real_norm_path = self.pathkey(file_path)
         self._images[real_norm_path] = { 'image': None, 'loaded': False, 'loading': True, 'task':None }
@@ -607,6 +618,7 @@ class SmartImageLibrary:
 
 
     def update ( self ):
+        print("SmartImageLibrary is updating | Caller: " + inspect.stack()[1].function + " |  SmartImageLibrary.queue_image_read")
         cur_scale_key = project_data['data']['current_scale']
         cur_scale_val = get_scale_val(cur_scale_key)
         cur_layer_index = project_data['data']['current_layer']
@@ -643,6 +655,7 @@ image_library = ImageLibrary()
 class ZoomPanWidget(QWidget):
     """A widget to display a single annotated image with zooming and panning."""
     def __init__(self, role, parent=None):
+        print("Constructor for ZoomPanWidget was called | Caller: " + inspect.stack()[1].function)
         super(ZoomPanWidget, self).__init__(parent)
         self.role = role
         self.parent = None
@@ -701,7 +714,7 @@ class ZoomPanWidget(QWidget):
             self.parent.update_multi_self(exclude=[self])
 
     def update_zpa_self ( self ):
-        print("Updating zpa self | ZoomPanWidget.update_zpa_self...")
+        #print('Updating zpa self | Caller: ' + inspect.stack()[1].function + ' |  ZoomPanWidget.update_zpa_self...')
         # Call the super "update" function for this panel's QWidget (this "self")
         if self.parent != None:
             self.draw_border = self.parent.draw_border
@@ -723,7 +736,7 @@ class ZoomPanWidget(QWidget):
         clear_crop_settings()
 
     def center_image ( self, all_images_in_stack = True ):
-        print("Centering image | ZoomPanWidget.center_image...")
+        print("Centering image | Caller: " + inspect.stack()[1].function + " |  ZoomPanWidget.center_image...")
         print_debug ( 30, "Centering image for " + str(self.role) )
 
         if project_data != None:
@@ -921,20 +934,11 @@ class ZoomPanWidget(QWidget):
         global crop_mode_role
         global crop_mode_disp_rect
         global crop_mode_callback
-        print("crop_mode_origin:", crop_mode_origin)
-        print("crop_mode_role:", crop_mode_role)
-        print("crop_mode_disp_rect:", crop_mode_disp_rect)
-        print("crop_mode_callback:", crop_mode_callback)
 
         crop_mode = False
-        print("crop_mode = ", crop_mode)
-        print("Evaluating: if crop_mode_callback != None")
+        #print("crop_mode = ", crop_mode)
         if crop_mode_callback != None:
-            print("  => True")
             mode = crop_mode_callback() #bug
-            print("mode = ", mode)
-
-            print("  Evaluating: if mode == 'Crop'")
             if mode == 'Crop':
                 print("    => True")
                 crop_mode = True
@@ -949,8 +953,6 @@ class ZoomPanWidget(QWidget):
                     crop_mode_role = None
                     self.update_zpa_self()
                     self.update_siblings()
-        else:
-            print("  => False")
 
         if crop_mode:
             ### New Rubber Band Code
@@ -1106,10 +1108,22 @@ class ZoomPanWidget(QWidget):
 
 
     def change_layer ( self, layer_delta ):
+        """This function iterates the current layer"""
+
         print("Changing layer | ZoomPanWidget.change_layer...")
         global project_data
         global main_window
         global preloading_range
+
+        # scale = project_data['data']['scales'][project_data['data']['current_scale']]
+        # layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        # base_file_name = layer['images']['base']['filename']
+        # print('base file name = ', base_file_name)
+        # print("current layer =", scale['alignment_stack'][project_data['data']['current_layer']])
+        # print("\nsetting toggle to: ", not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+        # main_window.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+
+        print("show_skipped_images = ", show_skipped_images)
 
         if not show_skipped_images:
 
@@ -1122,7 +1136,7 @@ class ZoomPanWidget(QWidget):
             new_layer_index = layer_index + layer_delta
             while (new_layer_index >= 0) and (new_layer_index < len(stack)):
                 print_debug ( 30, "Looking for next non-skipped image")
-                if stack[new_layer_index]['skip'] == False:
+                if stack[new_layer_index]['skip'] == False: #skip
                     break
                 new_layer_index += layer_delta
             if (new_layer_index >= 0) and (new_layer_index < len(stack)):
@@ -1134,7 +1148,7 @@ class ZoomPanWidget(QWidget):
                 new_layer_index = layer_index
                 while (new_layer_index >= 0) and (new_layer_index < len(stack)):
                     print_debug ( 30, "Looking for next non-skipped image")
-                    if stack[new_layer_index]['skip'] == False:
+                    if stack[new_layer_index]['skip'] == False: #skip
                         break
                     new_layer_index += -layer_delta
                 if (new_layer_index >= 0) and (new_layer_index < len(stack)):
@@ -1143,6 +1157,8 @@ class ZoomPanWidget(QWidget):
                 else:
                     # Could not find a layer that's not skipped in either direction, stay here
                     layer_delta = 0
+
+
 
         if project_data != None:
 
@@ -1200,6 +1216,13 @@ class ZoomPanWidget(QWidget):
 
           self.update_zpa_self()
           self.update_siblings()
+
+          scale = project_data['data']['scales'][project_data['data']['current_scale']]
+          layer = scale['alignment_stack'][project_data['data']['current_layer']]
+          base_file_name = layer['images']['base']['filename']
+          print('base file name = ', base_file_name)
+          print("\nsetting toggle to: ", not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+          main_window.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
 
 
 
@@ -1279,9 +1302,12 @@ class ZoomPanWidget(QWidget):
 
         self.update_zpa_self()
 
-
+    #todo
+    # MainWindow.paintEvent is called very frequently. No need to initialize multiple global variables more than once.
+    # Get rid of the cruft, try to limit these function calls
     def paintEvent(self, event):
-        print("Painting | ZoomPanWidget.paintEvent...", end='')
+        #tag
+        #print("Painting | Caller: " + inspect.stack()[1].function + " | ZoomPanWidget.paintEvent...", end='')
         global crop_mode_role #tag why repeatedly define these globals on each paint event?
         global crop_mode_disp_rect
 
@@ -1380,7 +1406,7 @@ class ZoomPanWidget(QWidget):
                                             painter.drawLine ( 0, painter.viewport().height(), painter.viewport().width(), 0 )
                                         color_index += 1
 
-                            if is_skipped:
+                            if is_skipped: #skip #redx
                                 # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
                                 color_to_use = [255,50,50]
                                 painter.setPen(QPen(QColor(*color_to_use),5))
@@ -1432,13 +1458,14 @@ class ZoomPanWidget(QWidget):
 
             self.already_painting = False
 
-        print("done")
+        #print("done")
 
 
 
 class MultiImagePanel(QWidget):
 
     def __init__(self):
+        print("Constructor for MultiImagePanel was called")
         super(MultiImagePanel, self).__init__()
 
         # None of these attempts to auto-fill worked, so a paintEvent handler was added
@@ -1502,33 +1529,31 @@ class MultiImagePanel(QWidget):
         painter.end()
 
     def update_spacing ( self ):
-        print("Setting Spacing to " + str(self.current_margin) + " | MultiImagePanel.update_spacing")
+        print("Setting Spacing to " + str(self.current_margin) + " | MultiImagePanel.update_spacing...")
         #self.hb_layout.setContentsMargin(self.current_margin)    #pyside6 This sets margins around the outer edge of all panels
         #self.hb_layout.setMargin(self.current_margin)    #pyside2 This sets margins around the outer edge of all panels
         self.hb_layout.setSpacing(self.current_margin)    # This sets margins around the outer edge of all panels
         self.repaint()
 
     def update_multi_self ( self, exclude=() ):
-        print("Updating multi self | MultiImagePanel.update_multi_self...",end='')
+        print("Updating multi self | MultiImagePanel.update_multi_self...")
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude)) ]
             for p in panels_to_update:
                 p.border_color = self.border_color
                 p.update_zpa_self()
                 p.repaint()
-        print("done")
 
     def add_panel ( self, panel ):
-        print("Adding panel | MultiImagePanel.add_panel...",end='')
+        print("  Adding panel | MultiImagePanel.add_panel...")
         if not panel in self.actual_children:
             self.actual_children.append ( panel )
             self.hb_layout.addWidget ( panel )
             panel.set_parent ( self )
             self.repaint()
-        print("done")
 
     def set_roles (self, roles_list):
-        print("Setting roles | MultiImagePanel.set_roles...",end='')
+        print("Setting roles | MultiImagePanel.set_roles...")
         if len(roles_list) > 0:
             # Save these roles
             role_settings = {}
@@ -1552,29 +1577,26 @@ class MultiImagePanel(QWidget):
               zpw.draw_annotations = self.draw_annotations
               zpw.draw_full_paths = self.draw_full_paths
               self.add_panel ( zpw )
-        print("done")
 
     def remove_all_panels ( self ):
-        print("Removing all panels | MultiImagePanel.remove_all_panels...",end='')
+        print("  Removing all panels | MultiImagePanel.remove_all_panels...")
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget ( self.actual_children[-1] )
             self.actual_children[-1].deleteLater()
             self.actual_children = self.actual_children[0:-1]
         self.repaint()
-        print("done")
 
     def refresh_all_images ( self ):
-        print("Refreshing all images | MultiImagePanel.refresh_all_images...",end='')
+        print("Refreshing all images | MultiImagePanel.refresh_all_images...")
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
-        print("done")
 
     def center_all_images ( self, all_images_in_stack=True ):
-        print("Centering all images | MultiImagePanel.center_all_images...",end='')
+        print("Centering all images | MultiImagePanel.center_all_images...")
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
@@ -1582,10 +1604,9 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
-        print("done")
 
     def all_images_actual_size ( self ):
-        print("Actual-sizing all images | MultiImagePanel.all_images_actual_size...",end='')
+        print("Actual-sizing all images | MultiImagePanel.all_images_actual_size...")
         if self.actual_children != None:
             panels_to_update = [ w for w in self.actual_children if (type(w) == ZoomPanWidget) ]
             for p in panels_to_update:
@@ -1593,7 +1614,6 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
-        print("done")
 
 
 
@@ -1625,18 +1645,39 @@ def bounding_rect_changed_callback ( state ):
             project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = False
         print_debug ( 50, "bounding_rec_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect']) + ")")
 
-def skip_changed_callback ( state ):
+def skip_changed_callback ( state ): # 'state' is connected to skip toggle
+    print("\n\n !!! Calling skip_changed_callback (alignem.py )...")
     # This function gets called whether it's changed by the user or by another part of the program!!!
     global ignore_changes
-    new_skip = bool(state)
-    print_debug ( 3, "Skip changed!! New value: " + str(new_skip) )
-    scale = project_data['data']['scales'][project_data['data']['current_scale']]
-    layer = scale['alignment_stack'][project_data['data']['current_layer']]
-    layer['skip'] = new_skip
-    if update_skips_callback != None:
-        update_skips_callback(bool(state))
+    print("  called by: ", inspect.stack()[1].function)
+    # called by:  change_layer <-- when ZoomPanWidget.change_layer toggles
+    # called by:  run_app <-- when user toggles
+    skip_list = []
+    for layer_index in range(len(project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
+        if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+            skip_list.append(layer_index)
+    print("skip_list = ", skip_list)
+
+    if inspect.stack()[1].function == 'run_app':
+        toggle_state = state
+        print('toggle_state = ', toggle_state)
+        new_skip = not state
+        print('new_skip = ', new_skip)
+
+
+        print("  !!! Skip changedby user!! New value: " + str(new_skip) )
+        scale = project_data['data']['scales'][project_data['data']['current_scale']]
+        layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        layer['skip'] = new_skip #skip # this is where skip list is appended to
+        if update_skips_callback != None:
+            print("  Entering conditional (if update_skips_callback != None)...")
+            #update_skips_callback(bool(state)) #og
+            update_skips_callback(new_skip) #jy
+    else:
+        print("Not called by run_app... short-circuiting...")
 
     if update_linking_callback != None:
+        print("  Entering conditional (if update_linking_callback != None)...")
         update_linking_callback()
         main_window.update_win_self()
         main_window.update_panels()
@@ -1650,7 +1691,19 @@ def skip_changed_callback ( state ):
                     ignore_changes = True
                     main_window.view_change_callback ( None, None, layer_num, layer_num )
                     ignore_changes = False
-        '''
+            '''
+
+    skip_list = []
+    for layer_index in range(len(project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
+        if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+            skip_list.append(layer_index)
+    print("skip_list = ", skip_list)
+    # layer_num = project_data['data']['current_layer'] #jy
+    # main_window.view_change_callback(None, None, layer_num, layer_num) #jy
+    # update_linking_callback()
+    # main_window.update_win_self()
+    # main_window.update_panels()
+    # main_window.refresh_all_images()
 
 def bool_changed_callback ( state ):
     global ignore_changes
@@ -2130,7 +2183,7 @@ class RunnableServerThread(QRunnable):
 #    def __init__(self, fn, *args, **kwargs):
     def __init__(self):
         super(RunnableServerThread, self).__init__()
-        print("\nRunnableServerThread(QRunnable):\n")
+        print("The constructor for RunnableServerThread was called")
 
         """
         # Store constructor arguments (re-used for processing)
@@ -2290,6 +2343,7 @@ class ToggleSwitch(QCheckBox):
                  fontSize=10):
 
         super().__init__(parent)
+        print('Constructor for ToggleSwitch was called |  Caller: ' + inspect.stack()[1].function)
 
         # Save our properties on the object via self, so we can access them later
         # in the paintEvent.
@@ -2436,7 +2490,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         global project_data
         project_data = copy.deepcopy ( new_project_template )
 
-        print("Initializing QMainWindow | QMainWindow.__init__(self)")
+        print('\nInitializing QMainWindow | QMainWindow.__init__(self)...\n')
         QMainWindow.__init__(self)
         self.setWindowTitle(title)
         self.current_project_file_name = None
@@ -2450,7 +2504,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         # stylesheet must be after QMainWindow.__init__(self)
         #self.setStyleSheet(open('stylesheet.qss').read())
-        print("Applying stylesheet... ",end='')
+        print("Applying stylesheet... ")
         self.setStyleSheet(open(os.path.join(self.pyside_path,'stylesheet.qss')).read())
 
 
@@ -2462,14 +2516,14 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         #pyside6
-        print("Instantiating QWebEngineView... ", end='')
+        print("Instantiating QWebEngineView... ")
         self.view = QWebEngineView()
         # PySide6 available options
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-        print("Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True... ", end='')
+        print("Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True... ")
         self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         #!!!
@@ -2941,6 +2995,55 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.remote_viewer_button = QPushButton("Remote Viewer")
         self.remote_viewer_button.clicked.connect(remote_view)
         self.remote_viewer_button.setFixedSize(QSize(130, 28))
+
+        def pretty(d, indent=0):
+            for key, value in d.items():
+                print('\t' * indent + str(key))
+                if isinstance(value, dict):
+                    pretty(value, indent + 1)
+                else:
+                    print('\t' * (indent + 1) + str(value))
+
+        #debug #debuglayer
+        def debug_layer():
+            print("\n:::DEBUG LAYER:::")
+            print("project path = ", project_data['data']['destination_path'])
+            print("current scale = ", project_data['data']['current_scale'])
+            scale = project_data['data']['scales'][project_data['data']['current_scale']] # print(scale) # returns massive wall of text
+            layer = scale['alignment_stack'][project_data['data']['current_layer']]
+            base_file_name = layer['images']['base']['filename']
+            print("current base image = ",base_file_name)
+            print("alignment option = ",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['alignment_option'])
+            #print("layer = \n", pretty(layer)) # dict_keys(['align_to_ref_method', 'images', 'skip']
+            print("layer['skip'] = ", layer['skip'])
+            print("scale['alignment_stack'][project_data['data']['current_layer']]['skip'] = ", scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+
+            skip_list = []
+            for layer_index in range(len(project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
+                if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+                    skip_list.append(layer_index)
+            print("skip_list = ", skip_list)
+            #print("scale['alignment_stack'][project_data['data']['current_layer']] = \n", scale['alignment_stack'][project_data['data']['current_layer']])
+
+            print("\nproject_data.keys() = ", project_data.keys())
+            print("layer.keys() = ", layer.keys())
+            print("scale.keys() = ", scale.keys())
+
+
+
+            # scale = project_data['data']['scales'][project_data['data']['current_scale']]
+            # print("scale = ", scale)
+            # layer = scale['alignment_stack'][project_data['data']['current_layer']]
+            # print("layer = ", layer)
+            # layer_indices
+
+
+
+
+        self.debug_layer_button = QPushButton("Debug Layer")                                          #quit/exit app button
+        self.debug_layer_button.clicked.connect(debug_layer)
+        self.debug_layer_button.setFixedSize(QSize(130, 28))
+
         # self.ng_button = QPushButton("Neuroglancer View")
         self.ng_button = QPushButton("3D View")
         self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
@@ -3040,6 +3143,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.h_layout.addWidget(self.quit_app_button, alignment=Qt.AlignLeft)
         self.h_layout.addWidget(self.documentation_button, alignment=Qt.AlignLeft)
         self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignLeft)
+        self.h_layout.addWidget(self.debug_layer_button, alignment=Qt.AlignLeft)
         # self.h_layout.addWidget(self.microns_button, alignment=Qt.AlignLeft)
         self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.h_layout.addItem(self.spacerItem)
@@ -3078,11 +3182,13 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.align_all_button.clicked.connect(align_all_or_some)
         self.align_all_button.setFixedSize(QSize(130, 28))
 
-        self.skip_bool = QCheckBox('Skip Image') #skip
-        self.skip_bool.setChecked(False)
+        # self.skip_bool = QCheckBox('Skip Image') #skip
+        # self.skip_bool.setChecked(False)
+        # self.skip_bool.clicked.connect(skip_changed_callback) #this is not being called. May need
 
         self.toggle_skip = ToggleSwitch() #toggleskip
         self.toggle_skip.setChecked(True)
+        self.toggle_skip.toggled.connect(skip_changed_callback)
 
         from alignem_swift import clear_all_skips #clear_all_skips #skip
         # self.clear_all_skips_button = QPushButton('Clear All Skips')
@@ -3761,7 +3867,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
                                     layer_num = project_data['data']['current_layer']
                                     scale_key = project_data['data']['current_scale']
                                     print_debug(3, "Open Project forcing values into fields with view_change_callback()")
-                                    self.view_change_callback ( scale_key, scale_key, layer_num, layer_num, True )
+                                    self.view_change_callback ( scale_key, scale_key, layer_num, layer_num, True ) #view_change_callback
 
                     if self.draw_full_paths:
                       self.setWindowTitle("Project: " + self.current_project_file_name )
@@ -4695,21 +4801,17 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
 
 def run_app(main_win=None):
-    print('Calling run_app from alignem.py...')
-
-    print("Defining global: app")
+    print("Calling run_app | Caller: " + inspect.stack()[1].function)
+    print("  Defining globals: app, main_window")
     global app
-    print("Defining global: main_window")
     global main_window
 
-    print('Evaluating conditional statement...')
+    print('  Evaluating conditional statement...')
     if main_win == None:
-        print('    main_win == None')
-        print('    => Setting main_window = MainWindow()')
+        print('main_win not found... setting main_window = MainWindow()')
         main_window = MainWindow()
     else:
-        print('    main_win != None...')
-        print('    => Setting main_window = main_win')
+        print('main_win exists... setting main_window = main_win')
         main_window = main_win
 
     # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
@@ -4759,7 +4861,26 @@ if __name__ == "__main__":
     sys.exit(app.exec_())
 
 """
+To do:
+* after selecting 'skip', it should not be necessary to re-focus on images widget
+* spawn new thread to make Zarr 
+# fix affine combo box
+
+
 Can OldImageLibrary be discarded?
 Is ControlPanelWidget necessary?
+
+inspect module doc:
+https://docs.python.org/3/library/inspect.html
+
+print calling function with inspect module:
+print(inspect.stack()[1].function)
+ Caller: " + inspect.stack()[1].function + " | 
+ Caller: ' + inspect.stack()[1].function + ' | 
+ 
+ 
+ ZoomPanWidget.get_settings
+ ZoomPanWidget.update_zpa_self
+ 
 
 """

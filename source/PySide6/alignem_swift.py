@@ -12,7 +12,7 @@ from PySide6.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
 import pyswift_tui
 import align_swiftir
 
-import platform
+import platform, inspect
 # import task_queue as task_queue
 # import task_queue2 as task_queue
 import task_queue_mp as task_queue
@@ -165,7 +165,7 @@ def ensure_proper_data_structure():
             if not 'method_data' in atrm:
                 atrm['method_data'] = {}
             mdata = atrm['method_data']
-            print("Evaluating: if not 'win_scale_factor' in mdata")
+            #print("Evaluating: if not 'win_scale_factor' in mdata")
             if not 'win_scale_factor' in mdata:
                 print("  => True")
 
@@ -178,10 +178,7 @@ def ensure_proper_data_structure():
                 # mdata['win_scale_factor'] = win_scale_factor.get_value()
                 mdata['win_scale_factor'] = float(alignem.main_window.swim_input.text())
 
-            else:
-                print("  => False")
-
-            print("Evaluating: if not 'whitening_factor' in mdata")
+            #print("Evaluating: if not 'whitening_factor' in mdata")
             if not 'whitening_factor' in mdata:
                 print("  => True")
                 print("\n\n IF NOT 'whitening_factor' in mdata was run.")
@@ -195,9 +192,8 @@ def ensure_proper_data_structure():
 
                 # mdata['whitening_factor'] = whitening_factor.get_value()
                 mdata['whitening_factor'] = float(alignem.main_window.whitening_input.text())
-            else:
-                print("  => False")
-    print("Exiting ensure_proper_data_structure()\n")
+
+    print("  Exiting ensure_proper_data_structure()\n")
 
 
 
@@ -209,9 +205,10 @@ def link_all_stacks():
         skip_list = []
         for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
             if alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
-                skip_list.append(layer_index)
+                #print('  appending layer ' + str(layer_index) + ' to skip_list')
+                skip_list.append(layer_index) #skip
 
-        print('link_all_stacks(): Skip List = \n' + str(skip_list) + '\n')
+        print('  Linking all stacks, scale = ' + str(scale_key) +  ', skip_list = ' + str(skip_list))
 
         for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
             base_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
@@ -244,8 +241,7 @@ def link_all_stacks():
 
     main_win.update_panels()
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    print('\nskip_list =\n', skip_list)
-    print("Exiting link_all_stacks()")
+    print("  Exiting link_all_stacks()")
 
 
 def update_linking_callback():
@@ -1350,12 +1346,10 @@ def notyet():
 
 
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
-    print('Viewing change callback | view_change_callback...')
-    print("View changed from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str((next_scale_key, next_layer_num)))
+    print('\nViewing change callback | Caller: ' + inspect.stack()[1].function + ' |  view_change_callback...')
+    print("  View changed from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str((next_scale_key, next_layer_num)))
 
-    print("Evaluating: alignem.project_data != None")
     if alignem.project_data != None:
-        print("  True. Continuing...")
 
         copy_from_widgets_to_data_model = True
         copy_from_data_model_to_widgets = True
@@ -1383,9 +1377,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
         # Begin the copying
 
         # First copy from the widgets to the previous data model if desired
-        print("  copy_from_widgets_to_data_model = ", copy_from_widgets_to_data_model)
         if copy_from_widgets_to_data_model:
-            print("    Entering conditional block...")
 
             # Start with the scale-level items
 
@@ -1421,17 +1413,13 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
                 # Copy the layer-level data
                 #prev_layer['skip'] = make_bool(skip.get_value()) #skip
-                prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked()
+                #prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked() #tag #skip #whyq? this seems not to be necessary
                 prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_factor.get_value()
                 prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = win_scale_factor.get_value()
 
         # Second copy from the data model to the widgets if desired (check each along the way)
-        print("  copy_from_data_model_to_widgets = ", copy_from_data_model_to_widgets)
         if copy_from_data_model_to_widgets:
-            print("    Entering conditional block...")
-
-            alignem.ignore_changes = True
-
+            alignem.ignore_changes = True #tag #odd
             # Start with the scale-level items
 
             if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
@@ -1445,62 +1433,53 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                     new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data'][
                         'alignment_option']
                     #init_ref_app.set_value(dm_name_to_combo_name[new_option])
-                    print("    Setting current text of combobox to:", dm_name_to_combo_name[new_option])
+                    print("\n    Setting combo box to:" + dm_name_to_combo_name[new_option] + "\n")
                     alignem.main_window.affine_combobox.setCurrentText(dm_name_to_combo_name[new_option])
 
 
             # Next copy the layer-level items
-            print("    Evaluating: if next_layer != None")
-            if next_layer != None:
-                print("      => True")
+            if next_layer != None: #next_layer seems to refer to the current layer
+                #print('    next_layer = ',next_layer)
                 # Copy the layer-level data
-                print("    Evaluating: if 'skip' in next_layer")
+                #print("    Evaluating: if 'skip' in next_layer ")
                 if 'skip' in next_layer:
-                    print("      => True")
-                    #skip.set_value(next_layer['skip']) #skip
-                    print("    alignem.main_window.toggle_skip.isChecked() = ", alignem.main_window.toggle_skip.isChecked())
-                    print("    Setting checked state of toggle_skip...")
-                    print("    Evaluating: not bool(next_layer['skip'])")
-                    print("      => ", not bool(next_layer['skip']))
-                    print("      Type: ", type(not bool(next_layer['skip'])))
-                    print("      next_layer['skip'] = ", next_layer['skip'])
-                    alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip'])) #toggle #toggleskip #setchecked #checked
-                    print("alignem.main_window.toggle_skip.isChecked() = ", alignem.main_window.toggle_skip.isChecked())
-                else:
-                    print("      => False")
+                    # print("=> True")
+                    # #skip.set_value(next_layer['skip']) #skip
+                    # print("    alignem.main_window.toggle_skip.isChecked() => ", alignem.main_window.toggle_skip.isChecked())
+                    # print("    Possibly setting checked state of toggle_skip...")
+                    # print("    Evaluating: not bool(next_layer['skip']) => ", next_layer['skip'])
+                    # #alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip'])) #toggle #toggleskip #setchecked #checked
+                    # print("    alignem.main_window.toggle_skip.isChecked() = ", alignem.main_window.toggle_skip.isChecked())
+                    print("next_layer['skip'] = ", next_layer['skip'])
+                    #alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip']))
 
-                print("    Evaluating: if 'align_to_ref_method' in next_layer")
+                    #original line of code:
+                    skip.set_value(next_layer['skip'])
+
+                else:
+                    print("\nNo skip in next_layer... Continuing...\n")
+                    # print("=> False. Continuing...")
+
+
+                #print("    Evaluating: if 'align_to_ref_method' in next_layer")
                 if 'align_to_ref_method' in next_layer:
-                    print("      => True")
-                    print("    Evaluating: if 'method_data' in next_layer['align_to_ref_method']")
+
                     if 'method_data' in next_layer['align_to_ref_method']:
-                        print("      => True")
-                        print("    Evaluating: if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']]")
-                        if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
-                            print("      => True")
-                            #whitening
-                            print("    Attempting to setText of whitening_input QLineEdit...")
+
+                        if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']: #whitening
                             # whitening_factor.set_value(
                             #     next_layer['align_to_ref_method']['method_data']['whitening_factor'])
                             alignem.main_window.whitening_input.setText(str((next_layer['align_to_ref_method']['method_data']['whitening_factor'])))
-                        else:
-                            print("      => False")
-                        print("    Evaluating: if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']")
+
                         if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
-                            print("      => True")
                             win_scale_factor.set_value(
                                 next_layer['align_to_ref_method']['method_data']['win_scale_factor'])
-                        else:
-                            print("      => False")
-                else:
-                    print("      => False")
-            else:
-                print("      => False")
+
 
             alignem.ignore_changes = False
     else:
-        print("=> False")
-    print("Exiting view_change_callback")
+        print('  alignem.project_data not found')
+    print("  Exiting view_change_callback\n")
 
 
 def mouse_down_callback(role, screen_coords, image_coords, button):
@@ -1611,13 +1590,12 @@ def copy_skips_to_all_scales():
         if scale_key != source_scale_key:
             for l in range(len(scales[source_scale_key]['alignment_stack'])):
                 if l < len(scales[scale_key]['alignment_stack']):
-                    scales[scale_key]['alignment_stack'][l]['skip'] = scales[source_scale_key]['alignment_stack'][l][
-                        'skip']
+                    scales[scale_key]['alignment_stack'][l]['skip'] = scales[source_scale_key]['alignment_stack'][l]['skip'] # <----
     # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][alignem.project_data['data']['current_layer']]['skip']
 
-
+#skip
 def update_skip_annotations():
-    print('Updating skip annotations | update_skip_annotations')
+    print('\nUpdating skip annotations | update_skip_annotations\n')
     alignem.print_debug(80, "update_skip_annotations called")
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
     remove_list = []
