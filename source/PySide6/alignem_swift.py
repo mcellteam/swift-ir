@@ -1376,14 +1376,14 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             #affine #combobox
             # alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
             #     combo_name_to_dm_name[init_ref_app.get_value()])
-            print("\n\n\n!!! Attempting to do copy_from_widgets_to_data_model...")
+            print("\n!!! Attempting copy_from_widgets_to_data_model...")
             print("combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()] = ",  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
             print("alignem.main_window.affine_combobox.currentText() = ", alignem.main_window.affine_combobox.currentText())
             print("Caller: " + inspect.stack()[1].function)
             print("\n")
             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
                 combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
-            print("\n\n\n")
+            print("\n")
 
 
 

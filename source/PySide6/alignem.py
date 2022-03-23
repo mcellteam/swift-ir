@@ -120,7 +120,22 @@ def get_cur_scale():
     global project_data
     return ( project_data['data']['current_scale'] )
 
-main_window = None
+def get_cur_snr():
+    s = get_cur_scale()
+    l = project_data['data']['current_layer']
+
+    if len(project_data['data']['scales']) > 0:
+        scale = project_data['data']['scales'][s]
+        if len(scale['alignment_stack']) > 0:
+            layer = scale['alignment_stack'][l]
+            if 'align_to_ref_method' in layer:
+                if 'method_results' in layer['align_to_ref_method']:
+                    method_results = layer['align_to_ref_method']['method_results']
+                    if 'snr_report' in method_results:
+                        if method_results['snr_report'] != None:
+                            return method_results['snr_report']
+
+#main_window = None #tag
 
 
 def makedirs_exist_ok ( path_to_build, exist_ok=False ):
@@ -172,7 +187,7 @@ def get_scale_val ( scale_of_any_type ):
         #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
         #    traceback.print_stack()
     except:
-        print_debug ( 1, "Error converting " + str(scale_of_any_type) + " to a value." )
+        print_debug ( 1, "Error converting " + str(scale_ gof_any_type) + " to a value." )
         exi = sys.exc_info()
         print_debug ( 1, "  Exception type = " + str(exi[0]) )
         print_debug ( 1, "  Exception value = " + str(exi[1]) )
@@ -739,7 +754,10 @@ class ZoomPanWidget(QWidget):
             self.draw_full_paths = self.parent.draw_full_paths
         super(ZoomPanWidget, self).update()
 
-        self.setToolTip(get_cur_scale())  # tooltip #settooltip
+        if get_cur_snr() is None:
+            self.setToolTip(str(get_cur_scale()) + '\n' + "Unaligned")  # tooltip #settooltip
+        else:
+            self.setToolTip(str(get_cur_scale()) + '\n' + str(get_cur_snr()))  # tooltip #settooltip
 
 
     def show_actual_size ( self ):
@@ -3054,6 +3072,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             layer = scale['alignment_stack'][project_data['data']['current_layer']]
             base_file_name = layer['images']['base']['filename']
             print("current base image = ",base_file_name)
+            print("SNR = ", get_cur_snr())
+            print("type(get_cur_snr()) = ", type(get_cur_snr()))
             print("alignment option = ",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['alignment_option'])
             print("whitening factor = ",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor'])
             print("SWIM window = ",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor'])
@@ -3205,6 +3225,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         ###################################
         ############# #STATUS #############
         ###################################
+        #stats
         # QGridLayout params: row, column, rowSpan, columnSpan
 
         def update_skips_label():
@@ -5011,8 +5032,12 @@ To do:
 [] fix/improve affine combo box
 [x] automatically focus back on ZoomPanWidget after adjusting control panel
 [] when skips are reset, remove red 'x' annotation immediately
-[] look into Zarr directory store
+[] display current affine
+
+To do (Zarr/precomputed):
 [] look into making pre-computed format multithreaded
+[] look into Zarr directory store
+[] insert/remove images from Zarr (callback functions)
 
 possible features:
 [] dim out skipped images instead of red 'X'
@@ -5030,6 +5055,7 @@ already done:
 [x] implement QStackedWidget to allow the application to have paging, replete with back buttons, etc.
 [x] apply stylesheet
 [x] replace 'skip' checkbox with toggle button
+[x] automatically center images
 
 Can OldImageLibrary be discarded?
 Is ControlPanelWidget necessary?
