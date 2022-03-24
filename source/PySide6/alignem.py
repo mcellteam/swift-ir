@@ -17,7 +17,7 @@ import numpy, scipy, scipy.ndimage, threading, concurrent.futures
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
     QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
-    QStyleFactory
+    QStyleFactory, QGroupBox
 from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
     QSurfaceFormat, QAction, QActionGroup, QPaintEvent, QBrush, QFont
 from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
@@ -187,7 +187,7 @@ def get_scale_val ( scale_of_any_type ):
         #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
         #    traceback.print_stack()
     except:
-        print_debug ( 1, "Error converting " + str(scale_ gof_any_type) + " to a value." )
+        print_debug ( 1, "Error converting " + str(scale_of_any_type) + " to a value." )
         exi = sys.exc_info()
         print_debug ( 1, "  Exception type = " + str(exi[0]) )
         print_debug ( 1, "  Exception value = " + str(exi[1]) )
@@ -716,9 +716,9 @@ class ZoomPanWidget(QWidget):
         # self.lb.setPixmap(self.pixmap.scaled(self.lb.size(), Qt.IgnoreAspectRatio))
         # self.show()
 
-
         #focus
         #QApplication.instance().focusChanged.connect(self.on_focusChanged)
+
 
     def on_focusChanged(self):
         fwidget = QApplication.focusWidget()
@@ -1515,14 +1515,14 @@ class MultiImagePanel(QWidget):
         super(MultiImagePanel, self).__init__()
 
         # None of these attempts to auto-fill worked, so a paintEvent handler was added
-        self.setStyleSheet("background-color:black;")
+
         #p = self.palette()
         #p.setColor(self.backgroundRole(), Qt.black)
         #self.setPalette(p)
         #self.setAutoFillBackground(True)
+        #self.setStyleSheet("background-color:black;")
 
         self.current_margin = 0
-
         self.hb_layout = QHBoxLayout()
         self.update_spacing()
         self.setLayout(self.hb_layout)
@@ -1531,9 +1531,9 @@ class MultiImagePanel(QWidget):
         self.draw_border = False
         self.draw_annotations = True
         self.draw_full_paths = False
-        self.bg_color = QColor(40,50,50,255) #tag
-
+        self.bg_color = QColor(40,50,50,255)
         self.border_color = QColor(0,0,0,255)
+
         # QWidgets don't get the keyboard focus by default
         # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
         self.setFocusPolicy(Qt.StrongFocus)
@@ -1560,6 +1560,7 @@ class MultiImagePanel(QWidget):
                 p.repaint()
 
         #main_window.update_base_label()
+
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -2392,11 +2393,14 @@ class ToggleSwitch(QCheckBox):
                  parent=None,
                  bar_color=Qt.gray,
                  # checked_color="#00B0FF",
-                 checked_color="#bdd73c",
+                 # checked_color="#ffffff",
+                 # checked_color="#607cff",
+                 checked_color="#d3dae3", #for monjaromix stylesheet
+
                  handle_color=Qt.white,
                  h_scale=1.0,
-                 v_scale=1.0,
-                 fontSize=10):
+                 v_scale=0.9,
+                 fontSize=9):
 
         super().__init__(parent)
         print('Constructor for ToggleSwitch was called |  Caller: ' + inspect.stack()[1].function)
@@ -2413,6 +2417,7 @@ class ToggleSwitch(QCheckBox):
 
         # Setup the rest of the widget.
 
+        # (int left, int top, int right, int bottom)
         # self.setContentsMargins(8, 0, 8, 0)
         self.setContentsMargins(8, 0, 8, 0)
         # self._handle_position = 0
@@ -2423,9 +2428,11 @@ class ToggleSwitch(QCheckBox):
 
         self.stateChanged.connect(self.handle_state_change)
 
+        self.setMaximumWidth(84)
+
     def sizeHint(self):
-        # return QSize(58, 45)
-        return QSize(86, 45)
+        return QSize(58, 45)
+        #return QSize(86, 45)
 
     def hitButton(self, pos: QPoint):
         return self.contentsRect().contains(pos)
@@ -2629,6 +2636,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #     self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
         #     time.sleep(2)
         #     self.stacked_widget.setCurrentIndex(2)
+
+
 
 
         def documentation_view(): #documentationview
@@ -3033,8 +3042,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         # self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none']) #?? why
         # note - check for string comparison of 'none' later, do not add whitespace fill
-        self.clevel_val = IntField("clevel (1-9):", 5)
-        self.n_scales_val = IntField("scales:", 4)
+        # self.clevel_val = IntField("clevel (1-9):", 5)
+        # self.n_scales_val = IntField("scales:", 4)
 
         # shoehorn extra UI elements
         # self.server_button = QPushButton("Launch Server...")
@@ -3042,18 +3051,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.main_panel_layout.addWidget(self.server_button)
 
         #self.main_panel_layout.addWidget(self.browser) #tag
-
-        # Bottom configuration panel
-        self.documentation_button = QPushButton("Documentation")
-        self.documentation_button.clicked.connect(documentation_view)
-        self.documentation_button.setFixedSize(QSize(130, 28))
-
-        # self.microns_button = QPushButton("MICrONS")
-        # self.microns_button.clicked.connect(microns_view)
-        # self.microns_button.setFixedSize(QSize(130, 28))
-        self.remote_viewer_button = QPushButton("Remote Viewer")
-        self.remote_viewer_button.clicked.connect(remote_view)
-        self.remote_viewer_button.setFixedSize(QSize(130, 28))
 
         def pretty(d, indent=0):
             for key, value in d.items():
@@ -3091,49 +3088,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
             print("\nproject_data.keys() = ", project_data.keys())
             print("layer.keys() = ", layer.keys())
             print("scale.keys() = ", scale.keys())
-
-
-
-            # scale = project_data['data']['scales'][project_data['data']['current_scale']]
-            # print("scale = ", scale)
-            # layer = scale['alignment_stack'][project_data['data']['current_layer']]
-            # print("layer = ", layer)
-            # layer_indices
-
-
-
-
-        self.debug_layer_button = QPushButton("Debug Layer")                                          #quit/exit app button
-        self.debug_layer_button.clicked.connect(debug_layer)
-        self.debug_layer_button.setFixedSize(QSize(130, 28))
-
-        # self.ng_button = QPushButton("Neuroglancer View")
-        self.ng_button = QPushButton("3D View")
-        self.ng_button.clicked.connect(ng_view) # HAH the () parenthesis were causing the member function to be evaluated early
-        self.ng_button.setFixedSize(QSize(130, 28))
-
-        n_scales_label = QLabel("# scales:")
-        #n_scales_label.setAlignment(Qt.AlignRight)
-        self.n_scales_input = QLineEdit(self)
-        self.n_scales_input.setText("4")
-        self.n_scales_input.setFixedWidth(40)
-        self.n_scales_valid = QIntValidator(1, 20, self)
-        self.n_scales_input.setValidator(self.n_scales_valid)
-
-        clevel_label = QLabel("clevel (1-9):")
-        #clevel_label.setAlignment(Qt.AlignRight)
-        self.clevel_input = QLineEdit(self)
-        self.clevel_input.setText("5")
-        self.clevel_input.setFixedWidth(40)
-        self.clevel_valid = QIntValidator(1, 9, self)
-        self.clevel_input.setValidator(self.clevel_valid)
-
-        cname_label = QLabel("compression:")
-        self.cname_combobox = QComboBox(self)
-        self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
-
-        # self.multiview_bool = QCheckBox("Multiview Demo")
-        # self.multiview_bool.setChecked(False)
 
         def export_zarr():
             print('\nCalling export_zarr() in alignem.py:\n')
@@ -3181,46 +3135,106 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
             self.status.showMessage("Export complete.")
 
-
-        # def close_all(self):
-        #     # if 'server' in locals():
-        #     #     print("\server appears alive. Killing it...\n")
-        #     #     server.server_close()
-        #     print("\nQuitting application...\n")
-        #     QApplication.quit()
-
-
-        ############main window lower controls panel
+        #I think this must occur after export_zarr function defintion
+        self.export_and_view_hbox = QHBoxLayout()
         self.export_zarr_button = QPushButton("Export to Zarr")
         self.export_zarr_button.clicked.connect(export_zarr)
         self.export_zarr_button.setFixedSize(QSize(130, 28))
-        self.h_layout = QHBoxLayout()
-        self.quit_app_button = QPushButton("Exit")                                          #quit/exit app button
-        #self.quit_app_button.clicked.connect(close_all)
+
+        # self.ng_button = QPushButton("Neuroglancer View")
+        self.ng_button = QPushButton("Neuroglancer View")
+        self.ng_button.clicked.connect(
+            ng_view)  # HAH the () parenthesis were causing the member function to be evaluated early
+        self.ng_button.setFixedSize(QSize(130, 28))
+
+        n_scales_label = QLabel("# scales:")
+        # n_scales_label.setAlignment(Qt.AlignRight)
+        self.n_scales_input = QLineEdit(self)
+        self.n_scales_input.setText("4")
+        self.n_scales_input.setFixedWidth(40)
+        self.n_scales_valid = QIntValidator(1, 20, self)
+        self.n_scales_input.setValidator(self.n_scales_valid)
+
+        clevel_label = QLabel("clevel (1-9):")
+        # clevel_label.setAlignment(Qt.AlignRight)
+        self.clevel_input = QLineEdit(self)
+        self.clevel_input.setText("5")
+        self.clevel_input.setFixedWidth(40)
+        self.clevel_valid = QIntValidator(1, 9, self)
+        self.clevel_input.setValidator(self.clevel_valid)
+
+        cname_label = QLabel("compression:")
+        self.cname_combobox = QComboBox(self)
+        self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
+        self.cname_combobox.setMinimumWidth(60)
+
+        self.quit_app_button = QPushButton("Exit")  # quit/exit app button
+        # self.quit_app_button.clicked.connect(close_all)
         self.quit_app_button.clicked.connect(self.close)
         self.quit_app_button.setFixedSize(QSize(130, 28))
-        #self.quit_app_button.resize(50,50) #not working could be .css
-        #self.quit_app_button.setGeometry(100, 100, 600, 400) #not working could be .css
-        #setfixedsize is necessary to force pushbutton size
-        #self.quit_app_button.setFixedSize(QSize(100,32))
-        self.h_layout.addWidget(self.quit_app_button, alignment=Qt.AlignLeft)
-        self.h_layout.addWidget(self.documentation_button, alignment=Qt.AlignLeft)
-        self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignLeft)
-        self.h_layout.addWidget(self.debug_layer_button, alignment=Qt.AlignLeft)
-        # self.h_layout.addWidget(self.microns_button, alignment=Qt.AlignLeft)
-        self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.h_layout.addItem(self.spacerItem)
-        self.h_layout.addWidget(n_scales_label, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(self.n_scales_input, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(clevel_label, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(self.clevel_input, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(cname_label, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(self.cname_combobox, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(self.export_zarr_button, alignment=Qt.AlignRight)
-        # self.h_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignRight)
-        self.h_layout.addWidget(self.ng_button, alignment=Qt.AlignRight)
-        # self.h_layout.addWidget(self.multiview_bool, alignment=Qt.AlignRight)
-        #self.h_layout.setContentsMargins(400, 0, 0, 0)
+
+        self.documentation_button = QPushButton("Documentation")
+        self.documentation_button.clicked.connect(documentation_view)
+        self.documentation_button.setFixedSize(QSize(130, 28))
+
+        self.remote_viewer_button = QPushButton("Remote Viewer")
+        self.remote_viewer_button.clicked.connect(remote_view)
+        self.remote_viewer_button.setFixedSize(QSize(130, 28))
+
+        self.debug_layer_button = QPushButton("Debug Layer")  # quit/exit app button
+        self.debug_layer_button.clicked.connect(debug_layer)
+        self.debug_layer_button.setFixedSize(QSize(130, 28))
+
+        ##################################
+        #### extra_functions_groupbox ####
+        ##################################
+
+        self.extra_functions_groupbox = QGroupBox("Main")
+        self.extra_functions_layout = QGridLayout()
+        self.extra_functions_layout.addWidget(self.documentation_button, 0, 0)
+        self.extra_functions_layout.addWidget(self.quit_app_button, 1, 0)
+        self.extra_functions_layout.addWidget(self.remote_viewer_button, 0, 1)
+        self.extra_functions_layout.addWidget(self.debug_layer_button, 1, 1)
+        #self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        #self.extra_functions_layout.addItem(self.spacerItem)
+        self.extra_functions_groupbox.setLayout(self.extra_functions_layout)
+
+
+        ##################################
+        #### export_and_view_groupbox ####
+        ##################################
+
+        self.n_scales_layout = QHBoxLayout()
+        self.n_scales_layout.addWidget(n_scales_label, alignment = Qt.AlignLeft)
+        self.n_scales_layout.addWidget(self.n_scales_input, alignment = Qt.AlignRight)
+
+        self.clevel_layout = QHBoxLayout()
+        self.clevel_layout.addWidget(clevel_label, alignment = Qt.AlignLeft)
+        self.clevel_layout.addWidget(self.clevel_input, alignment = Qt.AlignRight)
+
+        self.cname_layout = QHBoxLayout()
+        self.cname_layout.addWidget(cname_label, alignment = Qt.AlignLeft)
+        self.cname_layout.addWidget(self.cname_combobox, alignment = Qt.AlignRight)
+
+        self.export_settings_layout = QVBoxLayout()
+        self.export_settings_layout.addLayout(self.n_scales_layout)
+        self.export_settings_layout.addLayout(self.clevel_layout)
+        self.export_settings_layout.addLayout(self.cname_layout)
+        #        , alignment = Qt.AlignRight
+
+        self.export_and_ng_layout = QVBoxLayout()
+        self.export_and_ng_layout.addWidget(self.export_zarr_button, alignment = Qt.AlignCenter)
+        self.export_and_ng_layout.addWidget(self.ng_button, alignment = Qt.AlignCenter)
+
+        self.export_and_view_layout = QHBoxLayout()
+        self.export_and_view_layout.addLayout(self.export_settings_layout)
+        self.export_and_view_layout.addLayout(self.export_and_ng_layout)
+
+
+        self.export_and_view_groupbox = QGroupBox("Export && View")
+        #self.export_and_view_layout.setContentsMargins(400, 0, 0, 0)
+        self.export_and_view_groupbox.setLayout(self.export_and_view_layout)
+
 
         ###################################
         ############# #STATUS #############
@@ -3272,8 +3286,11 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.status_vbox.addLayout(self.status_hbox_skips)
         self.status_vbox.addLayout(self.status_hbox_base_image)
         self.status_vbox.addLayout(self.status_hbox_ref_image)
-        self.status_vbox.addWidget(QHLine())
-        self.main_panel_layout.addLayout(self.status_vbox)
+        #self.status_vbox.addWidget(QHLine())
+
+        #DISPLAY EXTRAS #MAINPANELLAYOUT #VERBOSE
+        if 0:
+            self.main_panel_layout.addLayout(self.status_vbox)
 
         # scale = project_data['data']['scales'][
         #     project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
@@ -3301,6 +3318,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.affine_combobox = QComboBox(self) #thing_to_do #init_ref_app #affine
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
         self.affine_combobox.setFocusPolicy(Qt.NoFocus)
+        self.affine_combobox.setMaximumWidth(130)
 
         from alignem_swift import align_all_or_some #align_all_or_some
         self.align_all_button = QPushButton('Align All')
@@ -3322,19 +3340,19 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.clear_all_skips_button.setFocusPolicy(Qt.NoFocus)
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
         self.clear_all_skips_button.clicked.connect(update_skips_label) #status
+        self.clear_all_skips_button.setFixedSize(QSize(130, 28))
         #from alignem_swift import view_change_callback
         # self.clear_all_skips_button.clicked.connect(self.update_win_self())
         # self.clear_all_skips_button.clicked.connect(self.update_panels())
         # self.clear_all_skips_button.clicked.connect(self.refresh_all_images())
         #self.clear_all_skips_button.clicked.connect(self.view_change_callback)
 
+        self.select_data_layout = QGridLayout()
+        self.select_data_layout.addWidget(self.toggle_skip, 0, 0, Qt.AlignLeft)  # toggleskip
+        self.select_data_layout.addWidget(self.clear_all_skips_button, 1, 0, Qt.AlignLeft)
 
-        # main_window.update_win_self()
-        # main_window.update_panels()
-        # main_window.refresh_all_images()
-
-
-        self.clear_all_skips_button.setFixedSize(QSize(130, 28))
+        # self.select_data_groupbox = QGroupBox("Select Data")
+        # self.select_data_groupbox.setLayout(self.select_data_layout)
 
         # Not necessary for minimal interface. copy_skips_to_all_scales is already run when 'skip' is set.
         # from alignem_swift import copy_skips_to_all_scales #copy_skips_to_all_scales
@@ -3344,7 +3362,6 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
 
         #whitening QLineEdit
         whitening_label = QLabel("Whitening:")
-        # n_scales_label.setAlignment(Qt.AlignRight)
         self.whitening_input = QLineEdit(self)
         self.whitening_input.setText("-0.68")
         self.whitening_input.setFixedWidth(70)
@@ -3362,49 +3379,56 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.n_scales_valid = QDoubleValidator(0.0000, 1.0000, 4, self)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
 
-        self.improved_controls_layout = QHBoxLayout()
-        self.improved_controls_layout.addWidget(self.center_button, alignment=Qt.AlignLeft)  #center
-        self.improved_controls_layout.addWidget(self.generate_scales_button, alignment=Qt.AlignLeft)  #scales
-        self.improved_controls_layout.addWidget(self.affine_combobox, alignment=Qt.AlignLeft)  # scales
-        self.improved_controls_layout.addWidget(self.align_all_button, alignment=Qt.AlignLeft)  #align_all
-        self.improved_controls_layout.addWidget(whitening_label, alignment=Qt.AlignLeft)
-        self.improved_controls_layout.addWidget(self.whitening_input, alignment=Qt.AlignLeft)
-        self.improved_controls_layout.addWidget(swim_label, alignment=Qt.AlignLeft)
-        self.improved_controls_layout.addWidget(self.swim_input, alignment=Qt.AlignLeft)
-        #self.improved_controls_layout.addWidget(self.skip_bool, alignment=Qt.AlignLeft)
-        self.improved_controls_layout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft) #toggleskip
-        self.improved_controls_layout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignLeft)
+        self.images_and_scaling_groupbox = QGroupBox("Scaling && Data Selection")
+        self.images_and_scaling_layout = QGridLayout()
+        self.images_and_scaling_layout.addWidget(self.center_button, 0, 0)  #center
+        self.images_and_scaling_layout.addWidget(self.generate_scales_button, 1 , 0)  #scales
+        self.images_and_scaling_layout.addWidget(self.toggle_skip, 0, 1)  # center
+        self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1)  # scales
+
+        self.images_and_scaling_groupbox.setLayout(self.images_and_scaling_layout)
+
+        self.alignment_groupbox = QGroupBox("Alignment")
+        self.images_and_scaling_groupbox.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.alignment_layout = QGridLayout()
+        self.whitening_grid = QGridLayout()
+        self.whitening_grid.addWidget(whitening_label, 0, 0, alignment = Qt.AlignLeft)
+        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment = Qt.AlignRight)
+        self.swim_grid = QGridLayout()
+        self.swim_grid.addWidget(swim_label, 0, 0, alignment = Qt.AlignLeft)
+        self.swim_grid.addWidget(self.swim_input, 0, 1, alignment = Qt.AlignRight)
+
+        #groups #grouplocation #controlpanel
+        self.alignment_layout.addLayout(self.whitening_grid, 0, 0)
+        self.alignment_layout.addLayout(self.swim_grid, 1, 0)
+        self.alignment_layout.addWidget(self.affine_combobox, 0, 1)
+        self.alignment_layout.addWidget(self.align_all_button, 1, 1)  # align_all
         #self.improved_controls_layout.addWidget(self.copy_skips_to_all_scales_button, alignment=Qt.AlignLeft) #not necessary
-        self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.improved_controls_layout.addItem(self.spacerItem2)
+        #self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        #self.improved_controls_layout.addItem(self.spacerItem2)
+        self.alignment_groupbox.setLayout(self.alignment_layout)
 
-        #divider
-        self.divider = QGridLayout()
+
         #self.divider.addWidget(QHLine(), 0, 0, 1, 2)
-        self.divider.addWidget(QLabel("New Control Panel:"), 1, 0, 1, 1)
+        #self.divider.addWidget(QLabel("New Control Panel:"), 1, 0, 1, 1)
         #self.divider.addWidget(QHLine(), 2, 0, 1, 2)
-        self.main_panel_layout.addLayout(self.divider)
 
-        self.main_panel_layout.addLayout(self.improved_controls_layout)
+        # ADD TO 'main_panel_layout' #mainpanellayout #maximumsize #groups #groupsize
+        self.extra_functions_groupbox.setMaximumWidth(300)
+        self.images_and_scaling_groupbox.setMaximumWidth(300)
+        #self.select_data_groupbox.setMaximumWidth(350)
+        self.alignment_groupbox.setMaximumWidth(400)
+        self.export_and_view_groupbox.setMaximumWidth(400)
 
-        #divider
-        self.layout = QGridLayout()
-        self.layout.addWidget(QHLine(), 0, 0, 1, 2)
-        self.new_feature_label = QLabel("New Features:")
-        self.new_feature_label.setObjectName("new_feature_label")
-        # self.new_feature_label.setGeometry(QRect(70, 80, 100, 100))
-        self.layout.addWidget(self.new_feature_label, 1, 0, 1, 1)
-        self.export_and_view_label = QLabel("Export & View:")
-        self.layout.addWidget(self.export_and_view_label, 1, 1, 1, 1)
-
-        # self.layout.addWidget(QLabel(""), 1, 5, -1, 100)
-        #self.layout.addWidget(QHLine(), 2, 0, 1, 2)
-        self.main_panel_layout.addLayout(self.layout)
-
-
-        self.main_panel_layout.addLayout(self.h_layout)
-        # self.setCentralWidget(self.main_panel) #!!!
-
+        self.lower_panel_groups = QGridLayout()
+        self.images_and_scaling_groupbox.setAlignment(Qt.AlignLeft)
+        self.alignment_groupbox.setAlignment(Qt.AlignLeft)
+        self.lower_panel_groups.addWidget(self.extra_functions_groupbox, 0, 0)
+        self.lower_panel_groups.addWidget(self.images_and_scaling_groupbox, 0, 1)
+        #self.lower_panel_groups.addWidget(self.select_data_groupbox, 0, 2)
+        self.lower_panel_groups.addWidget(self.alignment_groupbox, 0, 2)
+        self.lower_panel_groups.addWidget(self.export_and_view_groupbox, 0, 3)
+        self.main_panel_layout.addLayout(self.lower_panel_groups) #mainpanellayout
 
         ##########docs_panel DOCUMENTATION PANEL
         self.browser = QWebEngineView()
@@ -5033,6 +5057,7 @@ To do:
 [x] automatically focus back on ZoomPanWidget after adjusting control panel
 [] when skips are reset, remove red 'x' annotation immediately
 [] display current affine
+[] radio buttons for scales (?)
 
 To do (Zarr/precomputed):
 [] look into making pre-computed format multithreaded

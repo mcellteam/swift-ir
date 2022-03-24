@@ -1929,6 +1929,19 @@ if __name__ == "__main__":
 
     # main_win = alignem.MainWindow(control_model=control_model, title="GlanceEM_SWiFT")
     main_win = alignem.MainWindow(title="GlanceEM_SWiFT")
+
+
+    # # this works to set a background:
+    # stylesheet = """
+    #     MainWindow {
+    #         background-image: url("romain-lemaire-night.jpg");
+    #         background-repeat: no-repeat;
+    #         background-position: center;
+    #     }
+    # """
+    # main_win.setStyleSheet(stylesheet)
+
+
     main_win.register_view_change_callback(view_change_callback)
     main_win.register_mouse_move_callback(mouse_move_callback)
     main_win.register_mouse_down_callback(mouse_down_callback)
