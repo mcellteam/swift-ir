@@ -168,13 +168,13 @@ def ensure_proper_data_structure():
             if not 'win_scale_factor' in mdata:
                 print("  Warning: if NOT 'win_scale_factor' in mdata was run")
                 # mdata['win_scale_factor'] = win_scale_factor.get_value()
-                mdata['win_scale_factor'] = float(alignem.main_window.swim_input.currentText())
+                mdata['win_scale_factor'] = float(alignem.main_window.swim_input.text())
 
             #print("Evaluating: if not 'whitening_factor' in mdata")
             if not 'whitening_factor' in mdata:
                 print("  Warning: if NOT 'whitening_factor' in mdata was run")
                 # mdata['whitening_factor'] = whitening_factor.get_value()
-                mdata['whitening_factor'] = float(alignem.main_window.whitening_input.currentText())
+                mdata['whitening_factor'] = float(alignem.main_window.whitening_input.text())
 
     print("  Exiting ensure_proper_data_structure()\n")
 
@@ -1405,8 +1405,8 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                 #prev_layer['skip'] = make_bool(skip.get_value()) #skip
                 #prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked() #no longer necessary
 
-                prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_input.currentText()
-                prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = swim_input.currentText()
+                prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = whitening_input.text()
+                prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = swim_input.text()
 
         # Second copy from the data model to the widgets if desired (check each along the way)
         if copy_from_data_model_to_widgets:
@@ -1961,3 +1961,6 @@ if __name__ == "__main__":
     main_win.define_roles(swift_roles)
 
     alignem.run_app(main_win)
+
+
+
