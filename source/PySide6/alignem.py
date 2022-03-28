@@ -5,6 +5,7 @@ using any number of technologies.
 
 """
 import align_swiftir, pyswift_tui
+#import pyswift_tui
 import task_queue_mp as task_queue
 from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr
 #from caveclient import CAVEclient
@@ -56,6 +57,9 @@ def print_all_skips():
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
+# masterswitch
+global enable_stats
+enable_stats = 0
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the
@@ -106,6 +110,8 @@ crop_mode_disp_rect = None
 crop_mode_corners = None
 # current_scale = 'scale_1'
 
+main_window = None #tag
+
 def clear_crop_settings():
     global crop_mode_role
     global crop_mode_orgin
@@ -135,7 +141,6 @@ def get_cur_snr():
                         if method_results['snr_report'] != None:
                             return method_results['snr_report']
 
-#main_window = None #tag
 
 
 def makedirs_exist_ok ( path_to_build, exist_ok=False ):
@@ -702,7 +707,7 @@ class ZoomPanWidget(QWidget):
 
         self.setBackgroundRole(QPalette.Base)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.setFocusPolicy(Qt.StrongFocus) #jy #focus
+        # self.setFocusPolicy(Qt.StrongFocus) #jy #focus
 
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
 
@@ -720,10 +725,10 @@ class ZoomPanWidget(QWidget):
         #QApplication.instance().focusChanged.connect(self.on_focusChanged)
 
 
-    def on_focusChanged(self):
-        fwidget = QApplication.focusWidget()
-        if fwidget is not None:
-            print("focus widget name = ", fwidget.objectName())
+    # def on_focusChanged(self):
+    #     fwidget = QApplication.focusWidget()
+    #     if fwidget is not None:
+    #         print("focus widget name = ", fwidget.objectName())
 
     def get_settings ( self ):
         settings_dict = {}
@@ -1012,7 +1017,7 @@ class ZoomPanWidget(QWidget):
 
     def mouseReleaseEvent(self, event):
         widget = QApplication.focusWidget()
-        print("!!! FOCUS IS ON: ",widget) #focus
+        #print("!!! FOCUS IS ON: ",widget) #focus
 
         global crop_mode_origin
         global crop_mode_role
@@ -1267,8 +1272,14 @@ class ZoomPanWidget(QWidget):
 
           scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
           layer = scale['alignment_stack'][project_data['data']['current_layer']]
-          main_window.whitening_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor']))
-          main_window.swim_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor']))
+
+          #fix?
+          if get_cur_snr() is not None:
+              print("Trying to set whitening_input combobox value...")
+              main_window.whitening_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor']))
+              print("Trying to set swim_input combobox value...")
+              main_window.swim_input.setText(str(scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor']))
+
 
     def wheelEvent(self, event):
         """
@@ -1536,7 +1547,7 @@ class MultiImagePanel(QWidget):
 
         # QWidgets don't get the keyboard focus by default
         # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
-        self.setFocusPolicy(Qt.StrongFocus)
+        self.setFocusPolicy(Qt.StrongFocus) #tag #bugaudit
         self.arrow_direction = 1
 
     #keypress
@@ -1595,8 +1606,10 @@ class MultiImagePanel(QWidget):
                 p.border_color = self.border_color
                 p.update_zpa_self()
                 p.repaint()
-        main_window.update_base_label()
-        main_window.update_ref_label()
+        #masterswitch
+        if enable_stats:
+            main_window.update_base_label()
+            main_window.update_ref_label()
 
     def add_panel ( self, panel ):
         print("  Adding panel | MultiImagePanel.add_panel...")
@@ -1648,8 +1661,10 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
-        main_window.update_base_label()
-        main_window.update_ref_label()
+
+        if enable_stats:
+            main_window.update_base_label()
+            main_window.update_ref_label()
 
     def center_all_images ( self, all_images_in_stack=True ):
         print("Centering all images | MultiImagePanel.center_all_images...")
@@ -3028,6 +3043,11 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.simple_mode = simple_mode
         self.main_panel = QWidget()
         self.main_panel_layout = QVBoxLayout()
+
+        self.main_panel_extended_layout = QHBoxLayout() #mainpanel
+        self.main_panel_extended_layout.addLayout(self.main_panel_layout)
+        self.main_panel.setLayout(self.main_panel_extended_layout)
+
         self.main_panel.setLayout ( self.main_panel_layout )
         # self.main_panel.setAutoFillBackground(False)
 
@@ -3037,7 +3057,7 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         self.image_panel.draw_full_paths = self.draw_full_paths
         self.image_panel.setAutoFillBackground(True)
 
-        self.main_panel_layout.addWidget ( self.image_panel ) #jy instantiate image panel
+        self.main_panel_layout.addWidget ( self.image_panel ) #jy instantiate image panel #mainpanel #mainlayout
         #self.main_panel_layout.addWidget ( self.control_panel ) #controlpanel #controlmodel
 
         # self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none']) #?? why
@@ -3289,8 +3309,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #self.status_vbox.addWidget(QHLine())
 
         #DISPLAY EXTRAS #MAINPANELLAYOUT #VERBOSE
-        if 0:
-            self.main_panel_layout.addLayout(self.status_vbox)
+        if enable_stats: #masterswitch
+            self.main_panel_extended_layout.addLayout(self.status_vbox)
 
         # scale = project_data['data']['scales'][
         #     project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
@@ -3576,7 +3596,8 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         #menu Menu Bar
         self.action_groups = {}
         self.menu = self.menuBar()
-        self.menu.setNativeMenuBar(False)
+        self.menu.setNativeMenuBar(False) #menubar fix to set non-native menubar in macOS
+
         ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
         ml = [
               [ '&File',
@@ -3800,24 +3821,23 @@ class MainWindow(QMainWindow): #jy note call to QMainWindow (allows status bar, 
         # self.setCentralWidget(self.image_hbox)
         #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+    if enable_stats: #masterswitch
+        def update_base_label(self):
+            scale = project_data['data']['scales'][
+                project_data['data']['current_scale']]
+            layer = scale['alignment_stack'][project_data['data']['current_layer']]
+            base_file_name = layer['images']['base']['filename']
+            self.status_base_image_label.setText(os.path.basename(base_file_name))  #settext #status
 
+        def update_ref_label(self):
+            scale = project_data['data']['scales'][
+                project_data['data']['current_scale']]
+            layer = scale['alignment_stack'][project_data['data']['current_layer']]
+            ref_file_name = layer['images']['ref']['filename']
+            self.status_ref_image_label.setText(os.path.basename(ref_file_name))  #settext #status
 
-    def update_win_self ( self ):
+    def update_win_self(self):
         self.update()
-
-    def update_base_label(self):
-        scale = project_data['data']['scales'][
-            project_data['data']['current_scale']]
-        layer = scale['alignment_stack'][project_data['data']['current_layer']]
-        base_file_name = layer['images']['base']['filename']
-        self.status_base_image_label.setText(os.path.basename(base_file_name))  #settext #status
-
-    def update_ref_label(self):
-        scale = project_data['data']['scales'][
-            project_data['data']['current_scale']]
-        layer = scale['alignment_stack'][project_data['data']['current_layer']]
-        ref_file_name = layer['images']['ref']['filename']
-        self.status_ref_image_label.setText(os.path.basename(ref_file_name))  #settext #status
 
     def build_menu_from_list (self, parent, menu_list):
         # Get the group names first
@@ -4993,6 +5013,7 @@ def run_app(main_win=None):
     global app
     global main_window
 
+
     print('  Evaluating conditional statement...')
     if main_win == None:
         print('main_win not found... setting main_window = MainWindow()')
@@ -5058,6 +5079,9 @@ To do:
 [] when skips are reset, remove red 'x' annotation immediately
 [] display current affine
 [] radio buttons for scales (?)
+[] BUG: when Keep/Toggle switch is used pre-scaling, red X does not appear immediately
+[] improved robustness in error recovery of task_queue
+[] generate error report logs, save inside project (talk to James about saving log files to remote database/server)
 
 To do (Zarr/precomputed):
 [] look into making pre-computed format multithreaded
@@ -5097,5 +5121,138 @@ print(inspect.stack()[1].function)
  ZoomPanWidget.get_settings
  ZoomPanWidget.update_zpa_self
  
+
+
+"""
+
+"""
+After aligning, images should be centered
+
+"""
+
+
+"""
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/alignem.py", line 4047, in open_project
+    self.image_panel.update_multi_self()
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/alignem.py", line 1599, in update_multi_self
+    main_window.update_ref_label()
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/alignem.py", line 3823, in update_ref_label
+    ref_file_name = layer['images']['ref']['filename']
+KeyError: 'ref'
+
+Occurred pre-scaling, after saving/re-opening. Probably is preventing the image to center. Pressing 'center' successfully centered.
+
+
+"""
+
+
+"""
+Encountered an endless cycle of scaling
+
+Worker 2:  Task 189 Completed with RC 1
+Worker 3:  Task 183 Completed with RC 1
+Worker 2:  Stopping
+Worker 3:  Stopping
+
+Need to Requeue 194 Failed Tasks...
+    Task_IDs: [5, 1, 2, 3, 0, 6, 4, 7, 10, 13, 15, 11, 8, 9, 14, 12, 16, 17, 23, 18, 21, 22, 20, 19, 24, 28, 25, 31, 29, 27, 30, 26, 34, 32, 33, 38, 36, 35, 39, 37, 41, 40, 47, 46, 45, 44, 42, 43, 51, 48, 49, 52, 53, 50, 54, 55, 58, 56, 57, 59, 61, 63, 62, 60, 65, 64, 71, 70, 67, 66, 69, 68, 77, 72, 79, 73, 76, 78, 75, 74, 86, 80, 82, 87, 81, 83, 84, 85, 90, 88, 89, 92, 94, 95, 91, 93, 97, 98, 96, 103, 102, 99, 100, 101, 106, 105, 104, 109, 110, 107, 108, 111, 112, 115, 114, 113, 116, 117, 119, 118, 121, 125, 122, 120, 126, 124, 127, 123, 128, 133, 131, 130, 134, 129, 132, 135, 136, 137, 139, 178, 155, 150, 154, 141, 171, 165, 169, 161, 156, 145, 174, 173, 177, 166, 160, 159, 163, 162, 193, 144, 140, 153, 164, 172, 192, 189, 142, 191, 186, 175, 157, 152, 147, 190, 180, 158, 149, 151, 181, 183, 143, 146, 138, 182, 179, 148, 170, 176, 168, 184, 185, 187, 167, 188]
+
+Restarting Task Queue...
+    Restarting Worker 0
+    Restarting Worker 1
+    Restarting Worker 2
+    Restarting Worker 3
+    Restarting Worker 4
+    Restarting Worker 5
+    Restarting Worker 6
+    Restarting Worker 7
+    Done Restarting Task Queue
+Requeuing Failed Task_ID: 5   Retries: 3
+  Task: {'cmd': '/Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3', 'args': ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/R34CA1-BS12_2022-03-24/project_runner_job_file.json', 'init_affine', '4', 'c', '5', '1', '0'], 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>\n    updated_model, need_to_write_json = pyswift_tui.run_json_project (\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 686, in run_json_project\n    if project[\'data\'][\'scales\'][\'scale_%d\'%use_scale][\'alignment_stack\'][0][\'images\'][\'ref\'][\'filename\'] != None:\nKeyError: \'ref\'\n', 'rc': 1, 'status': 'task_error', 'retries': 2, 'dt': 1.8007159233093262}
+
+
+...
+
+  Task: {'cmd': '/Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3', 'args': ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/R34CA1-BS12_2022-03-24/project_runner_job_file.json', 'init_affine', '4', 'c', '188', '1', '0'], 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>\n    updated_model, need_to_write_json = pyswift_tui.run_json_project (\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 686, in run_json_project\n    if project[\'data\'][\'scales\'][\'scale_%d\'%use_scale][\'alignment_stack\'][0][\'images\'][\'ref\'][\'filename\'] != None:\nKeyError: \'ref\'\n', 'rc': 1, 'status': 'task_error', 'retries': 2, 'dt': 2.097774028778076}
+Exiting project_runner > do_alignment
+Worker 0:  Running Task 5
+Exiting project_runner > do_alignment
+
+...
+
+
+"""
+
+"""
+zooming issue...
+qt.pointer.dispatch: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x7f8454c9aef0, name="MainWindowClassWindow")
+qt.pointer.dispatch: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=858.668,722.959 gbl=858.668,722.959 Released ellipse=(1x1 ∡ 0) vel=0,0 press=-858.668,-722.959 last=-858.668,-722.959 Δ 858.668,722.959) : no target window
+qt.pointer.dispatch: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x7f8454c9aef0, name="MainWindowClassWindow")
+qt.pointer.dispatch: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=1096.8,909.006 gbl=1096.8,909.006 Released ellipse=(1x1 ∡ 0) vel=0,0 press=-1096.8,-909.006 last=-1096.8,-909.006 Δ 1096.8,909.006) : no target window
+js: performance warning: READ-usage buffer was written, then fenced, but written again before being read back. This discarded the shadow copy that was created to accelerate readback.
+qt.pointer.dispatch: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x7f8454c9aef0, name="MainWindowClassWindow")
+qt.pointer.dispatch: skipping QEventPoint(id=4 ts=0 pos=0,0 scn=1089.21,802.695 gbl=1089.21,802.695 Released ellipse=(1x1 ∡ 0) vel=0,0 press=-1089.21,-802.695 last=-1089.21,-802.695 Δ 1089.21,802.695) : no target window
+qt.pointer.dispatch: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x7f8454c9aef0, name="MainWindowClassWindow")
+qt.pointer.dispatch: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=1418.85,903.845 gbl=1418.85,903.845 Released ellipse=(1x1 ∡ 0) vel=0,0 press=-1418.85,-903.845 last=-1418.85,-903.845 Δ 1418.85,903.845) : no target window
+
+This bug could have to do with unused lines of code related to focus, i.e. self.setFocusPolicy(Qt.StrongFocus) #jy #focus
+
+This issue appears to be linked to TensorFlow
+https://github.com/tensorflow/tfjs/issues/1145
+
+"""
+
+
+"""
+When aligning full res images with 'Apply Affine'
+
+Finished Collecting Results for 270 Tasks
+    Failed Tasks: 19
+    Retries: 10
+
+...
+
+270 Alignment Tasks Completed in 138.09 seconds
+    Num Successful:   251
+    Num Still Queued: 0
+    Num Failed:       19
+
+
+
+...
+
+Task Error:
+   CMD:    /Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3
+   ARGS:   ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/SYGQK_4096x4096_2022-03-01/project_runner_job_file.json', 'apply_affine', '1', 'c', '71', '1', '0']
+   STDERR: Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>
+    updated_model, need_to_write_json = pyswift_tui.run_json_project (
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 936, in run_json_project
+    c_afm = align_item.align(c_afm,save=False)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 149, in align
+    result = self.auto_swim_align(c_afm,save=save)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 188, in auto_swim_align
+    wwx = int(wsf*wwx_f)                # Window Width in x Scaled
+TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
+
+...also getting a bunch of this block...
+
+ Task: {'cmd': '/Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3', 'args': ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/SYGQK_4096x4096_2022-03-01/project_runner_job_file.json', 'apply_affine', '1', 'c', '86', '1', '0'], 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>\n    updated_model, need_to_write_json = pyswift_tui.run_json_project (\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 936, in run_json_project\n    c_afm = align_item.align(c_afm,save=False)\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 149, in align\n    result = self.auto_swim_align(c_afm,save=save)\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 188, in auto_swim_align\n    wwx = int(wsf*wwx_f)                # Window Width in x Scaled\nTypeError: unsupported operand type(s) for *: \'NoneType\' and \'int\'\n', 'rc': 1, 'status': 'task_error', 'retries': 9, 'dt': 1.3530302047729492}
+
+...and finally...
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/alignem_swift.py", line 1186, in align_all_or_some
+    align_layers(first_layer, num_layers)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/alignem_swift.py", line 1072, in align_layers
+    running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'],
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/project_runner.py", line 339, in do_alignment
+    self.generate_aligned_images()
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/project_runner.py", line 373, in generate_aligned_images
+    pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 583, in save_bias_analysis
+    snr = np.array(atrm['method_results']['snr'])
+KeyError: 'snr'
+
 
 """
