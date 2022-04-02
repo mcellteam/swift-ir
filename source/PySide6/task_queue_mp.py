@@ -6,6 +6,8 @@ import subprocess as sp
 import psutil
 import time
 
+
+
 #
 # Function run by worker processes
 #
@@ -37,7 +39,7 @@ def worker(worker_id, task_q, result_q):
     task_q.task_done()
 
   result_q.close()
-#  result_q.join_thread()
+  # result_q.join_thread()
   sys.stderr.write('Worker %d:  Stopping\n' % (worker_id))
   task_q.task_done()
 
@@ -45,8 +47,9 @@ def worker(worker_id, task_q, result_q):
 #  dt = t_stop - t_start
 #  result_q.put((worker_id, dt))
 
-
-
+#
+# from log_calls import log_calls
+# @log_calls()
 class TaskQueue:
 
   def __init__(self, start_method='forkserver'):

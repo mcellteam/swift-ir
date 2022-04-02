@@ -106,9 +106,10 @@ if __name__ == '__main__':
     # BLOSC_COMPRESSORS=blosclz,lz4,lz4hc,snappy,zlib,zstd
     # Compressor is only applied when making zarr.
     args = ap.parse_args()
-    print('cli arguments:',args)
+    print('cli arguments                   :', args)
     src = Path(args.path)
     destination = args.destination
+    workers = args.workers
     chunks = [int(i) for i in args.chunks.split(',')]
     resolution = [int(i) for i in args.resolution.split(',')]
     scale_ratio = [int(i) for i in args.scale_ratio.split(',')]
@@ -116,7 +117,7 @@ if __name__ == '__main__':
     # print("type(no_compression)",type(args.no_compression)) #type = int
     no_compression = bool(int(args.no_compression))
     #print("type(no_compression)", type(no_compression))  #type = bool
-    print("no_compression: ", no_compression)
+    print("no_compression                  : ", no_compression)
 
     print("Setting multiprocessing.set_start_method('fork', force=True)...")
     multiprocessing.set_start_method('fork', force=True)
@@ -132,7 +133,6 @@ if __name__ == '__main__':
             shutil.rmtree(f_out)
         except:
             print('Error while deleting directory', f_out)
-
 
 
     # INITIALIZE DASK CLIENT
@@ -160,13 +160,17 @@ if __name__ == '__main__':
     clevel = int(args.clevel)
     n_scales = int(args.n_scales)
     r = scale_ratio
-    print(type(r))
-    #ds_name = "zarr_data"
     ds_name = 'img_aligned_zarr'
     scale_ratio = [scale_ratio]
     [scale_ratio.append(r) for x in range(n_scales-1)]
     ### typical 'scale_ratio'... [[1, 2, 2], [1, 2, 2], [1, 2, 2], [1, 2, 2]]
     ### test case... scale_ratio = [[1,1,1]]
+
+    scales_list = [r]
+    next = np.array(r)
+    for s in range(1,n_scales):
+        next = next * np.array(r)
+        scales_list.append(next.tolist())
 
     component = 'zArray'
     print('Source directory                :', src)
@@ -189,53 +193,76 @@ if __name__ == '__main__':
 
     # DUMP RUN INFO TO CONSOLE
     print('# images found                  :', n_imgs)
-    print('First file                      :', first_file)
-    print('Last file                       :', last_file)
+    print('First image                     :', first_file)
+    print('Last image                      :', last_file)
     print('Target (Zarr) directory (f_out) :', f_out)
     print('Number of downscales            :', n_scales)
-    print('Downscale ratio by axis         :', scale_ratio)
+    print('Scales                          :', scales_list)
     print('Chunk shape                     :', chunks)
     print('Compression type                :', cname)
     print('Compression level               :', clevel)
 
     # CALL 'tiffs2zarr' ON SOURCE DIRECTORY
-    print('Making Zarr from TIFs, using dask array intermediary for parallelization...')
+    print('\nCreating Zarr container using dask array for parallelization...')
     t = time.time()
     #tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compressor=zarr.get_codec({'id': cname, 'level': clevel}))
+    zarr_url = f_out + "/" + ds_name
+    chunk_shape_tuple = tuple(chunks)
+    overwrite = True
     if not no_compression:
         if cname in ('zstd', 'zlib'):
-            tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compressor=Blosc(cname=cname, clevel=clevel), overwrite=True)
+            print("\n  tiffs2zarr Arguments")
+            print("    zarr url    : ", zarr_url)
+            print("    chunk shape : ", str(chunk_shape_tuple))
+            print("    compressor  : ", str(Blosc(cname=cname, clevel=clevel)))
+            print("    overwrite   : ", str(overwrite))
+
+            tiffs2zarr(filenames, zarr_url, chunk_shape_tuple, compressor=Blosc(cname=cname, clevel=clevel), overwrite=overwrite) # NOTE 'compressor='
 
         else:
             #compressor = {'id': cname, 'level': clevel}
             # MIGHT NOT PASS IN cname, clevel
-            tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compression=cname, overwrite=True) #jy works by itself
-            # tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compression=compressor,overwrite=True)
+            print("\n  tiffs2zarr Arguments")
+            print("    zarr url    : ", zarr_url)
+            print("    chunk shape : ", str(chunk_shape_tuple))
+            print("    compressor  : ", cname)
+            print("    overwrite   : ", str(overwrite))
 
+            tiffs2zarr(filenames, zarr_url, chunk_shape_tuple, compression=cname, overwrite=overwrite) # NOTE 'compression='
+            # tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compression=compressor,overwrite=True)
             #tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), cname=cname, clevel=clevel, overwrite=True)
             #tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compressor=compressor, overwrite=True)
 
     if no_compression:
         # MIGHT PASS IN 'None'
-        tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compressor=None, overwrite=True)
+        print("\n  tiffs2zarr Arguments")
+        print("    zarr url    : ", zarr_url)
+        print("    chunk shape : ", str(chunk_shape_tuple))
+        print("    compressor  : ", None)
+        print("    overwrite   : ", str(overwrite))
+        tiffs2zarr(filenames, zarr_url, chunk_shape_tuple, compressor=None, overwrite=overwrite)
 
 
     # NEUROGLANCER COMPATIBILITY
     ds = zarr.open(f_out + '/' + ds_name, mode='a')
+    ds.attrs['n_images'] = n_imgs
     ds.attrs['offset'] = [0, 0, 0]
     ds.attrs['resolution'] = resolution
     ds.attrs['units'] = ['nm', 'nm', 'nm']
-    ds.attrs['scales'] = scale_ratio
+    #ds.attrs['scales'] = scale_ratio
+    ds.attrs['scale_factors'] = scales_list
     ds.attrs['_ARRAY_DIMENSIONS'] = ['z', 'y', 'x']
     t_to_zarr = time.time() - t
     print('time elapsed: ', t_to_zarr, 'seconds')
     # print('Shutting down dask client...')
     # client.shutdown()
 
+    print("\n")
+    print("ds.info = ", ds.info)
+
     # COMPUTE SCALE PYRAMID IN PLACE
     print('Generating scale pyramid in place...')
     t = time.time()
-    print('scale_ratio=',scale_ratio)
 
     ###create_scale_pyramid(f_out, ds_name, scale_ratio, chunks, compressor=zarr.get_codec({'id': cname, 'level': clevel}))
     print('chunks=',chunks)
@@ -243,7 +270,11 @@ if __name__ == '__main__':
     if not no_compression:
         print("Using compression...")
         compressor = {'id': cname, 'level': clevel}
+        # create_scale_pyramid(f_out, ds_name, scale_ratio, [1,64,64,64], compressor)
         create_scale_pyramid(f_out, ds_name, scale_ratio, chunks, compressor)
+
+        # # TESTING ONLY
+        # create_scale_pyramid(f_out, ds_name, scale_ratio, chunks)
 
     if no_compression:
         print("NOT using compression...")
@@ -253,7 +284,7 @@ if __name__ == '__main__':
 
     t_gen_scales = time.time() - t
     print('t_gen_scales: ',t_gen_scales,'s')
-    print('\nMaking the Zarr is completed.\n')
+    print('\nMaking the Zarr is complete.\n')
 
     # CONSOLIDATE META-DATA
     #print("Consolidating meta data...")
@@ -310,6 +341,37 @@ if __name__ == '__main__':
             print("[ds.info - s0 only]")
             print(ds.info)
             print("Done.\n")
+
+    print("\nZarr tree:")
+    ds = zarr.open(f_out)
+    ds.tree()
+
+    print("Consolidating Zarr metadata...", end='')
+    zarr.consolidate_metadata(f_out)
+    print("done")
+
+    # print("ds.name = ", ds.name)
+    # print("ds.fill_value = ",ds.fill_value)
+    # print("ds.tree() = ", ds.tree())
+    # print("ds.items() = ", ds.items())
+    # print("ds.info_items() = ", ds.info_items())
+    # print("ds.attrs = ", ds.attrs)
+    # print("ds.compressor = ", ds.compressor)
+    # print("ds.nbytes = ", ds.nbytes)
+    # print("ds.nbytes_stored = ", ds.nbytes_stored)
+    # print("ds.nchunks = ", ds.nchunks)
+    # print("ds.nchunks_initialized = ", ds.nchunks_initialized)
+    # print("ds.size = ", ds.size)
+    # print("ds.shape = ", ds.shape)
+    # print("ds.cdata_shape = ", ds.cdata_shape)
+    # print("ds.store = ", ds.store)
+    # print("ds.path = ", ds.path)
+    # print("ds.ndim = ", ds.ndim)
+    # print("ds.synchronizer = ", ds.synchronizer)
+    # print("ds.vindex = ", ds.vindex)
+    # print(" = ", )
+    # print(" = ", )
+    # print(" = ", )
 
 
 
