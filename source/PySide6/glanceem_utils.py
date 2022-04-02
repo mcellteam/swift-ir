@@ -19,6 +19,7 @@ from PIL import Image
 
 logger = logging.getLogger(__name__)
 
+DAISY_VERSION = 1
 
 class RequestHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
@@ -32,6 +33,8 @@ class Server(HTTPServer):
     def __init__(self, server_address):
         HTTPServer.__init__(self, server_address, RequestHandler)
 
+def decode_json(x):
+    return json.loads(x, object_pairs_hook=collections.OrderedDict)
 
 def get_json(path):
     with open(path) as f:
@@ -280,7 +283,7 @@ def get_viewer_url(src):
     print("Updating viewer.txn()...")
     with viewer.txn() as s:
 
-        s.cross_section_background_color = "#ffffff"
+        #s.cross_section_background_color = "#ffffff"
         s.dimensions = dimensions
         # s.perspective_zoom = 300
         # s.position = [0.24, 0.095, 0.14]
@@ -288,6 +291,7 @@ def get_viewer_url(src):
 
         # temp = np.zeros_like(data_ref)
         # layer = ng.Layer(temp)
+
 
         # only for 3 pane view
         if view == 'row':
@@ -512,63 +516,58 @@ def add_layer(
     print('type(array):', type(array))
     print('name:', name)
 
-
-
     """Add a layer to a neuroglancer context.
-
     Args:
-
         context:
-
             The neuroglancer context to add a layer to, as obtained by
             ``viewer.txn()``.
-
         array:
-
             A ``daisy``-like array, containing attributes ``roi``,
             ``voxel_size``, and ``data``. If a list of arrays is given, a
             ``ScalePyramid`` layer is generated.
-
         name:
-
             The name of the layer.
-
         opacity:
-
             A float to define the layer opacity between 0 and 1
-
         shader:
-
             A string to be used as the shader. If set to ``'rgb'``, an RGB
             shader will be used.
-
         visible:
-
             A bool which defines layer visibility
-
         c (channel):
-
             A list of ints to define which channels to use for an rgb shader
-
         h (hue):
-
             A list of floats to define rgb color for an rgba shader
     """
-
     is_multiscale = type(array) == list
 
-    print("is_multiscale=",is_multiscale)
+    print("is_multiscale =",is_multiscale)
 
     if not is_multiscale:
+
+        print("Entering conditional, if not is_multiscale...")
 
         a = array if not is_multiscale else array[0]
 
         spatial_dim_names = ["t", "z", "y", "x"]
         channel_dim_names = ["b^", "c^"]
 
+
+        # NOTE, in alignem.py:
+        # dimensions = ng.CoordinateSpace(
+        #     names=['x', 'y', 'z'],
+        #     units='nm',
+        #     # scales=scales, #jy
+        #     scales=[res_x, res_y, res_z],
+        # )
+
         dims = len(a.data.shape)
-        spatial_dims = a.roi.dims() #old
-        #spatial_dims = a.roi.dims #daisy1
+
+
+        if DAISY_VERSION == 1:
+            spatial_dims = a.roi.dims #daisy1
+        else:
+            spatial_dims = a.roi.dims() #old
         channel_dims = dims - spatial_dims
 
         attrs = {
@@ -582,133 +581,81 @@ def add_layer(
         dimensions = neuroglancer.CoordinateSpace(**attrs)
 
         voxel_offset = [0] * channel_dims + list(a.roi.get_offset() / a.voxel_size)
-
+        print("str(voxel_offset) = ", str(voxel_offset))
+        #voxel_offset = [0,0,0]
     else:
         dimensions = []
         voxel_offset = None
         for i, a in enumerate(array):
+            print("\nenumerating data; i = ",i)
 
-            spatial_dim_names = ["t", "z", "y", "x"]
-            channel_dim_names = ["b^", "c^"]
+            # spatial_dim_names = ["t", "z", "y", "x"]
+            # channel_dim_names = ["b^", "c^"]
+            spatial_dim_names = ["z", "y", "x"]
 
-            dims = len(a.data.shape)
-            spatial_dims = a.roi.dims() #old
-            #spatial_dims = a.roi.dims #daisy1
+            dims = len(a.data.shape)  # original
+            #dims = a.roi.dims
+
+            print("a.roi.dims = ", a.roi.dims)
+            print("len(a.data.shape) = ", len(a.data.shape))
+
+
+
+            if DAISY_VERSION == 1:
+                spatial_dims = a.roi.dims  # daisy1
+            else:
+                spatial_dims = a.roi.dims()  # old
             channel_dims = dims - spatial_dims
+            print("dims = ", str(dims))
+            print("channel_dims = ", channel_dims)
+
+
 
             attrs = {
-                "names": (channel_dim_names[-channel_dims:] if channel_dims > 0 else [])
-                + spatial_dim_names[-spatial_dims:]
-                if spatial_dims > 0
-                else [],
-                "units": [""] * channel_dims + ["nm"] * spatial_dims,
-                "scales": [1] * channel_dims + list(a.voxel_size),
+                "names": spatial_dim_names[-spatial_dims:],
+                "units": ["nm"] * spatial_dims,
+                "scales": list(a.voxel_size),
             }
+            print("str(attrs) = ", str(attrs))
             if reversed_axes:
                 attrs = {k: v[::-1] for k, v in attrs.items()}
             dimensions.append(neuroglancer.CoordinateSpace(**attrs))
 
+            print("a.roi.get_offset() = ", a.roi.get_offset())
+            print("a.voxel_size = ",a.voxel_size)
             if voxel_offset is None:
                 voxel_offset = [0] * channel_dims + list(
                     a.roi.get_offset() / a.voxel_size
                 )
+            print("voxel_offset = ", voxel_offset)
 
     if reversed_axes:
         voxel_offset = voxel_offset[::-1]
 
     if shader is None:
         a = array if not is_multiscale else array[0]
-        dims = a.roi.dims() #old
-        #dims = a.roi.dims #daisy1
-        if dims < len(a.data.shape):
-            channels = a.data.shape[0]
-            if channels > 1:
-                shader = "rgb"
 
-    if shader == "rgb":
-        if scale_rgb:
-            shader = """
-void main() {
-    emitRGB(
-        255.0*vec3(
-            toNormalized(getDataValue(%i)),
-            toNormalized(getDataValue(%i)),
-            toNormalized(getDataValue(%i)))
-        );
-}""" % (
-                c[0],
-                c[1],
-                c[2],
-            )
-
+        if DAISY_VERSION == 1:
+            dims = a.roi.dims #daisy1
         else:
-            shader = """
-void main() {
-    emitRGB(
-        vec3(
-            toNormalized(getDataValue(%i)),
-            toNormalized(getDataValue(%i)),
-            toNormalized(getDataValue(%i)))
-        );
-}""" % (
-                c[0],
-                c[1],
-                c[2],
-            )
-
-    elif shader == "rgba":
-        shader = """
-void main() {
-    emitRGBA(
-        vec4(
-        %f, %f, %f,
-        toNormalized(getDataValue()))
-        );
-}""" % (
-            h[0],
-            h[1],
-            h[2],
-        )
-
-    elif shader == "mask":
-        shader = """
-void main() {
-  emitGrayscale(255.0*toNormalized(getDataValue()));
-}"""
-
-    elif shader == "heatmap":
-        shader = """
-void main() {
-    float v = toNormalized(getDataValue(0));
-    vec4 rgba = vec4(0,0,0,0);
-    if (v != 0.0) {
-        rgba = vec4(colormapJet(v), 1.0);
-    }
-    emitRGBA(rgba);
-}"""
-
-    kwargs = {}
-
-    if shader is not None:
-        kwargs["shader"] = shader
-    if opacity is not None:
-        kwargs["opacity"] = opacity
+            dims = a.roi.dims() #old
 
     if is_multiscale:
-        print("is_multiscale is True. Running layer = ScalePyramid, creating ng.LocalVolume...")
-        print("voxel_offset             : ", voxel_offset)
-        print("data                     : ", array)
-        print("dimensions               : ", dimensions)
-
+        print("\nCalling ScalePyramid to create neurolgancer.LocalVolume...")
+        print("  voxel_offset             : ", voxel_offset)
+        print("  data                     : ", array)
+        #print("dimensions               : ", dimensions)
+        for i,d in enumerate(dimensions):
+            # print("type(d) = ",type(d)) #  <class 'neuroglancer.coordinate_space.CoordinateSpace'>
+            print("  dimension[" + str(i) + "] = " + str(dimensions[i]))
 
         layer = ScalePyramid(
             [
-                neuroglancer.LocalVolume(
-                    data=a.data, voxel_offset=voxel_offset, dimensions=array_dims
-                )
+                neuroglancer.LocalVolume(data=a.data, voxel_offset=voxel_offset, dimensions=array_dims)
                 for a, array_dims in zip(array, dimensions)
             ]
         )
+        print("layer.info() = ", layer.info())
 
     else:
         print("is_multiscale is False. Creating ng.LocalVolume...")
@@ -718,11 +665,12 @@ void main() {
             dimensions=dimensions,
         )
 
-    context.layers.append(name=name, layer=layer, visible=visible, **kwargs)
+    #context.layers.append(name=name, layer=layer, visible=visible, **kwargs) # NameError: name 'kwargs' is not defined
+    context.layers.append(name=name, layer=layer, visible=visible)
+
 
 
 def downscale_block(in_array, out_array, factor, block):
-
     dims = len(factor)
     in_data = in_array.to_ndarray(block.read_roi, fill_value=0)
 
@@ -730,6 +678,9 @@ def downscale_block(in_array, out_array, factor, block):
     assert in_shape.is_multiple_of(factor)
 
     n_channels = len(in_data.shape) - dims
+    print("downscale_block | dims = len(factor) = ", len(factor))
+    print("downscale_block | in_shape = daisy.Coordinate(in_data.shape[-dims:] = ",daisy.Coordinate(in_data.shape[-dims:]))
+    print("downscale_block | n_channels = len(in_data.shape) - dims = ", len(in_data.shape) - dims)
     if n_channels >= 1:
         factor = (1,)*n_channels + factor
 
@@ -751,34 +702,98 @@ def downscale_block(in_array, out_array, factor, block):
 
 def downscale(in_array, out_array, factor, write_size):
 
-    print("Downsampling by factor %s" % (factor,))
+    print("\n  Downsampling by factor " + str(factor) + "...")
 
-    dims = in_array.roi.dims() #old
-    #dims = in_array.roi.dims #daisy1
+    if DAISY_VERSION == 1:
+        dims = in_array.roi.dims #daisy1
+    else:
+        dims = in_array.roi.dims() #old
+
     block_roi = daisy.Roi((0,)*dims, write_size)
 
-    print("Processing ROI %s with blocks %s" % (out_array.roi, block_roi))
 
-    daisy.run_blockwise(
-        out_array.roi,
-        block_roi,
-        block_roi,
-        process_function=lambda b: downscale_block(
-            in_array,
-            out_array,
-            factor,
-            b),
-        read_write_conflict=False,
-        #num_workers=60, #jy
-        #num_workers=8,
-        num_workers=4,
-        max_retries=0,
-        #max_retries=3,
-        fit='shrink')
+    print("    processing ROI %s with blocks %s" % (out_array.roi, block_roi))
+    print("    in_array  : shape = " + str(in_array.shape) + " chunk_shape = " + str(in_array.chunk_shape) + " voxel_size = " + str(in_array.voxel_size))
+    print("    out_array : shape = " + str(out_array.shape) + " chunk_shape = " + str(out_array.chunk_shape) + " voxel_size = " + str(out_array.voxel_size))
+
+    # DEBUGGING OUTPUT
+    # in_array.shape = (270, 4096, 4096)
+    # in_array.chunk_shape = (64, 64, 64)
+    # in_array.voxel_size = (50, 2, 2)
+    # in_array.n_channel_dims = 0
+    # str(in_array.roi) = [0:13500, 0: 8192, 0: 8192] (13500, 8192, 8192)
+    #
+    # out_array.shape = (1, 270, 2048, 2048)
+    # out_array.chunk_shape = (1, 1, 16, 16)
+    # out_array.voxel_size = (50, 4, 4)
+    # out_array.n_channel_dims = 1
+    # str(out_array.roi) = [0:13500, 0: 8192, 0: 8192] (13500, 8192, 8192)
+
+
+    if DAISY_VERSION == 1:
+        downscale_task = daisy.Task(
+            'downscale',
+            out_array.roi,
+            block_roi,
+            block_roi,
+            process_function=lambda b: downscale_block(
+                in_array,
+                out_array,
+                factor,
+                b),
+            read_write_conflict=False,
+            num_workers=60,
+            #num_workers=8,
+            # num_workers=4,
+            max_retries=0,
+            # max_retries=3,
+            fit='shrink')
+
+        # foo_task = daisy.Task(
+        #     'foo',
+        #     total_roi,
+        #     block_read_roi,
+        #     block_write_roi,
+        #     process_function=lambda b: downscale_block(
+        #         in_array,
+        #         out_array,
+        #         factor,
+        #         b),
+        #     read_write_conflict=False,
+        #     # num_workers=60,
+        #     # num_workers=8,
+        #     num_workers=4,
+        #     max_retries=0,
+        #     # max_retries=3,
+        #     fit='shrink')
+
+        done = daisy.run_blockwise([downscale_task])
+
+        if not done:
+            raise RuntimeError("daisy.Task failed for (at least) one block")
+
+    else:
+        daisy.run_blockwise(
+            out_array.roi,
+            block_roi,
+            block_roi,
+            process_function=lambda b: downscale_block(
+                in_array,
+                out_array,
+                factor,
+                b),
+            read_write_conflict=False,
+            #num_workers=60,
+            #num_workers=8,
+            num_workers=4,
+            max_retries=0,
+            #max_retries=3,
+            fit='shrink')
+
 
 
 #def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, cname, clevel):
-def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, compressor):
+def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, compressor={'id': 'zstd', 'level': 5}):
     """
     # https://zarr.readthedocs.io/en/stable/api/convenience.html#zarr.convenience.open
     # https://zarr.readthedocs.io/en/stable/_modules/zarr/convenience.html
@@ -791,12 +806,18 @@ def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, compressor):
     also: https://daisy-docs.readthedocs.io/en/latest/api.html
     """
 
-
+    print("\nCreating scale pyramid...")
+    print("\n  Input arguments:")
+    print("    in_file       : ", in_file)
+    print("    in_ds_name    : ", in_ds_name)
+    print("    scales        : ", str(scales))
+    print("    chunk_shape   : ", str(chunk_shape))
+    print("    compressor    : ", str(compressor))
 
     ds = zarr.open(in_file)
-
     # make sure in_ds_name points to a dataset
     try:
+        print("  Opening Zarr dataset as daisy Array...")
         daisy.open_ds(in_file, in_ds_name)
     except Exception:
         raise RuntimeError("%s does not seem to be a dataset" % in_ds_name)
@@ -805,16 +826,19 @@ def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, compressor):
 
         ds_name = in_ds_name + '/s0'
 
-        print("Moving %s to %s" % (in_ds_name, ds_name))
+        print("  Moving %s to %s..." % (in_ds_name, ds_name))
         ds.store.rename(in_ds_name, in_ds_name + '__tmp')
         ds.store.rename(in_ds_name + '__tmp', ds_name)
-
     else:
 
         ds_name = in_ds_name
         in_ds_name = in_ds_name[:-3]
 
-    print("Scaling %s by a factor of %s" % (in_file, scales))
+    print("  Scaling %s by a factor of %s" % (in_file, scales))
+
+    print("\n  Calling daisy.open_ds to create 'prev_array' with arguments:")
+    print("    in_file = ", str(in_file))
+    print("    ds_name = ", str(ds_name))
 
     prev_array = daisy.open_ds(in_file, ds_name)
 
@@ -825,14 +849,20 @@ def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, compressor):
         print("Reusing chunk shape of %s for new datasets" % (chunk_shape,))
 
     if prev_array.n_channel_dims == 0:
-        num_channels = 1
+        # print("Setting num_channels = 1")
+        # num_channels = 1
+        num_channels = None #!!!!
     elif prev_array.n_channel_dims == 1:
+        print("Setting num_channels = prev_array.shape[0] = ", prev_array.shape[0])
         num_channels = prev_array.shape[0]
     else:
         raise RuntimeError(
             "more than one channel not yet implemented, sorry...")
 
+    #num_channels = None #debug
+
     for scale_num, scale in enumerate(scales):
+        print("\n  Working on scale " + str(scale_num) + ":")
 
         try:
             scale = daisy.Coordinate(scale)
@@ -840,102 +870,118 @@ def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, compressor):
             scale = daisy.Coordinate((scale,)*chunk_shape.dims())
 
         next_voxel_size = prev_array.voxel_size*scale
-        next_total_roi = prev_array.roi.snap_to_grid(
-            next_voxel_size,
-            mode='grow')
+        #next_voxel_size = daisy.Coordinate(prev_array.voxel_size*scale)
+        next_total_roi = prev_array.roi.snap_to_grid(next_voxel_size,mode='grow')
         next_write_size = chunk_shape*next_voxel_size
-
-        print("Next voxel size: %s" % (next_voxel_size,))
-        print("Next total ROI: %s" % next_total_roi)
-        print("Next chunk size: %s" % (next_write_size,))
-
+        #next_write_size = daisy.Coordinate(chunk_shape*next_voxel_size)
         next_ds_name = in_ds_name + '/s' + str(scale_num + 1)
-        print("Preparing %s" % (next_ds_name,))
 
-        print("compressor=",compressor)
+        print("    scale                     :", str(scale))
+        print("    chunk_shape               :", str(chunk_shape))
+        #print("    Next voxel size           :", str(next_voxel_size))
+        #print("    Next chunk size           :", str(next_write_size))
+        #print("    Next total ROI            :", next_total_roi)
+        print("    Preparing dataset " + next_ds_name + "...")
+        #print("    prev_array.dtype          :", prev_array.dtype)
+        print("    prev_array.n_channel_dims :", prev_array.n_channel_dims)
+        print("    num_channels              :", num_channels)
+        print("    prev_array.shape[0]       :", prev_array.shape[0])
 
-        if isinstance(compressor, dict):
-            print("compressor is a dict...")
-            # cname = compressor['cname']
-            # clevel = compressor['clevel']
-            next_array = daisy.prepare_ds(
-                in_file,
-                next_ds_name,
-                total_roi=next_total_roi,
-                voxel_size=next_voxel_size,
-                write_size=next_write_size,
-                dtype=prev_array.dtype,
-                num_channels=num_channels,
-                compressor=compressor
-                #compressor={'id': cname, 'level': clevel}
-            )
-        elif isinstance(compressor, str):
-            print("compressor is a string...")
-            next_array = daisy.prepare_ds(
-                in_file,
-                next_ds_name,
-                total_roi=next_total_roi,
-                voxel_size=next_voxel_size,
-                write_size=next_write_size,
-                dtype=prev_array.dtype,
-                num_channels=num_channels,
-                compressor=compressor
-                #compressor={'id': cname, 'level': clevel}
-            )
-
-        # elif compressor=='none':
-        #     next_array = daisy.prepare_ds(
-        #         in_file,
-        #         next_ds_name,
-        #         total_roi=next_total_roi,
-        #         voxel_size=next_voxel_size,
-        #         write_size=next_write_size,
-        #         dtype=prev_array.dtype,
-        #         num_channels=num_channels,
-        #         compressor=None  # added for passing in compressor from **kwargs
-        #     )
-
-        else:
-            print("compressor is neither a dict nor a string...")
-            next_array = daisy.prepare_ds(
-                in_file,
-                next_ds_name,
-                total_roi=next_total_roi,
-                voxel_size=next_voxel_size,
-                write_size=next_write_size,
-                dtype=prev_array.dtype,
-                num_channels=num_channels,
-                compressor=compressor  # added for passing in compressor from **kwargs
-                # note - must support case where compressor is a bool (None)
-            )
+        curr_ds_path = in_file + '/' + in_ds_name
+        # curr_ds = zarr.open(curr_ds_path)
 
 
+        # ndims = 3
+        # #total_roi_size = prev_array.roi
+        # print("prev_array.roi = ", prev_array.roi)
+        # # define total region of interest (roi)
+        # total_roi_start = daisy.Coordinate((0,) * ndims)
+        # total_roi_size = daisy.Coordinate(total_roi_size)
+        # total_roi = daisy.Roi(total_roi_start, total_roi_size)
+        # total_roi = prev_array.roi
+        #
+        # block_read_size = [64, 64, 64]
+        # block_write_size = [64, 64, 64]
 
-        """
-        # I dont believe I need this case
-        if compressor is None:
-            next_array = daisy.prepare_ds(
+        # define block read and write rois
+        # block_read_size = daisy.Coordinate(block_read_size)
+        # block_write_size = daisy.Coordinate(block_write_size)
+        # context = (block_read_size - block_write_size) / 2
+        # block_read_roi = daisy.Roi(total_roi_start, block_read_size)
+        # block_write_roi = daisy.Roi(context, block_write_size)
+
+        # now use these :
+        # total_roi,
+        # block_read_roi,
+        # block_write_roi,
+        # print("total_roi = ", str(total_roi))
+        # print("block_read_roi = ", str(block_read_roi))
+        # print("block_write_roi = ", str(block_write_roi))
+
+        # next_total_roi = total_roi
+        # next_voxel_size = block_read_roi
+        # next_write_size = next_write_size
+
+
+        print("\n  Calling daisy.prepare_ds to create 'next_array' with arguments:")
+        print("    " + str(in_file))
+        print("    " + str(next_ds_name))
+        print("    next_total_roi = ", str(next_total_roi))
+        print("    next_voxel_size = ", str(next_voxel_size))
+        print("    next_write_size = ", str(next_write_size))
+        print("    dtype = ", prev_array.dtype)
+        print("    num_channels = ", str(num_channels))
+        print("    compressor = ", str(compressor))
+
+        # / Users / joelyancey / glanceEM_SWiFT / test_projects / SYGQK_4096x4096_2022 - 03 - 28 / project.zarr
+        # img_aligned_zarr / s1
+        # next_total_roi = [0:13500, 0: 8192, 0: 8192] (13500, 8192, 8192)
+        # next_voxel_size = (50, 4, 4)
+        # next_write_size = (3200, 256, 256)
+        # dtype = uint8
+        # num_channels = 1
+        # compressor = {'id': 'zstd', 'level': 5}
+
+
+        # in daisy v1.0 the chunk shape for 'next_array' is not chosen correctly
+        # daisy.prepare_ds doc:
+        # https://github.com/funkelab/daisy/blob/6ef33068affaf78503a7ee73191080a40e35ec74/daisy/datasets.py
+            # write_size (:class:`daisy.Coordinate`):
+            # The size of anticipated writes to the dataset, in world units. The
+            # chunk size of the dataset will be set such that ``write_size`` is a
+            # multiple of it. This allows concurrent writes to the dataset if the
+            # writes are aligned with ``write_size``.
+        next_array = daisy.prepare_ds(
             in_file,
             next_ds_name,
-            total_roi=next_total_roi,
-            voxel_size=next_voxel_size,
-            write_size=next_write_size,
+            total_roi=next_total_roi,   #         total_roi (:class:`daisy.Roi`):
+            voxel_size=next_voxel_size, #         voxel_size (:class:`daisy.Coordinate`):
+            write_size=next_write_size, #         write_size (:class:`daisy.Coordinate`):
             dtype=prev_array.dtype,
-            num_channels=num_channels,
-            compressor=None
-            )
+            num_channels=num_channels, #!!!! num_channels default value is None, and must be None, not 0 to generate correct chunk_shape
+            compressor=compressor
+            #compressor={'id': cname, 'level': clevel}
+        )
 
+        # print("next_array.chunk_shape = ", next_array.chunk_shape)
 
-        """
-            # default: compressor = {'id': 'gzip', 'level': 5}
+        # default: compressor = {'id': 'gzip', 'level': 5}
 
-            # API ref: https://daisy-docs.readthedocs.io/en/latest/api.html
-            # source: https://daisy-docs.readthedocs.io/en/latest/_modules/daisy/datasets.html#prepare_ds
+        # API ref: https://daisy-docs.readthedocs.io/en/latest/api.html
+        # source: https://daisy-docs.readthedocs.io/en/latest/_modules/daisy/datasets.html#prepare_ds
 
+        print("\n  Calling downscale with arguments:")
+        print("    prev_array (<- in_array) = ", str(prev_array)) # (<- in_array)
+        print("    next_array (<- out_array)  = ", str(next_array)) # (<- out_array)
+        print("    scale = ", str(scale))
+        print("    next_write_size = ", str(next_write_size))
 
         downscale(prev_array, next_array, scale, next_write_size)
 
         prev_array = next_array
+
+        print("\nScale complete.\n")
+
 
 
 
