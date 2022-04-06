@@ -1084,31 +1084,31 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         return
 
 
-    print("isAlignmentOfCurrentScale() = ", isAlignmentOfCurrentScale())
-    # if prompt: #original
-    if isAlignmentOfCurrentScale():
-        # cb = QCheckBox("Do not show this again.")
-        # NOTE: this should only show if there is already an existing alignment at this scale...
-        msg = QMessageBox(QMessageBox.Question,
-                          "Confirm ",
-                          "Warning: Re-generating the alignment at any scale deletes all alignments.",
-                          buttons = QMessageBox.Cancel | QMessageBox.Ok)
-        msg.setIcon(QMessageBox.Question)
-        # msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
-        msg.setDefaultButton(QMessageBox.Ok)
-        reply = msg.exec_()
-
-        if reply != QMessageBox.Ok:
-            print("Reponse was not 'Ok'. Aborting...")
-            return
-        else:
-            actually_remove = True
-            print("Reponse was 'Ok'. Continuing...")
-            pass
-
-        # actually_remove = alignem.request_confirmation("Note", "Warning: Re-generating the alignment at any scale " \
-        #                                                "will delete all alignments.")
-        print("(!!!) actually_remove = ", actually_remove)
+    # print("isAlignmentOfCurrentScale() = ", isAlignmentOfCurrentScale())
+    # # if prompt: #original
+    # if isAlignmentOfCurrentScale():
+    #     # cb = QCheckBox("Do not show this again.")
+    #     # NOTE: this should only show if there is already an existing alignment at this scale...
+    #     msg = QMessageBox(QMessageBox.Question,
+    #                       "Confirm ",
+    #                       "Warning: Re-generating the alignment at any scale deletes all alignments.",
+    #                       buttons = QMessageBox.Cancel | QMessageBox.Ok)
+    #     msg.setIcon(QMessageBox.Question)
+    #     # msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+    #     msg.setDefaultButton(QMessageBox.Ok)
+    #     reply = msg.exec_()
+    #
+    #     if reply != QMessageBox.Ok:
+    #         print("Reponse was not 'Ok'. Aborting...")
+    #         return
+    #     else:
+    #         actually_remove = True
+    #         print("Reponse was 'Ok'. Continuing...")
+    #         pass
+    #
+    #     # actually_remove = alignem.request_confirmation("Note", "Warning: Re-generating the alignment at any scale " \
+    #     #                                                "will delete all alignments.")
+    #     print("(!!!) actually_remove = ", actually_remove)
 
     if actually_remove:
         alignem.print_debug(5, "Removing aligned from scale " + str(
