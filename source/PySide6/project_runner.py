@@ -70,8 +70,6 @@ def print_debug_enter(level):
 
 
 
-
-
 class project_runner:
     ''' Run an alignment project by splitting it up by scales and/or layers '''
 
@@ -369,10 +367,9 @@ class project_runner:
         cur_scale = self.project['data']['current_scale']
 
         # Propagate the AFMs to generate and appropriate CFM at each layer
-        # null_biases = self.project['data']['scales'][cur_scale]['null_cafm_trends'] #jy-remove
-        #      pyswift_tui.SetStackCafm ( self.project['data']['scales'][cur_scale]['alignment_stack'], null_biases )
-
-        pyswift_tui.SetStackCafm(self.project['data']['scales'][cur_scale], null_biases=null_biases)  # jy-remove
+        null_biases = self.project['data']['scales'][cur_scale]['null_cafm_trends'] #jy-remove
+        # pyswift_tui.SetStackCafm ( self.project['data']['scales'][cur_scale]['alignment_stack'], null_biases )
+        pyswift_tui.SetStackCafm(self.project['data']['scales'][cur_scale], null_biases=null_biases)
 
         destination_path = self.project['data']['destination_path']
         bias_data_path = os.path.join(destination_path, cur_scale, 'bias_data')
@@ -484,6 +481,7 @@ class project_runner:
 
         del self.task_queue
         self.task_queue = None
+
 
     def get_updated_data_model(self):
         # print ( "Returning the updated data model" )
