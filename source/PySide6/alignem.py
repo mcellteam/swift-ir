@@ -122,7 +122,7 @@ def get_cur_scale():
 # main_window = None
 
 def get_cur_snr():
-    print("get_cur_snr() was called by " + inspect.stack()[1].function + "...")
+    # print("get_cur_snr() was called by " + inspect.stack()[1].function + "...") #0406
     # print("  current scale,layer according to project_data is " + str(project_data['data']['current_scale']) + ',' + str(project_data['data']['current_layer']))
     if not  project_data['data']['current_scale']:
         print("Aborting get_cur_snr() because no current scale is even set...")
@@ -263,7 +263,7 @@ def create_project_structure_directories(subdir_path):
 # @countit
 # @timeit
 # @traceit
-@profileit
+# @profileit
 def generate_scales_queue():
     print("Displaying define scales dialog to receive user input...")
     print("Trying to disconnect scales_combobox from all handlers...")
@@ -906,7 +906,7 @@ class ZoomPanWidget(QWidget):
 
     def center_image(self, all_images_in_stack=True):
         # print("  ZoomPanWidget is centering image for " + str(self.role))
-        print("'center_image' called by ", inspect.stack()[1].function)
+        #print("'center_image' called by ", inspect.stack()[1].function) #0406
 
         if project_data != None:
             # s = get_cur_scale()
@@ -914,7 +914,7 @@ class ZoomPanWidget(QWidget):
             l = project_data['data']['current_layer']
 
             if len(project_data['data']['scales']) > 0:
-                print("s = ", s)
+                #print("s = ", s) #0406
                 if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
 
                     image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
@@ -2406,6 +2406,7 @@ class MainWindow(QMainWindow):
         # print("Setting multiprocessing.set_start_method('fork', force=True)...")
         # multiprocessing.set_start_method('fork', force=True)
 
+        # std_button_size = QSize(130, 28)
         std_button_size = QSize(130, 28)
 
 
@@ -3022,7 +3023,7 @@ class MainWindow(QMainWindow):
         self.ng_button = QPushButton("Neuroglancer View")
         self.ng_button.clicked.connect(
             ng_view)  # HAH the () parenthesis were causing the member function to be evaluated early
-        self.ng_button.setFixedSize(QSize(130, 28))
+        self.ng_button.setFixedSize(std_button_size)
 
         n_scales_label = QLabel("#scales:")
         # n_scales_label.setAlignment(Qt.AlignRight)
@@ -3332,7 +3333,7 @@ class MainWindow(QMainWindow):
         # from alignem_swift import copy_skips_to_all_scales #copy_skips_to_all_scales
         # self.copy_skips_to_all_scales_button = QPushButton('Skips -> All Scales')
         # self.copy_skips_to_all_scales_button.clicked.connect(copy_skips_to_all_scales)
-        # self.copy_skips_to_all_scales_button.setFixedSize(QSize(130, 28))
+        # self.copy_skips_to_all_scales_button.setFixedSize(std_button_size)
 
         # whitening QLineEdit
         whitening_label = QLabel("Whitening:")
