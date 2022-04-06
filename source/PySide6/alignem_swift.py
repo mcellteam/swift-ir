@@ -466,7 +466,7 @@ def gen_scales_with_thread():
     global gen_scales_dialog
     if (alignem.project_data['data']['destination_path'] == None) or (
             len(alignem.project_data['data']['destination_path']) <= 0):
-        alignem.show_warning("Note", "Scales can not be generated without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Please 'Save As'. Scales can not be generated without a destination (use File/Set Destination)")
     else:
         alignem.print_debug(10, "Generating Scales with Progress Bar ...")
         gen_scales_dialog = GenScalesDialog()
@@ -483,7 +483,7 @@ def generate_scales_queue():
     if (alignem.project_data['data']['destination_path'] == None) or (
             len(alignem.project_data['data']['destination_path']) <= 0):
 
-        alignem.show_warning("Note", "Scales can not be generated without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Please 'Save As'. Scales can not be generated without a destination (use File/Set Destination)")
 
     else:
 
@@ -650,7 +650,7 @@ def generate_scales_optimized():
     if (alignem.project_data['data']['destination_path'] == None) or (
             len(alignem.project_data['data']['destination_path']) <= 0):
 
-        alignem.show_warning("Note", "Scales can not be generated without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Please 'Save As'. Scales can not be generated without a destination (use File/Set Destination)")
 
     else:
 
@@ -854,7 +854,7 @@ def align_layers(first_layer=0, num_layers=-1):
             len(alignem.project_data['data']['destination_path']) <= 0):
         print("...if statement was TRUE...")
         alignem.print_debug(1, "Error: Cannot align without destination set (use File/Set Destination)")
-        alignem.show_warning("Note", "Projects can not be aligned without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Please 'Save As'. Projects can not be aligned without a destination (use File/Set Destination)")
 
     else:
         print("...ELSE statement was run...")
