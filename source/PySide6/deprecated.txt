@@ -93,21 +93,6 @@
 #     self.refresh_all()
 
 
-# def null_bias_changed_callback(state):
-#     global ignore_changes
-#     print_debug(50, 100 * '+')
-#     print_debug(50, "Null Bias changed to " + str(state))
-#     print_debug(50, "ignore_changes = " + str(ignore_changes))
-#     print_debug(50, 100 * '+')
-#     if not ignore_changes:
-#         if state:
-#             project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = True
-#         else:
-#             project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = False
-#         print_debug(50, "null_bias_changed_callback (" + str(state) + " saved as " + str(
-#             project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends']) + ")")
-
-
 # def bool_changed_callback ( state ):
 #     global ignore_changes
 #     print_debug ( 50, 100*'+' )
@@ -849,27 +834,3 @@
 #     print_debug ( 50, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
 #     print_debug ( 50, "    memory available after loading = " + str(m.available) )
 
-
-    # @Slot()
-    # def set_bg_color(self):
-    #     c = QColorDialog.getColor()
-    #     # print_debug ( 30, " Color = " + str(c) )
-    #     self.image_panel.bg_color = c
-    #     self.image_panel.update_multi_self()
-    #     self.image_panel.repaint()
-    #
-    #     for p in self.panel_list:
-    #         p.update_zpa_self()
-    #         p.repaint()
-
-
-    # @Slot()
-    # def set_border_color(self):
-    #     c = QColorDialog.getColor()
-    #     self.image_panel.border_color = c
-    #     self.image_panel.update_multi_self()
-    #     self.image_panel.repaint()
-    #     for p in self.panel_list:
-    #         p.border_color = c
-    #         p.update_zpa_self()
-    #         p.repaint()

@@ -6,7 +6,7 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 import sys, traceback, os, time, shutil, psutil, copy, argparse, cv2, json, platform, inspect
 from source_tracker import get_hash_and_rev
 
-from PySide6.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar
+from PySide6.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar, QMessageBox
 from PySide6.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
 
 from joel_decs import timeit, profileit, dumpit, traceit, countit
@@ -41,8 +41,8 @@ main_win = None
 
 global_source_rev = ""
 global_source_hash = ""
-global_parallel_mode = False  # jy original
-# global_parallel_mode = True  # jy
+# global_parallel_mode = False  # jy original
+global_parallel_mode = True  # jy
 global_use_file_io = False
 
 swift_roles = ['ref', 'base', 'aligned']
@@ -144,23 +144,29 @@ def make_bool(thing):
 
 # major overhaul #bug #caution
 def ensure_proper_data_structure():
-    print('Ensuring proper data structure | ensure_proper_data_structure...')
-
     ''' Try to ensure that the data model is usable. '''
     scales_dict = alignem.project_data['data']['scales']
     for scale_key in scales_dict.keys():
-        scale = scales_dict[scale_key]
-        """
-        if not 'null_cafm_trends' in scale:
-            scale['null_cafm_trends'] = null_cafm_trends.get_value()
-        if not 'use_bounding_rect' in scale:
-            scale['use_bounding_rect'] = make_bool(use_bounding_rect.get_value())
-            
-        ^^ I just dont need any of this #jy
-            
-        """
-        # if not 'poly_order' in scale:
-        #     scale['poly_order'] = poly_order.get_value()
+      scale = scales_dict[scale_key]
+      '''
+      if not 'null_cafm_trends' in scale:
+        scale ['null_cafm_trends'] = null_cafm_trends.get_value()
+      if not 'use_bounding_rect' in scale:
+        scale ['use_bounding_rect'] = make_bool ( use_bounding_rect.get_value() )
+      if not 'poly_order' in scale:
+        scale ['poly_order'] = poly_order.get_value()
+      '''
+      #0405 #hardcode whatever values
+      if not 'null_cafm_trends' in scale:
+        scale ['null_cafm_trends'] = make_bool(True)
+      if not 'use_bounding_rect' in scale:
+        scale ['use_bounding_rect'] = make_bool(True)
+      if not 'poly_order' in scale:
+        scale ['poly_order'] = int(4)
+
+        # "null_cafm_trends": true
+        # "poly_order": 4
+        # "use_bounding_rect": true
 
         for layer_index in range(len(scale['alignment_stack'])):
             layer = scale['alignment_stack'][layer_index]
@@ -817,9 +823,8 @@ def get_file_io_mode():
                 file_io_mode = True
     return (file_io_mode)
 
-
 def align_layers(first_layer=0, num_layers=-1):
-    print('Aligning layers | align_layers...')
+    print('\nAligning layers | align_layers...\n')
     alignem.print_debug(30, 100 * '=')
     if num_layers < 0:
         alignem.print_debug(30, "Aligning all layers starting with " + str(first_layer) + " using SWiFT-IR ...")
@@ -892,8 +897,9 @@ def align_layers(first_layer=0, num_layers=-1):
     print('Run the project via pyswift_tui...')
     # Run the project via pyswift_tui
     # pyswift_tui.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+    print("global_parallel_mode = ", global_parallel_mode)
     if global_parallel_mode:
-        print("  if global_parallel_mode:", global_parallel_mode)
+        print("  Running in global parallel mode...")
         running_project = project_runner.project_runner(project=dm,
                                                         use_scale=alignem.get_scale_val(scale_to_run_text),
                                                         swiftir_code_mode=code_mode,
@@ -901,15 +907,16 @@ def align_layers(first_layer=0, num_layers=-1):
                                                         num_layers=num_layers,
                                                         use_file_io=global_use_file_io)
         #        running_project.start()
-        running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'],
-                                     generate_images=True)
+        #0405 #debug
+        print("this_scale['method_data']['alignment_option'] = ", this_scale['method_data']['alignment_option'])
+        running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'], generate_images=True)
         updated_model = running_project.get_updated_data_model()
         need_to_write_json = running_project.need_to_write_json
         alignem.print_debug(30, "Return from project_runner.project_runner: need_to_write_json = " + str(
             need_to_write_json))
     else:
-        print("  Doing the else...")
-        # bug #conditional #else # this conditional appears only to activate with new control panel
+        print("  align_layers is doing the else...")
+        #conditional #else # this conditional appears only to activate with new control panel
         updated_model, need_to_write_json = pyswift_tui.run_json_project(project=dm,
                                                                          alignment_option=this_scale['method_data'][
                                                                              'alignment_option'],
@@ -919,8 +926,7 @@ def align_layers(first_layer=0, num_layers=-1):
                                                                          start_layer=first_layer,
                                                                          num_layers=num_layers)
 
-        alignem.print_debug(30,
-                            "Return from pyswift_tui.run_json_project: need_to_write_json = " + str(need_to_write_json))
+        print("Return from pyswift_tui.run_json_project: need_to_write_json = " + str(need_to_write_json))
 
     if need_to_write_json:
         alignem.project_data = updated_model
@@ -932,7 +938,7 @@ def align_layers(first_layer=0, num_layers=-1):
 
 # Call this function when run_json_project returns with need_to_write_json=false
 def update_datamodel(updated_model):
-    print('Updating data model | update_datamodel...')
+    print('\nUpdating data model | update_datamodel...\n')
     alignem.print_debug(1, 100 * "+")
     alignem.print_debug(1, "run_json_project returned with need_to_write_json=false")
     alignem.print_debug(1, 100 * "+")
@@ -980,13 +986,129 @@ def update_datamodel(updated_model):
 combo_name_to_dm_name = {'Init Affine': 'init_affine', 'Refine Affine': 'refine_affine', 'Apply Affine': 'apply_affine'}
 dm_name_to_combo_name = {'init_affine': 'Init Affine', 'refine_affine': 'Refine Affine', 'apply_affine': 'Apply Affine'}
 
+# I think implementing these here rather than inside of MainWindow is more "data driven" and thus better.
+# def isProjectOpen():
+#     """
+#     Checks if there is a project open
+#
+#     """
+#
+#     # if not alignem.project_data["data"]["source_path"]:
+#     if not alignem.project_data['data']['source_path']:
+#         print("alignem.project_data['data']['source_path'] = ", alignem.project_data['data']['source_path'])
+#         print("isProjectLoaded() is returning False")
+#         return  False
+#     else:
+#         print("isProjectLoaded() is returning True")
+#         return True
 
+def isDestinationSet():
+    """
+    Checks if there is a project open
+
+    """
+
+    # if not alignem.project_data["data"]["source_path"]:
+    if not alignem.project_data['data']['destination_path']:
+        # print("alignem.project_data['data']['destination_path'] = ", alignem.project_data['data']['destination_path'])
+        # print("isDestinationSet is returning False")
+        return  False
+    else:
+        # print("isDestinationSet is returning True")
+        return True
+
+def isProjectScaled():
+    """
+    Checks if there exists any stacks of scaled images
+
+    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
+    functions even for a project that does not need scales.
+
+    """
+    if len(alignem.project_data['data']['scales']) < 2:
+        # print("isProjectScaled() is returning False")
+        return False
+    else:
+        # print("isProjectScaled() is returning False")
+        return True
+
+def isAlignmentOfCurrentScale():
+    """
+    Checks if there exists a set of aligned images at the current scale
+    """
+    if len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]) < 1:
+        print("isAlignmentOfCurrentScale is returning False, val = ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        return False
+    else:
+        print("isAlignmentOfCurrentScale is returning True, val = ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        return True
+
+def getNumOfScales():
+    """
+    Returns the number of scales for the open project
+
+    """
+    return len(project_data['data']['scales'])
+
+
+#dialog #controlflow
 def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
-    print('Aligning all or some | align_all_or_some...')
+    print('\nalign_all_or_some(...):\n')
     actually_remove = True
-    if prompt:
-        actually_remove = alignem.request_confirmation("Note", "Do you want to delete aligned images from " + str(
-            first_layer) + "?")
+
+    """
+    TODO: Need to check if images have been imported
+    
+    """
+
+    if isDestinationSet():
+        pass
+    else:
+        print("(!) User clicked align but the destination is not set. Aborting alignment.")
+        alignem.main_window.set_status("Destination not set!")
+        alignem.show_warning("Warning", "Destination not set!\n\n"
+                                        "Typical workflow:"
+                                        "(1) Open an existing project or import some images.\n"
+                                        "(2) Generate a set of scaled images (and save).\n"
+                                        "(3) Align each scale starting with the coarsest.\n"
+                                        "(4) Export project to Zarr format.\n"
+                                        "(5) View data in Neuroglancer client")
+
+        return
+
+
+    if isProjectScaled():
+        pass
+    else:
+        print(" (!) User clicked align but no scales have been generated. Aborting.")
+        return
+
+
+    print("isAlignmentOfCurrentScale() = ", isAlignmentOfCurrentScale())
+    # if prompt: #original
+    if isAlignmentOfCurrentScale():
+        # cb = QCheckBox("Do not show this again.")
+        # NOTE: this should only show if there is already an existing alignment at this scale...
+        msg = QMessageBox(QMessageBox.Question,
+                          "Confirm ",
+                          "Warning: Re-generating the alignment at any scale deletes all alignments.",
+                          buttons = QMessageBox.Cancel | QMessageBox.Ok)
+        msg.setIcon(QMessageBox.Question)
+        # msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+        msg.setDefaultButton(QMessageBox.Ok)
+        reply = msg.exec_()
+
+        if reply != QMessageBox.Ok:
+            print("Reponse was not 'Ok'. Aborting...")
+            return
+        else:
+            actually_remove = True
+            print("Reponse was 'Ok'. Continuing...")
+            pass
+
+        # actually_remove = alignem.request_confirmation("Note", "Warning: Re-generating the alignment at any scale " \
+        #                                                "will delete all alignments.")
+        print("(!!!) actually_remove = ", actually_remove)
 
     if actually_remove:
         alignem.print_debug(5, "Removing aligned from scale " + str(
@@ -1015,7 +1137,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         # alignem.print_debug(5, 40 * '=@' + '=')
         # alignem.print_debug(5, 40 * '@=' + '@')
         alignem.print_debug(5, '')
-        align_layers(first_layer, num_layers)
+        align_layers(first_layer, num_layers) # <-- CALL TO 'align_layers'
         refresh_all()
 
     # center
@@ -1025,7 +1147,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
 
 def align_forward():
-    print('Aligning forward | align_forward...')
+    print('\nAligning forward | align_forward...\n')
     num_layers = num_fwd.get_value()
     first_layer = alignem.project_data['data']['current_layer']
     alignem.print_debug(5, "Inside 'align_forward' with first_layer=" + str(first_layer))
@@ -1034,7 +1156,7 @@ def align_forward():
 
 
 def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
-    print('Regenerating aligned | regenerate_aligned...')
+    print('\nRegenerating aligned | regenerate_aligned...\n')
     #    print ( "Regenerate Aligned ... not working yet.")
     #    return
 
@@ -1160,7 +1282,7 @@ def notyet():
     alignem.print_debug(0, "Function not implemented yet. Skip = " + alignem.main_window.toggle_skip.isChecked())
 
 
-@dumpit
+
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
     print('Viewing change callback (view_change_callback was called by ' + inspect.stack()[1].function + ')...')
     print("  Changing from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str(
@@ -1208,18 +1330,23 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             # alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = make_bool(null_cafm_trends.get_value())
             # alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = make_bool(use_bounding_rect.get_value())
             # alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
-            # affine #combobox
-            # alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
-            #     combo_name_to_dm_name[init_ref_app.get_value()])
-            # print("  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()] = ",  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
-            # print("  alignem.main_window.affine_combobox.currentText() = ", alignem.main_window.affine_combobox.currentText())
+
+            #0405 #hardcode whatever values
+            alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = bool(True)
+            alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = bool(True)
+            alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = int(4)
+            #affine #combobox            #0405 #testing
+            alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
+                combo_name_to_dm_name[init_ref_app.get_value()])
+            print("  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()] = ",  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
+            print("  alignem.main_window.affine_combobox.currentText() = ", alignem.main_window.affine_combobox.currentText())
             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
                 combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
 
-            # alignem.print_debug(25, "In DM: Null Bias = " + str(
-            #     alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends']))
-            # alignem.print_debug(25, "In DM: Use Bound = " + str(
-            #     alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect']))
+            alignem.print_debug(25, "In DM: Null Bias = " + str(
+                alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends']))
+            alignem.print_debug(25, "In DM: Use Bound = " + str(
+                alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect']))
 
             # Next copy the layer-level items
             if prev_layer != None:
@@ -1242,16 +1369,15 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
         if copy_from_data_model_to_widgets:
             alignem.ignore_changes = True  # tag #odd
             # Start with the scale-level items
-            """
+            #0405
             if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
                 null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
             if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
                 use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
-                
-            #jy-remove    
-            """
-            # if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
-            #     poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
+
+            #jy-remove-x
+            if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+                poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
 
             # affine #combobox
             if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
@@ -1267,6 +1393,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                     alignem.main_window.affine_combobox.setCurrentText(dm_name_to_combo_name[new_option])
 
             # Next copy the layer-level items
+
             if next_layer != None:  # next_layer refers to the current layer
                 # print('  next_layer = ',next_layer)
                 # Copy the layer-level data
@@ -1286,10 +1413,6 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                     # alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip']))
 
                     # skip.set_value(next_layer['skip']) #original
-
-                else:
-                    print("  No skip in next_layer... continuing...")
-                    # print("=> False. Continuing...")
 
                 if 'align_to_ref_method' in next_layer:
                     if 'method_data' in next_layer['align_to_ref_method']:
@@ -1322,7 +1445,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
     #         'method_data'][
     #         'win_scale_factor']))
 
-    # print("view_change_callback has completed.\n")
+    print("view_change_callback has completed.\n")
 
 
 def mouse_down_callback(role, screen_coords, image_coords, button):
@@ -1335,7 +1458,8 @@ def mouse_down_callback(role, screen_coords, image_coords, button):
 def mouse_move_callback(role, screen_coords, image_coords, button):
     # global match_pt_mode
     # if match_pt_mode.get_value():
-    return  # monkeypatch
+    return  # monkeypatch #jy-remove
+
     print("view_match_crop.get_value() = ", view_match_crop.get_value())
     if view_match_crop.get_value() == 'Match':
         return (True)  # Lets the framework know that the move has been handled
@@ -1345,7 +1469,9 @@ def mouse_move_callback(role, screen_coords, image_coords, button):
 
 def crop_mode_callback():
     print("\nCalling crop_mode_callback() in alignem_swift.py:\n")
-    return (view_match_crop.get_value())
+    # return (view_match_crop.get_value())
+    #0405 return whatever #jy
+    return 'View'
 
 
 def clear_match_points():
@@ -1636,7 +1762,7 @@ if __name__ == "__main__":
     main_win.register_view_change_callback(view_change_callback)
     main_win.register_mouse_move_callback(mouse_move_callback)
     main_win.register_mouse_down_callback(mouse_down_callback)
-    # alignem.crop_mode_callback = crop_mode_callback
+    alignem.crop_mode_callback = crop_mode_callback
     alignem.update_linking_callback = update_linking_callback
     alignem.update_skips_callback = update_skips_callback
 

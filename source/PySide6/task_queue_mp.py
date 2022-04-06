@@ -47,9 +47,6 @@ def worker(worker_id, task_q, result_q):
 #  dt = t_stop - t_start
 #  result_q.put((worker_id, dt))
 
-#
-# from log_calls import log_calls
-# @log_calls()
 class TaskQueue:
 
   def __init__(self, start_method='forkserver'):

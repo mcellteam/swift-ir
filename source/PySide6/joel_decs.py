@@ -8,7 +8,7 @@ https://github.com/fabianlee/blogcode/blob/master/python/inspect_func_test_decor
 
 import sys, argparse, time, inspect, logging, functools, tracemalloc
 
-
+# BAD  -FAILS ON SOME FUNCTIONS
 def countit(func):
     """
     A decorator that counts and prints the number of times a function has been executed
@@ -22,6 +22,7 @@ def countit(func):
     wrapper.count = 0
     return wrapper
 
+#thsi may have caused error
 def timeit(func):
     """ Returns execution time """
 
@@ -74,7 +75,7 @@ def dumpit(func):
     def wrapper(*args, **kwargs):
         func_args = inspect.signature(func).bind(*args, **kwargs).arguments
         func_args_str = ", ".join(map("{0[0]} = {0[1]!r}".format, func_args.items()))
-        print("DUMPIT:")
+        print("dumpit: ", end='')
         print(f"{func.__module__}.{func.__qualname__} ( {func_args_str} )")
         return func(*args, **kwargs)
 

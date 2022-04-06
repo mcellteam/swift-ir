@@ -32,10 +32,13 @@ import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
 
+from alignem_swift import isDestinationSet, isProjectScaled, isAlignmentOfCurrentScale
+
+
 # from caveclient import CAVEclient
 
 
-# project_data = None #jy
+project_data = None #jy turning back on #0404
 
 # Get the path of ../python
 # alignem_file = os.path.abspath(__file__)                     # path/PySide6/py
@@ -104,23 +107,34 @@ def clear_crop_settings():
     crop_mode_corners = None
 
 
-def get_cur_scale():
-    global project_data  #debug #tag
-    curr_scale = project_data['data']['current_scale']
-    # print("get_cur_scale() was called by " + inspect.stack()[1].function + "...")
-    # print("  returning the current scale:", curr_scale)
-    return curr_scale
+# def get_cur_scale():
+#     #global project_data  #why #tag
+#     # curr_scale = project_data['data']['current_scale']
+#     # print("get_cur_scale() was called by " + inspect.stack()[1].function + "...")
+#     # print("  returning the current scale:", curr_scale)
+#     # print("returning current scale: ", project_data['data']['current_scale'])
+#     return (project_data['data']['current_scale'])
 
+def get_cur_scale():
+    global project_data
+    return ( project_data['data']['current_scale'] )
+
+# main_window = None
 
 def get_cur_snr():
-    # print("get_cur_snr() was called by " + inspect.stack()[1].function + "...")
+    print("get_cur_snr() was called by " + inspect.stack()[1].function + "...")
     # print("  current scale,layer according to project_data is " + str(project_data['data']['current_scale']) + ',' + str(project_data['data']['current_layer']))
+    if not  project_data['data']['current_scale']:
+        print("Aborting get_cur_snr() because no current scale is even set...")
+        return
+
     s = project_data['data']['current_scale']
     l = project_data['data']['current_layer']
 
     # print("  len(project_data['data']['scales']) = ", len(project_data['data']['scales']))
 
     if len(project_data['data']['scales']) > 0:
+        # print("len(project_data['data']['scales']) =", len(project_data['data']['scales'][s]))
         scale = project_data['data']['scales'][s]
         if len(scale['alignment_stack']) > 0:
             layer = scale['alignment_stack'][l]
@@ -130,7 +144,7 @@ def get_cur_snr():
                     if 'snr_report' in method_results:
                         if method_results['snr_report'] != None:
                             curr_snr = method_results['snr_report']
-                            print("  returning the current snr:", str(curr_snr))
+                            # print("  returning the current snr:", str(curr_snr))
                             return curr_snr
 
 
@@ -162,7 +176,7 @@ def makedirs_exist_ok(path_to_build, exist_ok=False):
 def show_warning(title, text):
     QMessageBox.warning(None, title, text)
 
-
+@dumpit
 def request_confirmation(title, text):
     button = QMessageBox.question(None, title, text)
     print_debug(50, "You clicked " + str(button))
@@ -249,6 +263,7 @@ def create_project_structure_directories(subdir_path):
 # @countit
 # @timeit
 # @traceit
+@profileit
 def generate_scales_queue():
     print("Displaying define scales dialog to receive user input...")
     print("Trying to disconnect scales_combobox from all handlers...")
@@ -266,9 +281,8 @@ def generate_scales_queue():
 
     input_val, ok = QInputDialog().getText(None, "Define Scales",
                                            "Please enter your scaling factors separated by spaces." \
-                                           "\n\nFor example, to generate 1x 2x and 4x scale datasets:" \
-                                           "\n1 2 4\n\nYour current scales:\n" +
-                                           str(' '.join(default_scales)),
+                                           "\n\nFor example, to generate 1x 2x and 4x scale datasets: 1 2 4\n\n"
+                                           "Your current scales: " + str(' '.join(default_scales)),
                                            echo=QLineEdit.Normal,
                                            text=' '.join(default_scales))
     if ok:
@@ -420,7 +434,7 @@ def generate_scales_queue():
                                         print_debug(1,
                                                     "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
                                                         scale))
-                                        # print_exception()
+                                        print_exception()
 
                                 # Update the Data Model with the new absolute file name. This replaces the originally opened file names
                                 print_debug(40, "  Original File Name: " + str(layer['images'][role]['filename']))
@@ -445,8 +459,10 @@ def generate_scales_queue():
         print("Reloading scales_combobox...")
         main_window.reload_scales_combobox()
 
-        print("Connecting scales_combobox to fn_scales_combobox handler...")
-        main_window.scales_combobox.currentTextChanged.connect(main_window.fn_scales_combobox)
+        # print("Connecting scales_combobox to fn_scales_combobox handler...")
+        # main_window.scales_combobox.currentTextChanged.connect(main_window.fn_scales_combobox)
+        # print("  Connecting scales_combobox to fn_scales_combobox handler...")
+        # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
         print("Generating scales complete.")
         main_window.status.showMessage("Generating scales complete.")
@@ -870,10 +886,11 @@ class ZoomPanWidget(QWidget):
             self.draw_full_paths = self.parent.draw_full_paths
         super(ZoomPanWidget, self).update()
 
-        if get_cur_snr() is None:
-            self.setToolTip(str(get_cur_scale()) + '\n' + "Unaligned")  # tooltip #settooltip
-        else:
-            self.setToolTip(str(get_cur_scale()) + '\n' + str(get_cur_snr()))  # tooltip #settooltip
+        #04-04
+        # if get_cur_snr() is None:
+        #     self.setToolTip(str(get_cur_scale()) + '\n' + "Unaligned")  # tooltip #settooltip
+        # else:
+        #     self.setToolTip(str(get_cur_scale()) + '\n' + str(get_cur_snr()))  # tooltip #settooltip
 
     def show_actual_size(self):
         print("Showing actual size | ZoomPanWidget.show_actual_size...")
@@ -889,12 +906,15 @@ class ZoomPanWidget(QWidget):
 
     def center_image(self, all_images_in_stack=True):
         # print("  ZoomPanWidget is centering image for " + str(self.role))
+        print("'center_image' called by ", inspect.stack()[1].function)
 
         if project_data != None:
-            s = get_cur_scale()
+            # s = get_cur_scale()
+            s = project_data['data']['current_scale']
             l = project_data['data']['current_layer']
 
             if len(project_data['data']['scales']) > 0:
+                print("s = ", s)
                 if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
 
                     image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
@@ -1151,10 +1171,14 @@ class ZoomPanWidget(QWidget):
         global crop_window_height
 
         crop_mode = False
-        if crop_mode_callback != None:
-            mode = crop_mode_callback()
-            if mode == 'Crop':
-                crop_mode = True
+
+        #jy-remove #0405 #keep crop_mode false
+        #jy if I need to reimplement crop mode, do it differently, not through crop_mode_callback and derived widgets
+        # if crop_mode_callback != None:
+        #     mode = crop_mode_callback()
+        #     if mode == 'Crop':
+        #         crop_mode = True
+
         if crop_mode:
             self.rubberBand.hide()
             if crop_mode_origin != None:
@@ -1273,10 +1297,14 @@ class ZoomPanWidget(QWidget):
         self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
         self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
 
+
+
+    #todo #0404  I think this is where problems w/ current_scale may start
+
     def change_layer(self, layer_delta):
         """This function iterates the current layer"""
 
-        # print("Changing layer (ZoomPanWidget.change_layer)...")
+        print("Changing layer (ZoomPanWidget.change_layer)...")
         global project_data
         global main_window
         global preloading_range
@@ -1330,6 +1358,8 @@ class ZoomPanWidget(QWidget):
 
                 leaving_layer = project_data['data']['current_layer']
                 entering_layer = project_data['data']['current_layer'] + layer_delta
+                print("  change_layer > leaving_layer = ", leaving_layer)
+                print("  change_layer > entering_layer = ", entering_layer)
 
                 if entering_layer < 0:
                     entering_layer = 0
@@ -1349,6 +1379,8 @@ class ZoomPanWidget(QWidget):
                 if 'alignment_stack' in local_scale:
                     local_stack = local_scale['alignment_stack']
                     if len(local_stack) <= 0:
+                        print('len(local_stack) is <= 0')
+                        print("Setting: project_data['data']['current_layer'] = 0")
                         project_data['data']['current_layer'] = 0
                     else:
                         # Adjust the current layer
@@ -1377,26 +1409,23 @@ class ZoomPanWidget(QWidget):
 
             # if len(project_data['data']['scales'][local_current_layer]
 
-            image_library.update()
+            image_library.update() #original
+            self.update_zpa_self() #original
+            self.update_siblings() #original
 
-            self.update_zpa_self()
-            self.update_siblings()
+            # ------- below this line not original --------
+            #0404 #0405 #jy #sus
 
-            self.center_image()  # centering the image sooner may prevent glitch
+            # self.center_image()  # centering the image sooner may prevent glitch
 
             scale = project_data['data']['scales'][project_data['data']['current_scale']]
             layer = scale['alignment_stack'][project_data['data']['current_layer']]
             base_file_name = layer['images']['base']['filename']
             print('  base file name = ', base_file_name)
             # print("\nsetting toggle to: ", not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
-            main_window.toggle_skip.setChecked(
-                not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+            main_window.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
 
-            scale = project_data['data']['scales'][
-                project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
-            layer = scale['alignment_stack'][project_data['data']['current_layer']]
 
-            # fix?
             if get_cur_snr() is not None:
                 print("Trying to set whitening_input combobox value...")
                 main_window.whitening_input.setText(str(
@@ -1484,12 +1513,14 @@ class ZoomPanWidget(QWidget):
     # Get rid of the cruft, try to limit these function calls
     def paintEvent(self, event):
         #tag
-        # print("Painting | Caller: " + inspect.stack()[1].function + " | ZoomPanWidget.paintEvent...", end='')
+        print("Painting | Caller: " + inspect.stack()[1].function + " | ZoomPanWidget.paintEvent...", end='')
         global crop_mode_role  #tag why repeatedly define these globals on each paint event?
         global crop_mode_disp_rect
 
         if not self.already_painting:
             self.already_painting = True
+
+            # print("standalone function attempting paintEvent...")
 
             painter = QPainter(self)
 
@@ -1504,7 +1535,8 @@ class ZoomPanWidget(QWidget):
                 role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
 
                 if len(project_data['data']['scales']) > 0:
-                    if len(project_data['data']['scales'][s]['alignment_stack']) > 0:
+                    # if 1: #monkey patch
+                    if len(project_data['data']['scales'][s]['alignment_stack']) > 0: #debug #tag # previously uncommented
 
                         image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
                         is_skipped = project_data['data']['scales'][s]['alignment_stack'][l]['skip']
@@ -1637,6 +1669,7 @@ class ZoomPanWidget(QWidget):
             # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
             # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
+            # print("standalone function exiting paintEvent")
             painter.end()
             del painter
 
@@ -1695,8 +1728,9 @@ class MultiImagePanel(QWidget):
                 p.repaint()
 
         #main_window.update_base_label()
-
+    # @countit
     def paintEvent(self, event):
+        # print("MultiImagePanel is attempting paintEvent...")
         painter = QPainter(self)
         # painter.setBackgroundMode(Qt.OpaqueMode)
         # painter.setBackground(QBrush(Qt.black))
@@ -1710,6 +1744,7 @@ class MultiImagePanel(QWidget):
         else:
             # Draw background for panels
             painter.fillRect(0, 0, self.width(), self.height(), self.bg_color)
+        # print("MultiImagePanel is exiting paintEvent...")
         painter.end()
 
         #main_window.update_base_label()
@@ -1785,11 +1820,17 @@ class MultiImagePanel(QWidget):
                 p.repaint()
         self.repaint()
 
+        # if main_window.isProjectOpen():
+        if get_cur_snr() is None:
+            self.setToolTip(str(get_cur_scale()) + '\n' + "Unaligned")  # tooltip #settooltip
+        else:
+            self.setToolTip(str(get_cur_scale()) + '\n' + str(get_cur_snr()))  # tooltip #settooltip
+
         if enable_stats:
             main_window.update_base_label()
             main_window.update_ref_label()
 
-    @countit
+
     def center_all_images(self, all_images_in_stack=True):
         print("  MultiImagePanel is centering all images...")
         if self.actual_children != None:
@@ -1799,7 +1840,7 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
-        self.refresh_all_images()
+        self.refresh_all_images() #jy
 
     def all_images_actual_size(self):
         print("  MultiImagePanel is actual-sizing all images...")
@@ -1813,6 +1854,19 @@ class MultiImagePanel(QWidget):
 
 
 ignore_changes = True  # Default for first change which happens on file open?
+
+def null_bias_changed_callback ( state ):
+    global ignore_changes
+    print_debug ( 50, 100*'+' )
+    print_debug ( 50, "Null Bias changed to " + str(state) )
+    print_debug ( 50, "ignore_changes = " + str(ignore_changes))
+    print_debug ( 50, 100*'+' )
+    if not ignore_changes:
+        if state:
+            project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = True
+        else:
+            project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'] = False
+        print_debug ( 50, "null_bias_changed_callback (" + str(state) + " saved as " + str(project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends']) + ")")
 
 
 def bounding_rect_changed_callback(state):
@@ -2215,6 +2269,7 @@ class ToggleSwitch(QCheckBox):
         height = contRect.height() * self._v_scale
         handleRadius = round(0.24 * height)
 
+
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
 
@@ -2304,8 +2359,8 @@ class MainWindow(QMainWindow):
         self.default_format = QSurfaceFormat.defaultFormat()
 
         print("Setting up thread pool...")
-        # self.threadpool = QThreadPool() #test
-        # print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
+        self.threadpool = QThreadPool() #test
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         self.init_dir = os.getcwd()
 
@@ -2353,6 +2408,7 @@ class MainWindow(QMainWindow):
 
         std_button_size = QSize(130, 28)
 
+
         # titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
 
@@ -2371,6 +2427,17 @@ class MainWindow(QMainWindow):
         print("Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True.")
         self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
+        def closeEvent(self, event):
+
+            quit_msg = "Are you sure you want to exit the program?"
+            reply = QtGui.QMessageBox.question(self, 'Message',
+                                               quit_msg, QtGui.QMessageBox.Yes, QtGui.QMessageBox.No)
+
+            if reply == QtGui.QMessageBox.Yes:
+                event.accept()
+            else:
+                event.ignore()
+
         # !!!
         # def changeEvent(self, event):
         #     if event.type() == event.WindowStateChange:
@@ -2386,12 +2453,12 @@ class MainWindow(QMainWindow):
         # app.setStyleSheet(stream.readAll())
 
         #jy Call the RunnableServerThread class to start background CORS web server
-        # def start_server():
-        #     print("\nstart_server() was called...\n")
-        #     print("Creating RunnableServerThread() worker...")
-        #     worker = RunnableServerThread()
-        #     print("Setting up thread pool...")
-        #     self.threadpool.start(worker)
+        def start_server():
+            print("\nstart_server() was called...\n")
+            print("Creating RunnableServerThread() worker...")
+            worker = RunnableServerThread()
+            print("Setting up thread pool...")
+            self.threadpool.start(worker)
 
         # self.browser.setPage(CustomWebEnginePage(self)) # This is necessary. Clicked links will never open new window.
         # self.browser.setPage(CustomWebEnginePage(self))
@@ -2578,8 +2645,8 @@ class MainWindow(QMainWindow):
                 zattrs_keys = json.load(f)
             print("zattrs_path : ", zattrs_path)
             resolution = zattrs_keys["resolution"]
-            scales = zattrs_keys["scales"]
-            print("scales : ", scales)
+            # scales = zattrs_keys["scales"]  #0405 #0406 #jy-remove
+            # print("scales : ", scales)  #0405 #0406 #jy-remove
 
             ds_ref = "img_ref_zarr"
             ds_base = "img_base_zarr"
@@ -2831,43 +2898,82 @@ class MainWindow(QMainWindow):
                 else:
                     print('\t' * (indent + 1) + str(value))
 
+
+
         #debug #debuglayer
         def debug_layer():
-            print("\n:::DEBUG LAYER:::")
-            print("project path = ", project_data['data']['destination_path'])
-            print("current scale = ", project_data['data']['current_scale'])
-            scale = project_data['data']['scales'][
-                project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
-            layer = scale['alignment_stack'][project_data['data']['current_layer']]
-            base_file_name = layer['images']['base']['filename']
-            print("current base image = ", base_file_name)
-            print("SNR = ", get_cur_snr())
-            print("type(get_cur_snr()) = ", type(get_cur_snr()))
-            print("alignment option = ",
-                  scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data'][
-                      'alignment_option'])
-            print("whitening factor = ",
-                  scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data'][
-                      'whitening_factor'])
-            print("SWIM window = ",
-                  scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data'][
-                      'win_scale_factor'])
+            print('\n\n----------- DEBUG LAYER -----------')
+            print('source_path                   :', project_data['data']['source_path'])
+            print('destination_path              :', project_data['data']['destination_path'])
+            print('current_scale                 :', project_data['data']['current_scale'])
+            print('get_cur_scale()               :', get_cur_scale())
+            print('current_layer                 :', project_data['data']['current_layer'])
+            print('panel_roles                   :', str(project_data['data']['panel_roles']))
+
+            # scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
+            scale = project_data['data']['current_scale']
+            # base_file_name = layer['images']['base']['filename']
+            # print("current base image = ", base_file_name)
+            print("SNR (get_cur_snr())           :", get_cur_snr())
+            print("len(project_data)             :", len(project_data))
+            print("isDestinationSet              :",isDestinationSet())
+            print("isProjectScaled               :", isProjectScaled())
+            print("isAlignmentOfCurrentScale     :", isAlignmentOfCurrentScale())
+            print("project_data['method']        :", project_data['method'])
+
+            try:
+                scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
+            except:
+                print("  unable to set scale = project_data['data']['scales'][project_data['data']['current_scale']]")
+            try:
+                layer = scale['alignment_stack'][project_data['data']['current_layer']]
+            except:
+                print("  unable to set layer = scale['alignment_stack'][project_data['data']['current_layer']]")
+            try:
+                print("whitening factor              :",scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor'])
+            except:
+                print("  whitening factor not found")
+            try:
+                print("SWIM window                   :", scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor'])
+            except:
+                print("  SWIM window not found")
+
             # print("layer = \n", pretty(layer)) # dict_keys(['align_to_ref_method', 'images', 'skip']
-            print("layer['skip'] = ", layer['skip'])
-            print("scale['alignment_stack'][project_data['data']['current_layer']]['skip'] = ",
-                  scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+            try:
+                print("layer['skip']                 :", layer['skip'])
+            except:
+                print("  layer['skip'] not found")
+            try:
+                print("scale['alignment_stack'][project_data['data']['current_layer']]['skip'] = ", scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+            except:
+                print("  scale['alignment_stack'][project_data['data']['current_layer']]['skip'] not found")
+
 
             skip_list = []
             for layer_index in range(len(project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
                 if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
                     skip_list.append(layer_index)
-            print("skip_list = ", skip_list)
-            print("scale['alignment_stack'][project_data['data']['current_layer']] = \n",
-                  scale['alignment_stack'][project_data['data']['current_layer']])
+            print("skip_list                     :", skip_list)
 
-            print("\nproject_data.keys() = ", project_data.keys())
-            print("layer.keys() = ", layer.keys())
-            print("scale.keys() = ", scale.keys())
+            # print("scale['alignment_stack'][project_data['data']['current_layer']] = \n",scale['alignment_stack'][project_data['data']['current_layer']])
+
+            try:
+                print("project_data.keys()           :", project_data.keys())
+            except:
+                print("project_data.keys() not found")
+
+            try:
+                print("scale.keys()                  :", scale.keys())
+            except:
+                print("scale.keys() not found")
+
+            try:
+                print("layer.keys()                  :", layer.keys())
+            except:
+                print("layer.keys() not found")
+
+            print("\n")
+
 
         def export_zarr():
             print('Exporting to Zarr...')
@@ -3176,6 +3282,10 @@ class MainWindow(QMainWindow):
         self.scales_combobox.setMaximumWidth(130)
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
+        #0405
+        print("  Connecting scales_combobox to fn_scales_combobox handler...")
+        self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+
         from alignem_swift import clear_all_skips  # clear_all_skips #skip
         # self.clear_all_skips_button = QPushButton('Clear All Skips')
         self.clear_all_skips_button = QPushButton('Reset Skips')
@@ -3200,7 +3310,8 @@ class MainWindow(QMainWindow):
         self.affine_combobox.setMaximumWidth(130)
 
         from alignem_swift import align_all_or_some  # align_all_or_some
-        self.align_all_button = QPushButton('Align All')
+        # self.align_all_button = QPushButton('Align All')
+        self.align_all_button = QPushButton('Align This Scale')
         self.align_all_button.clicked.connect(align_all_or_some)
         self.align_all_button.setFixedSize(std_button_size)
 
@@ -3548,7 +3659,7 @@ class MainWindow(QMainWindow):
             #   [
             #     [ 'Borders', None, self.toggle_border, False, None, None ],
             #     [ 'Window Centers', None, self.not_yet, False, None, None ],
-            #     [ 'Affines', None, self.not_yet, False, None, None ],
+            #     [ 'Affines', None, self.not_yet, False, None, None ],debug_layer
             #     [ 'Skipped Images', None, self.toggle_show_skipped, show_skipped_images, None, None ],
             #     [ '-', None, None, None, None, None ],
             #     [ 'Plot', None, self.not_yet, None, None, None ],
@@ -3559,8 +3670,6 @@ class MainWindow(QMainWindow):
             # ],
             ['&Debug',
              [
-                 ['&Python Console', 'Ctrl+P', self.py_console, None, None, None],
-                 ['-', None, None, None, None, None],
                  ['Print Structures', None, self.print_structures, None, None, None],
                  ['-', None, None, None, None, None],
                  ['Print Image Library', None, self.print_image_library, None, None, None],
@@ -3573,6 +3682,15 @@ class MainWindow(QMainWindow):
                  ['-', None, None, None, None, None],
                  ['refresh_all_images', None, self.refresh_all_images, None, None, None],
                  ['-', None, None, None, None, None],
+                 ['print_project_data', None, self.print_project_data, None, None, None],
+                 ['-', None, None, None, None, None],
+                 ['isDestinationSet', None, isDestinationSet, None, None, None],
+                 ['-', None, None, None, None, None],
+                 ['isProjectScaled', None, isProjectScaled, None, None, None],
+                 ['-', None, None, None, None, None],
+                 ['isAlignmentOfCurrentScale', None, isAlignmentOfCurrentScale, None, None, None],
+                 ['-', None, None, None, None, None],
+
                  # ['Define Waves', None, self.not_yet, None, None, None],
                  # ['Make Waves', None, self.not_yet, None, None, None],
                  # ['-', None, None, None, None, None],
@@ -3584,6 +3702,8 @@ class MainWindow(QMainWindow):
                  # ['Show Aligned', None, self.not_yet, True, "GridMode", None],
                  # ['-', None, None, None, None, None],
                  # ['&Set Debug Level',
+                 ['&Python Console', 'Ctrl+P', self.py_console, None, None, None],
+                 ['-', None, None, None, None, None],
                  #  [
                  #      ['Level 0', None, self.set_debug_level, DEBUG_LEVEL == 0, "DebugLevel", 0],
                  #      ['Level 1', None, self.set_debug_level, DEBUG_LEVEL == 1, "DebugLevel", 1],
@@ -3644,6 +3764,8 @@ class MainWindow(QMainWindow):
             # self.status.showMessage("File: "+fname)
             self.status.showMessage("File: unknown")
 
+
+
         # Window dimensions
         # geometry = qApp.desktop().availableGeometry(self)
         # self.setFixedSize(geometry.width() * 0.8, geometry.height() * 0.7)
@@ -3657,6 +3779,15 @@ class MainWindow(QMainWindow):
 
         # self.setCentralWidget(self.image_hbox)
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    # NOTE: THE CODE FOR isProjectOpen, isProjectScaled, and isAlignmentOfCurrentScale should be functionally equivalent wherever they are defined.
+
+    def getNumOfScales(self):
+        """
+        Returns the number of scales for the open project
+
+        """
+        return len(project_data['data']['scales'])
 
     if enable_stats:  # masterswitch
         def update_base_label(self):
@@ -3719,9 +3850,24 @@ class MainWindow(QMainWindow):
 
                     parent.addAction(action)
 
-    @countit
-    @Slot()  #scales #030
+    @Slot() #0404
+    def set_status(self, message: str):
+        self.status.showMessage(message)
+
+    def print_project_data(self):
+        # print(project_data)
+        print(json.dumps(project_data, indent=2))
+
+
+
+
+    #0404 seems to be called right before the issue with QPainter
+    @Slot()  #scales #030 #0404
     def reload_scales_combobox(self):
+        print("\nreload_scales_combobox called...\n")
+        self.scales_combobox_switch = 0
+        # if len(project_data['data']['scales']) > 0:
+
         curr_scale = project_data['data']['current_scale']
         image_scales_to_run = [get_scale_val(s) for s in sorted(project_data['data']['scales'].keys())]
         print("reload_scales_combobox was called by " + inspect.stack()[
@@ -3735,27 +3881,28 @@ class MainWindow(QMainWindow):
         if index >= 0:
             self.scales_combobox.setCurrentIndex(index)
 
+
+        self.scales_combobox_switch = 1
+
     # method called by combo box
     @Slot()  #scales #030
     def fn_scales_combobox(self):
-        print("\n(!) scales_combobox text has changed. Entering fn_scales_combobox scope...")
-        print("  self.scales_combobox.currentText() = ", self.scales_combobox.currentText())
-        new_curr_scale = self.scales_combobox.currentText()  # ~ set_selected_scale ->  Line 5086 #030
-        # print("type(new_curr_scale) = ", type(new_curr_scale)) #  <class 'str'>
-        if new_curr_scale is None:
-            print("new_curr_scale is None")
-        if new_curr_scale == '':
-            print("new_curr_scale is empty string")
-        project_data['data']['current_scale'] = new_curr_scale
-        self.center_all_images()
+        # if len(project_data['data']['scales']) > 0:
+        print("fn_scales_combobox called. self.scales_combobox_switch = ", self.scales_combobox_switch)
+        if self.scales_combobox_switch == 1:
+            print("\n(!) scales_combobox text has changed. Entering fn_scales_combobox scope...")
+            print("  self.scales_combobox.currentText() = ", self.scales_combobox.currentText())
+            new_curr_scale = self.scales_combobox.currentText()  # ~ set_selected_scale ->  Line 5086 #030
+            # print("type(new_curr_scale) = ", type(new_curr_scale)) #  <class 'str'>
+            if new_curr_scale is None:
+                print("new_curr_scale is None")
+            if new_curr_scale == '':
+                print("new_curr_scale is empty string")
+            project_data['data']['current_scale'] = new_curr_scale
+            self.center_all_images()
+        else:
+            print("(!) Call to fn_scales_combobox was short-circuited due to conditional")
 
-    @Slot()
-    def get_whitening_input(self):
-        return self.whitening_input.text()
-
-    @Slot()
-    def get_swim_input(self):
-        return self.swim_input.text()
 
     @Slot()
     def do_nothing(self, checked):
@@ -3816,9 +3963,9 @@ class MainWindow(QMainWindow):
         print_debug(2, "  list(project_data['data']['scales'].keys()) = " + str(scale_keys))
         print_debug(2, "Scales, Layers, and Images:")
         for k in sorted(scale_keys):
-            # print_debug ( 2, "  Scale key: " + str(k) +
-            #               ", NullBias: " + str(project_data['data']['scales'][k]['null_cafm_trends']) +
-            #               ", Bounding Rect: " + str(project_data['data']['scales'][k]['use_bounding_rect']) )
+            print_debug ( 2, "  Scale key: " + str(k) +
+                          ", NullBias: " + str(project_data['data']['scales'][k]['null_cafm_trends']) +
+                          ", Bounding Rect: " + str(project_data['data']['scales'][k]['use_bounding_rect']) )
             scale = project_data['data']['scales'][k]
             for layer in scale['alignment_stack']:
                 print_debug(2, "    Layer: " + str([k for k in layer['images'].keys()]))
@@ -3853,43 +4000,78 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def new_project(self):
-        print("MainWindow has been asked to make a new project...")
+        print("MainWindow.new_project...")
         print("Trying to disconnect scales_combobox from all handlers...")
-        try:
-            self.scales_combobox.disconnect()
-        except Exception:
-            print(
-                "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
+        self.scales_combobox_switch = 0
+        # try:
+        #     self.scales_combobox.disconnect()
+        # except Exception:
+        #     print(
+        #         "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
 
-        make_new = request_confirmation("Are you sure?",
-                                        "Really quit? Unsaved progress will be unrecoverable like George Clooney and Sandra Bullock drifting through space.")
-        if (make_new):
-            global project_data
-            project_data = copy.deepcopy(new_project_template)
-            self.current_project_file_name = None
-            project_data['data']['destination_path'] = None
+        if isDestinationSet():
+            print("(!) Warning user about data loss if a new project is started now.")
+            msg = QMessageBox(QMessageBox.Warning,
+                              "Confirm New Project",
+                              "Warning: If a new project is started now, \n"
+                              "any unsaved progress will be lost.",
+                              buttons=QMessageBox.Cancel | QMessageBox.Ok)
+            msg.setIcon(QMessageBox.Question)
+            # msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Ok)
+            reply = msg.exec_()
 
-            self.set_scales_from_string("1")
-            # self.define_scales_menu ( ["1"] ) #jy-remove
+            if reply == QMessageBox.Ok:
+                print("Reponse was 'Ok'. Continuing...")
+                pass
+            else:
+                print("User did not click Ok. Aborting new project.")
+                return
 
-            self.scales_combobox.clear()
-            # self.scales_combobox.addItems(['--'])
 
-            self.setWindowTitle("No Project File")
-            self.status.showMessage("Project File:       Destination: ")
-            self.actual_size()
-        print("Connecting scales_combobox to fn_scales_combobox handler...")
-        self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+        # make_new = request_confirmation("Are you sure?",
+        #                                 "Are you sure you want to exit the project? " \
+        #                                 "Unsaved progress will be unrecoverable like " \
+        #                                 "George Clooney and Sandra Bullock drifting " \
+        #                                 "through space.")
+        # if (make_new):
+
+        print("Defining global variable: project_data")
+        global project_data
+        print("Defining project_data from 'new-project_template'")
+        project_data = copy.deepcopy(new_project_template) #<-- NOTE THIS HAPPENS IN MainWindow CONSTRUCTOR ALSO
+        print("Setting: self.current_project_file_name = None...")
+        self.current_project_file_name = None
+        project_data['data']['destination_path'] = None
+
+        self.set_scales_from_string("1")
+        # self.define_scales_menu ( ["1"] ) #jy-remove
+
+        self.scales_combobox.clear()
+        # self.scales_combobox.addItems(['--'])
+
+        self.setWindowTitle("No Project File")
+        self.status.showMessage("Project File:       Destination: ")
+        self.actual_size()
+
+
+        # print("Connecting scales_combobox to fn_scales_combobox handler...")
+        # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+        self.scales_combobox_switch = 1
 
     @Slot()
     def open_project(self):
         print("\nMainWindow has been asked to open a project. Waiting for user...\n")
-        print("Trying to disconnect scales_combobox from all handlers...")
-        try:
-            self.scales_combobox.disconnect()
-        except Exception:
-            print(
-                "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
+
+        self.scales_combobox_switch = 0
+
+        # print("Trying to disconnect scales_combobox from all handlers...")
+        # try:
+        #     self.scales_combobox.disconnect()
+        # except Exception:
+        #     print(
+        #         "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
+
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         file_name, filter = QFileDialog.getOpenFileName(parent=None,  # None was self
@@ -3897,7 +4079,7 @@ class MainWindow(QMainWindow):
                                                         filter="Projects (*.json);;All Files (*)",
                                                         selectedFilter="",
                                                         options=options)
-        print("  Opening project: " + str(file_name) + "...")
+        print("Opening project: " + str(file_name) + "...")
 
         if file_name != None:
             if len(file_name) > 0:
@@ -3924,11 +4106,14 @@ class MainWindow(QMainWindow):
                     print("  " + proj_copy)
                 else:
                     # The data model loaded fine, so initialize the application with the data
-
+                    print("The data model loaded fine, so initialize the application with the data...")
+                    print("self.current_project_file_name was: ",self.current_project_file_name)
                     self.current_project_file_name = file_name
+                    print("self.current_project_file_name is now: ", self.current_project_file_name)
                     self.status.showMessage("  Loading Project File " + self.current_project_file_name
                                             + "  Destination: " + str(proj_copy['data']['destination_path']))
 
+                    print("Modifying the copy to use absolute paths internally..")
                     # Modify the copy to use absolute paths internally
                     if 'destination_path' in proj_copy['data']:
                         if proj_copy['data']['destination_path'] != None:
@@ -3944,6 +4129,7 @@ class MainWindow(QMainWindow):
                                         layer['images'][role]['filename'] = self.make_absolute(
                                             layer['images'][role]['filename'], self.current_project_file_name)
 
+                    print("Replace the current version with the copy..")
                     # Replace the current version with the copy
                     project_data = copy.deepcopy(proj_copy)
 
@@ -3961,8 +4147,7 @@ class MainWindow(QMainWindow):
                                 if 'current_layer' in project_data['data']:
                                     layer_num = project_data['data']['current_layer']
                                     scale_key = project_data['data']['current_scale']
-                                    print_debug(3,
-                                                "Open Project is forcing values into fields by calling view_change_callback...")
+                                    print("Open Project is forcing values into fields by calling view_change_callback...")
                                     self.view_change_callback(scale_key, scale_key, layer_num, layer_num,
                                                               True)  # view_change_callback
 
@@ -3975,21 +4160,140 @@ class MainWindow(QMainWindow):
 
         print_all_skips()
 
-        print("  open_project > updating image library (image_library.update)...")
-        image_library.update()
+        #bug most of the following code should NOT be run if the user exits without picking a project
+        #another case where it would be nice to have an "isProjectOpen() function"
+
         print("  open_project > setting project destination (set_def_proj_dest)...")
         self.set_def_proj_dest()
-        print("  open_project > centering all images...")
-        self.center_all_images()
+        # self.refresh_all_images()
+        self.center_all_images() # !!!!!!!!!!!! <-- this line for some reason #0404 #0405
+
+
+
+        print("  open_project > updating image library (image_library.update)...")
+        image_library.update()
+
+        # print("  open_project > centering all images...")
+        # self.center_all_images() #causing line 911 in center_image to fail, can't always find scale
 
         # Set the currently selected scale from the JSON project data
         print("  setting current scale to " + str(project_data['data']['current_scale']))
-        # self.set_selected_scale ( project_data['data']['current_scale'] ) #bob
-        self.reload_scales_combobox()  #jy
 
-        # connect
-        print("Connecting scales_combobox to fn_scales_combobox handler...")
-        self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+        # NOTE: this functionality needs to be replaced since no longer have a 'set_selected_scale' function
+        # self.set_selected_scale ( project_data['data']['current_scale'] ) #bob #bug #0404
+
+        #TODO this should be dynamic to remember scale that user left off on
+        # The following will at least always return a valid scale
+        # note: converting dicitonary to list so that it can be indexed.
+        project_data['data']['current_scale'] = list(project_data['data']['scales'])[0]
+
+        scale_to_match = int(str(project_data['data']['current_scale'].split('_')[1]))
+
+        self.reload_scales_combobox()  #jy # !!!!!!!!!!!
+        self.scales_combobox_switch = 1 # shouldnt really need this, reload_scales_combobox sets to 1 at the end
+
+        # # connect
+        # print("  Connecting scales_combobox to fn_scales_combobox handler...")
+        # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+
+    # @Slot()
+    # def open_project(self):
+    #     print_debug ( 20, "\n\nOpening Project\n\n" )
+    #
+    #     options = QFileDialog.Options()
+    #     options |= QFileDialog.DontUseNativeDialog
+    #     file_name, filter = QFileDialog.getOpenFileName ( parent=None,  # None was self
+    #                                                       caption="Open Project",
+    #                                                       filter="Projects (*.json);;All Files (*)",
+    #                                                       selectedFilter="",
+    #                                                       options=options)
+    #     print_debug ( 60, "open_project ( " + str(file_name) + ")" )
+    #
+    #     if file_name != None:
+    #         if len(file_name) > 0:
+    #
+    #             ignore_changes = True
+    #
+    #             f = open ( file_name, 'r' )
+    #             text = f.read()
+    #             f.close()
+    #
+    #             # Read the JSON file from the text
+    #             global project_data
+    #             proj_copy = json.loads ( text )
+    #
+    #             # Upgrade the "Data Model"
+    #             proj_copy = upgrade_data_model(proj_copy)
+    #
+    #             if proj_copy == None:
+    #                 # There was an unknown error loading the data model
+    #                 print ( "Unable to load project (loaded as None)" )
+    #             elif type(proj_copy) == type('abc'):
+    #                 # There was a known error loading the data model
+    #                 print ( "Error loading project:" )
+    #                 print ( "  " + proj_copy )
+    #             else:
+    #                 # The data model loaded fine, so initialize the application with the data
+    #
+    #                 self.current_project_file_name = file_name
+    #                 self.status.showMessage ("Project File: " + self.current_project_file_name
+    #                                          + "   Destination: " + str(proj_copy ['data'] ['destination_path']))
+    #
+    #                 # Modify the copy to use absolute paths internally
+    #                 if 'destination_path' in proj_copy['data']:
+    #                   if proj_copy['data']['destination_path'] != None:
+    #                     if len(proj_copy['data']['destination_path']) > 0:
+    #                       proj_copy['data']['destination_path'] = self.make_absolute ( proj_copy['data']['destination_path'], self.current_project_file_name )
+    #                 for scale_key in proj_copy['data']['scales'].keys():
+    #                   scale_dict = proj_copy['data']['scales'][scale_key]
+    #                   for layer in scale_dict['alignment_stack']:
+    #                     for role in layer['images'].keys():
+    #                       if layer['images'][role]['filename'] != None:
+    #                         if len(layer['images'][role]['filename']) > 0:
+    #                           layer['images'][role]['filename'] = self.make_absolute ( layer['images'][role]['filename'], self.current_project_file_name )
+    #
+    #                 # Replace the current version with the copy
+    #                 project_data = copy.deepcopy ( proj_copy )
+    #
+    #                 # Get the roles from the JSON project:
+    #                 #if project_data != None:
+    #                 #    if 'data' in project_data:
+    #                 #        if 'panel_roles' in project_data['data']:
+    #                 #            if len(project_data['data']['panel_roles']) > 0:
+    #                 #                self.define_roles ( project_data['data']['panel_roles'] )
+    #
+    #                 # Update the scales menu
+    #                 self.define_scales_menu ( sorted(project_data['data']['scales'].keys()) )
+    #                 self.image_panel.update_multi_self()
+    #
+    #                 # Set the currently selected scale from the JSON project data
+    #                 print_debug ( 30, "Set current Scale to " + str(project_data['data']['current_scale']) )
+    #                 self.set_selected_scale ( project_data['data']['current_scale'] )
+    #
+    #                 # Force the currently displayed fields to reflect the newly loaded data
+    #                 if self.view_change_callback != None:
+    #                     if project_data != None:
+    #                         if 'data' in project_data:
+    #                             if 'current_layer' in project_data['data']:
+    #                                 layer_num = project_data['data']['current_layer']
+    #                                 scale_key = project_data['data']['current_scale']
+    #                                 print_debug(3, "Open Project forcing values into fields with view_change_callback()")
+    #                                 self.view_change_callback ( scale_key, scale_key, layer_num, layer_num, True )
+    #
+    #                 if self.draw_full_paths:
+    #                   self.setWindowTitle("Project: " + self.current_project_file_name )
+    #                 else:
+    #                   self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1] )
+    #
+    #                 self.center_all_images()
+    #
+    #             ignore_changes = False
+    #
+    #     image_library.update()
+    #
+    #     print_all_skips()
+
+
 
     def save_project_to_current_file(self):
         print(
@@ -4001,8 +4305,8 @@ class MainWindow(QMainWindow):
                 # Write out the project
                 if not self.current_project_file_name.endswith('.json'):
                     self.current_project_file_name = self.current_project_file_name + ".json"
-                print_debug(0, "Saving to: \"" + str(self.current_project_file_name) + "\"")
-                proj_copy = copy.deepcopy(project_data)
+                print("Saving to: \"" + str(self.current_project_file_name) + "\"")
+                proj_copy = copy.deepcopy(project_data)                                        #why
                 if project_data['data']['destination_path'] != None:
                     if len(proj_copy['data']['destination_path']) > 0:
                         proj_copy['data']['destination_path'] = self.make_relative(
@@ -4017,6 +4321,7 @@ class MainWindow(QMainWindow):
                                         layer['images'][role]['filename'], self.current_project_file_name)
                 f = open(self.current_project_file_name, 'w')
                 jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+                print("type(proj_copy) = ", type(proj_copy))
                 proj_json = jde.encode(proj_copy)
                 f.write(proj_json)
                 f.close()
@@ -4704,6 +5009,31 @@ class MainWindow(QMainWindow):
                         crop_window_height = w_h[0]
                     print_debug(10, "Crop Window will be " + str(crop_window_width) + "x" + str(crop_window_height))
 
+    # adding these back in
+    @Slot()
+    def set_bg_color(self):
+        c = QColorDialog.getColor()
+        # print_debug ( 30, " Color = " + str(c) )
+        self.image_panel.bg_color = c
+        self.image_panel.update_multi_self()
+        self.image_panel.repaint()
+
+        for p in self.panel_list:
+            p.update_zpa_self()
+            p.repaint()
+
+    # adding these back in
+    @Slot()
+    def set_border_color(self):
+        c = QColorDialog.getColor()
+        self.image_panel.border_color = c
+        self.image_panel.update_multi_self()
+        self.image_panel.repaint()
+        for p in self.panel_list:
+            p.border_color = c
+            p.update_zpa_self()
+            p.repaint()
+
     @Slot()
     def center_all_images(self, all_images_in_stack=True):
         print("  MainWindow is centering all images (called by " + inspect.stack()[1].function + ")...")
@@ -4828,6 +5158,15 @@ if __name__ == "__main__":
     sys.exit(app.exec_())
 
 """
+!!! code to see if scales have been generated yet (e.g.):
+len(project_data['data']['scales']) = 2
+if len(project_data['data']['scales']) > 0:
+
+
+
+"""
+
+"""
 To do:
 [x] upgrade 'daisy' from v0.2 to v1.0
 [x] make menu bar attached on macOS
@@ -4842,6 +5181,7 @@ To do:
 [] improved robustness in error recovery of task_queue
 [] generate error report logs, save inside project (talk to James about saving log files to remote database/server)
 [] ask to save before exiting
+[] set project destination instantly upon re-opening a project
 [] dim out "#scales" and "clevel" when compression combobox option "none" is selected
 [] cancel Zarr export
 [] when quitting without a recent save, have option to save first
