@@ -466,7 +466,7 @@ def gen_scales_with_thread():
     global gen_scales_dialog
     if (alignem.project_data['data']['destination_path'] == None) or (
             len(alignem.project_data['data']['destination_path']) <= 0):
-        alignem.show_warning("Note", "Please 'Save As'. Scales can not be generated without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
     else:
         alignem.print_debug(10, "Generating Scales with Progress Bar ...")
         gen_scales_dialog = GenScalesDialog()
@@ -483,7 +483,7 @@ def generate_scales_queue():
     if (alignem.project_data['data']['destination_path'] == None) or (
             len(alignem.project_data['data']['destination_path']) <= 0):
 
-        alignem.show_warning("Note", "Please 'Save As'. Scales can not be generated without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
 
     else:
 
@@ -650,7 +650,7 @@ def generate_scales_optimized():
     if (alignem.project_data['data']['destination_path'] == None) or (
             len(alignem.project_data['data']['destination_path']) <= 0):
 
-        alignem.show_warning("Note", "Please 'Save As'. Scales can not be generated without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
 
     else:
 
@@ -854,7 +854,7 @@ def align_layers(first_layer=0, num_layers=-1):
             len(alignem.project_data['data']['destination_path']) <= 0):
         print("...if statement was TRUE...")
         alignem.print_debug(1, "Error: Cannot align without destination set (use File/Set Destination)")
-        alignem.show_warning("Note", "Please 'Save As'. Projects can not be aligned without a destination (use File/Set Destination)")
+        alignem.show_warning("Note", "Error cannot align. Fix me.")
 
     else:
         print("...ELSE statement was run...")
@@ -1066,10 +1066,10 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     else:
         print("(!) User clicked align but the destination is not set. Aborting alignment.")
         alignem.main_window.set_status("Destination not set!")
-        alignem.show_warning("Warning", "Destination not set!\n\n"
-                                        "Typical workflow:"
-                                        "(1) Open an existing project or import some images.\n"
-                                        "(2) Generate a set of scaled images (and save).\n"
+        alignem.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
+                                        "Typical workflow:\n"
+                                        "(1) Open a project or import images and save.\n"
+                                        "(2) Generate a set of scaled images and save.\n"
                                         "(3) Align each scale starting with the coarsest.\n"
                                         "(4) Export project to Zarr format.\n"
                                         "(5) View data in Neuroglancer client")
@@ -1332,9 +1332,14 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             # alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
 
             #0405 #hardcode whatever values
-            alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = bool(True)
-            alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = bool(True)
-            alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = int(4)
+            #todo #0406 NEED BIAS CONTROL i.e.
+            # bias controls: CUMULATIVE AFFINE MATRIX CHECKBOX, POLY ORDER
+            # NEED ALL 3 OF THESE, BOUNDING RECTANGLE LAST
+            # NOTE: THESE SETTINGS AFFECT HOW ALIGNED IMAGES ARE DISPLAYED (ALIGNMENT DOES NOT CHANGE)
+            alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = bool(False)
+            alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = int(0)
+            alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = bool(False)
+
             #affine #combobox            #0405 #testing
             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
                 combo_name_to_dm_name[init_ref_app.get_value()])
