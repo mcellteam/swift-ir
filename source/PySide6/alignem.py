@@ -267,6 +267,7 @@ def create_project_structure_directories(subdir_path):
 def generate_scales_queue():
     print("Displaying define scales dialog to receive user input...")
     print("Trying to disconnect scales_combobox from all handlers...")
+    #todo come back to this #0406
     try:
         self.scales_combobox.disconnect()
     except Exception:
@@ -279,6 +280,7 @@ def generate_scales_queue():
     if len(cur_scales) > 0:
         default_scales = cur_scales
 
+    #0406 #todo Greyed out text "No Scales" would be good
     input_val, ok = QInputDialog().getText(None, "Define Scales",
                                            "Please enter your scaling factors separated by spaces." \
                                            "\n\nFor example, to generate 1x 2x and 4x scale datasets: 1 2 4\n\n"
@@ -301,7 +303,7 @@ def generate_scales_queue():
     if (project_data['data']['destination_path'] == None) or (
             len(project_data['data']['destination_path']) <= 0):
 
-        show_warning("Note", "Scales can not be generated without a destination (use File/Set Destination)")
+        show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
 
     else:
 
@@ -4018,8 +4020,15 @@ class MainWindow(QMainWindow):
                               "any unsaved progress will be lost.",
                               buttons=QMessageBox.Cancel | QMessageBox.Ok)
             msg.setIcon(QMessageBox.Question)
+            button_cancel = msg.button(QMessageBox.Cancel)
+            button_cancel.setText('Cancel')
+            # button_cancel.setAlignment(Qt.AlignCenter) #todo
+            button_ok = msg.button(QMessageBox.Ok)
+            button_ok.setText('New Project')
+            # button_ok.setAlignment(Qt.AlignCenter)
+
             # msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
-            msg.setDefaultButton(QMessageBox.Ok)
+            msg.setDefaultButton(QMessageBox.Cancel)
             reply = msg.exec_()
 
             if reply == QMessageBox.Ok:
@@ -5188,6 +5197,7 @@ To do:
 [] when quitting without a recent save, have option to save first
 [] call 'Apply Affine' something more descriptive, or make its function more clear ('Force Affine'?)
 [] add a place to take notes (see: https://pythonbasics.org/pyqt-menubar/)
+[] Should be able to export aligned to Zarr at any scale
 
 To do (Zarr/precomputed):
 [] look into making pre-computed format multithreaded
