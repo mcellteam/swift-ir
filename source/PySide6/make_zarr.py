@@ -94,6 +94,7 @@ if __name__ == '__main__':
     #ap.add_argument('-f', '--force', default=True, type=int, help='Force overwrite if zarr exists (default: True)')
     ap.add_argument('-c', '--chunks', default='64,64,64', type=str, help="Chunk shape X,Y,Z (default: '64,64,64')")
     ap.add_argument('-d', '--destination', default='.', type=str, help="Destination dir (default: '.')")
+    ap.add_argument('-n', '--dataset_name', default='img_aligned_zarr', type=str, help="Destination dir (default: 'img_aligned_zarr')")
     ap.add_argument('-s', '--scale_ratio', default='1,2,2', type=str, help="Scaling ratio for each axis (default: '1,2,2')")
     ap.add_argument('-nS', '--n_scales', default=4, help='Number of downscaled image arrays. (default: 4)')
     ap.add_argument('-cN', '--cname', default='zstd', type=str, help="Compressor [zstd,zlib,gzip] (default: 'zstd')")
@@ -109,6 +110,7 @@ if __name__ == '__main__':
     print('cli arguments                   :', args)
     src = Path(args.path)
     destination = args.destination
+    ds_name = args.dataset_name
     workers = args.workers
     chunks = [int(i) for i in args.chunks.split(',')]
     resolution = [int(i) for i in args.resolution.split(',')]
@@ -160,7 +162,6 @@ if __name__ == '__main__':
     clevel = int(args.clevel)
     n_scales = int(args.n_scales)
     r = scale_ratio
-    ds_name = 'img_aligned_zarr'
     scale_ratio = [scale_ratio]
     [scale_ratio.append(r) for x in range(n_scales-1)]
     ### typical 'scale_ratio'... [[1, 2, 2], [1, 2, 2], [1, 2, 2], [1, 2, 2]]
