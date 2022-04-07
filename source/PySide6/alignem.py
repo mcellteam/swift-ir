@@ -1694,11 +1694,12 @@ class MultiImagePanel(QWidget):
 
         # None of these attempts to auto-fill worked, so a paintEvent handler was added
 
-        # p = self.palette()
-        # p.setColor(self.backgroundRole(), Qt.black)
-        # self.setPalette(p)
-        # self.setAutoFillBackground(True)
-        # self.setStyleSheet("background-color:black;")
+        #0407
+        p = self.palette()
+        p.setColor(self.backgroundRole(), Qt.black)
+        self.setPalette(p)
+        self.setAutoFillBackground(True)
+        self.setStyleSheet("background-color:black;")
 
         self.current_margin = 0
         self.hb_layout = QHBoxLayout()
@@ -1709,12 +1710,13 @@ class MultiImagePanel(QWidget):
         self.draw_border = False
         self.draw_annotations = True
         self.draw_full_paths = False
-        self.bg_color = QColor(40, 50, 50, 255)
+        # self.bg_color = QColor(40, 50, 50, 255)
+        self.bg_color = QColor(0, 0, 0, 255) #0407 #color #background
         self.border_color = QColor(0, 0, 0, 255)
 
         # QWidgets don't get the keyboard focus by default
         # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
-        self.setFocusPolicy(Qt.StrongFocus)  #tag #bugaudit
+        self.setFocusPolicy(Qt.StrongFocus)  #tag #add
         self.arrow_direction = 1
 
     # keypress
@@ -1743,7 +1745,9 @@ class MultiImagePanel(QWidget):
         # print("MultiImagePanel is attempting paintEvent...")
         painter = QPainter(self)
         # painter.setBackgroundMode(Qt.OpaqueMode)
+
         # painter.setBackground(QBrush(Qt.black))
+
         if len(self.actual_children) <= 0:
             # Draw background for no panels
             painter.fillRect(0, 0, self.width(), self.height(), self.bg_color)
@@ -2417,7 +2421,7 @@ class MainWindow(QMainWindow):
         # multiprocessing.set_start_method('fork', force=True)
 
         # std_button_size = QSize(130, 28)
-        std_button_size = QSize(130, 28)
+        std_button_size = QSize(120, 28)
 
 
         # titlebar resource
@@ -2591,7 +2595,7 @@ class MainWindow(QMainWindow):
         # ng_view #ngview
         def ng_view():  # ng_view #ngview #neuroglancer
             print("Creating Neuroglancer viewer...")
-
+            print("getNumAligned() = ", getNumAligned())
             if getNumAligned() < 1:
                 print("  (!) There is no alignment of the current scale.")
                 show_warning("No Alignment", "There is no alignment to export.\n\n"
@@ -3013,7 +3017,8 @@ class MainWindow(QMainWindow):
         def export_zarr():
             print('Exporting to Zarr...')
 
-            if getNumAligned() < 1:
+            # if getNumAligned() < 1:
+            if isAlignmentOfCurrentScale():
                 print("  (!) There is no alignment to export.")
                 show_warning("No Alignment", "There is no alignment to export.\n\n"
                                              "Typical workflow:\n"
@@ -4098,7 +4103,6 @@ class MainWindow(QMainWindow):
                 print("User did not click Ok. Aborting new project.")
                 return
 
-
         # make_new = request_confirmation("Are you sure?",
         #                                 "Are you sure you want to exit the project? " \
         #                                 "Unsaved progress will be unrecoverable like " \
@@ -4123,7 +4127,6 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("No Project File")
         self.status.showMessage("Project File:       Destination: ")
         self.actual_size()
-
 
         # print("Connecting scales_combobox to fn_scales_combobox handler...")
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
@@ -5241,6 +5244,8 @@ if len(project_data['data']['scales']) > 0:
 """
 
 """
+cafm = cumulative affine matrix
+
 To do:
 [x] upgrade 'daisy' from v0.2 to v1.0
 [x] make menu bar attached on macOS
@@ -5264,6 +5269,8 @@ To do:
 [] add a place to take notes (see: https://pythonbasics.org/pyqt-menubar/)
 [] Should be able to export aligned to Zarr at any scale
 [] project status indicator
+[] there should ALWAYS be a scale 1, not just when scales are generated
+[] underlined letters for hotkeys
 
 Things project_data should include:
 * is project scaled (bool)

@@ -33,6 +33,9 @@ QGroupBox {
   padding: 2px;
   margin-top: 6px;
   margin-bottom: 4px;
+
+  /* 0407 */
+  color: white;
 }
 
 QMainWindow {
