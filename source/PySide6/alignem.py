@@ -4173,7 +4173,7 @@ class MainWindow(QMainWindow):
         # self.setWindowTitle("No Project File") #0407 #remove
         #
         self.status.showMessage("Project File:       Destination: ")
-        self.actual_size()
+        # self.actual_size()
 
         # print("Connecting scales_combobox to fn_scales_combobox handler...")
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
