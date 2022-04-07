@@ -933,6 +933,7 @@ def align_layers(first_layer=0, num_layers=-1):
     else:
         update_datamodel(updated_model)
 
+    alignem.main_window.center_all_images()
     print("Exiting align_layers(...)")
 
 
@@ -978,8 +979,10 @@ def update_datamodel(updated_model):
     refresh_all()
 
     # center
-    main_win.center_all_images()
-    main_win.update_win_self()
+    # main_win.center_all_images()
+    # main_win.update_win_self()
+    alignem.main_window.center_all_images()
+    alignem.main_window.update_win_self()
 
 
 # affine
@@ -1048,8 +1051,20 @@ def getNumOfScales():
     Returns the number of scales for the open project
 
     """
-    return len(project_data['data']['scales'])
+    return len(alignem.project_data['data']['scales'])
 
+def getNumAligned():
+    """
+    Returns the count aligned images for the current scale
+
+    """
+    try:
+        path = os.path.join(alignem.project_data['data']['destination_path'], get_cur_scale(), 'img_aligned')
+        count = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
+        print('Returning # aligned images at current scale: ', count)
+        return int(count)
+    except:
+        return int(0)
 
 #dialog #controlflow
 def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
@@ -1068,19 +1083,30 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         alignem.main_window.set_status("Destination not set!")
         alignem.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
-                                        "(1) Open a project or import images and save.\n"
-                                        "(2) Generate a set of scaled images and save.\n"
+                                        "* (1) Open a project or import images and save.\n"
+                                        "* (2) Generate a set of scaled images and save.\n"
                                         "(3) Align each scale starting with the coarsest.\n"
                                         "(4) Export project to Zarr format.\n"
                                         "(5) View data in Neuroglancer client")
+        print("Aborting align_all_or_some due to 'isDestinationSet()' conditional.")
 
         return
 
 
     if isProjectScaled():
+        #debug isProjectScaled() might be returning True incorrectly sometimes
         pass
     else:
-        print(" (!) User clicked align but no scales have been generated. Aborting.")
+        print(" (!) User clicked align but scales have not been generated yet. Aborting.")
+        alignem.main_window.set_status("Scales must be generated prior to alignment.")
+        alignem.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
+                                        "Typical workflow:\n"
+                                        "(1) Open a project or import images and save.\n"
+                                        "* (2) Generate a set of scaled images and save.\n"
+                                        "(3) Align each scale starting with the coarsest.\n"
+                                        "(4) Export project to Zarr format.\n"
+                                        "(5) View data in Neuroglancer client")
+        print("Aborting align_all_or_some due to 'isProjectScaled()' conditional.")
         return
 
 

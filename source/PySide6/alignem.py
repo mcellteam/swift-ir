@@ -32,7 +32,7 @@ import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
 
-from alignem_swift import isDestinationSet, isProjectScaled, isAlignmentOfCurrentScale
+from alignem_swift import isDestinationSet, isProjectScaled, isAlignmentOfCurrentScale, getNumAligned
 
 
 # from caveclient import CAVEclient
@@ -268,11 +268,13 @@ def generate_scales_queue():
     print("Displaying define scales dialog to receive user input...")
     print("Trying to disconnect scales_combobox from all handlers...")
     #todo come back to this #0406
-    try:
-        self.scales_combobox.disconnect()
-    except Exception:
-        print(
-            "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
+    # try:
+    #     self.scales_combobox.disconnect()
+    # except Exception:
+    #     print(
+    #         "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
+    main_window.scales_combobox_switch = 0
+
 
     default_scales = ['1']
 
@@ -292,6 +294,7 @@ def generate_scales_queue():
 
     else:
         print("Aborting. Scales were not generated.")
+        main_window.scales_combobox_switch = 1 #may need to more reliably way tp ensure this gets set back to 1
         return  # Want to exit function if no scales are defined
 
     print('Generating scales queue...')
@@ -334,7 +337,7 @@ def generate_scales_queue():
                 scale_key = 'scale_' + scale_key
 
             subdir_path = os.path.join(project_data['data']['destination_path'], scale_key)
-            scale_1_path = os.path.join(project_data['data']['destination_path'], 'scale_1')
+            # scale_1_path = os.path.join(project_data['data']['destination_path'], 'scale_1')
 
             create_project_structure_directories(subdir_path)
 
@@ -455,11 +458,10 @@ def generate_scales_queue():
         scaling_queue.stop()
         del scaling_queue
 
-        #main_window.reload_scales_combobox() #may not need this here
-        main_window.center_all_images()
-
-        print("Reloading scales_combobox...")
-        main_window.reload_scales_combobox()
+        # main_window.center_all_images
+        main_window.image_panel.center_all_images() # <-- dont want parenthesis (?)
+        main_window.reload_scales_combobox() # <-- def need parenthesis
+        main_window.scales_combobox_switch = 1
 
         # print("Connecting scales_combobox to fn_scales_combobox handler...")
         # main_window.scales_combobox.currentTextChanged.connect(main_window.fn_scales_combobox)
@@ -888,7 +890,7 @@ class ZoomPanWidget(QWidget):
             self.draw_full_paths = self.parent.draw_full_paths
         super(ZoomPanWidget, self).update()
 
-        #04-04
+        #04-04 #maybe better at the end of change_layer?
         # if get_cur_snr() is None:
         #     self.setToolTip(str(get_cur_scale()) + '\n' + "Unaligned")  # tooltip #settooltip
         # else:
@@ -1419,6 +1421,9 @@ class ZoomPanWidget(QWidget):
             #0404 #0405 #jy #sus
 
             # self.center_image()  # centering the image sooner may prevent glitch
+            # self.center_image()
+            # ^^ this definitely keeps things centered, but may not be desirable behavior.
+            # zoom should probably be preserved between layer changes
 
             scale = project_data['data']['scales'][project_data['data']['current_scale']]
             layer = scale['alignment_stack'][project_data['data']['current_layer']]
@@ -1437,6 +1442,9 @@ class ZoomPanWidget(QWidget):
                 main_window.swim_input.setText(str(
                     scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method'][
                         'method_data']['win_scale_factor']))
+
+
+        main_window.scales_combobox_switch = 1 #this is precautionary
 
     def wheelEvent(self, event):
         """
@@ -2584,18 +2592,41 @@ class MainWindow(QMainWindow):
         def ng_view():  # ng_view #ngview #neuroglancer
             print("Creating Neuroglancer viewer...")
 
-            if not self.current_project_file_name:
-                print("  (!) There is no open project. Not opening viewer.")
-                self.status.showMessage("There is no project open,  nothing to view.")
+            if getNumAligned() < 1:
+                print("  (!) There is no alignment of the current scale.")
+                show_warning("No Alignment", "There is no alignment to export.\n\n"
+                                             "Typical workflow:\n"
+                                             "(1) Open a project or import images and save.\n"
+                                             "(2) Generate a set of scaled images and save.\n"
+                                             "* (3) Align each scale starting with the coarsest.\n"
+                                             "* (4) Export alignment to Zarr format.\n"
+                                             "(5) View data in Neuroglancer client")
+                print("Aborting ng_view due to 'getNumAligned() < 1' conditoinal.")
                 return
+            else:
+                print("  There appears to be an alignment at the current scale. Continuing...")
 
+            ds_name = "aligned_" + get_cur_scale()
             destination_path = os.path.abspath(project_data['data']['destination_path'])
             zarr_project_path = os.path.join(destination_path, "project.zarr")
+            zarr_ds_path = os.path.join(destination_path, "project.zarr", str("aligned_" + get_cur_scale()))
+            print("zarr_ds_path = ", zarr_ds_path)
 
             if not os.path.isdir(zarr_project_path):
-                print("  (!) No Zarr project file not found.")
-                self.status.showMessage("Project must be exported to Zarr before it can be viewed in Neuroglancer.")
+                print("  (!) The alignment of this scale must be exported before viewing in Neuroglancer.")
+                show_warning("No Alignment", "Alignment at this scale has not been exported to Zarr format.\n\n"
+                                             "Typical workflow:\n"
+                                             "(1) Open a project or import images and save.\n"
+                                             "(2) Generate a set of scaled images and save.\n"
+                                             "(3) Align each scale starting with the coarsest.\n"
+                                             "* (4) Export alignment to Zarr format.\n"
+                                             "(5) View data in Neuroglancer client")
+                print("Aborting ng_view due to 'not os.path.isdir(zarr_project_path)' conditional.")
                 return
+            else:
+                print("  There appears to be an alignment in Zarr format at the current scale. Continuing...")
+
+            self.status.showMessage("Loading Neuroglancer viewer...")
 
             if 'server' in locals():
                 print("Server is already running. Continuing...")
@@ -2653,7 +2684,8 @@ class MainWindow(QMainWindow):
 
             ds_ref = "img_ref_zarr"
             ds_base = "img_base_zarr"
-            ds_aligned = "img_aligned_zarr"
+            # ds_aligned = "img_aligned_zarr" #0406
+            ds_aligned = ds_name
             ds_blended = "img_blended_zarr"
 
             print("Initializing neuroglancer.Viewer()...")
@@ -2709,9 +2741,9 @@ class MainWindow(QMainWindow):
 
                 import numpy as np
 
-                print("type(data_aligned) = ", type(data_aligned))  # <class 'list'>
-                print("type(data_aligned[0]) = ", type(data_aligned[0]))  # <class 'daisy.array.Array'>
-                print("len(data_aligned) = ", len(data_aligned))  # 2
+                # print("type(data_aligned) = ", type(data_aligned))  # <class 'list'>
+                # print("type(data_aligned[0]) = ", type(data_aligned[0]))  # <class 'daisy.array.Array'>
+                # print("len(data_aligned) = ", len(data_aligned))  # 2
 
                 array = np.asarray(data_aligned)
                 # print("type(array) = ", type(array))                       # <class 'numpy.ndarray'>
@@ -2981,19 +3013,35 @@ class MainWindow(QMainWindow):
         def export_zarr():
             print('Exporting to Zarr...')
 
-            if not self.current_project_file_name:
-                print("  (!) There is no project open, nothing to export.")
-                self.status.showMessage("There is no project open, nothing to export.")
+            if getNumAligned() < 1:
+                print("  (!) There is no alignment to export.")
+                show_warning("No Alignment", "There is no alignment to export.\n\n"
+                                             "Typical workflow:\n"
+                                             "(1) Open a project or import images and save.\n"
+                                             "(2) Generate a set of scaled images and save.\n"
+                                             "* (3) Align each scale starting with the coarsest.\n"
+                                             "(4) Export alignment to Zarr format.\n"
+                                             "(5) View data in Neuroglancer client")
+                print("Aborting export_zarr.")
                 return
+            else:
+                print("  There appears to be an alignment at the current scale. Continuing...")
+                self.status.showMessage("Exporting project to Zarr...")
+
+            # allow any scale export...
+            aligned_path = os.path.join(project_data['data']['destination_path'], get_cur_scale(), 'img_aligned')
+            ds_name = "aligned_" + get_cur_scale()
+            print("aligned_path_cur_scale =", aligned_path)
+
+            # # only allow scale_1 export...
+            # aligned_path = os.path.join(project_data['data']['destination_path'], 'scale_1', 'img_aligned')  # aligned_path= scale_1/img_aligned
+            # ds_name = "img_aligned_zarr"
+            # print("  aligned_path                    :", aligned_path)
 
             destination_path = os.path.abspath(project_data['data']['destination_path'])
+            print("  aligned_path                        :", aligned_path)
             print("  destination_path                    :", destination_path)
-            # print("\nproject_data...\n",project_data)
-            scale_1_path = os.path.join(project_data['data']['destination_path'], 'scale_1')  #scale_1_path= scale_1
-            aligned_path = os.path.join(scale_1_path, 'img_aligned')  # aligned_path= scale_1/img_aligned
-            # aligned_path_full = os.path.join(cwd, aligned_path) ???
-            # print("aligned_path_full= ", aligned_path_full) ???
-            print("  aligned_path                    :", aligned_path)
+            print("  ds_name                             :", ds_name)
 
             self.clevel = self.clevel_input.text()
             self.cname = self.cname_combobox.currentText()
@@ -3002,16 +3050,26 @@ class MainWindow(QMainWindow):
             os.chdir(self.pyside_path)
             print("  working directory               :", os.getcwd())
 
-            self.status.showMessage("Exporting project to Zarr...")
+            # if self.cname == "none":
+            #     os.system(
+            #         "python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(
+            #             self.n_scales) + " -nC 1 -d " + destination_path)
+            # else:
+            #     # os.system("./make_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
+            #     os.system(
+            #         "python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(self.n_scales) + " -cN " + str(
+            #             self.cname) + " -cL " + str(self.clevel) + " -d " + destination_path)
+
             if self.cname == "none":
                 os.system(
                     "python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(
-                        self.n_scales) + " -nC 1 -d " + destination_path)
+                        self.n_scales) + " -nC 1 -d " + destination_path + " -n " + ds_name)
             else:
                 # os.system("./make_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
                 os.system(
                     "python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(self.n_scales) + " -cN " + str(
-                        self.cname) + " -cL " + str(self.clevel) + " -d " + destination_path)
+                        self.cname) + " -cL " + str(self.clevel) + " -d " + destination_path + " -n " + ds_name)
+
 
             self.status.showMessage("Export to Zarr complete.")
 
@@ -3023,8 +3081,7 @@ class MainWindow(QMainWindow):
 
         # self.ng_button = QPushButton("Neuroglancer View")
         self.ng_button = QPushButton("Neuroglancer View")
-        self.ng_button.clicked.connect(
-            ng_view)  # HAH the () parenthesis were causing the member function to be evaluated early
+        self.ng_button.clicked.connect(ng_view)  # parenthesis were causing the member function to be evaluated early
         self.ng_button.setFixedSize(std_button_size)
 
         n_scales_label = QLabel("#scales:")
@@ -3693,6 +3750,8 @@ class MainWindow(QMainWindow):
                  ['-', None, None, None, None, None],
                  ['isAlignmentOfCurrentScale', None, isAlignmentOfCurrentScale, None, None, None],
                  ['-', None, None, None, None, None],
+                 ['getNumAligned', None, getNumAligned, None, None, None],
+                 ['-', None, None, None, None, None],
 
                  # ['Define Waves', None, self.not_yet, None, None, None],
                  # ['Make Waves', None, self.not_yet, None, None, None],
@@ -3884,7 +3943,6 @@ class MainWindow(QMainWindow):
         if index >= 0:
             self.scales_combobox.setCurrentIndex(index)
 
-
         self.scales_combobox_switch = 1
 
     # method called by combo box
@@ -3902,9 +3960,11 @@ class MainWindow(QMainWindow):
             if new_curr_scale == '':
                 print("new_curr_scale is empty string")
             project_data['data']['current_scale'] = new_curr_scale
-            self.center_all_images()
+            self.center_all_images() # maybe necessary because center_all_images also performs refresh but why here
         else:
             print("(!) Call to fn_scales_combobox was short-circuited due to conditional")
+
+        self.center_all_images() #better here than in the conditional?
 
 
     @Slot()
@@ -4168,6 +4228,9 @@ class MainWindow(QMainWindow):
 
                 ignore_changes = False
 
+        self.center_all_images() # #0406 just redundancy, discard if possible
+
+
         print_all_skips()
 
         #bug most of the following code should NOT be run if the user exits without picking a project
@@ -4176,9 +4239,7 @@ class MainWindow(QMainWindow):
         print("  open_project > setting project destination (set_def_proj_dest)...")
         self.set_def_proj_dest()
         # self.refresh_all_images()
-        self.center_all_images() # !!!!!!!!!!!! <-- this line for some reason #0404 #0405
-
-
+        # self.center_all_images()
 
         print("  open_project > updating image library (image_library.update)...")
         image_library.update()
@@ -4195,12 +4256,16 @@ class MainWindow(QMainWindow):
         #TODO this should be dynamic to remember scale that user left off on
         # The following will at least always return a valid scale
         # note: converting dicitonary to list so that it can be indexed.
-        project_data['data']['current_scale'] = list(project_data['data']['scales'])[0]
+        # project_data['data']['current_scale'] = list(project_data['data']['scales'])[0] #0406 try without this
 
-        scale_to_match = int(str(project_data['data']['current_scale'].split('_')[1]))
+        # should not need this funny business. reload_scales_combobox takes care of widget representing the JSON
+        # scale_to_match = int(str(project_data['data']['current_scale'].split('_')[1]))
+        # print("scale_to_match = ", scale_to_match)
 
-        self.reload_scales_combobox()  #jy # !!!!!!!!!!!
-        self.scales_combobox_switch = 1 # shouldnt really need this, reload_scales_combobox sets to 1 at the end
+        self.reload_scales_combobox()
+        # self.scales_combobox_switch = 1 # shouldnt really need this, reload_scales_combobox sets to 1 at the end
+
+        self.center_all_images() # I think this needs to happen last, otherwise reference image may not center
 
         # # connect
         # print("  Connecting scales_combobox to fn_scales_combobox handler...")
@@ -4663,8 +4728,7 @@ class MainWindow(QMainWindow):
         # self.update_win_self()
 
         self.import_images(import_role_name, file_name_list)
-
-        self.center_all_images()
+        # self.center_all_images() #0406
 
     @Slot()
     def set_destination(self):
@@ -5194,10 +5258,16 @@ To do:
 [] set project destination instantly upon re-opening a project
 [] dim out "#scales" and "clevel" when compression combobox option "none" is selected
 [] cancel Zarr export
+[x] check if aligned images exist before exporting to Zarr. Cancel and display warning otherwise.
 [] when quitting without a recent save, have option to save first
 [] call 'Apply Affine' something more descriptive, or make its function more clear ('Force Affine'?)
 [] add a place to take notes (see: https://pythonbasics.org/pyqt-menubar/)
 [] Should be able to export aligned to Zarr at any scale
+[] project status indicator
+
+Things project_data should include:
+* is project scaled (bool)
+* scales with alignments so-far generated (list of strings, i.e. ['scale_4', 'scale_2'])
 
 To do (Zarr/precomputed):
 [] look into making pre-computed format multithreaded
@@ -5249,7 +5319,11 @@ print(inspect.stack()[1].function)
 """
 
 """
-After aligning, images should be centered
+Print/return the number of aligned images in  <project destination>/<current scale>/img_aligned
+
+DIR = os.path.join(project_data['data']['destination_path'], get_cur_scale(), 'img_aligned')
+print(len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))]))
+
 
 """
 
