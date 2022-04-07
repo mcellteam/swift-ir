@@ -78,7 +78,8 @@ use_file_io = False
 show_skipped_images = True
 
 preloading_range = 3
-max_image_file_size = 1000000000
+# max_image_file_size = 1000000000 #original
+max_image_file_size = 50000000000
 crop_window_mode = 'mouse_rectangle'  # mouse_rectangle or mouse_square or fixed
 crop_window_width = 1024
 crop_window_height = 1024
@@ -481,7 +482,7 @@ def load_image_worker(real_norm_path, image_dict):
     print_debug(50, "load_image_worker finished for:" + str(real_norm_path))
     image_library.print_load_status()
 
-
+#imagelibrary
 class ImageLibrary:
     """A class containing multiple images keyed by their file name."""
 
@@ -799,7 +800,7 @@ class SmartImageLibrary:
         self.prev_layer_index = cur_layer_index
 
 
-image_library = ImageLibrary()
+image_library = ImageLibrary() #imagelibrary
 
 
 class ZoomPanWidget(QWidget):
@@ -808,7 +809,7 @@ class ZoomPanWidget(QWidget):
     def __init__(self, role, parent=None):
         super(ZoomPanWidget, self).__init__(parent)
         print("ZoomPanWidget constructor called.")
-        self.role = role
+        self.role = role #current role
 
         self.parent = None
         self.already_painting = False
@@ -908,6 +909,8 @@ class ZoomPanWidget(QWidget):
         self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
         clear_crop_settings()
 
+    # ZoomPanWidget.center_image called once for each role/panel
+    @dumpit
     def center_image(self, all_images_in_stack=True):
         # print("  ZoomPanWidget is centering image for " + str(self.role))
         #print("'center_image' called by ", inspect.stack()[1].function) #0406
@@ -923,10 +926,44 @@ class ZoomPanWidget(QWidget):
 
                     image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
 
+                    '''
+                    "base": {
+                "filename": "/Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.101.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+                  },
+                  "ref": {
+                    "filename": "",
+                    "metadata": {
+                      "annotations": [],
+                      "match_points": []
+                    }
+                    '''
+
+
                     if self.role in image_dict.keys():
+                        print("current role: ", self.role)
                         ann_image = image_dict[self.role]
+                        print("ann_image = type(image_dict[self.role]) = ", type(image_dict[self.role]))
                         pixmap = image_library.get_image_reference(ann_image['filename'])
+                        print("pixmap = ", str(pixmap))
+
+                        try:
+                            print("pixmap.width() = ", pixmap.width())
+                        except:
+                            print("could not print pixmap.width()")
+                        try:
+                            print("pixmap.height() = ", pixmap.height())
+                        except:
+                            print("could not print pixmap.height()")
+                        print("type(all_images_in_stack) = ", type(all_images_in_stack)) # type = bool
+                        print("type(pixmap) = ", type(pixmap)) # <class 'PySide6.QtGui.QPixmap'>
+
+
                         if (pixmap != None) or all_images_in_stack:
+                            print("conditional was run: if (pixmap != None) or all_images_in_stack ")
                             img_w = 0
                             img_h = 0
                             if pixmap != None:
@@ -934,12 +971,18 @@ class ZoomPanWidget(QWidget):
                                 img_h = pixmap.height()
                             win_w = self.width()
                             win_h = self.height()
+
+                            print("win_w = ", win_w)
+                            print("win_h = ", win_h)
+
                             if all_images_in_stack:
+
                                 # Search through all images in this stack to find bounds
                                 stack = project_data['data']['scales'][s]['alignment_stack']
                                 for layer in stack:
                                     if 'images' in layer.keys():
                                         if self.role in layer['images'].keys():
+                                            #0407
                                             other_pixmap = image_library.get_image_reference_if_loaded(
                                                 layer['images'][self.role]['filename'])
                                             if other_pixmap != None:
@@ -1176,7 +1219,7 @@ class ZoomPanWidget(QWidget):
 
         crop_mode = False
 
-        #jy-remove #0405 #keep crop_mode false
+        #remove #0405 #keep crop_mode false
         #jy if I need to reimplement crop mode, do it differently, not through crop_mode_callback and derived widgets
         # if crop_mode_callback != None:
         #     mode = crop_mode_callback()
@@ -1685,7 +1728,7 @@ class ZoomPanWidget(QWidget):
 
             self.already_painting = False
 
-
+#multiimagepanel
 class MultiImagePanel(QWidget):
 
     def __init__(self):
@@ -1844,7 +1887,7 @@ class MultiImagePanel(QWidget):
             main_window.update_base_label()
             main_window.update_ref_label()
 
-
+    # MultiImagePanel.center_all_images
     def center_all_images(self, all_images_in_stack=True):
         print("  MultiImagePanel is centering all images...")
         if self.actual_children != None:
@@ -2420,8 +2463,10 @@ class MainWindow(QMainWindow):
         # print("Setting multiprocessing.set_start_method('fork', force=True)...")
         # multiprocessing.set_start_method('fork', force=True)
 
+        #size #buttonsize
         # std_button_size = QSize(130, 28)
         std_button_size = QSize(120, 28)
+        std_combo_size = int(120)
 
 
         # titlebar resource
@@ -2683,8 +2728,8 @@ class MainWindow(QMainWindow):
                 zattrs_keys = json.load(f)
             print("zattrs_path : ", zattrs_path)
             resolution = zattrs_keys["resolution"]
-            # scales = zattrs_keys["scales"]  #0405 #0406 #jy-remove
-            # print("scales : ", scales)  #0405 #0406 #jy-remove
+            # scales = zattrs_keys["scales"]  #0405 #0406 #remove
+            # print("scales : ", scales)  #0405 #0406 #remove
 
             ds_ref = "img_ref_zarr"
             ds_base = "img_base_zarr"
@@ -3109,6 +3154,7 @@ class MainWindow(QMainWindow):
         self.cname_combobox = QComboBox(self)
         self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
         self.cname_combobox.setMinimumWidth(60)
+        self.cname_combobox.setMaximumWidth(std_combo_size)
 
         #-------------------------------------
         #           EXTRA FUNCTIONS
@@ -3344,7 +3390,7 @@ class MainWindow(QMainWindow):
         # self.scales_combobox.addItems([skip_list])
         # self.scales_combobox.addItems(['--'])
         self.scales_combobox.setFocusPolicy(Qt.NoFocus)
-        self.scales_combobox.setMaximumWidth(130)
+        self.scales_combobox.setMaximumWidth(std_combo_size)
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
         #0405
@@ -3372,7 +3418,7 @@ class MainWindow(QMainWindow):
         self.affine_combobox = QComboBox(self)  # thing_to_do #init_ref_app #affine
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
         self.affine_combobox.setFocusPolicy(Qt.NoFocus)
-        self.affine_combobox.setMaximumWidth(130)
+        self.affine_combobox.setMaximumWidth(std_combo_size)
 
         from alignem_swift import align_all_or_some  # align_all_or_some
         # self.align_all_button = QPushButton('Align All')
@@ -4119,12 +4165,13 @@ class MainWindow(QMainWindow):
         project_data['data']['destination_path'] = None
 
         self.set_scales_from_string("1")
-        # self.define_scales_menu ( ["1"] ) #jy-remove
+        # self.define_scales_menu ( ["1"] ) #remove
 
         self.scales_combobox.clear()
         # self.scales_combobox.addItems(['--'])
 
-        self.setWindowTitle("No Project File")
+        # self.setWindowTitle("No Project File") #0407 #remove
+        #
         self.status.showMessage("Project File:       Destination: ")
         self.actual_size()
 
@@ -5111,6 +5158,7 @@ class MainWindow(QMainWindow):
             p.update_zpa_self()
             p.repaint()
 
+    # MainWindow.center_all_images -> calls MultiImagePanel.center_all_images
     @Slot()
     def center_all_images(self, all_images_in_stack=True):
         print("  MainWindow is centering all images (called by " + inspect.stack()[1].function + ")...")

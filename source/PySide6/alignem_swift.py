@@ -8,6 +8,7 @@ from source_tracker import get_hash_and_rev
 
 from PySide6.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar, QMessageBox
 from PySide6.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
+from PySide6.QtGui import QImageReader
 
 from joel_decs import timeit, profileit, dumpit, traceit, countit
 from glanceem_utils import RequestHandler, Server, get_viewer_url
@@ -794,7 +795,7 @@ def generate_scales_optimized():
 
     # main_win.status.showMessage("Done Generating Scales ...")
 
-
+@dumpit
 def get_file_io_mode():
     print('Getting file IO mode | get_file_io_mode...')
     ### All of this code is just trying to find the right menu item for the "Use File I/O" check box:
@@ -1724,6 +1725,10 @@ if __name__ == "__main__":
     enable_stats = 0
     main_window_size_x = 1420
     main_window_size_y = 700
+
+    print("QImageReader.allocationLimit() = " + str(QImageReader.allocationLimit()) + "MB")
+    QImageReader.setAllocationLimit(4000)
+    print("New QImageReader.allocationLimit() = " + str(QImageReader.allocationLimit()) + "MB")
 
     if args.parallel != None:
         global_parallel_mode = args.parallel != 0
