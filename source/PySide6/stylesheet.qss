@@ -387,11 +387,20 @@ QFontComboBox {
 }
 QComboBox {
 	color: #d3dae3;
-	background-color: #222b2e;
+	/* background-color: #222b2e; */ /* light */
+	background-color: #151a1e; /* dark */
 	border-width: 1px;
 	border-style: solid;
 	border-color: #4fa08b;
 }
+
+/* this applies to the dropdown */
+QComboBox QAbstractItemView {
+     /*border: 2px solid darkgray;*/
+     /*selection-background-color: lightgray;*/
+     background-color: #151a1e; /* dark */
+
+ }
 
 QDial {
 	background: #16a085;
