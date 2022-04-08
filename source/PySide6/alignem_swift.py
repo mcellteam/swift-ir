@@ -1072,12 +1072,15 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     print('\nalign_all_or_some(...):\n')
     actually_remove = True
 
+    print("  actually_remove = ", actually_remove)
+
     """
     TODO: Need to check if images have been imported
     
     """
 
     if isDestinationSet():
+        print("  project destination is apparently set")
         pass
     else:
         print("(!) User clicked align but the destination is not set. Aborting alignment.")
@@ -1095,6 +1098,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
 
     if isProjectScaled():
+        print("  project is apparently scaled")
         #debug isProjectScaled() might be returning True incorrectly sometimes
         pass
     else:
@@ -1164,10 +1168,15 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         # alignem.print_debug(5, 40 * '=@' + '=')
         # alignem.print_debug(5, 40 * '@=' + '@')
         alignem.print_debug(5, '')
+
+        print("Calling align_layers w/ first_layer = " + str(first_layer) + "  | num_layers = " + str(num_layers))
         align_layers(first_layer, num_layers) # <-- CALL TO 'align_layers'
+
+
         refresh_all()
 
     # center
+    print("Wrapping up align_all_or_some(...)")
     alignem.main_window.center_all_images()
     alignem.main_window.update_win_self()
     print("Exiting align_all_or_some(...)")
@@ -1204,16 +1213,19 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
 
         dm = copy.deepcopy(alignem.project_data)
 
-        code_mode = 'c'
-
+        code_mode = 'c' #jy force c mode for now
+        print('Setting: running_project = project_runner.project_runner(...)')
         running_project = project_runner.project_runner(project=dm,
                                                         use_scale=alignem.get_scale_val(scale_to_run_text),
                                                         swiftir_code_mode=code_mode,
                                                         start_layer=first_layer,
                                                         num_layers=num_layers,
                                                         use_file_io=global_use_file_io)
+        print('Calling: running_project.generate_aligned_images()')
         running_project.generate_aligned_images()
+        print('Setting: updated_model = running_project.get_updated_data_model() | type=',type(updated_model))
         updated_model = running_project.get_updated_data_model()
+        print('Setting: need_to_write_json = running_project.need_to_write_json | need_to_write_json = ', need_to_write_json)
         need_to_write_json = running_project.need_to_write_json
 
         if need_to_write_json:
@@ -1224,9 +1236,11 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
         refresh_all()
 
     # center
+    print("Wrapping up align_layers...")
     alignem.main_window.center_all_images()
     alignem.main_window.update_win_self()
     refresh_all()
+    print("Exit align_layers")
 
 
 def jump_to_layer():
@@ -1245,12 +1259,13 @@ def jump_to_layer():
 
 
 def center_all():
-    print('Centering all | center_all...')
-    main_win.center_all_images()
+    print('alignem.main_window.center_all_images() was called from alignem_swift.py')
+    # main_win.center_all_images() #0408 #changed because below should be the correct call
+    alignem.main_window.center_all_images()
 
 
 def refresh_all():
-    print('Refreshing all | refresh_all...')
+    print('alignem.main_window.refresh_all_images() was called from alignem_swift.py')
     # main_win.refresh_all_images () #bug
     alignem.main_window.refresh_all_images()  # fix
 
@@ -1726,9 +1741,9 @@ if __name__ == "__main__":
     main_window_size_x = 1420
     main_window_size_y = 700
 
-    print("QImageReader.allocationLimit() = " + str(QImageReader.allocationLimit()) + "MB")
+    print("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
     QImageReader.setAllocationLimit(4000)
-    print("New QImageReader.allocationLimit() = " + str(QImageReader.allocationLimit()) + "MB")
+    print("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
 
     if args.parallel != None:
         global_parallel_mode = args.parallel != 0
@@ -1783,6 +1798,7 @@ if __name__ == "__main__":
           ", parallel mode = " + str(global_parallel_mode) + "\n")
 
     # main_win = alignem.MainWindow(control_model=control_model, title="GlanceEM_SWiFT")
+    print('(alignem_swift.py main) Creating a MainWindow instance as main_win = alignem.MainWindow(title="GlanceEM_SWiFT")')
     main_win = alignem.MainWindow(title="GlanceEM_SWiFT")
 
     # # this works to set a background:
@@ -1794,7 +1810,7 @@ if __name__ == "__main__":
     #     }
     # """
     # main_win.setStyleSheet(stylesheet)
-
+    print('Registering callbacks...')
     main_win.register_view_change_callback(view_change_callback)
     main_win.register_mouse_move_callback(mouse_move_callback)
     main_win.register_mouse_down_callback(mouse_down_callback)
@@ -1802,6 +1818,7 @@ if __name__ == "__main__":
     alignem.update_linking_callback = update_linking_callback
     alignem.update_skips_callback = update_skips_callback
 
+    print("Resizing main_win to    width=" + str(main_window_size_x) + "    height=" + str(main_window_size_y))
     # main_win.resize(1420,655)  #original This value is typically chosen to show all widget text
     main_win.resize(main_window_size_x, main_window_size_y)  # This value is typically chosen to show all widget text
 
@@ -1809,7 +1826,7 @@ if __name__ == "__main__":
     # main_win.register_project_save ( save_json_project )
     # main_win.register_gen_scales ( generate_scales )
 
-    alignem.print_debug(30, "================= Defining Roles =================")
+    # alignem.print_debug(30, "================= Defining Roles =================")
 
     main_win.define_roles(swift_roles)
 

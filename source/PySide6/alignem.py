@@ -948,6 +948,11 @@ class ZoomPanWidget(QWidget):
                         ann_image = image_dict[self.role] # <class 'dict'>
                         pixmap = image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
 
+                        if pixmap is None:
+                            print("WARNING: 'pixmap' is set to None")
+                        else:
+                            pass
+
                         if (pixmap != None) or all_images_in_stack:
                             img_w = 0
                             img_h = 0
@@ -957,7 +962,7 @@ class ZoomPanWidget(QWidget):
                             win_w = self.width()
                             win_h = self.height()
 
-                            print("win_w = " + str(win_w) + "win_h = " + str(win_h))
+                            print("win_w=" + str(win_w) + "  win_h=" + str(win_h))
 
                             if all_images_in_stack:
 
@@ -5159,7 +5164,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def all_images_actual_size(self):
-        print("  MainWindow is actual-sizing all images (called by " + inspect.stack()[1].function + ")...")
+        print("WARNING: actual-sizing all images (called by " + inspect.stack()[1].function + ")...")
         self.image_panel.all_images_actual_size()
 
     @Slot()
