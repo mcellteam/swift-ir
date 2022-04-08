@@ -177,7 +177,6 @@ def makedirs_exist_ok(path_to_build, exist_ok=False):
 def show_warning(title, text):
     QMessageBox.warning(None, title, text)
 
-@dumpit
 def request_confirmation(title, text):
     button = QMessageBox.question(None, title, text)
     print_debug(50, "You clicked " + str(button))
@@ -910,7 +909,6 @@ class ZoomPanWidget(QWidget):
         clear_crop_settings()
 
     # ZoomPanWidget.center_image called once for each role/panel
-    @dumpit
     def center_image(self, all_images_in_stack=True):
         # print("  ZoomPanWidget is centering image for " + str(self.role))
         #print("'center_image' called by ", inspect.stack()[1].function) #0406
@@ -2630,8 +2628,8 @@ class MainWindow(QMainWindow):
             print("Creating Neuroglancer viewer...")
             print("getNumAligned() = ", getNumAligned())
             if getNumAligned() < 1:
-                print("  (!) There is no alignment of the current scale.")
-                show_warning("No Alignment", "There is no alignment to export.\n\n"
+                print("  (!) There is no alignment of the current scale. Aborting ng_view()...")
+                show_warning("No Alignment", "There is no alignment to view. Viewing nothing in Neuroglancer is not supported.\n\n"
                                              "Typical workflow:\n"
                                              "(1) Open a project or import images and save.\n"
                                              "(2) Generate a set of scaled images and save.\n"
@@ -2650,8 +2648,8 @@ class MainWindow(QMainWindow):
             print("zarr_ds_path = ", zarr_ds_path)
 
             if not os.path.isdir(zarr_project_path):
-                print("  (!) The alignment of this scale must be exported before viewing in Neuroglancer.")
-                show_warning("No Alignment", "Alignment at this scale has not been exported to Zarr format.\n\n"
+                print("  (!) The alignment of this scale must be exported before it can be viewed in Neuroglancer. Aborting ng_view()...")
+                show_warning("No Alignment", "Alignment must be exported before viewing in Neuroglancer.\n\n"
                                              "Typical workflow:\n"
                                              "(1) Open a project or import images and save.\n"
                                              "(2) Generate a set of scaled images and save.\n"
@@ -3052,7 +3050,11 @@ class MainWindow(QMainWindow):
 
             # if getNumAligned() < 1:
             if isAlignmentOfCurrentScale():
-                print("  (!) There is no alignment to export.")
+                print("  There appears to be an alignment at the current scale. Continuing...")
+                pass
+            else:
+                self.status.showMessage("Exporting project to Zarr...")
+                print("  (!) There is no alignment to export. Aborting export_zarr()...")
                 show_warning("No Alignment", "There is no alignment to export.\n\n"
                                              "Typical workflow:\n"
                                              "(1) Open a project or import images and save.\n"
@@ -3060,11 +3062,8 @@ class MainWindow(QMainWindow):
                                              "* (3) Align each scale starting with the coarsest.\n"
                                              "(4) Export alignment to Zarr format.\n"
                                              "(5) View data in Neuroglancer client")
-                print("Aborting export_zarr.")
                 return
-            else:
-                print("  There appears to be an alignment at the current scale. Continuing...")
-                self.status.showMessage("Exporting project to Zarr...")
+
 
             # allow any scale export...
             aligned_path = os.path.join(project_data['data']['destination_path'], get_cur_scale(), 'img_aligned')
@@ -3836,6 +3835,24 @@ class MainWindow(QMainWindow):
             #  ]
             #  ]
         ]
+
+        # This could be used to optionally simplify menus:
+        '''
+        if simple_mode:
+            ml[0] = [ '&File',
+                [
+                  [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
+                  [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Save &Cropped As...', None, self.save_cropped_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
+                ]
+              ]
+
+        '''
 
         # This could be used to optionally simplify menus:
         '''
@@ -5312,6 +5329,7 @@ To do:
 [] project status indicator
 [] there should ALWAYS be a scale 1, not just when scales are generated
 [] underlined letters for hotkeys
+[] forget/remove all images from project function
 
 Things project_data should include:
 * is project scaled (bool)
