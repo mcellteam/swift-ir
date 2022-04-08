@@ -125,14 +125,15 @@ if __name__ == '__main__':
     multiprocessing.set_start_method('fork', force=True)
 
     #f_out = "project.zarr"  # jy
-    f_out = aligned_path_full = os.path.join(args.destination, 'project.zarr')
+    f_out = os.path.join(args.destination, 'project.zarr')
+    ds_path = os.path.join(f_out, ds_name)
     store = zarr.NestedDirectoryStore('data/array.zarr')
     print('f_out                           :', f_out)
 
-    if os.path.isdir(f_out):
-        print('Deleting existing directory', f_out, '...')
+    if os.path.isdir(ds_path):
+        print('Overwriting existing directory', ds_path, '...')
         try:
-            shutil.rmtree(f_out)
+            shutil.rmtree(ds_path)
         except:
             print('Error while deleting directory', f_out)
 

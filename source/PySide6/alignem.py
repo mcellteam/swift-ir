@@ -891,10 +891,10 @@ class ZoomPanWidget(QWidget):
         super(ZoomPanWidget, self).update()
 
         #04-04 #maybe better at the end of change_layer?
-        # if get_cur_snr() is None:
-        #     self.setToolTip(str(get_cur_scale()) + '\n' + "Unaligned")  # tooltip #settooltip
-        # else:
-        #     self.setToolTip(str(get_cur_scale()) + '\n' + str(get_cur_snr()))  # tooltip #settooltip
+        if get_cur_snr() is None:
+            self.setToolTip(self.role + "\n" + str(get_cur_scale()) + '\n' + "Unaligned")  # tooltip #settooltip
+        else:
+            self.setToolTip(self.role + "\n" + str(get_cur_scale()) + '\n' + str(get_cur_snr()))  # tooltip #settooltip
 
     def show_actual_size(self):
         print("Showing actual size | ZoomPanWidget.show_actual_size...")
@@ -2039,7 +2039,7 @@ def unchunk(s):
     print("\n'u' key press detected. Executing unchunk callback function...\n")
     destination_path = os.path.abspath(project_data['data']['destination_path'])
     path = zarr_project_path = os.path.join(destination_path, "project.zarr")
-    ds_aligned = "img_aligned_zarr"
+    ds_aligned = str("aligned_" + get_cur_scale())
     print("'u' key press detected. Executing unchunk function...")
     # this is parallel
     path = zarr_project_path
@@ -2067,7 +2067,7 @@ def blend(s):
     print("current working dir :", os.getcwd())
     destination_path = os.path.abspath(project_data['data']['destination_path'])
     src = zarr_project_path = os.path.join(destination_path, "project.zarr")
-    ds_aligned = "img_aligned_zarr"
+    ds_aligned = str("aligned_" + get_cur_scale())
     # blend_scale = 0
     blend_scale = 2
     n_blend = int(s.mouse_voxel_coordinates[2])
@@ -2695,7 +2695,7 @@ class MainWindow(QMainWindow):
 
             # LOAD METADATA - .zarray
             print("Loading metadata from .zarray (array details) file...")
-            zarray_path = os.path.join(src, "img_aligned_zarr", "s0", ".zarray")
+            zarray_path = os.path.join(src, ds_name, "s0", ".zarray")
             print("zarray_path : ", zarray_path)
             with open(zarray_path) as f:
                 zarray_keys = json.load(f)
@@ -2709,7 +2709,7 @@ class MainWindow(QMainWindow):
 
             # LOAD META DATA - .zattrs
             print("Loading metadata from .zattrs (attributes) file...")
-            zattrs_path = os.path.join(src, "img_aligned_zarr", "s0", ".zattrs")
+            zattrs_path = os.path.join(src, ds_name, "s0", ".zattrs")
             with open(zattrs_path) as f:
                 zattrs_keys = json.load(f)
             print("zattrs_path : ", zattrs_path)
@@ -3076,9 +3076,9 @@ class MainWindow(QMainWindow):
             # print("  aligned_path                    :", aligned_path)
 
             destination_path = os.path.abspath(project_data['data']['destination_path'])
-            print("  aligned_path                        :", aligned_path)
-            print("  destination_path                    :", destination_path)
-            print("  ds_name                             :", ds_name)
+            print("  swift-ir aligned images path        :", aligned_path)
+            print("  destination path (Zarr)             :", destination_path)
+            print("  data set name                       :", ds_name)
 
             self.clevel = self.clevel_input.text()
             self.cname = self.cname_combobox.currentText()
