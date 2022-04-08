@@ -474,326 +474,326 @@ def gen_scales_with_thread():
         # main_win.status.showMessage("Done Generating Scales ...")
 
 
-def generate_scales_queue():
-    print('Generating scales queue (generate_scales_queue called by ' + inspect.stack()[1].function + ')...')
+# def generate_scales_queue():
+#     print('Generating scales queue (generate_scales_queue called by ' + inspect.stack()[1].function + ')...')
+#
+#     image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
+#
+#     alignem.print_debug(2, "Create images at all scales: " + str(image_scales_to_run))
+#
+#     if (alignem.project_data['data']['destination_path'] == None) or (
+#             len(alignem.project_data['data']['destination_path']) <= 0):
+#
+#         alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
+#
+#     else:
+#
+#         ### Create the queue here
+#         #      task_queue.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+#         #      task_wrapper.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+#         #      scaling_queue = task_queue.TaskQueue (sys.executable)
+#         #      cpus = psutil.cpu_count (logical=False)
+#         #      scaling_queue.start (cpus)
+#         #      scaling_queue.notify = False
+#         #      scaling_queue.passthrough_stdout = False
+#         #      scaling_queue.passthrough_stderr = False
+#
+#         # Use task_queue_mp
+#         scaling_queue = task_queue.TaskQueue()
+#         cpus = psutil.cpu_count(logical=False)
+#         if cpus > 48:
+#             cpus = 48
+#         scaling_queue.start(cpus)
+#
+#         for scale in sorted(image_scales_to_run):
+#
+#             alignem.print_debug(70, "Creating images for scale " + str(scale))
+#             # main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+#
+#             scale_key = str(scale)
+#             if not 'scale_' in scale_key:
+#                 scale_key = 'scale_' + scale_key
+#
+#             subdir_path = os.path.join(alignem.project_data['data']['destination_path'], scale_key)
+#             scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1')
+#
+#             create_project_structure_directories(subdir_path)
+#
+#             alignem.print_debug(70, "Begin creating images at each layer for key: " + str(scale_key))
+#
+#             for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+#                 alignem.print_debug(40, "Generating images for layer: \"" + str(
+#                     alignem.project_data['data']['scales'][scale_key]['alignment_stack'].index(layer)) + "\"")
+#                 # Remove previously aligned images from panel ??
+#
+#                 # Copy (or link) the source images to the expected scale_key"/img_src" directory
+#                 for role in layer['images'].keys():
+#
+#                     # Only copy files for roles "ref" and "base"
+#
+#                     if role in ['ref', 'base']:
+#                         alignem.print_debug(40, "Generating images for role: \"" + role + "\"")
+#                         base_file_name = layer['images'][role]['filename']
+#                         if base_file_name != None:
+#                             if len(base_file_name) > 0:
+#                                 abs_file_name = os.path.abspath(base_file_name)
+#                                 bare_file_name = os.path.split(abs_file_name)[1]
+#                                 destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
+#                                 outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
+#                                 if scale == 1:
+#                                     if get_best_path(abs_file_name) != get_best_path(outfile_name):
+#                                         # The paths are different so make the link
+#                                         try:
+#                                             alignem.print_debug(70, "UnLinking " + outfile_name)
+#                                             os.unlink(outfile_name)
+#                                         except:
+#                                             alignem.print_debug(70, "Error UnLinking " + outfile_name)
+#                                         try:
+#                                             alignem.print_debug(70,
+#                                                                 "Linking from " + abs_file_name + " to " + outfile_name)
+#                                             os.symlink(abs_file_name, outfile_name)
+#                                         except:
+#                                             alignem.print_debug(5,
+#                                                                 "Unable to link from " + abs_file_name + " to " + outfile_name)
+#                                             alignem.print_debug(5, "Copying file instead")
+#                                             # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
+#                                             try:
+#                                                 shutil.copy(abs_file_name, outfile_name)
+#                                             except:
+#                                                 alignem.print_debug(1,
+#                                                                     "Unable to link or copy from " + abs_file_name + " to " + outfile_name)
+#                                                 print_exception()
+#                                 else:
+#                                     try:
+#                                         # Do the scaling
+#                                         alignem.print_debug(70,
+#                                                             "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
+#                                                                 scale))
+#
+#                                         if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
+#                                             1].startswith('scale_'):
+#                                             # Convert the source from whatever scale is currently processed to scale_1
+#                                             p, f = os.path.split(abs_file_name)
+#                                             p, r = os.path.split(p)
+#                                             p, s = os.path.split(p)
+#                                             abs_file_name = os.path.join(p, 'scale_1', r, f)
+#
+#                                         ### Add this job to the task queue
+#                                         code_mode = 'c'
+#                                         if code_mode == 'python':
+#                                             scaling_queue.add_task(cmd=sys.executable,
+#                                                                    args=['single_scale_job.py', str(scale),
+#                                                                          str(abs_file_name), str(outfile_name)], wd='.')
+#                                         else:
+#                                             # Configure platform-specific path to executables for C SWiFT-IR
+#                                             my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+#                                             my_system = platform.system()
+#                                             my_node = platform.node()
+#                                             if my_system == 'Darwin':
+#                                                 iscale2_c = my_path + '../c/bin_darwin/iscale2'
+#                                             elif my_system == 'Linux':
+#                                                 if '.tacc.utexas.edu' in my_node:
+#                                                     iscale2_c = my_path + '../c/bin_tacc/iscale2'
+#                                                 else:
+#                                                     iscale2_c = my_path + '../c/bin_linux/iscale2'
+#
+#                                             scale_arg = '+%d' % (scale)
+#                                             outfile_arg = 'of=%s' % (outfile_name)
+#                                             infile_arg = '%s' % (abs_file_name)
+#                                             #                        scaling_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
+#                                             scaling_queue.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
+#
+#                                         # These two lines generate the scales directly rather than through the queue
+#                                         # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+#                                         # align_swiftir.swiftir.saveImage ( img, outfile_name )
+#
+#                                         # Change the base image for this scale to the new file
+#                                         layer['images'][role]['filename'] = outfile_name
+#                                     except:
+#                                         alignem.print_debug(1,
+#                                                             "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
+#                                                                 scale))
+#                                         print_exception()
+#
+#                                 # Update the Data Model with the new absolute file name. This replaces the originally opened file names
+#                                 alignem.print_debug(40, "Original File Name: " + str(layer['images'][role]['filename']))
+#                                 layer['images'][role]['filename'] = outfile_name
+#                                 alignem.print_debug(40, "Updated  File Name: " + str(layer['images'][role]['filename']))
+#
+#         ### Join the queue here to ensure that all have been generated before returning
+#         alignem.print_debug(1, "Waiting for Generate Scales to Complete...")
+#         #      scaling_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+#         t0 = time.time()
+#         scaling_queue.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+#         dt = time.time() - t0
+#         alignem.print_debug(1, "Generate Scales Completed in %.2f seconds" % (dt))
+#
+#         # Stop the queue
+#         #      scaling_queue.shutdown()
+#         scaling_queue.stop()
+#         del scaling_queue
+#
+#     # center
+#     alignem.main_window.center_all_images()
+#     alignem.main_window.update_win_self()
+#
+#     # main_win.status.showMessage("Done Generating Scales ...")
 
-    image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
 
-    alignem.print_debug(2, "Create images at all scales: " + str(image_scales_to_run))
-
-    if (alignem.project_data['data']['destination_path'] == None) or (
-            len(alignem.project_data['data']['destination_path']) <= 0):
-
-        alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
-
-    else:
-
-        ### Create the queue here
-        #      task_queue.DEBUG_LEVEL = alignem.DEBUG_LEVEL
-        #      task_wrapper.DEBUG_LEVEL = alignem.DEBUG_LEVEL
-        #      scaling_queue = task_queue.TaskQueue (sys.executable)
-        #      cpus = psutil.cpu_count (logical=False)
-        #      scaling_queue.start (cpus)
-        #      scaling_queue.notify = False
-        #      scaling_queue.passthrough_stdout = False
-        #      scaling_queue.passthrough_stderr = False
-
-        # Use task_queue_mp
-        scaling_queue = task_queue.TaskQueue()
-        cpus = psutil.cpu_count(logical=False)
-        if cpus > 48:
-            cpus = 48
-        scaling_queue.start(cpus)
-
-        for scale in sorted(image_scales_to_run):
-
-            alignem.print_debug(70, "Creating images for scale " + str(scale))
-            # main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
-
-            scale_key = str(scale)
-            if not 'scale_' in scale_key:
-                scale_key = 'scale_' + scale_key
-
-            subdir_path = os.path.join(alignem.project_data['data']['destination_path'], scale_key)
-            scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1')
-
-            create_project_structure_directories(subdir_path)
-
-            alignem.print_debug(70, "Begin creating images at each layer for key: " + str(scale_key))
-
-            for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
-                alignem.print_debug(40, "Generating images for layer: \"" + str(
-                    alignem.project_data['data']['scales'][scale_key]['alignment_stack'].index(layer)) + "\"")
-                # Remove previously aligned images from panel ??
-
-                # Copy (or link) the source images to the expected scale_key"/img_src" directory
-                for role in layer['images'].keys():
-
-                    # Only copy files for roles "ref" and "base"
-
-                    if role in ['ref', 'base']:
-                        alignem.print_debug(40, "Generating images for role: \"" + role + "\"")
-                        base_file_name = layer['images'][role]['filename']
-                        if base_file_name != None:
-                            if len(base_file_name) > 0:
-                                abs_file_name = os.path.abspath(base_file_name)
-                                bare_file_name = os.path.split(abs_file_name)[1]
-                                destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
-                                outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
-                                if scale == 1:
-                                    if get_best_path(abs_file_name) != get_best_path(outfile_name):
-                                        # The paths are different so make the link
-                                        try:
-                                            alignem.print_debug(70, "UnLinking " + outfile_name)
-                                            os.unlink(outfile_name)
-                                        except:
-                                            alignem.print_debug(70, "Error UnLinking " + outfile_name)
-                                        try:
-                                            alignem.print_debug(70,
-                                                                "Linking from " + abs_file_name + " to " + outfile_name)
-                                            os.symlink(abs_file_name, outfile_name)
-                                        except:
-                                            alignem.print_debug(5,
-                                                                "Unable to link from " + abs_file_name + " to " + outfile_name)
-                                            alignem.print_debug(5, "Copying file instead")
-                                            # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
-                                            try:
-                                                shutil.copy(abs_file_name, outfile_name)
-                                            except:
-                                                alignem.print_debug(1,
-                                                                    "Unable to link or copy from " + abs_file_name + " to " + outfile_name)
-                                                print_exception()
-                                else:
-                                    try:
-                                        # Do the scaling
-                                        alignem.print_debug(70,
-                                                            "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
-                                                                scale))
-
-                                        if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
-                                            1].startswith('scale_'):
-                                            # Convert the source from whatever scale is currently processed to scale_1
-                                            p, f = os.path.split(abs_file_name)
-                                            p, r = os.path.split(p)
-                                            p, s = os.path.split(p)
-                                            abs_file_name = os.path.join(p, 'scale_1', r, f)
-
-                                        ### Add this job to the task queue
-                                        code_mode = 'c'
-                                        if code_mode == 'python':
-                                            scaling_queue.add_task(cmd=sys.executable,
-                                                                   args=['single_scale_job.py', str(scale),
-                                                                         str(abs_file_name), str(outfile_name)], wd='.')
-                                        else:
-                                            # Configure platform-specific path to executables for C SWiFT-IR
-                                            my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-                                            my_system = platform.system()
-                                            my_node = platform.node()
-                                            if my_system == 'Darwin':
-                                                iscale2_c = my_path + '../c/bin_darwin/iscale2'
-                                            elif my_system == 'Linux':
-                                                if '.tacc.utexas.edu' in my_node:
-                                                    iscale2_c = my_path + '../c/bin_tacc/iscale2'
-                                                else:
-                                                    iscale2_c = my_path + '../c/bin_linux/iscale2'
-
-                                            scale_arg = '+%d' % (scale)
-                                            outfile_arg = 'of=%s' % (outfile_name)
-                                            infile_arg = '%s' % (abs_file_name)
-                                            #                        scaling_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
-                                            scaling_queue.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
-
-                                        # These two lines generate the scales directly rather than through the queue
-                                        # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
-                                        # align_swiftir.swiftir.saveImage ( img, outfile_name )
-
-                                        # Change the base image for this scale to the new file
-                                        layer['images'][role]['filename'] = outfile_name
-                                    except:
-                                        alignem.print_debug(1,
-                                                            "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
-                                                                scale))
-                                        print_exception()
-
-                                # Update the Data Model with the new absolute file name. This replaces the originally opened file names
-                                alignem.print_debug(40, "Original File Name: " + str(layer['images'][role]['filename']))
-                                layer['images'][role]['filename'] = outfile_name
-                                alignem.print_debug(40, "Updated  File Name: " + str(layer['images'][role]['filename']))
-
-        ### Join the queue here to ensure that all have been generated before returning
-        alignem.print_debug(1, "Waiting for Generate Scales to Complete...")
-        #      scaling_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
-        t0 = time.time()
-        scaling_queue.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
-        dt = time.time() - t0
-        alignem.print_debug(1, "Generate Scales Completed in %.2f seconds" % (dt))
-
-        # Stop the queue
-        #      scaling_queue.shutdown()
-        scaling_queue.stop()
-        del scaling_queue
-
-    # center
-    alignem.main_window.center_all_images()
-    alignem.main_window.update_win_self()
-
-    # main_win.status.showMessage("Done Generating Scales ...")
-
-
-def generate_scales_optimized():
-    print('Generating scales, optimized | generate_scales_optimized...')
-    alignem.print_debug(1, "generate_scales_optimized inside alignem_swift called")
-
-    image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
-
-    alignem.print_debug(2, "Create images at all scales: " + str(image_scales_to_run))
-
-    if (alignem.project_data['data']['destination_path'] == None) or (
-            len(alignem.project_data['data']['destination_path']) <= 0):
-
-        alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
-
-    else:
-
-        ### Create the queue here
-        task_queue.DEBUG_LEVEL = alignem.DEBUG_LEVEL
-        task_wrapper.DEBUG_LEVEL = alignem.DEBUG_LEVEL
-        scaling_queue = task_queue.TaskQueue(sys.executable)
-        cpus = psutil.cpu_count(logical=False)
-        #    if cpus > 32:
-        #      cpus = 32
-        scaling_queue.start(cpus)
-        scaling_queue.notify = False
-        scaling_queue.passthrough_stdout = False
-        scaling_queue.passthrough_stderr = False
-
-        # Create a list of scaling jobs to be built by looping through scales and layers
-        scaling_jobs_by_input_file = {}
-
-        for scale in sorted(image_scales_to_run):
-
-            alignem.print_debug(70, "Creating images for scale " + str(scale))
-            # main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
-
-            scale_key = str(scale)
-            if not 'scale_' in scale_key:
-                scale_key = 'scale_' + scale_key
-
-            subdir_path = os.path.join(alignem.project_data['data']['destination_path'], scale_key)
-            scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1')
-
-            create_project_structure_directories(subdir_path)
-
-            alignem.print_debug(70, "Begin creating images at each layer for key: " + str(scale_key))
-
-            layer_index = 0
-            for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
-                # if not layer_index in scaling_jobs_by_input_file:
-                #  scaling_jobs_by_input_file[layer_index] = []
-
-                alignem.print_debug(40, "Generating images for layer: \"" + str(
-                    alignem.project_data['data']['scales'][scale_key]['alignment_stack'].index(layer)) + "\"")
-                # Remove previously aligned images from panel ??
-
-                # Copy (or link) the source images to the expected scale_key"/img_src" directory
-                for role in layer['images'].keys():
-
-                    # Only copy files for roles "ref" and "base"
-
-                    if role in ['ref', 'base']:
-                        alignem.print_debug(40, "Generating images for role: \"" + role + "\"")
-                        base_file_name = layer['images'][role]['filename']
-                        if base_file_name != None:
-                            if len(base_file_name) > 0:
-                                abs_file_name = os.path.abspath(base_file_name)
-                                bare_file_name = os.path.split(abs_file_name)[1]
-                                destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
-                                outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
-                                if scale == 1:
-                                    # Make links or copy immediately without creating a job
-                                    if get_best_path(abs_file_name) != get_best_path(outfile_name):
-                                        # The paths are different so make the link
-                                        try:
-                                            alignem.print_debug(70, "UnLinking " + outfile_name)
-                                            os.unlink(outfile_name)
-                                        except:
-                                            alignem.print_debug(70, "Error UnLinking " + outfile_name)
-                                        try:
-                                            alignem.print_debug(70,
-                                                                "Linking from " + abs_file_name + " to " + outfile_name)
-                                            os.symlink(abs_file_name, outfile_name)
-                                        except:
-                                            alignem.print_debug(5,
-                                                                "Unable to link from " + abs_file_name + " to " + outfile_name)
-                                            alignem.print_debug(5, "Copying file instead")
-                                            # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
-                                            try:
-                                                shutil.copy(abs_file_name, outfile_name)
-                                            except:
-                                                alignem.print_debug(1,
-                                                                    "Unable to link or copy from " + abs_file_name + " to " + outfile_name)
-                                                print_exception()
-                                else:
-                                    try:
-                                        # Do the scaling
-                                        alignem.print_debug(70,
-                                                            "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
-                                                                scale))
-
-                                        if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
-                                            1].startswith('scale_'):
-                                            # Convert the source from whatever scale is currently processed to scale_1
-                                            p, f = os.path.split(abs_file_name)
-                                            p, r = os.path.split(p)
-                                            p, s = os.path.split(p)
-                                            abs_file_name = os.path.join(p, 'scale_1', r, f)
-
-                                        ### Add this job to the task queue or job list
-                                        if not (abs_file_name in scaling_jobs_by_input_file.keys()):
-                                            scaling_jobs_by_input_file[abs_file_name] = []
-                                        scaling_jobs_by_input_file[abs_file_name].append(
-                                            {'scale': scale, 'target': outfile_name})
-                                        # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-                                        # scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str (scale), str (abs_file_name), str(outfile_name)], wd='.')
-                                        # These two lines generate the scales directly rather than through the queue
-                                        # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
-                                        # align_swiftir.swiftir.saveImage ( img, outfile_name )
-
-                                        # Change the base image for this scale to the new file
-                                        layer['images'][role]['filename'] = outfile_name
-                                    except:
-                                        alignem.print_debug(1,
-                                                            "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
-                                                                scale))
-                                        print_exception()
-
-                                # Update the Data Model with the new absolute file name. This replaces the originally opened file names
-                                alignem.print_debug(40, "Original File Name: " + str(layer['images'][role]['filename']))
-                                layer['images'][role]['filename'] = outfile_name
-                                alignem.print_debug(40, "Updated  File Name: " + str(layer['images'][role]['filename']))
-
-                layer_index += 1
-
-        print("Jobs to Scale: " + str(scaling_jobs_by_input_file))
-        print()
-        job_keys = sorted(scaling_jobs_by_input_file.keys())
-        for k in job_keys:
-            print(" Scaling " + str(k))
-            arg_list = ['multi_scale_job.py', k]
-            for s in scaling_jobs_by_input_file[k]:
-                arg_list.append(str(s['scale']))
-                arg_list.append(str(s['target']))
-            scaling_queue.add_task(cmd=sys.executable, args=arg_list, wd='.')
-
-        ### Join the queue here to ensure that all have been generated before returning
-        alignem.print_debug(1, "Waiting for TaskQueue.join to return")
-        scaling_queue.work_q.join()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
-
-        scaling_queue.shutdown()
-        del scaling_queue
-    print("Exiting generate_scales_optimized()")
-
-    # main_win.status.showMessage("Done Generating Scales ...")
+# def generate_scales_optimized():
+#     print('Generating scales, optimized | generate_scales_optimized...')
+#     alignem.print_debug(1, "generate_scales_optimized inside alignem_swift called")
+#
+#     image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
+#
+#     alignem.print_debug(2, "Create images at all scales: " + str(image_scales_to_run))
+#
+#     if (alignem.project_data['data']['destination_path'] == None) or (
+#             len(alignem.project_data['data']['destination_path']) <= 0):
+#
+#         alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
+#
+#     else:
+#
+#         ### Create the queue here
+#         task_queue.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+#         task_wrapper.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+#         scaling_queue = task_queue.TaskQueue(sys.executable)
+#         cpus = psutil.cpu_count(logical=False)
+#         #    if cpus > 32:
+#         #      cpus = 32
+#         scaling_queue.start(cpus)
+#         scaling_queue.notify = False
+#         scaling_queue.passthrough_stdout = False
+#         scaling_queue.passthrough_stderr = False
+#
+#         # Create a list of scaling jobs to be built by looping through scales and layers
+#         scaling_jobs_by_input_file = {}
+#
+#         for scale in sorted(image_scales_to_run):
+#
+#             alignem.print_debug(70, "Creating images for scale " + str(scale))
+#             # main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+#
+#             scale_key = str(scale)
+#             if not 'scale_' in scale_key:
+#                 scale_key = 'scale_' + scale_key
+#
+#             subdir_path = os.path.join(alignem.project_data['data']['destination_path'], scale_key)
+#             scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1')
+#
+#             create_project_structure_directories(subdir_path)
+#
+#             alignem.print_debug(70, "Begin creating images at each layer for key: " + str(scale_key))
+#
+#             layer_index = 0
+#             for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+#                 # if not layer_index in scaling_jobs_by_input_file:
+#                 #  scaling_jobs_by_input_file[layer_index] = []
+#
+#                 alignem.print_debug(40, "Generating images for layer: \"" + str(
+#                     alignem.project_data['data']['scales'][scale_key]['alignment_stack'].index(layer)) + "\"")
+#                 # Remove previously aligned images from panel ??
+#
+#                 # Copy (or link) the source images to the expected scale_key"/img_src" directory
+#                 for role in layer['images'].keys():
+#
+#                     # Only copy files for roles "ref" and "base"
+#
+#                     if role in ['ref', 'base']:
+#                         alignem.print_debug(40, "Generating images for role: \"" + role + "\"")
+#                         base_file_name = layer['images'][role]['filename']
+#                         if base_file_name != None:
+#                             if len(base_file_name) > 0:
+#                                 abs_file_name = os.path.abspath(base_file_name)
+#                                 bare_file_name = os.path.split(abs_file_name)[1]
+#                                 destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
+#                                 outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
+#                                 if scale == 1:
+#                                     # Make links or copy immediately without creating a job
+#                                     if get_best_path(abs_file_name) != get_best_path(outfile_name):
+#                                         # The paths are different so make the link
+#                                         try:
+#                                             alignem.print_debug(70, "UnLinking " + outfile_name)
+#                                             os.unlink(outfile_name)
+#                                         except:
+#                                             alignem.print_debug(70, "Error UnLinking " + outfile_name)
+#                                         try:
+#                                             alignem.print_debug(70,
+#                                                                 "Linking from " + abs_file_name + " to " + outfile_name)
+#                                             os.symlink(abs_file_name, outfile_name)
+#                                         except:
+#                                             alignem.print_debug(5,
+#                                                                 "Unable to link from " + abs_file_name + " to " + outfile_name)
+#                                             alignem.print_debug(5, "Copying file instead")
+#                                             # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
+#                                             try:
+#                                                 shutil.copy(abs_file_name, outfile_name)
+#                                             except:
+#                                                 alignem.print_debug(1,
+#                                                                     "Unable to link or copy from " + abs_file_name + " to " + outfile_name)
+#                                                 print_exception()
+#                                 else:
+#                                     try:
+#                                         # Do the scaling
+#                                         alignem.print_debug(70,
+#                                                             "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
+#                                                                 scale))
+#
+#                                         if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
+#                                             1].startswith('scale_'):
+#                                             # Convert the source from whatever scale is currently processed to scale_1
+#                                             p, f = os.path.split(abs_file_name)
+#                                             p, r = os.path.split(p)
+#                                             p, s = os.path.split(p)
+#                                             abs_file_name = os.path.join(p, 'scale_1', r, f)
+#
+#                                         ### Add this job to the task queue or job list
+#                                         if not (abs_file_name in scaling_jobs_by_input_file.keys()):
+#                                             scaling_jobs_by_input_file[abs_file_name] = []
+#                                         scaling_jobs_by_input_file[abs_file_name].append(
+#                                             {'scale': scale, 'target': outfile_name})
+#                                         # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+#                                         # scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str (scale), str (abs_file_name), str(outfile_name)], wd='.')
+#                                         # These two lines generate the scales directly rather than through the queue
+#                                         # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+#                                         # align_swiftir.swiftir.saveImage ( img, outfile_name )
+#
+#                                         # Change the base image for this scale to the new file
+#                                         layer['images'][role]['filename'] = outfile_name
+#                                     except:
+#                                         alignem.print_debug(1,
+#                                                             "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
+#                                                                 scale))
+#                                         print_exception()
+#
+#                                 # Update the Data Model with the new absolute file name. This replaces the originally opened file names
+#                                 alignem.print_debug(40, "Original File Name: " + str(layer['images'][role]['filename']))
+#                                 layer['images'][role]['filename'] = outfile_name
+#                                 alignem.print_debug(40, "Updated  File Name: " + str(layer['images'][role]['filename']))
+#
+#                 layer_index += 1
+#
+#         print("Jobs to Scale: " + str(scaling_jobs_by_input_file))
+#         print()
+#         job_keys = sorted(scaling_jobs_by_input_file.keys())
+#         for k in job_keys:
+#             print(" Scaling " + str(k))
+#             arg_list = ['multi_scale_job.py', k]
+#             for s in scaling_jobs_by_input_file[k]:
+#                 arg_list.append(str(s['scale']))
+#                 arg_list.append(str(s['target']))
+#             scaling_queue.add_task(cmd=sys.executable, args=arg_list, wd='.')
+#
+#         ### Join the queue here to ensure that all have been generated before returning
+#         alignem.print_debug(1, "Waiting for TaskQueue.join to return")
+#         scaling_queue.work_q.join()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+#
+#         scaling_queue.shutdown()
+#         del scaling_queue
+#     print("Exiting generate_scales_optimized()")
+#
+#     # main_win.status.showMessage("Done Generating Scales ...")
 
 @dumpit
 def get_file_io_mode():
