@@ -267,7 +267,6 @@ def create_project_structure_directories(subdir_path):
 # @profileit
 def generate_scales_queue():
     print("Displaying define scales dialog to receive user input...")
-    print("Trying to disconnect scales_combobox from all handlers...")
     #todo come back to this #0406
     # try:
     #     self.scales_combobox.disconnect()
@@ -275,7 +274,6 @@ def generate_scales_queue():
     #     print(
     #         "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
     main_window.scales_combobox_switch = 0
-
 
     default_scales = ['1']
 
@@ -294,8 +292,8 @@ def generate_scales_queue():
         main_window.set_scales_from_string(input_val)
 
     else:
-        print("Aborting. Scales were not generated.")
-        main_window.scales_combobox_switch = 1 #may need to more reliably way tp ensure this gets set back to 1
+        print("Something went wrong. Scales were not generated.")
+        main_window.scales_combobox_switch = 1 #may need to more reliably ensure this gets set back to 1
         return  # Want to exit function if no scales are defined
 
     print('Generating scales queue...')
@@ -321,12 +319,35 @@ def generate_scales_queue():
         #      scaling_queue.passthrough_stdout = False
         #      scaling_queue.passthrough_stderr = False
 
+
+        print("generate_scales_queue | counting CPUs and configuring platform-specific path to executables for C SWiFT-IR...")
+
         # Use task_queue_mp
         scaling_queue = task_queue.TaskQueue()
         cpus = psutil.cpu_count(logical=False)
+
         if cpus > 48:
             cpus = 48
         scaling_queue.start(cpus)  # cpus = 8 for my laptop
+        print("# cpus        :", cpus)
+
+        # Configure platform-specific path to executables for C SWiFT-IR
+
+        my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+        my_system = platform.system()
+        my_node = platform.node()
+        print("my_path       :", my_path)
+        print("my_system     :", my_system)
+        print("my_node       :", my_node)
+
+        if my_system == 'Darwin':
+            iscale2_c = my_path + '../c/bin_darwin/iscale2'
+        elif my_system == 'Linux':
+            if '.tacc.utexas.edu' in my_node:
+                iscale2_c = my_path + '../c/bin_tacc/iscale2'
+            else:
+                iscale2_c = my_path + '../c/bin_linux/iscale2'
+
 
         for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
 
@@ -345,8 +366,6 @@ def generate_scales_queue():
             print("Generating images at each layer for key:", str(scale_key))
 
             for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
-                print("  Generating images for layer:",
-                      str(project_data['data']['scales'][scale_key]['alignment_stack'].index(layer)))
                 # Remove previously aligned images from panel ??
 
                 # Copy (or link) the source images to the expected scale_key"/img_src" directory
@@ -355,7 +374,9 @@ def generate_scales_queue():
                     # Only copy files for roles "ref" and "base"
 
                     if role in ['ref', 'base']:
-                        print("  Generating images for role:", role)
+                        print("  Generating images for scale : " + str(scale) + "  layer: "\
+                              + str(project_data['data']['scales'][scale_key]['alignment_stack'].index(layer))\
+                              + "  role: " + str(role))
                         base_file_name = layer['images'][role]['filename']
                         if base_file_name != None:
                             if len(base_file_name) > 0:
@@ -386,9 +407,9 @@ def generate_scales_queue():
                                 else:
                                     try:
                                         # Do the scaling
-                                        print(
-                                            "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
-                                                scale))
+                                        # print(
+                                        #     "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
+                                        #         scale))
 
                                         if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
                                             1].startswith('scale_'):
@@ -401,29 +422,10 @@ def generate_scales_queue():
                                         code_mode = 'c'  # force c code scaling implementation
 
                                         if code_mode == 'python':
-                                            print(
-                                                "generate_scales_queue > code_mode equals 'python' -> entering conditional...")
                                             scaling_queue.add_task(cmd=sys.executable,
                                                                    args=['single_scale_job.py', str(scale),
                                                                          str(abs_file_name), str(outfile_name)], wd='.')
                                         else:
-                                            print(
-                                                "generate_scales_queue > configuring platform-specific path to executables for C SWiFT-IR...")
-                                            # Configure platform-specific path to executables for C SWiFT-IR
-                                            my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-                                            my_system = platform.system()
-                                            my_node = platform.node()
-                                            print("my_path = ", my_path)
-                                            print("my_system = ", my_system)
-                                            print("my_node = ", my_node)
-                                            if my_system == 'Darwin':
-                                                iscale2_c = my_path + '../c/bin_darwin/iscale2'
-                                            elif my_system == 'Linux':
-                                                if '.tacc.utexas.edu' in my_node:
-                                                    iscale2_c = my_path + '../c/bin_tacc/iscale2'
-                                                else:
-                                                    iscale2_c = my_path + '../c/bin_linux/iscale2'
-
                                             scale_arg = '+%d' % (scale)
                                             outfile_arg = 'of=%s' % (outfile_name)
                                             infile_arg = '%s' % (abs_file_name)
@@ -437,9 +439,7 @@ def generate_scales_queue():
                                         # Change the base image for this scale to the new file
                                         layer['images'][role]['filename'] = outfile_name
                                     except:
-                                        print_debug(1,
-                                                    "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
-                                                        scale))
+                                        print("Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale))
                                         print_exception()
 
                                 # Update the Data Model with the new absolute file name. This replaces the originally opened file names
@@ -576,7 +576,7 @@ class ImageLibrary:
         return image_ref
 
     def remove_image_reference(self, file_path):
-        print("  ImageLayer is removing image reference (called by " + inspect.stack()[1].function + ")...")
+        # print("  ImageLayer is removing image reference (called by " + inspect.stack()[1].function + ")...")
         image_ref = None
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)
@@ -945,25 +945,10 @@ class ZoomPanWidget(QWidget):
 
                     if self.role in image_dict.keys():
                         print("current role: ", self.role)
-                        ann_image = image_dict[self.role]
-                        print("ann_image = type(image_dict[self.role]) = ", type(image_dict[self.role]))
-                        pixmap = image_library.get_image_reference(ann_image['filename'])
-                        print("pixmap = ", str(pixmap))
-
-                        try:
-                            print("pixmap.width() = ", pixmap.width())
-                        except:
-                            print("could not print pixmap.width()")
-                        try:
-                            print("pixmap.height() = ", pixmap.height())
-                        except:
-                            print("could not print pixmap.height()")
-                        print("type(all_images_in_stack) = ", type(all_images_in_stack)) # type = bool
-                        print("type(pixmap) = ", type(pixmap)) # <class 'PySide6.QtGui.QPixmap'>
-
+                        ann_image = image_dict[self.role] # <class 'dict'>
+                        pixmap = image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
 
                         if (pixmap != None) or all_images_in_stack:
-                            print("conditional was run: if (pixmap != None) or all_images_in_stack ")
                             img_w = 0
                             img_h = 0
                             if pixmap != None:
@@ -972,8 +957,7 @@ class ZoomPanWidget(QWidget):
                             win_w = self.width()
                             win_h = self.height()
 
-                            print("win_w = ", win_w)
-                            print("win_h = ", win_h)
+                            print("win_w = " + str(win_w) + "win_h = " + str(win_h))
 
                             if all_images_in_stack:
 
@@ -1405,8 +1389,7 @@ class ZoomPanWidget(QWidget):
 
                 leaving_layer = project_data['data']['current_layer']
                 entering_layer = project_data['data']['current_layer'] + layer_delta
-                print("  change_layer > leaving_layer = ", leaving_layer)
-                print("  change_layer > entering_layer = ", entering_layer)
+                print("  change_layer | leaving_layer = " + str(leaving_layer) + "entering_layer = " + str(entering_layer))
 
                 if entering_layer < 0:
                     entering_layer = 0
@@ -1566,7 +1549,7 @@ class ZoomPanWidget(QWidget):
     # Get rid of the cruft, try to limit these function calls
     def paintEvent(self, event):
         #tag
-        print("Painting | Caller: " + inspect.stack()[1].function + " | ZoomPanWidget.paintEvent...", end='')
+        # print("Painting | Caller: " + inspect.stack()[1].function + " | ZoomPanWidget.paintEvent...", end='')
         global crop_mode_role  #tag why repeatedly define these globals on each paint event?
         global crop_mode_disp_rect
 
@@ -1814,7 +1797,7 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def update_multi_self(self, exclude=()):
-        print("  MultiImagePanel is updating itself...")
+        print("MultiImagePanel is updating itself...")
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude))]
             for p in panels_to_update:
@@ -1827,7 +1810,7 @@ class MultiImagePanel(QWidget):
             main_window.update_ref_label()
 
     def add_panel(self, panel):
-        # print("MultiImagePanel is adding panel (MultiImagePanel.add_panel)...")
+        print("MultiImagePanel is adding panel (MultiImagePanel.add_panel)...")
         if not panel in self.actual_children:
             self.actual_children.append(panel)
             self.hb_layout.addWidget(panel)
@@ -1835,7 +1818,7 @@ class MultiImagePanel(QWidget):
             self.repaint()
 
     def set_roles(self, roles_list):
-        print("  MultiImagePanel is setting roles...")
+        print("MultiImagePanel is setting roles...")
         if len(roles_list) > 0:
             # Save these roles
             role_settings = {}
@@ -1861,7 +1844,7 @@ class MultiImagePanel(QWidget):
                 self.add_panel(zpw)
 
     def remove_all_panels(self):
-        print("  MultiImagePanel is removing all panels...")
+        print("MultiImagePanel is removing all panels...")
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget(self.actual_children[-1])
             self.actual_children[-1].deleteLater()
@@ -1869,7 +1852,7 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def refresh_all_images(self):
-        print("  MultiImagePanel is refreshing all images...")
+        print("MultiImagePanel is refreshing all images...")
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in panels_to_update:
@@ -1889,7 +1872,7 @@ class MultiImagePanel(QWidget):
 
     # MultiImagePanel.center_all_images
     def center_all_images(self, all_images_in_stack=True):
-        print("  MultiImagePanel is centering all images...")
+        print("MultiImagePanel is centering all images...")
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in panels_to_update:
@@ -1900,7 +1883,7 @@ class MultiImagePanel(QWidget):
         self.refresh_all_images() #jy
 
     def all_images_actual_size(self):
-        print("  MultiImagePanel is actual-sizing all images...")
+        print("MultiImagePanel is actual-sizing all images...")
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in panels_to_update:
@@ -1979,7 +1962,7 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
         print("  Not called by run_app... short-circuiting...")
 
     if update_linking_callback != None:
-        print("  Entering conditional (if update_linking_callback != None)...")
+        print("Entering conditional (if update_linking_callback != None)...")
         update_linking_callback()
         main_window.update_win_self()
         main_window.update_panels()
@@ -2408,12 +2391,12 @@ class MainWindow(QMainWindow):
         self.pyside_path = os.path.dirname(os.path.realpath(__file__))
         print("pyside_path = ", self.pyside_path)
 
-        print('Setting MESA_GL_VERSION_OVERRIDE=4.5...')
+        print('Setting MESA_GL_VERSION_OVERRIDE...')
         os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
         print('MESA_GL_VERSION_OVERRIDE = ', os.environ.get('MESA_GL_VERSION_OVERRIDE'))
 
-        print('Setting default_format using QSurfaceFormat...')
-        self.default_format = QSurfaceFormat.defaultFormat()
+        # print('Setting QSurfaceFormat.defaultFormat()...')
+        # self.default_format = QSurfaceFormat.defaultFormat()
 
         print("Setting up thread pool...")
         self.threadpool = QThreadPool() #test
@@ -2477,7 +2460,7 @@ class MainWindow(QMainWindow):
         # self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         # pyside6
-        print("Instantiating QWebEngineView... ")
+        print("Initializing QWebEngineView... ")
         self.view = QWebEngineView()
         # PySide6 available options
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -3394,7 +3377,7 @@ class MainWindow(QMainWindow):
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
         #0405
-        print("  Connecting scales_combobox to fn_scales_combobox handler...")
+        print("Connecting scales_combobox to fn_scales_combobox handler...")
         self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
         from alignem_swift import clear_all_skips  # clear_all_skips #skip
@@ -3650,7 +3633,7 @@ class MainWindow(QMainWindow):
         #menu Menu Bar
         self.action_groups = {}
         self.menu = self.menuBar()
-        print("Setting setNativeMenuBar to False for an attached menubar on macOS...")
+        print("Setting setNativeMenuBar to False to enable attached menubar default on macOS...")
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
 
         ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
@@ -4804,12 +4787,17 @@ class MainWindow(QMainWindow):
         print("MainWindow is setting default project destination (MainWindow.set_def_proj_dest was called by " +
               inspect.stack()[1].function + ")...")
         print("  Default project destination is set to: ", str(self.current_project_file_name))
+        # if self.current_project_file_name == None:
+        #     show_warning("No Project File",
+        #                  "Unable to set a project destination without a project file.\nPlease save the project file first.")
+        # elif len(self.current_project_file_name) == 0:
+        #     show_warning("No Legal Project File",
+        #                  "Unable to set a project destination without a project file.\nPlease save the project file first.")
+        # main_win.status.showMessage
         if self.current_project_file_name == None:
-            show_warning("No Project File",
-                         "Unable to set a project destination without a project file.\nPlease save the project file first.")
+            self.status.showMessage("Unable to set a project destination without a project file.\nPlease save the project file first.")
         elif len(self.current_project_file_name) == 0:
-            show_warning("No Legal Project File",
-                         "Unable to set a project destination without a project file.\nPlease save the project file first.")
+            self.status.showMessage("Unable to set a project destination without a project file.\nPlease save the project file first.")
         else:
             p, e = os.path.splitext(self.current_project_file_name)
             if not (e.lower() == '.json'):
@@ -5161,7 +5149,7 @@ class MainWindow(QMainWindow):
     # MainWindow.center_all_images -> calls MultiImagePanel.center_all_images
     @Slot()
     def center_all_images(self, all_images_in_stack=True):
-        print("  MainWindow is centering all images (called by " + inspect.stack()[1].function + ")...")
+        # print("  MainWindow is centering all images (called by " + inspect.stack()[1].function + ")...")
         self.image_panel.center_all_images(all_images_in_stack=all_images_in_stack)
 
     @Slot()
