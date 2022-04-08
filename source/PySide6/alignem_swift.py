@@ -1036,15 +1036,25 @@ def isProjectScaled():
         # print("isProjectScaled() is returning False")
         return True
 
+def numAlignedCurrentScale():
+    '''
+    Returns the number of aligned images at the current scale
+    '''
+    n = alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]
+    return int(n)
+
+    return alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]
+
 def isAlignmentOfCurrentScale():
-    """
+    '''
     Checks if there exists a set of aligned images at the current scale
-    """
+    '''
+
     if len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]) < 1:
-        print("isAlignmentOfCurrentScale is returning False, val = ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        print("isAlignmentOfCurrentScale() | returning False, # aligned imgs =s ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
         return False
     else:
-        print("isAlignmentOfCurrentScale is returning True, val = ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        print("isAlignmentOfCurrentScale() | returning True, # aligned imgs = ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
         return True
 
 def getNumOfScales():
