@@ -1069,13 +1069,11 @@ def getNumAligned():
     Returns the count aligned images for the current scale
 
     """
-    try:
-        path = os.path.join(alignem.project_data['data']['destination_path'], get_cur_scale(), 'img_aligned')
-        count = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
-        print('Returning # aligned images at current scale: ', count)
-        return int(count)
-    except:
-        return int(0)
+    path = os.path.join(alignem.project_data['data']['destination_path'], alignem.get_cur_scale(), 'img_aligned')
+    count = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
+    print('Returning # aligned images at current scale: ', count)
+    return int(count)
+
 
 #dialog #controlflow
 def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):

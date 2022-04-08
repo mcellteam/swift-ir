@@ -26,6 +26,12 @@ Last updated: 25/02/2020, 15:42.
 Available at: https://github.com/GTRONICK/QSS/blob/master/ManjaroMix.qss
 */
 
+QToolTip {
+    background-color: #8ad4ff;
+    color: white;
+    border: #8ad4ff solid 1px
+    }
+
 QGroupBox {
   font-weight: bold;
   border: 1px solid #455364;
