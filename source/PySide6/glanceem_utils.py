@@ -983,5 +983,26 @@ def create_scale_pyramid(in_file, in_ds_name, scales, chunk_shape, compressor={'
         print("\nScale complete.\n")
 
 
+class SwiftirException:
+    def __init__(self, project_file, message):
+        self.project_file = project_file
+        self.message = message
+    def __str__(self):
+        return self.message
+
+
+'''
+# to override or pass additional arguments...
+
+class ValidationError(Exception):
+    def __init__(self, message, errors):            
+        # Call the base class constructor with the parameters it needs
+        super().__init__(message)
+
+        # Now for your custom code...
+        self.errors = errors
+'''
+
+
 
 

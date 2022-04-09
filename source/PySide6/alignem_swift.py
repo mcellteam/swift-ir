@@ -824,6 +824,7 @@ def get_file_io_mode():
                 file_io_mode = True
     return (file_io_mode)
 
+# generate_scales_queue calls this w/ defaults in debugger
 def align_layers(first_layer=0, num_layers=-1):
     print('\nAligning layers | align_layers...\n')
     alignem.print_debug(30, 100 * '=')
@@ -1334,9 +1335,10 @@ def notyet():
 
 
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
-    print('Viewing change callback (view_change_callback was called by ' + inspect.stack()[1].function + ')...')
-    print("  Changing from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str(
-        (next_scale_key, next_layer_num)))
+    # print('Viewing change callback (view_change_callback was called by ' + inspect.stack()[1].function + ')...')
+    # print("  Changing from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str((next_scale_key, next_layer_num)))
+    print("view_change_callback | {}, layer {}  --> {}, layer {}".format(prev_scale_key, prev_layer_num, next_scale_key, next_layer_num))
+
 
     if alignem.project_data != None:
 
@@ -1500,7 +1502,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
     #         'method_data'][
     #         'win_scale_factor']))
 
-    print("view_change_callback has completed.\n")
+    # print("view_change_callback has completed.\n")
 
 
 def mouse_down_callback(role, screen_coords, image_coords, button):
@@ -1523,7 +1525,7 @@ def mouse_move_callback(role, screen_coords, image_coords, button):
 
 
 def crop_mode_callback():
-    print("\nCalling crop_mode_callback() in alignem_swift.py:\n")
+    print("crop_mode_callback() was called by ", inspect.stack()[1].function)
     # return (view_match_crop.get_value())
     #0405 return whatever #jy
     return 'View'
@@ -1730,6 +1732,8 @@ def update_skip_annotations():
 
 # main
 if __name__ == "__main__":
+    print("Running " + __file__ + ".__main__()")
+
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, default=10,
                          help="Print more information with larger DEBUG (0 to 100)")
@@ -1749,9 +1753,25 @@ if __name__ == "__main__":
     main_window_size_x = 1420
     main_window_size_y = 700
 
+
+    # This is a suggested fix for error message which results from multiprocessing crashing when using Tom's TaskQueue
+    # together with the PyCharm debugger.
+
+    # This is the error:
+    # objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
+    # called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
+    # on objc_initializeAfterForkError to debug.
+
+    # ref: https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr
+    # print("Temporarily setting env variable OBJC_DISABLE_INITIALIZE_FORK_SAFETY to yes")
+    os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "yes"
+
+
+
     print("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
     QImageReader.setAllocationLimit(4000)
     print("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
+
 
     if args.parallel != None:
         global_parallel_mode = args.parallel != 0
@@ -1790,7 +1810,7 @@ if __name__ == "__main__":
         my_path + "stylesheet.qss",
         my_path + "make_zarr.py",
         # my_path + "glanceem_ng.py",
-        my_path + "glanceem_utils.py"
+        my_path + "glanceem_utils.py",
     ]
     # global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
     # control_model[0].append ( [ "                                              "

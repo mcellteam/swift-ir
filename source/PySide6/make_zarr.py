@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 """
-Joel Yancey
-2021-11-22 v1
-2022-01-18 v2
+Author: Joel Yancey
+Project: SWiFT-IR
 
 Notes:
     * script depends on glanceem_utils.py functions for scale pyramid functionality. keep files in the same directory.
@@ -55,33 +54,25 @@ tifffile new fsspec implementation
 https://github.com/cgohlke/tifffile
 
 """
-import logging
-logging.basicConfig(filename='make_zarr.log', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
-logging.debug('Logging to make_zarr.log...')
-
+import multiprocessing
+import logging, argparse, os, sys, time, shutil, re, subprocess, json
 import zarr
-from numcodecs import Blosc, Delta, LZMA, Zstd
-# blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
+import numpy as np
+from numcodecs import Blosc, Delta, LZMA, Zstd # blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
 import codecs
 import numcodecs
-import numpy as np
 from pathlib import Path
 from datetime import datetime
-import argparse, os, sys, time, shutil, re, subprocess, json
 from contextlib import redirect_stdout
-from glanceem_utils import create_scale_pyramid, tiffs2zarr
-from dask.distributed import Client, LocalCluster
-#from dask.diagnostics import Profiler, ResourceProfiler, CacheProfiler
-#from dask.diagnostics.profile_visualize import visualize
-from dask.diagnostics import ProgressBar
-import multiprocessing
 
-# register dask progress bar globally
-pbar = ProgressBar()
-pbar.register()
+from glanceem_utils import create_scale_pyramid, tiffs2zarr
 
 
 if __name__ == '__main__':
+    print('\n>>>>>>>>>>>>>>>> RUNNING make_zarr.py\n')
+
+    logfile = 'make_zarr.log'
+    logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # PARSE COMMAND LINE INPUTS
     ap = argparse.ArgumentParser()
@@ -90,95 +81,87 @@ if __name__ == '__main__':
     ap.add_argument('path', type=str, help='Source directory path')
 
     # optional arguments
-    #ap.add_argument('-m', '--make_zarr', action="store_true", help='Make .zarr from source (source is not modifed)')
-    #ap.add_argument('-f', '--force', default=True, type=int, help='Force overwrite if zarr exists (default: True)')
     ap.add_argument('-c', '--chunks', default='64,64,64', type=str, help="Chunk shape X,Y,Z (default: '64,64,64')")
     ap.add_argument('-d', '--destination', default='.', type=str, help="Destination dir (default: '.')")
     ap.add_argument('-n', '--dataset_name', default='img_aligned_zarr', type=str, help="Destination dir (default: 'img_aligned_zarr')")
     ap.add_argument('-s', '--scale_ratio', default='1,2,2', type=str, help="Scaling ratio for each axis (default: '1,2,2')")
-    ap.add_argument('-nS', '--n_scales', default=4, help='Number of downscaled image arrays. (default: 4)')
+    ap.add_argument('-nS', '--n_scales', default=4, type=int, help='Number of downscaled image arrays. (default: 4)')
     ap.add_argument('-cN', '--cname', default='zstd', type=str, help="Compressor [zstd,zlib,gzip] (default: 'zstd')")
     ap.add_argument('-cL', '--clevel', default=1, type=int, help='Compression level [0:9] (default: 1)')
     ap.add_argument('-r', '--resolution', default='50,2,2', type=str, help="Resolution of x dim (default: '50,2,2')")
     ap.add_argument('-w', '--workers', default=8, type=int, help='Number of workers (default: 8)')
     ap.add_argument('-t', '--threads', default=2, type=int, help='Number of threads per worker (default: 2)')
     ap.add_argument('-nC', '--no_compression', default=0, type=int, help='Do not compress. (default: 0)')
-    # COMPRESSORS=blosc,zlib,gzip,lzma,zstd,lz4i
-    # BLOSC_COMPRESSORS=blosclz,lz4,lz4hc,snappy,zlib,zstd
-    # Compressor is only applied when making zarr.
+    ap.add_argument('-o', '--overwrite', default=1, type=int, help='Overwrite target if already exists (default: 1)')
+    # ap.add_argument('-m', '--make_zarr', action="store_true", help='Make .zarr from source (source is not modifed)')
+    # ap.add_argument('-f', '--force', default=True, type=int, help='Force overwrite if zarr exists (default: True)')
+    # COMPRESSORS=blosc,zlib,gzip,lzma,zstd,lz4i / BLOSC_COMPRESSORS=blosclz,lz4,lz4hc,snappy,zlib,zstd
     args = ap.parse_args()
-    print('cli arguments                   :', args)
-    src = Path(args.path)
+    cname = args.cname
+    clevel = args.clevel
+    n_scales = args.n_scales
+    no_compression = bool(args.no_compression)
+    overwrite = bool(args.overwrite)
+    workers = args.workers
     destination = args.destination
     ds_name = args.dataset_name
-    workers = args.workers
+    zarr_path = os.path.join(args.destination, 'project.zarr')
+    zarr_ds_path = os.path.join(zarr_path, ds_name)
+    src = Path(args.path)
+    filenames = sorted(list(Path(src).glob(r'*.tif')))
+    n_imgs = len(filenames)
     chunks = [int(i) for i in args.chunks.split(',')]
+    chunk_shape_tuple = tuple(chunks)
     resolution = [int(i) for i in args.resolution.split(',')]
     scale_ratio = [int(i) for i in args.scale_ratio.split(',')]
-    timestr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    # print("type(no_compression)",type(args.no_compression)) #type = int
-    no_compression = bool(int(args.no_compression))
-    #print("type(no_compression)", type(no_compression))  #type = bool
-    print("no_compression                  : ", no_compression)
-
-    print("Setting multiprocessing.set_start_method('fork', force=True)...")
-    multiprocessing.set_start_method('fork', force=True)
-
-    #f_out = "project.zarr"  # jy
-    f_out = os.path.join(args.destination, 'project.zarr')
-    ds_path = os.path.join(f_out, ds_name)
-    store = zarr.NestedDirectoryStore('data/array.zarr')
-    print('f_out                           :', f_out)
-
-    if os.path.isdir(ds_path):
-        print('Overwriting existing directory', ds_path, '...')
-        try:
-            shutil.rmtree(ds_path)
-        except:
-            print('Error while deleting directory', f_out)
-
-
-    # INITIALIZE DASK CLIENT
-    ###client = Client(processes=False) # force run as a single thread
-    ###client = Client(n_workers=args.workers, threads_per_worker=args.threads, processes=True)
-    # client = Client(n_workers=args.workers, threads_per_worker=args.threads, processes=False)
-    # client
-    #
-    # cluster = LocalCluster()
-    # cluster
-
-
-    # CHECK IF DIRECTORIES ALREADY EXIST
-    if not src.is_dir():
-        print('Exiting: ' + sys.argv[1] + ' is not a directory.')
-        sys.exit(2)
-
-    if src.suffix == '.zarr':
-        print('Exiting: Source path has .zarr suffix already, cannot make Zarr into Zarr.')
-        sys.exit()
-
-    print('Making Zarr from ' +  src.name + '...')
-    #blosc.set_nthreads(args.threads)
-    cname = str(args.cname)
-    clevel = int(args.clevel)
-    n_scales = int(args.n_scales)
     r = scale_ratio
     scale_ratio = [scale_ratio]
-    [scale_ratio.append(r) for x in range(n_scales-1)]
-    ### typical 'scale_ratio'... [[1, 2, 2], [1, 2, 2], [1, 2, 2], [1, 2, 2]]
-    ### test case... scale_ratio = [[1,1,1]]
-
+    [scale_ratio.append(r) for x in range(n_scales - 1)]
+    timestr = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    component = 'zArray'
+    # blosc.set_nthreads(args.threads)
+    # store = zarr.NestedDirectoryStore('data/array.zarr')
+    # more intuitive scale_ratio for Zarr metadata...
     scales_list = [r]
     next = np.array(r)
-    for s in range(1,n_scales):
+    for s in range(1, n_scales):
         next = next * np.array(r)
         scales_list.append(next.tolist())
 
-    component = 'zArray'
-    print('Source directory                :', src)
-    print('Loading file list...')
-    filenames = sorted(list(Path(src).glob(r'*.tif')))
-    n_imgs = len(filenames)
+    # CHECK IF SOURCE MAKES SENSE
+    if not src.is_dir():
+        print("(script) make_zarr.py | EXCEPTION | source '%s' is not a directory - Aborting" % str(src))
+        sys.exit()
+
+    if src.suffix == '.zarr':
+        print("\n(script) make_zarr.py | EXCEPTION | source has '.zarr' suffix, cannot export Zarr to Zarr - Aborting\n")
+        sys.exit()
+
+    # SET PYTHON 'multiprocessing' TO USE 'fork'
+    print("(script) make_zarr.py | setting multiprocessing start method to 'fork'...")
+    try:
+        multiprocessing.set_start_method('fork', force=True)
+    except:
+        print('(script) make_zarr.py | WARNING | something went wrong while setting multiprocessing start method')
+        pass
+
+    # CHECK IF TARGET DIRECTORY EXISTS; OVERWRITE?
+    print('(script) make_zarr.py | checking if export path already exists...')
+    if os.path.isdir(zarr_ds_path):
+        if overwrite is False:
+            print('\n(script) make_zarr.py | EXCEPTION | target already exists & overwrite is disabled - Aborting\n')
+            sys.exit()
+        print("(script) make_zarr.py | target '%s' already exists, overwrite=%s" %  (zarr_ds_path, overwrite))
+        print("(script) make_zarr.py | removing '%s'..." % zarr_ds_path)
+        try:
+            shutil.rmtree(zarr_ds_path)
+        except:
+            print("(script) make_zarr.py | WARNING | unable to remove '%s'" % zarr_ds_path)
+            pass
+
+
+    print('(script) make_zarr.py | loading file list...')
+
     if not no_compression:
         config_str = src.as_posix() + "_" + str(n_imgs) + 'imgs_multiscale' + str(n_scales) + \
                      '_chunksize' + str(chunks[0]) + 'x' + str(chunks[1]) + 'x' + str(chunks[2]) + \
@@ -187,66 +170,50 @@ if __name__ == '__main__':
         config_str = src.as_posix() + "_" + str(n_imgs) + 'imgs_multiscale' + str(n_scales) + \
                      '_chunksize' + str(chunks[0]) + 'x' + str(chunks[1]) + 'x' + str(chunks[2]) + \
                      '_uncompressed'
-
-    #f_out = config_str + ".zarr"
-    #_out = "project.zarr"
     first_file = str(filenames[0])
     last_file = str(filenames[-1])
 
-    # DUMP RUN INFO TO CONSOLE
-    print('# images found                  :', n_imgs)
-    print('First image                     :', first_file)
-    print('Last image                      :', last_file)
-    print('Target (Zarr) directory (f_out) :', f_out)
-    print('Number of downscales            :', n_scales)
-    print('Scales                          :', scales_list)
-    print('Chunk shape                     :', chunks)
-    print('Compression type                :', cname)
-    print('Compression level               :', clevel)
+    # CONSOLE DUMP
 
-    # CALL 'tiffs2zarr' ON SOURCE DIRECTORY
-    print('\nCreating Zarr container using dask array for parallelization...')
+    print('(script) make_zarr.py | export path (Zarr)       :', zarr_path)
+    print('(script) make_zarr.py | zarr url                 :', zarr_ds_path)
+    print('(script) make_zarr.py | overwrite                :', str(overwrite))
+    print('(script) make_zarr.py | source                   :', src)
+    print('(script) make_zarr.py | src.name                 :', src.name)
+    print('(script) make_zarr.py | # of images found        :', n_imgs)
+    print('(script) make_zarr.py | first image              :', first_file)
+    print('(script) make_zarr.py | last image               :', last_file)
+    print('(script) make_zarr.py | # of scales              :', n_scales)
+    print('(script) make_zarr.py | scales                   :', scales_list)
+    print('(script) make_zarr.py | chunk shape              :', str(chunk_shape_tuple))
+    print('(script) make_zarr.py | compression type         :', cname)
+    print('(script) make_zarr.py | compression level        :', clevel)
+    print('(script) make_zarr.py | compression type         :', cname)
+    print('(script) make_zarr.py | no_compression           :', no_compression)
+    try:
+        print('(script) make_zarr.py | compressor               :', str(Blosc(cname=cname, clevel=clevel)))
+    except:
+        print("(script) make_zarr.py | WARNING | could not evaluate 'str(Blosc(cname=cname, clevel=clevel))'")
+
+    # CALL 'tiffs2zarr'
+    print("(script) make_zarr.py | converting original scale images to Zarr...")
     t = time.time()
-    #tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compressor=zarr.get_codec({'id': cname, 'level': clevel}))
-    zarr_url = f_out + "/" + ds_name
-    chunk_shape_tuple = tuple(chunks)
-    overwrite = True
-    if not no_compression:
-        if cname in ('zstd', 'zlib'):
-            print("\n  tiffs2zarr Arguments")
-            print("    zarr url    : ", zarr_url)
-            print("    chunk shape : ", str(chunk_shape_tuple))
-            print("    compressor  : ", str(Blosc(cname=cname, clevel=clevel)))
-            print("    overwrite   : ", str(overwrite))
-
-            tiffs2zarr(filenames, zarr_url, chunk_shape_tuple, compressor=Blosc(cname=cname, clevel=clevel), overwrite=overwrite) # NOTE 'compressor='
-
-        else:
-            #compressor = {'id': cname, 'level': clevel}
-            # MIGHT NOT PASS IN cname, clevel
-            print("\n  tiffs2zarr Arguments")
-            print("    zarr url    : ", zarr_url)
-            print("    chunk shape : ", str(chunk_shape_tuple))
-            print("    compressor  : ", cname)
-            print("    overwrite   : ", str(overwrite))
-
-            tiffs2zarr(filenames, zarr_url, chunk_shape_tuple, compression=cname, overwrite=overwrite) # NOTE 'compression='
-            # tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compression=compressor,overwrite=True)
-            #tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), cname=cname, clevel=clevel, overwrite=True)
-            #tiffs2zarr(filenames, f_out + "/" + ds_name, tuple(chunks), compressor=compressor, overwrite=True)
-
     if no_compression:
-        # MIGHT PASS IN 'None'
-        print("\n  tiffs2zarr Arguments")
-        print("    zarr url    : ", zarr_url)
-        print("    chunk shape : ", str(chunk_shape_tuple))
-        print("    compressor  : ", None)
-        print("    overwrite   : ", str(overwrite))
-        tiffs2zarr(filenames, zarr_url, chunk_shape_tuple, compressor=None, overwrite=overwrite)
+        tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compressor=None, overwrite=overwrite) # might pass in 'None'
+    else:
+        if cname in ('zstd', 'zlib'):
+            tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compressor=Blosc(cname=cname, clevel=clevel), overwrite=overwrite)  # NOTE 'compressor='
+            # tiffs2zarr(filenames, zarr_path + "/" + ds_name, tuple(chunks), compressor=zarr.get_codec({'id': cname, 'level': clevel}))
+        else:
+            tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compression=cname, overwrite=overwrite)  # NOTE 'compression='
+            # tiffs2zarr(filenames, zarr_path + "/" + ds_name, tuple(chunks), compression=compressor,overwrite=True)
+            # tiffs2zarr(filenames, zarr_path + "/" + ds_name, tuple(chunks), cname=cname, clevel=clevel, overwrite=True)
 
+    t_to_zarr = time.time() - t
 
-    # NEUROGLANCER COMPATIBILITY
-    ds = zarr.open(f_out + '/' + ds_name, mode='a')
+    # WRITE NEUROGLANCER & OME-NGFF-COMPATIBLE METADATA
+    print('(script) make_zarr.py | setting Neuroglancer & OME-NGFF compatible meta-data...')
+    ds = zarr.open(zarr_path + '/' + ds_name, mode='a')
     ds.attrs['n_images'] = n_imgs
     ds.attrs['offset'] = [0, 0, 0]
     ds.attrs['resolution'] = resolution
@@ -254,81 +221,38 @@ if __name__ == '__main__':
     #ds.attrs['scales'] = scale_ratio
     ds.attrs['scale_factors'] = scales_list
     ds.attrs['_ARRAY_DIMENSIONS'] = ['z', 'y', 'x']
-    t_to_zarr = time.time() - t
-    print('time elapsed: ', t_to_zarr, 'seconds')
-    # print('Shutting down dask client...')
-    # client.shutdown()
 
-    print("\n")
-    print("ds.info = ", ds.info)
+    print("\n--------original scale Zarr info (pre-scaling)--------")
+    print(ds.info)
 
-    # COMPUTE SCALE PYRAMID IN PLACE
-    print('Generating scale pyramid in place...')
+    # COMPUTE SCALE PYRAMID
+    print('(script) make_zarr.py | Generating scales...')
     t = time.time()
-
-    ###create_scale_pyramid(f_out, ds_name, scale_ratio, chunks, compressor=zarr.get_codec({'id': cname, 'level': clevel}))
-    print('chunks=',chunks)
-    print('no_compression: ', no_compression)
-    if not no_compression:
-        print("Using compression...")
-        compressor = {'id': cname, 'level': clevel}
-        # create_scale_pyramid(f_out, ds_name, scale_ratio, [1,64,64,64], compressor)
-        create_scale_pyramid(f_out, ds_name, scale_ratio, chunks, compressor)
-
-        # # TESTING ONLY
-        # create_scale_pyramid(f_out, ds_name, scale_ratio, chunks)
-
     if no_compression:
-        print("NOT using compression...")
         compressor = None
-        create_scale_pyramid(f_out, ds_name, scale_ratio, chunks, compressor=None)
-
+        create_scale_pyramid(zarr_path, ds_name, scale_ratio, chunks, compressor=None)
+    else:
+        compressor = {'id': cname, 'level': clevel}
+        create_scale_pyramid(zarr_path, ds_name, scale_ratio, chunks, compressor)
+        # create_scale_pyramid(zarr_path, ds_name, scale_ratio, chunks) # testing ONLY
+        # create_scale_pyramid(zarr_path, ds_name, scale_ratio, chunks, compressor=zarr.get_codec({'id': cname, 'level': clevel})) # testing ONLY
 
     t_gen_scales = time.time() - t
-    print('t_gen_scales: ',t_gen_scales,'s')
-    print('\nMaking the Zarr is complete.\n')
+    t_total = t_to_zarr + t_gen_scales
 
     # CONSOLIDATE META-DATA
-    #print("Consolidating meta data...")
-    #zarr.consolidate_metadata(f_out)
+    print("(script) make_zarr.py | consolidating Zarr metadata")
+    zarr.consolidate_metadata(zarr_path)
 
     # COLLECT RUN DATA AND SAVE TO FILE
-    print('Collecting run data...')
-    #magic_info = str(magic.from_file(str(filenames[0])))
-    data = {
-        'time': timestr,
-        'path_source': args.path,
-        #'magic_info': magic_info,
-        'n_imgs': n_imgs,
-        'first_image': first_file,
-        'last_image': last_file,
-        'resolution': resolution,
-        'path_zarr_target': f_out,
-        'ds_name': ds_name,
-        #'overwrite': args.force,
-        't_to_zarr': t_to_zarr,
-        't_gen_scales': t_gen_scales,
-        'n_scales': n_scales,
-        'scale_ratio': str(np.concatenate(scale_ratio)),
-        'cname': cname,
-        'clevel': clevel,
-        'chunks': chunks,
-    }
-    #f_json = config_str + "_dump" +  ".json"
-    #print("Dumping run details to ", f_json)
-    #with open(f_json, mode='a') as f:
-    #    json.dump(data, f, indent=4, skipkeys=True)
-
-
-    #_txt = config_str + "_dump" + ".txt"
     f_txt = os.path.join(destination, "make_zarr_dump.txt")
-    print("Dumping more run details to ", f_txt)
+    print("(script) make_zarr.py | dumping run details to '%s'" % f_txt)
     with open(f_txt, mode='a') as f:
         with redirect_stdout(f):
             print(timestr)
             print("____ RESULTS - MAKE ZARR ____")
             print("source             :", args.path)
-            print("output file        :", f_out)
+            print("output file        :", zarr_path)
             print("first file         :", first_file)
             print("last file          :", last_file)
             print("# images found     :", n_imgs)
@@ -344,179 +268,40 @@ if __name__ == '__main__':
             print(ds.info)
             print("Done.\n")
 
-    print("\nZarr tree:")
-    ds = zarr.open(f_out)
-    ds.tree()
-
-    print("Consolidating Zarr metadata...", end='')
-    zarr.consolidate_metadata(f_out)
-    print("done")
-
-    # print("ds.name = ", ds.name)
-    # print("ds.fill_value = ",ds.fill_value)
-    # print("ds.tree() = ", ds.tree())
-    # print("ds.items() = ", ds.items())
-    # print("ds.info_items() = ", ds.info_items())
-    # print("ds.attrs = ", ds.attrs)
-    # print("ds.compressor = ", ds.compressor)
-    # print("ds.nbytes = ", ds.nbytes)
-    # print("ds.nbytes_stored = ", ds.nbytes_stored)
-    # print("ds.nchunks = ", ds.nchunks)
-    # print("ds.nchunks_initialized = ", ds.nchunks_initialized)
-    # print("ds.size = ", ds.size)
-    # print("ds.shape = ", ds.shape)
-    # print("ds.cdata_shape = ", ds.cdata_shape)
-    # print("ds.store = ", ds.store)
-    # print("ds.path = ", ds.path)
-    # print("ds.ndim = ", ds.ndim)
-    # print("ds.synchronizer = ", ds.synchronizer)
-    # print("ds.vindex = ", ds.vindex)
-    # print(" = ", )
-    # print(" = ", )
-    # print(" = ", )
+    # print('(script) make_zarr.py | dumping run details to JSON')
+    # data = {
+    #     'time': timestr,
+    #     'path_source': args.path,
+    #     #'magic_info': magic_info,
+    #     'n_imgs': n_imgs,
+    #     'first_image': first_file,
+    #     'last_image': last_file,
+    #     'resolution': resolution,
+    #     'path_zarr_target': zarr_path,
+    #     'ds_name': ds_name,
+    #     #'overwrite': args.force,
+    #     't_to_zarr': t_to_zarr,
+    #     't_gen_scales': t_gen_scales,
+    #     'n_scales': n_scales,
+    #     'scale_ratio': str(np.concatenate(scale_ratio)),
+    #     'cname': cname,
+    #     'clevel': clevel,
+    #     'chunks': chunks,
+    # }
+    #f_json = config_str + "_dump" +  ".json"
+    #print("Dumping run details to ", f_json)
+    #with open(f_json, mode='a') as f:
+    #    json.dump(data, f, indent=4, skipkeys=True)
 
 
+    print("(script) make_zarr.py | printing result as tree...")
+    ds = zarr.open(zarr_path)
+    print(ds.tree())
 
-    print("Exiting: Complete.")
+    print('\n-------------------------------------------------------')
+    print('Time Elapsed (copy data to Zarr) : {:.2f} seconds'.format(t_to_zarr))
+    print('Time Elapsed (generate scales)   : {:.2f} seconds'.format(t_gen_scales))
+    print('Total Time Elapsed               : {:.2f} seconds'.format(t_total))
+    print('-------------------------------------------------------')
 
-
-"""
-dask.config.config
-
-# https://docs.dask.org/en/stable/configuration.html
-
-Out[15]: 
-{'temporary-directory': None,
- 'tokenize': {'ensure-deterministic': False},
- 'dataframe': {'shuffle-compression': None,
-  'parquet': {'metadata-task-size-local': 512,
-   'metadata-task-size-remote': 16}},
- 'array': {'svg': {'size': 120},
-  'slicing': {'split-large-chunks': None},
-  'chunk-size': '128MiB',
-  'rechunk-threshold': 4},
- 'optimization': {'fuse': {'active': None,
-   'ave-width': 1,
-   'max-width': None,
-   'max-height': inf,
-   'max-depth-new-edges': None,
-   'subgraphs': None,
-   'rename-keys': True}},
- 'distributed': {'version': 2,
-  'scheduler': {'allowed-failures': 3,
-   'bandwidth': 100000000,
-   'blocked-handlers': [],
-   'default-data-size': '1kiB',
-   'events-cleanup-delay': '1h',
-   'idle-timeout': None,
-   'transition-log-length': 100000,
-   'events-log-length': 100000,
-   'work-stealing': True,
-   'work-stealing-interval': '100ms',
-   'worker-ttl': None,
-   'pickle': True,
-   'preload': [],
-   'preload-argv': [],
-   'unknown-task-duration': '500ms',
-   'default-task-durations': {'rechunk-split': '1us', 'split-shuffle': '1us'},
-   'validate': False,
-   'dashboard': {'status': {'task-stream-length': 1000},
-    'tasks': {'task-stream-length': 100000},
-    'tls': {'ca-file': None, 'key': None, 'cert': None},
-    'bokeh-application': {'allow_websocket_origin': ['*'],
-     'keep_alive_milliseconds': 500,
-     'check_unused_sessions_milliseconds': 500}},
-   'locks': {'lease-validation-interval': '10s', 'lease-timeout': '30s'},
-   'http': {'routes': ['distributed.http.scheduler.prometheus',
-     'distributed.http.scheduler.info',
-     'distributed.http.scheduler.json',
-     'distributed.http.health',
-     'distributed.http.proxy',
-     'distributed.http.statics']},
-   'allowed-imports': ['dask', 'distributed'],
-   'active-memory-manager': {'start': False,
-    'interval': '2s',
-    'policies': [{'class': 'distributed.active_memory_manager.ReduceReplicas'}]}},
-  'worker': {'blocked-handlers': [],
-   'multiprocessing-method': 'spawn',
-   'use-file-locking': True,
-   'connections': {'outgoing': 50, 'incoming': 10},
-   'preload': [],
-   'preload-argv': [],
-   'daemon': True,
-   'validate': False,
-   'resources': {},
-   'lifetime': {'duration': None, 'stagger': '0 seconds', 'restart': False},
-   'profile': {'interval': '10ms', 'cycle': '1000ms', 'low-level': False},
-   'memory': {'recent-to-old-time': '30s',
-    'rebalance': {'measure': 'optimistic',
-     'sender-min': 0.3,
-     'recipient-max': 0.6,
-     'sender-recipient-gap': 0.1},
-    'target': 0.6,
-    'spill': 0.7,
-    'pause': 0.8,
-    'terminate': 0.95},
-   'http': {'routes': ['distributed.http.worker.prometheus',
-     'distributed.http.health',
-     'distributed.http.statics']}},
-  'nanny': {'preload': [],
-   'preload-argv': [],
-   'environ': {'MALLOC_TRIM_THRESHOLD_': 65536,
-    'OMP_NUM_THREADS': 1,
-    'MKL_NUM_THREADS': 1}},
-  'client': {'heartbeat': '5s', 'scheduler-info-interval': '2s'},
-  'deploy': {'lost-worker-timeout': '15s', 'cluster-repr-interval': '500ms'},
-  'adaptive': {'interval': '1s',
-   'target-duration': '5s',
-   'minimum': 0,
-   'maximum': inf,
-   'wait-count': 3},
-  'comm': {'retry': {'count': 0, 'delay': {'min': '1s', 'max': '20s'}},
-   'compression': 'auto',
-   'shard': '64MiB',
-   'offload': '10MiB',
-   'default-scheme': 'tcp',
-   'socket-backlog': 2048,
-   'recent-messages-log-length': 0,
-   'ucx': {'cuda-copy': None,
-    'tcp': None,
-    'nvlink': None,
-    'infiniband': None,
-    'rdmacm': None,
-    'net-devices': None,
-    'reuse-endpoints': None,
-    'create-cuda-context': None},
-   'zstd': {'level': 3, 'threads': 0},
-   'timeouts': {'connect': '30s', 'tcp': '30s'},
-   'require-encryption': None,
-   'tls': {'ciphers': None,
-    'ca-file': None,
-    'scheduler': {'cert': None, 'key': None},
-    'worker': {'key': None, 'cert': None},
-    'client': {'key': None, 'cert': None}},
-   'websockets': {'shard': '8MiB'}},
-  'diagnostics': {'nvml': True,
-   'computations': {'max-history': 100,
-    'ignore-modules': ['distributed',
-     'dask',
-     'xarray',
-     'cudf',
-     'cuml',
-     'prefect',
-     'xgboost']}},
-  'dashboard': {'link': '{scheme}://{host}:{port}/status',
-   'export-tool': False,
-   'graph-max-items': 5000,
-   'prometheus': {'namespace': 'dask'}},
-  'admin': {'tick': {'interval': '20ms', 'limit': '3s'},
-   'max-error-length': 10000,
-   'log-length': 10000,
-   'log-format': '%(name)s - %(levelname)s - %(message)s',
-   'pdb-on-err': False,
-   'system-monitor': {'interval': '500ms'},
-   'event-loop': 'tornado'},
-  'rmm': {'pool-size': None}}}
-
-
-"""
+    print("\n<<<<<<<<<<<<<<<< EXITING make_zarr.py\n")
