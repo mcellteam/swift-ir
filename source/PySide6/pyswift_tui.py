@@ -1051,6 +1051,7 @@ def print_command_line_syntax(args):
 
 
 if (__name__ == '__main__'):
+    print("Running " + __file__ + ".__main__()")
 
     if (len(sys.argv) < 3):
         print_command_line_syntax(sys.argv)

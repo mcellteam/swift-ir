@@ -824,7 +824,7 @@ import sys
 
 
 if __name__=='__main__':
-  print_debug ( 50, "Running " + __file__ + ".__main__()" )
+  print("Running " + __file__ + ".__main__()")
 
   # "Tile_r1-c1_LM9R5CA1series_247.jpg",
   # "Tile_r1-c1_LM9R5CA1series_248.jpg",

@@ -815,6 +815,7 @@ def copyTriangle(dst, src, tria, afm):
 ######################################################################
 
 if __name__=='__main__':
+    print("Running " + __file__ + ".__main__()")
 
     import time
     import matplotlib.pyplot as plt
