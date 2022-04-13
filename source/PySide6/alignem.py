@@ -40,9 +40,11 @@ import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
 
-from alignem_swift import isDestinationSet, isProjectScaled, isAlignmentOfCurrentScale, getSkipsList, \
-    getNumOfScales, getNumAligned
+# from alignem_swift import isDestinationSet, isProjectScaled, isAlignmentOfCurrentScale, getSkipsList, \
+#     getNumOfScales, getNumAligned
+import alignem_swift
 
+main_window = alignem_swift.main_win
 
 # from caveclient import CAVEclient
 
