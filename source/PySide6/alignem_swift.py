@@ -1910,6 +1910,7 @@ if __name__ == "__main__":
 
     print('main | executing the program')
     # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
+
     main_win.show()
     sys.exit(app.exec())
 
