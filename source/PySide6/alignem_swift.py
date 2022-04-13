@@ -3,12 +3,18 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 
 """
 
-import sys, traceback, os, time, shutil, psutil, copy, argparse, cv2, json, platform, inspect
+import sys, traceback, os, time, shutil, psutil, copy, argparse, cv2, json, platform, inspect, logging
 from source_tracker import get_hash_and_rev
 
 from PySide6.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar, QMessageBox
+from PySide6.QtWidgets import QApplication, QVBoxLayout, QTextEdit, QPlainTextEdit, QWidget
+
 from PySide6.QtCore import Signal, QObject, QUrl, QThread, QThreadPool
 from PySide6.QtGui import QImageReader
+
+from PySide6.QtCore import Signal as pyqtSignal, Slot as pyqtSlot #PyQt6 and PySide6 are semantically different here
+# from PyQt6.QtCore import pyqtSignal as Signal, pyqtSlot as Slot
+
 
 from joel_decs import timeit, profileit, dumpit, traceit, countit
 from glanceem_utils import RequestHandler, Server, get_viewer_url
@@ -1007,73 +1013,81 @@ dm_name_to_combo_name = {'init_affine': 'Init Affine', 'refine_affine': 'Refine 
 #         print("isProjectLoaded() is returning True")
 #         return True
 
-def isDestinationSet():
-    """
+def isDestinationSet() -> bool:
+    '''
     Checks if there is a project open
+    '''
 
-    """
-
-    # if not alignem.project_data["data"]["source_path"]:
-    if not alignem.project_data['data']['destination_path']:
-        # print("alignem.project_data['data']['destination_path'] = ", alignem.project_data['data']['destination_path'])
-        # print("isDestinationSet is returning False")
-        return  False
+    if alignem.project_data['data']['destination_path']:
+        isDestinationSet = True
     else:
-        # print("isDestinationSet is returning True")
-        return True
+        isDestinationSet = False
+    print('isDestinationSet() | returning: ', isDestinationSet)
+    return isDestinationSet
 
-def isProjectScaled():
-    """
+def isProjectScaled() -> bool:
+    '''
     Checks if there exists any stacks of scaled images
 
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a project that does not need scales.
-
-    """
+    '''
     if len(alignem.project_data['data']['scales']) < 2:
-        # print("isProjectScaled() is returning False")
-        return False
+        isScaled = False
     else:
-        # print("isProjectScaled() is returning False")
-        return True
+        isScaled = True
 
-def numAlignedCurrentScale():
+    print('isProjectScaled() | returning:', isScaled)
+    return isScaled
+
+def getNumAligned() -> int:
     '''
-    Returns the number of aligned images at the current scale
+    Returns the count aligned images for the current scale
     '''
-    n = alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]
-    return int(n)
+    path = os.path.join(alignem.project_data['data']['destination_path'], alignem.get_cur_scale(), 'img_aligned')
+    print('getNumAligned() | path=', path)
+    try:
+        n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
+    except:
+        print('getNumAligned() | EXCEPTION | unable to get number of aligned - returning 0')
+        return 0
+    print('getNumAligned() | returning:', n_aligned)
+    return n_aligned
 
-    return alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]
+def getSkipsList() -> list[int]:
+    '''
+    Returns the list of skipped images at the current scale
+    '''
 
-def isAlignmentOfCurrentScale():
+    skip_list = []
+    try:
+        for layer_index in range(len(project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
+            if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+                skip_list.append(layer_index)
+            print('getSkipsList() | ', str(skip_list))
+    except:
+        print('getSkipsList | EXCEPTION | failed to get skips list')
+
+    return skip_list
+
+def isAlignmentOfCurrentScale() -> bool:
     '''
     Checks if there exists a set of aligned images at the current scale
     '''
-
     if len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]) < 1:
-        print("isAlignmentOfCurrentScale() | returning False, # aligned imgs =s ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        print('isAlignmentOfCurrentScale() | False')
         return False
     else:
-        print("isAlignmentOfCurrentScale() | returning True, # aligned imgs = ", len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        print('isAlignmentOfCurrentScale() | True | # aligned images: ', len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
         return True
 
-def getNumOfScales():
-    """
+def getNumOfScales() -> int:
+    '''
     Returns the number of scales for the open project
-
-    """
-    return len(alignem.project_data['data']['scales'])
-
-def getNumAligned():
-    """
-    Returns the count aligned images for the current scale
-
-    """
-    path = os.path.join(alignem.project_data['data']['destination_path'], alignem.get_cur_scale(), 'img_aligned')
-    count = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
-    print('Returning # aligned images at current scale: ', count)
-    return int(count)
+    '''
+    n_scales = len(alignem.project_data['data']['scales'])
+    print('getNumOfScales() | returning:', n_scales)
+    return n_scales
 
 
 #dialog #controlflow
@@ -1083,13 +1097,12 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     print("  actually_remove = ", actually_remove)
 
-    """
+    '''
     TODO: Need to check if images have been imported
-    
-    """
+    '''
 
     if isDestinationSet():
-        print("  project destination is apparently set")
+        print('align_all_or_some | project destination is apparently set')
         pass
     else:
         print("(!) User clicked align but the destination is not set. Aborting alignment.")
@@ -1337,7 +1350,6 @@ def notyet():
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
     # print('Viewing change callback (view_change_callback was called by ' + inspect.stack()[1].function + ')...')
     # print("  Changing from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str((next_scale_key, next_layer_num)))
-    print("view_change_callback | {}, layer {}  --> {}, layer {}".format(prev_scale_key, prev_layer_num, next_scale_key, next_layer_num))
 
 
     if alignem.project_data != None:
@@ -1502,6 +1514,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
     #         'method_data'][
     #         'win_scale_factor']))
 
+    print("view_change_callback | {}, layer {}  --> {}, layer {}".format(prev_scale_key, prev_layer_num, next_scale_key,next_layer_num))
     # print("view_change_callback has completed.\n")
 
 
@@ -1730,6 +1743,34 @@ def update_skip_annotations():
 #     # p.start("python3", ["./glanceem_ng.py ", zarr_project_path, "--view single"])
 
 
+
+#jy
+# class QTextEditLogger(logging.Handler, QObject):
+#     '''
+#     Thread-safe logger class based on:
+#     https://stackoverflow.com/questions/28655198/best-way-to-display-logs-in-pyqt
+#
+#
+#     '''
+#
+#
+#     appendPlainText = pyqtSignal(str)
+#
+#     def __init__(self, parent):
+#         super().__init__()
+#         QObject.__init__(self)
+#         self.widget = QPlainTextEdit(parent)
+#         self.widget.setReadOnly(True)
+#         self.appendPlainText.connect(self.widget.appendPlainText)
+#
+#     def emit(self, record):
+#         msg = self.format(record)
+#         self.appendPlainText.emit(msg)
+
+
+
+
+
 # main
 if __name__ == "__main__":
     print("Running " + __file__ + ".__main__()")
@@ -1753,20 +1794,9 @@ if __name__ == "__main__":
     main_window_size_x = 1420
     main_window_size_y = 700
 
-
-    # This is a suggested fix for error message which results from multiprocessing crashing when using Tom's TaskQueue
-    # together with the PyCharm debugger.
-
-    # This is the error:
-    # objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
-    # called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
-    # on objc_initializeAfterForkError to debug.
-
-    # ref: https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr
-    # print("Temporarily setting env variable OBJC_DISABLE_INITIALIZE_FORK_SAFETY to yes")
     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "yes"
 
-
+    logger = logging.getLogger(__name__)
 
     print("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
     QImageReader.setAllocationLimit(4000)
@@ -1825,11 +1855,33 @@ if __name__ == "__main__":
           ", tagged as revision: " + str(global_source_rev) +
           ", parallel mode = " + str(global_parallel_mode) + "\n")
 
+    global app, main_window
+    if not QApplication.instance():
+        print("main | instantiating QApplication")
+        app = QApplication([])
+    else:
+        print("main | WARNING | could not create QApplication instance because an instance already exists")
+
+
+    app.setStyle('Fusion') # force OS-consistent style
+
     # main_win = alignem.MainWindow(control_model=control_model, title="GlanceEM_SWiFT")
-    print('(alignem_swift.py main) Creating a MainWindow instance as main_win = alignem.MainWindow(title="GlanceEM_SWiFT")')
     main_win = alignem.MainWindow(title="GlanceEM_SWiFT")
 
-    # # this works to set a background:
+    # dlg = MyDialog()
+    # dlg.show()
+    # dlg.raise_()
+
+    #0412
+    # QThread.currentThread().setObjectName('MainThread')
+    # logging.getLogger().setLevel(logging.DEBUG)
+    # # app = QApplication(sys.argv)
+    # example = alignem.Window(app)
+    # example.show()
+    # # sys.exit(app.exec_())
+
+
+    # # override style and set an image application wallpaper:
     # stylesheet = """
     #     MainWindow {
     #         background-image: url("romain-lemaire-night.jpg");
@@ -1838,7 +1890,8 @@ if __name__ == "__main__":
     #     }
     # """
     # main_win.setStyleSheet(stylesheet)
-    print('Registering callbacks...')
+
+    #jy what is the purpose?
     main_win.register_view_change_callback(view_change_callback)
     main_win.register_mouse_move_callback(mouse_move_callback)
     main_win.register_mouse_down_callback(mouse_down_callback)
@@ -1847,15 +1900,29 @@ if __name__ == "__main__":
     alignem.update_skips_callback = update_skips_callback
 
     print("Resizing main_win to    width=" + str(main_window_size_x) + "    height=" + str(main_window_size_y))
-    # main_win.resize(1420,655)  #original This value is typically chosen to show all widget text
-    main_win.resize(main_window_size_x, main_window_size_y)  # This value is typically chosen to show all widget text
+    main_win.resize(main_window_size_x, main_window_size_y)  # previously set to 1420 x 655
 
     # main_win.register_project_open ( open_json_project )
     # main_win.register_project_save ( save_json_project )
     # main_win.register_gen_scales ( generate_scales )
-
-    # alignem.print_debug(30, "================= Defining Roles =================")
-
     main_win.define_roles(swift_roles)
 
-    alignem.run_app(main_win)
+
+    print('main | executing the program')
+    # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
+    main_win.show()
+    sys.exit(app.exec())
+
+'''
+    A suggested fix for error message which results from multiprocessing crashing when using Tom's TaskQueue:
+    together with the PyCharm debugger.
+    This is the error:
+    objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
+    called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
+    on objc_initializeAfterForkError to debug.
+
+    ref: https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr
+    print("Temporarily setting env variable OBJC_DISABLE_INITIALIZE_FORK_SAFETY to yes")
+
+
+'''
