@@ -131,10 +131,12 @@ if __name__ == '__main__':
     # CHECK IF SOURCE MAKES SENSE
     if not src.is_dir():
         print("(script) make_zarr.py | EXCEPTION | source '%s' is not a directory - Aborting" % str(src))
+        print("\n<<<<<<<<<<<<<<<< EXITING make_zarr.py\n")
         sys.exit()
 
     if src.suffix == '.zarr':
         print("\n(script) make_zarr.py | EXCEPTION | source has '.zarr' suffix, cannot export Zarr to Zarr - Aborting\n")
+        print("\n<<<<<<<<<<<<<<<< EXITING make_zarr.py\n")
         sys.exit()
 
     # SET PYTHON 'multiprocessing' TO USE 'fork'
@@ -150,6 +152,7 @@ if __name__ == '__main__':
     if os.path.isdir(zarr_ds_path):
         if overwrite is False:
             print('\n(script) make_zarr.py | EXCEPTION | target already exists & overwrite is disabled - Aborting\n')
+            print("\n<<<<<<<<<<<<<<<< EXITING make_zarr.py\n")
             sys.exit()
         print("(script) make_zarr.py | target '%s' already exists, overwrite=%s" %  (zarr_ds_path, overwrite))
         print("(script) make_zarr.py | removing '%s'..." % zarr_ds_path)
@@ -298,10 +301,10 @@ if __name__ == '__main__':
     ds = zarr.open(zarr_path)
     print(ds.tree())
 
-    print('\n-------------------------------------------------------')
-    print('Time Elapsed (copy data to Zarr) : {:.2f} seconds'.format(t_to_zarr))
-    print('Time Elapsed (generate scales)   : {:.2f} seconds'.format(t_gen_scales))
-    print('Total Time Elapsed               : {:.2f} seconds'.format(t_total))
-    print('-------------------------------------------------------')
+    print('\n---------------------------------------------------------------------')
+    print('Time Elapsed (copy data to Zarr)                 : {:.2f} seconds'.format(t_to_zarr))
+    print('Time Elapsed (generate scales)                   : {:.2f} seconds'.format(t_gen_scales))
+    print('Total Time Elapsed                               : {:.2f} seconds'.format(t_total))
+    print('---------------------------------------------------------------------')
 
     print("\n<<<<<<<<<<<<<<<< EXITING make_zarr.py\n")
