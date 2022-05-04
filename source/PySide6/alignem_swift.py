@@ -38,7 +38,7 @@ import project_runner
 # not provide signals and slots.
 
 
-main_win = None
+main_win = None #jy #0412 #0419
 
 ## project_data = None  # Use from alignem
 
@@ -165,9 +165,9 @@ def ensure_proper_data_structure():
       '''
       #0405 #hardcode whatever values
       if not 'null_cafm_trends' in scale:
-        scale ['null_cafm_trends'] = make_bool(True)
+        scale ['null_cafm_trends'] = False
       if not 'use_bounding_rect' in scale:
-        scale ['use_bounding_rect'] = make_bool(True)
+        scale ['use_bounding_rect'] = False
       if not 'poly_order' in scale:
         scale ['poly_order'] = int(4)
 
@@ -1354,10 +1354,11 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
     if alignem.project_data != None:
 
-        # copy_from_widgets_to_data_model = True
-        # copy_from_data_model_to_widgets = True
-        copy_from_widgets_to_data_model = False
-        copy_from_data_model_to_widgets = False
+        copy_from_widgets_to_data_model = True
+        copy_from_data_model_to_widgets = False #0503
+        # making false, instead will use new function main_window.read_project_data_update_gui() (call from change_layer directly)
+        # copy_from_widgets_to_data_model = False
+        # copy_from_data_model_to_widgets = False
 
         if new_data_model:
             # Copy all data from the data model into the widgets, ignoring what's in the widgets
@@ -1381,9 +1382,11 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
         # Begin the copying
 
+        # *****************************************************************
         # First copy from the widgets to the previous data model if desired
+        # *****************************************************************
         if copy_from_widgets_to_data_model:
-            print("  (!) Attempting copy_from_widgets_to_data_model...")
+            print('Copying GUI data to project_data file.')
             # Start with the scale-level items
 
             # Build any scale-level structures that might be needed
@@ -1400,24 +1403,21 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             # bias controls: CUMULATIVE AFFINE MATRIX CHECKBOX, POLY ORDER
             # NEED ALL 3 OF THESE, BOUNDING RECTANGLE LAST
             # NOTE: THESE SETTINGS AFFECT HOW ALIGNED IMAGES ARE DISPLAYED (ALIGNMENT DOES NOT CHANGE)
-            alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = bool(False)
+            alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
             alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = int(0)
-            alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = bool(False)
-
-            #affine #combobox            #0405 #testing
-            alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
-                combo_name_to_dm_name[init_ref_app.get_value()])
-            print("  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()] = ",  combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
-            print("  alignem.main_window.affine_combobox.currentText() = ", alignem.main_window.affine_combobox.currentText())
-            alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = str(
-                combo_name_to_dm_name[alignem.main_window.affine_combobox.currentText()])
+            alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
 
             alignem.print_debug(25, "In DM: Null Bias = " + str(
                 alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends']))
+
             alignem.print_debug(25, "In DM: Use Bound = " + str(
                 alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect']))
 
+            alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = alignem.main_window.get_affine_combobox()
+
             # Next copy the layer-level items
+            # NOTE: THIS CONDITIONAL PREVENTS COPYING OF FIRST LAYER/IMAGE DATA ENTERED INTO GUI BACK TO PROJECT FILE
+            # ASK TOM IF THIS BEHAVIOR IS CORRECT
             if prev_layer != None:
 
                 # Build any layer-level structures that might be needed in the data model
@@ -1429,24 +1429,40 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                 # Copy the layer-level data
                 # prev_layer['skip'] = make_bool(skip.get_value()) #skip
                 # prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked() #no longer necessary
-                prev_layer['align_to_ref_method']['method_data'][
-                    'whitening_factor'] = alignem.main_window.whitening_input.text
-                prev_layer['align_to_ref_method']['method_data'][
-                    'win_scale_factor'] = alignem.main_window.swim_input.text
+                # prev_layer['align_to_ref_method']['method_data'][
+                #     'whitening_factor'] = alignem.main_window.whitening_input.text
+                # prev_layer['align_to_ref_method']['method_data'][
+                #     'win_scale_factor'] = alignem.main_window.swim_input.text
+                prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = alignem.main_window.get_whitening_input()
+                prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = alignem.main_window.get_swim_input()
 
+        # *****************************************************************
         # Second copy from the data model to the widgets if desired (check each along the way)
+        # *****************************************************************
+        # SET TO FALSE #0503.. new function main_window.read_project_data_update_gui() will accomplish this,
+        # and will be called directly from MainWindow.change_layer
         if copy_from_data_model_to_widgets:
             alignem.ignore_changes = True  # tag #odd
-            # Start with the scale-level items
-            #0405
-            if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
-                null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
-            if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
-                use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
 
+            #0503 THIS DOES NOT WORK, THINKING UPDATE of GUI ELEMENTS UPON LAYER CHANGE NEEDS TO HAPPEN IN 'change_layer'
+            # try:
+            #     # alignem.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+            #     # main_window.update_skip_toggle()
+            #     # main_win.update_skip_toggle()
+            #     print('\nTrying alignem.main_window.update_skip_toggle()...\n')
+            #     alignem.main_window.update_skip_toggle()
+            # except:
+            #     print('view_change_callback | WARNING | skip toggle switch UI element failed to update its state')
+
+            # Start with the scale-level items
+            #0405 #0503 - commented the 6 line below out b/c 'NameError: name 'null_cafm_trends' is not defined
+            # if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
+            #     null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
+            # if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
+            #     use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
             #jy-remove-x
-            if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
-                poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
+            # if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+            #     poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
 
             # affine #combobox
             if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
@@ -1500,7 +1516,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
             alignem.ignore_changes = False
     else:
-        print('  (!) alignem.project_data not found')
+        print('view_change_callback | EXCEPTION | alignem.project_data not found')
 
     # # THIS MIGHT NOT BE THE BEST PLACE FOR THIS, ARBITRARY LOCATION
     # scale = alignem.project_data['data']['scales'][alignem.project_data['data']['current_scale']]
@@ -1516,6 +1532,13 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
 
     print("view_change_callback | {}, layer {}  --> {}, layer {}".format(prev_scale_key, prev_layer_num, next_scale_key,next_layer_num))
     # print("view_change_callback has completed.\n")
+
+    # print('view_change_callback | updating skip toggle switch')
+    # try:
+    #     # alignem.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+    #     alignem.main_win.update_skip_toggle()
+    # except:
+    #     print('ZoomPanWidget.mouseMoveEvent | WARNING | unable to set checked state of toggle switch')
 
 
 def mouse_down_callback(role, screen_coords, image_coords, button):
@@ -1768,8 +1791,169 @@ def update_skip_annotations():
 #         self.appendPlainText.emit(msg)
 
 
+# AttributeError: partially initialized module 'alignem' has no attribute 'MainWindow' (most likely due to a circular import)
+# def mainwindow_sig(main_window: alignem.MainWindow):
+#     print('\n  Calling mainwindow_sig...\n')
 
 
+#
+#
+# # main
+# if __name__ == "__main__":
+#     print("Running " + __file__ + ".__main__()")
+#
+#     options = argparse.ArgumentParser()
+#     options.add_argument("-d", "--debug", type=int, required=False, default=10,
+#                          help="Print more information with larger DEBUG (0 to 100)")
+#     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
+#     options.add_argument("-l", "--preload", type=int, required=False, default=3,
+#                          help="Preload +/-, total to preload = 2n-1")
+#     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1,
+#                          help="Run the C versions of SWiFT tools")
+#     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0,
+#                          help="Use files to gather output from tasks")
+#     args = options.parse_args()
+#     alignem.DEBUG_LEVEL = int(args.debug)
+#     print("cli args:", args)
+#
+#     global enable_stats
+#     enable_stats = 0
+#     main_window_size_x = 1420
+#     main_window_size_y = 700
+#
+#     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "yes"
+#
+#     logger = logging.getLogger(__name__)
+#
+#     print("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
+#     QImageReader.setAllocationLimit(4000)
+#     print("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
+#
+#
+#     if args.parallel != None:
+#         global_parallel_mode = args.parallel != 0
+#
+#     if args.use_c_version != None:
+#         alignem.use_c_version = args.use_c_version != 0
+#
+#     if args.use_file_io != None:
+#         global_use_file_io = args.use_file_io != 0
+#
+#     if args.preload != None:
+#         alignem.preloading_range = int(args.preload)
+#         if alignem.preloading_range < 1:
+#             alignem.preloading_range = 1
+#
+#     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+#     source_list = [
+#         my_path + "alignem_swift.py",
+#         my_path + "alignem_data_model.py",
+#         my_path + "alignem.py",
+#         my_path + "swift_project.py",
+#         my_path + "pyswift_tui.py",
+#         my_path + "swiftir.py",
+#         my_path + "align_swiftir.py",
+#         my_path + "source_tracker.py",
+#         my_path + "task_queue.py",
+#         my_path + "task_queue2.py",
+#         my_path + "task_wrapper.py",
+#         my_path + "single_scale_job.py",
+#         my_path + "multi_scale_job.py",
+#         my_path + "project_runner.py",
+#         my_path + "single_alignment_job.py",
+#         my_path + "single_crop_job.py",
+#
+#         # jy
+#         my_path + "stylesheet.qss",
+#         my_path + "make_zarr.py",
+#         # my_path + "glanceem_ng.py",
+#         my_path + "glanceem_utils.py",
+#     ]
+#     # global_source_hash, global_source_rev = get_hash_and_rev (source_list, "source_info.json")
+#     # control_model[0].append ( [ "                                              "
+#     #                             "                                              "
+#     #                             "                                              "
+#     #                             "                                              "
+#     #                             "                                              "
+#     #                             "Source Tag: " + str(global_source_rev) + "   /   "
+#     #                             "Source Hash: " + str(global_source_hash) ] )
+#
+#     print("\nRunning with source hash: " + str(global_source_hash) +
+#           ", tagged as revision: " + str(global_source_rev) +
+#           ", parallel mode = " + str(global_parallel_mode) + "\n")
+#
+#     # global app, main_win
+#     # if not QApplication.instance():
+#     #     print("main | instantiating QApplication")
+#     #     app = QApplication([])
+#     # else:
+#     #     print("main | WARNING | could not create QApplication instance because an instance already exists")
+#
+#
+#     # app.setStyle('Fusion') # force OS-consistent style #0419
+#
+#     # main_win = alignem.MainWindow(control_model=control_model, title="GlanceEM_SWiFT")
+#     main_win = alignem.MainWindow(title="GlanceEM_SWiFT")
+#
+#     # dlg = MyDialog()
+#     # dlg.show()
+#     # dlg.raise_()
+#
+#     #0412
+#     # QThread.currentThread().setObjectName('MainThread')
+#     # logging.getLogger().setLevel(logging.DEBUG)
+#     # # app = QApplication(sys.argv)
+#     # example = alignem.Window(app)
+#     # example.show()
+#     # # sys.exit(app.exec_())
+#
+#
+#     # # override style and set an image application wallpaper:
+#     # stylesheet = """
+#     #     MainWindow {
+#     #         background-image: url("romain-lemaire-night.jpg");
+#     #         background-repeat: no-repeat;
+#     #         background-position: center;
+#     #     }
+#     # """
+#     # main_win.setStyleSheet(stylesheet)
+#
+#     #jy what is the purpose?
+#     main_win.register_view_change_callback(view_change_callback)
+#     main_win.register_mouse_move_callback(mouse_move_callback)
+#     main_win.register_mouse_down_callback(mouse_down_callback)
+#     alignem.crop_mode_callback = crop_mode_callback
+#     alignem.update_linking_callback = update_linking_callback
+#     alignem.update_skips_callback = update_skips_callback
+#
+#     print("Resizing main_win to    width=" + str(main_window_size_x) + "    height=" + str(main_window_size_y))
+#     main_win.resize(main_window_size_x, main_window_size_y)  # previously set to 1420 x 655
+#
+#     # main_win.register_project_open ( open_json_project )
+#     # main_win.register_project_save ( save_json_project )
+#     # main_win.register_gen_scales ( generate_scales )
+#     main_win.define_roles(swift_roles)
+#
+#
+#     print('main | executing the program')
+#     # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
+#
+#     main_win.show()
+#     sys.exit(app.exec())
+#
+# '''
+#     A suggested fix for error message which results from multiprocessing crashing when using Tom's TaskQueue:
+#     together with the PyCharm debugger.
+#     This is the error:
+#     objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
+#     called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
+#     on objc_initializeAfterForkError to debug.
+#
+#     ref: https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr
+#     print("Temporarily setting env variable OBJC_DISABLE_INITIALIZE_FORK_SAFETY to yes")
+#
+#
+# '''
 
 # main
 if __name__ == "__main__":
@@ -1794,9 +1978,20 @@ if __name__ == "__main__":
     main_window_size_x = 1420
     main_window_size_y = 700
 
+
+    # This is a suggested fix for error message which results from multiprocessing crashing when using Tom's TaskQueue
+    # together with the PyCharm debugger.
+
+    # This is the error:
+    # objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
+    # called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
+    # on objc_initializeAfterForkError to debug.
+
+    # ref: https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr
+    # print("Temporarily setting env variable OBJC_DISABLE_INITIALIZE_FORK_SAFETY to yes")
     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "yes"
 
-    logger = logging.getLogger(__name__)
+
 
     print("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
     QImageReader.setAllocationLimit(4000)
@@ -1855,33 +2050,11 @@ if __name__ == "__main__":
           ", tagged as revision: " + str(global_source_rev) +
           ", parallel mode = " + str(global_parallel_mode) + "\n")
 
-    global app, main_window
-    if not QApplication.instance():
-        print("main | instantiating QApplication")
-        app = QApplication([])
-    else:
-        print("main | WARNING | could not create QApplication instance because an instance already exists")
-
-
-    app.setStyle('Fusion') # force OS-consistent style
-
     # main_win = alignem.MainWindow(control_model=control_model, title="GlanceEM_SWiFT")
+    print('(alignem_swift.py main) Creating a MainWindow instance as main_win = alignem.MainWindow(title="GlanceEM_SWiFT")')
     main_win = alignem.MainWindow(title="GlanceEM_SWiFT")
 
-    # dlg = MyDialog()
-    # dlg.show()
-    # dlg.raise_()
-
-    #0412
-    # QThread.currentThread().setObjectName('MainThread')
-    # logging.getLogger().setLevel(logging.DEBUG)
-    # # app = QApplication(sys.argv)
-    # example = alignem.Window(app)
-    # example.show()
-    # # sys.exit(app.exec_())
-
-
-    # # override style and set an image application wallpaper:
+    # # this works to set a background:
     # stylesheet = """
     #     MainWindow {
     #         background-image: url("romain-lemaire-night.jpg");
@@ -1890,8 +2063,7 @@ if __name__ == "__main__":
     #     }
     # """
     # main_win.setStyleSheet(stylesheet)
-
-    #jy what is the purpose?
+    print('Registering callbacks...')
     main_win.register_view_change_callback(view_change_callback)
     main_win.register_mouse_move_callback(mouse_move_callback)
     main_win.register_mouse_down_callback(mouse_down_callback)
@@ -1900,30 +2072,15 @@ if __name__ == "__main__":
     alignem.update_skips_callback = update_skips_callback
 
     print("Resizing main_win to    width=" + str(main_window_size_x) + "    height=" + str(main_window_size_y))
-    main_win.resize(main_window_size_x, main_window_size_y)  # previously set to 1420 x 655
+    # main_win.resize(1420,655)  #original This value is typically chosen to show all widget text
+    main_win.resize(main_window_size_x, main_window_size_y)  # This value is typically chosen to show all widget text
 
     # main_win.register_project_open ( open_json_project )
     # main_win.register_project_save ( save_json_project )
     # main_win.register_gen_scales ( generate_scales )
+
+    # alignem.print_debug(30, "================= Defining Roles =================")
+
     main_win.define_roles(swift_roles)
 
-
-    print('main | executing the program')
-    # main_window.resize(pixmap.width(),pixmap.height())  # Optionally resize to image
-
-    main_win.show()
-    sys.exit(app.exec())
-
-'''
-    A suggested fix for error message which results from multiprocessing crashing when using Tom's TaskQueue:
-    together with the PyCharm debugger.
-    This is the error:
-    objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
-    called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
-    on objc_initializeAfterForkError to debug.
-
-    ref: https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr
-    print("Temporarily setting env variable OBJC_DISABLE_INITIALIZE_FORK_SAFETY to yes")
-
-
-'''
+    alignem.run_app(main_win)
