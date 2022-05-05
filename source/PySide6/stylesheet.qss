@@ -126,6 +126,7 @@ QPushButton:hover{
 	border-radius: 5px;
 	color: #d3dae3;
 	padding: 2px;
+	/*background-color: #1c1f1f;*/
 	background-color: #1c1f1f;
 }
 QPushButton:pressed{

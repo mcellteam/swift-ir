@@ -69,8 +69,11 @@ QPushButton
 {
 	background-color: #141414;
 	color: #bfbfbf;
-	border: none;
+	/*border: none;*/
+	border-width: 1.5px;
+	border-style: solid;
 	padding: 5px;
+	border-color: #bfbfbf;
 
 }
 
@@ -81,7 +84,7 @@ QPushButton::hover
 	color: #bfbfbf;
 	border-bottom-style: solid;
 	border-bottom-color: #bfbfbf;
-	border-bottom-width: 3px;
+	/8border-bottom-width: 2px;*/
 
 
 }
