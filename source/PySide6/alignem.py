@@ -690,7 +690,8 @@ def generate_scales_queue():
         # print("  Connecting scales_combobox to fn_scales_combobox handler...")
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
-        main_window.toggle_on_alignment_groupbox() #0504
+        main_window.set_progress_stage_2()
+
         # main_window.alignment_stack.setStyleSheet("""QWidget {color: #fffff;}""")
 
         print("Generating scales complete.")
@@ -1721,7 +1722,7 @@ class ZoomPanWidget(QWidget):
                 print('Loading project_data into GUI.')
                 # alignem.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
                 # main_window.update_skip_toggle() #### THIS GETS INTO THE FUNCTION -- WORKS!!
-                main_window.read_project_data_update_gui()
+                # main_window.read_project_data_update_gui() #0505
                 # 0503 #skiptoggle #toggleskip #skipswitch forgot to define this
             except BaseException as error:
                 print('ZoomPanWidget.change_layer | EXCEPTION | MainWindow.read_project_data_update_gui threw an exception:\n{}'.format(error))
@@ -3648,9 +3649,9 @@ class MainWindow(QMainWindow):
         # self.extra_functions_layout.setAlignment(Qt.AlignLeft)
         # self.extra_functions_layout.setSpacing(15)
         # self.extra_functions_layout.addWidget(self.import_images_button, 0, 0)
-        self.extra_functions_layout.addWidget(self.documentation_button, 0, 0)
-        self.extra_functions_layout.addWidget(self.new_project_button, 0, 1)
-        self.extra_functions_layout.addWidget(self.open_project_button, 0, 2)
+        self.extra_functions_layout.addWidget(self.new_project_button, 0, 0)
+        self.extra_functions_layout.addWidget(self.open_project_button, 0, 1)
+        self.extra_functions_layout.addWidget(self.documentation_button, 0, 2)
         self.extra_functions_layout.addWidget(self.quit_app_button, 1, 0)
         self.extra_functions_layout.addWidget(self.save_project_button, 1, 1)
         self.extra_functions_layout.addWidget(self.remote_viewer_button, 1, 2)
@@ -3797,23 +3798,19 @@ class MainWindow(QMainWindow):
         #         skip_list.append(layer_index)
         skip_list = getSkipsList()
         # print("skip_list = ", skip_list)
-        self.select_scale_layout = QHBoxLayout()
-        self.select_scale_layout.setContentsMargins(0,0,0,0) #left,top,right,bottom
-        self.select_scale_layout.setSpacing(5)
+
         self.scales_combobox = QComboBox(self)  # thing_to_do #init_ref_app #affine
-        self.scales_combobox.setMinimumWidth(100) #original
-        self.scales_combobox.setMinimumWidth(120)  # original
         # self.scales_combobox.addItems([skip_list])
         # self.scales_combobox.addItems(['--'])
         self.scales_combobox.setFocusPolicy(Qt.NoFocus)
-        self.scales_combobox.setMaximumWidth(std_combo_size)
+        # self.scales_combobox.setMaximumWidth(std_combo_size)
+        self.scales_combobox.setMaximumWidth(150)
+        self.scales_combobox.setMinimumWidth(150)
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
         self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
-        self.select_scale_layout.addWidget(QLabel("Current Scale:"), alignment=Qt.AlignLeft)
-        # (QLabel("Ref Image:"), alignment=Qt.AlignLeft)
-        self.select_scale_layout.addWidget(self.scales_combobox)
+
 
 
         # self.clear_all_skips_button = QPushButton('Clear All Skips')
@@ -3834,7 +3831,7 @@ class MainWindow(QMainWindow):
         self.toggle_reset_hlayout = QHBoxLayout()
         self.toggle_reset_hlayout.setContentsMargins(0,0,0,0)
         self.toggle_reset_hlayout.setSpacing(15)
-        self.toggle_reset_hlayout.addWidget(self.toggle_skip)
+        self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft)
         self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button)
         # self.toggle_reset_hlayout.addLayout(self.select_scale_layout)
         self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0)
@@ -3847,11 +3844,18 @@ class MainWindow(QMainWindow):
         self.affine_combobox = QComboBox(self)  # thing_to_do #init_ref_app #affine
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
         self.affine_combobox.setFocusPolicy(Qt.NoFocus)
-        self.affine_combobox.setMaximumWidth(std_combo_size)
+        # self.affine_combobox.setMaximumWidth(std_combo_size)
+        self.affine_combobox.setMaximumWidth(150)
+        self.affine_combobox.setMinimumWidth(150)
+
+
 
         # -------------------------------------
         #         STEP 3: ALIGNMENT
         # -------------------------------------
+        # self.select_scale_layout = QHBoxLayout()
+        # self.select_scale_layout.setContentsMargins(0, 0, 0, 0)  # left,top,right,bottom
+        # self.select_scale_layout.setSpacing(5)
 
         # self.align_all_button = QPushButton('Align All')
         self.align_all_button = QPushButton('Align This Scale')
@@ -3894,14 +3898,26 @@ class MainWindow(QMainWindow):
         self.swim_grid.addWidget(swim_label, 0, 0, alignment=Qt.AlignLeft)
         self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignRight)
 
+
+        """
+        self.select_scale_layout.addWidget(QLabel("Current Scale:"), alignment=Qt.AlignLeft)
+        # (QLabel("Ref Image:"), alignment=Qt.AlignLeft)
+        # self.select_scale_layout.addWidget(self.scales_combobox, alignment=Qt.AlignCenter)
+        self.select_scale_layout.addWidget(self.scales_combobox, alignment=Qt.AlignRight)
+        
+        """
+
         # groups #grouplocation #controlpanel
         self.alignment_layout = QGridLayout()
         self.alignment_layout.setContentsMargins(10, 25, 10, 5) #tag23
         # self.alignment_layout.setSpacing(0)
-        self.alignment_layout.addLayout(self.select_scale_layout, 0, 0, 1, 2)
+        # self.alignment_layout.addLayout(self.select_scale_layout, 0, 0)
+        self.alignment_layout.addWidget(QLabel("Current Scale:"), 0, 0,alignment=Qt.AlignLeft)
+        self.alignment_layout.addWidget(self.scales_combobox, 0, 1,alignment=Qt.AlignRight)
+
         self.alignment_layout.addLayout(self.whitening_grid, 1, 0)
         self.alignment_layout.addLayout(self.swim_grid, 2, 0)
-        self.alignment_layout.addWidget(self.affine_combobox, 1, 1)
+        self.alignment_layout.addWidget(self.affine_combobox, 1, 1,alignment=Qt.AlignRight)
         self.alignment_layout.addWidget(self.align_all_button, 2, 1)  # align_all
         # self.improved_controls_layout.addWidget(self.copy_skips_to_all_scales_button, alignment=Qt.AlignLeft) #not necessary
         # self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -3958,7 +3974,7 @@ class MainWindow(QMainWindow):
         # FILE FUNCTIONS
         self.extra_functions_groupbox = QGroupBox("Project")
         self.extra_functions_groupbox.setMaximumWidth(400)
-        self.extra_functions_groupbox.setMaximumHeight(140)
+        self.extra_functions_groupbox.setMaximumHeight(150)
         # self.extra_functions_layout.setContentsMargins(20,25,20,5)
         # self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.extra_functions_groupbox.setLayout(self.extra_functions_layout)
@@ -3968,7 +3984,7 @@ class MainWindow(QMainWindow):
         # SCALING & DATA SELECTION
         self.images_and_scaling_stack = QStackedWidget()
         self.images_and_scaling_stack.setMaximumWidth(280)
-        self.images_and_scaling_stack.setMaximumHeight(140)
+        self.images_and_scaling_stack.setMaximumHeight(150)
         self.images_and_scaling_groupbox_ = QGroupBox()
         self.images_and_scaling_groupbox_.setTitle("Scaling && Data Selection")
         self.images_and_scaling_groupbox = QGroupBox("Scaling && Data Selection")
@@ -3984,7 +4000,7 @@ class MainWindow(QMainWindow):
         # ALIGNMENT
         self.alignment_stack = QStackedWidget()
         self.alignment_stack.setMaximumWidth(400)
-        self.alignment_stack.setMaximumHeight(140)
+        self.alignment_stack.setMaximumHeight(150)
         self.alignment_groupbox_ = QGroupBox()
         self.alignment_groupbox_.setTitle("Alignment")
         self.alignment_groupbox = QGroupBox("Alignment")
@@ -3999,7 +4015,7 @@ class MainWindow(QMainWindow):
         # EXPORT & VIEW
         self.export_and_view_stack = QStackedWidget()
         self.export_and_view_stack.setMaximumWidth(400)
-        self.export_and_view_stack.setMaximumHeight(140)
+        self.export_and_view_stack.setMaximumHeight(150)
         self.export_and_view_groupbox_ = QGroupBox()
         self.export_and_view_groupbox_.setTitle("Export && View")
         self.export_and_view_groupbox = QGroupBox("Export && View")
@@ -4313,7 +4329,7 @@ class MainWindow(QMainWindow):
                      ['Style #4 - Grey', None, self.apply_stylesheet_4, None, None, None],
                      ['Style #11 - Screamin Green', None, self.apply_stylesheet_11, None, None, None],
                      ['Style #12 - Dark12', None, self.apply_stylesheet_12, None, None, None],
-                     ['No Style', None, self.no_stylesheet, None, None, None],
+                     ['Minimal', None, self.no_stylesheet, None, None, None],
                    ]
                  ],
              ]
@@ -4566,6 +4582,10 @@ class MainWindow(QMainWindow):
     #stylesheet
     def no_stylesheet(self):
         self.setStyleSheet('')
+        self.extra_functions_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
+        self.images_and_scaling_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
+        self.alignment_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
+        self.export_and_view_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
 
     def apply_stylesheet(self):
         self.setStyleSheet('')
@@ -4578,10 +4598,18 @@ class MainWindow(QMainWindow):
     def apply_stylesheet_3(self):
         self.setStyleSheet('')
         self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet3.qss')).read())
+        self.extra_functions_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
+        self.images_and_scaling_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
+        self.alignment_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
+        self.export_and_view_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
 
     def apply_stylesheet_4(self):
         self.setStyleSheet('')
         self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet4.qss')).read())
+        self.extra_functions_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
+        self.images_and_scaling_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
+        self.alignment_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
+        self.export_and_view_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
 
     # def apply_stylesheet_8(self):
     #     self.setStyleSheet('')
@@ -4594,6 +4622,10 @@ class MainWindow(QMainWindow):
     def apply_stylesheet_12(self):
         self.setStyleSheet('')
         self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet12.qss')).read())
+        self.extra_functions_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
+        self.images_and_scaling_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
+        self.alignment_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
+        self.export_and_view_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
 
     #0504
     # def toggle_on_extra_functions_groupbox(self):
@@ -4631,12 +4663,18 @@ class MainWindow(QMainWindow):
         self.toggle_off_alignment_groupbox()
         self.toggle_off_export_and_view_groupbox()
 
+
     @Slot()
     def set_progress_stage_1(self):
         print('Updating user progress to stage 1')
         self.toggle_on_images_and_scaling_groupbox()
         self.toggle_off_alignment_groupbox()
         self.toggle_off_export_and_view_groupbox()
+        # self.extra_functions_groupbox.setMaximumHeight(150)
+        # self.images_and_scaling_stack.setMaximumHeight(160)
+        # self.alignment_stack.setMaximumHeight(150)
+        # self.export_and_view_stack.setMaximumHeight(150)
+
 
     @Slot()
     def set_progress_stage_2(self):
@@ -4644,6 +4682,10 @@ class MainWindow(QMainWindow):
         self.toggle_on_images_and_scaling_groupbox()
         self.toggle_on_alignment_groupbox()
         self.toggle_off_export_and_view_groupbox()
+        # self.extra_functions_groupbox.setMaximumHeight(150)
+        # self.images_and_scaling_stack.setMaximumHeight(150)
+        # self.alignment_stack.setMaximumHeight(160)
+        # self.export_and_view_stack.setMaximumHeight(150)
 
     @Slot()
     def set_progress_stage_3(self):
@@ -4651,6 +4693,10 @@ class MainWindow(QMainWindow):
         self.toggle_on_images_and_scaling_groupbox()
         self.toggle_on_alignment_groupbox()
         self.toggle_on_export_and_view_groupbox()
+        # self.extra_functions_groupbox.setMaximumHeight(150)
+        # self.images_and_scaling_stack.setMaximumHeight(150)
+        # self.alignment_stack.setMaximumHeight(150)
+        # self.export_and_view_stack.setMaximumHeight(160)
 
     @Slot()
     def set_user_progress(self):
@@ -4673,7 +4719,6 @@ class MainWindow(QMainWindow):
     def read_project_data_update_gui(self):
         print('\nMainWindow.read_project_data_update_gui | ENTERING |')
         scale = project_data['data']['scales'][project_data['data']['current_scale']] # we only want the current scale
-        layer = scale['alignment_stack'][project_data['data']['current_layer']] # we only want the current layer
 
         try:
             self.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
@@ -4699,6 +4744,11 @@ class MainWindow(QMainWindow):
         except BaseException as error:
             print('MainWindow.read_project_data_update_gui | WARNING | whitening input UI element failed to update its state')
             print('This was the exception: {}'.format(error))
+
+        try:
+            layer = scale['alignment_stack'][project_data['data']['current_layer']] # we only want the current layer
+        except:
+            print("read_project_data_update_gui | WARNING | unable to define variable 'layer'")
 
         try:
             cur_swim_window = layer['align_to_ref_method']['method_data']['win_scale_factor']

@@ -1176,6 +1176,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         return
 
 
+
     # print("isAlignmentOfCurrentScale() = ", isAlignmentOfCurrentScale())
     # # if prompt: #original
     # if isAlignmentOfCurrentScale():
