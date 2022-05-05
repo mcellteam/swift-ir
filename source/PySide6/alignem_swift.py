@@ -186,13 +186,15 @@ def ensure_proper_data_structure():
             if not 'win_scale_factor' in mdata:
                 print("  Warning: if NOT 'win_scale_factor' in mdata was run")
                 # mdata['win_scale_factor'] = win_scale_factor.get_value()
-                mdata['win_scale_factor'] = float(alignem.main_window.swim_input.text())
+                # mdata['win_scale_factor'] = float(alignem.main_window.get_swim_input())
+                mdata['win_scale_factor'] = float(alignem.main_window.get_swim_input())
 
             # print("Evaluating: if not 'whitening_factor' in mdata")
             if not 'whitening_factor' in mdata:
                 print("  Warning: if NOT 'whitening_factor' in mdata was run")
                 # mdata['whitening_factor'] = whitening_factor.get_value()
-                mdata['whitening_factor'] = float(alignem.main_window.whitening_input.text())
+                # mdata['whitening_factor'] = float(alignem.main_window.get_whitening_input())
+                mdata['whitening_factor'] = float(alignem.main_window.get_whitening_input())
 
     print("  Exiting ensure_proper_data_structure()")
 
@@ -241,6 +243,9 @@ def link_all_stacks():
                     base_layer['images']['ref']['filename'] = ref_fn
 
     main_win.update_panels()
+
+    main_win.center_all_images()
+
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     print("  Exiting link_all_stacks()")
 
@@ -1013,6 +1018,21 @@ dm_name_to_combo_name = {'init_affine': 'Init Affine', 'refine_affine': 'Refine 
 #         print("isProjectLoaded() is returning True")
 #         return True
 
+def isProject() -> bool:
+    # This function does not work as intended.
+    try:
+        scale = alignem.project_data['data']['scales'][alignem.project_data['data']['current_scale']]
+        layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        print("isProject | a project is open")
+        return True
+    except BaseException as error:
+        print('isProject | there is no project open\n  [isProject()] Exception: {}'.format(error))
+        return False
+
+
+
+
+
 def isDestinationSet() -> bool:
     '''
     Checks if there is a project open
@@ -1037,8 +1057,27 @@ def isProjectScaled() -> bool:
     else:
         isScaled = True
 
-    print('isProjectScaled() | returning:', isScaled)
+    # print('isProjectScaled() | returning:', isScaled)
     return isScaled
+
+def isScaleAligned() -> bool:
+    '''
+    Checks if there exists an alignment stack for the current scale
+
+    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
+    functions even for a project that does not need scales.
+    '''
+
+    if len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]) < 1:
+        # print('isAlignmentOfCurrentScale() | False')
+        isAligned = False
+    else:
+        # print('isAlignmentOfCurrentScale() | True | # aligned images: ', len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        isAligned = True
+
+
+    # print('isScaleAligned() | returning:', isAligned)
+    return isAligned
 
 def getNumAligned() -> int:
     '''
@@ -1109,8 +1148,8 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         alignem.main_window.set_status("Destination not set!")
         alignem.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
-                                        "* (1) Open a project or import images and save.\n"
-                                        "* (2) Generate a set of scaled images and save.\n"
+                                        "--> (1) Open a project or import images and save.\n"
+                                        "--> (2) Generate a set of scaled images and save.\n"
                                         "(3) Align each scale starting with the coarsest.\n"
                                         "(4) Export project to Zarr format.\n"
                                         "(5) View data in Neuroglancer client")
@@ -1129,7 +1168,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         alignem.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
                                         "(1) Open a project or import images and save.\n"
-                                        "* (2) Generate a set of scaled images and save.\n"
+                                        "--> (2) Generate a set of scaled images and save.\n"
                                         "(3) Align each scale starting with the coarsest.\n"
                                         "(4) Export project to Zarr format.\n"
                                         "(5) View data in Neuroglancer client")
@@ -1197,10 +1236,15 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
         refresh_all()
 
+
     # center
     print("Wrapping up align_all_or_some(...)")
     alignem.main_window.center_all_images()
     alignem.main_window.update_win_self()
+
+    # alignem.main_window.toggle_on_export_and_view_groupbox()
+    alignem.main_window.set_progress_stage_3()
+
     print("Exiting align_all_or_some(...)")
 
 
@@ -1416,8 +1460,6 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = alignem.main_window.get_affine_combobox()
 
             # Next copy the layer-level items
-            # NOTE: THIS CONDITIONAL PREVENTS COPYING OF FIRST LAYER/IMAGE DATA ENTERED INTO GUI BACK TO PROJECT FILE
-            # ASK TOM IF THIS BEHAVIOR IS CORRECT
             if prev_layer != None:
 
                 # Build any layer-level structures that might be needed in the data model
@@ -1433,8 +1475,8 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
                 #     'whitening_factor'] = alignem.main_window.whitening_input.text
                 # prev_layer['align_to_ref_method']['method_data'][
                 #     'win_scale_factor'] = alignem.main_window.swim_input.text
-                prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = alignem.main_window.get_whitening_input()
-                prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = alignem.main_window.get_swim_input()
+                prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = float(alignem.main_window.get_whitening_input())
+                prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = float(alignem.main_window.get_swim_input())
 
         # *****************************************************************
         # Second copy from the data model to the widgets if desired (check each along the way)

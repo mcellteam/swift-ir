@@ -34,7 +34,7 @@ QToolTip {
 
 QGroupBox {
   font-weight: bold;
-  border: 1px solid #455364;
+  border: 2px solid #455364;
   border-radius: 4px;
   padding: 2px;
   margin-top: 6px;
@@ -346,7 +346,9 @@ QRadioButton::indicator:!checked {
 }
 QStatusBar {
 	/*color:#027f7f;*/
+	/*color:#ffffff;*/
 	color:#ffffff;
+	background-color: #222b2e;
 	font-weight: bold;
 }
 QSpinBox {

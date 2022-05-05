@@ -35,14 +35,13 @@ import cv2
 from joel_decs import timeit, profileit, dumpit, traceit, countit
 from glanceem_utils import RequestHandler, Server, get_viewer_url, tiffs2zarr, open_ds, add_layer
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
-import align_swiftir, pyswift_tui
+from alignem_swift import align_all_or_some, clear_all_skips, isDestinationSet, isProjectScaled, getSkipsList, \
+    isAlignmentOfCurrentScale, getNumOfScales, getNumAligned, isScaleAligned, isProject
+import alignem_swift, align_swiftir, pyswift_tui
 import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
 
-from alignem_swift import isDestinationSet, isProjectScaled, isAlignmentOfCurrentScale, getSkipsList, \
-    getNumOfScales, getNumAligned
-import alignem_swift
 
 
 # from caveclient import CAVEclient
@@ -690,6 +689,9 @@ def generate_scales_queue():
         # main_window.scales_combobox.currentTextChanged.connect(main_window.fn_scales_combobox)
         # print("  Connecting scales_combobox to fn_scales_combobox handler...")
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+
+        main_window.toggle_on_alignment_groupbox() #0504
+        # main_window.alignment_stack.setStyleSheet("""QWidget {color: #fffff;}""")
 
         print("Generating scales complete.")
         main_window.status.showMessage("Generating scales complete.")
@@ -1384,7 +1386,8 @@ class ZoomPanWidget(QWidget):
         crop_mode = False
         # print("crop_mode = ", crop_mode)
         if crop_mode_callback != None:
-            mode = crop_mode_callback()  #bug
+            # mode = crop_mode_callback()  #bug #0503
+            mode = 'View' #hardcoded #0503
             if mode == 'Crop':
                 print("    => True")
                 crop_mode = True
@@ -1745,9 +1748,6 @@ class ZoomPanWidget(QWidget):
             #     except:
             #         print('ZoomPanWidget.change_layer | WARNING | swim input UI element failed to update its state')
 
-                
-
-        # alignem_swift.main_win.center_all_images() #0409 #changelayer
         main_window.scales_combobox_switch = 1 #this is precautionary
 
     def wheelEvent(self, event):
@@ -1934,6 +1934,7 @@ class ZoomPanWidget(QWidget):
                                         color_index += 1
 
                             if is_skipped:  # skip #redx
+                                self.center_image() #0503 I think this helps
                                 # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
                                 self.setWindowOpacity(.5)
                                 color_to_use = [255, 50, 50]
@@ -2276,6 +2277,10 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
     #alignem_swift.main_win.refresh_all_images()
     main_window.status_skips_label.setText(str(skip_list))  # settext #status #0503
 
+    #0503 attempt to fix non-centering bug that occurs when runtime skips change is followed by scale change
+    # self.image_panel.center_all_images()
+    main_window.image_panel.center_all_images()
+
 
 def align_forward():
     print_debug(30, "Aligning Forward ...")
@@ -2546,7 +2551,7 @@ class ToggleSwitch(QCheckBox):
                  handle_color=Qt.white,
                  h_scale=1.0,
                  v_scale=0.9,
-                 fontSize=9):
+                 fontSize=10):
 
         super().__init__(parent)
         print('ToggleSwitch constructor called.')
@@ -2564,8 +2569,9 @@ class ToggleSwitch(QCheckBox):
         # Setup the rest of the widget.
 
         # (int left, int top, int right, int bottom)
+        #jy this setContentMargins can cause issues with painted region, stick to 8,0,8,0 or similar
         # self.setContentsMargins(8, 0, 8, 0)
-        self.setContentsMargins(8, 0, 8, 0)
+        self.setContentsMargins(8, 0, 8, 0) #left,top,right,bottom
         # self._handle_position = 0
         self._handle_position = 0
         self._h_scale = h_scale
@@ -2574,15 +2580,15 @@ class ToggleSwitch(QCheckBox):
 
         self.stateChanged.connect(self.handle_state_change)
 
-        self.setMaximumWidth(84)
+        self.setMaximumWidth(70)
 
     def __str__(self):
         return str(self.__class__) + '\n' + '\n'.join(
             ('{} = {}'.format(item, self.__dict__[item]) for item in self.__dict__))
 
     def sizeHint(self):
-        return QSize(58, 45)
-        # return QSize(86, 45)
+        # return QSize(76, 30)
+        return QSize(80, 35)
 
     def hitButton(self, pos: QPoint):
         return self.contentsRect().contains(pos)
@@ -2611,10 +2617,9 @@ class ToggleSwitch(QCheckBox):
         if self.isChecked():
             p.setBrush(self._bar_checked_brush)
             p.drawRoundedRect(barRect, rounding, rounding)
-            p.setBrush(self._handle_checked_brush)
-
             p.setPen(self._black_pen)
-            # p.setFont(QFont('Helvetica', self._fontSize, 75))
+            p.setBrush(self._handle_checked_brush)
+            p.setFont(QFont('Helvetica', self._fontSize, 75))
             p.drawText(xLeft + handleRadius / 2, contRect.center().y() + handleRadius / 2, "KEEP")
 
         else:
@@ -2622,6 +2627,7 @@ class ToggleSwitch(QCheckBox):
             p.drawRoundedRect(barRect, rounding, rounding)
             p.setPen(self._black_pen)
             p.setBrush(self._handle_brush)
+            p.setFont(QFont('Helvetica', self._fontSize, 75))
             p.drawText(contRect.center().x(), contRect.center().y() + handleRadius / 2, "SKIP")
 
         p.setPen(self._light_grey_pen)
@@ -2893,6 +2899,7 @@ class MainWindow(QMainWindow):
         print('MainWindow | initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
         self.setWindowTitle(title)
+        self.setWindowIcon(QIcon(QPixmap('sims.png')))
         self.current_project_file_name = None
         self.view_change_callback = None
         self.mouse_down_callback = None
@@ -2912,8 +2919,8 @@ class MainWindow(QMainWindow):
         # multiprocessing.set_start_method('fork', force=True)
 
         #size #buttonsize
-        # std_button_size = QSize(130, 28)
-        std_button_size = QSize(120, 28)
+        # std_button_size = QSize(130, 28) #original
+        std_button_size = QSize(110, 28)
         std_combo_size = int(120)
 
 
@@ -3097,8 +3104,8 @@ class MainWindow(QMainWindow):
                                              "Typical workflow:\n"
                                              "(1) Open a project or import images and save.\n"
                                              "(2) Generate a set of scaled images and save.\n"
-                                             "* (3) Align each scale starting with the coarsest.\n"
-                                             "* (4) Export alignment to Zarr format.\n"
+                                             "--> (3) Align each scale starting with the coarsest.\n"
+                                             "--> (4) Export alignment to Zarr format.\n"
                                              "(5) View data in Neuroglancer client")
                 print("ng_view() | EXCEPTION | failed 'getNumAligned() < 1' conditoinal - Aborting")
                 return
@@ -3121,7 +3128,7 @@ class MainWindow(QMainWindow):
                                              "(1) Open a project or import images and save.\n"
                                              "(2) Generate a set of scaled images and save.\n"
                                              "(3) Align each scale starting with the coarsest.\n"
-                                             "* (4) Export alignment to Zarr format.\n"
+                                             "--> (4) Export alignment to Zarr format.\n"
                                              "(5) View data in Neuroglancer client")
                 print("ng_view() | EXCEPTION | failed 'not os.path.isdir(zarr_project_path)' conditional - Aborting")
                 return
@@ -3379,8 +3386,10 @@ class MainWindow(QMainWindow):
         self.simple_mode = simple_mode
         self.main_panel = QWidget()
         self.main_panel_layout = QVBoxLayout()
+        self.main_panel_layout.setSpacing(20) # this will inherit downward
 
         self.main_panel_extended_layout = QHBoxLayout()
+        self.main_panel_extended_layout.setSpacing(0)
         self.main_panel_extended_layout.addLayout(self.main_panel_layout)
         self.main_panel.setLayout(self.main_panel_extended_layout)
 
@@ -3417,8 +3426,8 @@ class MainWindow(QMainWindow):
                 else:
                     print('\t' * (indent + 1) + str(value))
 
-
-
+        def show_memory_usage():
+            os.system('python3 memoryusage.py')
 
         #debug #debuglayer
         def debug_layer():
@@ -3508,7 +3517,7 @@ class MainWindow(QMainWindow):
                                              'Typical workflow:\n'
                                              '(1) Open a project or import images and save.\n'
                                              '(2) Generate a set of scaled images and save.\n'
-                                             '* (3) Align each scale starting with the coarsest.\n'
+                                             '--> (3) Align each scale starting with the coarsest.\n'
                                              '(4) Export alignment to Zarr format.\n'
                                              '(5) View data in Neuroglancer client')
                 return
@@ -3567,11 +3576,11 @@ class MainWindow(QMainWindow):
         self.export_zarr_button.setFixedSize(std_button_size)
 
         # self.ng_button = QPushButton("Neuroglancer View")
-        self.ng_button = QPushButton("Neuroglancer View")
+        self.ng_button = QPushButton("Neuroglancer")
         self.ng_button.clicked.connect(ng_view)  # parenthesis were causing the member function to be evaluated early
         self.ng_button.setFixedSize(std_button_size)
 
-        n_scales_label = QLabel("#scales:")
+        n_scales_label = QLabel("# of scales:")
         # n_scales_label.setAlignment(Qt.AlignRight)
         self.n_scales_input = QLineEdit(self)
         self.n_scales_input.setText("4")
@@ -3590,11 +3599,11 @@ class MainWindow(QMainWindow):
         cname_label = QLabel("compression:")
         self.cname_combobox = QComboBox(self)
         self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
-        self.cname_combobox.setMinimumWidth(60)
+        self.cname_combobox.setMinimumWidth(70)
         self.cname_combobox.setMaximumWidth(std_combo_size)
 
         #-------------------------------------
-        #           EXTRA FUNCTIONS
+        #       STEP 1: FILE FUNCTIONS
         #-------------------------------------
 
         self.documentation_button = QPushButton("Documentation")
@@ -3633,20 +3642,24 @@ class MainWindow(QMainWindow):
         self.import_images_button.clicked.connect(self.import_base_images)
         self.import_images_button.setFixedSize(std_button_size)
 
-        self.extra_functions_groupbox = QGroupBox("Main")
+
         self.extra_functions_layout = QGridLayout()
+        self.extra_functions_layout.setContentsMargins(10, 25, 10, 10)
+        # self.extra_functions_layout.setAlignment(Qt.AlignLeft)
+        # self.extra_functions_layout.setSpacing(15)
+        # self.extra_functions_layout.addWidget(self.import_images_button, 0, 0)
         self.extra_functions_layout.addWidget(self.documentation_button, 0, 0)
-        self.extra_functions_layout.addWidget(self.remote_viewer_button, 0, 1)
+        self.extra_functions_layout.addWidget(self.new_project_button, 0, 1)
+        self.extra_functions_layout.addWidget(self.open_project_button, 0, 2)
+        self.extra_functions_layout.addWidget(self.quit_app_button, 1, 0)
+        self.extra_functions_layout.addWidget(self.save_project_button, 1, 1)
+        self.extra_functions_layout.addWidget(self.remote_viewer_button, 1, 2)
+        # self.extra_functions_layout.addWidget(self.quit_app_button, 3, 0)
         # self.extra_functions_layout.addWidget(self.new_project_button, 1, 0)
         # self.extra_functions_layout.addWidget(self.open_project_button, 1, 1)
         # self.extra_functions_layout.addWidget(self.save_project_as_button, 2, 0)
         # self.extra_functions_layout.addWidget(self.save_project_button, 2, 1)
-        self.extra_functions_layout.addWidget(self.quit_app_button, 3, 0)
-        self.extra_functions_layout.addWidget(self.import_images_button, 3, 1)
 
-        # self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        # self.extra_functions_layout.addItem(self.spacerItem)
-        self.extra_functions_groupbox.setLayout(self.extra_functions_layout)
 
         splash_button_size = QSize(200, 60)
 
@@ -3657,6 +3670,7 @@ class MainWindow(QMainWindow):
         self.splash_remote_viewer_button = QPushButton("Remote Viewer")
         self.splash_remote_viewer_button.clicked.connect(remote_view)
         self.splash_remote_viewer_button.setFixedSize(splash_button_size)
+
 
         self.splash_open_project_button = QPushButton("Open Project")
         self.splash_open_project_button.clicked.connect(self.open_project)
@@ -3687,6 +3701,8 @@ class MainWindow(QMainWindow):
         self.splash_import_images_button.setFixedSize(splash_button_size)
 
         self.splash_functions_layout = QGridLayout()
+        self.splash_functions_layout.setContentsMargins(0, 0, 0, 0)
+        # self.splash_functions_layout.setSpacing(5)
         self.splash_functions_layout.addWidget(self.splash_documentation_button, 0, 0)
         self.splash_functions_layout.addWidget(self.splash_remote_viewer_button, 0, 1)
         self.splash_functions_layout.addWidget(self.splash_new_project_button, 1, 0)
@@ -3698,39 +3714,6 @@ class MainWindow(QMainWindow):
         self.splash_panel = QWidget()
         self.splash_panel.setLayout(self.splash_functions_layout)
 
-        #-------------------------------------
-        #           EXPORT AND VIEW
-        #-------------------------------------
-
-        self.n_scales_layout = QHBoxLayout()
-        self.n_scales_layout.addWidget(n_scales_label, alignment=Qt.AlignLeft)
-        self.n_scales_layout.addWidget(self.n_scales_input, alignment=Qt.AlignRight)
-
-        self.clevel_layout = QHBoxLayout()
-        self.clevel_layout.addWidget(clevel_label, alignment=Qt.AlignLeft)
-        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignRight)
-
-        self.cname_layout = QHBoxLayout()
-        self.cname_layout.addWidget(cname_label, alignment=Qt.AlignLeft)
-        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignRight)
-
-        self.export_settings_layout = QVBoxLayout()
-        self.export_settings_layout.addLayout(self.n_scales_layout)
-        self.export_settings_layout.addLayout(self.clevel_layout)
-        self.export_settings_layout.addLayout(self.cname_layout)
-        #        , alignment = Qt.AlignRight
-
-        self.export_and_ng_layout = QVBoxLayout()
-        self.export_and_ng_layout.addWidget(self.export_zarr_button, alignment=Qt.AlignCenter)
-        self.export_and_ng_layout.addWidget(self.ng_button, alignment=Qt.AlignCenter)
-
-        self.export_and_view_layout = QHBoxLayout()
-        self.export_and_view_layout.addLayout(self.export_settings_layout)
-        self.export_and_view_layout.addLayout(self.export_and_ng_layout)
-
-        self.export_and_view_groupbox = QGroupBox("Export && View")
-        # self.export_and_view_layout.setContentsMargins(400, 0, 0, 0)
-        self.export_and_view_groupbox.setLayout(self.export_and_view_layout)
 
         #-------------------------------------
         #           STATUS
@@ -3746,7 +3729,6 @@ class MainWindow(QMainWindow):
         #     self.status_base_image_label.setText(str(skip_list))  # settext #status
 
         self.status_vbox = QVBoxLayout()
-
         self.status_hbox_skips = QHBoxLayout()
         self.status_skips_label = QLabel("[]")
         self.status_skips_label.setObjectName("status_skips_label");
@@ -3786,9 +3768,6 @@ class MainWindow(QMainWindow):
         # base_file_name = layer['images']['base']['filename']
         # print("current base image = ", base_file_name)
 
-        #-------------------------------------
-        #           NEW CONTROLS
-        #-------------------------------------
         #controls #controlpanel #newcontrols
 
         self.center_button = QPushButton('Center')  # center
@@ -3818,70 +3797,77 @@ class MainWindow(QMainWindow):
         #         skip_list.append(layer_index)
         skip_list = getSkipsList()
         # print("skip_list = ", skip_list)
+        self.select_scale_layout = QHBoxLayout()
+        self.select_scale_layout.setContentsMargins(0,0,0,0) #left,top,right,bottom
+        self.select_scale_layout.setSpacing(5)
         self.scales_combobox = QComboBox(self)  # thing_to_do #init_ref_app #affine
+        self.scales_combobox.setMinimumWidth(100) #original
+        self.scales_combobox.setMinimumWidth(120)  # original
         # self.scales_combobox.addItems([skip_list])
         # self.scales_combobox.addItems(['--'])
         self.scales_combobox.setFocusPolicy(Qt.NoFocus)
         self.scales_combobox.setMaximumWidth(std_combo_size)
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
-        #0405
-        print("Connecting scales_combobox to fn_scales_combobox handler...")
         self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
-        from alignem_swift import clear_all_skips  # clear_all_skips #skip
+        self.select_scale_layout.addWidget(QLabel("Current Scale:"), alignment=Qt.AlignLeft)
+        # (QLabel("Ref Image:"), alignment=Qt.AlignLeft)
+        self.select_scale_layout.addWidget(self.scales_combobox)
+
+
         # self.clear_all_skips_button = QPushButton('Clear All Skips')
-        self.clear_all_skips_button = QPushButton('Reset Skips')
+        # self.clear_all_skips_button = QPushButton('Reset Skips')
+        self.clear_all_skips_button = QPushButton('Reset')
 
-        # self.select_data_layout = QGridLayout()
-        # self.select_data_layout.addWidget(self.toggle_skip, 0, 0, Qt.AlignLeft)
-        # self.select_data_layout.addWidget(self.clear_all_skips_button, 1, 0, Qt.AlignLeft)
+        # -------------------------------------
+        #    STEP 2: SCALING & DATA SELECTION
+        # -------------------------------------
 
-        self.images_and_scaling_groupbox = QGroupBox("Scaling && Data Selection")
         self.images_and_scaling_layout = QGridLayout()
-        self.images_and_scaling_layout.addWidget(self.center_button, 0, 0)
-        self.images_and_scaling_layout.addWidget(self.scales_combobox, 1, 0)
-        # self.images_and_scaling_layout.addWidget(self.define_scales_button, 0, 1)
-        self.images_and_scaling_layout.addWidget(self.generate_scales_button, 1, 1)
-        self.images_and_scaling_layout.addWidget(self.toggle_skip, 0, 2)  # center
-        self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 2)
-        self.images_and_scaling_groupbox.setLayout(self.images_and_scaling_layout)
+        self.images_and_scaling_layout.setContentsMargins(10, 25, 10, 5) #tag23
+        self.images_and_scaling_layout.setSpacing(10)
+
+        self.images_and_scaling_layout.addWidget(self.import_images_button, 0, 0)
+        self.images_and_scaling_layout.addWidget(self.center_button, 0, 1)
+        self.images_and_scaling_layout.addWidget(self.generate_scales_button, 1, 1, alignment=Qt.AlignCenter)
+        self.toggle_reset_hlayout = QHBoxLayout()
+        self.toggle_reset_hlayout.setContentsMargins(0,0,0,0)
+        self.toggle_reset_hlayout.setSpacing(15)
+        self.toggle_reset_hlayout.addWidget(self.toggle_skip)
+        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button)
+        # self.toggle_reset_hlayout.addLayout(self.select_scale_layout)
+        self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0)
+        # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0)
+        # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1)
+        # self.images_and_scaling_layout.addLayout(self.select_scale_layout, 1, 1)
+        # self.images_and_scaling_layout.addWidget(select_scale_label, 3, 0)
+        # self.images_and_scaling_layout.addWidget(self.scales_combobox, 4, 0)
 
         self.affine_combobox = QComboBox(self)  # thing_to_do #init_ref_app #affine
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
         self.affine_combobox.setFocusPolicy(Qt.NoFocus)
         self.affine_combobox.setMaximumWidth(std_combo_size)
 
-        from alignem_swift import align_all_or_some  # align_all_or_some
+        # -------------------------------------
+        #         STEP 3: ALIGNMENT
+        # -------------------------------------
+
         # self.align_all_button = QPushButton('Align All')
         self.align_all_button = QPushButton('Align This Scale')
         self.align_all_button.clicked.connect(align_all_or_some)
-        self.align_all_button.setFixedSize(std_button_size)
-
+        # self.align_all_button.setFixedSize(std_button_size)
         self.clear_all_skips_button.setFocusPolicy(Qt.NoFocus)
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
         self.clear_all_skips_button.clicked.connect(self.update_skips_label())  # status
-        self.clear_all_skips_button.setFixedSize(std_button_size)
-        # from alignem_swift import view_change_callback
-        # self.clear_all_skips_button.clicked.connect(self.update_win_self())
-        # self.clear_all_skips_button.clicked.connect(self.update_panels())
-        # self.clear_all_skips_button.clicked.connect(self.refresh_all_images())
-        # self.clear_all_skips_button.clicked.connect(self.view_change_callback)
-
-        # self.select_data_groupbox = QGroupBox("Select Data")
-        # self.select_data_groupbox.setLayout(self.select_data_layout)
-
-        # Not necessary for minimal interface. copy_skips_to_all_scales is already run when 'skip' is set.
-        # from alignem_swift import copy_skips_to_all_scales #copy_skips_to_all_scales
-        # self.copy_skips_to_all_scales_button = QPushButton('Skips -> All Scales')
-        # self.copy_skips_to_all_scales_button.clicked.connect(copy_skips_to_all_scales)
-        # self.copy_skips_to_all_scales_button.setFixedSize(std_button_size)
+        # self.clear_all_skips_button.setFixedSize(std_button_size)
+        self.clear_all_skips_button.setMaximumWidth(50)
 
         # whitening QLineEdit
         whitening_label = QLabel("Whitening:")
         self.whitening_input = QLineEdit(self)
         self.whitening_input.setText("-0.68")
-        self.whitening_input.setFixedWidth(70)
+        self.whitening_input.setFixedWidth(50)
         # self.whitening_input.setFocusPolicy(Qt.NoFocus) #prevents text entry at runtime
         # self.whitening_valid = QDoubleValidator(-5.0, 5.0, 2, self)
         self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
@@ -3891,51 +3877,171 @@ class MainWindow(QMainWindow):
         # n_scales_label.setAlignment(Qt.AlignRight)
         self.swim_input = QLineEdit(self)
         self.swim_input.setText("0.8125")
-        self.swim_input.setFixedWidth(70)
+        self.swim_input.setFixedWidth(50)
         # self.swim_input.setFocusPolicy(Qt.NoFocus) #prevents text entry at runtime
         # self.n_scales_valid = QDoubleValidator(0.0000, 1.0000, 4, self)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
 
-        self.alignment_groupbox = QGroupBox("Alignment")
-        self.images_and_scaling_groupbox.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        self.alignment_layout = QGridLayout()
+
+
         self.whitening_grid = QGridLayout()
+        self.whitening_grid.setContentsMargins(0, 0, 0, 0)
         self.whitening_grid.addWidget(whitening_label, 0, 0, alignment=Qt.AlignLeft)
         self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignRight)
+
         self.swim_grid = QGridLayout()
+        self.swim_grid.setContentsMargins(0,0,0,0)
         self.swim_grid.addWidget(swim_label, 0, 0, alignment=Qt.AlignLeft)
         self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignRight)
 
         # groups #grouplocation #controlpanel
-        self.alignment_layout.addLayout(self.whitening_grid, 0, 0)
-        self.alignment_layout.addLayout(self.swim_grid, 1, 0)
-        self.alignment_layout.addWidget(self.affine_combobox, 0, 1)
-        self.alignment_layout.addWidget(self.align_all_button, 1, 1)  # align_all
+        self.alignment_layout = QGridLayout()
+        self.alignment_layout.setContentsMargins(10, 25, 10, 5) #tag23
+        # self.alignment_layout.setSpacing(0)
+        self.alignment_layout.addLayout(self.select_scale_layout, 0, 0, 1, 2)
+        self.alignment_layout.addLayout(self.whitening_grid, 1, 0)
+        self.alignment_layout.addLayout(self.swim_grid, 2, 0)
+        self.alignment_layout.addWidget(self.affine_combobox, 1, 1)
+        self.alignment_layout.addWidget(self.align_all_button, 2, 1)  # align_all
         # self.improved_controls_layout.addWidget(self.copy_skips_to_all_scales_button, alignment=Qt.AlignLeft) #not necessary
         # self.spacerItem2 = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         # self.improved_controls_layout.addItem(self.spacerItem2)
-        self.alignment_groupbox.setLayout(self.alignment_layout)
 
         # self.divider.addWidget(QHLine(), 0, 0, 1, 2)
         # self.divider.addWidget(QLabel("New Control Panel:"), 1, 0, 1, 1)
         # self.divider.addWidget(QHLine(), 2, 0, 1, 2)
 
-        # ADD TO 'main_panel_layout' #mainpanellayout #maximumsize #groups #groupsize
-        self.extra_functions_groupbox.setMaximumWidth(300)
-        self.images_and_scaling_groupbox.setMaximumWidth(500)
-        # self.select_data_groupbox.setMaximumWidth(350)
-        self.alignment_groupbox.setMaximumWidth(400)
-        self.export_and_view_groupbox.setMaximumWidth(400)
+
+        #-------------------------------------
+        #       STEP 4: EXPORT AND VIEW
+        #-------------------------------------
+
+        self.n_scales_layout = QHBoxLayout()
+        self.n_scales_layout.setContentsMargins(0, 0, 0, 0)
+        self.n_scales_layout.addWidget(n_scales_label, alignment=Qt.AlignLeft)
+        self.n_scales_layout.addWidget(self.n_scales_input, alignment=Qt.AlignRight)
+
+        self.clevel_layout = QHBoxLayout()
+        self.clevel_layout.setContentsMargins(0, 0, 0, 0)
+        self.clevel_layout.addWidget(clevel_label, alignment=Qt.AlignLeft)
+        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignRight)
+
+        self.cname_layout = QHBoxLayout()
+        self.cname_layout.setContentsMargins(0,0,0,0)
+        self.cname_layout.addWidget(cname_label, alignment=Qt.AlignLeft)
+        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignRight)
+
+        self.export_settings_layout = QVBoxLayout()
+        # self.export_settings_layout.insertStretch(1)
+        self.export_settings_layout.setContentsMargins(0,0,0,0)
+        self.export_settings_layout.setSpacing(20)
+        self.export_settings_layout.addLayout(self.n_scales_layout)
+        self.export_settings_layout.addLayout(self.clevel_layout)
+        self.export_settings_layout.addLayout(self.cname_layout)
+        #        , alignment = Qt.AlignRight
+
+        self.export_and_ng_layout = QVBoxLayout()
+        self.export_and_ng_layout.setContentsMargins(0, 0, 0, 0)
+        self.export_and_ng_layout.addWidget(self.export_zarr_button, alignment=Qt.AlignCenter)
+        self.export_and_ng_layout.addWidget(self.ng_button, alignment=Qt.AlignCenter)
+
+        self.export_and_view_layout = QHBoxLayout()
+        self.export_and_view_layout.setContentsMargins(10, 25, 10, 5)
+        self.export_and_view_layout.addLayout(self.export_settings_layout)
+        self.export_and_view_layout.addLayout(self.export_and_ng_layout)
+
+
+        # ---------------------------------------
+        #             GROUP BOXES
+        # ---------------------------------------
+        #sizes #margins #groupbox
+        # FILE FUNCTIONS
+        self.extra_functions_groupbox = QGroupBox("Project")
+        self.extra_functions_groupbox.setMaximumWidth(400)
+        self.extra_functions_groupbox.setMaximumHeight(140)
+        # self.extra_functions_layout.setContentsMargins(20,25,20,5)
+        # self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.extra_functions_groupbox.setLayout(self.extra_functions_layout)
+        # self.extra_functions_layout.addItem(self.spacerItem)
+        # self.extra_functions_layout.setSpacing(0)
+        # self.extra_functions_layout.setContentsMargins(0,0,0,0)
+        # SCALING & DATA SELECTION
+        self.images_and_scaling_stack = QStackedWidget()
+        self.images_and_scaling_stack.setMaximumWidth(280)
+        self.images_and_scaling_stack.setMaximumHeight(140)
+        self.images_and_scaling_groupbox_ = QGroupBox()
+        self.images_and_scaling_groupbox_.setTitle("Scaling && Data Selection")
+        self.images_and_scaling_groupbox = QGroupBox("Scaling && Data Selection")
+        # self.images_and_scaling_groupbox.setMaximumWidth(400)
+        self.images_and_scaling_groupbox.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.images_and_scaling_groupbox.setAlignment(Qt.AlignLeft)
+        self.images_and_scaling_groupbox.setLayout(self.images_and_scaling_layout)
+        self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox_)
+        self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox)
+        self.images_and_scaling_stack.setCurrentIndex(0)
+
+        # self.images_and_scaling_groupbox.setVisible(False)
+        # ALIGNMENT
+        self.alignment_stack = QStackedWidget()
+        self.alignment_stack.setMaximumWidth(400)
+        self.alignment_stack.setMaximumHeight(140)
+        self.alignment_groupbox_ = QGroupBox()
+        self.alignment_groupbox_.setTitle("Alignment")
+        self.alignment_groupbox = QGroupBox("Alignment")
+        # self.alignment_groupbox.setMaximumWidth(340)
+        self.alignment_groupbox.setAlignment(Qt.AlignLeft)
+        self.alignment_groupbox.setContentsMargins(0, 0, 0, 0)
+        self.alignment_groupbox.setLayout(self.alignment_layout)
+        self.alignment_stack.addWidget(self.alignment_groupbox_)
+        self.alignment_stack.addWidget(self.alignment_groupbox)
+        self.alignment_stack.setCurrentIndex(0)
+        # self.alignment_groupbox.setVisible(False)
+        # EXPORT & VIEW
+        self.export_and_view_stack = QStackedWidget()
+        self.export_and_view_stack.setMaximumWidth(400)
+        self.export_and_view_stack.setMaximumHeight(140)
+        self.export_and_view_groupbox_ = QGroupBox()
+        self.export_and_view_groupbox_.setTitle("Export && View")
+        self.export_and_view_groupbox = QGroupBox("Export && View")
+        # self.export_and_view_groupbox.setMaximumWidth(340)
+        self.export_and_view_groupbox.setLayout(self.export_and_view_layout)
+        self.export_and_view_stack.addWidget(self.export_and_view_groupbox_)
+        self.export_and_view_stack.addWidget(self.export_and_view_groupbox)
+        self.export_and_view_stack.setCurrentIndex(0)
+        # self.export_and_view_groupbox.setVisible(False)
+
+        # self.images_and_scaling_stack.setStyleSheet("""QGroupBox {background-color: #7d7d7d;}""")
+        self.images_and_scaling_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+        self.alignment_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+        self.export_and_view_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
+
+        # QStackedWidget Doc:
+        #https://doc.qt.io/qtforpython/PySide6/QtWidgets/QStackedWidget.html
+
 
         self.lower_panel_groups = QGridLayout()
-        self.images_and_scaling_groupbox.setAlignment(Qt.AlignLeft)
-        self.alignment_groupbox.setAlignment(Qt.AlignLeft)
+        # self.lower_panel_groups.setContentsMargins(20,0,20,0)
+        self.lower_panel_groups.setAlignment(Qt.AlignHCenter)
+        # self.lower_panel_groups.setSpacing(0)
+
         self.lower_panel_groups.addWidget(self.extra_functions_groupbox, 0, 0)
-        self.lower_panel_groups.addWidget(self.images_and_scaling_groupbox, 0, 1)
+        # self.lower_panel_groups.addWidget(self.images_and_scaling_groupbox, 0, 1)
+        self.lower_panel_groups.addWidget(self.images_and_scaling_stack, 0, 1)
+        self.lower_panel_groups.addWidget(self.images_and_scaling_stack, 0, 1)
         # self.lower_panel_groups.addWidget(self.select_data_groupbox, 0, 2)
-        self.lower_panel_groups.addWidget(self.alignment_groupbox, 0, 2)
-        self.lower_panel_groups.addWidget(self.export_and_view_groupbox, 0, 3)
+        # self.lower_panel_groups.addWidget(self.alignment_groupbox, 0, 2)
+        self.lower_panel_groups.addWidget(self.alignment_stack, 0, 2)
+        # self.lower_panel_groups.addWidget(self.export_and_view_groupbox, 0, 3)
+        self.lower_panel_groups.addWidget(self.export_and_view_stack, 0, 3)
+        # self.lower_panel_groups_hspacer = QSpacerItem(10, 10, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        # self.lower_panel_groups.addItem(self.lower_panel_groups_hspacer, 0, 4)
+
+        # self.lower_panel_groups.setContentsMargins(20,20,20,0)
+        # self.lower_panel_groups.setContentsMargins(25,25,25,25)
+        self.lower_panel_groups.setAlignment(Qt.AlignHCenter)
         self.main_panel_layout.addLayout(self.lower_panel_groups)  #mainpanellayout
+        self.main_panel_layout.setAlignment(Qt.AlignHCenter)
 
         ##########docs_panel DOCUMENTATION PANEL
         self.browser = QWebEngineView()
@@ -4074,6 +4180,8 @@ class MainWindow(QMainWindow):
         # self.pageComboBox.activated.connect(self.stackedLayout.setCurrentIndex)
 
         self.stacked_layout = QVBoxLayout()
+        # self.stacked_layout.setContentsMargins(0,0,0,0)
+        # self.stacked_layout.setSpacing(0)
         self.stacked_layout.addWidget(self.stacked_widget)
         self.setCentralWidget(self.stacked_widget)  # setCentralWidget to QStackedWidget
 
@@ -4166,6 +4274,7 @@ class MainWindow(QMainWindow):
             #   ]
             # ],
             # [ '&Set',
+            #stylesheet
             ['&Advanced',
              [
                  ['&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None],
@@ -4195,7 +4304,18 @@ class MainWindow(QMainWindow):
                  ['Reverse Arrow Keys', None, self.toggle_arrow_direction, False, None, None],
                  ['-', None, None, None, None, None],
                  ['Default Plot Code', None, self.not_yet, None, None, None],
-                 ['Custom Plot Code', None, self.not_yet, None, None, None]
+                 ['Custom Plot Code', None, self.not_yet, None, None, None],
+                 [ '&Stylesheets',
+                   [
+                     ['Style #1 - Default', None, self.apply_stylesheet, None, None, None],
+                     # ['Style #2 - Light2', None, self.apply_stylesheet_2, None, None, None],
+                     ['Style #3 - Light3', None, self.apply_stylesheet_3, None, None, None],
+                     ['Style #4 - Grey', None, self.apply_stylesheet_4, None, None, None],
+                     ['Style #11 - Screamin Green', None, self.apply_stylesheet_11, None, None, None],
+                     ['Style #12 - Dark12', None, self.apply_stylesheet_12, None, None, None],
+                     ['No Style', None, self.no_stylesheet, None, None, None],
+                   ]
+                 ],
              ]
              ],
             # [ '&Show',
@@ -4215,6 +4335,8 @@ class MainWindow(QMainWindow):
              [
                  ['Print Structures', None, self.print_structures, None, None, None],
                  ['-', None, None, None, None, None],
+                 ['Print Project File', None, self.print_project_data, None, None, None],
+                 ['-', None, None, None, None, None],
                  ['Print Image Library', None, self.print_image_library, None, None, None],
                  ['-', None, None, None, None, None],
                  ['Debug Layer', None, debug_layer, None, None, None],
@@ -4225,15 +4347,16 @@ class MainWindow(QMainWindow):
                  ['-', None, None, None, None, None],
                  ['refresh_all_images', None, self.refresh_all_images, None, None, None],
                  ['-', None, None, None, None, None],
-                 ['print_project_data', None, self.print_project_data, None, None, None],
-                 ['-', None, None, None, None, None],
+
                  ['isDestinationSet', None, isDestinationSet, None, None, None],
                  ['-', None, None, None, None, None],
                  ['isProjectScaled', None, isProjectScaled, None, None, None],
                  ['-', None, None, None, None, None],
                  ['isAlignmentOfCurrentScale', None, isAlignmentOfCurrentScale, None, None, None],
                  ['-', None, None, None, None, None],
-                 ['getNumAligned', None, getNumAligned, None, None, None],
+                 ['Get # Aligned', None, getNumAligned, None, None, None],
+                 ['-', None, None, None, None, None],
+                 ['Show Memory Usage', None, show_memory_usage, None, None, None],
                  ['-', None, None, None, None, None],
 
                  # ['Define Waves', None, self.not_yet, None, None, None],
@@ -4440,6 +4563,109 @@ class MainWindow(QMainWindow):
               scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
         self.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
 
+    #stylesheet
+    def no_stylesheet(self):
+        self.setStyleSheet('')
+
+    def apply_stylesheet(self):
+        self.setStyleSheet('')
+        self.setStyleSheet(open(os.path.join(self.pyside_path, 'stylesheet.qss')).read())
+
+    # def apply_stylesheet_2(self):
+    #     self.setStyleSheet('')
+    #     self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet2.qss')).read())
+
+    def apply_stylesheet_3(self):
+        self.setStyleSheet('')
+        self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet3.qss')).read())
+
+    def apply_stylesheet_4(self):
+        self.setStyleSheet('')
+        self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet4.qss')).read())
+
+    # def apply_stylesheet_8(self):
+    #     self.setStyleSheet('')
+    #     self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet8.qss')).read())
+
+    def apply_stylesheet_11(self):
+        self.setStyleSheet('')
+        self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet11.qss')).read())
+
+    def apply_stylesheet_12(self):
+        self.setStyleSheet('')
+        self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet12.qss')).read())
+
+    #0504
+    # def toggle_on_extra_functions_groupbox(self):
+    #     self.extra_functions_stack.setCurrentIndex(1)
+    #     self.extra_functions_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
+    # def toggle_off_extra_functions_groupbox(self):
+    #     self.extra_functions_stack.setCurrentIndex(0)
+    #     self.extra_functions_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
+    def toggle_on_images_and_scaling_groupbox(self):
+        self.images_and_scaling_stack.setCurrentIndex(1)
+        self.images_and_scaling_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
+    def toggle_off_images_and_scaling_groupbox(self):
+        self.images_and_scaling_stack.setCurrentIndex(0)
+        self.images_and_scaling_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
+    def toggle_on_alignment_groupbox(self):
+        self.alignment_stack.setCurrentIndex(1)
+        self.alignment_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
+    def toggle_off_alignment_groupbox(self):
+        self.alignment_stack.setCurrentIndex(0)
+        self.alignment_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
+    def toggle_on_export_and_view_groupbox(self):
+        self.export_and_view_stack.setCurrentIndex(1)
+        self.export_and_view_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
+    def toggle_off_export_and_view_groupbox(self):
+        self.export_and_view_stack.setCurrentIndex(0)
+        self.export_and_view_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
+    @Slot()
+    def set_progress_stage_0(self):
+        print('Updating user progress to stage 0')
+        self.toggle_off_images_and_scaling_groupbox()
+        self.toggle_off_alignment_groupbox()
+        self.toggle_off_export_and_view_groupbox()
+
+    @Slot()
+    def set_progress_stage_1(self):
+        print('Updating user progress to stage 1')
+        self.toggle_on_images_and_scaling_groupbox()
+        self.toggle_off_alignment_groupbox()
+        self.toggle_off_export_and_view_groupbox()
+
+    @Slot()
+    def set_progress_stage_2(self):
+        print('Updating user progress to stage 2')
+        self.toggle_on_images_and_scaling_groupbox()
+        self.toggle_on_alignment_groupbox()
+        self.toggle_off_export_and_view_groupbox()
+
+    @Slot()
+    def set_progress_stage_3(self):
+        print('Updating user progress to stage 3')
+        self.toggle_on_images_and_scaling_groupbox()
+        self.toggle_on_alignment_groupbox()
+        self.toggle_on_export_and_view_groupbox()
+
+    @Slot()
+    def set_user_progress(self):
+        print('set_user_progress | Updating user progress...')
+
+        if isScaleAligned():
+            self.set_progress_stage_3()
+        elif isProjectScaled():
+            self.set_progress_stage_2()
+        elif isDestinationSet():
+            self.set_progress_stage_1()
+        else:
+            self.set_progress_stage_0()
+
+
     # TODO: update_skip_toggle function above works, when called from change_layer. Better idea is to
     # combine all GUI elements into a single funciton that can be called from change_layer. For example:
     # main_window.read_project_data_update_gui()
@@ -4484,15 +4710,15 @@ class MainWindow(QMainWindow):
         print('MainWindow.read_project_data_update_gui | COMPLETE | GUI data is 1:1 with project file for current scale + layer.\n')
 
     #0503...
-    # @Slot()
-    def get_whitening_input(self):
-        return self.whitening_input.text()
+    @Slot()
+    def get_whitening_input(self) -> float:
+        return float(self.whitening_input.text())
 
-    # @Slot()
-    def get_swim_input(self):
-        return self.swim_input.text()
+    @Slot()
+    def get_swim_input(self) -> float:
+        return float(self.swim_input.text())
 
-    # @Slot()
+    @Slot()
     def get_affine_combobox(self):
         combo_name_to_dm_name = {'Init Affine': 'init_affine', 'Refine Affine': 'refine_affine','Apply Affine': 'apply_affine'}
         return combo_name_to_dm_name[self.affine_combobox.currentText()]
@@ -4531,8 +4757,8 @@ class MainWindow(QMainWindow):
             project_data['data']['current_scale'] = new_curr_scale
         else:
             print("fn_scales_combobox | change scales switch is DISABLED")
-
         self.center_all_images() # prob best location, user is using combobox to change scale
+        # self.image_panel.center_all_images() #0503
 
 
     @Slot()
@@ -4665,6 +4891,8 @@ class MainWindow(QMainWindow):
                 print('MainWindow.new_project | user did not click Ok - Aborting')
                 return
 
+        self.set_progress_stage_0()
+
         # make_new = request_confirmation("Are you sure?",
         #                                 "Are you sure you want to exit the project? " \
         #                                 "Unsaved progress will be unrecoverable like " \
@@ -4680,6 +4908,11 @@ class MainWindow(QMainWindow):
         print('MainWindow.new_project | setting self.current_project_file_name = None')
         self.current_project_file_name = None
 
+        try:
+            self.save_new_project_as()
+        except:
+            print("MainWindow.new_project | something went wrong after New Project dialog was presented to user")
+
 
         self.set_scales_from_string('1')
         # self.define_scales_menu ( ["1"] ) #remove
@@ -4694,6 +4927,13 @@ class MainWindow(QMainWindow):
 
         # print("Connecting scales_combobox to fn_scales_combobox handler...")
         # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+
+        # self.toggle_on_images_and_scaling_groupbox()
+        # self.toggle_off_alignment_groupbox()
+        # self.toggle_off_export_and_view_groupbox()
+
+        self.set_user_progress()
+
         self.scales_combobox_switch = 1
 
     @Slot()
@@ -4830,10 +5070,32 @@ class MainWindow(QMainWindow):
         # scale_to_match = int(str(project_data['data']['current_scale'].split('_')[1]))
         # print("scale_to_match = ", scale_to_match)
 
+        self.read_project_data_update_gui()
+
         self.reload_scales_combobox()
         # self.scales_combobox_switch = 1 # shouldnt really need this, reload_scales_combobox sets to 1 at the end
 
         print(image_library.__str__())
+        # self.toggle_on_images_and_scaling_groupbox()
+        # self.toggle_off_alignment_groupbox()
+        # self.toggle_off_export_and_view_groupbox()
+
+        self.set_user_progress()
+
+        # if isProjectScaled():
+        #     print("Project is scaled, turning on alignment_groupbox")
+        #     # self.toggle_on_alignment_groupbox()
+        #     self.set_progress_stage_2()
+        #     if isScaleAligned():
+        #         print("Alignment found. Turning on export_and_view_groupbox")
+        #         # self.toggle_on_export_and_view_groupbox()
+        #         self.set_progress_stage_3()
+        #     else:
+        #         print("No alignment found, not turning on export_and_view_groupbox")
+        # else:
+        #     print("Project is not scaled, not turning on alignment_groupbox")
+
+
 
         # # connect
         # print("  Connecting scales_combobox to fn_scales_combobox handler...")
@@ -5001,6 +5263,41 @@ class MainWindow(QMainWindow):
                                                         selectedFilter="",
                                                         options=options)
         print_debug(60, "save_project_dialog ( " + str(file_name) + ")")
+
+        if file_name != None:
+            if len(file_name) > 0:
+                self.current_project_file_name = file_name
+
+                # Attempt to hide the file dialog before opening ...
+                for p in self.panel_list:
+                    p.update_zpa_self()
+                # self.update_win_self()
+                try:
+                    self.save_project_to_current_file()
+                except:
+                    print("\nError: Something may have gone wrong with saving the project.\n")
+                else:
+                    print("Project saved successfully.")
+
+                if self.draw_full_paths:
+                    self.setWindowTitle("Project: " + self.current_project_file_name)
+                else:
+                    self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1])
+
+                self.set_def_proj_dest()
+
+    @Slot()
+    def save_new_project_as(self):
+        print("MainWindow is showing the save project as dialog...")
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name, filter = QFileDialog.getSaveFileName(parent=None,  # None was self
+                                                        caption="New Project Save As...",
+                                                        filter="Projects (*.json);;All Files (*)",
+                                                        selectedFilter="",
+                                                        options=options)
+        print("save_project_dialog: saving as '" + str(file_name) + "'")
 
         if file_name != None:
             if len(file_name) > 0:
@@ -5271,6 +5568,8 @@ class MainWindow(QMainWindow):
 
         # center images after importing
         self.center_all_images()
+
+        self.toggle_on_images_and_scaling_groupbox()
 
         # might need:
         # self.update_panels()
@@ -5996,7 +6295,7 @@ class Window(QWidget):
 #     sys.exit(app.exec_())
 
 
-#main
+
 if __name__ == "__main__":
     print("Running " + __file__ + ".__main__()")
 
