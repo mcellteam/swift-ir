@@ -2,59 +2,6 @@
 https://gist.github.com/Calinou/ef4e40fa5974bbdb39335c3b8d1b7492
 */
 
-
-/**
-**   ____            _     ___  ___                  _          _
-**  |  _ \          | |    |  \/  |                 | |        (_)
-**  | | \ |__ _ _ __| | __ | .  . | ___  _ __   ___ | | __ __ _ _
-**  | | | | _` | '__| |/ / | |\/| |/ _ \| '_ \ / _ \| |/ // _` | |
-**  | |_/ /(_| | |  |   <  | |  | | (_) | | | | (_) |   <| (_| | |
-**  |____/\__,_|_|  |_|\_\ \_|  |_/\___/|_| |_|\___/|_|\_\\__,_|_|
-**
-**      Quassel Theme
-**
-** Author: Chris Holland (Zren on Freenode/GitHub)
-**
-** Modified by Hugo Locurcio (Calinou on Freenode/GitHub):
-** - Tweaked sender colors to be more readable on a dark background
-** - Changed the highlight color for an orange tint instead of a blue one
-** - Removed font overrides, allowing the Quassel settings to change the default fonts
-*/
-
-/**
-** Theme Notes:
-**  - This theme is designed to work on top of the Fusion or the Plastique client style.
-**    It will look weird on almost all the others (including the system default).
-**    (Settings > Configure Quassel (F7) > Interface > Client Style)
-*/
-
-/**
-** Helpful Links:
-**  - QT:
-**      http://qt-project.org/doc/qt-4.8/stylesheet-syntax.html
-**      http://doc.qt.nokia.com/4.7-snapshot/stylesheet-reference.html
-**      http://doc.qt.nokia.com/4.7-snapshot/stylesheet-examples.html
-**  - Plastique Client Style:
-**      https://qt.gitorious.org/qt/qt/source/src/gui/styles/qplastiquestyle.cpp
-**      https://github.com/mirror/qt/blob/4.8/src/gui/styles/qplastiquestyle.cpp
-**  - Quassel Stylesheet Gallery:
-**      http://bugs.quassel-irc.org/projects/1/wiki/Stylesheet_Gallery
-**      http://bugs.quassel-irc.org/projects/1/wiki/Stylesheet_Gallery#DarkMonokaiqss
-*/
-
-/**
-**  - QSS Notes:
-**      Quassel stylesheets also support Palette { role: color; } for setting the system
-**      palette. See the QPalette docs for available roles, and convert them into qss-style
-**      attributes, so ButtonText would become button-text or see qssparser.cpp In fact,
-**      qssparser.cpp is the authorative source for Quassel's qss syntax that contains all
-**      the extensions over standard Qt qss syntax.
-**      See:
-**          http://qt-project.org/doc/qt-4.8/qpalette.html#ColorRole-enum
-**          https://github.com/quassel/quassel/blob/master/src/uisupport/qssparser.cpp
-**
-*/
-
 Palette {
     /* Window colors */
     window: #333333;

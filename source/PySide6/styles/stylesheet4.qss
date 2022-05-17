@@ -1,4 +1,6 @@
 /*
+Grey Stylesheet
+
 https://github.com/thatlittleboy/TeXstudio-Qt-Stylesheet/blob/master/stylesheet.qss
 */
 
@@ -18,8 +20,16 @@ Be sure to change all image urls to the appropriate folder on your system.
 */
 
 /*================================================================
+joel customizations
+================================================================*/
+QGroupBox {
+	font-weight: bold;
+}
+
+/*================================================================
 QWidget
 ================================================================*/
+
 QWidget {
 	color: #eff0f1;
 	background-color: #272a2d;
