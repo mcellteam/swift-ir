@@ -3,7 +3,7 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 
 """
 
-import sys, traceback, os, time, shutil, psutil, copy, argparse, cv2, json, platform, inspect, logging
+import sys, traceback, os, time, shutil, psutil, copy, argparse, cv2, json, platform, inspect, logging, glob
 from source_tracker import get_hash_and_rev
 
 from PySide6.QtWidgets import QInputDialog, QDialog, QPushButton, QProgressBar, QMessageBox
@@ -1029,10 +1029,6 @@ def isProject() -> bool:
         print('isProject | there is no project open\n  [isProject()] Exception: {}'.format(error))
         return False
 
-
-
-
-
 def isDestinationSet() -> bool:
     '''
     Checks if there is a project open
@@ -1052,6 +1048,7 @@ def isProjectScaled() -> bool:
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a project that does not need scales.
     '''
+    print('isProjectScaled | checking if %s is less than 2 (proxy for not scaled)' % str(len(alignem.project_data['data']['scales'])))
     if len(alignem.project_data['data']['scales']) < 2:
         isScaled = False
     else:
@@ -1112,13 +1109,60 @@ def getSkipsList() -> list[int]:
 def isAlignmentOfCurrentScale() -> bool:
     '''
     Checks if there exists a set of aligned images at the current scale
+    DOES NOT WORK AS EXPECTED
     '''
-    if len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]) < 1:
-        print('isAlignmentOfCurrentScale() | False')
+    try:
+        files = glob.glob(alignem.project_data['data']['destination_path'] + '/' + alignem.get_cur_scale() + '/img_aligned/*.tif')
+    except:
+        print('isAlignmentOfCurrentScale | WARNING | something went wrong')
+
+    if len(files) < 1:
+        print('isAlignmentOfCurrentScale | returning False')
         return False
     else:
-        print('isAlignmentOfCurrentScale() | True | # aligned images: ', len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        print('isAlignmentOfCurrentScale | returning True')
         return True
+
+def isAnyScaleAligned() -> bool:
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    try:
+        files = glob.glob(alignem.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
+    except:
+        print('isAnyScaleAligned | WARNING | something went wrong')
+
+    if len(files) > 0:
+        print('isAnyScaleAligned | returning True')
+        return True
+    else:
+        print('isAnyScaleAligned | returning False')
+        return False
+
+def returnAlignedImgs() -> list:
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    try:
+        files = glob.glob(alignem.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
+    except:
+        print('returnAlignedImg | WARNING | something went wrong')
+
+    print('returnAlignedImg | # aligned images found: ', len(files))
+    print('returnAlignedImg | list of aligned imgs: ', files)
+    return files
+
+def isAnyAlignmentExported() -> bool:
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    return os.path.isdir(os.path.join(alignem.project_data['data']['destination_path'], 'project.zarr'))
+
+def printCurrentDirectory():
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    print('\nCURRENT WORKING DIRECTORY: %s\n' % os.getcwd())
 
 def getNumOfScales() -> int:
     '''
@@ -1175,7 +1219,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         print("Aborting align_all_or_some due to 'isProjectScaled()' conditional.")
         return
 
-
+    alignem.main_window.set_status('Aligning scale %s...' % str(alignem.get_cur_scale()))
 
     # print("isAlignmentOfCurrentScale() = ", isAlignmentOfCurrentScale())
     # # if prompt: #original
@@ -1234,8 +1278,9 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         print("Calling align_layers w/ first_layer = " + str(first_layer) + "  | num_layers = " + str(num_layers))
         align_layers(first_layer, num_layers) # <-- CALL TO 'align_layers'
 
-
         refresh_all()
+
+        alignem.main_window.set_status('Alignment of scale %s complete.' % str(alignem.get_cur_scale()))
 
 
     # center
@@ -1393,14 +1438,17 @@ def notyet():
 
 
 def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
-    # print('Viewing change callback (view_change_callback was called by ' + inspect.stack()[1].function + ')...')
+    print('view_change_callback | called by ' + inspect.stack()[1].function)
     # print("  Changing from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str((next_scale_key, next_layer_num)))
+    print('prev_scale_key=%s,next_scale_key=%s, prev_layer_num=%s, next_layer_num=%s' % (prev_scale_key, next_scale_key, prev_layer_num, next_layer_num))
 
 
     if alignem.project_data != None:
 
         copy_from_widgets_to_data_model = True
         copy_from_data_model_to_widgets = False #0503
+
+
         # making false, instead will use new function main_window.read_project_data_update_gui() (call from change_layer directly)
         # copy_from_widgets_to_data_model = False
         # copy_from_data_model_to_widgets = False
@@ -1431,7 +1479,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
         # First copy from the widgets to the previous data model if desired
         # *****************************************************************
         if copy_from_widgets_to_data_model:
-            print('Copying GUI data to project_data file.')
+            print('view_change_callback | writing changes from UI to data model')
             # Start with the scale-level items
 
             # Build any scale-level structures that might be needed
@@ -1485,6 +1533,7 @@ def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_la
         # SET TO FALSE #0503.. new function main_window.read_project_data_update_gui() will accomplish this,
         # and will be called directly from MainWindow.change_layer
         if copy_from_data_model_to_widgets:
+            print('view_change_callback | writing changes from data model to UI')
             alignem.ignore_changes = True  # tag #odd
 
             #0503 THIS DOES NOT WORK, THINKING UPDATE of GUI ELEMENTS UPON LAYER CHANGE NEEDS TO HAPPEN IN 'change_layer'

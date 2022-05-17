@@ -1,85 +1,16 @@
 /*
-https://github.com/GTRONICK/QSS/blob/master/AMOLED.qss
-*/
+Screamin' Green stylesheet (screamin' green = #bdd73c)
 
-/*
-AMOLED Style Sheet for QT Applications
-Author: Jaime A. Quiroga P.
-Company: GTRONICK
-Last updated: 01/10/2021, 15:49.
-Available at: https://github.com/GTRONICK/QSS/blob/master/AMOLED.qss
+stylesheet based on:
+https://github.com/GTRONICK/QSS/blob/master/AMOLED.qss
 */
 
 QGroupBox
 {
     /*font-size: 18px;*/
     font-weight: bold;
+    color: #ffffff;
 }
-
-QLabel#status_skips_label {
-    /*background-color: red;*/
-	font-weight: normal;
-	/*color: #bdd73c;*/
-	color: #d3d3d3;
-    /*border-style: outset;*/
-    /*border-width: 2px;*/
-    /*border-color: beige;*/
-}
-
-QLabel#base_image_label {
-    /*background-color: red;*/
-	font-weight: normal;
-	/*color: #bdd73c;*/
-	color: #d3d3d3;
-    /*border-style: outset;*/
-    /*border-width: 2px;*/
-    /*border-color: beige;*/
-	/*border-style: solid;*/
-	/*border-top-color: transparent;*/
-	/*border-left-color: transparent;*/
-	/*border-top-color: #ffffff;*/
-	/*border-left-color: #ffffff;*/
-	/*border-right-color: #ffffff;*/
-	/*border-bottom-color: #ffffff;*/
-	/*border-top-width: 1px;*/
-	/*border-bottom-width: 1px;*/
-	/*border-right-width: 1px;*/
-	/*border-left-width: 1px;*/
-	/*border-bottom-left-radius: 6px;*/
-	/*border-bottom-right-radius: 6px;*/
-	/*padding-bottom: 0px;*/
-}
-
-QLabel#ref_image_label {
-    /*background-color: red;*/
-	font-weight: normal;
-	/*color: #bdd73c;*/
-	color: #d3d3d3;
-    /*border-style: outset;*/
-    /*border-width: 2px;*/
-    /*border-color: beige;*/
-}
-
-/*QLabel#new_feature_label {*/
-/*    !*background-color: red;*!*/
-/*	font-weight: normal;*/
-/*	!*color: #bdd73c;*!*/
-/*	color: #ffffff;*/
-/*    !*border-style: outset;*!*/
-/*    !*border-width: 2px;*!*/
-/*    !*border-color: beige;*!*/
-/*	border-style: solid;*/
-/*	!*border-top-color: transparent;*!*/
-/*	!*border-left-color: transparent;*!*/
-/*	border-right-color: #ffffff;*/
-/*	border-bottom-color: #ffffff;*/
-/*	border-bottom-width: 1px;*/
-/*	border-right-width: 1px;*/
-/*	border-bottom-left-radius: 6px;*/
-/*	border-bottom-right-radius: 6px;*/
-/*	padding-bottom: 0px;*/
-/*	!*background-color: #333333;*!*/
-/*}*/
 
 QMainWindow {
 	background-color:#000000;
@@ -124,81 +55,7 @@ QPushButton{
 	background-color: #bdd73c;
 
 }
-QPushButton::default{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: rgb(255,255,255);
-}
-QPushButton:hover{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(195, 195, 195), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(197, 197, 197), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(197, 197, 197));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(195, 195, 195), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: rgb(255,255,255);
-}
-QPushButton:pressed{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: rgb(0,0,0);
-	padding: 2px;
-	background-color: rgb(142,142,142);
-}
-QPushButton:disabled{
-	border-style: solid;
-	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
-	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
-	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
-	border-width: 1px;
-	border-radius: 2px;
-	color: #808086;
-	padding: 2px;
-	background-color: rgb(142,142,142);
-}
 
-QToolButton {
-	border-style: solid;
-	border-top-color: transparent;
-	border-right-color: transparent;
-	border-left-color: transparent;
-	border-bottom-color: #bdd73c;
-	border-bottom-width: 1px;
-	border-style: solid;
-	color: #a9b7c6;
-	padding: 2px;
-	background-color: #000000;
-}
-QToolButton:hover{
-	border-style: solid;
-	border-top-color: transparent;
-	border-right-color: transparent;
-	border-left-color: transparent;
-	border-bottom-color: #bdd73c;
-	border-bottom-width: 2px;
-	border-bottom-left-radius: 6px;
-	border-bottom-right-radius: 6px;
-	border-style: solid;
-	color: #FFFFFF;
-	padding-bottom: 1px;
-	background-color: #000000;
-}
 QLineEdit {
 	border-width: 1px; border-radius: 2px;
 	border-color: rgb(58, 58, 58);
@@ -216,7 +73,7 @@ QLineEdit {
 }
 QLabel {
 	/*color: #a9b7c6;*/
-	color: #fff;
+	color: #ffffff;
 	font-weight: bold;
 }
 QLCDNumber {
