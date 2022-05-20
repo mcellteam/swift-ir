@@ -834,3 +834,65 @@
 #     print_debug ( 50, "  load_image_worker finished for: \"" + str(real_norm_path) + "\"" )
 #     print_debug ( 50, "    memory available after loading = " + str(m.available) )
 
+
+
+        # splash_button_size = QSize(200, 60)
+        #
+        # self.splash_documentation_button = QPushButton("Documentation")
+        # self.splash_documentation_button.clicked.connect(documentation_view)
+        # self.splash_documentation_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_remote_viewer_button = QPushButton("Remote Viewer")
+        # self.splash_remote_viewer_button.clicked.connect(remote_view)
+        # self.splash_remote_viewer_button.setFixedSize(splash_button_size)
+        #
+        #
+        # self.splash_open_project_button = QPushButton("Open Project")
+        # self.splash_open_project_button.clicked.connect(self.open_project)
+        # self.splash_open_project_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_new_project_button = QPushButton("New Project")
+        # self.splash_new_project_button.clicked.connect(self.new_project)
+        # self.splash_new_project_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_save_project_button = QPushButton("Save")
+        # self.splash_save_project_button.clicked.connect(self.save_project)
+        # self.splash_save_project_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_save_project_as_button = QPushButton("Save As...")
+        # self.splash_save_project_as_button.clicked.connect(self.save_project_as)
+        # self.splash_save_project_as_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_quit_app_button = QPushButton("Exit")
+        # self.splash_quit_app_button.clicked.connect(self.close)
+        # self.splash_quit_app_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_debug_layer_button = QPushButton("Debug Layer")
+        # self.splash_debug_layer_button.clicked.connect(debug_layer)
+        # self.splash_debug_layer_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_import_images_button = QPushButton("Import Images")
+        # self.splash_import_images_button.clicked.connect(self.import_base_images)
+        # self.splash_import_images_button.setFixedSize(splash_button_size)
+        #
+        # self.splash_functions_layout = QGridLayout()
+        # self.splash_functions_layout.setContentsMargins(0, 0, 0, 0)
+        # self.splash_functions_layout.addWidget(self.splash_documentation_button, 0, 0)
+        # self.splash_functions_layout.addWidget(self.splash_remote_viewer_button, 0, 1)
+        # self.splash_functions_layout.addWidget(self.splash_new_project_button, 1, 0)
+        # self.splash_functions_layout.addWidget(self.splash_open_project_button, 1, 1)
+        # self.splash_functions_layout.addWidget(self.splash_save_project_as_button, 2, 0)
+        # self.splash_functions_layout.addWidget(self.splash_save_project_button, 2, 1)
+        # self.splash_functions_layout.addWidget(self.splash_quit_app_button, 3, 0)
+        # self.splash_functions_layout.addWidget(self.splash_import_images_button, 3, 1)
+        # self.splash_panel = QWidget()
+        # self.splash_panel.setLayout(self.splash_functions_layout)
+
+
+
+# def align_forward():
+#     print_debug(30, "Aligning Forward ...")
+
+
+
+

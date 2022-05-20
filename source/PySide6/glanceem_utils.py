@@ -17,9 +17,166 @@ import neuroglancer as ng
 from glob import glob
 from PIL import Image
 
+#cannot import alignem... circular logic
+# from alignem import project_data
+
 logger = logging.getLogger(__name__)
 
 DAISY_VERSION = 1
+
+def isProject() -> bool:
+    # This function does not work as intended.
+    try:
+        scale = alignem.project_data['data']['scales'][alignem.project_data['data']['current_scale']]
+        layer = scale['alignment_stack'][project_data['data']['current_layer']]
+        print("isProject | a project is open")
+        return True
+    except BaseException as error:
+        print('isProject | there is no project open\n  [isProject()] Exception: {}'.format(error))
+        return False
+
+def isDestinationSet() -> bool:
+    '''
+    Checks if there is a project open
+    '''
+
+    if alignem.project_data['data']['destination_path']:
+        isDestinationSet = True
+    else:
+        isDestinationSet = False
+    print('isDestinationSet() | returning: ', isDestinationSet)
+    return isDestinationSet
+
+def isProjectScaled() -> bool:
+    '''
+    Checks if there exists any stacks of scaled images
+
+    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
+    functions even for a project that does not need scales.
+    '''
+    print('isProjectScaled | checking if %s is less than 2 (proxy for not scaled)' % str(len(alignem.project_data['data']['scales'])))
+    if len(alignem.project_data['data']['scales']) < 2:
+        isScaled = False
+    else:
+        isScaled = True
+
+    # print('isProjectScaled() | returning:', isScaled)
+    return isScaled
+
+def isScaleAligned() -> bool:
+    '''
+    Checks if there exists an alignment stack for the current scale
+
+    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
+    functions even for a project that does not need scales.
+    '''
+
+    if len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]) < 1:
+        # print('isAlignmentOfCurrentScale() | False')
+        isAligned = False
+    else:
+        # print('isAlignmentOfCurrentScale() | True | # aligned images: ', len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
+        isAligned = True
+
+
+    # print('isScaleAligned() | returning:', isAligned)
+    return isAligned
+
+def getNumAligned() -> int:
+    '''
+    Returns the count aligned images for the current scale
+    '''
+    path = os.path.join(alignem.project_data['data']['destination_path'], alignem.get_cur_scale(), 'img_aligned')
+    print('getNumAligned() | path=', path)
+    try:
+        n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
+    except:
+        print('getNumAligned() | EXCEPTION | unable to get number of aligned - returning 0')
+        return 0
+    print('getNumAligned() | returning:', n_aligned)
+    return n_aligned
+
+def getSkipsList() -> list[int]:
+    '''
+    Returns the list of skipped images at the current scale
+    '''
+
+    skip_list = []
+    try:
+        for layer_index in range(len(project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
+            if project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+                skip_list.append(layer_index)
+            print('getSkipsList() | ', str(skip_list))
+    except:
+        print('getSkipsList | EXCEPTION | failed to get skips list')
+
+    return skip_list
+
+def isAlignmentOfCurrentScale() -> bool:
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    DOES NOT WORK AS EXPECTED
+    '''
+    try:
+        files = glob.glob(alignem.project_data['data']['destination_path'] + '/' + alignem.get_cur_scale() + '/img_aligned/*.tif')
+    except:
+        print('isAlignmentOfCurrentScale | WARNING | something went wrong')
+
+    if len(files) < 1:
+        print('isAlignmentOfCurrentScale | returning False')
+        return False
+    else:
+        print('isAlignmentOfCurrentScale | returning True')
+        return True
+
+def isAnyScaleAligned() -> bool:
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    try:
+        files = glob.glob(alignem.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
+    except:
+        print('isAnyScaleAligned | WARNING | something went wrong')
+
+    if len(files) > 0:
+        print('isAnyScaleAligned | returning True')
+        return True
+    else:
+        print('isAnyScaleAligned | returning False')
+        return False
+
+def returnAlignedImgs() -> list:
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    try:
+        files = glob.glob(alignem.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
+    except:
+        print('returnAlignedImg | WARNING | something went wrong')
+
+    print('returnAlignedImg | # aligned images found: ', len(files))
+    print('returnAlignedImg | list of aligned imgs: ', files)
+    return files
+
+def isAnyAlignmentExported() -> bool:
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    return os.path.isdir(os.path.join(alignem.project_data['data']['destination_path'], 'project.zarr'))
+
+def printCurrentDirectory():
+    '''
+    Checks if there exists a set of aligned images at the current scale
+    '''
+    print('\nCURRENT WORKING DIRECTORY: %s\n' % os.getcwd())
+
+def getNumOfScales() -> int:
+    '''
+    Returns the number of scales for the open project
+    '''
+    n_scales = len(alignem.project_data['data']['scales'])
+    print('getNumOfScales() | returning:', n_scales)
+    return n_scales
 
 class RequestHandler(SimpleHTTPRequestHandler):
     def end_headers(self):
