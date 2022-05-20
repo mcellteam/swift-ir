@@ -17,6 +17,11 @@ Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
 
+QMainWindow {
+	/*background-color:#ececec;*/
+	/*background-color: #2e2e2e;*/ /* 18% gray */
+	color: black;
+}
 
 QGroupBox
 {
@@ -43,10 +48,6 @@ QLineEdit {
 	/*font-weight: bold;*/
 }
 
-QMainWindow {
-	background-color:#ececec;
-	color: black;
-}
 QTextEdit {
 	border-width: 1px;
 	border-style: solid;
