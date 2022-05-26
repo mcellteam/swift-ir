@@ -107,7 +107,7 @@ class project_runner:
     # Class Method to Align the Stack
     #  def start ( self ):
     def do_alignment(self, alignment_option='init_affine', generate_images=True):
-        print("\nCalling project_runner > do_alignment:")
+        print("\nCalling project_runner.do_alignment:")
         print("alignment_option = " + alignment_option + "\n")
 
         self.alignment_option = alignment_option
@@ -277,8 +277,11 @@ class project_runner:
                     # Get the name of the file for this task number
                     # NOTE / TODO : This uses the TASK NUMBER and NOT the LAYER NUMBER ... THEY MAY BE DIFFERENT!!
                     output_file = "single_alignment_out_" + str(tnum) + ".json"
-                    job_output_file = open(os.path.join(output_dir, output_file), 'r')
-                    dm_text = job_output_file.read()
+                    with open(os.path.join(output_dir, output_file), 'r') as job_output_file:  # Use file to refer to the file object
+                        dm_text = job_output_file.read()
+                    # job_output_file = open(os.path.join(output_dir, output_file), 'r')
+                    # dm_text = job_output_file.read()
+                    # job_output_file.close()
                     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
 
                 else:
@@ -362,12 +365,12 @@ class project_runner:
 
     # Class Method to Generate the Aligned Images
     def generate_aligned_images(self):
-        print("\nCalling project_runner > generate_aligned_images:")
+        print("\nproject_runner.generate_aligned_images:")
 
         cur_scale = self.project['data']['current_scale']
 
         # Propagate the AFMs to generate and appropriate CFM at each layer
-        null_biases = self.project['data']['scales'][cur_scale]['null_cafm_trends'] #jy-remove
+        null_biases = self.project['data']['scales'][cur_scale]['null_cafm_trends']
         # pyswift_tui.SetStackCafm ( self.project['data']['scales'][cur_scale]['alignment_stack'], null_biases )
         pyswift_tui.SetStackCafm(self.project['data']['scales'][cur_scale], null_biases=null_biases)
 
@@ -376,8 +379,16 @@ class project_runner:
         pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path)
 
         use_bounding_rect = self.project['data']['scales'][cur_scale]['use_bounding_rect']
+
         if use_bounding_rect:
             rect = pyswift_tui.BoundingRect(self.project['data']['scales'][cur_scale]['alignment_stack'])
+
+        with open(os.path.join(bias_data_path,'bounding_rect.dat'), 'w') as file:  # Use file to refer to the file object
+            if use_bounding_rect:
+                file.write("%d %d %d %d\n" % (rect[0],rect[1],rect[2],rect[3]) )
+            else:
+                file.write("None\n")
+
 
         # Finally generate the images with a parallel run of image_apply_affine.py
 

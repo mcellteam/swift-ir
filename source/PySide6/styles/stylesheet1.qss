@@ -26,12 +26,33 @@ Last updated: 25/02/2020, 15:42.
 Available at: https://github.com/GTRONICK/QSS/blob/master/ManjaroMix.qss
 */
 
+QDockWidget {
+	/*background-color:#151a1e;*/
+	/*background-color: #7c7c7c;*/
+	/*background-color: white;*/
+	background-color: #ffe135;
+	/*color: #d3dae3;*/  /* light off-white */
+	color: #151a1e;
+	margin: 0px 0px 0px 0px;
+}
+
+QDockWidget::title {
+    /*background-color: lightblue;*/
+    /*border: 1px solid black;*/
+}
+
+QDockWidget::title:hover {
+    /*background: yellow;*/
+}
+
 QMainWindow {
 	/*background-color:#151a1e;*/
 	/*background-color:#2e2e2e;*/ /* 18% gray */
 	background-color: #7c7c7c;
 	color: #151a1e; /* dark */
 }
+
+
 
 QLabel {
 	/*color: #d3dae3;*/
@@ -59,7 +80,8 @@ QGroupBox {
 
   /* 0407 */
   /*color: white;*/
-  color: #d3dae3;  /* light off-white */
+
+
   /*color: #ffe135;*/
 
   /*color: #455364;*/
@@ -67,6 +89,9 @@ QGroupBox {
 
   /*color: #151a1e;*/ /* lightish dark */
 
+  color: #d3dae3;  /* light off-white */
+
+  /*color: #ffe135;*/
 
 }
 
@@ -94,10 +119,11 @@ QToolButton {
 	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
 	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
 	border-width: 1px;
-	border-radius: 5px;
+	border-radius: 2px;
 	color: #d3dae3;
+	/* padding between edge of toolbutton and inner text (text shrinks with larger values) */
 	padding: 2px;
-	background-color: rgb(255,255,255);
+	background-color: #7c7c7c;
 }
 QToolButton:hover{
 	border-style: solid;
@@ -106,10 +132,10 @@ QToolButton:hover{
 	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(197, 197, 197));
 	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(195, 195, 195), stop:1 rgb(222, 222, 222));
 	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
+	border-radius: 2px;
+	/*color: rgb(0,0,0);*/
 	padding: 2px;
-	background-color: rgb(255,255,255);
+	background-color: #7c7c7c;
 }
 QToolButton:pressed{
 	border-style: solid;
@@ -118,23 +144,26 @@ QToolButton:pressed{
 	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
 	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
 	border-width: 1px;
-	border-radius: 5px;
-	color: rgb(0,0,0);
+	border-radius: 2px;
+	/*color: rgb(0,0,0);*/
 	padding: 2px;
-	background-color: rgb(142,142,142);
+	background-color: #7c7c7c;
 }
 QPushButton{
-	border-style: solid;
+	/*border-style: solid;*/
+	border-style: outset;
 	/*border-color: #050a0e;*/
-	border-color: #4fa08b;
+	/*border-color: #4fa08b;*/
+	border-color:  #ffe135;
+	/*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
 	border-width: 1px;
 	/*border-radius: 5px;*/
-	border-radius: 2px;
+	border-radius: 3px;
 	color: #d3dae3;
 	/*padding: 2px;*/
 	background-color: #151a1e;
 }
-QPushButton::default{
+QPushButton:default{
 	border-style: solid;
 	border-color: #050a0e;
 	border-width: 1px;
@@ -144,22 +173,23 @@ QPushButton::default{
 	background-color: #151a1e;
 }
 QPushButton:hover{
-	border-style: solid;
-	border-color: #050a0e;
-	border-width: 1px;
+	/*border-style: solid;*/
+	/*border-color: #050a0e;*/
+	/*border-width: 1px;*/
 	/*border-radius: 5px;*/
-	color: #d3dae3;
-	padding: 2px;
+	/*color: #d3dae3;*/
+	/*padding: 1px;*/
 	/*background-color: #1c1f1f;*/
 	background-color: #1c1f1f;
 }
 QPushButton:pressed{
-	border-style: solid;
+	/*border-style: solid;*/
+	border-style: inset;
 	border-color: #050a0e;
 	border-width: 1px;
 	/*border-radius: 5px;*/
 	color: #d3dae3;
-	padding: 2px;
+	padding: 1px;
 	background-color: #2c2f2f;
 }
 QPushButton:disabled{
@@ -178,6 +208,7 @@ QLineEdit {
 	border-width: 1px;
 	border-style: solid;
 	border-color: #4fa08b;
+	/*border-color: #ffe135;*/
 	/*background-color: #222b2e;*/
 	background-color: #151a1e;
 	color: #d3dae3;
@@ -424,6 +455,7 @@ QComboBox {
 	border-width: 1px;
 	border-style: solid;
 	border-color: #4fa08b;
+	/*border-color: #ffe135;*/
 }
 
 /* this applies to the dropdown */

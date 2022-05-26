@@ -158,7 +158,7 @@ new_project_template = \
           "alignment_option": "init_affine"
         },
         "null_cafm_trends": False,
-        "use_bounding_rect": False,
+        "use_bounding_rect": True,
         "alignment_stack": []
       }
     }

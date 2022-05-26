@@ -268,6 +268,7 @@ def BiasFuncs(al_stack, bias_funcs=None):
 def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
     print_debug_enter(90)
     print_debug(50, 50 * 'B0')
+    poly_order=int(poly_order)
     if type(bias_funcs) == type(None):
         init_scalars = True
         bias_funcs = {}
@@ -446,8 +447,9 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         layer_dict['skip'] = True
         afm = swiftir.identityAffine()
         atrm['method_results']['affine_matrix'] = afm.tolist()
-    #    atrm['method_results']['snr'] = [0.0]
-    #    atrm['method_results']['snr_report'] = 'SNR: --'
+        # atrm['method_results']['snr'] = [0.0]
+        # atrm['method_results']['snr_report'] = 'SNR: --'
+
     c_afm = np.array(c_afm)
     c_afm = swiftir.composeAffine(afm, c_afm)
 
