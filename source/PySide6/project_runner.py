@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-
+print(f'project_runner.py | Loading {__name__}')
 import sys
 import os
 import time
@@ -21,6 +21,7 @@ import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
 import alignem
+
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
