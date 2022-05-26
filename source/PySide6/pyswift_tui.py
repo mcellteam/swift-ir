@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-
+print(f'pyswift_tui.py | Loading {__name__}')
 import sys
 import os
 import json
@@ -15,6 +15,7 @@ import swiftir
 import align_swiftir
 from get_image_size import get_image_size
 import task_queue
+
 
 # import project_runner  # Not really used yet
 
@@ -580,10 +581,13 @@ def save_bias_analysis(al_stack, bias_data_path):
     for i in range(len(al_stack)):
 
         if True or not al_stack[i]['skip']:
-            atrm = al_stack[i]['align_to_ref_method']
-            afm = np.array(atrm['method_results']['affine_matrix'])
-            c_afm = np.array(atrm['method_results']['cumulative_afm'])
-            snr = np.array(atrm['method_results']['snr'])
+            try:
+                atrm = al_stack[i]['align_to_ref_method']
+                afm = np.array(atrm['method_results']['affine_matrix'])
+                c_afm = np.array(atrm['method_results']['cumulative_afm'])
+                snr = np.array(atrm['method_results']['snr'])
+            except:
+                print('pyswift_tui.save_bias_analysis | EXCEPTION | There was a problem reading the project file')
 
             # Compute and save final biases in analysis data files
             rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])

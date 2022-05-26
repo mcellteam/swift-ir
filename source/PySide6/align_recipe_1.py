@@ -1,50 +1,15 @@
-import os, sys, copy
+'''
+RECIPE1 for SWiFT-IR alignment.
+
+'''
+
+import os
+import copy
 import alignem
 import project_runner
 import pyswift_tui
-from glanceem_utils import get_image_size, isProjectScaled, getCurScale, isAlignmentOfCurrentScale, \
+from glanceem_utils import get_image_size, isProjectScaled, getCurScale, update_datamodel, isAlignmentOfCurrentScale, \
     requestConfirmation, areImagesImported, getNumImportedImages
-
-
-'''
->>> project_data.keys()
-dict_keys(['data', 'method', 'user_settings', 'version'])
-
->>> project_data['data'].keys()
-dict_keys(['current_layer', 'current_scale', 'destination_path', 'panel_roles', 'scales', 'source_path'])
-
->>> project_data['data']['scales']['scale_1'].keys()
-dict_keys(['alignment_stack', 'method_data', 'null_cafm_trends', 'poly_order', 'use_bounding_rect'])
-
-NOTE: directly index layers (stored in a list). First layer stores different data from the other layers, no need for ref.
->>> project_data['data']['scales']['scale_1']['alignment_stack'][0]
-{'align_to_ref_method': {'method_data': {'alignment_option': 'refine_affine', 'bias_rot_per_image': 0.0, 'bias_scale_x_per_image': 1.0, 'bias_scale_y_per_image': 1.0, 'bias_skew_x_per_image': 0.0, 'bias_x_per_image': 0.0, 'bias_y_per_image': 0.0, 'whitening_factor': -0.68, 'win_scale_factor': 0.8125}, 'method_options': ['None'], 'method_results': {'affine_matrix': [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], 'cumulative_afm': [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], 'snr': [0.0], 'snr_report': 'SNR: --'}, 'selected_method': 'Auto Swim Align'}, 'images': {'aligned': {'filename': '/Users/joelyancey/glanceEM_SWiFT/test_projects/r34_apical_vijay/scale_1/img_aligned/R34CA1-BS12.101.tif', 'metadata': {'annotations': [], 'match_points': []}}, 'base': {'filename': '/Users/joelyancey/glanceEM_SWiFT/test_projects/r34_apical_vijay/scale_1/img_src/R34CA1-BS12.101.tif', 'metadata': {'annotations': [], 'match_points': []}}, 'ref': {'filename': '', 'metadata': {'annotations': [], 'match_points': []}}}, 'skip': False}
-
-
-WHEN (A) NO PROJECT IS STARTED, (B) NO IMAGES HAVE BEEN IMPORTED:
->>> len(project_data['data']['scales']['scale_1']['alignment_stack'])
-0
->>> project_data['data']['scales']['scale_1']['alignment_stack']
-[]
-
-WHEN (A) PROJECT IS STARTED, (B) NO IMAGES HAVE BEEN IMPORTED (SAME AS ABOVE):
->>> len(project_data['data']['scales']['scale_1']['alignment_stack'])
-0
->>> project_data['data']['scales']['scale_1']['alignment_stack']
-[]
-
-WHEN (A) PROJECT IS STARTED, (B) 10 IMAGES HAVE BEEN IMPORTED, (C) PRE-SAVE
->>> len(project_data['data']['scales']['scale_1']['alignment_stack'])
-10
->>> len(project_data['data']['scales']['scale_1']['alignment_stack'][0])
-3
-
-
-
-
-'''
-
-
 
 def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     '''
@@ -96,7 +61,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     img_size = get_image_size(
         alignem.project_data['data']['scales'][cur_scale]['alignment_stack'][0]['images']['base']['filename'])
 
-    alignem.main_window.set_status('Aligning %s scale %s images (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
+    alignem.main_window.set_status('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
 
     remove_aligned(starting_layer=first_layer, prompt=False)
     alignem.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
@@ -122,8 +87,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     alignem.main_window.refresh_all_images()
 
-    alignem.main_window.set_status(
-        'Alignment of %s images (%s x %s pixels) is complete.' % (cur_scale, img_size[0], img_size[1]))
+    alignem.main_window.set_status('Alignment of scale %s images (%s x %s pixels) is complete.' % (cur_scale[-1], img_size[0], img_size[1]))
 
     print("align_all_or_some | Wrapping up")
     alignem.main_window.center_all_images()
@@ -403,3 +367,46 @@ def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
         alignem.main_window.update_panels()  # fix
         alignem.main_window.refresh_all_images()
 
+
+
+
+
+
+
+
+
+'''
+>>> project_data.keys()
+dict_keys(['data', 'method', 'user_settings', 'version'])
+
+>>> project_data['data'].keys()
+dict_keys(['current_layer', 'current_scale', 'destination_path', 'panel_roles', 'scales', 'source_path'])
+
+>>> project_data['data']['scales']['scale_1'].keys()
+dict_keys(['alignment_stack', 'method_data', 'null_cafm_trends', 'poly_order', 'use_bounding_rect'])
+
+NOTE: directly index layers (stored in a list). First layer stores different data from the other layers, no need for ref.
+>>> project_data['data']['scales']['scale_1']['alignment_stack'][0]
+{'align_to_ref_method': {'method_data': {'alignment_option': 'refine_affine', 'bias_rot_per_image': 0.0, 'bias_scale_x_per_image': 1.0, 'bias_scale_y_per_image': 1.0, 'bias_skew_x_per_image': 0.0, 'bias_x_per_image': 0.0, 'bias_y_per_image': 0.0, 'whitening_factor': -0.68, 'win_scale_factor': 0.8125}, 'method_options': ['None'], 'method_results': {'affine_matrix': [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], 'cumulative_afm': [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0]], 'snr': [0.0], 'snr_report': 'SNR: --'}, 'selected_method': 'Auto Swim Align'}, 'images': {'aligned': {'filename': '/Users/joelyancey/glanceEM_SWiFT/test_projects/r34_apical_vijay/scale_1/img_aligned/R34CA1-BS12.101.tif', 'metadata': {'annotations': [], 'match_points': []}}, 'base': {'filename': '/Users/joelyancey/glanceEM_SWiFT/test_projects/r34_apical_vijay/scale_1/img_src/R34CA1-BS12.101.tif', 'metadata': {'annotations': [], 'match_points': []}}, 'ref': {'filename': '', 'metadata': {'annotations': [], 'match_points': []}}}, 'skip': False}
+
+
+WHEN (A) NO PROJECT IS STARTED, (B) NO IMAGES HAVE BEEN IMPORTED:
+>>> len(project_data['data']['scales']['scale_1']['alignment_stack'])
+0
+>>> project_data['data']['scales']['scale_1']['alignment_stack']
+[]
+
+WHEN (A) PROJECT IS STARTED, (B) NO IMAGES HAVE BEEN IMPORTED (SAME AS ABOVE):
+>>> len(project_data['data']['scales']['scale_1']['alignment_stack'])
+0
+>>> project_data['data']['scales']['scale_1']['alignment_stack']
+[]
+
+WHEN (A) PROJECT IS STARTED, (B) 10 IMAGES HAVE BEEN IMPORTED, (C) PRE-SAVE
+>>> len(project_data['data']['scales']['scale_1']['alignment_stack'])
+10
+>>> len(project_data['data']['scales']['scale_1']['alignment_stack'][0])
+3
+
+
+'''

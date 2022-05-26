@@ -5,6 +5,7 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 import sys, traceback, os, copy, math, random, json, psutil, argparse, inspect, threading, \
     concurrent.futures, platform, collections, time, datetime, multiprocessing, logging, operator, random, \
     multiprocessing, logging
+from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
@@ -23,22 +24,24 @@ except ImportError:
     from PyQt6.QtCore import pyqtSignal as Signal
     from PyQt6.QtCore import pyqtSlot as Slot
 
-import numpy, scipy, scipy.ndimage
-import zarr, daisy, skimage.measure, tifffile, imagecodecs
+
+import daisy
+import skimage.measure
 import dask.array as da
 import neuroglancer as ng
 from glob import glob
 from PIL import Image
 import numpy as np
-import cv2
 
 from joel_decs import timeit, profileit, dumpit, traceit, countit
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
-from glanceem_utils import Server, RequestHandler, get_viewer_url, tiffs2zarr, open_ds, add_layer, print_exception, \
-    getCurScale, isDestinationSet, isProjectScaled, isScaleAligned, getNumAligned, getNumAligned, getSkipsList, \
+from glanceem_utils import print_exception, getCurScale, isDestinationSet, isProjectScaled, \
+    isScaleAligned, getNumAligned, getNumAligned, getSkipsList, \
     isAlignmentOfCurrentScale, isAnyScaleAligned, returnAlignedImgs, isAnyAlignmentExported, getNumOfScales, \
     printCurrentDirectory, link_all_stacks, copy_skips_to_all_scales
+# from glanceem_utils import get_viewer_url
 from glanceem_utils import clear_all_skips, ensure_proper_data_structure
+from scale_pyramid import add_layer
 from align_recipe_1 import align_all_or_some, regenerate_aligned
 from get_image_size import get_image_size
 import align_swiftir, pyswift_tui
@@ -76,6 +79,39 @@ crop_window_height = 1024
 
 '''global variables'''
 project_data = None
+
+def open_ds(path, ds_name):
+    """ wrapper for daisy.open_ds """
+    print("Running daisy.open_ds with path:" + path + ", ds_name:" + ds_name)
+    try:
+        return daisy.open_ds(path, ds_name)
+    except KeyError:
+        print("\n  ERROR: dataset " + ds_name + " could not be loaded. Must be Daisy-like array.\n")
+        return None
+
+
+
+class RequestHandler(SimpleHTTPRequestHandler):
+    '''A simple HTTP request handler'''
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        SimpleHTTPRequestHandler.end_headers(self)
+
+
+class Server(HTTPServer):
+    '''A simple HTTP server'''
+    protocol_version = 'HTTP/1.1'
+
+    def __init__(self, server_address):
+        HTTPServer.__init__(self, server_address, RequestHandler)
+
+def decode_json(x):
+    return json.loads(x, object_pairs_hook=collections.OrderedDict)
+
+def get_json(path):
+    with open(path) as f:
+        return json.load(f)
+        # example: keys = get_json("project.zarr/img_aligned_zarr/s0/.zarray")
 
 
 # For now, always use the limited argument version
@@ -957,9 +993,8 @@ class ZoomPanWidget(QWidget):
             self.setToolTip(self.role + "\n" + str(get_cur_scale()) + '\n' + str(get_cur_snr()))  # tooltip #settooltip
 
     def show_actual_size(self):
-        print("Showing actual size | ZoomPanWidget.show_actual_size...")
+        # print("Showing actual size | ZoomPanWidget.show_actual_size...")
 
-        print_debug(30, "Showing actual size image for role " + str(self.role))
         self.zoom_scale = 1.0
         self.ldx = 0
         self.ldy = 0
@@ -1021,9 +1056,7 @@ class ZoomPanWidget(QWidget):
                                 img_h = pixmap.height()
                             win_w = self.width()
                             win_h = self.height()
-                            print("win_w = %d, win_h = %d" % (win_w, win_h))
-
-                            # print("win_w=" + str(win_w) + "  win_h=" + str(win_h))
+                            # print("win_w = %d, win_h = %d" % (win_w, win_h))
 
                             if all_images_in_stack:
 
@@ -1547,9 +1580,7 @@ class ZoomPanWidget(QWidget):
             self.update_zpa_self() #original
             self.update_siblings() #original
 
-            # ------- below this line not original --------
-            #0404 #0405 #jy #sus
-
+            # ------- below this line not original
             # self.center_image()  # centering the image sooner may prevent glitch
             # ^^ this definitely keeps things centered, but may not be desirable behavior.
             # zoom should probably be preserved between layer changes
@@ -1566,14 +1597,14 @@ class ZoomPanWidget(QWidget):
 
             # TRY DOING THIS IN 'view_change_callback'
             # # # alignem_swift.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
-            try:
-                print('Loading project_data into GUI.')
-                # alignem.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
-                # main_window.update_skip_toggle() #### THIS GETS INTO THE FUNCTION -- WORKS!!
-                # main_window.read_project_data_update_gui() #0505
-                # 0503 #skiptoggle #toggleskip #skipswitch forgot to define this
-            except BaseException as error:
-                print('ZoomPanWidget.change_layer | EXCEPTION | MainWindow.read_project_data_update_gui threw an exception:\n{}'.format(error))
+            # try:
+            #     # print('Loading project_data into GUI.')
+            #     # alignem.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+            #     # main_window.update_skip_toggle() #### THIS GETS INTO THE FUNCTION -- WORKS!!
+            #     # main_window.read_project_data_update_gui() #0505
+            #     # 0503 #skiptoggle #toggleskip #skipswitch forgot to define this
+            # except BaseException as error:
+            #     print('ZoomPanWidget.change_layer | EXCEPTION | MainWindow.read_project_data_update_gui threw an exception:\n{}'.format(error))
             '''
             NOTE: I THINK THE PLACE FOR THIS IS view_change_callback #todo #jy #0412
             NOTE: ^^ I NO LONGER THINK THAT. 'change_layer' is prob best loc #0503
@@ -2002,7 +2033,7 @@ class MultiImagePanel(QWidget):
 
     # MultiImagePanel.center_all_images
     def center_all_images(self, all_images_in_stack=True):
-        print("MultiImagePanel is centering all images.")
+        print("MultiImagePanel.center_all_images: Centering all images")
         if self.actual_children != None:
             #NOTE THIS CALL CAN BE USED TO OBTAIN HANDLES TO THE THREE ZoomPanWidget OBJECTS
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
@@ -2014,7 +2045,7 @@ class MultiImagePanel(QWidget):
         self.refresh_all_images() #jy
 
     def all_images_actual_size(self):
-        print("MultiImagePanel is actual-sizing all images.")
+        print("MultiImagePanel.all_images_actual_size | Actual-sizing all images")
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in panels_to_update:
@@ -2891,6 +2922,10 @@ class MainWindow(QMainWindow):
         # self.view_change_callback = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
+
+        '''This will require moving the image_panel = ImageLibrary() to MainWindow constructor where it should be anyway'''
+        # self.define_roles(['ref', 'base', 'aligned'])
+
         # self.setAttribute(Qt.WA_TranslucentBackground, True) #translucent #dim #opacity #redx
         # self.setFocusPolicy(Qt.StrongFocus)  #jy #focus
 
@@ -2941,7 +2976,8 @@ class MainWindow(QMainWindow):
         std_width = int(118)
         std_button_size = QSize(std_width, std_height)
         square_button_height = int(38)
-        square_button_size = QSize(74,square_button_height)
+        square_button_width = int(74)
+        square_button_size = QSize(square_button_width,square_button_height)
         std_input_size = int(56)
         std_input_size_small = int(36)
 
@@ -3380,7 +3416,7 @@ class MainWindow(QMainWindow):
 
             # To modify the state, use the viewer.txn() function, or viewer.set_state
             print('ng_view() | Viewer.config_state                  :', self.viewer.config_state)
-            print('ng_view() | viewer URL                           :', self.viewer.get_viewer_url())
+            # print('ng_view() | viewer URL                           :', self.viewer.get_viewer_url())
             # print('Neuroglancer view (remote viewer)                :', ng.to_url(viewer.state))
 
             try:
@@ -3758,18 +3794,26 @@ class MainWindow(QMainWindow):
         # base_file_name = layer['images']['base']['filename']
         # print("current base image = ", base_file_name)
 
-        self.import_images_button = QPushButton("Import\nImages")
+        self.import_images_button = QPushButton("Import")
         self.import_images_button.clicked.connect(self.import_base_images)
         self.import_images_button.setFixedSize(square_button_size)
 
         self.center_button = QPushButton('Center')
         self.center_button.clicked.connect(self.center_all_images)
-        self.center_button.setFixedSize(square_button_size)
+        self.center_button.setFixedSize(square_button_width, std_height)
 
-        self.generate_scales_button = QPushButton('Generate\nScales')
+        self.actual_size_button = QPushButton('Actual Size')
+        self.actual_size_button.clicked.connect(self.all_images_actual_size)
+        self.actual_size_button.setFixedSize(square_button_width, std_height)
+
+        self.size_buttons_vlayout = QVBoxLayout()
+        self.size_buttons_vlayout.addWidget(self.center_button)
+        self.size_buttons_vlayout.addWidget(self.actual_size_button)
+
+        self.generate_scales_button = QPushButton('Scale')
         self.generate_scales_button.clicked.connect(generate_scales_queue)
         self.generate_scales_button.setFixedSize(square_button_size)
-        self.generate_scales_button.setStyleSheet("font-size: 11px;")
+        # self.generate_scales_button.setStyleSheet("font-size: 11px;")
 
 
         #scales #scalescombobox #scaleslist #030
@@ -3814,7 +3858,8 @@ class MainWindow(QMainWindow):
         self.images_and_scaling_layout.setContentsMargins(10, 25, 10, 5) #tag23
         self.images_and_scaling_layout.setSpacing(10) # ***
         self.images_and_scaling_layout.addWidget(self.import_images_button, 0, 0, alignment=Qt.AlignHCenter)
-        self.images_and_scaling_layout.addWidget(self.center_button, 0, 1, alignment=Qt.AlignHCenter)
+        # self.images_and_scaling_layout.addWidget(self.center_button, 0, 1, alignment=Qt.AlignHCenter)
+        self.images_and_scaling_layout.addLayout(self.size_buttons_vlayout, 0, 1, alignment=Qt.AlignHCenter)
         self.images_and_scaling_layout.addWidget(self.generate_scales_button, 0, 2, alignment=Qt.AlignHCenter)
         self.toggle_reset_hlayout = QHBoxLayout()
         self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft)
@@ -4492,7 +4537,7 @@ class MainWindow(QMainWindow):
     #         self.status_ref_image_label.setText(os.path.basename(ref_file_name))  # settext #status
 
     def update_win_self(self):
-        print("  MainWindow is updating itself (called by " + inspect.stack()[1].function + ").")
+        print("MainWindow is updating itself (called by " + inspect.stack()[1].function + ").")
         # self.center_all_images()  # uncommenting causes centering issues to re-emerge
         self.update() #repaint
 
@@ -4546,7 +4591,7 @@ class MainWindow(QMainWindow):
         self.status_skips_label.setText(str(skip_list))  # settext #status
 
     def update_current_scale_label(self):
-        print('update_current_scale_label:')
+        # print('update_current_scale_label:')
         cur_scale = get_cur_scale()
         img_size = get_image_size(project_data['data']['scales'][get_cur_scale()]['alignment_stack'][0]['images']['base']['filename'])
         self.current_scale_label.setText('Scale %s (%spx, %spx)' % (cur_scale[-1], img_size[0], img_size[1]))
@@ -4817,7 +4862,7 @@ class MainWindow(QMainWindow):
         '''
         Reads 'project_data' values and writes everything to MainWindow.
         '''
-        print('\nMainWindow.read_project_data_update_gui | ENTERING |')
+        print('\nMainWindow.read_project_data_update_gui:')
         scale = project_data['data']['scales'][project_data['data']['current_scale']] # we only want the current scale
 
         try:
@@ -5095,7 +5140,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def new_project(self):
-        print('MainWindow.new_project | Entering...')
+        print('\nMainWindow.new_project:')
         self.scales_combobox_switch = 0
         # try:
         #     self.scales_combobox.disconnect()
@@ -6602,10 +6647,10 @@ if __name__ == "__main__":
         if preloading_range < 1:
             preloading_range = 1
 
-    alignem_swift.main_win = MainWindow()
-    alignem_swift.main_win.resize(2200, 1200)
-    alignem_swift.main_win.define_roles(['Stack'])
-    alignem_swift.main_win.show()
+    main_win = MainWindow()
+    main_win.resize(2200, 1200)
+    main_win.define_roles(['Stack'])
+    main_win.show()
     sys.exit(app.exec_())
 
 

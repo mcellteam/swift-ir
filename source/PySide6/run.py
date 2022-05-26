@@ -26,14 +26,22 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to [http://unlicense.org]
 """
-import os, sys, argparse
-# from glanceem_utils import update_skips_callback, update_linking_callback, crop_mode_callback, mouse_down_callback, mouse_move_callback
+
+import os
+import argparse
 import alignem
 
-'''global variables'''
+
+'''globals'''
 main_win = None
 
 if __name__ == "__main__":
+    global_parallel_mode = True
+    global_use_file_io = False
+    width = 1600
+    height = 700
+
+    print(f'Loading {__name__}')
     print("Running " + __file__ + ".__main__()")
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, default=10,help="Print more information with larger DEBUG (0 to 100)")
@@ -44,20 +52,11 @@ if __name__ == "__main__":
     args = options.parse_args()
     alignem.DEBUG_LEVEL = int(args.debug)
     print("alignem_swift.py | cli args:", args)
-    size_x = 1600
-    size_y = 700
-    global_source_rev = ""
-    global_source_hash = ""
-    global_parallel_mode = True #was False
-    global_use_file_io = False
 
     if args.parallel != None: global_parallel_mode = args.parallel != 0
     if args.use_c_version != None: alignem.use_c_version = args.use_c_version != 0
     if args.use_file_io != None: global_use_file_io = args.use_file_io != 0
-    if args.preload != None:
-        alignem.preloading_range = int(args.preload)
-        if alignem.preloading_range < 1:
-            alignem.preloading_range = 1
+    if args.preload != None: alignem.preloading_range = int(args.preload)
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     source_list = ["alignem_swift.py","alignem_data_model.py","alignem.py","swift_project.py","pyswift_tui.py",
@@ -67,17 +66,8 @@ if __name__ == "__main__":
                    "glanceem_utils.py","align_recipe_1.py"
                    ]
 
-    # print("alignem_swift.py | Source tag: %s" % str(global_source_tag))
-    # print("alignem_swift.py | Source hash: %s" % str(global_source_hash))
-    print('alignem_swift.py | Initializing MainWindow')
-
+    print("alignem_swift.py | Initializing MainWindow with size %dx%d pixels" % (width, height))
     main_win = alignem.MainWindow(title="GlanceEM_SWiFT") # no more control_model
-    # main_win.register_mouse_move_callback(mouse_move_callback)
-    # main_win.register_mouse_down_callback(mouse_down_callback)
-    # alignem.crop_mode_callback = crop_mode_callback
-    # alignem.update_linking_callback = update_linking_callback
-    # alignem.update_skips_callback = update_skips_callback
-    print("alignem_swift.py | Resizing main window to %dx%d pixels" % (size_x, size_y))
-    main_win.resize(size_x, size_y)
+    main_win.resize(width, height)
     main_win.define_roles(['ref', 'base', 'aligned'])
     alignem.run_app(main_win)

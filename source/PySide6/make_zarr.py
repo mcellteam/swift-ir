@@ -65,7 +65,9 @@ from pathlib import Path
 from datetime import datetime
 from contextlib import redirect_stdout
 
-from glanceem_utils import create_scale_pyramid, tiffs2zarr
+from tiffs2zarr import tiffs2zarr
+from scale_pyramid import create_scale_pyramid
+
 
 
 if __name__ == '__main__':

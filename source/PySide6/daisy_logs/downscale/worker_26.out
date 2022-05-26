@@ -1,6 +1,0 @@
-downscale_block | dims = len(factor) =  3
-downscale_block | in_shape = daisy.Coordinate(in_data.shape[-dims:] =  (12, 128, 128)
-downscale_block | n_channels = len(in_data.shape) - dims =  0
-downscale_block | dims = len(factor) =  3
-downscale_block | in_shape = daisy.Coordinate(in_data.shape[-dims:] =  (12, 128, 84)
-downscale_block | n_channels = len(in_data.shape) - dims =  0
