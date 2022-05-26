@@ -896,3 +896,622 @@
 
 
 
+# def gen_scales_with_thread():
+#     print('\nCalling generate_scales_with_thread() in alignem_swift.py:\n')
+#
+#     global gen_scales_dialog
+#     if (alignem.project_data['data']['destination_path'] == None) or (
+#             len(alignem.project_data['data']['destination_path']) <= 0):
+#         alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
+#     else:
+#         alignem.print_debug(10, "Generating Scales with Progress Bar ...")
+#         gen_scales_dialog = GenScalesDialog()
+#         # main_win.status.showMessage("Done Generating Scales ...")
+
+
+
+# def generate_scales_optimized():
+#     print('Generating scales, optimized | generate_scales_optimized...')
+#     alignem.print_debug(1, "generate_scales_optimized inside alignem_swift called")
+#
+#     image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
+#
+#     alignem.print_debug(2, "Create images at all scales: " + str(image_scales_to_run))
+#
+#     if (alignem.project_data['data']['destination_path'] == None) or (
+#             len(alignem.project_data['data']['destination_path']) <= 0):
+#
+#         alignem.show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
+#
+#     else:
+#
+#         ### Create the queue here
+#         task_queue.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+#         task_wrapper.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+#         scaling_queue = task_queue.TaskQueue(sys.executable)
+#         cpus = psutil.cpu_count(logical=False)
+#         #    if cpus > 32:
+#         #      cpus = 32
+#         scaling_queue.start(cpus)
+#         scaling_queue.notify = False
+#         scaling_queue.passthrough_stdout = False
+#         scaling_queue.passthrough_stderr = False
+#
+#         # Create a list of scaling jobs to be built by looping through scales and layers
+#         scaling_jobs_by_input_file = {}
+#
+#         for scale in sorted(image_scales_to_run):
+#
+#             alignem.print_debug(70, "Creating images for scale " + str(scale))
+#             # main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+#
+#             scale_key = str(scale)
+#             if not 'scale_' in scale_key:
+#                 scale_key = 'scale_' + scale_key
+#
+#             subdir_path = os.path.join(alignem.project_data['data']['destination_path'], scale_key)
+#             scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1')
+#
+#             create_project_structure_directories(subdir_path)
+#
+#             alignem.print_debug(70, "Begin creating images at each layer for key: " + str(scale_key))
+#
+#             layer_index = 0
+#             for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+#                 # if not layer_index in scaling_jobs_by_input_file:
+#                 #  scaling_jobs_by_input_file[layer_index] = []
+#
+#                 alignem.print_debug(40, "Generating images for layer: \"" + str(
+#                     alignem.project_data['data']['scales'][scale_key]['alignment_stack'].index(layer)) + "\"")
+#                 # Remove previously aligned images from panel ??
+#
+#                 # Copy (or link) the source images to the expected scale_key"/img_src" directory
+#                 for role in layer['images'].keys():
+#
+#                     # Only copy files for roles "ref" and "base"
+#
+#                     if role in ['ref', 'base']:
+#                         alignem.print_debug(40, "Generating images for role: \"" + role + "\"")
+#                         base_file_name = layer['images'][role]['filename']
+#                         if base_file_name != None:
+#                             if len(base_file_name) > 0:
+#                                 abs_file_name = os.path.abspath(base_file_name)
+#                                 bare_file_name = os.path.split(abs_file_name)[1]
+#                                 destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
+#                                 outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
+#                                 if scale == 1:
+#                                     # Make links or copy immediately without creating a job
+#                                     if get_best_path(abs_file_name) != get_best_path(outfile_name):
+#                                         # The paths are different so make the link
+#                                         try:
+#                                             alignem.print_debug(70, "UnLinking " + outfile_name)
+#                                             os.unlink(outfile_name)
+#                                         except:
+#                                             alignem.print_debug(70, "Error UnLinking " + outfile_name)
+#                                         try:
+#                                             alignem.print_debug(70,
+#                                                                 "Linking from " + abs_file_name + " to " + outfile_name)
+#                                             os.symlink(abs_file_name, outfile_name)
+#                                         except:
+#                                             alignem.print_debug(5,
+#                                                                 "Unable to link from " + abs_file_name + " to " + outfile_name)
+#                                             alignem.print_debug(5, "Copying file instead")
+#                                             # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
+#                                             try:
+#                                                 shutil.copy(abs_file_name, outfile_name)
+#                                             except:
+#                                                 alignem.print_debug(1,
+#                                                                     "Unable to link or copy from " + abs_file_name + " to " + outfile_name)
+#                                                 print_exception()
+#                                 else:
+#                                     try:
+#                                         # Do the scaling
+#                                         alignem.print_debug(70,
+#                                                             "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
+#                                                                 scale))
+#
+#                                         if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
+#                                             1].startswith('scale_'):
+#                                             # Convert the source from whatever scale is currently processed to scale_1
+#                                             p, f = os.path.split(abs_file_name)
+#                                             p, r = os.path.split(p)
+#                                             p, s = os.path.split(p)
+#                                             abs_file_name = os.path.join(p, 'scale_1', r, f)
+#
+#                                         ### Add this job to the task queue or job list
+#                                         if not (abs_file_name in scaling_jobs_by_input_file.keys()):
+#                                             scaling_jobs_by_input_file[abs_file_name] = []
+#                                         scaling_jobs_by_input_file[abs_file_name].append(
+#                                             {'scale': scale, 'target': outfile_name})
+#                                         # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+#                                         # scaling_queue.add_task (cmd=sys.executable, args=['single_scale_job.py', str (scale), str (abs_file_name), str(outfile_name)], wd='.')
+#                                         # These two lines generate the scales directly rather than through the queue
+#                                         # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(abs_file_name), fac=scale )
+#                                         # align_swiftir.swiftir.saveImage ( img, outfile_name )
+#
+#                                         # Change the base image for this scale to the new file
+#                                         layer['images'][role]['filename'] = outfile_name
+#                                     except:
+#                                         alignem.print_debug(1,
+#                                                             "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
+#                                                                 scale))
+#                                         print_exception()
+#
+#                                 # Update the Data Model with the new absolute file name. This replaces the originally opened file names
+#                                 alignem.print_debug(40, "Original File Name: " + str(layer['images'][role]['filename']))
+#                                 layer['images'][role]['filename'] = outfile_name
+#                                 alignem.print_debug(40, "Updated  File Name: " + str(layer['images'][role]['filename']))
+#
+#                 layer_index += 1
+#
+#         print("Jobs to Scale: " + str(scaling_jobs_by_input_file))
+#         print()
+#         job_keys = sorted(scaling_jobs_by_input_file.keys())
+#         for k in job_keys:
+#             print(" Scaling " + str(k))
+#             arg_list = ['multi_scale_job.py', k]
+#             for s in scaling_jobs_by_input_file[k]:
+#                 arg_list.append(str(s['scale']))
+#                 arg_list.append(str(s['target']))
+#             scaling_queue.add_task(cmd=sys.executable, args=arg_list, wd='.')
+#
+#         ### Join the queue here to ensure that all have been generated before returning
+#         alignem.print_debug(1, "Waiting for TaskQueue.join to return")
+#         scaling_queue.work_q.join()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+#
+#         scaling_queue.shutdown()
+#         del scaling_queue
+#     print("Exiting generate_scales_optimized()")
+#
+#     # main_win.status.showMessage("Done Generating Scales ...")
+
+
+
+#
+#
+# def view_change_callback(prev_scale_key, next_scale_key, prev_layer_num, next_layer_num, new_data_model=False):
+#     print('view_change_callback | called by ' + inspect.stack()[1].function)
+#     # print("  Changing from scale,layer " + str((prev_scale_key, prev_layer_num)) + " to " + str((next_scale_key, next_layer_num)))
+#     print('prev_scale_key=%s,next_scale_key=%s, prev_layer_num=%s, next_layer_num=%s' % (prev_scale_key, next_scale_key, prev_layer_num, next_layer_num))
+#
+#
+#     if alignem.project_data != None:
+#
+#         copy_from_widgets_to_data_model = True
+#         copy_from_data_model_to_widgets = False #0503
+#
+#
+#         # making false, instead will use new function main_window.read_project_data_update_gui() (call from change_layer directly)
+#         # copy_from_widgets_to_data_model = False
+#         # copy_from_data_model_to_widgets = False
+#
+#         if new_data_model:
+#             # Copy all data from the data model into the widgets, ignoring what's in the widgets
+#             # But don't copy from the widgets to the data model
+#             copy_from_widgets_to_data_model = False
+#         elif (prev_scale_key == None) or (next_scale_key == None):
+#             # None signals a button change and not an actual layer or scale change
+#             # Copy all of the data from the widgets into the data model
+#             # But don't copy from the data model to the widgets
+#             copy_from_data_model_to_widgets = False
+#
+#         # Set up convenient prev and next layer references
+#         prev_layer = None
+#         next_layer = None
+#         if prev_scale_key in alignem.project_data['data']['scales']:
+#             if prev_layer_num in range(len(alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'])):
+#                 prev_layer = alignem.project_data['data']['scales'][prev_scale_key]['alignment_stack'][prev_layer_num]
+#         if next_scale_key in alignem.project_data['data']['scales']:
+#             if next_layer_num in range(len(alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'])):
+#                 next_layer = alignem.project_data['data']['scales'][next_scale_key]['alignment_stack'][next_layer_num]
+#
+#         # Begin the copying
+#
+#         # *****************************************************************
+#         # First copy from the widgets to the previous data model if desired
+#         # *****************************************************************
+#         if copy_from_widgets_to_data_model:
+#             print('view_change_callback | writing changes from UI to data model')
+#             # Start with the scale-level items
+#
+#             # Build any scale-level structures that might be needed
+#             if not 'method_data' in alignem.project_data['data']['scales'][prev_scale_key]:
+#                 alignem.project_data['data']['scales'][prev_scale_key]['method_data'] = {}
+#
+#             # Copy the scale-level data
+#             # alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = make_bool(null_cafm_trends.get_value())
+#             # alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = make_bool(use_bounding_rect.get_value())
+#             # alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = poly_order.get_value()
+#
+#             #0405 #hardcode whatever values
+#             #todo #0406 NEED BIAS CONTROL i.e.
+#             # bias controls: CUMULATIVE AFFINE MATRIX CHECKBOX, POLY ORDER
+#             # NEED ALL 3 OF THESE, BOUNDING RECTANGLE LAST
+#             # NOTE: THESE SETTINGS AFFECT HOW ALIGNED IMAGES ARE DISPLAYED (ALIGNMENT DOES NOT CHANGE)
+#             # alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = False
+#             # alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = int(0)
+#             # alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = False
+#
+#             # alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends'] = alignem.main_window.get_null_bias_state()
+#
+#             alignem.project_data['data']['scales'][prev_scale_key]['poly_order'] = alignem.main_window.get_null_bias_value()
+#             alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect'] = alignem.main_window.get_bounding_state()
+#
+#
+#             # @Slot()
+#             # def get_bounding_state(self) -> bool:
+#             #     return float(self.toggle_bounding_rect.isChecked())
+#             #
+#             # @Slot()
+#             # def get_null_bias_state(self) -> bool:
+#             #     return float(self.toggle_cafm.isChecked())
+#
+#
+#             alignem.print_debug(25, "In DM: Null Bias = " + str(
+#                 alignem.project_data['data']['scales'][prev_scale_key]['null_cafm_trends']))
+#
+#             alignem.print_debug(25, "In DM: Use Bound = " + str(
+#                 alignem.project_data['data']['scales'][prev_scale_key]['use_bounding_rect']))
+#
+#             alignem.project_data['data']['scales'][prev_scale_key]['method_data']['alignment_option'] = alignem.main_window.get_affine_combobox()
+#
+#             # Next copy the layer-level items
+#             if prev_layer != None:
+#
+#                 # Build any layer-level structures that might be needed in the data model
+#                 if not 'align_to_ref_method' in prev_layer:
+#                     prev_layer['align_to_ref_method'] = {}
+#                 if not 'method_data' in prev_layer['align_to_ref_method']:
+#                     prev_layer['align_to_ref_method']['method_data'] = {}
+#
+#                 # Copy the layer-level data
+#                 # prev_layer['skip'] = make_bool(skip.get_value()) #skip
+#                 # prev_layer['skip'] = alignem.main_window.toggle_skip.isChecked() #no longer necessary
+#                 # prev_layer['align_to_ref_method']['method_data'][
+#                 #     'whitening_factor'] = alignem.main_window.whitening_input.text
+#                 # prev_layer['align_to_ref_method']['method_data'][
+#                 #     'win_scale_factor'] = alignem.main_window.swim_input.text
+#                 prev_layer['align_to_ref_method']['method_data']['whitening_factor'] = float(alignem.main_window.get_whitening_input())
+#                 prev_layer['align_to_ref_method']['method_data']['win_scale_factor'] = float(alignem.main_window.get_swim_input())
+#
+#         # *****************************************************************
+#         # Second copy from the data model to the widgets if desired (check each along the way)
+#         # *****************************************************************
+#         # SET TO FALSE #0503.. new function main_window.read_project_data_update_gui() will accomplish this,
+#         # and will be called directly from MainWindow.change_layer
+#         if copy_from_data_model_to_widgets:
+#             print('view_change_callback | writing changes from data model to UI')
+#             alignem.ignore_changes = True  # tag #odd
+#
+#             #0503 THIS DOES NOT WORK, THINKING UPDATE of GUI ELEMENTS UPON LAYER CHANGE NEEDS TO HAPPEN IN 'change_layer'
+#             # try:
+#             #     # alignem.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+#             #     # main_window.update_skip_toggle()
+#             #     # main_win.update_skip_toggle()
+#             #     print('\nTrying alignem.main_window.update_skip_toggle()...\n')
+#             #     alignem.main_window.update_skip_toggle()
+#             # except:
+#             #     print('view_change_callback | WARNING | skip toggle switch UI element failed to update its state')
+#
+#             # Start with the scale-level items
+#             #0405 #0503 - commented the 6 line below out b/c 'NameError: name 'null_cafm_trends' is not defined
+#             # if 'null_cafm_trends' in alignem.project_data['data']['scales'][next_scale_key]:
+#             #     null_cafm_trends.set_value(alignem.project_data['data']['scales'][next_scale_key]['null_cafm_trends'])
+#             # if 'use_bounding_rect' in alignem.project_data['data']['scales'][next_scale_key]:
+#             #     use_bounding_rect.set_value(alignem.project_data['data']['scales'][next_scale_key]['use_bounding_rect'])
+#             #jy-remove-x
+#             # if 'poly_order' in alignem.project_data['data']['scales'][next_scale_key]:
+#             #     poly_order.set_value(alignem.project_data['data']['scales'][next_scale_key]['poly_order'])
+#
+#             # affine #combobox
+#             if 'method_data' in alignem.project_data['data']['scales'][next_scale_key]:
+#                 # if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+#                 #     new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data']['alignment_option']
+#                 #     init_ref_app.set_value(dm_name_to_combo_name[new_option])
+#
+#                 if 'alignment_option' in alignem.project_data['data']['scales'][next_scale_key]['method_data']:
+#                     new_option = alignem.project_data['data']['scales'][next_scale_key]['method_data'][
+#                         'alignment_option']
+#                     # init_ref_app.set_value(dm_name_to_combo_name[new_option])
+#                     print('  Setting affine_combobox: ' + dm_name_to_combo_name[new_option])
+#                     alignem.main_window.affine_combobox.setCurrentText(dm_name_to_combo_name[new_option])
+#
+#             # Next copy the layer-level items
+#
+#             if next_layer != None:  # next_layer refers to the current layer
+#                 # print('  next_layer = ',next_layer)
+#                 # Copy the layer-level data
+#                 # print("  Evaluating: if 'skip' in next_layer ")
+#                 if 'skip' in next_layer:
+#                     # print("=> True")
+#                     # #skip.set_value(next_layer['skip']) #skip
+#                     # print("    alignem.main_window.toggle_skip.isChecked() => ", alignem.main_window.toggle_skip.isChecked())
+#                     # print("    Possibly setting checked state of toggle_skip...")
+#                     # print("    Evaluating: not bool(next_layer['skip']) => ", next_layer['skip'])
+#                     # #alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip'])) #toggle #toggleskip #setchecked #checked
+#                     # print("    alignem.main_window.toggle_skip.isChecked() = ", alignem.main_window.toggle_skip.isChecked())
+#
+#                     # print("  next_layer['skip'] = ", next_layer['skip']) # <- last code removed
+#                     pass
+#
+#                     # alignem.main_window.toggle_skip.setChecked(not bool(next_layer['skip']))
+#
+#                     # skip.set_value(next_layer['skip']) #original
+#
+#                 if 'align_to_ref_method' in next_layer:
+#                     if 'method_data' in next_layer['align_to_ref_method']:
+#                         if 'whitening_factor' in next_layer['align_to_ref_method']['method_data']:
+#                             # print("  next_layer['align_to_ref_method']['method_data']['whitening_factor'] = ", next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+#                             print("  Setting 'whitening_input': " + str(
+#                                 next_layer['align_to_ref_method']['method_data']['whitening_factor']))
+#                             # whitening_factor.set_value(next_layer['align_to_ref_method']['method_data']['whitening_factor'])
+#                             alignem.main_window.whitening_input.setText(
+#                                 str(next_layer['align_to_ref_method']['method_data']['whitening_factor']))
+#                         if 'win_scale_factor' in next_layer['align_to_ref_method']['method_data']:
+#                             print("  Setting 'swim_input': " + str(
+#                                 (next_layer['align_to_ref_method']['method_data']['win_scale_factor'])))
+#                             alignem.main_window.swim_input.setText(
+#                                 str(next_layer['align_to_ref_method']['method_data']['win_scale_factor']))
+#
+#             alignem.ignore_changes = False
+#     else:
+#         print('view_change_callback | EXCEPTION | alignem.project_data not found')
+#
+#     # # THIS MIGHT NOT BE THE BEST PLACE FOR THIS, ARBITRARY LOCATION
+#     # scale = alignem.project_data['data']['scales'][alignem.project_data['data']['current_scale']]
+#     # layer = scale['alignment_stack'][alignem.project_data['data']['current_layer']]
+#     # alignem.main_window.whitening_input.setText(str(
+#     #     scale['alignment_stack'][alignem.project_data['data']['current_layer']]['align_to_ref_method'][
+#     #         'method_data'][
+#     #         'whitening_factor']))
+#     # alignem.main_window.swim_input.setText(str(
+#     #     scale['alignment_stack'][alignem.project_data['data']['current_layer']]['align_to_ref_method'][
+#     #         'method_data'][
+#     #         'win_scale_factor']))
+#
+#     print("view_change_callback | {}, layer {}  --> {}, layer {}".format(prev_scale_key, prev_layer_num, next_scale_key,next_layer_num))
+#     # print("view_change_callback has completed.\n")
+#
+#     # print('view_change_callback | updating skip toggle switch')
+#     # try:
+#     #     # alignem.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
+#     #     alignem.main_win.update_skip_toggle()
+#     # except:
+#     #     print('ZoomPanWidget.mouseMoveEvent | WARNING | unable to set checked state of toggle switch')
+
+
+
+
+# class GenScalesDialog(QDialog):
+#     """
+#     Simple dialog that consists of a Progress Bar.
+#     """
+#
+#     def __init__(self):
+#         super().__init__()
+#         print("GenScalesDialog constructor called")
+#         self.initUI()
+#
+#     def initUI(self):
+#         self.setWindowTitle('Generating Scales')
+#         self.progress = QProgressBar(self)
+#         self.progress.setGeometry(0, 0, 300, 25)
+#
+#         total_images_to_scale = 0
+#         image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
+#         for scale in image_scales_to_run:
+#             scale_key = str(scale)
+#             if not 'scale_' in scale_key:
+#                 scale_key = 'scale_' + scale_key
+#             total_images_to_scale += len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])
+#         if total_images_to_scale <= 1:
+#             total_images_to_scale = 1
+#         print('Total images to scale = ' + str(total_images_to_scale))
+#
+#         self.progress.setMaximum(total_images_to_scale)
+#
+#         # self.button = QPushButton('Start', self)
+#         # self.button.move(0, 30)
+#
+#         self.setModal(True)
+#         self.show()
+#         self.calc = GenScalesThread()
+#         self.calc.countChanged.connect(self.onCountChanged)
+#         self.calc.start()
+#
+#     def onCountChanged(self, value):
+#         self.progress.setValue(value)
+
+
+# class GenScalesThread(QThread):
+#     countChanged = Signal(int)
+#
+#     def run(self):
+#         print('GenScalesThread constructor called')
+#         # Note: all printed output has been suppressed for testing
+#         # alignem.print_debug ( 10, "GenScalesThread.run inside alignem_swift called" )
+#         # main_win.status.showMessage("Generating Scales ...")
+#
+#         count = 0
+#
+#         image_scales_to_run = [alignem.get_scale_val(s) for s in sorted(alignem.project_data['data']['scales'].keys())]
+#
+#         # alignem.print_debug ( 40, "Create images at all scales: " + str ( image_scales_to_run ) )
+#
+#         for scale in sorted(image_scales_to_run):
+#
+#             # alignem.print_debug ( 70, "Creating images for scale " + str(scale) )
+#             # main_win.status.showMessage("Generating Scale " + str(scale) + " ...")
+#
+#             scale_key = str(scale)
+#             if not 'scale_' in scale_key:
+#                 scale_key = 'scale_' + scale_key
+#
+#             subdir_path = os.path.join(alignem.project_data['data']['destination_path'], scale_key)
+#             scale_1_path = os.path.join(alignem.project_data['data']['destination_path'], 'scale_1')
+#
+#             create_project_structure_directories(subdir_path)
+#
+#             for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+#                 # Remove previously aligned images from panel ??
+#
+#                 # Copy (or link) the source images to the expected scale_key"/img_src" directory
+#                 for role in layer['images'].keys():
+#
+#                     # Update the counter for the progress bar and emit the signal to update
+#                     count += 1
+#                     self.countChanged.emit(count)
+#
+#                     # Only copy files for roles "ref" and "base"
+#                     # if role in ['ref', 'base']:
+#                     if role in ['base']:
+#
+#                         base_file_name = layer['images'][role]['filename']
+#                         if base_file_name != None:
+#                             if len(base_file_name) > 0:
+#                                 abs_file_name = os.path.abspath(base_file_name)
+#                                 bare_file_name = os.path.split(abs_file_name)[1]
+#                                 destination_path = os.path.abspath(alignem.project_data['data']['destination_path'])
+#                                 outfile_name = os.path.join(destination_path, scale_key, 'img_src', bare_file_name)
+#                                 if scale == 1:
+#                                     if get_best_path(abs_file_name) != get_best_path(outfile_name):
+#                                         # The paths are different so make the link
+#                                         try:
+#                                             # alignem.print_debug ( 70, "UnLinking " + outfile_name )
+#                                             os.unlink(outfile_name)
+#                                         except:
+#                                             # alignem.print_debug ( 70, "Error UnLinking " + outfile_name )
+#                                             pass
+#                                         try:
+#                                             # alignem.print_debug ( 70, "Linking from " + abs_file_name + " to " + outfile_name )
+#                                             os.symlink(abs_file_name, outfile_name)
+#                                         except:
+#                                             # alignem.print_debug ( 5, "Unable to link from " + abs_file_name + " to " + outfile_name )
+#                                             # alignem.print_debug ( 5, "Copying file instead" )
+#                                             # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
+#                                             try:
+#                                                 shutil.copy(abs_file_name, outfile_name)
+#                                             except:
+#                                                 # alignem.print_debug ( 1, "Unable to link or copy from " + abs_file_name + " to " + outfile_name )
+#                                                 print_exception()
+#                                 else:
+#                                     try:
+#                                         # Do the scaling
+#                                         # alignem.print_debug ( 70, "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+#
+#                                         if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
+#                                             1].startswith('scale_'):
+#                                             # Convert the source from whatever scale is currently processed to scale_1
+#                                             p, f = os.path.split(abs_file_name)
+#                                             p, r = os.path.split(p)
+#                                             p, s = os.path.split(p)
+#                                             abs_file_name = os.path.join(p, 'scale_1', r, f)
+#
+#                                         img = align_swiftir.swiftir.scaleImage(
+#                                             align_swiftir.swiftir.loadImage(abs_file_name), fac=scale)
+#                                         align_swiftir.swiftir.saveImage(img, outfile_name)
+#                                         # Change the base image for this scale to the new file
+#                                         layer['images'][role]['filename'] = outfile_name
+#                                     except:
+#                                         # alignem.print_debug ( 1, "Error copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(scale) )
+#                                         # print_exception()
+#                                         pass
+#
+#                                 # Update the Data Model with the new absolute file name. This replaces the originally opened file names
+#                                 # alignem.print_debug ( 40, "Original File Name: " + str(layer['images'][role]['filename']) )
+#                                 layer['images'][role]['filename'] = outfile_name
+#                                 # alignem.print_debug ( 40, "Updated  File Name: " + str(layer['images'][role]['filename']) )
+#         # main_win.status.showMessage("Done Generating Scales")
+
+
+# gen_scales_dialog = None
+
+
+# def jump_to_layer():
+#     print('Jumping to layer | jump_to_layer...')
+#     requested_layer = jump_to_val.get_value()
+#     alignem.print_debug(3, "Jump to layer " + str(requested_layer))
+#     num_layers = len(alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'])
+#     if requested_layer >= num_layers:  # Limit to largest
+#         requested_layer = num_layers - 1
+#     if requested_layer < 0:  # Consider negative values as indexes from the end
+#         requested_layer = num_layers + requested_layer
+#     if requested_layer < 0:  # If the end index was greater than the length, just show 0
+#         requested_layer = 0
+#     alignem.project_data['data']['current_layer'] = requested_layer
+#     main_win.image_panel.update_multi_self()
+
+
+
+# def link_stack_orig():
+#     print('Linking stack, original | link_stack_orig...')
+#
+#     alignem.print_debug(10, "Linking stack")
+#
+#     ref_image_stack = []
+#     for layer_index in range(len(alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'])):
+#         if layer_index == 0:
+#             main_win.add_empty_to_role('ref')
+#         else:
+#             # layer = alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index]
+#             prev_layer = alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'][
+#                 layer_index - 1]
+#             fn = ""
+#             if 'base' in prev_layer['images'].keys():
+#                 fn = prev_layer['images']['base']['filename']
+#             main_win.add_image_to_role(fn, 'ref')
+#
+#     alignem.print_debug(50, "Loading images: " + str(ref_image_stack))
+#     # main_win.load_images_in_role ( 'ref', ref_image_stack )
+#
+#     main_win.update_panels()
+#     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+#     print('Exiting link_stack_orij()')
+
+
+
+# def get_file_io_mode():
+#     print('Getting file IO mode | get_file_io_mode...')
+#     ### All of this code is just trying to find the right menu item for the "Use File I/O" check box:
+#     file_io_mode = False
+#     menubar = alignem.main_window.menu
+#     menubar_items = [menubar.children()[x].title() for x in range(len(menubar.children())) if
+#                      'title' in dir(menubar.children()[x])]
+#     submenus = [menubar.children()[x] for x in range(len(menubar.children())) if 'title' in dir(menubar.children()[x])]
+#     alignem.print_debug(40, "Menubar contains: " + str(menubar_items))
+#     setmenu_index = -1
+#     for m in menubar_items:
+#         if "Set" in m:
+#             setmenu_index = menubar_items.index(m)
+#     alignem.print_debug(40, "Set menu is item " + str(setmenu_index))
+#     if setmenu_index >= 0:
+#         set_menu = submenus[setmenu_index]
+#         set_menu_actions = set_menu.actions()
+#         use_file_io = None  # This will be the widget (menu item)
+#         for action in set_menu_actions:
+#             if "Use File I/O" in action.text():
+#                 use_file_io = action
+#                 break
+#         if use_file_io != None:
+#             # Then we've found the actual widget, so get its value
+#             if use_file_io.isChecked():
+#                 file_io_mode = True
+#     print('get_file_io_mode | Returning %s' % str(file_io_mode))
+#     return (file_io_mode)
+
+
+# def method_debug():
+#     print('method_debug() was called...')
+#     alignem.print_debug(1, "In Method debug for " + str(__name__))
+#     __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+# def center_all():
+#     print('alignem.main_window.center_all_images() was called from alignem_swift.py')
+#     # main_win.center_all_images() #0408 #changed because below should be the correct call
+#     alignem.main_window.center_all_images()
+#
+#
+# def refresh_all():
+#     print('refresh_all | Refreshing all...')
+#     alignem.main_window.refresh_all_images()
