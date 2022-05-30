@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-print(f'glanceem_utils.py | Loading {__name__}')
-import alignem
+# print(f'glanceem_utils.py | Loading {__name__}')
+import interface
 import webbrowser
 import operator
 import logging
@@ -11,7 +11,9 @@ import skimage.measure
 import dask.array as da
 import struct
 import multiprocessing
+import inspect
 import os
+import sys
 import time
 import traceback
 import copy
@@ -46,20 +48,148 @@ center_switch = 0
 # import task_wrapper
 # import project_runner
 
+def getProjectFileLength(path: str) -> int:
+    f = open(path, 'r')
+    text = f.read()
+    f.close()
+    for count, line in enumerate(text):
+        pass
+    return count+1
+
+
+def printProjectDetails(project_data: dict) -> None:
+    print('\nIn Memory:')
+    print("  project_data['data']['destination_path']         :", interface.project_data['data']['destination_path'])
+    print("  project_data['data']['source_path']              :", interface.project_data['data']['source_path'])
+    print("  project_data['data']['current_scale']            :", interface.project_data['data']['current_scale'])
+    print("  project_data['data']['current_layer']            :", interface.project_data['data']['current_layer'])
+    print("  project_data['method']                           :", interface.project_data['method'])
+    print("  Destination Set Status (isDestinationSet)        :", isDestinationSet())
+    print("  Images Imported Status (areImagesImported)       :", areImagesImported())
+    print("  Project Scaled Status (isProjectScaled)          :", isProjectScaled())
+    print("  Any Scale Aligned Status (isAnyScaleAligned)     :", isAnyScaleAligned())
+    print("  Cur Scale Aligned (isAlignmentOfCurrentScale)    :", isAlignmentOfCurrentScale())
+    print("  Any Exported Status (isAnyAlignmentExported)     :", isAnyAlignmentExported())
+    print("  # Imported Images (getNumImportedImages)         :", getNumImportedImages())
+    print("  Current Layer SNR (getCurSNR)                    :", getCurSNR())
+
+    return None
+
+def debug_project():
+    print('\n-------------- DEBUG PROJECT --------------')
+    path = interface.project_data['data']['destination_path']
+    cat_str = 'cat %s.json' % path
+    n_init_affine = os.system(cat_str + ' |grep init_affine')
+    n_refine_affine = os.system(cat_str + ' |grep refine_affine')
+    n_apply_affine = os.system(cat_str + ' |grep apply_affine')
+    n_alignment_option = os.system(cat_str + ' |grep alignment_option')
+    print('# init_affine (project FILE)              :', n_init_affine)
+    print('# refine_affine (project FILE)            :', n_refine_affine)
+    print('# apply_affine (project FILE)             :', n_apply_affine)
+    print('# alignment_option (project_FILE)         :')
+    print('')
+    print('# init_affine (interface.project_data)    :', str(interface.project_data).count('init_affine'))
+    print('# refine_affine (interface.project_data)  :', str(interface.project_data).count('refine_affine'))
+    print('# apply_affine (interface.project_data)   :', str(interface.project_data).count('apply_affine'))
+    print('-------------------------------------------\n')
+
+#debug #debuglayer
+def debug_layer():
+    scale = interface.project_data['data']['current_scale']
+    print('\n\n----------- DEBUG LAYER -----------')
+    print("project_data['data']['source_path']              :", interface.project_data['data']['source_path'])
+    print("project_data['data']['destination_path']         :", interface.project_data['data']['destination_path'])
+    print("project_data['data']['current_scale']            :", interface.project_data['data']['current_scale'])
+    print("project_data['data']['current_layer']            :", interface.project_data['data']['current_layer'])
+    print("project_data['method']                           :", interface.project_data['method'])
+
+    # scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
+
+    # base_file_name = layer['images']['base']['filename']
+    print("Destination Set Status (isDestinationSet)        :", isDestinationSet())
+    print("Images Imported Status (areImagesImported)       :", areImagesImported())
+    print("# Imported Images (getNumImportedImages)         :", getNumImportedImages())
+    print("Project Scaled Status (isProjectScaled)          :", isProjectScaled())
+    print("Any Scale Aligned Status (isAnyScaleAligned)     :", isAnyScaleAligned())
+    print("Cur Scale Aligned (isAlignmentOfCurrentScale)    :", isAlignmentOfCurrentScale())
+    print("Current Layer SNR (getCurSNR)                    :", getCurSNR())
+    print("Any Exported Status (isAnyAlignmentExported)     :", isAnyAlignmentExported())
+    try:
+        print("alignment_option                                 :", interface.project_data['data']['scales'][getCurScale()]['method_data']['alignment_option'])
+    except:
+        print("alignment_option not found")
+    try:
+        print("project_data.keys()                              :", interface.project_data.keys())
+    except:
+        print("project_data.keys() not found")
+
+    null_cafm_trends = interface.project_data['data']['scales'][interface.project_data['data']['current_scale']]['null_cafm_trends']
+    use_bounding_rect = interface.project_data['data']['scales'][interface.project_data['data']['current_scale']]['use_bounding_rect']
+    poly_order = interface.project_data['data']['scales'][getCurScale()]['poly_order']
+    try:
+        scale = interface.project_data['data']['scales'][interface.project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
+    except:
+        print("unable to set scale = project_data['data']['scales'][project_data['data']['current_scale']]")
+    try:
+        layer = scale['alignment_stack'][interface.project_data['data']['current_layer']]
+    except:
+        print("unable to set layer = scale['alignment_stack'][project_data['data']['current_layer']]")
+    try:
+        print("whitening factor                                 :",scale['alignment_stack'][interface.project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor'])
+    except:
+        print("whitening factor not found")
+    try:
+        print("SWIM window                                      :", scale['alignment_stack'][interface.project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor'])
+    except:
+        print("SWIM window not found")
+
+
+    # print("layer = \n", pretty(layer)) # dict_keys(['align_to_ref_method', 'images', 'skip']
+    try:
+        print("layer['skip']                                    :", layer['skip'])
+    except:
+        print("layer['skip'] not found")
+    try:
+        print("scale['alignment_stack'][project_data['data']['current_layer']]['skip'] = ", scale['alignment_stack'][interface.project_data['data']['current_layer']]['skip'])
+    except:
+        print("scale['alignment_stack'][project_data['data']['current_layer']]['skip'] not found")
+
+    # skip_list = []
+    # for layer_index in range(len(project_data['data']['scales'][getCurScale()]['alignment_stack'])):
+    #     if project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index]['skip'] == True:
+    #         skip_list.append(layer_index)
+    # print("skip_list                                        :", skip_list)
+    # print("scale['alignment_stack'][project_data['data']['current_layer']] = \n",scale['alignment_stack'][project_data['data']['current_layer']])
+
+
+    print("null_cafm_trends                                 :", null_cafm_trends)
+    print("use_bounding_rect                                :", use_bounding_rect)
+    print("poly_order                                       :", poly_order)
+    print("skips list                                       :", getSkipsList())
+
+    try:
+        print("scale.keys()                                     :", scale.keys())
+    except:
+        print("scale.keys() not found")
+
+    try:
+        print("layer.keys()                                     :", layer.keys())
+    except:
+        print("layer.keys() not found")
 
 
 def areImagesImported() -> bool:
     '''Checks if any images have been imported.'''
+    # print('areImagesImported:')
+    # print("areImagesImported | len(interface.project_data['data']['scales']['scale_1']['alignment_stack']) = ", len(interface.project_data['data']['scales']['scale_1']['alignment_stack']))
 
-    try:
-        len(alignem.project_data['data']['scales']['scale_1']['alignment_stack'])
-        print('  areImagesImported | Returning True')
+    n_imgs = len(interface.project_data['data']['scales']['scale_1']['alignment_stack'])
+    if n_imgs > 0:
         check = True
-    except:
-        print('  areImagesImported | Returning False')
+    else:
         check = False
 
-    print('areImagesImported | Returning %s' % check)
+    # print('areImagesImported | Returning ', str(check))
 
     return check
 
@@ -70,8 +200,8 @@ def getNumImportedImages() -> int:
     CHECK THIS FOR OFF-BY-ONE BUG'''
 
     try:
-        n_imgs = len(alignem.project_data['data']['scales']['scale_1']['alignment_stack'])
-        print('getNumImportedImages | Returning %d as int' % n_imgs)
+        n_imgs = len(interface.project_data['data']['scales']['scale_1']['alignment_stack'])
+        # print('getNumImportedImages | Returning %d as int' % n_imgs)
         return n_imgs
     except:
         print('getNumImportedImages | WARNING | No image layers were found')
@@ -79,17 +209,17 @@ def getNumImportedImages() -> int:
 
 
 def getCurScale() -> str:
-    '''Returns the current scale, according to alignem.project_data (project dictionary).'''
-    print('getCurScale:')
+    '''Returns the current scale, according to interface.project_data (project dictionary).'''
+    # print('getCurScale:')
 
-    cur_scale = alignem.project_data['data']['current_scale']
-    print('  getCurScale | Returning %s' % cur_scale)
+    cur_scale = interface.project_data['data']['current_scale']
+    # print('  getCurScale | Returning %s' % cur_scale)
     return cur_scale
 
 def isDestinationSet() -> bool:
     '''Checks if there is a project open'''
 
-    if alignem.project_data['data']['destination_path']:
+    if interface.project_data['data']['destination_path']:
         check = True
     else:
         check = False
@@ -102,13 +232,13 @@ def isProjectScaled() -> bool:
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a project that does not need scales.'''
 
-    if len(alignem.project_data['data']['scales']) < 2:
+    if len(interface.project_data['data']['scales']) < 2:
         isScaled = False
     else:
         isScaled = True
 
-    print('isProjectScaled | checking if %s is less than 2 (proxy for not scaled)' % str(len(alignem.project_data['data']['scales'])))
-    print('isProjectScaled | Returning %s' % isScaled)
+    # print('isProjectScaled | checking if %s is less than 2 (proxy for not scaled)' % str(len(interface.project_data['data']['scales'])))
+    # print('isProjectScaled | Returning %s' % isScaled)
     return isScaled
 
 def isScaleAligned() -> bool:
@@ -116,45 +246,61 @@ def isScaleAligned() -> bool:
 
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a project that does not need scales.'''
-
-    if len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]) < 1:
-        # print('isAlignmentOfCurrentScale() | False')
-        isAligned = False
-    else:
-        # print('isAlignmentOfCurrentScale() | True | # aligned images: ', len(alignem.project_data["data"]["scales"][alignem.get_cur_scale()]["alignment_stack"]))
-        isAligned = True
-
-    print('isScaleAligned | Returning %s' % isAligned)
-
-    # print('isScaleAligned() | returning:', isAligned)
-    return isAligned
+    print('isScaleAligned (caller=%s):' % str(inspect.stack()[1].function))
+    try:
+        alignment = len(interface.project_data["data"]["scales"][interface.getCurScale()]["alignment_stack"])
+        if alignment > 1:
+            print('isScaleAligned | Returning True')
+            return True
+        else:
+            print('isScaleAligned | Returning False')
+            return False
+    except:
+        print('isScaleAligned | EXCEPTION | Unexpected function behavior - Returning False')
+        return False
 
 def getNumAligned() -> int:
     '''Returns the count aligned images for the current scale'''
 
-    path = os.path.join(alignem.project_data['data']['destination_path'], alignem.get_cur_scale(), 'img_aligned')
-    print('getNumAligned() | path=', path)
+    path = os.path.join(interface.project_data['data']['destination_path'], interface.getCurScale(), 'img_aligned')
+    # print('getNumAligned | path=', path)
     try:
         n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
     except:
         print('getNumAligned() | EXCEPTION | Unable to get number of aligned - returning 0')
         return 0
-    print('getNumAligned() | returning:', n_aligned)
+    # print('getNumAligned() | returning:', n_aligned)
     return n_aligned
 
 def getSkipsList() -> list[int]:
     '''Returns the list of skipped images at the current scale'''
-
+    print('getSkipsList | called by ',inspect.stack()[1].function)
     skip_list = []
     try:
-        for layer_index in range(len(alignem.project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
-            if alignem.project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+        for layer_index in range(len(interface.project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
+            if interface.project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
                 skip_list.append(layer_index)
-            print('getSkipsList() | ', str(skip_list))
+            # print('getSkipsList() | ', str(skip_list))
     except:
         print('getSkipsList | EXCEPTION | failed to get skips list')
 
     return skip_list
+
+def isAnyScaleAligned() -> bool:
+    '''Checks if there exists a set of aligned images at the current scale'''
+
+    try:
+        files = glob(interface.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
+    except:
+        files = '' #0520
+        print('isAnyScaleAligned | WARNING | Looking for *.tif in project dir but didnt find any')
+
+    if len(files) > 0:
+        # print('isAnyScaleAligned | Returning True')
+        return True
+    else:
+        # print('isAnyScaleAligned | Returning False')
+        return False
 
 def isAlignmentOfCurrentScale() -> bool:
     '''Checks if there exists a set of aligned images at the current scale
@@ -162,61 +308,73 @@ def isAlignmentOfCurrentScale() -> bool:
     ISSUES THAT REGENERATING SCALES MEANS PREVIOUS AALIGNMENTS STILL EXIST AND THUS THIS CAN INCORRECTLY RETURN TRUE
     MIGHT WANT TO HAVE SCALE RE-GENERATION CAUSE PREVIOUSLY ALIGNED IMAGES TO BE REMOVED'''
 
-    path = os.path.join(alignem.project_data['data']['destination_path'], getCurScale(), 'img_aligned')
+    path = os.path.join(interface.project_data['data']['destination_path'], getCurScale(), 'img_aligned')
 
     try:
-        print("alignem.project_data['data']['destination_path'] = ", alignem.project_data['data']['destination_path'])
+        # print("interface.project_data['data']['destination_path'] = ", interface.project_data['data']['destination_path'])
         files = glob(path + '/*.tif')
 
     except:
         print('isAlignmentOfCurrentScale | WARNING | Something went wrong. Check project dictionary.')
 
     if len(files) < 1:
-        print('isAlignmentOfCurrentScale | Returning False')
+        # print('isAlignmentOfCurrentScale | Returning False')
         return False
     else:
-        print('isAlignmentOfCurrentScale | Returning True')
+        # print('isAlignmentOfCurrentScale | Returning True')
         return True
 
-def isAnyScaleAligned() -> bool:
-    '''Checks if there exists a set of aligned images at the current scale'''
 
-    try:
-        files = glob(alignem.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
-    except:
-        files = '' #0520
-        print('isAnyScaleAligned | WARNING | Looking for *.tif in project dir but didnt find any')
-
-    if len(files) > 0:
-        print('isAnyScaleAligned | Returning True')
-        return True
-    else:
-        print('isAnyScaleAligned | Returning False')
-        return False
 
 def returnAlignedImgs() -> list:
     '''Checks if there exists a set of aligned images at the current scale'''
 
     try:
-        files = glob(alignem.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
+        files = glob(interface.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
     except:
         print('returnAlignedImg | WARNING | Something went wrong. Check project dictionary.')
 
-    print('returnAlignedImg | # aligned images found: ', len(files))
-    print('returnAlignedImg | List of aligned imgs: ', files)
+    # print('returnAlignedImg | # aligned images found: ', len(files))
+    # print('returnAlignedImg | List of aligned imgs: ', files)
     return files
 
 def isAnyAlignmentExported() -> bool:
     '''Checks if there exists an exported alignment'''
 
-    return os.path.isdir(os.path.join(alignem.project_data['data']['destination_path'], 'project.zarr'))
+    return os.path.isdir(os.path.join(interface.project_data['data']['destination_path'], 'project.zarr'))
 
-def getNumOfScales() -> int:
+def getCurSNR() -> str:
+    if not  interface.project_data['data']['current_scale']:
+        print("Aborting getCurSNR() because no current scale is even set...")
+        return
+
+    s = interface.project_data['data']['current_scale']
+    l = interface.project_data['data']['current_layer']
+
+    # print("  len(project_data['data']['scales']) = ", len(project_data['data']['scales']))
+
+    if len(interface.project_data['data']['scales']) > 0:
+        # print("len(project_data['data']['scales']) =", len(project_data['data']['scales'][s]))
+        scale = interface.project_data['data']['scales'][s]
+        if len(scale['alignment_stack']) > 0:
+            layer = scale['alignment_stack'][l]
+            if 'align_to_ref_method' in layer:
+                if 'method_results' in layer['align_to_ref_method']:
+                    method_results = layer['align_to_ref_method']['method_results']
+                    if 'snr_report' in method_results:
+                        if method_results['snr_report'] != None:
+                            curr_snr = method_results['snr_report']
+                            # print("  returning the current snr:", str(curr_snr))
+                            return str(curr_snr)
+
+
+
+def getNumScales() -> int:
     '''Returns the number of scales for the open project'''
 
-    try: n_scales = len(alignem.project_data['data']['scales'])
-    except: print('getNumOfScales | WARNING | Something went wrong getting the # of scales. Check project dictionary.')
-    print('getNumOfScales() | Returning %d' % n_scales)
+    try: n_scales = len(interface.project_data['data']['scales'])
+    except: print('getNumScales | WARNING | Something went wrong getting the # of scales. Check project dictionary.')
+    # print('getNumScales() | Returning %d' % n_scales)
     return n_scales
 
 def printCurrentDirectory():
@@ -240,6 +398,10 @@ def print_exception():
     print("  Exception trace = " + str(exi[2]))
     print("  Exception traceback:")
     traceback.print_tb(exi[2])
+
+def print_project_data_stats():
+    pass
+
 
 
 
@@ -294,25 +456,25 @@ def link_stack():
     print('Linking stack | link_stack...')
 
     skip_list = []
-    for layer_index in range(len(alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'])):
-        if alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index][
+    for layer_index in range(len(interface.project_data['data']['scales'][getCurScale()]['alignment_stack'])):
+        if interface.project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index][
             'skip'] == True:
             skip_list.append(layer_index)
 
     print('\nlink_stack(): Skip List = \n' + str(skip_list) + '\n')
 
-    for layer_index in range(len(alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'])):
-        base_layer = alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index]
+    for layer_index in range(len(interface.project_data['data']['scales'][getCurScale()]['alignment_stack'])):
+        base_layer = interface.project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index]
 
         if layer_index == 0:
             # No ref for layer 0
             if 'ref' not in base_layer['images'].keys():
-                base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+                base_layer['images']['ref'] = copy.deepcopy(interface.new_image_template)
             base_layer['images']['ref']['filename'] = ''
         elif layer_index in skip_list:
             # No ref for skipped layer
             if 'ref' not in base_layer['images'].keys():
-                base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+                base_layer['images']['ref'] = copy.deepcopy(interface.new_image_template)
             base_layer['images']['ref']['filename'] = ''
         else:
             # Find nearest previous non-skipped layer
@@ -322,15 +484,16 @@ def link_stack():
 
             # Use the nearest previous non-skipped layer as ref for this layer
             if (j not in skip_list) and (j >= 0):
-                ref_layer = alignem.project_data['data']['scales'][getCurScale()]['alignment_stack'][j]
+                ref_layer = interface.project_data['data']['scales'][getCurScale()]['alignment_stack'][j]
                 ref_fn = ''
                 if 'base' in ref_layer['images'].keys():
                     ref_fn = ref_layer['images']['base']['filename']
                 if 'ref' not in base_layer['images'].keys():
-                    base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+                    base_layer['images']['ref'] = copy.deepcopy(interface.new_image_template)
                 base_layer['images']['ref']['filename'] = ref_fn
 
-    main_win.update_panels()
+    # main_win.update_panels() #0526
+    interface.main_window.update_win_self()
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     print('\nskip_list =\n', str(skip_list))
     print('Exiting link_stack')
@@ -344,7 +507,7 @@ DEPRECATE THIS
 def ensure_proper_data_structure():
     print('\nensure_proper_data_structure:')
     ''' Try to ensure that the data model is usable. '''
-    scales_dict = alignem.project_data['data']['scales']
+    scales_dict = interface.project_data['data']['scales']
     for scale_key in scales_dict.keys():
         scale = scales_dict[scale_key]
         '''
@@ -372,13 +535,15 @@ def ensure_proper_data_structure():
                 atrm['method_data'] = {}
             mdata = atrm['method_data']
             if not 'win_scale_factor' in mdata:
-                print("  Warning: if NOT 'win_scale_factor' in mdata was run")
-                mdata['win_scale_factor'] = float(alignem.main_window.get_swim_input())
+                # NOTE: THIS IS IMPORTANT, BUT NEEDS REFACTORING
+                # print("  Warning: if NOT 'win_scale_factor' in mdata was run")
+                mdata['win_scale_factor'] = float(interface.main_window.get_swim_input())
 
             # print("Evaluating: if not 'whitening_factor' in mdata")
             if not 'whitening_factor' in mdata:
-                print("  Warning: if NOT 'whitening_factor' in mdata was run")
-                mdata['whitening_factor'] = float(alignem.main_window.get_whitening_input())
+                # NOTE: THIS IS IMPORTANT, BUT NEEDS REFACTORING
+                # print("  Warning: if NOT 'whitening_factor' in mdata was run")
+                mdata['whitening_factor'] = float(interface.main_window.get_whitening_input())
 
     print("Exiting ensure_proper_data_structure")
 
@@ -388,26 +553,26 @@ def link_all_stacks():
     print('\nlink_all_stacks:')
     ensure_proper_data_structure()
 
-    for scale_key in alignem.project_data['data']['scales'].keys():
+    for scale_key in interface.project_data['data']['scales'].keys():
         skip_list = []
-        for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
-            if alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
+        for layer_index in range(len(interface.project_data['data']['scales'][scale_key]['alignment_stack'])):
+            if interface.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
                 print('  appending layer ' + str(layer_index) + ' to skip_list')
                 skip_list.append(layer_index)  # skip
 
 
-        for layer_index in range(len(alignem.project_data['data']['scales'][scale_key]['alignment_stack'])):
-            base_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
+        for layer_index in range(len(interface.project_data['data']['scales'][scale_key]['alignment_stack'])):
+            base_layer = interface.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
 
             if layer_index == 0:
                 # No ref for layer 0 # <-- ******
                 if 'ref' not in base_layer['images'].keys():
-                    base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+                    base_layer['images']['ref'] = copy.deepcopy(interface.new_image_template)
                 base_layer['images']['ref']['filename'] = ''
             elif layer_index in skip_list:
                 # No ref for skipped layer
                 if 'ref' not in base_layer['images'].keys():
-                    base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+                    base_layer['images']['ref'] = copy.deepcopy(interface.new_image_template)
                 base_layer['images']['ref']['filename'] = ''
             else:
                 # Find nearest previous non-skipped layer
@@ -417,18 +582,19 @@ def link_all_stacks():
 
                 # Use the nearest previous non-skipped layer as ref for this layer
                 if (j not in skip_list) and (j >= 0):
-                    ref_layer = alignem.project_data['data']['scales'][scale_key]['alignment_stack'][j]
+                    ref_layer = interface.project_data['data']['scales'][scale_key]['alignment_stack'][j]
                     ref_fn = ''
                     if 'base' in ref_layer['images'].keys():
                         ref_fn = ref_layer['images']['base']['filename']
                     if 'ref' not in base_layer['images'].keys():
-                        base_layer['images']['ref'] = copy.deepcopy(alignem.new_image_template)
+                        base_layer['images']['ref'] = copy.deepcopy(interface.new_image_template)
                     base_layer['images']['ref']['filename'] = ref_fn
 
-    main_win.update_panels()
+    # main_win.update_panels() #0526
+    interface.main_window.update_win_self()
 
     if center_switch:
-        alignem.main_window.center_all_images()
+        interface.main_window.center_all_images()
 
 
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -492,13 +658,13 @@ def run_progress():
 # Call this function when run_json_project returns with need_to_write_json=false
 def update_datamodel(updated_model):
     print('\nUpdating data model | update_datamodel...\n')
-    # alignem.print_debug(1, 100 * "+")
-    # alignem.print_debug(1, "run_json_project returned with need_to_write_json=false")
-    # alignem.print_debug(1, 100 * "+")
+    # interface.print_debug(1, 100 * "+")
+    # interface.print_debug(1, "run_json_project returned with need_to_write_json=false")
+    # interface.print_debug(1, 100 * "+")
     # Load the alignment stack after the alignment has completed
     aln_image_stack = []
-    scale_to_run_text = alignem.project_data['data']['current_scale']
-    stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
+    scale_to_run_text = interface.project_data['data']['current_scale']
+    stack_at_this_scale = interface.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
 
     for layer in stack_at_this_scale:
 
@@ -511,7 +677,7 @@ def update_datamodel(updated_model):
         if image_name != None:
             # The first scale is handled differently now, but it might be better to unify if possible
             if scale_to_run_text == "scale_1":
-                aligned_name = os.path.join(os.path.abspath(alignem.project_data['data']['destination_path']),
+                aligned_name = os.path.join(os.path.abspath(interface.project_data['data']['destination_path']),
                                             scale_to_run_text, 'img_aligned', os.path.split(image_name)[-1])
             else:
                 name_parts = os.path.split(image_name)
@@ -519,24 +685,24 @@ def update_datamodel(updated_model):
                     aligned_name = os.path.join(os.path.split(name_parts[0])[0],
                                                 os.path.join('img_aligned', name_parts[1]))
         aln_image_stack.append(aligned_name)
-        # alignem.print_debug(30, "Adding aligned image " + aligned_name)
+        # interface.print_debug(30, "Adding aligned image " + aligned_name)
         layer['images']['aligned'] = {}
         layer['images']['aligned']['filename'] = aligned_name
     try:
         print('update_datamodel | trying to load_images_into_role')
-        alignem.main_window.load_images_in_role('aligned', aln_image_stack)
+        interface.main_window.load_images_in_role('aligned', aln_image_stack)
     except:
         print('Error from main_win.load_images_in_role.')
         print_exception()
         pass
-    alignem.main_window.refresh_all_images()
+    interface.main_window.refresh_all_images()
 
     # center
     # main_win.center_all_images()
     # main_win.update_win_self()
     if center_switch:
-        alignem.main_window.center_all_images()
-    alignem.main_window.update_win_self()
+        interface.main_window.center_all_images()
+    interface.main_window.update_win_self()
 
 
 combo_name_to_dm_name = {'Init Affine': 'init_affine', 'Refine Affine': 'refine_affine', 'Apply Affine': 'apply_affine'}
@@ -551,25 +717,25 @@ def clear_match_points():
         print('"\nMust be in \"Match\" mode to delete all match points."')
     else:
         print('Deleting all match points for this layer')
-        scale_key = alignem.project_data['data']['current_scale']
-        layer_num = alignem.project_data['data']['current_layer']
-        stack = alignem.project_data['data']['scales'][scale_key]['alignment_stack']
+        scale_key = interface.project_data['data']['current_scale']
+        layer_num = interface.project_data['data']['current_layer']
+        stack = interface.project_data['data']['scales'][scale_key]['alignment_stack']
         layer = stack[layer_num]
 
         for role in layer['images'].keys():
             if 'metadata' in layer['images'][role]:
                 layer['images'][role]['metadata']['match_points'] = []
                 layer['images'][role]['metadata']['annotations'] = []
-        main_win.update_panels()
-        alignem.main_window.refresh_all_images()
+        interface.main_window.update_win_self()
+        interface.main_window.refresh_all_images()
 
 
 def clear_all_skips():
     print('Clearing all skips | clear_all_skips...')
-    image_scale_keys = [s for s in sorted(alignem.project_data['data']['scales'].keys())]
+    image_scale_keys = [s for s in sorted(interface.project_data['data']['scales'].keys())]
     for scale in image_scale_keys:
         scale_key = str(scale)
-        for layer in alignem.project_data['data']['scales'][scale_key]['alignment_stack']:
+        for layer in interface.project_data['data']['scales'][scale_key]['alignment_stack']:
             layer['skip'] = False
 
     # main_win.status_skips_label.setText(str(skip_list))  # settext #status
@@ -578,10 +744,10 @@ def clear_all_skips():
 
 def copy_skips_to_all_scales():
     print('Copying skips to all scales | copy_skips_to_all_scales...')
-    source_scale_key = alignem.project_data['data']['current_scale']
+    source_scale_key = interface.project_data['data']['current_scale']
     if not 'scale_' in str(source_scale_key):
         source_scale_key = 'scale_' + str(source_scale_key)
-    scales = alignem.project_data['data']['scales']
+    scales = interface.project_data['data']['scales']
     image_scale_keys = [s for s in sorted(scales.keys())]
     for scale in image_scale_keys:
         scale_key = str(scale)
@@ -592,7 +758,7 @@ def copy_skips_to_all_scales():
                 if l < len(scales[scale_key]['alignment_stack']):
                     scales[scale_key]['alignment_stack'][l]['skip'] = scales[source_scale_key]['alignment_stack'][l][
                         'skip']  # <----
-    # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][alignem.project_data['data']['current_layer']]['skip']
+    # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][interface.project_data['data']['current_layer']]['skip']
 
 
 # skip
@@ -601,7 +767,7 @@ def update_skip_annotations():
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
     remove_list = []
     add_list = []
-    for sk, scale in alignem.project_data['data']['scales'].items():
+    for sk, scale in interface.project_data['data']['scales'].items():
         for layer in scale['alignment_stack']:
             layer_num = scale['alignment_stack'].index(layer)
             for ik, im in layer['images'].items():
@@ -627,9 +793,9 @@ def update_skip_annotations():
                             remove_list.append((sk, layer_num, ik))
                             ann.remove(a)
     # for item in remove_list:
-    #     alignem.print_debug(80, "Removed skip from " + str(item))
+    #     interface.print_debug(80, "Removed skip from " + str(item))
     # for item in add_list:
-    #     alignem.print_debug(80, "Added skip to " + str(item))
+    #     interface.print_debug(80, "Added skip to " + str(item))
 
 
 # NOTE: this is called right after importing base images
@@ -644,7 +810,7 @@ def update_skip_annotations():
 #
 #     # Update all of the annotations based on the skip values
 #     copy_skips_to_all_scales()
-#     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into alignem.py
+#     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into interface.py
 #     print("Exiting update_skips_callback(new_state)")
 
 
@@ -668,8 +834,8 @@ def update_skip_annotations():
 
 # def notyet():
 #     print('notyet() was called')
-#     # alignem.print_debug(0, "Function not implemented yet. Skip = " + str(skip.value)) #skip
-#     # alignem.print_debug(0, "Function not implemented yet. Skip = " + alignem.main_window.toggle_skip.isChecked())
+#     # interface.print_debug(0, "Function not implemented yet. Skip = " + str(skip.value)) #skip
+#     # interface.print_debug(0, "Function not implemented yet. Skip = " + interface.main_window.toggle_skip.isChecked())
 
 # def crop_mode_callback():
 #     return

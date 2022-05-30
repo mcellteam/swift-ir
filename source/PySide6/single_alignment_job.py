@@ -10,6 +10,7 @@ import os
 import sys
 import json
 import pyswift_tui
+from tqdm import tqdm
 
 if __name__ == '__main__':
 

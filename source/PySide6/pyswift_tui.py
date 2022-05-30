@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-print(f'pyswift_tui.py | Loading {__name__}')
+# print(f'pyswift_tui.py | Loading {__name__}')
 import sys
 import os
 import json
@@ -15,6 +15,7 @@ import swiftir
 import align_swiftir
 from get_image_size import get_image_size
 import task_queue
+from tqdm import tqdm
 
 
 # import project_runner  # Not really used yet

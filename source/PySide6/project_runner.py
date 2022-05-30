@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-print(f'project_runner.py | Loading {__name__}')
+# print(f'project_runner.py | Loading {__name__}')
 import sys
 import os
 import time
@@ -8,11 +8,11 @@ import copy
 import errno
 import inspect
 import argparse
-import tempfile
 import psutil
 import numpy as np
 import scipy.stats as sps
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 import swiftir
 import align_swiftir
 # import task_queue as task_queue
@@ -20,11 +20,14 @@ import align_swiftir
 import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
-import alignem
+from glanceem_utils import printProjectDetails
+
+
 
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
+print_switch = 0
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the
@@ -85,7 +88,6 @@ class project_runner:
     #  def __init__ ( self, project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1, run_parallel=False, use_file_io=True ):
     def __init__(self, project=None, use_scale=0, swiftir_code_mode='python', start_layer=0, num_layers=-1,
                  use_file_io=True):
-        print("project_runner constructor was called.")
         if use_scale <= 0:
             # print ( "Error: project_runner must be given an explicit scale")
             return
@@ -108,8 +110,7 @@ class project_runner:
     # Class Method to Align the Stack
     #  def start ( self ):
     def do_alignment(self, alignment_option='init_affine', generate_images=True):
-        print("\nCalling project_runner.do_alignment:")
-        print("alignment_option = " + alignment_option + "\n")
+        print("\nproject_runner.do_alignment(alignment_option=%s,generate_images=%s):" % (alignment_option,generate_images))
 
         self.alignment_option = alignment_option
         self.generate_images = generate_images
@@ -154,13 +155,13 @@ class project_runner:
             cpus = psutil.cpu_count(logical=False)
             if cpus > 48:
                 cpus = 48
-            print("Starting Project Runner Task Queue with %d CPUs" % (cpus))
+            print("Starting Project Runner Task Queue with %d CPUs (TaskQueue.start)" % (cpus))
             self.task_queue.start(cpus)
 
             my_path = os.path.split(os.path.realpath(__file__))[0]
             align_job = os.path.join(my_path, 'single_alignment_job.py')
 
-            for layer in alstack:
+            for layer in tqdm(alstack):
                 lnum = alstack.index(layer)
                 skip = False
                 if 'skip' in layer:
@@ -172,7 +173,7 @@ class project_runner:
 
                 else:
 
-                    print_debug(1, "Starting a task for layer " + str(lnum))
+                    if print_switch: print_debug(1, "Starting a task for layer " + str(lnum))
                     '''
                     self.task_queue.add_task ( cmd=sys.executable,
                                                args=[ align_job,                     # Python program to run (single_alignment_job)
@@ -199,7 +200,7 @@ class project_runner:
                                  str(1),  # Number of layers to run
                                  str(self.use_file_not_pipe)  # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
                                  ]
-                    print_debug(50, "Starting task_queue_mp with args:")
+                    if print_switch: print_debug(50, "project_runner.do_alignment | Starting task_queue_mp with args:")
                     for p in task_args:
                         print_debug(50, "  " + str(p))
 
@@ -208,7 +209,7 @@ class project_runner:
             # self.task_queue.work_q.join()
 
             self.t0 = time.time()
-            print_debug(-1, 'Waiting for Alignment Tasks to Complete...')
+            if print_switch: print_debug(-1, 'project_runner.do_alignment | Waiting for Alignment Tasks to Complete...')
             self.task_queue.collect_results()
             dt = time.time() - self.t0
             #  print_debug ( -1, 'Alignment Tasks Completed in %.2f seconds' % (dt) )
@@ -238,10 +239,11 @@ class project_runner:
                 #        if self.task_queue.task_dict[k]['status'] == 'task_error':
                 #          print_debug ( -1, '  ' + str(self.task_queue.task_dict[k]['cmd']) + " " + str(self.task_queue.task_dict[k]['args']) )
                 pass
-            print_debug(-1, '%d Alignment Tasks Completed in %.2f seconds' % (n_tasks, dt))
-            print_debug(-1, '    Num Successful:   %d' % (n_success))
-            print_debug(-1, '    Num Still Queued: %d' % (n_queued))
-            print_debug(-1, '    Num Failed:       %d' % (n_failed))
+            if print_switch:
+                print_debug(-1, '%d Alignment Tasks Completed in %.2f seconds' % (n_tasks, dt))
+                print_debug(-1, '    Num Successful:   %d' % (n_success))
+                print_debug(-1, '    Num Still Queued: %d' % (n_queued))
+                print_debug(-1, '    Num Failed:       %d' % (n_failed))
 
             # Sort the tasks by layers rather than by process IDs
             task_dict_by_start_layer = {}
@@ -271,7 +273,7 @@ class project_runner:
             for tnum in range(len(tasks_by_start_layer)):
 
                 if self.use_file_not_pipe:
-                    print('\n\n' + (80 * '#') + '\nUsing File I/O\n' + (80 * '#') + '\n\n')
+                    if print_switch: print('\n\n' + (80 * '#') + '\nUsing File I/O\n' + (80 * '#') + '\n\n')
                     # Get the updated data model from the file written by single_alignment_job
                     # Start by getting the location of the project's output files:
                     output_dir = os.path.join(os.path.split(run_project_name)[0], scale_key)
@@ -313,10 +315,10 @@ class project_runner:
                     if tasks_by_start_layer[tnum]['status'] == 'task_error':
                         ref_fn = al_stack_old[lnum]['images']['ref']['filename']
                         base_fn = al_stack_old[lnum]['images']['base']['filename']
-                        print_debug(-1, 'Alignment Task Error at: ' + str(task_by_start_layer[tnum]['cmd']) + " " + str(
-                            task_by_start_layer[tnum]['args']))
-                        print_debug(-1, 'Automatically Skipping Layer %d' % (lnum))
-                        print_debug(-1, 'ref image: %s   base image: %s' % (ref_fn, base_fn))
+                        if print_switch:
+                            print_debug(-1, 'Alignment Task Error at: ' + str(task_by_start_layer[tnum]['cmd']) + " " + str(task_by_start_layer[tnum]['args']))
+                            print_debug(-1, 'Automatically Skipping Layer %d' % (lnum))
+                            print_debug(-1, 'ref image: %s   base image: %s' % (ref_fn, base_fn))
                         al_stack_old[lnum]['skip'] = True
 
                     self.need_to_write_json = results_dict[
@@ -362,7 +364,8 @@ class project_runner:
                 num_layers=self.num_layers)
             self.project = self.updated_model
 
-    # print("Exiting project_runner")
+        # printProjectDetails(self.project)
+        print("\nAlignment Complete\n")
 
     # Class Method to Generate the Aligned Images
     def generate_aligned_images(self):
@@ -493,6 +496,11 @@ class project_runner:
 
         del self.task_queue
         self.task_queue = None
+
+        printProjectDetails(self.project)
+        print('\nGenerating Aligned Images Complete\n')
+
+
 
 
     def get_updated_data_model(self):

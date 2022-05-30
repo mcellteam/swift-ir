@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 
@@ -29,7 +31,8 @@ For more information, please refer to [http://unlicense.org]
 
 import os
 import argparse
-import alignem
+import interface
+import asyncio
 
 
 '''globals'''
@@ -38,10 +41,13 @@ main_win = None
 if __name__ == "__main__":
     global_parallel_mode = True
     global_use_file_io = False
-    width = 1600
-    height = 700
+    width = 1580
+    height = 640
 
-    print(f'Loading {__name__}')
+    # objc[46147]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint on objc_initializeAfterForkError to debug.
+    os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+
+    # print(f'Loading {__name__}')
     print("Running " + __file__ + ".__main__()")
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, default=10,help="Print more information with larger DEBUG (0 to 100)")
@@ -50,24 +56,25 @@ if __name__ == "__main__":
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1,help="Run the C versions of SWiFT tools")
     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0,help="Use files to gather output from tasks")
     args = options.parse_args()
-    alignem.DEBUG_LEVEL = int(args.debug)
-    print("alignem_swift.py | cli args:", args)
+    interface.DEBUG_LEVEL = int(args.debug)
+    print("run.py | cli args:", args)
 
     if args.parallel != None: global_parallel_mode = args.parallel != 0
-    if args.use_c_version != None: alignem.use_c_version = args.use_c_version != 0
+    if args.use_c_version != None: interface.use_c_version = args.use_c_version != 0
     if args.use_file_io != None: global_use_file_io = args.use_file_io != 0
-    if args.preload != None: alignem.preloading_range = int(args.preload)
+    if args.preload != None: interface.preloading_range = int(args.preload)
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-    source_list = ["alignem_swift.py","alignem_data_model.py","alignem.py","swift_project.py","pyswift_tui.py",
+    source_list = ["run.py","alignem_data_model.py","interface.py","swift_project.py","pyswift_tui.py",
                    "swiftir.py","align_swiftir.py","source_tracker.py","task_queue.py","task_queue2.py",
                    "task_wrapper.py","single_scale_job.py","multi_scale_job.py","project_runner.py",
                    "single_alignment_job.py","single_crop_job.py","stylesheet.qss","make_zarr.py","glanceem_ng.py",
                    "glanceem_utils.py","align_recipe_1.py"
                    ]
 
-    print("alignem_swift.py | Initializing MainWindow with size %dx%d pixels" % (width, height))
-    main_win = alignem.MainWindow(title="GlanceEM_SWiFT") # no more control_model
+    print("run.py | Launching AlignEM-SWiFT with window size %dx%d pixels" % (width, height))
+    main_win = interface.MainWindow(title="GlanceEM_SWiFT") # no more control_model
     main_win.resize(width, height)
     main_win.define_roles(['ref', 'base', 'aligned'])
-    alignem.run_app(main_win)
+    interface.run_app(main_win)
+

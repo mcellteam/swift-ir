@@ -31,7 +31,7 @@
 # @Slot()
 # def set_current_scale(self, checked):
 #     print("@Slot Setting current scale | MainWindow.set_current_scale...")
-#     local_cur_scale = get_cur_scale()
+#     local_cur_scale = getCurScale()
 #     print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
 #     old_scale = local_cur_scale
 #     new_scale = get_scale_key ( str ( self.sender().text() ) )
@@ -1515,3 +1515,180 @@
 # def refresh_all():
 #     print('refresh_all | Refreshing all...')
 #     alignem.main_window.refresh_all_images()
+
+# [ '&Show',
+#   [
+#     [ 'Borders', None, self.toggle_border, False, None, None ],
+#     [ 'Window Centers', None, self.not_yet, False, None, None ],
+#     [ 'Affines', None, self.not_yet, False, None, None ],debug_layer
+#     [ 'Skipped Images', None, self.toggle_show_skipped, show_skipped_images, None, None ],
+#     [ '-', None, None, None, None, None ],
+#     [ 'Plot', None, self.not_yet, None, None, None ],
+#     [ '-', None, None, None, None, None ],
+#     [ 'Annotations', None, self.toggle_annotations, True, None, None ],
+#     [ 'Full Paths', None, self.toggle_full_paths, False, None, None ]
+#   ]
+# ],
+
+# @Slot()
+# def toggle_border(self, checked):
+#     pr)
+#     self.draw_border = checked
+#     self.image_panel.draw_border = self.draw_border
+#     self.image_panel.update_multi_self()
+#     for p in self.panel_list:
+#         p.draw_border = self.draw_border
+#         p.update_zpa_self()
+
+# def register_view_change_callback(self, callback_function):
+#     self.view_change_callback = callback_function
+
+# def register_mouse_down_callback(self, callback_function):
+#     self.mouse_down_callback = callback_function
+#
+# def register_mouse_move_callback(self, callback_function):
+#     self.mouse_move_callback = callback_function
+
+
+# # adding these back in
+# @Slot()
+# def set_bg_color(self):
+#     c = QColorDialog.getColor()
+#     # print_debug ( 30, " Color = " + str(c) )
+#     self.image_panel.bg_color = c
+#     self.image_panel.update_multi_self()
+#     self.image_panel.repaint()
+#
+#     for p in self.panel_list:
+#         p.update_zpa_self()
+#         p.repaint()
+#
+# # adding these back in
+# @Slot()
+# def set_border_color(self):
+#     c = QColorDialog.getColor()
+#     self.image_panel.border_color = c
+#     self.image_panel.update_multi_self()
+#     self.image_panel.repaint()
+#     for p in self.panel_list:
+#         p.border_color = c
+#         p.update_zpa_self()
+#         p.repaint()
+
+
+# def print_all_skips():
+#     scale_keys = project_data['data']['scales'].keys()
+#     for scale_key in sorted(scale_keys):
+#         print_debug(50, " Scale: " + scale_key)
+#         scale = project_data['data']['scales'][scale_key]
+#         layers = scale['alignment_stack']
+#         for layer in layers:
+#             print_debug(50, "  Layer: " + str(layers.index(layer)) + ", skip = " + str(layer['skip']))
+#             # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+
+# @Slot()
+# def define_roles_callback(self):
+#     print("MainWindow.define_roles_callback:")
+#
+#     default_roles = ['Stack']
+#     if len(project_data['data']['panel_roles']) > 0:
+#         default_roles = project_data['data']['panel_roles']
+#     input_val, ok = QInputDialog().getText(None, "Define Roles", "Current: " + str(' '.join(default_roles)),
+#                                            echo=QLineEdit.Normal, text=' '.join(default_roles))
+#     if ok:
+#         input_val = input_val.strip()
+#         roles_list = project_data['data']['panel_roles']
+#         if len(input_val) > 0:
+#             roles_list = [str(v) for v in input_val.split(' ') if len(v) > 0]
+#         # if not (roles_list == project_data['data']['panel_roles']):
+#         self.define_roles(roles_list)
+#     else:
+#         print_debug(30, "Cancel: Roles not changed")
+
+
+
+    # @Slot()
+    # def save_new_project_as(self):
+    #     return
+        # print("MainWindow.save_new_project_as | MainWindow is showing the save project as dialog...")
+        #
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
+        # file_name, filter = QFileDialog.getSaveFileName(parent=None,  # None was self
+        #                                                 caption="New Project Save As...",
+        #                                                 filter="Projects (*.json);;All Files (*)",
+        #                                                 selectedFilter="",
+        #                                                 options=options)
+        # print("MainWindow.save_new_project_as | saving as " + str(file_name))
+        #
+        # if file_name != None:
+        #     if len(file_name) > 0:
+        #         self.current_project_file_name = file_name
+        #
+        #         # Attempt to hide the file dialog before opening ...
+        #         for p in self.panel_list:
+        #             p.update_zpa_self()
+        #         # self.update_win_self()
+        #
+        #
+        #
+        #         try:
+        #             self.save_project_to_current_file()
+        #         except:
+        #             print("\nMainWindow.save_new_project_as | ERROR | Something may have gone wrong with saving the project.\n")
+        #             self.status.showMessage("Oh no! Something went wrong.")
+        #         else:
+        #             print("MainWindow.save_new_project_as | Project saved successfully.")
+        #
+        #         if self.draw_full_paths:
+        #             self.setWindowTitle("Project: " + self.current_project_file_name)
+        #         else:
+        #             self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1])
+        #
+        #         self.set_def_proj_dest()
+        #
+        #         print('MainWindow.save_new_project_as | self.current_project_file_name = ', self.current_project_file_name)
+        #         print("MainWindow.save_new_project_as | str(proj_copy['data']['destination_path']) = ", str(proj_copy['data']['destination_path']))
+        #
+        #         self.status.showMessage("Project File: " + self.current_project_file_name
+        #                                 + "   Destination: " + str(proj_copy['data']['destination_path']))
+
+
+
+    # @Slot()
+    # def set_preloading_range(self):
+    #     print("MainWindow.set_preloading_range (called by " + inspect.stack()[1].function + ")...")
+    #     global preloading_range
+    #
+    #     input_val, ok = QInputDialog().getInt(None, "Enter Number of Images to Preload", "Preloading Count:",
+    #                                           preloading_range)
+    #     if ok:
+    #         preloading_range = input_val
+    #
+    #         if project_data != None:
+    #
+    #             local_scales = project_data['data']['scales']
+    #             local_cur_scale = getCurScale()
+    #             if local_cur_scale in local_scales:
+    #                 local_scale = local_scales[local_cur_scale]
+    #                 if 'alignment_stack' in local_scale:
+    #                     local_stack = local_scale['alignment_stack']
+    #                     if len(local_stack) > 0:
+    #                         local_current_layer = project_data['data']['current_layer']
+    #
+    #                         # Define the images needed
+    #                         needed_images = set()
+    #                         for i in range(len(local_stack)):
+    #                             if abs(i - local_current_layer) < preloading_range:
+    #                                 for role, local_image in local_stack[i]['images'].items():
+    #                                     if local_image['filename'] != None:
+    #                                         if len(local_image['filename']) > 0:
+    #                                             needed_images.add(local_image['filename'])
+    #                         # Ask the library to keep only those images
+    #                         image_library.make_available(needed_images)
+
+
+
+
+
