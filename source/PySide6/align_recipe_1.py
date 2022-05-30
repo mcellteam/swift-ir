@@ -5,11 +5,14 @@ RECIPE1 for SWiFT-IR alignment.
 
 import os
 import copy
-import alignem
+import interface
 import project_runner
 import pyswift_tui
+from tqdm import tqdm
 from glanceem_utils import get_image_size, isProjectScaled, getCurScale, update_datamodel, isAlignmentOfCurrentScale, \
     requestConfirmation, areImagesImported, getNumImportedImages
+
+print_switch = 0
 
 def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     '''
@@ -19,15 +22,15 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     '''
 
     '''TODO: Need to check if images have been imported'''
-    print('\n\nalign_all_or_some:')
+    print('\nalign_all_or_some:')
 
     if areImagesImported():
         print("align_all_or_some | Images are imported - Continuing")
         pass
     else:
-        print("align_all_or_some | User selected align but areImagesImported() returned False - Exiting")
-        alignem.main_window.set_status("Scales must be generated prior to alignment.")
-        alignem.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
+        print("align_all_or_some | User selected align but no images are imported - Exiting")
+        interface.main_window.set_status("Scales must be generated prior to alignment.")
+        interface.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
                                         "--> (1) Open a project or import images and save.\n"
                                         "--> (2) Generate a set of scaled images and save.\n"
@@ -41,9 +44,9 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         # debug isProjectScaled() might be returning True incorrectly sometimes
         pass
     else:
-        print("align_all_or_some | User clicked align but isProjectScaled() returned False - Exiting")
-        alignem.main_window.set_status("Scales must be generated prior to alignment.")
-        alignem.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
+        print("align_all_or_some | User clicked align but project is not scaled - Exiting")
+        interface.main_window.set_status("Scales must be generated prior to alignment.")
+        interface.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
                                         "(1) Open a project or import images and save.\n"
                                         "--> (2) Generate a set of scaled images and save.\n"
@@ -52,54 +55,38 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
                                         "(5) View data in Neuroglancer client")
         return
 
-    n_imgs = getNumImportedImages()
-
-    alignem.main_window.read_gui_update_project_data()
+    interface.main_window.read_gui_update_project_data()
 
     cur_scale = getCurScale()
+    n_imgs = getNumImportedImages()
+    img_size = get_image_size(interface.project_data['data']['scales'][cur_scale]['alignment_stack'][0]['images']['base']['filename'])
+    interface.main_window.set_status('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
 
-    img_size = get_image_size(
-        alignem.project_data['data']['scales'][cur_scale]['alignment_stack'][0]['images']['base']['filename'])
-
-    alignem.main_window.set_status('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
-
+    print('align_all_or_some | Removing any previously aligned images...')
     remove_aligned(starting_layer=first_layer, prompt=False)
-    alignem.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
-    # alignem.print_debug(70, "Control Model = " + str(control_model))
+    interface.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
+    # interface.print_debug(70, "Control Model = " + str(control_model))
 
     combo_name_to_dm_name = {'Init Affine': 'init_affine', 'Refine Affine': 'refine_affine', 'Apply Affine': 'apply_affine'}
     dm_name_to_combo_name = {'init_affine': 'Init Affine', 'refine_affine': 'Refine Affine', 'apply_affine': 'Apply Affine'}
 
     # thing_to_do = init_ref_app.get_value ()
-    thing_to_do = alignem.main_window.affine_combobox.currentText()  # jy #mod #change #march #wtf #combobox
-    print('align_all_or_some | selected affine is ', thing_to_do)
-    scale_to_run_text = alignem.project_data['data']['current_scale']
-    print('align_all_or_some | scale is ', scale_to_run_text)
-    print('align_all_or_some | updating project file with this scales selected affine...')
-    this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
+    thing_to_do = interface.main_window.affine_combobox.currentText()  # jy #mod #change #march #wtf #combobox
+    scale_to_run_text = interface.project_data['data']['current_scale']
+    print('align_all_or_some | affine: %s, scale: %s' % (thing_to_do,scale_to_run_text))
+    this_scale = interface.project_data['data']['scales'][scale_to_run_text]
     this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
-    # alignem.print_debug(5, '')
-    alignem.print_debug(5, 40 * '@=' + '@')
-    alignem.print_debug(5, '')
-
-    print("align_all_or_some | Calling align_layers w/ first_layer = " + str(first_layer) + "  | num_layers = " + str(num_layers))
+    print("align_all_or_some | Calling align_layers w/ first layer = %s, # layers = %s" % (str(first_layer), str(num_layers)))
     align_layers(first_layer, num_layers)  # <-- CALL TO 'align_layers'
 
-    alignem.main_window.refresh_all_images()
-
-    alignem.main_window.set_status('Alignment of scale %s images (%s x %s pixels) is complete.' % (cur_scale[-1], img_size[0], img_size[1]))
-
     print("align_all_or_some | Wrapping up")
-    alignem.main_window.center_all_images()
-    alignem.main_window.update_win_self()
+    interface.main_window.set_status('Alignment of scale %s images (%s x %s pixels) complete.' % (cur_scale[-1], img_size[0], img_size[1]))
+    interface.main_window.refresh_all_images()
+    interface.main_window.center_all_images()
+    interface.main_window.update_win_self()
+    interface.main_window.set_progress_stage_3()
 
-    # alignem.main_window.toggle_on_export_and_view_groupbox()
-    alignem.main_window.set_progress_stage_3()
-
-    # print('Incrementing user scale')
-    # alignem.main_window.scales_combobox.setCurrentIndex(alignem.main_window.scales_combobox.count() - 1)
-
-    print("\nalign_all_or_some | Exiting\n")
+    print("\nAlignment complete.\n")
 
 
 # generate_scales_queue calls this w/ defaults in debugger
@@ -109,7 +96,7 @@ def align_layers(first_layer=0, num_layers=-1):
     '''
 
     print('align_layers(first_layer=%d, num_layers=%d):' % (first_layer,first_layer+num_layers-1))
-    alignem.print_debug(30, 100 * '=')
+    interface.print_debug(30, 100 * '=')
     if num_layers < 0:
         print("align_layers | Aligning all layers starting with %s using SWiFT-IR..." % str(first_layer))
     else:
@@ -124,25 +111,25 @@ def align_layers(first_layer=0, num_layers=-1):
     global_use_file_io = False
 
     # Check that there is a place to put the aligned images
-    if (alignem.project_data['data']['destination_path'] == None) or (len(alignem.project_data['data']['destination_path']) <= 0):
+    if (interface.project_data['data']['destination_path'] == None) or (len(interface.project_data['data']['destination_path']) <= 0):
         print('align_layers | Error: Cannot align without destination set (use File/Set Destination)')
-        alignem.show_warning('Note', 'Error cannot align. Fix me.')
+        interface.show_warning('Note', 'Error cannot align. Fix me.')
 
     else:
-        print('Aligning with output in ' + alignem.project_data['data']['destination_path'])
-        scale_to_run_text = alignem.project_data['data']['current_scale']
+        print('Aligning with output in ' + interface.project_data['data']['destination_path'])
+        scale_to_run_text = interface.project_data['data']['current_scale']
         print("align_layers | Aligning scale %s..." % str(scale_to_run_text))
 
         # Create the expected directory structure for pyswift_tui.py
-        source_dir = os.path.join(alignem.project_data['data']['destination_path'], scale_to_run_text, "img_src")
-        alignem.makedirs_exist_ok(source_dir, exist_ok=True)
-        target_dir = os.path.join(alignem.project_data['data']['destination_path'], scale_to_run_text, "img_aligned")
-        alignem.makedirs_exist_ok(target_dir, exist_ok=True)
+        source_dir = os.path.join(interface.project_data['data']['destination_path'], scale_to_run_text, "img_src")
+        interface.makedirs_exist_ok(source_dir, exist_ok=True)
+        target_dir = os.path.join(interface.project_data['data']['destination_path'], scale_to_run_text, "img_aligned")
+        interface.makedirs_exist_ok(target_dir, exist_ok=True)
 
         # Create links or copy files in the expected directory structure
         # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
-        this_scale = alignem.project_data['data']['scales'][scale_to_run_text]
-        stack_at_this_scale = alignem.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
+        this_scale = interface.project_data['data']['scales'][scale_to_run_text]
+        stack_at_this_scale = interface.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
 
     if False:
         for layer in stack_at_this_scale:
@@ -157,7 +144,7 @@ def align_layers(first_layer=0, num_layers=-1):
                     pass
 
     # Copy the data model for this project to add local fields
-    dm = copy.deepcopy(alignem.project_data)
+    dm = copy.deepcopy(interface.project_data)
     # Add fields needed for SWiFT:
     stack_at_this_scale = dm['data']['scales'][scale_to_run_text]['alignment_stack']  # tag2
     for layer in stack_at_this_scale:
@@ -167,11 +154,11 @@ def align_layers(first_layer=0, num_layers=-1):
 
     print('align_layers | Run the project via pyswift_tui...')
     # Run the project via pyswift_tui
-    # pyswift_tui.DEBUG_LEVEL = alignem.DEBUG_LEVEL
+    # pyswift_tui.DEBUG_LEVEL = interface.DEBUG_LEVEL
     if global_parallel_mode:
         print("align_layers | Running in global parallel mode")
         running_project = project_runner.project_runner(project=dm,
-                                                        use_scale=alignem.get_scale_val(scale_to_run_text),
+                                                        use_scale=interface.get_scale_val(scale_to_run_text),
                                                         swiftir_code_mode=code_mode,
                                                         start_layer=first_layer,
                                                         num_layers=num_layers,
@@ -179,7 +166,9 @@ def align_layers(first_layer=0, num_layers=-1):
         #        running_project.start()
         # 0405 #debug
         print("align_layers | alignment_option is ", this_scale['method_data']['alignment_option'])
-        running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'],generate_images=True)
+        generate_images = interface.main_window.get_auto_generate_state()
+        # running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'],generate_images=True)
+        running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'],generate_images=generate_images)
         updated_model = running_project.get_updated_data_model()
         need_to_write_json = running_project.need_to_write_json
     else:
@@ -188,7 +177,7 @@ def align_layers(first_layer=0, num_layers=-1):
         updated_model, need_to_write_json = pyswift_tui.run_json_project(project=dm,
                                                                          alignment_option=this_scale['method_data'][
                                                                              'alignment_option'],
-                                                                         use_scale=alignem.get_scale_val(
+                                                                         use_scale=interface.get_scale_val(
                                                                              scale_to_run_text),
                                                                          swiftir_code_mode=code_mode,
                                                                          start_layer=first_layer,
@@ -197,12 +186,12 @@ def align_layers(first_layer=0, num_layers=-1):
 
     print('align_layers | need_to_write_json = %s' % str(need_to_write_json))
     if need_to_write_json:
-        alignem.project_data = updated_model
+        interface.project_data = updated_model
     else:
         update_datamodel(updated_model)
 
-    alignem.main_window.center_all_images()
-    print("align_layers | EXITING")
+    # interface.main_window.center_all_images()
+    print("align_layers | Exiting")
 
 
 
@@ -223,26 +212,26 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
         pass
     else:
         print('regenerate_aligned | WARNING | Cannot regenerate images until the transformation matrices have been computed')
-        alignem.show_warning("Note","Warning: Transformation matrices have not been computed yet. Please align this scale first.")
+        interface.show_warning("Note","Warning: Transformation matrices have not been computed yet. Please align this scale first.")
         return
 
-    alignem.main_window.read_gui_update_project_data()
+    interface.main_window.read_gui_update_project_data()
     cur_scale = getCurScale()
 
     if prompt:
-        actually_remove = requestConfirmation('Note','Confirm remove aligned images for scale %s.' % cur_scale[-1])
+        actually_remove = requestConfirmation('Note','Confirm remove and re-generate aligned images for scale %s.' % cur_scale[-1])
 
 
     if actually_remove:
         '''IMPORTANT FUNCTION CALL'''
-        alignem.main_window.read_gui_update_project_data()
+        interface.main_window.read_gui_update_project_data()
 
-        # alignem.print_debug(5, "Removing aligned from scale " + cur_scale + " forward from layer " + str(first_layer) + "  (align_all_or_some)")
+        # interface.print_debug(5, "Removing aligned from scale " + cur_scale + " forward from layer " + str(first_layer) + "  (align_all_or_some)")
         print('regenerate_aligned | Removing aligned from scale %s' % cur_scale)
 
         remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
-        scale_to_run_text = alignem.project_data['data']['current_scale']
-        dm = copy.deepcopy(alignem.project_data)
+        scale_to_run_text = interface.project_data['data']['current_scale']
+        dm = copy.deepcopy(interface.project_data)
 
         code_mode = 'c'
         global_parallel_mode = True
@@ -250,7 +239,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
 
         '''NOTE: IDENTICAL FUNCTION CALL TO 'align_layers' '''
         running_project = project_runner.project_runner(project=dm,
-                                                        use_scale=alignem.get_scale_val(scale_to_run_text),
+                                                        use_scale=interface.get_scale_val(scale_to_run_text),
                                                         swiftir_code_mode=code_mode,
                                                         start_layer=first_layer,
                                                         num_layers=num_layers,
@@ -260,91 +249,48 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
         need_to_write_json = running_project.need_to_write_json
 
         if need_to_write_json:
-            alignem.project_data = updated_model
+            interface.project_data = updated_model
         else:
             update_datamodel(updated_model)
 
-        alignem.main_window.refresh_all_images()
+        interface.main_window.refresh_all_images()
 
-        alignem.main_window.set_status('Regenerating alignment of %s complete.' % cur_scale)
+        interface.main_window.set_status('Regenerating alignment of %s complete.' % cur_scale)
 
     print("regenerate_aligned | Wrapping up...")
-    alignem.main_window.center_all_images()
-    alignem.main_window.update_win_self()
+    interface.main_window.center_all_images()
+    interface.main_window.update_win_self()
 
-    # alignem.main_window.toggle_on_export_and_view_groupbox()
-    alignem.main_window.set_progress_stage_3()
+    # interface.main_window.toggle_on_export_and_view_groupbox()
+    interface.main_window.set_progress_stage_3()
 
     print("regenerate_aligned | Exiting.")
 
 
-def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
-    '''
-    Remove aligned images.
-    '''
-
-    print('\n\nremove_aligned:')
-    cur_scale = getCurScale()
-
-    if prompt:
-        confirm = requestConfirmation('Note', 'Confirm remove aligned images for scale %s.' % cur_scale[-1])
-        if not confirm:
-            print('remove_aligned | User did not confirm - Exiting')
-            return
-
-    print("remove_aligned | Removing aligned from scale %s forward from layer %s..." % (cur_scale[-1], str(starting_layer)))
-
-    delete_list = []
-
-    layer_index = 0
-    for layer in alignem.project_data['data']['scales'][alignem.get_cur_scale()]['alignment_stack']:
-        if layer_index >= starting_layer:
-            alignem.print_debug(5, "Removing Aligned from Layer " + str(layer_index))
-            if 'aligned' in layer['images'].keys():
-                delete_list.append(layer['images']['aligned']['filename'])
-                print("  Removing " + str(layer['images']['aligned']['filename']))
-                layer['images'].pop('aligned')
-                if clear_results:
-                    # Remove the method results since they are no longer applicable
-                    if 'align_to_ref_method' in layer.keys():
-                        if 'method_results' in layer['align_to_ref_method']:
-                            # Set the "method_results" to an empty dictionary to signify no results:
-                            layer['align_to_ref_method']['method_results'] = {}
-        layer_index += 1
-
-    # alignem.image_library.remove_all_images()
-
-    for fname in delete_list:
-        if fname != None:
-            if os.path.exists(fname):
-                os.remove(fname)
-                alignem.image_library.remove_image_reference(fname)
-
-    alignem.main_window.update_panels()
-    alignem.main_window.refresh_all_images()
-
-    print('\nremove_aligned | EXITING\n')
-
 
 def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
-
-    print("\nremove_aligned(starting_layer=%d, prompt=%s, clear_results=%s):" % (starting_layer, str(prompt), str(clear_results)))
+    print('\nremove_aligned:')
+    print("remove_aligned(starting_layer=%d, prompt=%s, clear_results=%s):" % (starting_layer, str(prompt), str(clear_results)))
 
     actually_remove = True
     if prompt:
-        actually_remove = alignem.request_confirmation("Note", "Do you want to delete aligned images?")
+        actually_remove = interface.request_confirmation("Note", "Do you want to delete aligned images?")
     if actually_remove:
-        alignem.print_debug(5, "Removing aligned images ...")
+
+        cur_scale = getCurScale()
+        print("remove_aligned | Removing aligned from scale %s forward from layer %s..." % (cur_scale[-1], str(starting_layer)))
 
         delete_list = []
 
         layer_index = 0
-        for layer in alignem.project_data['data']['scales'][getCurScale()]['alignment_stack']:
+        for layer in interface.project_data['data']['scales'][getCurScale()]['alignment_stack']:
             if layer_index >= starting_layer:
-                alignem.print_debug(5, "Removing Aligned from Layer " + str(layer_index))
+                if print_switch:
+                    interface.print_debug(5, "Removing Aligned from Layer " + str(layer_index))
                 if 'aligned' in layer['images'].keys():
                     delete_list.append(layer['images']['aligned']['filename'])
-                    alignem.print_debug(5, "  Removing " + str(layer['images']['aligned']['filename']))
+                    if print_switch:
+                        interface.print_debug(5, "  Removing " + str(layer['images']['aligned']['filename']))
                     layer['images'].pop('aligned')
 
                     if clear_results:
@@ -355,17 +301,19 @@ def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
                                 layer['align_to_ref_method']['method_results'] = {}
             layer_index += 1
 
-        # alignem.image_library.remove_all_images()
+        # interface.image_library.remove_all_images()
 
         for fname in delete_list:
             if fname != None:
                 if os.path.exists(fname):
                     os.remove(fname)
-                    alignem.image_library.remove_image_reference(fname)
+                    interface.image_library.remove_image_reference(fname)
 
         # main_win.update_panels() #bug
-        alignem.main_window.update_panels()  # fix
-        alignem.main_window.refresh_all_images()
+        interface.main_window.update_panels()  # fix
+        interface.main_window.refresh_all_images()
+
+        print('remove_aligned | Exiting')
 
 
 

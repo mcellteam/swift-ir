@@ -9,6 +9,7 @@ else:
 import threading
 import subprocess as sp
 import time
+from tqdm import tqdm
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff

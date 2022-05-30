@@ -8,6 +8,7 @@ import os
 import sys
 import platform
 import subprocess as sp
+from tqdm import tqdm
 
 
 '''

@@ -2,10 +2,13 @@
 
 import sys
 import multiprocessing as mp
+from multiprocessing import Pool
 import subprocess as sp
 import psutil
 import time
+from tqdm import tqdm
 
+print_switch = 0
 
 #
 # Function run by worker processes
@@ -14,8 +17,9 @@ def worker(worker_id, task_q, result_q):
     t_start = time.time()
     # type(task_q.get) =  <class 'method'>
 
-    for task_id, task in iter(task_q.get, 'END_TASKS'):
-        sys.stderr.write('Worker %d:  Running Task %d\n' % (worker_id, task_id))
+    for task_id, task in tqdm(iter(task_q.get, 'END_TASKS')):
+        if print_switch:
+            sys.stderr.write('task_queue_mp.py | Worker %d:  Running Task %d\n' % (worker_id, task_id))
         t0 = time.time()
         outs = ''
         errs = ''
@@ -28,8 +32,10 @@ def worker(worker_id, task_q, result_q):
             outs = '' if outs == None else outs.decode('utf-8')
             errs = '' if errs == None else errs.decode('utf-8')
             rc = task_proc.returncode
-            sys.stderr.write('Worker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
+            if print_switch:
+                sys.stderr.write('task_queue_mp.py | Worker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
         except:
+
             outs = ''
             errs = 'TaskQueue worker %d : task exception: %s' % (worker_id, str(sys.exc_info()[0]))
             print(errs)
@@ -73,7 +79,7 @@ class TaskQueue:
             self.workers[i].start()
 
     def restart(self):
-        sys.stderr.write('\nRestarting Task Queue...\n')
+        sys.stderr.write('\ntask_queue_mp.py | Restarting Task Queue...\n')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.workers = []
