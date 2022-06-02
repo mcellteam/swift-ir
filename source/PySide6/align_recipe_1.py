@@ -2,14 +2,14 @@
 RECIPE1 for SWiFT-IR alignment.
 
 '''
-
+import logging
 import os
 import copy
 import interface
 import project_runner
 import pyswift_tui
 from tqdm import tqdm
-from glanceem_utils import get_image_size, isProjectScaled, getCurScale, update_datamodel, isAlignmentOfCurrentScale, \
+from glanceem_utils import get_image_size, isProjectScaled, getCurScale, update_datamodel, \
     requestConfirmation, areImagesImported, getNumImportedImages, areAlignedImagesGenerated
 
 print_switch = 0
@@ -23,7 +23,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     '''TODO: Need to check if images have been imported'''
     print('\nalign_all_or_some:')
-    interface.main_window.hud.post('Aligning scale ' + getCurScale()[-1] + '...')
+    interface.main_window.hud.post('Calculating alignment transformation matrices of scale ' + getCurScale()[-1] + '...')
 
     if areImagesImported():
         print("align_all_or_some | Images are imported - Continuing")
@@ -46,7 +46,8 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         pass
     else:
         print("align_all_or_some | User clicked align but project is not scaled - Exiting")
-        interface.main_window.set_status("Scales must be generated prior to alignment.")
+        interface.main_window.hud.post('Dataset must be scaled prior to alignment', logging.WARNING)
+        interface.main_window.set_status('Dataset must be scaled prior to alignment')
         interface.show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
                                         "(1) Open a project or import images and save.\n"
@@ -66,6 +67,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     print('align_all_or_some | Removing any previously aligned images...')
     interface.main_window.hud.post('Removing pre-existing aligned images of scale  ' + getCurScale()[-1] + '...')
     remove_aligned(starting_layer=first_layer, prompt=False)
+    interface.main_window.hud.post('Aligning...')
     interface.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
     # interface.print_debug(70, "Control Model = " + str(control_model))
 
@@ -88,6 +90,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     interface.main_window.update_win_self()
     interface.main_window.set_progress_stage_3()
     interface.main_window.update_project_inspector()
+    interface.main_window.hud.post('Alignment of scale ' + getCurScale()[-1] + ' complete')
 
     print("\nCalculating alignment transformation matrices complete.\n")
 

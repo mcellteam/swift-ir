@@ -68,7 +68,7 @@ def printProjectDetails(project_data: dict) -> None:
     print("  Images Imported Status (areImagesImported)       :", areImagesImported())
     print("  Project Scaled Status (isProjectScaled)          :", isProjectScaled())
     print("  Any Scale Aligned Status (isAnyScaleAligned)     :", isAnyScaleAligned())
-    print("  Cur Scale Aligned (isAlignmentOfCurrentScale)    :", isAlignmentOfCurrentScale())
+    print("  Cur Scale Aligned (areAlignedImagesGenerated)    :", areAlignedImagesGenerated())
     print("  Any Exported Status (isAnyAlignmentExported)     :", isAnyAlignmentExported())
     print("  # Imported Images (getNumImportedImages)         :", getNumImportedImages())
     print("  Current Layer SNR (getCurSNR)                    :", getCurSNR())
@@ -111,7 +111,6 @@ def debug_layer():
     print("# Imported Images (getNumImportedImages)         :", getNumImportedImages())
     print("Project Scaled Status (isProjectScaled)          :", isProjectScaled())
     print("Any Scale Aligned Status (isAnyScaleAligned)     :", isAnyScaleAligned())
-    print("Cur Scale Aligned (isAlignmentOfCurrentScale)    :", isAlignmentOfCurrentScale())
     print("Current Layer SNR (getCurSNR)                    :", getCurSNR())
     print("Any Exported Status (isAnyAlignmentExported)     :", isAnyAlignmentExported())
     try:
@@ -303,48 +302,48 @@ def isAnyScaleAligned() -> bool:
         # print('isAnyScaleAligned | Returning False')
         return False
 
-def isAlignmentOfCurrentScale() -> bool:
-    '''Checks if there exists a set of aligned images at the current scale
-
-    DOES *NOT* FUNCTION PROPERLY
-
-    NEEDS TO PROBE 'bias_data' DIRECTORIES
-
-    ISSUES THAT REGENERATING SCALES MEANS PREVIOUS AALIGNMENTS STILL EXIST AND THUS THIS CAN INCORRECTLY RETURN TRUE
-    MIGHT WANT TO HAVE SCALE RE-GENERATION CAUSE PREVIOUSLY ALIGNED IMAGES TO BE REMOVED'''
-
-    try:
-        destination_path = os.path.join(interface.project_data['data']['destination_path'])
-    except:
-        print('isAlignmentOfCurrentScale | WARNING | There is no project open - Returning False')
-        return False
-
-    try:
-        isProjectScaled()
-    except:
-        print('isAlignmentOfCurrentScale | WARNING | This project has not been scaled yet - returning False')
-        return False
-
-    try:
-        bias_path = destination_path + '/' + getCurScale() + '/bias_data'
-        print('isAlignmentOfCurrentScale | bias path =', bias_path)
-        bias_dir_byte_size=0
-        for path, dirs, files in os.walk(bias_path):
-            for f in files:
-                fp = os.path.join(path, f)
-                bias_dir_byte_size += os.path.getsize(fp)
-    except:
-        print('isAlignmentOfCurrentScale | WARNING | Unable to get size of the bias directory - Returning False')
-
-
-    print('isAlignmentOfCurrentScale | size of bias dir=', bias_dir_byte_size)
-
-    if bias_dir_byte_size < 20:
-        print('isAlignmentOfCurrentScale | Returning False')
-        return False
-    else:
-        print('isAlignmentOfCurrentScale | Returning True')
-        return True
+# def isAlignmentOfCurrentScale() -> bool:
+#     '''Checks if there exists a set of aligned images at the current scale
+# 
+#     DOES *NOT* FUNCTION PROPERLY
+# 
+#     NEEDS TO PROBE 'bias_data' DIRECTORIES
+# 
+#     ISSUES THAT REGENERATING SCALES MEANS PREVIOUS AALIGNMENTS STILL EXIST AND THUS THIS CAN INCORRECTLY RETURN TRUE
+#     MIGHT WANT TO HAVE SCALE RE-GENERATION CAUSE PREVIOUSLY ALIGNED IMAGES TO BE REMOVED'''
+# 
+#     try:
+#         destination_path = os.path.join(interface.project_data['data']['destination_path'])
+#     except:
+#         print('isAlignmentOfCurrentScale | WARNING | There is no project open - Returning False')
+#         return False
+# 
+#     try:
+#         isProjectScaled()
+#     except:
+#         print('isAlignmentOfCurrentScale | WARNING | This project has not been scaled yet - returning False')
+#         return False
+# 
+#     try:
+#         bias_path = destination_path + '/' + getCurScale() + '/bias_data'
+#         print('isAlignmentOfCurrentScale | bias path =', bias_path)
+#         bias_dir_byte_size=0
+#         for path, dirs, files in os.walk(bias_path):
+#             for f in files:
+#                 fp = os.path.join(path, f)
+#                 bias_dir_byte_size += os.path.getsize(fp)
+#     except:
+#         print('isAlignmentOfCurrentScale | WARNING | Unable to get size of the bias directory - Returning False')
+# 
+# 
+#     print('isAlignmentOfCurrentScale | size of bias dir=', bias_dir_byte_size)
+# 
+#     if bias_dir_byte_size < 20:
+#         print('isAlignmentOfCurrentScale | Returning False')
+#         return False
+#     else:
+#         print('isAlignmentOfCurrentScale | Returning True')
+#         return True
 
 def areAlignedImagesGenerated():
     '''Returns True or False dependent on whether aligned images have been generated for the current scale.'''

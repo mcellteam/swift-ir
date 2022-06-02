@@ -68,8 +68,6 @@ from contextlib import redirect_stdout
 from tiffs2zarr import tiffs2zarr
 from scale_pyramid import create_scale_pyramid
 
-
-
 if __name__ == '__main__':
     print('\n>>>>>>>>>>>>>>>> RUNNING make_zarr.py\n')
 

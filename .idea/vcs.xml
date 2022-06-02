@@ -2,5 +2,8 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/PySide6/src/daisy" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/PySide6/src/funlib-geometry" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/source/PySide6/src/funlib-math" vcs="Git" />
   </component>
 </project>
