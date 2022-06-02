@@ -41,7 +41,7 @@ from joel_decs import timeit, profileit, dumpit, traceit, countit
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 from glanceem_utils import print_exception, getCurScale, isDestinationSet, isProjectScaled, \
     isScaleAligned, getNumAligned, getNumAligned, getSkipsList, areAlignedImagesGenerated, \
-    isAlignmentOfCurrentScale, isAnyScaleAligned, returnAlignedImgs, isAnyAlignmentExported, getNumScales, \
+    isAnyScaleAligned, returnAlignedImgs, isAnyAlignmentExported, getNumScales, \
     printCurrentDirectory, link_all_stacks, copy_skips_to_all_scales, print_project_data_stats, getCurSNR, \
     areImagesImported, debug_layer, debug_project, printProjectDetails, getProjectFileLength, isCurScaleExported \
 # from glanceem_utils import get_viewer_url
@@ -2812,7 +2812,7 @@ class MainWindow(QMainWindow):
         def ng_view():  # ng_view #ngview #neuroglancer
             print("\n>>>>>>>>>>>>>>>> RUNNING ng_view()\n")
             print("ng_view() | # of aligned images                  : ", getNumAligned())
-            if isAlignmentOfCurrentScale():
+            if areAlignedImagesGenerated():
                 self.hud.post('This scale must be aligned and exported before viewing in Neuroglancer')
                 show_warning("No Alignment Found", "This scale must be aligned and exported before viewing in Neuroglancer.\n\n"
                                              "Typical workflow:\n"
@@ -4004,7 +4004,6 @@ class MainWindow(QMainWindow):
                  ['Is Destination Set', None, isDestinationSet, None, None, None],
                  ['Is Project Scaled', None, isProjectScaled, None, None, None],
                  ['Is Any Scale Aligned', None, isAnyScaleAligned, None, None, None],
-                 ['Is Alignment of Current Scale', None, isAlignmentOfCurrentScale, None, None, None],
                  ['Are Aligned Images Generated', None, areAlignedImagesGenerated, None, None, None],
                  ['Return Aligned Imgs', None, returnAlignedImgs, None, None, None],
                  ['Get # Aligned', None, getNumAligned, None, None, None],
@@ -4105,6 +4104,7 @@ class MainWindow(QMainWindow):
                                              '(5) View data in Neuroglancer client')
 
             self.set_status('Exporting scale %s to Neuroglancer-ready Zarr format...' % str(getCurScale()))
+            self.hud.post('Exporting scale %s to Neuroglancer-ready Zarr format...' % str(getCurScale()))
 
             # allow any scale export...
             self.aligned_path = os.path.join(project_data['data']['destination_path'], getCurScale(), 'img_aligned')
@@ -4741,22 +4741,20 @@ class MainWindow(QMainWindow):
 
 
     @Slot()  #scales
-    def fn_scales_combobox(self):
+    def fn_scales_combobox(self) -> None:
         # print('fn_scales_combobox:')
         # if self.scales_combobox_switch == 1:
         #     print('fn_scales_combobox | Switch is live')
         if self.scales_combobox_switch == 0:
             print('fn_scales_combobox | Change scales switch is disabled - Returning')
-            return
-
-        # if areImagesImported():
-        #     if isProjectScaled():
-            # if len(project_data['data']['scales']) > 0:
-            # print("fn_scales_combobox() called, self.scales_combobox_switch = ", self.scales_combobox_switch)
+            return None
 
         print("fn_scales_combobox | Change scales switch is Enabled, changing to %s"%self.scales_combobox.currentText())
         new_curr_scale = self.scales_combobox.currentText()  #  <class 'str'>
         project_data['data']['current_scale'] = new_curr_scale
+
+        self.hud.post('Setting current image scale to %s' % new_curr_scale[-1])
+        
         self.read_project_data_update_gui()
         # self.update_panels()  # 0523 #0528
 
@@ -4764,6 +4762,7 @@ class MainWindow(QMainWindow):
         # self.center_all_images() # prob best location, user is using combobox to change scale #orig
         # self.image_panel.center_all_images() #0503 #0528
         main_window.center_all_images() #0528
+        return None
 
 
     @Slot()
