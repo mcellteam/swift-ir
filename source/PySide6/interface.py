@@ -2,15 +2,15 @@
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 
 """
-import sys, traceback, os, copy, math, random, json, psutil, argparse, inspect, threading, \
+import sys, os, traceback, copy, math, random, json, psutil, shutil, argparse, inspect, threading, \
     concurrent.futures, platform, collections, time, datetime, multiprocessing, logging, operator, random, \
-    multiprocessing, logging
+    multiprocessing, logging, random
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
     QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
-    QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget
+    QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter
 from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
     QSurfaceFormat, QAction, QActionGroup, QPaintEvent, QBrush, QFont, QImageReader, QImage
 from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
@@ -18,19 +18,18 @@ from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThr
     QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup
 from PySide6.QtWebEngineWidgets import QWebEngineView
 from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
+
+
 try:
     from PySide6.QtCore import Signal, Slot
 except ImportError:
     from PyQt6.QtCore import pyqtSignal as Signal
     from PyQt6.QtCore import pyqtSlot as Slot
 
-import os
-import psutil
-import shutil
+
 from pathlib import Path
 import daisy
 import skimage.measure
-import logging
 import dask.array as da
 import neuroglancer as ng
 from glob import glob
@@ -41,10 +40,10 @@ from tqdm import tqdm
 from joel_decs import timeit, profileit, dumpit, traceit, countit
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 from glanceem_utils import print_exception, getCurScale, isDestinationSet, isProjectScaled, \
-    isScaleAligned, getNumAligned, getNumAligned, getSkipsList, \
+    isScaleAligned, getNumAligned, getNumAligned, getSkipsList, areAlignedImagesGenerated, \
     isAlignmentOfCurrentScale, isAnyScaleAligned, returnAlignedImgs, isAnyAlignmentExported, getNumScales, \
     printCurrentDirectory, link_all_stacks, copy_skips_to_all_scales, print_project_data_stats, getCurSNR, \
-    areImagesImported, debug_layer, debug_project, printProjectDetails, getProjectFileLength
+    areImagesImported, debug_layer, debug_project, printProjectDetails, getProjectFileLength, isCurScaleExported \
 # from glanceem_utils import get_viewer_url
 from glanceem_utils import clear_all_skips
 from scale_pyramid import add_layer
@@ -56,6 +55,7 @@ import task_wrapper
 import pyswift_tui
 # from caveclient import CAVEclient
 
+logger = logging.getLogger(__name__)
 center_switch = 0
 
 project_data = None #jy turning back on #0404
@@ -70,17 +70,14 @@ max_image_file_size = 50000000000
 crop_window_mode = 'mouse_rectangle'  # mouse_rectangle or mouse_square or fixed
 crop_window_width = 1024
 crop_window_height = 1024
-
 # update_linking_callback = None
 # update_skips_callback = None
-
 # crop_mode_callback = None
 # crop_mode_role = None
 # crop_mode_origin = None
 # crop_mode_disp_rect = None
 # crop_mode_corners = None
 # current_scale = 'scale_1'
-
 # alignem_swift.main_win = None #jy 0525
 
 '''global variables'''
@@ -299,10 +296,12 @@ def generate_scales_queue():
     # except Exception:
     #     print(
     #         "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
+
+    #0531 TODO: NEED TO HANDLE CHANGING OF NUMBER OF SCALES, ESPECIALLY WHEN DECREASED. MUST REMOVE PRE-EXISTING DATA (bias data, scaled images, and aligned images)
+
     main_window.scales_combobox_switch = 0
 
     default_scales = ['1']
-
     cur_scales = [str(v) for v in sorted([get_scale_val(s) for s in project_data['data']['scales'].keys()])]
     if len(cur_scales) > 0:
         default_scales = cur_scales
@@ -317,14 +316,13 @@ def generate_scales_queue():
     if ok:
         print("generate_scales_queue | User picked OK - Continuing")
         main_window.set_scales_from_string(input_val)
-
     else:
-        print("generate_scales_queue | User did not pick OK. Scales will not be generated.")
-        main_window.scales_combobox_switch = 1 #may need to more reliably ensure this gets set back to 1
-        return  # Want to exit function if no scales are defined
+        print("generate_scales_queue | User did NOT pick OK - Canceling")
+        return
 
-    main_window.set_status('Generating scales...')
 
+    main_window.status.showMessage("Generating scales...")
+    main_window.hud.post('Generating scales...')
     image_scales_to_run = [get_scale_val(s) for s in sorted(project_data['data']['scales'].keys())]
 
     print("generate_scales_queue | Generating images for these scales: " + str(image_scales_to_run))
@@ -335,17 +333,6 @@ def generate_scales_queue():
         show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
 
     else:
-
-        ### Create the queue here
-        #      task_queue.DEBUG_LEVEL = DEBUG_LEVEL
-        #      task_wrapper.DEBUG_LEVEL = DEBUG_LEVEL
-        #      scaling_queue = task_queue.TaskQueue (sys.executable)
-        #      cpus = psutil.cpu_count (logical=False)
-        #      scaling_queue.start (cpus)
-        #      scaling_queue.notify = False
-        #      scaling_queue.passthrough_stdout = False
-        #      scaling_queue.passthrough_stderr = False
-
 
         print("generate_scales_queue | Counting CPUs and configuring platform-specific path to executables for C SWiFT-IR")
 
@@ -361,7 +348,6 @@ def generate_scales_queue():
         print("generate_scales_queue | # cpus        :", cpus)
 
         # Configure platform-specific path to executables for C SWiFT-IR
-
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
         my_system = platform.system()
         my_node = platform.node()
@@ -484,15 +470,22 @@ def generate_scales_queue():
         scaling_queue.stop()
         del scaling_queue
 
+        #0531
+        try:
+            isProjectScaled()
+        except:
+            print('generate_scales_queue | Project is not scaled - Returning')
+            return None
 
         main_window.apply_project_defaults()
         main_window.set_progress_stage_2()
         main_window.read_project_data_update_gui()
         main_window.reload_scales_combobox() #0529 moved this from read_project_data_update_gui because it only should be done this one time
         main_window.scales_combobox.setCurrentIndex(main_window.scales_combobox.count() - 1)
-        main_window.center_all_images
+        main_window.center_all_images()
         main_window.scales_combobox_switch = 1
         main_window.update_interface_current_scale()
+        main_window.update_project_inspector()
 
         print("\nGenerating scales complete.\n")
         main_window.status.showMessage("Generating scales complete.")
@@ -1376,7 +1369,6 @@ class ZoomPanWidget(QWidget):
 
         # self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale) #pyside2
         # self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale) #pyside2
-
         self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
         self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
 
@@ -1771,8 +1763,6 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
 
-        #alignem_swift.main_win.update_base_label()
-
     def paintEvent(self, event):
         painter = QPainter(self)
         if len(self.actual_children) <= 0:
@@ -1786,8 +1776,6 @@ class MultiImagePanel(QWidget):
             # Draw background for panels
             painter.fillRect(0, 0, self.width(), self.height(), self.bg_color)
         painter.end()
-
-        #alignem_swift.main_win.update_base_label()
 
     # def update_spacing(self):
     #     # print("MultiImagePanel is setting spacing to " + str(self.current_margin))
@@ -1860,13 +1848,6 @@ class MultiImagePanel(QWidget):
         else:
             self.setToolTip(str(getCurScale()) + '\n' + str(getCurSNR()))  # tooltip #settooltip
 
-        # if enable_stats:
-        #     # alignem_swift.main_win.update_base_label() #0503
-        #     # alignem_swift.main_win.update_ref_label() #0503
-        #     main_window.update_base_label()
-        #     main_window.update_ref_label()
-
-    # MultiImagePanel.center_all_images
     def center_all_images(self, all_images_in_stack=True):
         # print('MultiImagePanel.center_all_images (caller=%s):' % str(inspect.stack()[1].function))
         if self.actual_children != None:
@@ -1890,9 +1871,6 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
 
-ignore_changes = True  # Default for first change which happens on file open?
-
-
 def null_bias_changed_callback(state):
     print('\nnull_bias_changed_callback(state):' % str(state))
     print('  Null Bias project_file value was:', project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'])
@@ -1903,13 +1881,13 @@ def null_bias_changed_callback(state):
     print('  Null Bias project_file value saved as: ', project_data['data']['scales'][project_data['data']['current_scale']]['null_cafm_trends'])
 
 def bounding_rect_changed_callback(state):
-    print('\nbounding_rect_changed_callback(state=%s):' % str(state))
-    print('  Bounding Rect project_file value was:', project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'])
+    print('bounding_rect_changed_callback(state=%s):' % str(state))
+    # print('  Bounding Rect project_file value was:', project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'])
     if state:
         project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = True
     else:
         project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'] = False
-    print('  Bounding Rect project_file value saved as:',project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'])
+    # print('  Bounding Rect project_file value saved as:',project_data['data']['scales'][project_data['data']['current_scale']]['use_bounding_rect'])
 
 def skip_changed_callback(state):  # 'state' is connected to skip toggle
     print("\nskip_changed_callback(state=%s):" % str(state))
@@ -2123,78 +2101,6 @@ class Worker(QRunnable):
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
             self.signals.finished.emit()  # Done
-
-
-'''
-class MainWindow(QMainWindow):
-
-
-    def __init__(self, *args, **kwargs):
-        super(MainWindow, self).__init__(*args, **kwargs)
-
-        self.counter = 0
-
-        layout = QVBoxLayout()
-
-        self.l = QLabel("Start")
-        b = QPushButton("DANGER!")
-        b.pressed.connect(self.oh_no)
-
-        layout.addWidget(self.l)
-        layout.addWidget(b)
-
-        w = QWidget()
-        w.setLayout(layout)
-
-        self.setCentralWidget(w)
-
-        self.show()
-
-        self.threadpool = QThreadPool()
-        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
-
-        self.timer = QTimer()
-        self.timer.setInterval(1000)
-        self.timer.timeout.connect(self.recurring_timer)
-        self.timer.start()
-
-    def progress_fn(self, n):
-        print("%d%% done" % n)
-
-    def execute_this_fn(self, progress_callback):
-        for n in range(0, 5):
-            time.sleep(1)
-            progress_callback.emit(n*100/4)
-
-        return "Done."
-
-    def print_output(self, s):
-        print(s)
-
-    def thread_complete(self):
-        print("THREAD COMPLETE!")
-
-    def oh_no(self):
-        # Pass the function to execute
-        worker = Worker(self.execute_this_fn) # Any other args, kwargs are passed to the run function
-        worker.signals.result.connect(self.print_output)
-        worker.signals.finished.connect(self.thread_complete)
-        worker.signals.progress.connect(self.progress_fn)
-
-        # Execute
-        self.threadpool.start(worker)
-
-
-    def recurring_timer(self):
-        self.counter +=1
-        self.l.setText("Counter: %d" % self.counter)
-
-
-app = QApplication([])
-window = MainWindow()
-app.exec_()
-'''
-
 
 
 # server #runnable
@@ -2559,116 +2465,6 @@ class ToggleSkipSwitch(QCheckBox):
         self.update()
 
 
-#--------------------------------------#
-#-----------EMBEDDED LOGGER------------#
-#--------------------------------------#
-
-# UI w/
-# * A read-only text edit window which holds formatted log messages
-# * A button to start work and log stuff in a separate thread
-# * A button to log something from the main thread
-# * A button to clear the log window
-class Window(QWidget):
-
-    COLORS = {
-        logging.DEBUG: 'black',
-        logging.INFO: 'blue',
-        logging.WARNING: 'orange',
-        logging.ERROR: 'red',
-        logging.CRITICAL: 'purple',
-    }
-
-    def __init__(self, app):
-        super(Window, self).__init__()
-        self.app = app
-        self.textedit = te = QPlainTextEdit(self)
-        # Set whatever the default monospace font is for the platform
-        f = QFont('nosuchfont')
-        f.setStyleHint(f.Monospace)
-        te.setFont(f)
-        te.setReadOnly(True)
-        PB = QPushButton
-        self.work_button = PB('Start background work', self)
-        self.log_button = PB('Log a message at a random level', self)
-        self.clear_button = PB('Clear log window', self)
-        self.handler = h = QtHandler(self.update_status)
-        # Remember to use qThreadName rather than threadName in the format string.
-        fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
-        formatter = logging.Formatter(fs)
-        h.setFormatter(formatter)
-        logger.addHandler(h)
-        # Set up to terminate the QThread when we exit
-        app.aboutToQuit.connect(self.force_quit)
-
-        # Lay out all the widgets
-        layout = QVBoxLayout(self)
-        layout.addWidget(te)
-        layout.addWidget(self.work_button)
-        layout.addWidget(self.log_button)
-        layout.addWidget(self.clear_button)
-        self.setFixedSize(900, 400)
-
-        # Connect the non-worker slots and signals
-        self.log_button.clicked.connect(self.manual_update)
-        self.clear_button.clicked.connect(self.clear_display)
-
-        # Start a new worker thread and connect the slots for the worker
-        self.start_thread()
-        self.work_button.clicked.connect(self.worker.start)
-        # Once started, the button should be disabled
-        self.work_button.clicked.connect(lambda: self.work_button.setEnabled(False))
-
-    def start_thread(self):
-        self.worker = Worker()
-        self.worker_thread = QThread()
-        self.worker.setObjectName('Worker')
-        self.worker_thread.setObjectName('WorkerThread')  # for qThreadName
-        self.worker.moveToThread(self.worker_thread)
-        # This will start an event loop in the worker thread
-        self.worker_thread.start()
-
-    def kill_thread(self):
-        # Just tell the worker to stop, then tell it to quit and wait for that
-        # to happen
-        self.worker_thread.requestInterruption()
-        if self.worker_thread.isRunning():
-            self.worker_thread.quit()
-            self.worker_thread.wait()
-        else:
-            print('worker has already exited.')
-
-    def force_quit(self):
-        # For use when the window is closed
-        if self.worker_thread.isRunning():
-            self.kill_thread()
-
-    # The functions below update the UI and run in the main thread because
-    # that's where the slots are set up
-
-    @Slot(str, logging.LogRecord)
-    def update_status(self, status, record):
-        color = self.COLORS.get(record.levelno, 'black')
-        s = '<pre><font color="%s">%s</font></pre>' % (color, status)
-        self.textedit.appendHtml(s)
-
-    @Slot()
-    def manual_update(self):
-        # This function uses the formatted message passed in, but also uses
-        # information from the record to format the message in an appropriate
-        # color according to its severity (level).
-        level = random.choice(LEVELS)
-        extra = {'qThreadName': ctname()}
-        logger.log(level, 'Manually logged!', extra=extra)
-
-    @Slot()
-    def clear_display(self):
-        self.textedit.clear()
-
-#-----------------------------------------#
-#---------- END OF LOGGER CODE -----------#
-#-----------------------------------------#
-
-
 
 
 '''
@@ -2745,7 +2541,7 @@ class CollapsibleBox(QWidget):
 
 #mainwindow
 class MainWindow(QMainWindow):
-    def __init__(self, fname=None, panel_roles=None, title="Align EM", simple_mode=True):
+    def __init__(self, fname=None, panel_roles=None, title="AlignEM-SWiFT"):
         self.pyside_path = os.path.dirname(os.path.realpath(__file__))
         print("MainWindow | pyside_path is ", self.pyside_path)
 
@@ -3016,19 +2812,34 @@ class MainWindow(QMainWindow):
         def ng_view():  # ng_view #ngview #neuroglancer
             print("\n>>>>>>>>>>>>>>>> RUNNING ng_view()\n")
             print("ng_view() | # of aligned images                  : ", getNumAligned())
-            if getNumAligned() < 1:
-                print("ng_view() | EXCEPTION | There is no alignment of the current scale - Aborting")
-                show_warning("No Alignment", "There is no alignment to view. Viewing nothing in Neuroglancer is not supported.\n\n"
+            if isAlignmentOfCurrentScale():
+                self.hud.post('This scale must be aligned and exported before viewing in Neuroglancer')
+                show_warning("No Alignment Found", "This scale must be aligned and exported before viewing in Neuroglancer.\n\n"
                                              "Typical workflow:\n"
                                              "(1) Open a project or import images and save.\n"
                                              "(2) Generate a set of scaled images and save.\n"
                                              "--> (3) Align each scale starting with the coarsest.\n"
                                              "--> (4) Export alignment to Zarr format.\n"
                                              "(5) View data in Neuroglancer client")
-                print("ng_view() | EXCEPTION | failed 'getNumAligned() < 1' conditoinal - Aborting")
+                print("ng_view() | EXCEPTION | This scale must be aligned and exported before viewing in Neuroglancer - Aborting")
                 return
             else:
-                print("ng_view() | there appears to exist an alignment at the current scale - Continuing")
+                print('ng_view() | Alignment at this scale exists - Continuing')
+
+
+            if isCurScaleExported():
+                self.hud.post('Alignment must be exported before it can be viewed in Neuroglancer')
+                show_warning("No Export Found", "Alignment must be exported before it can be viewed in Neuroglancer.\n\n"
+                                             "Typical workflow:\n"
+                                             "(1) Open a project or import images and save.\n"
+                                             "(2) Generate a set of scaled images and save.\n"
+                                             "(3) Align each scale starting with the coarsest.\n"
+                                             "--> (4) Export alignment to Zarr format.\n"
+                                             "(5) View data in Neuroglancer client")
+                print("ng_view() | EXCEPTION | Alignment must be exported before it can be viewed in Neuroglancer - Aborting")
+                return
+            else:
+                print('ng_view() | Exported alignment at this scale exists - Continuing')
 
             ds_name = "aligned_" + getCurScale()
             destination_path = os.path.abspath(project_data['data']['destination_path'])
@@ -3039,21 +2850,9 @@ class MainWindow(QMainWindow):
             print('ng_view() | zarr_ds_path                         :', zarr_ds_path)
             print('ng_view() | zarr_ds_path exists?                 :', bool(os.path.isdir(zarr_ds_path)))
 
-            if not os.path.isdir(zarr_ds_path):
-                print("ng_view() | EXCEPTION | The alignment of this scale must be exported before it can be viewed in Neuroglancer - Aborting")
-                show_warning("No Alignment", "Alignment must be exported before viewing in Neuroglancer.\n\n"
-                                             "Typical workflow:\n"
-                                             "(1) Open a project or import images and save.\n"
-                                             "(2) Generate a set of scaled images and save.\n"
-                                             "(3) Align each scale starting with the coarsest.\n"
-                                             "--> (4) Export alignment to Zarr format.\n"
-                                             "(5) View data in Neuroglancer client")
-                print("ng_view() | EXCEPTION | failed 'not os.path.isdir(zarr_project_path)' conditional - Aborting")
-                return
-            else:
-                print('ng_view() | there appears to exist an alignment in Zarr format at the current scale - Continuing')
 
-            self.status.showMessage("Loading Neuroglancer viewer...")
+            self.hud.post('Loading Neuroglancer viewer...')
+            self.hud.post('Zarr source: ' + zarr_project_path)
 
             if 'server' in locals():
                 print('ng_view() | server is already running')
@@ -3306,40 +3105,7 @@ class MainWindow(QMainWindow):
 
         self.panel_list = []
 
-        self.simple_mode = simple_mode
-        self.main_panel = QWidget()
-        self.main_panel_layout = QVBoxLayout()
-        self.main_panel_layout.setSpacing(20) # this will inherit downward
 
-        self.main_panel_extended_layout = QHBoxLayout()
-        self.main_panel_extended_layout.setSpacing(0)
-        self.main_panel_extended_layout.addLayout(self.main_panel_layout)
-        self.main_panel.setLayout(self.main_panel_extended_layout)
-
-        self.main_panel.setLayout(self.main_panel_layout)
-        # self.main_panel.setAutoFillBackground(False)
-
-        self.image_panel = MultiImagePanel()
-        # self.image_panel.draw_border = self.draw_border #border #0520
-        self.image_panel.draw_annotations = self.draw_annotations
-        self.image_panel.draw_full_paths = self.draw_full_paths
-        # self.image_panel.setAutoFillBackground(True)
-
-        self.main_panel_layout.addWidget(self.image_panel)  #jy instantiate image panel #mainpanel #mainlayout
-
-        # self.main_panel_layout.addWidget ( self.control_panel )
-
-        # self.cname_type = ComboBoxControl(['zstd  ', 'zlib  ', 'gzip  ', 'none']) #?? why
-        # note - check for string comparison of 'none' later, do not add whitespace fill
-        # self.clevel_val = IntField("clevel (1-9):", 5)
-        # self.n_scales_val = IntField("scales:", 4)
-
-        # shoehorn extra UI elements
-        # self.server_button = QPushButton("Launch Server...")
-        # self.server_button.clicked.connect(start_server)
-        # self.main_panel_layout.addWidget(self.server_button)
-
-        # self.main_panel_layout.addWidget(self.browser) #tag
 
         def pretty(d, indent=0):
             for key, value in d.items():
@@ -3369,26 +3135,23 @@ class MainWindow(QMainWindow):
         dock_vlayout = QVBoxLayout(content)
         # dock_vlayout.setAlignment(Qt.AlignTop)
 
-        '''
+
         # Skips List
-        self.scales_box = CollapsibleBox('Skips List')
-        dock_vlayout.addWidget(self.scales_box)
+        self.inspector_scales = CollapsibleBox('Skip List')
+        dock_vlayout.addWidget(self.inspector_scales)
         lay = QVBoxLayout()
-        for j in range(8):
-            label = QLabel('')
-            label.setStyleSheet(
-                "background-color: orange;"
-                "color: #ffe135;"
+        self.inspector_label_scales = QLabel('')
+        self.inspector_label_scales.setStyleSheet(
+                "color: #d3dae3;"
+                "border-radius: 12px;"
             )
-            label.setAlignment(Qt.AlignTop)
-            lay.addWidget(label)
-        self.scales_box.setContentLayout(lay)
-        # dock_vlayout.addStretch()
-        '''
+        lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)
+        self.inspector_scales.setContentLayout(lay)
+
 
         # CPU Specs
-        inspector_cpu_specs = CollapsibleBox('CPU Specs')
-        dock_vlayout.addWidget(inspector_cpu_specs)
+        self.inspector_cpu = CollapsibleBox('CPU Specs')
+        dock_vlayout.addWidget(self.inspector_cpu)
         lay = QVBoxLayout()
         label = QLabel("CPU #: %s\nSystem : %s" % ( psutil.cpu_count(logical=False), platform.system() ))
         label.setStyleSheet(
@@ -3396,7 +3159,7 @@ class MainWindow(QMainWindow):
                 "border-radius: 12px;"
             )
         lay.addWidget(label, alignment=Qt.AlignTop)
-        inspector_cpu_specs.setContentLayout(lay)
+        self.inspector_cpu.setContentLayout(lay)
 
         dock_vlayout.addStretch()
 
@@ -3498,27 +3261,27 @@ class MainWindow(QMainWindow):
         # base_file_name = layer['images']['base']['filename']
         # print("current base image = ", base_file_name)
 
-        self.import_images_button = QPushButton("Import")
+        self.import_images_button = QPushButton("Import\nImages")
         self.import_images_button.clicked.connect(self.import_base_images)
-        # self.import_images_button.setFixedSize(square_button_size)
-        self.import_images_button.setFixedSize(square_button_width, std_height)
+        self.import_images_button.setFixedSize(square_button_size)
+        # self.import_images_button.setFixedSize(square_button_width, std_height)
 
         self.center_button = QPushButton('Center')
-        self.center_button.clicked.connect(self.center_all_images)
+        self.center_button.clicked.connect(self.center_callback)
         self.center_button.setFixedSize(square_button_width, std_height)
 
         self.actual_size_button = QPushButton('Actual Size')
-        self.actual_size_button.clicked.connect(self.all_images_actual_size)
+        self.actual_size_button.clicked.connect(self.actual_size_callback)
         self.actual_size_button.setFixedSize(square_button_width, std_height)
 
         self.size_buttons_vlayout = QVBoxLayout()
         self.size_buttons_vlayout.addWidget(self.center_button)
         self.size_buttons_vlayout.addWidget(self.actual_size_button)
 
-        self.generate_scales_button = QPushButton('Scale')
+        self.generate_scales_button = QPushButton('Generate\nScales')
         self.generate_scales_button.clicked.connect(generate_scales_queue)
-        # self.generate_scales_button.setFixedSize(square_button_size)
-        self.generate_scales_button.setFixedSize(square_button_width, std_height)
+        self.generate_scales_button.setFixedSize(square_button_size)
+        # self.generate_scales_button.setFixedSize(square_button_width, std_height)
         # self.generate_scales_button.setStyleSheet("font-size: 11px;")
 
 
@@ -3915,18 +3678,63 @@ class MainWindow(QMainWindow):
         self.postalignment_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
         self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
 
-        self.lower_panel_groups = QGridLayout()
-        # self.lower_panel_groups.setAlignment(Qt.AlignCenter)
-        self.lower_panel_groups.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignHCenter)
-        # .setContentsMargins(20,0,20,0)
-        # .setSpacing(0)
+        self.lower_panel_groups_ = QGridLayout()
+        self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignHCenter)
+        self.lower_panel_groups = QWidget()
+        self.lower_panel_groups.setLayout(self.lower_panel_groups_)
+        self.lower_panel_groups.setFixedHeight(cpanel_height + 10)
 
-        self.main_panel_layout.addLayout(self.lower_panel_groups)
+
+
+        # self.main_panel_layout.addLayout(self.lower_panel_groups) #**
         # self.main_panel_layout.setAlignment(Qt.AlignHCenter)
+
+        '''------------------------------------------
+        MAIN LAYOUT
+        ------------------------------------------'''
+
+        self.image_panel = MultiImagePanel()
+        self.image_panel.draw_annotations = self.draw_annotations
+        self.image_panel.draw_full_paths = self.draw_full_paths
+        self.image_panel.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
+        self.image_panel.setMinimumHeight(400)
+
+        #logger
+        QThread.currentThread().setObjectName('Log')
+        logging.getLogger().setLevel(logging.DEBUG)
+        self.hud = HeadsUpDisplay(app)
+
+
+
+
+        # self.above_splitter =QWidget()
+        # self.above_splitter.setLayout(self.lower_panel_groups)
+
+
+        self.splitter = QSplitter(Qt.Vertical)
+        self.splitter.addWidget(self.image_panel)
+        self.splitter.addWidget(self.lower_panel_groups)
+        self.splitter.addWidget(self.hud)
+        # https://stackoverflow.com/questions/14397653/qsplitter-with-one-fixed-size-widget-and-one-variable-size-widget
+        self.splitter.setStretchFactor(0,1)
+        self.splitter.setStretchFactor(1,0)
+        self.splitter.setStretchFactor(2,1)
+        self.splitter.setCollapsible(0,False)
+        self.splitter.setCollapsible(1,False)
+        self.splitter.setCollapsible(2,True)
+
+        self.main_panel = QWidget()
+        # self.main_panel_layout = QVBoxLayout()
+        self.main_panel_layout = QGridLayout()
+        self.main_panel_layout.setSpacing(10) # this will inherit downward
+
+        self.main_panel_layout.addWidget(self.splitter,1,0)
+        self.main_panel.setLayout(self.main_panel_layout)
+
 
         '''------------------------------------------
         AUXILIARY PANELS
@@ -4072,6 +3880,7 @@ class MainWindow(QMainWindow):
                  # ['Set Custom Destination...', None, self.set_destination, None, None, None],
                  # ['-', None, None, None, None, None],
                  ['Show Project Inspector', None, self.show_project_inspector, None, None, None],
+                 ['Update Project Inspector', None, self.update_project_inspector, None, None, None],
                  ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
              ]
              ],
@@ -4183,25 +3992,27 @@ class MainWindow(QMainWindow):
              ],
             ['&Debug',
              [
+                 ['Debug Layer', None, debug_layer, None, None, None],
+                 ['Debug Project', None, debug_project, None, None, None],
                  ['Print Structures', None, self.print_structures, None, None, None],
                  ['Print project_data', None, self.print_project_data, None, None, None],
                  ['Print Project Stats', None, self.print_project_data_stats, None, None, None],
                  ['Print Image Library', None, self.print_image_library, None, None, None],
-                 ['Debug Layer', None, debug_layer, None, None, None],
-                 ['Debug Project', None, debug_project, None, None, None],
                  ['update_win_self', None, self.update_win_self, None, None, None],
                  ['update_panels', None, self.update_panels, None, None, None],
                  ['refresh_all_images', None, self.refresh_all_images, None, None, None],
-                 ['isDestinationSet', None, isDestinationSet, None, None, None],
-                 ['isProjectScaled', None, isProjectScaled, None, None, None],
-                 ['isAnyScaleAligned', None, isAnyScaleAligned, None, None, None],
-                 ['isAlignmentOfCurrentScale', None, isAlignmentOfCurrentScale, None, None, None],
-                 ['print aligned imgs', None, returnAlignedImgs, None, None, None],
+                 ['Is Destination Set', None, isDestinationSet, None, None, None],
+                 ['Is Project Scaled', None, isProjectScaled, None, None, None],
+                 ['Is Any Scale Aligned', None, isAnyScaleAligned, None, None, None],
+                 ['Is Alignment of Current Scale', None, isAlignmentOfCurrentScale, None, None, None],
+                 ['Are Aligned Images Generated', None, areAlignedImagesGenerated, None, None, None],
+                 ['Return Aligned Imgs', None, returnAlignedImgs, None, None, None],
                  ['Get # Aligned', None, getNumAligned, None, None, None],
                  ['Show Memory Usage', None, show_memory_usage, None, None, None],
-                 ['print working directory', None, printCurrentDirectory, None, None, None],
-                 ['Read project_data update GUI', None, self.read_project_data_update_gui, None, None, None],
-                 ['Apply project defaults', None, self.apply_project_defaults, None, None, None],
+                 ['Print Working Directory', None, printCurrentDirectory, None, None, None],
+                 ['Read project_data Update GUI', None, self.read_project_data_update_gui, None, None, None],
+                 ['Read GUI Update project_data', None, self.read_gui_update_project_data, None, None, None],
+                 ['Apply Project Defaults', None, self.apply_project_defaults, None, None, None],
 
                  # ['Define Waves', None, self.not_yet, None, None, None],
                  # ['Make Waves', None, self.not_yet, None, None, None],
@@ -4276,6 +4087,7 @@ class MainWindow(QMainWindow):
 
     def export_zarr(self):
             print('\nexport_zarr():')
+            self.hud.post('Exporting scale ' + getCurScale()[-1] + 'to Zarr format...')
 
             # if getNumAligned() < 1:
             if isAnyScaleAligned():
@@ -4422,7 +4234,6 @@ class MainWindow(QMainWindow):
     def update_interface_current_scale(self) -> None:
         '''Update the visibility of next/prev scale buttons depending on current scale'''
 
-        print('update_interface_current_scale:')
         try:
             n_scales = getNumScales()
             cur_index = self.scales_combobox.currentIndex()
@@ -4445,7 +4256,7 @@ class MainWindow(QMainWindow):
             alignment_method_pretty = dm_name_to_combo_name[alignment_method]
             cur_scale = getCurScale()
             img_size = get_image_size(project_data['data']['scales'][getCurScale()]['alignment_stack'][0]['images']['base']['filename'])
-            self.alignment_groupbox.setTitle("Alignment (Scale %s of %d) %s %sx%spx" % (n_scales - cur_index, n_scales, alignment_method_pretty, img_size[0], img_size[1]))
+            self.alignment_groupbox.setTitle("Align Scale %s of %d | %sx%spx | %s " % (n_scales - cur_index, n_scales,  img_size[0], img_size[1], alignment_method_pretty))
         except:
             print('update_interface_current_scale | Something went wrong updating alignment groupbox title')
             print_exception()
@@ -4463,6 +4274,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def toggle_auto_generate_callback(self):
+        if self.toggle_auto_generate.isChecked():
+            self.hud.post('Images will be generated automatically after alignment')
+        else:
+            self.hud.post('Images will not be generated automatically after alignment')
         pass
 
     @Slot()
@@ -4484,6 +4299,7 @@ class MainWindow(QMainWindow):
         self.read_gui_update_project_data()
         self.read_project_data_update_gui()
         self.update_interface_current_scale()
+        self.update_project_inspector()
         return None
 
     @Slot()
@@ -4503,6 +4319,7 @@ class MainWindow(QMainWindow):
         self.read_gui_update_project_data()
         self.read_project_data_update_gui()
         self.update_interface_current_scale()
+        self.update_project_inspector()
         return None
 
 
@@ -4544,7 +4361,14 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def show_project_inspector(self):
+        self.update_project_inspector()
         self.project_inspector.show()
+
+    @Slot()
+    def update_project_inspector(self):
+
+        self.inspector_label_scales.setText(str(getSkipsList()))
+
 
 
     @Slot() #0404
@@ -4590,10 +4414,6 @@ class MainWindow(QMainWindow):
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.reset_groupbox_styles()
-        # self.project_functions_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
-        # self.images_and_scaling_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
-        # self.alignment_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
-        # self.export_and_view_groupbox.setStyleSheet("""QWidget {color: #000000;}""")
 
     def apply_stylesheet_4(self):
         '''Grey stylesheet'''
@@ -4602,10 +4422,6 @@ class MainWindow(QMainWindow):
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.reset_groupbox_styles()
-        # self.project_functions_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.images_and_scaling_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.alignment_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.export_and_view_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
 
     # def apply_stylesheet_8(self):
     #     self.setStyleSheet('')
@@ -4625,10 +4441,6 @@ class MainWindow(QMainWindow):
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.reset_groupbox_styles()
-        # self.project_functions_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.images_and_scaling_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.alignment_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.export_and_view_groupbox.setStyleSheet("""QWidget {color: #ffffff;}""")
 
     def reset_groupbox_styles(self):
         print('reset_groupbox_styles | Resetting groupbox styles')
@@ -4648,51 +4460,43 @@ class MainWindow(QMainWindow):
 
     def toggle_on_images_and_scaling_groupbox(self):
         self.images_and_scaling_stack.setCurrentIndex(1)
-        # self.images_and_scaling_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.images_and_scaling_stack.setStyleSheet('')
         self.images_and_scaling_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.images_and_scaling_stack.setStyleSheet("""QGroupBox {border: 0px;}""")
+
         """QGroupBox {border: 2px dotted #455364;}"""
     def toggle_off_images_and_scaling_groupbox(self):
         self.images_and_scaling_stack.setCurrentIndex(0)
         self.images_and_scaling_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        # self.images_and_scaling_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
 
     def toggle_on_alignment_groupbox(self):
         self.alignment_stack.setCurrentIndex(1)
-        # self.alignment_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.alignment_stack.setStyleSheet('')
         self.alignment_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.alignment_stack.setStyleSheet("""QGroupBox {border: 0px;}""")
+
     def toggle_off_alignment_groupbox(self):
         self.alignment_stack.setCurrentIndex(0)
         self.alignment_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        # self.alignment_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
 
     def toggle_on_postalignment_groupbox(self):
         self.postalignment_stack.setCurrentIndex(1)
-        # self.alignment_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.alignment_stack.setStyleSheet('')
         self.postalignment_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.alignment_stack.setStyleSheet("""QGroupBox {border: 0px;}""")
+
     def toggle_off_postalignment_groupbox(self):
         self.postalignment_stack.setCurrentIndex(0)
         self.postalignment_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        # self.alignment_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
+
 
     def toggle_on_export_and_view_groupbox(self):
         self.export_and_view_stack.setCurrentIndex(1)
-        # self.export_and_view_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
-        # self.export_and_view_stack.setStyleSheet('')
         self.export_and_view_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 0px;}""")
+
     def toggle_off_export_and_view_groupbox(self):
         self.export_and_view_stack.setCurrentIndex(0)
         self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        # self.export_and_view_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
 
     @Slot()
     def set_progress_stage_0(self):
+        self.hud.post('Setting user progress to Project')
         print('Updating user progress to stage 0')
         self.toggle_off_images_and_scaling_groupbox()
         self.toggle_off_alignment_groupbox()
@@ -4700,9 +4504,9 @@ class MainWindow(QMainWindow):
         self.toggle_off_export_and_view_groupbox()
         self.scales_combobox_switch = 0
 
-
     @Slot()
     def set_progress_stage_1(self):
+        self.hud.post('Setting user progress to Data Selection & Scaling')
         print('Updating user progress to stage 1')
         self.toggle_on_images_and_scaling_groupbox()
         self.toggle_off_alignment_groupbox()
@@ -4712,6 +4516,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_progress_stage_2(self):
+        self.hud.post('Setting user progress to Alignment')
         print('Updating user progress to stage 2')
         self.toggle_on_images_and_scaling_groupbox()
         self.toggle_on_alignment_groupbox()
@@ -4721,6 +4526,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_progress_stage_3(self):
+        self.hud.post('Setting user progress to Export & View')
         print('Updating user progress to stage 3')
         self.toggle_on_images_and_scaling_groupbox()
         self.toggle_on_alignment_groupbox()
@@ -4730,6 +4536,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_user_progress(self):
+        '''Set user progress (0 to 3)'''
         if isAnyScaleAligned():
             self.set_progress_stage_3()
             print('set_user_progress | Setting user progress to stage 3')
@@ -4746,6 +4553,21 @@ class MainWindow(QMainWindow):
             print('set_user_progress | setting user progress to stage 0')
             # self.set_progress_stage_1()
             # print('set_user_progress | Setting user progress to stage 1')
+        self.update_project_inspector()
+
+
+    @Slot()
+    def get_user_progress(self) -> int:
+        '''Get user progress (0 to 3)'''
+        if isAnyScaleAligned():
+            return int(3)
+        elif isProjectScaled():
+            return int(2)
+        elif isDestinationSet():
+            return int(1)
+        else:
+            return int(0)
+
 
     def get_user_progress(self):
         if isAnyScaleAligned():
@@ -4762,20 +4584,12 @@ class MainWindow(QMainWindow):
             return int(0)
 
 
-    #0521
-    '''
-    affine_combobox FUNCTIONALITY MUST BE CONSIDERED. MIGHT BE A GOOD IDEA TO DIVORCE IT FROM 'project_data', AS IT IS
-    MORE ABOUT CONTROL FLOW THAN PROJECT DATA.
-    
-
-    '''
     @Slot()
     def read_gui_update_project_data(self) -> None:
         '''
         Reads UI data from MainWindow and writes everything to 'project_data'.
         NOTE: Do NOT write affine combobox back to project_data. That only goes from project_data to GUI.
         '''
-
         if self.get_null_bias_value() == 'None':
             project_data['data']['scales'][getCurScale()]['null_cafm_trends'] = False
         else:
@@ -4790,6 +4604,8 @@ class MainWindow(QMainWindow):
         scale = project_data['data']['scales'][project_data['data']['current_scale']]
         scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor'] = self.get_whitening_input()
         scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['win_scale_factor'] = self.get_swim_input()
+
+        self.update_project_inspector()
         return
 
     '''
@@ -4847,22 +4663,13 @@ class MainWindow(QMainWindow):
         except:
             print('read_project_data_update_gui | WARNING | Bounding Rect UI element failed to update its state')
 
-        # if isProjectScaled():
-        #     self.update_current_alignment_method_label()
-        #     self.update_current_scale_label()
-            # self.reload_scales_combobox() #0529 not sure if this is the best place for this.
-
-        # try:
-        #     curr_layer = project_data['data']['current_layer']
-        #     self.jump_input.setText(curr_layer)
-        #     except BaseException as error:
-        #         print('read_project_data_update_gui | WARNING | Jump Input failed to update image number')
-        #         print('This was the exception: {}'.format(error))
-
         # main_window.refresh_all_images() #0528 is something like this needed?
         print('read_project_data_update_gui | GUI is in sync with project_data for current scale + layer.')
 
-    #0503...
+        self.update_project_inspector()
+
+
+
     #0519
     @Slot()
     def get_whitening_input(self) -> float:
@@ -4897,7 +4704,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def jump_to_layer(self) -> None:
-        print('Jumping to layer | jump_to_layer...')
+        print('jump_to_layer:')
         if self.jump_input.text() == '':
             pass
         else:
@@ -4935,7 +4742,7 @@ class MainWindow(QMainWindow):
 
     @Slot()  #scales
     def fn_scales_combobox(self):
-        print('fn_scales_combobox:')
+        # print('fn_scales_combobox:')
         # if self.scales_combobox_switch == 1:
         #     print('fn_scales_combobox | Switch is live')
         if self.scales_combobox_switch == 0:
@@ -4982,29 +4789,6 @@ class MainWindow(QMainWindow):
         global show_skipped_images
         show_skipped_images = checked
 
-    # @Slot()
-    # def set_debug_level(self, checked):
-    #     global DEBUG_LEVEL
-    #     action_text = self.sender().text()
-    #     try:
-    #         value = int(action_text.split(' ')[1])
-    #         print_debug(5, "Changing Debug Level from " + str(DEBUG_LEVEL) + " to " + str(value))
-    #         DEBUG_LEVEL = value
-    #         try:
-    #             print_debug(5, "Changing TUI Debug Level from " + str(pyswift_tui.DEBUG_LEVEL) + " to " + str(value))
-    #             pyswift_tui.DEBUG_LEVEL = value
-    #             try:
-    #                 print_debug(5, "Changing SWIFT Debug Level from " + str(align_swiftir.DEBUG_LEVEL) + " to " + str(
-    #                     value))
-    #                 align_swiftir.DEBUG_LEVEL = value
-    #             except:
-    #                 print_debug(1, "Unable to change SWIFT Debug Level")
-    #                 pass
-    #         except:
-    #             print_debug(1, "Unable to change TUI Debug Level")
-    #             pass
-    #     except:
-    #         print_debug(1, "Invalid debug value in: \"" + str(action_text))
 
     @Slot()
     def print_structures(self, checked):
@@ -5092,6 +4876,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def apply_project_defaults(self):
         print('\napply_defaults_to_scales:')
+        self.hud.post('Applying project defaults...')
         global project_data # AHA! NECESSARY TO MODIFY GLOBAL INSIDE OF FUNCTION
         scales_combobox_switch_ = self.scales_combobox_switch
         self.scales_combobox_switch = 0
@@ -5101,7 +4886,7 @@ class MainWindow(QMainWindow):
         # debug_project()
         # print('')
 
-        self.set_def_proj_dest() #0529 might be needed
+        # self.set_def_proj_dest() #0529 might be needed #0601 - removing
 
         for scale_key in scales_dict.keys():
             scale = scales_dict[scale_key]
@@ -5133,11 +4918,8 @@ class MainWindow(QMainWindow):
                     # print('Setting %s to refine_affine' % scale_key)
                     project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
 
-        # self.save_project_to_current_file()
-        self.save_project()
 
-        # debug_project()
-
+        # self.save_project() #0601 - removing
         self.scales_combobox_switch = scales_combobox_switch_
 
         print("\nExiting apply_project_defaults\n")
@@ -5145,12 +4927,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def new_project(self):
         print('\nnew_project:')
-        # try:
-        #     self.scales_combobox.disconnect()
-        # except Exception:
-        #     print(
-        #         "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
 
+        self.hud.post('Creating a new project...')
         if isDestinationSet():
             print('(!) Warning user about data loss if a new project is started now.')
             msg = QMessageBox(QMessageBox.Warning,
@@ -5218,15 +4996,6 @@ class MainWindow(QMainWindow):
                     p.update_zpa_self()
                 # self.update_win_self()
 
-                try:
-                    self.save_project_to_current_file()
-                except:
-                    print(
-                        "\nnew_project | ERROR | Something may have gone wrong with saving the project.\n")
-                    self.status.showMessage("Oh no! Something went wrong.")
-                else:
-                    print("new_project | Project saved successfully.")
-
                 if self.draw_full_paths:
                     self.setWindowTitle("Project: " + self.current_project_file_name)
                 else:
@@ -5234,33 +5003,10 @@ class MainWindow(QMainWindow):
 
                 self.set_def_proj_dest()
                 # self.apply_project_defaults()
+                self.save_project_to_current_file()
                 self.set_progress_stage_1()
                 # self.scales_combobox.clear() #why?? #0528
 
-                # self.status.showMessage("Project File: " + self.current_project_file_name
-                #                         + "   Destination: " + str(proj_copy['data']['destination_path']))
-
-
-                # self.set_scales_from_string('1') #0527  REMOVING THIS WHAT DOES IT EVEN DO   #0528 removing it again
-        # self.define_scales_menu ( ["1"] ) #remove
-
-        # self.scales_combobox.addItems(['--'])
-
-        # self.setWindowTitle("No Project File") #0407 #remove
-        #
-        # self.status.showMessage('Project File:       Destination: ') #0509 (!!!)
-        # self.actual_size()
-
-        # print("Connecting scales_combobox to fn_scales_combobox handler...")
-        # self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
-
-        # self.toggle_on_images_and_scaling_groupbox()
-        # self.toggle_off_alignment_groupbox()
-        # self.toggle_off_export_and_view_groupbox()
-
-
-
-        # self.save_project()
 
 
     '''
@@ -5269,6 +5015,7 @@ class MainWindow(QMainWindow):
     '''
     @Slot()
     def open_project(self):
+        self.hud.post('Opening project...')
         print('\nopen_project:')
 
         self.scales_combobox_switch = 0
@@ -5282,88 +5029,90 @@ class MainWindow(QMainWindow):
                                                         options=options)
         print("open_project | Opening project", file_name)
 
-        if file_name != None:
-            if len(file_name) > 0:
 
-                ignore_changes = True
+        if file_name == '':
+            print('open_project | No project was opened')
+            self.hud.post('No project was opened', logging.WARNING)
+            return
 
-
-
-
-                try:
-                    print('open_project | Opening the project file and storing text into variable')
-                    f = open(file_name, 'r')
-                    text = f.read()
-                    print('open_project | Closing the project file')
-                    f.close()
-                except:
-                    print('open_project | EXCEPTION | Something went wrong opening the project file (read-only) - Aborting')
-                    return
-
-                for count, line in enumerate(text):
-                    pass
-                print('open_project | # lines in project file is ', count + 1)
-
-                print('open_project | Using project_data as global (mutable)')
-                global project_data
-
-                # Read the JSON file from the text
-                proj_copy = json.loads(text)
-
-                # Upgrade the "Data Model"
-                proj_copy = upgrade_data_model(proj_copy)
-
-                if proj_copy == None:
-                    # There was an unknown error loading the data model
-                    print('open_project | There was an unknown error loading the project')
-                elif type(proj_copy) == type('abc'):  # abc = abstract base class
-                    # There was a known error loading the data model
-                    print('open_project | EXCEPTION | There was a problem loading the project', proj_copy)
-                else:
-                    # The data model loaded fine, so initialize the application with the data
-                    # At this point, self.current_project_file_name is None
-                    self.current_project_file_name = file_name
-                    print('open_project | self.current_project_file_name is now', self.current_project_file_name)
-                    self.status.showMessage("Loading Project File " + self.current_project_file_name)
-
-                    print('open_project | Modifying the copy to use absolute paths internally')
-                    # Modify the copy to use absolute paths internally
-                    if 'destination_path' in proj_copy['data']:
-                        if proj_copy['data']['destination_path'] != None:
-                            if len(proj_copy['data']['destination_path']) > 0:
-                                proj_copy['data']['destination_path'] = self.make_absolute(
-                                    proj_copy['data']['destination_path'], self.current_project_file_name)
-                    for scale_key in proj_copy['data']['scales'].keys():
-                        scale_dict = proj_copy['data']['scales'][scale_key]
-                        for layer in scale_dict['alignment_stack']:
-                            for role in layer['images'].keys():
-                                if layer['images'][role]['filename'] != None:
-                                    if len(layer['images'][role]['filename']) > 0:
-                                        layer['images'][role]['filename'] = self.make_absolute(
-                                            layer['images'][role]['filename'], self.current_project_file_name)
-
-                    print('open_project | Replacing the current version with the copy')
-                    # Replace the current version with the copy
-                    project_data = copy.deepcopy(proj_copy)
-
-                    if self.draw_full_paths:
-                        self.setWindowTitle('Project: ' + self.current_project_file_name)
-                    else:
-                        self.setWindowTitle('Project: ' + os.path.split(self.current_project_file_name)[-1])
-
-                ignore_changes = False
+        # ignore_changes = True
 
 
-        # if center_switch:
-        self.center_all_images() # #0406 redundancy, discard if possible
+        try:
+            print('open_project | Opening the project file and storing text into variable')
+            f = open(file_name, 'r')
+            text = f.read()
+            print('open_project | Closing the project file')
+            f.close()
+        except:
+            self.hud.post('No project opened.', logging.WARNING)
+            print('open_project | EXCEPTION | Something went wrong opening the project file (read-only) - Aborting')
+            return
+
+        for count, line in enumerate(text):
+            pass
+
+        print('open_project | Using project_data as global (mutable)')
+        global project_data
+
+        # Read the JSON file from the text
+        proj_copy = json.loads(text)
+
+        # Upgrade the "Data Model"
+        proj_copy = upgrade_data_model(proj_copy)
+
+        if proj_copy == None:
+            # There was an unknown error loading the data model
+            print('open_project | There was an unknown error loading the project')
+        elif type(proj_copy) == type('abc'):  # abc = abstract base class
+            # There was a known error loading the data model
+            print('open_project | EXCEPTION | There was a problem loading the project', proj_copy)
+        else:
+            # The data model loaded fine, so initialize the application with the data
+            # At this point, self.current_project_file_name is None
+            self.current_project_file_name = file_name
+            print('open_project | self.current_project_file_name is now', self.current_project_file_name)
+            self.status.showMessage("Loading Project File " + self.current_project_file_name)
+
+            print('open_project | Modifying the copy to use absolute paths internally')
+            # Modify the copy to use absolute paths internally
+            if 'destination_path' in proj_copy['data']:
+                if proj_copy['data']['destination_path'] != None:
+                    if len(proj_copy['data']['destination_path']) > 0:
+                        proj_copy['data']['destination_path'] = self.make_absolute(
+                            proj_copy['data']['destination_path'], self.current_project_file_name)
+            for scale_key in proj_copy['data']['scales'].keys():
+                scale_dict = proj_copy['data']['scales'][scale_key]
+                for layer in scale_dict['alignment_stack']:
+                    for role in layer['images'].keys():
+                        if layer['images'][role]['filename'] != None:
+                            if len(layer['images'][role]['filename']) > 0:
+                                layer['images'][role]['filename'] = self.make_absolute(
+                                    layer['images'][role]['filename'], self.current_project_file_name)
+
+            print('open_project | Replacing the current version with the copy')
+            # Replace the current version with the copy
+            project_data = copy.deepcopy(proj_copy)
+
+            if self.draw_full_paths:
+                self.setWindowTitle('Project: ' + self.current_project_file_name)
+            else:
+                self.setWindowTitle('Project: ' + os.path.split(self.current_project_file_name)[-1])
+
+            # ignore_changes = False
+
+
         self.read_project_data_update_gui()
         self.reload_scales_combobox() #0529 just checking if adding this fixes bug
-        # print(image_library.__str__())
+        self.center_all_images() # #0406 redundancy, discard if possible
         self.set_user_progress()
+        self.update_project_inspector()
         print('\nCurrent project: %s\n' % self.current_project_file_name)
+
 
     def save_project_to_current_file(self):
         print('save_project_to_current_file:')
+        self.hud.post('Saving project')
         # Save to current file and make known file paths relative to the project file name
         if self.current_project_file_name != None:
             if len(self.current_project_file_name) > 0:
@@ -5424,8 +5173,6 @@ class MainWindow(QMainWindow):
                 self.save_project_to_current_file()
             except:
                 print('\nsave_project | EXCEPTION | Something may have gone wrong with saving the project.\n')
-            else:
-                print('\nProject saved successfully\n')
 
     @Slot()
     def save_project_as(self):
@@ -5451,14 +5198,13 @@ class MainWindow(QMainWindow):
                 try:
                     self.save_project_to_current_file()
                 except:
-                    print("\nError: Something may have gone wrong with saving the project.\n")
-                else:
-                    print("Project saved successfully.")
+                    print("save_project_as | WARNING | Project not saved.")
+                    return
 
-                if self.draw_full_paths:
+                try:
                     self.setWindowTitle("Project: " + self.current_project_file_name)
-                else:
-                    self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1])
+                except:
+                    return
 
                 self.set_def_proj_dest()
 
@@ -5654,18 +5400,14 @@ class MainWindow(QMainWindow):
         image_dict[role_name] = copy.deepcopy(new_image_template)
         image_dict[role_name]['filename'] = None
 
+
     def import_images(self, role_to_import, file_name_list, clear_role=False):
-        print('MainWindow.import_images:')
+
         '''
         #0411 need to give user a choice of what to do with imported images. Add to current project, or start a new project.
-        importChoiceMsgbx = QMessageBox()
-        importChoiceMsgbx.setWindowTitle("Import how?")
-        importChoiceMsgbx.setText('Import into current project or into a new project?')
-        import_cancel_button = importChoiceMsgbx.addButton(QMessageBox.Cancel)
-        import_cur_project_button = importChoiceMsgbx.addButton('Current Project')
-        import_new_project_button = importChoiceMsgbx.addButton('New Project')
         '''
-
+        print('MainWindow.import_images:')
+        self.hud.post('Importing images...')
         global preloading_range
         local_cur_scale = getCurScale()
         print('Importing images for role: %s' % str(role_to_import))
@@ -5691,15 +5433,19 @@ class MainWindow(QMainWindow):
                     p.force_center = True
                     p.update_zpa_self()
 
+        img_size = get_image_size(project_data['data']['scales'][getCurScale()]['alignment_stack'][0]['images']['base']['filename'])
+        self.hud.post('Size of images: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
+
         # center images after importing
         # if center_switch:
         self.center_all_images()
 
         # self.set_progress_stage_1() THIS IS NOT NEEDED. USER PROGRESS DOES NOT CHANGE AFTER IMPORT, USER STILL NEEDS TO SCALE.
-        self.apply_project_defaults() #0529 I I THINK THIS IS NECESSARY
+        # self.apply_project_defaults() #0529 I I THINK THIS IS NECESSARY
         self.update_panels() # NECESSARY. PAINTS THE IMAGES IN VIEWER.
+        self.update_project_inspector()
         # THIS SHOULD BE FINE SINCE ORIGINAL IMAGES ARE JUST LINKS. ENSURES PROJECT IS IN A KNOWN STATE.
-        self.save_project()
+        # self.save_project()
 
 
 
@@ -5777,10 +5523,11 @@ class MainWindow(QMainWindow):
                 
 
     #0527
-    # def load_images_in_role(self, role, file_names):
-    #     # print("MainWindow is loading images in role (called by " + inspect.stack()[1].function + ")...")
-    #     print('MainWindow.load_images_in_role(role=%s,file_names=%s):' % (str(role),file_names))
-    #     self.import_images(role, file_names, clear_role=True)
+    def load_images_in_role(self, role, file_names):
+        '''Not clear if this has any effect. Needs refactoring.'''
+        # print("MainWindow is loading images in role (called by " + inspect.stack()[1].function + ")...")
+        print('MainWindow.load_images_in_role(role=%s,file_names=%s):' % (str(role),file_names))
+        self.import_images(role, file_names, clear_role=True)
 
     def define_roles(self, roles_list):
         print("MainWindow.define_roles:")
@@ -5833,7 +5580,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def import_into_role(self, checked):
-        print("MainWindow.import_into_role:")
+        print("\nMainWindow.import_into_role:\n")
 
         import_role_name = str(self.sender().text())
         self.import_images_dialog(import_role_name)
@@ -5841,12 +5588,34 @@ class MainWindow(QMainWindow):
     # center try center code from here
     def import_base_images(self):
         print("MainWindow.import_base_images:")
+        # self.hud.post('Importing images...')
 
-        self.import_images_dialog('base')
+
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        file_name_list, filtr = QFileDialog.getOpenFileNames(None,  # None was self
+                                                             "Select Images to Import",
+                                                             # self.openFileNameLabel.text(),
+                                                             "Select Images",
+                                                             "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)",
+                                                             "", options)
+
+
+        # Attempt to hide the file dialog before opening ...
+        for p in self.panel_list:
+            p.update_zpa_self()
+
+        # self.update_win_self()
+
+        self.import_images('base', file_name_list)
+
         link_all_stacks()
         self.center_all_images() # patch center all images after importing
         # if center_switch:
         self.update_win_self()
+
+
+
 
         # print(image_library.__str__())
 
@@ -5979,19 +5748,6 @@ class MainWindow(QMainWindow):
         else:
             print("set_scales_from_string | No input: Scales not changed")
 
-    # @Slot()
-    # def remove_this_layer(self):
-    #     print("MainWindow.remove_this_layer:")
-    #     local_cur_scale = getCurScale()
-    #     local_current_layer = project_data['data']['current_layer']
-    #     project_data['data']['scales'][local_cur_scale]['alignment_stack'].pop(local_current_layer)
-    #     if local_current_layer >= len(project_data['data']['scales'][local_cur_scale]['alignment_stack']):
-    #         local_current_layer = len(project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
-    #     project_data['data']['current_layer'] = local_current_layer
-    #
-    #     for p in self.panel_list:
-    #         p.update_zpa_self()
-    #     self.update_win_self()
 
     @Slot()
     def remove_all_layers(self):
@@ -6012,7 +5768,7 @@ class MainWindow(QMainWindow):
             self.image_panel.remove_all_panels()
         else:
             print_debug(30, "image_panel does not exit!!")
-        self.define_roles([])
+        self.define_roles([]) #0601
         self.update_win_self()
 
     @Slot()
@@ -6063,6 +5819,15 @@ class MainWindow(QMainWindow):
                         crop_window_height = w_h[0]
                     print_debug(10, "Crop Window will be " + str(crop_window_width) + "x" + str(crop_window_height))
 
+    @Slot()
+    def center_callback(self):
+        self.hud.post('Centering images...')
+        self.center_all_images()
+
+    @Slot()
+    def actual_size_callback(self):
+        self.hud.post('Actual-sizing images...')
+        self.all_images_actual_size()
 
 
     # MainWindow.center_all_images -> calls MultiImagePanel.center_all_images
@@ -6096,22 +5861,31 @@ class MainWindow(QMainWindow):
     @Slot()
     def exit_app(self):
         print("MainWindow.exit_app:")
+        self.hud.post('Exiting...')
+        self.hud.force_quit()
 
         if areImagesImported():
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
-            reply = QMessageBox.question(self, 'Message', "Save before exiting?", QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel, QMessageBox.Cancel)
-            print('exit_app | Images have been imported - Asking user if to save')
-            if reply == QMessageBox.Cancel:
-                print('exit_app | reply=Cancel | Returning')
-                return
-            if reply == QMessageBox.No:
-                print('exit_app | reply=No | Exiting without saving')
-                sys.exit()
-            if reply == QMessageBox.Yes:
-                print('exit_app | reply=Yes | Saving and exiting')
+            message = "<font size = 4 color = gray>Save before exiting?</font>"
+            msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
+            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msg.setDefaultButton(QMessageBox.Save)
+            msg.setIcon(QMessageBox.Question)
+            reply = msg.exec_()
+            # options = QFileDialog.Options()
+            # # options |= QFileDialog.DontUseNativeDialog
+            # reply = QMessageBox.question(self, 'Message', "Save before exiting?", QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            if reply == QMessageBox.Save:
+                print('exit_app | reply=Save')
                 self.save_project()
+                print('\nProject saved. Exiting\n')
                 sys.exit()
+            if reply == QMessageBox.Discard:
+                print('exit_app | reply=Discard\n\nExiting without saving\n')
+                sys.exit()
+            if reply == QMessageBox.Cancel:
+                print('exit_app | reply=Cancel\n\nCanceling action - Returning control to app\n')
+                return
+
         else:
             sys.exit()
 
@@ -6130,43 +5904,23 @@ class MainWindow(QMainWindow):
 
 
 
+#----------------------------------------------#
+#---------------EMBEDDED LOGGER----------------#
+#----------------------------------------------#
 
-#---------------------------- LOGGING -----------------------------#
 '''
 I think this is a solid implementation of a thread-safe background GUI logger
 
+https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
+
 
 '''
-#logging
-import datetime
-import logging
-import random
-import sys
-import time
+#logging #logger
 
-# Deal with minor differences between PySide6 and PyQt6
-
-
-
-#
-# Signals need to be contained in a QObject or subclass in order to be correctly
-# initialized.
-#
+# Signals need to be contained in a QObject or subclass in order to be correctly initialized.
 class Signaller(QObject):
     signal = Signal(str, logging.LogRecord)
 
-
-#
-# Output to a Qt GUI is only supposed to happen on the main thread. So, this
-# handler is designed to take a slot function which is set up to run in the main
-# thread. In this example, the function takes a string argument which is a
-# formatted log message, and the log record which generated it. The formatted
-# string is just a convenience - you could format a string for output any way
-# you like in the slot function itself.
-#
-# You specify the slot function to do whatever GUI updates you want. The handler
-# doesn't know or care about specific UI elements.
-#
 class QtHandler(logging.Handler):
     def __init__(self, slotfunc, *args, **kwargs):
         super(QtHandler, self).__init__(*args, **kwargs)
@@ -6177,36 +5931,9 @@ class QtHandler(logging.Handler):
         s = self.format(record)
         self.signaller.signal.emit(s, record)
 
-
-#
-# This example uses QThreads, which means that the threads at the Python level
-# are named something like "Dummy-1". The function below gets the Qt name of the
-# current thread.
-#
 def ctname():
     return QThread.currentThread().objectName()
 
-
-#
-# Used to generate random levels for logging.
-#
-LEVELS = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
-          logging.CRITICAL)
-
-
-#
-# This worker class represents work that is done in a thread separate to the
-# main thread. The way the thread is kicked off to do work is via a button press
-# that connects to a slot in the worker.
-#
-# Because the default threadName value in the LogRecord isn't much use, we add
-# a qThreadName which contains the QThread name as computed above, and pass that
-# value in an "extra" dictionary which is used to update the LogRecord with the
-# QThread name.
-#
-# This example worker just outputs messages sequentially, interspersed with
-# random delays of the order of a few seconds.
-#
 class Worker(QObject):
     @Slot()
     def start(self):
@@ -6223,15 +5950,7 @@ class Worker(QObject):
             i += 1
 
 
-#
-# Implement a simple UI for this cookbook example. This contains:
-#
-# * A read-only text edit window which holds formatted log messages
-# * A button to start work and log stuff in a separate thread
-# * A button to log something from the main thread
-# * A button to clear the log window
-#
-class Window(QWidget):
+class HeadsUpDisplay(QWidget):
 
     COLORS = {
         logging.DEBUG: 'black',
@@ -6242,18 +5961,28 @@ class Window(QWidget):
     }
 
     def __init__(self, app):
-        super(Window, self).__init__()
+        super(HeadsUpDisplay, self).__init__()
         self.app = app
         self.textedit = te = QPlainTextEdit(self)
         # Set whatever the default monospace font is for the platform
-        f = QFont('nosuchfont')
-        f.setStyleHint(f.Monospace)
+        f = QFont()
+        # f.setStyleHint(f.Monospace)
+        f.setFamily('monospace')
+        # f.setStyleHint(QFont.TypeWriter)
+
         te.setFont(f)
         te.setReadOnly(True)
+        te.setStyleSheet("""
+            background-color: #d3dae3;
+            /*border-style: solid;*/
+            border-style: inset;
+            border-color: #455364; /* off-blue-ish color used in qgroupbox border */
+            border-width: 2px;
+            border-radius: 2px;            
+        """)
+
         PB = QPushButton
-        self.work_button = PB('Start background work', self)
-        self.log_button = PB('Log a message at a random level', self)
-        self.clear_button = PB('Clear log window', self)
+
         self.handler = h = QtHandler(self.update_status)
         # Remember to use qThreadName rather than threadName in the format string.
         fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
@@ -6263,23 +5992,11 @@ class Window(QWidget):
         # Set up to terminate the QThread when we exit
         app.aboutToQuit.connect(self.force_quit)
 
-        # Lay out all the widgets
         layout = QVBoxLayout(self)
         layout.addWidget(te)
-        layout.addWidget(self.work_button)
-        layout.addWidget(self.log_button)
-        layout.addWidget(self.clear_button)
-        self.setFixedSize(900, 400)
 
-        # Connect the non-worker slots and signals
-        self.log_button.clicked.connect(self.manual_update)
-        self.clear_button.clicked.connect(self.clear_display)
-
-        # Start a new worker thread and connect the slots for the worker
         self.start_thread()
-        self.work_button.clicked.connect(self.worker.start)
-        # Once started, the button should be disabled
-        self.work_button.clicked.connect(lambda: self.work_button.setEnabled(False))
+
 
     def start_thread(self):
         self.worker = Worker()
@@ -6289,10 +6006,9 @@ class Window(QWidget):
         self.worker.moveToThread(self.worker_thread)
         # This will start an event loop in the worker thread
         self.worker_thread.start()
+        self.post('Starting heads up display...')
 
     def kill_thread(self):
-        # Just tell the worker to stop, then tell it to quit and wait for that
-        # to happen
         self.worker_thread.requestInterruption()
         if self.worker_thread.isRunning():
             self.worker_thread.quit()
@@ -6301,12 +6017,8 @@ class Window(QWidget):
             print('worker has already exited.')
 
     def force_quit(self):
-        # For use when the window is closed
         if self.worker_thread.isRunning():
             self.kill_thread()
-
-    # The functions below update the UI and run in the main thread because
-    # that's where the slots are set up
 
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):
@@ -6316,26 +6028,20 @@ class Window(QWidget):
 
     @Slot()
     def manual_update(self):
-        # This function uses the formatted message passed in, but also uses
-        # information from the record to format the message in an appropriate
-        # color according to its severity (level).
         level = random.choice(LEVELS)
         extra = {'qThreadName': ctname()}
         logger.log(level, 'Manually logged!', extra=extra)
 
     @Slot()
+    def post(self, message, level=logging.INFO):
+        extra = {'qThreadName': ctname()}
+        logger.log(level, message, extra=extra)
+
+    @Slot()
     def clear_display(self):
         self.textedit.clear()
 
-# in original code from
-# http://plumberjack.blogspot.com/2019/11/a-qt-gui-for-logging.html
-# def main():
-#     QtCore.QThread.currentThread().setObjectName('MainThread')
-#     logging.getLogger().setLevel(logging.DEBUG)
-#     app = QtWidgets.QApplication(sys.argv)
-#     example = Window(app)
-#     example.show()
-#     sys.exit(app.exec_())
+
 
 
 
@@ -6360,7 +6066,7 @@ if __name__ == "__main__":
     main_win.resize(2200, 1200)
     main_win.define_roles(['Stack'])
     main_win.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 
@@ -6439,6 +6145,7 @@ To do:
 [] apply_project_defaults cannot be a member function of main_window. This is not data driven.
 [] Save Automatically toggle switch
 [] project has unsaved changes flag (similar to what Tom does)... for asking user whether to save before exit
+[] Show which scales have been aligned (possibly with non-selectable radio boxes)
 
 Things project_data should include:
 * is project scaled (bool)

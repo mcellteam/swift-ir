@@ -365,7 +365,7 @@ class project_runner:
             self.project = self.updated_model
 
         # printProjectDetails(self.project)
-        print("\nAlignment Complete\n")
+        # print("\nAlignment Complete\n")
 
     # Class Method to Generate the Aligned Images
     def generate_aligned_images(self):

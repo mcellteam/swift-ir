@@ -10,7 +10,7 @@ import project_runner
 import pyswift_tui
 from tqdm import tqdm
 from glanceem_utils import get_image_size, isProjectScaled, getCurScale, update_datamodel, isAlignmentOfCurrentScale, \
-    requestConfirmation, areImagesImported, getNumImportedImages
+    requestConfirmation, areImagesImported, getNumImportedImages, areAlignedImagesGenerated
 
 print_switch = 0
 
@@ -23,6 +23,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     '''TODO: Need to check if images have been imported'''
     print('\nalign_all_or_some:')
+    interface.main_window.hud.post('Aligning scale ' + getCurScale()[-1] + '...')
 
     if areImagesImported():
         print("align_all_or_some | Images are imported - Continuing")
@@ -63,6 +64,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     interface.main_window.set_status('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
 
     print('align_all_or_some | Removing any previously aligned images...')
+    interface.main_window.hud.post('Removing pre-existing aligned images of scale  ' + getCurScale()[-1] + '...')
     remove_aligned(starting_layer=first_layer, prompt=False)
     interface.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
     # interface.print_debug(70, "Control Model = " + str(control_model))
@@ -85,8 +87,9 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     interface.main_window.center_all_images()
     interface.main_window.update_win_self()
     interface.main_window.set_progress_stage_3()
+    interface.main_window.update_project_inspector()
 
-    print("\nAlignment complete.\n")
+    print("\nCalculating alignment transformation matrices complete.\n")
 
 
 # generate_scales_queue calls this w/ defaults in debugger
@@ -208,54 +211,53 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     '''
     print('\n\nregenerate_aligned(first_layer=%d, num_layers=%d, prompt=%s):' % (first_layer, num_layers, prompt))
 
-    if isAlignmentOfCurrentScale():
-        pass
-    else:
-        print('regenerate_aligned | WARNING | Cannot regenerate images until the transformation matrices have been computed')
-        interface.show_warning("Note","Warning: Transformation matrices have not been computed yet. Please align this scale first.")
-        return
+    # isAlignmentOfCurrentScale does not function properly. Come back to this.
+    # if isAlignmentOfCurrentScale():
+    #     pass
+    # else:
+    #     print('regenerate_aligned | WARNING | Cannot regenerate images until the transformation matrices have been computed')
+    #     interface.show_warning("Note","Warning: Transformation matrices have not been computed yet. Please align this scale first.")
+    #     return
 
     interface.main_window.read_gui_update_project_data()
     cur_scale = getCurScale()
 
-    if prompt:
-        actually_remove = requestConfirmation('Note','Confirm remove and re-generate aligned images for scale %s.' % cur_scale[-1])
+    # disconnecting 'prompt' variable and check - Todo: rewrite warnings using glanceem_utils functions
+
+    '''IMPORTANT FUNCTION CALL'''
+    interface.main_window.read_gui_update_project_data()
+
+    # interface.print_debug(5, "Removing aligned from scale " + cur_scale + " forward from layer " + str(first_layer) + "  (align_all_or_some)")
+    print('regenerate_aligned | Removing aligned from scale %s' % cur_scale)
 
 
-    if actually_remove:
-        '''IMPORTANT FUNCTION CALL'''
-        interface.main_window.read_gui_update_project_data()
+    remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
+    scale_to_run_text = interface.project_data['data']['current_scale']
+    dm = copy.deepcopy(interface.project_data)
 
-        # interface.print_debug(5, "Removing aligned from scale " + cur_scale + " forward from layer " + str(first_layer) + "  (align_all_or_some)")
-        print('regenerate_aligned | Removing aligned from scale %s' % cur_scale)
+    code_mode = 'c'
+    global_parallel_mode = True
+    global_use_file_io = False
 
-        remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
-        scale_to_run_text = interface.project_data['data']['current_scale']
-        dm = copy.deepcopy(interface.project_data)
+    '''NOTE: IDENTICAL FUNCTION CALL TO 'align_layers' '''
+    running_project = project_runner.project_runner(project=dm,
+                                                    use_scale=interface.get_scale_val(scale_to_run_text),
+                                                    swiftir_code_mode=code_mode,
+                                                    start_layer=first_layer,
+                                                    num_layers=num_layers,
+                                                    use_file_io=global_use_file_io)
+    running_project.generate_aligned_images()
+    updated_model = running_project.get_updated_data_model()
+    need_to_write_json = running_project.need_to_write_json
 
-        code_mode = 'c'
-        global_parallel_mode = True
-        global_use_file_io = False
+    if need_to_write_json:
+        interface.project_data = updated_model
+    else:
+        update_datamodel(updated_model)
 
-        '''NOTE: IDENTICAL FUNCTION CALL TO 'align_layers' '''
-        running_project = project_runner.project_runner(project=dm,
-                                                        use_scale=interface.get_scale_val(scale_to_run_text),
-                                                        swiftir_code_mode=code_mode,
-                                                        start_layer=first_layer,
-                                                        num_layers=num_layers,
-                                                        use_file_io=global_use_file_io)
-        running_project.generate_aligned_images()
-        updated_model = running_project.get_updated_data_model()
-        need_to_write_json = running_project.need_to_write_json
+    interface.main_window.refresh_all_images()
 
-        if need_to_write_json:
-            interface.project_data = updated_model
-        else:
-            update_datamodel(updated_model)
-
-        interface.main_window.refresh_all_images()
-
-        interface.main_window.set_status('Regenerating alignment of %s complete.' % cur_scale)
+    interface.main_window.set_status('Regenerating alignment of %s complete.' % cur_scale)
 
     print("regenerate_aligned | Wrapping up...")
     interface.main_window.center_all_images()
@@ -264,7 +266,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     # interface.main_window.toggle_on_export_and_view_groupbox()
     interface.main_window.set_progress_stage_3()
 
-    print("regenerate_aligned | Exiting.")
+    print("\nRegenerating aligned images complete.\n")
 
 
 
@@ -272,48 +274,45 @@ def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
     print('\nremove_aligned:')
     print("remove_aligned(starting_layer=%d, prompt=%s, clear_results=%s):" % (starting_layer, str(prompt), str(clear_results)))
 
-    actually_remove = True
-    if prompt:
-        actually_remove = interface.request_confirmation("Note", "Do you want to delete aligned images?")
-    if actually_remove:
+    # disconnecting 'prompt' and 'actually_remove' variables and checks - Todo: rewrite warnings using glanceem_utils functions
 
-        cur_scale = getCurScale()
-        print("remove_aligned | Removing aligned from scale %s forward from layer %s..." % (cur_scale[-1], str(starting_layer)))
+    cur_scale = getCurScale()
+    print("remove_aligned | Removing aligned from scale %s forward from layer %s..." % (cur_scale[-1], str(starting_layer)))
 
-        delete_list = []
+    delete_list = []
 
-        layer_index = 0
-        for layer in interface.project_data['data']['scales'][getCurScale()]['alignment_stack']:
-            if layer_index >= starting_layer:
+    layer_index = 0
+    for layer in interface.project_data['data']['scales'][getCurScale()]['alignment_stack']:
+        if layer_index >= starting_layer:
+            if print_switch:
+                interface.print_debug(5, "Removing Aligned from Layer " + str(layer_index))
+            if 'aligned' in layer['images'].keys():
+                delete_list.append(layer['images']['aligned']['filename'])
                 if print_switch:
-                    interface.print_debug(5, "Removing Aligned from Layer " + str(layer_index))
-                if 'aligned' in layer['images'].keys():
-                    delete_list.append(layer['images']['aligned']['filename'])
-                    if print_switch:
-                        interface.print_debug(5, "  Removing " + str(layer['images']['aligned']['filename']))
-                    layer['images'].pop('aligned')
+                    interface.print_debug(5, "  Removing " + str(layer['images']['aligned']['filename']))
+                layer['images'].pop('aligned')
 
-                    if clear_results:
-                        # Remove the method results since they are no longer applicable
-                        if 'align_to_ref_method' in layer.keys():
-                            if 'method_results' in layer['align_to_ref_method']:
-                                # Set the "method_results" to an empty dictionary to signify no results:
-                                layer['align_to_ref_method']['method_results'] = {}
-            layer_index += 1
+                if clear_results:
+                    # Remove the method results since they are no longer applicable
+                    if 'align_to_ref_method' in layer.keys():
+                        if 'method_results' in layer['align_to_ref_method']:
+                            # Set the "method_results" to an empty dictionary to signify no results:
+                            layer['align_to_ref_method']['method_results'] = {}
+        layer_index += 1
 
-        # interface.image_library.remove_all_images()
+    # interface.image_library.remove_all_images()
 
-        for fname in delete_list:
-            if fname != None:
-                if os.path.exists(fname):
-                    os.remove(fname)
-                    interface.image_library.remove_image_reference(fname)
+    for fname in delete_list:
+        if fname != None:
+            if os.path.exists(fname):
+                os.remove(fname)
+                interface.image_library.remove_image_reference(fname)
 
-        # main_win.update_panels() #bug
-        interface.main_window.update_panels()  # fix
-        interface.main_window.refresh_all_images()
+    # main_win.update_panels() #bug
+    interface.main_window.update_panels()  # fix
+    interface.main_window.refresh_all_images()
 
-        print('remove_aligned | Exiting')
+    print('\nRemoving aligned images complete.\n')
 
 
 

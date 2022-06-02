@@ -277,12 +277,13 @@ def getSkipsList() -> list[int]:
     print('getSkipsList | called by ',inspect.stack()[1].function)
     skip_list = []
     try:
-        for layer_index in range(len(interface.project_data['data']['scales'][get_cur_scale()]['alignment_stack'])):
-            if interface.project_data['data']['scales'][get_cur_scale()]['alignment_stack'][layer_index]['skip'] == True:
+        for layer_index in range(len(interface.project_data['data']['scales'][getCurScale()]['alignment_stack'])):
+            if interface.project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index]['skip'] == True:
                 skip_list.append(layer_index)
             # print('getSkipsList() | ', str(skip_list))
     except:
         print('getSkipsList | EXCEPTION | failed to get skips list')
+        return
 
     return skip_list
 
@@ -293,7 +294,7 @@ def isAnyScaleAligned() -> bool:
         files = glob(interface.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
     except:
         files = '' #0520
-        print('isAnyScaleAligned | WARNING | Looking for *.tif in project dir but didnt find any')
+        print('isAnyScaleAligned | WARNING | Looking for *.tif in project dir but didnt find any - Returning empty string')
 
     if len(files) > 0:
         # print('isAnyScaleAligned | Returning True')
@@ -304,26 +305,58 @@ def isAnyScaleAligned() -> bool:
 
 def isAlignmentOfCurrentScale() -> bool:
     '''Checks if there exists a set of aligned images at the current scale
-    DOES *NOT* WORK AS EXPECTED
+
+    DOES *NOT* FUNCTION PROPERLY
+
+    NEEDS TO PROBE 'bias_data' DIRECTORIES
+
     ISSUES THAT REGENERATING SCALES MEANS PREVIOUS AALIGNMENTS STILL EXIST AND THUS THIS CAN INCORRECTLY RETURN TRUE
     MIGHT WANT TO HAVE SCALE RE-GENERATION CAUSE PREVIOUSLY ALIGNED IMAGES TO BE REMOVED'''
 
-    path = os.path.join(interface.project_data['data']['destination_path'], getCurScale(), 'img_aligned')
+    try:
+        destination_path = os.path.join(interface.project_data['data']['destination_path'])
+    except:
+        print('isAlignmentOfCurrentScale | WARNING | There is no project open - Returning False')
+        return False
 
     try:
-        # print("interface.project_data['data']['destination_path'] = ", interface.project_data['data']['destination_path'])
-        files = glob(path + '/*.tif')
-
+        isProjectScaled()
     except:
-        print('isAlignmentOfCurrentScale | WARNING | Something went wrong. Check project dictionary.')
+        print('isAlignmentOfCurrentScale | WARNING | This project has not been scaled yet - returning False')
+        return False
 
-    if len(files) < 1:
-        # print('isAlignmentOfCurrentScale | Returning False')
+    try:
+        bias_path = destination_path + '/' + getCurScale() + '/bias_data'
+        print('isAlignmentOfCurrentScale | bias path =', bias_path)
+        bias_dir_byte_size=0
+        for path, dirs, files in os.walk(bias_path):
+            for f in files:
+                fp = os.path.join(path, f)
+                bias_dir_byte_size += os.path.getsize(fp)
+    except:
+        print('isAlignmentOfCurrentScale | WARNING | Unable to get size of the bias directory - Returning False')
+
+
+    print('isAlignmentOfCurrentScale | size of bias dir=', bias_dir_byte_size)
+
+    if bias_dir_byte_size < 20:
+        print('isAlignmentOfCurrentScale | Returning False')
         return False
     else:
-        # print('isAlignmentOfCurrentScale | Returning True')
+        print('isAlignmentOfCurrentScale | Returning True')
         return True
 
+def areAlignedImagesGenerated():
+    '''Returns True or False dependent on whether aligned images have been generated for the current scale.'''
+    path = os.path.join(interface.project_data['data']['destination_path'], getCurScale(), 'img_aligned')
+    # print("interface.project_data['data']['destination_path'] = ", interface.project_data['data']['destination_path'])
+    files = glob(path + '/*.tif')
+    if len(files) < 1:
+        print('areAlignedImagesGenerated | Zero aligned TIFs were found at this scale - Returning False')
+        return False
+    else:
+        print('areAlignedImagesGenerated | One or more aligned TIFs were found at this scale - Returning True')
+        return True
 
 
 def returnAlignedImgs() -> list:
@@ -332,7 +365,9 @@ def returnAlignedImgs() -> list:
     try:
         files = glob(interface.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
     except:
-        print('returnAlignedImg | WARNING | Something went wrong. Check project dictionary.')
+        print('returnAlignedImg | WARNING | Something went wrong. Check project dictionary - Returning None')
+        return None
+
 
     # print('returnAlignedImg | # aligned images found: ', len(files))
     # print('returnAlignedImg | List of aligned imgs: ', files)
@@ -342,6 +377,11 @@ def isAnyAlignmentExported() -> bool:
     '''Checks if there exists an exported alignment'''
 
     return os.path.isdir(os.path.join(interface.project_data['data']['destination_path'], 'project.zarr'))
+
+def isCurScaleExported() -> bool:
+    '''Checks if there exists an exported alignment'''
+
+    return os.path.isdir(os.path.join(interface.project_data['data']['destination_path'], 'project.zarr', 'aligned_' + getCurScale()))
 
 def getCurSNR() -> str:
     if not  interface.project_data['data']['current_scale']:
@@ -601,58 +641,58 @@ def link_all_stacks():
     print("Exiting link_all_stacks")
 
 
-class RunProgressDialog(QDialog):
-    """
-    Simple dialog that consists of a Progress Bar and a Button.
-    Clicking on the button results in the start of a timer and
-    updates the progress bar.
-    """
-
-    def __init__(self):
-        super().__init__()
-        print("RunProgressDialog constructor called")
-        self.initUI()
-
-    def initUI(self):
-        self.setWindowTitle('Progress Bar')
-        self.progress = QProgressBar(self)
-        self.progress.setGeometry(0, 0, 300, 25)
-        self.progress.setMaximum(100)
-        # self.button = QPushButton('Start', self)
-        # self.button.move(0, 30)
-        self.setModal(True)
-        self.show()
-        self.onButtonClick()
-
-        # self.button.clicked.connect(self.onButtonClick)
-
-    def onButtonClick(self):
-        self.calc = RunnableThread()
-        self.calc.countChanged.connect(self.onCountChanged)
-        self.calc.start()
-
-    def onCountChanged(self, value):
-        self.progress.setValue(value)
-
-
-class RunnableThread(QThread):
-    """
-    Runs a counter thread.
-    """
-    countChanged = Signal(int)
-
-    def run(self):
-        count = 0
-        while count < COUNT_LIMIT:
-            count += 1
-            time.sleep(0.02)
-            self.countChanged.emit(count)
-
-
-def run_progress():
-    print('run_progress: Initializing a RunProgressDialog()')
-    global window
-    window = RunProgressDialog()
+# class RunProgressDialog(QDialog):
+#     """
+#     Simple dialog that consists of a Progress Bar and a Button.
+#     Clicking on the button results in the start of a timer and
+#     updates the progress bar.
+#     """
+#
+#     def __init__(self):
+#         super().__init__()
+#         print("RunProgressDialog constructor called")
+#         self.initUI()
+#
+#     def initUI(self):
+#         self.setWindowTitle('Progress Bar')
+#         self.progress = QProgressBar(self)
+#         self.progress.setGeometry(0, 0, 300, 25)
+#         self.progress.setMaximum(100)
+#         # self.button = QPushButton('Start', self)
+#         # self.button.move(0, 30)
+#         self.setModal(True)
+#         self.show()
+#         self.onButtonClick()
+#
+#         # self.button.clicked.connect(self.onButtonClick)
+#
+#     def onButtonClick(self):
+#         self.calc = RunnableThread()
+#         self.calc.countChanged.connect(self.onCountChanged)
+#         self.calc.start()
+#
+#     def onCountChanged(self, value):
+#         self.progress.setValue(value)
+#
+#
+# class RunnableThread(QThread):
+#     """
+#     Runs a counter thread.
+#     """
+#     countChanged = Signal(int)
+#
+#     def run(self):
+#         count = 0
+#         while count < COUNT_LIMIT:
+#             count += 1
+#             time.sleep(0.02)
+#             self.countChanged.emit(count)
+#
+#
+# def run_progress():
+#     print('run_progress: Initializing a RunProgressDialog()')
+#     global window
+#     window = RunProgressDialog()
 
 
 # Call this function when run_json_project returns with need_to_write_json=false
@@ -708,26 +748,26 @@ def update_datamodel(updated_model):
 combo_name_to_dm_name = {'Init Affine': 'init_affine', 'Refine Affine': 'refine_affine', 'Apply Affine': 'apply_affine'}
 dm_name_to_combo_name = {'init_affine': 'Init Affine', 'refine_affine': 'Refine Affine', 'apply_affine': 'Apply Affine'}
 
-def clear_match_points():
-    print('\nCalling clear_match_points() in alignem_swift.py:\n')
-
-    # global match_pt_mode
-    # if not match_pt_mode.get_value():
-    if view_match_crop.get_value() != 'Match':
-        print('"\nMust be in \"Match\" mode to delete all match points."')
-    else:
-        print('Deleting all match points for this layer')
-        scale_key = interface.project_data['data']['current_scale']
-        layer_num = interface.project_data['data']['current_layer']
-        stack = interface.project_data['data']['scales'][scale_key]['alignment_stack']
-        layer = stack[layer_num]
-
-        for role in layer['images'].keys():
-            if 'metadata' in layer['images'][role]:
-                layer['images'][role]['metadata']['match_points'] = []
-                layer['images'][role]['metadata']['annotations'] = []
-        interface.main_window.update_win_self()
-        interface.main_window.refresh_all_images()
+# def clear_match_points():
+#     print('\nCalling clear_match_points() in alignem_swift.py:\n')
+#
+#     # global match_pt_mode
+#     # if not match_pt_mode.get_value():
+#     if view_match_crop.get_value() != 'Match':
+#         print('"\nMust be in \"Match\" mode to delete all match points."')
+#     else:
+#         print('Deleting all match points for this layer')
+#         scale_key = interface.project_data['data']['current_scale']
+#         layer_num = interface.project_data['data']['current_layer']
+#         stack = interface.project_data['data']['scales'][scale_key]['alignment_stack']
+#         layer = stack[layer_num]
+#
+#         for role in layer['images'].keys():
+#             if 'metadata' in layer['images'][role]:
+#                 layer['images'][role]['metadata']['match_points'] = []
+#                 layer['images'][role]['metadata']['annotations'] = []
+#         interface.main_window.update_win_self()
+#         interface.main_window.refresh_all_images()
 
 
 def clear_all_skips():
