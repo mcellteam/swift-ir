@@ -4,7 +4,7 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 """
 import sys, os, traceback, copy, math, random, json, psutil, shutil, argparse, inspect, threading, \
     concurrent.futures, platform, collections, time, datetime, multiprocessing, logging, operator, random, \
-    multiprocessing, logging, random
+    multiprocessing, logging, random, textwrap
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
@@ -2812,7 +2812,7 @@ class MainWindow(QMainWindow):
         def ng_view():  # ng_view #ngview #neuroglancer
             print("\n>>>>>>>>>>>>>>>> RUNNING ng_view()\n")
             print("ng_view() | # of aligned images                  : ", getNumAligned())
-            if areAlignedImagesGenerated():
+            if not areAlignedImagesGenerated():
                 self.hud.post('This scale must be aligned and exported before viewing in Neuroglancer')
                 show_warning("No Alignment Found", "This scale must be aligned and exported before viewing in Neuroglancer.\n\n"
                                              "Typical workflow:\n"
@@ -2827,7 +2827,7 @@ class MainWindow(QMainWindow):
                 print('ng_view() | Alignment at this scale exists - Continuing')
 
 
-            if isCurScaleExported():
+            if not isCurScaleExported():
                 self.hud.post('Alignment must be exported before it can be viewed in Neuroglancer')
                 show_warning("No Export Found", "Alignment must be exported before it can be viewed in Neuroglancer.\n\n"
                                              "Typical workflow:\n"
@@ -3072,6 +3072,7 @@ class MainWindow(QMainWindow):
                 s.viewer_size = None
 
             viewer_url = str(self.viewer)
+            # viewer_url = self.viewer
             self.browser.setUrl(QUrl(viewer_url))
             self.stacked_widget.setCurrentIndex(1)
 
@@ -3262,15 +3263,18 @@ class MainWindow(QMainWindow):
         # print("current base image = ", base_file_name)
 
         self.import_images_button = QPushButton("Import\nImages")
+        self.import_images_button.setToolTip('Import TIFF images.')
         self.import_images_button.clicked.connect(self.import_base_images)
         self.import_images_button.setFixedSize(square_button_size)
         # self.import_images_button.setFixedSize(square_button_width, std_height)
 
         self.center_button = QPushButton('Center')
+        self.center_button.setToolTip('Center all images.')
         self.center_button.clicked.connect(self.center_callback)
         self.center_button.setFixedSize(square_button_width, std_height)
 
         self.actual_size_button = QPushButton('Actual Size')
+        self.actual_size_button.setToolTip('Actual-size all images.')
         self.actual_size_button.clicked.connect(self.actual_size_callback)
         self.actual_size_button.setFixedSize(square_button_width, std_height)
 
@@ -3279,6 +3283,7 @@ class MainWindow(QMainWindow):
         self.size_buttons_vlayout.addWidget(self.actual_size_button)
 
         self.generate_scales_button = QPushButton('Generate\nScales')
+        self.generate_scales_button.setToolTip('Generate a scale hierarchy.')
         self.generate_scales_button.clicked.connect(generate_scales_queue)
         self.generate_scales_button.setFixedSize(square_button_size)
         # self.generate_scales_button.setFixedSize(square_button_width, std_height)
@@ -3295,6 +3300,7 @@ class MainWindow(QMainWindow):
 
 
         self.clear_all_skips_button = QPushButton('Reset')
+        self.clear_all_skips_button.setToolTip('Reset skips (align all)')
         self.clear_all_skips_button.setMaximumHeight(std_height)
         self.clear_all_skips_button.setFocusPolicy(Qt.NoFocus)
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
@@ -3303,13 +3309,16 @@ class MainWindow(QMainWindow):
         self.clear_all_skips_button.setFixedHeight(std_height)
 
         self.toggle_skip = ToggleSkipSwitch()  #toggleskip
+        self.toggle_skip.setToolTip('Skip current image (do not align)')
         self.toggle_skip.setChecked(True)
         self.toggle_skip.setH_scale(.9)
         self.toggle_skip.setV_scale(1.0)
         self.toggle_skip.toggled.connect(skip_changed_callback)
 
-        jump_label = QLabel("Jump To:")
+        self.jump_label = QLabel("Jump To:")
+        self.jump_label.setToolTip('Jump to image #')
         self.jump_input = QLineEdit(self)
+        self.jump_input.setToolTip('Jump to image #')
         self.jump_input.setAlignment(Qt.AlignHCenter)
         # self.jump_input.setText("--")
         self.jump_input.setFixedSize(std_input_size, std_height)
@@ -3333,7 +3342,7 @@ class MainWindow(QMainWindow):
         self.toggle_reset_hlayout = QHBoxLayout()
         self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft)
         self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignHCenter)
-        self.toggle_reset_hlayout.addWidget(jump_label, alignment=Qt.AlignHCenter)
+        self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignHCenter)
         self.toggle_reset_hlayout.addWidget(self.jump_input, alignment=Qt.AlignHCenter)
         # self.toggle_reset_hlayout.addLayout(self.jump_hlayout, alignment=Qt.AlignHCenter)
         # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=Qt.AlignHCenter)
@@ -3365,7 +3374,10 @@ class MainWindow(QMainWindow):
         # saving affine data to project file might ultimately be needed, but this is good for now.
 
         # Whitening LineEdit
-        whitening_label = QLabel("Whitening:")
+        self.whitening_label = QLabel("Whitening:")
+        tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.whitening_label.setToolTip(wrapped)
         self.whitening_input = QLineEdit(self)
         self.whitening_input.setAlignment(Qt.AlignCenter)
         self.whitening_input.setText("-0.68")
@@ -3374,7 +3386,10 @@ class MainWindow(QMainWindow):
         self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
 
         # Swim Window LineEdit
-        swim_label = QLabel("SWIM Window:")
+        self.swim_label = QLabel("SWIM Window:")
+        tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.swim_label.setToolTip(wrapped)
         self.swim_input = QLineEdit(self)
         self.swim_input.setAlignment(Qt.AlignCenter)
         self.swim_input.setText("0.8125")
@@ -3387,12 +3402,12 @@ class MainWindow(QMainWindow):
 
         self.whitening_grid = QGridLayout()
         self.whitening_grid.setContentsMargins(0, 0, 0, 0)
-        self.whitening_grid.addWidget(whitening_label, 0, 0, alignment=Qt.AlignLeft)
+        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignLeft)
         self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignRight)
 
         self.swim_grid = QGridLayout()
         self.swim_grid.setContentsMargins(0, 0, 0, 0)
-        self.swim_grid.addWidget(swim_label, 0, 0, alignment=Qt.AlignLeft)
+        self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignLeft)
         self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignRight)
 
         # self.toggle_cafm = ToggleSwitch() #togglecafm
@@ -3458,13 +3473,16 @@ class MainWindow(QMainWindow):
 
         # Auto-generate Toggle
         # Current implementation is not data-driven.
+        self.auto_generate_label = QLabel("Auto-generate Images:")
+        self.auto_generate_label.setToolTip('Automatically generate aligned images.')
         self.toggle_auto_generate = ToggleSwitch()  #toggleboundingrect
+        self.toggle_auto_generate.setToolTip('Automatically generate aligned images.')
         self.toggle_auto_generate.setChecked(True)
         self.toggle_auto_generate.setV_scale(.6)
         self.toggle_auto_generate.setH_scale(.8)
         self.toggle_auto_generate.toggled.connect(self.toggle_auto_generate_callback)
         self.toggle_auto_generate_hlayout = QHBoxLayout()
-        self.toggle_auto_generate_hlayout.addWidget(QLabel("Auto-generate Images:"), alignment=Qt.AlignLeft)
+        self.toggle_auto_generate_hlayout.addWidget(self.auto_generate_label, alignment=Qt.AlignLeft)
         self.toggle_auto_generate_hlayout.addWidget(self.toggle_auto_generate, alignment=Qt.AlignRight)
 
         # self.scale_tabs = QTabWidget()
@@ -3495,28 +3513,39 @@ class MainWindow(QMainWindow):
         #postalignmentpanel
 
         # Null Bias combobox
+        self.null_bias_label = QLabel("Bias:")
+        tip = 'Polynomial bias (default=None). Note: This affects the alignment and the pixel dimensions of the generated images.'
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.null_bias_label.setToolTip(wrapped)
         self.null_bias_combobox = QComboBox(self)
+        self.null_bias_combobox.setToolTip(wrapped)
+        self.null_bias_combobox.setToolTip('Polynomial bias (default=None)')
         self.null_bias_combobox.addItems(['None', '0', '1', '2', '3', '4'])
         self.null_bias_combobox.setFocusPolicy(Qt.NoFocus)
         # self.null_bias_combobox.setFixedSize(std_button_size)
         self.null_bias_combobox.setFixedSize(72, std_height)
 
         self.poly_order_hlayout = QHBoxLayout()
-        self.poly_order_hlayout.addWidget(QLabel("Bias:"), alignment=Qt.AlignLeft)
+        self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignLeft)
         self.poly_order_hlayout.addWidget(self.null_bias_combobox, alignment=Qt.AlignRight)
 
         # Bounding Box toggle
+        self.bounding_label = QLabel("Bounding Box:")
+        tip = 'Bounding rectangle (default=ON). Caution: Turning this OFF will result in images that are the same size as the source images but may have missing data, while turning this ON will result in no missing data but may significantly increase the size of the generated images.'
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.bounding_label.setToolTip(wrapped)
         self.toggle_bounding_rect = ToggleSwitch()  #toggleboundingrect
+        self.toggle_bounding_rect.setToolTip(wrapped)
         # self.toggle_bounding_rect.setChecked(True)
         self.toggle_bounding_rect.setV_scale(.6)
         self.toggle_bounding_rect.setH_scale(.8)
         self.toggle_bounding_rect.toggled.connect(bounding_rect_changed_callback)
         self.toggle_bounding_hlayout = QHBoxLayout()
-        self.toggle_bounding_hlayout.addWidget(QLabel("Bounding Box:"), alignment=Qt.AlignLeft)
+        self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignLeft)
         self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignRight)
 
         # Regenerate Button
-        self.regenerate_button = QPushButton('Regenerate')
+        self.regenerate_button = QPushButton('Generate')
         self.regenerate_button.clicked.connect(regenerate_aligned)
         self.regenerate_button.setFixedSize(std_button_size)
 
@@ -3568,7 +3597,9 @@ class MainWindow(QMainWindow):
 
         self.export_and_view_hbox = QHBoxLayout()
         self.export_zarr_button = QPushButton("Export To\nZarr")
-        self.export_zarr_button.setToolTip('To view data in Neuroglancer, it is necessary to export to a compatible format such as Zarr. This function exports all aligned .TIF images for current scale to the chunked and compressed Zarr (.zarr) format with scale pyramid. Uses parallel processing.')
+        tip = "To view data in Neuroglancer, it is necessary to export to a compatible format such as Zarr. This function exports all aligned .TIF images for current scale to the chunked and compressed Zarr (.zarr) format with scale pyramid. Uses parallel processing."
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.export_zarr_button.setToolTip(wrapped)
         self.export_zarr_button.clicked.connect(self.export_zarr)
         self.export_zarr_button.setFixedSize(square_button_size)
         self.export_zarr_button.setStyleSheet("font-size: 11px;")
@@ -6145,6 +6176,8 @@ To do:
 [] Save Automatically toggle switch
 [] project has unsaved changes flag (similar to what Tom does)... for asking user whether to save before exit
 [] Show which scales have been aligned (possibly with non-selectable radio boxes)
+[] SWIM Window <- # of pixels in label
+[] show SWIM window as overlay on base & ref
 
 Things project_data should include:
 * is project scaled (bool)
