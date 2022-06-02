@@ -26,12 +26,34 @@ Last updated: 25/02/2020, 15:42.
 Available at: https://github.com/GTRONICK/QSS/blob/master/ManjaroMix.qss
 */
 
+/*
+QSplitter::handle {
+    border-bottom: 1px solid #455364;
+    border-style: outset;
+}
+*/
+
 QMessageBox{
     background:rgba(255,255,255,255);
     color:#333;
     }
 
-QMessageBox QPushButton {min-width: 50; min-height: 19}
+QMessageBox QPushButton {
+    width: 118;
+    height: 22;
+    /*border-style: solid;*/
+	border-style: outset;
+	border-color: #455364; /* off-blue-ish color used in qgroupbox border */
+	border-width: 1px;
+	border-radius: 2px;
+	color: #d3dae3;
+	/*padding: 2px;*/
+	background-color: #151a1e;
+    }
+
+QDialogButtonBox > QPushButton[text="&Cancel"] {
+    background-color: green;
+}
 
 QDockWidget {
 	/*background-color:#151a1e;*/

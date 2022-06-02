@@ -38,11 +38,19 @@ import asyncio
 '''globals'''
 main_win = None
 
+# LOGGER
+#     logging.DEBUG: 'black',
+#     logging.INFO: 'blue',
+#     logging.WARNING: 'orange',
+#     logging.ERROR: 'red',
+#     logging.CRITICAL: 'purple',
+
 if __name__ == "__main__":
     global_parallel_mode = True
     global_use_file_io = False
     width = 1580
-    height = 640
+    # height = 640
+    height = 800
 
     # objc[46147]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint on objc_initializeAfterForkError to debug.
     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
@@ -77,4 +85,6 @@ if __name__ == "__main__":
     main_win.resize(width, height)
     main_win.define_roles(['ref', 'base', 'aligned'])
     interface.run_app(main_win)
+
+
 
