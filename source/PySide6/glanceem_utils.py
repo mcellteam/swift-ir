@@ -379,8 +379,11 @@ def isAnyAlignmentExported() -> bool:
 
 def isCurScaleExported() -> bool:
     '''Checks if there exists an exported alignment'''
-
-    return os.path.isdir(os.path.join(interface.project_data['data']['destination_path'], 'project.zarr', 'aligned_' + getCurScale()))
+    path = os.path.join(interface.project_data['data']['destination_path'], 'project.zarr', 'aligned_' + getCurScale())
+    answer = os.path.isdir(path)
+    # print("isCurScaleExported | path = " + path)
+    # print("isCurScaleExported | answer = " + str(answer))
+    return answer
 
 def getCurSNR() -> str:
     if not  interface.project_data['data']['current_scale']:
