@@ -99,13 +99,13 @@ QToolTip {
 
 QGroupBox {
   font-weight: bold;
-  border: 2px solid #455364; /* off blue-ish color */
+  border: 1px solid #455364; /* off blue-ish color */
   /*border: 2px solid #151a1e;*/
   border-radius: 4px;
   /*padding: 2px;*/
   padding: 0px; /* #0529 */
-  margin-top: 6px;
-  margin-bottom: 4px;
+  margin-top: 2px;
+  margin-bottom: 2px;
 
   font-size: 13px;
 

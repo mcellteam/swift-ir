@@ -105,7 +105,6 @@ dependencies:
   - zlib=1.2.11=h6c3fc93_1014
   - zstd=1.5.2=h582d3a0_0
   - pip:
-    - daisy
     - asciitree==0.3.3
     - atomicwrites==1.4.0
     - autologging==1.3.2
