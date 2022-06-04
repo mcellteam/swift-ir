@@ -1006,8 +1006,8 @@ class ZoomPanWidget(QWidget):
                                                 img_w = max(img_w, other_w)
                                                 img_h = max(img_h, other_h)
 
-                            if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (
-                                    win_h <= 0):  # Zero or negative dimensions might lock up?
+                            if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (win_h <= 0):  # Zero or negative dimensions might lock up?
+                                self.need_to_center = 1
                                 print("center_image | EXCEPTION | Image or Window dimension is zero. Cannot center image for role \"" + str(self.role) + "\"")
 
                             else:
@@ -1473,6 +1473,13 @@ class ZoomPanWidget(QWidget):
             return
 
         main_window.read_project_data_update_gui() #0523
+
+
+        # hack to fix center bug when proj is closed on layer 1 (ref not loaded) > re-open project > change_layer
+        if self.need_to_center == 1:
+            main_window.center_all_images()
+            self.need_to_center = 0
+
         # if isProjectScaled():
         #     main_window.scales_combobox_switch = 1 #this is precautionary
 
@@ -2613,6 +2620,8 @@ class MainWindow(QMainWindow):
         self.setMinimumWidth(800)
         self.setMinimumHeight(400)
         self.resize(2000, 1200)
+
+        self.need_to_center=0
 
         # self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         # self.setWindowFlag(Qt.FramelessWindowHint)
@@ -5376,6 +5385,7 @@ class MainWindow(QMainWindow):
         print_debug(50, "  Action: " + str(option_action))
 
     def add_image_to_role(self, image_file_name, role_name):
+        print('add_image_to_role:')
 
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
         local_cur_scale = getCurScale()
@@ -5489,7 +5499,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def import_images_dialog(self, import_role_name):
 
-        print_debug(5, "Importing images dialog for role: " + str(import_role_name))
+        print("Importing images dialog for role: " + str(import_role_name))
 
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -5554,10 +5564,12 @@ class MainWindow(QMainWindow):
 
     #0527
     def load_images_in_role(self, role, file_names):
+        print('MainWindow.load_images_in_role:')
         '''Not clear if this has any effect. Needs refactoring.'''
         # print("MainWindow is loading images in role (called by " + inspect.stack()[1].function + ")...")
         print('MainWindow.load_images_in_role(role=%s,file_names=%s):' % (str(role),file_names))
         self.import_images(role, file_names, clear_role=True)
+        self.center_all_images()
 
     def define_roles(self, roles_list):
         print("MainWindow.define_roles:")
@@ -5610,7 +5622,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def import_into_role(self, checked):
-        print("\nMainWindow.import_into_role:\n")
+        print("MainWindow.import_into_role:")
 
         import_role_name = str(self.sender().text())
         self.import_images_dialog(import_role_name)
@@ -6036,7 +6048,7 @@ class HeadsUpDisplay(QWidget):
         self.worker.moveToThread(self.worker_thread)
         # This will start an event loop in the worker thread
         self.worker_thread.start()
-        self.post('Starting heads up display...')
+        self.post('Starting heads-up display...')
 
     def kill_thread(self):
         self.worker_thread.requestInterruption()
@@ -6178,6 +6190,8 @@ To do:
 [] Show which scales have been aligned (possibly with non-selectable radio boxes)
 [] SWIM Window <- # of pixels in label
 [] show SWIM window as overlay on base & ref
+[] for new project, might be probelm with apply_project_defaults() func
+[] bug where when project is saved on first base image in the stack (which has no ref) -> reopening the project and changing layer will require a re-center
 
 Things project_data should include:
 * is project scaled (bool)

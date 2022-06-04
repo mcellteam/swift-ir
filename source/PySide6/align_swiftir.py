@@ -10,7 +10,6 @@ import platform
 import subprocess as sp
 from tqdm import tqdm
 
-
 '''
 align_swiftir.py implements a simple generic interface for aligning two images in SWiFT-IR
 This version uses swiftir.py
@@ -21,6 +20,8 @@ a series of steps, or "ingredients" to first estimate and then refine the affine
 which brings the "moving" image into alignment with the "stationary" image.
 Together these ingredients comprise a procedure, or "recipe".
 '''
+
+#pyswift_tui calls this -jy
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
@@ -228,8 +229,9 @@ class alignment_process:
     print_debug ( 70, "  psta_2x2 = " + str(psta_2x2) )
     print_debug ( 70, "  psta_4x4 = " + str(psta_4x4) )
 
+    # im_sta_fn is 'ref', im_mov_fn is 'base'
 #    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
-    self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
+    self.recipe = align_recipe(im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn) #tag
 
     wht = atrm['method_data']['whitening_factor']
     if atrm['selected_method']=='Auto Swim Align':
@@ -241,8 +243,8 @@ class alignment_process:
         ingredient_apply_affine = align_ingredient(afm=self.init_affine_matrix, align_mode='apply_affine_align')
         self.recipe.add_ingredient(ingredient_apply_affine)
       else:
-        # Normal Auto Swim Align - Full Recipe
-        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, wht=wht)
+        # Normal Auto Swim Align - Full Recipe for init_affine
+        ingredient_1 = align_ingredient(ww=(wwx,wwy), psta=psta_1, wht=wht) # 1x1 SWIM window
         ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht)
         ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht)
         self.recipe.add_ingredient(ingredient_1)
@@ -264,10 +266,9 @@ class alignment_process:
 # DISABLE CHECK_ALIGN INGREDIENT FOR PERFORMANCE TESTING
 #    self.recipe.add_ingredient(ingredient_check_align)
 
-    self.recipe.execute()
+    self.recipe.execute() #DOES the alignment -jy
 
-    self.setCafm(c_afm,bias_mat=None)
-
+    self.setCafm(c_afm,bias_mat=None) # returns new current c_afm -jy
 
     # Retrieve alignment result
     snr = self.recipe.ingredients[-1].snr
@@ -295,7 +296,10 @@ class alignment_process:
 
 
   def setCafm(self,c_afm,bias_mat=None):
+    '''Calculate new cumulative affine for current stack location'''
     self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,c_afm)
+    #matrix multiplication of current affine matrix with c_afm (cumulative) -jy
+    #current cumulative "at this point in the stack"
 
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
