@@ -90,7 +90,6 @@ def run_app(main_win=None):
     global app
     global main_window
 
-    # print('run_app | conditional | main_win == None')
     if main_win == None:
         print('run_app | WARNING | main_win does not exist. setting main_window = MainWindow() | <conditional>')
         main_window = MainWindow()
@@ -136,7 +135,6 @@ def get_json(path):
         return json.load(f)
         # example: keys = get_json("project.zarr/img_aligned_zarr/s0/.zarray")
 
-
 # For now, always use the limited argument version
 def print_debug(level, p1=None, p2=None, p3=None, p4=None):
     global DEBUG_LEVEL
@@ -163,14 +161,9 @@ def clear_crop_settings():
     crop_mode_disp_rect = None
     crop_mode_corners = None
 
-
-
-
 def getCurScale():
     global project_data
     return ( project_data['data']['current_scale'] )
-
-
 
 def makedirs_exist_ok(path_to_build, exist_ok=False):
     # Needed for old python which doesn't have the exist_ok option!!!
@@ -249,7 +242,6 @@ def get_best_path(file_path):
 def create_project_structure_directories(subdir_path):
     # print('create_project_structure_directories:')
     # print('param subdir_path: ', subdir_path)
-
     try:
         os.mkdir(subdir_path)
     except:
@@ -260,7 +252,7 @@ def create_project_structure_directories(subdir_path):
     try:
         os.mkdir(src_path)
     except:
-        # NOTE: some lines of commented code here were discarded
+        # NOTE: some commented lines here were discarded
         print('Warning: Exception creating "img_src" path (may already exist).')
         pass
     aligned_path = os.path.join(subdir_path, 'img_aligned')
@@ -279,14 +271,6 @@ def create_project_structure_directories(subdir_path):
         pass
 
 
-
-# @profileit
-# @dumpit
-# @traceit
-# @countit
-# @timeit
-# @traceit
-# @profileit
 def generate_scales_queue():
     print("Displaying define scales dialog to receive user input...")
     global project_data #0528
@@ -407,7 +391,6 @@ def generate_scales_queue():
                                             pass
                                             # print("generate_scales_queue | Error UnLinking " + outfile_name)
                                         try:
-
                                             # print("generate_scales_queue | Linking from " + abs_file_name + " to " + outfile_name)
                                             os.symlink(abs_file_name, outfile_name)
                                         except:
@@ -578,7 +561,6 @@ class ImageLibrary:
                 print_debug(4, "  Forced load of image: \"" + str(real_norm_path) + "\"")
 
                 #0526
-
                 # image = QImage(real_norm_path)
                 # self._images[real_norm_path] = {'image': QPixmap.fromImage(image).scaled(200, 200), 'loaded': True, 'loading': False,'task': None}
 
@@ -885,12 +867,14 @@ class ZoomPanWidget(QWidget):
         # self.show()
 
         # focus
-        # QApplication.instance().focusChanged.connect(self.on_focusChanged)
 
-    # def on_focusChanged(self):
-    #     fwidget = QApplication.focusWidget()
-    #     if fwidget is not None:
-    #         print("focus widget name = ", fwidget.objectName())
+        #0605 following 6 lines were commented
+        QApplication.instance().focusChanged.connect(self.on_focusChanged)
+
+    def on_focusChanged(self):
+        fwidget = QApplication.focusWidget()
+        if fwidget is not None:
+            print("focus widget name = ", fwidget.objectName())
 
     def get_settings(self):
         settings_dict = {}
@@ -953,23 +937,6 @@ class ZoomPanWidget(QWidget):
                 if len(project_data['data']['scales'][s]['alignment_stack']):
 
                     image_dict = project_data['data']['scales'][s]['alignment_stack'][l]['images']
-
-                    '''
-                    "base": {
-                "filename": "/Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.101.tif",
-                "metadata": {
-                  "annotations": [],
-                  "match_points": []
-                }
-                  },
-                  "ref": {
-                    "filename": "",
-                    "metadata": {
-                      "annotations": [],
-                      "match_points": []
-                    }
-                    '''
-
 
                     if self.role in image_dict.keys():
                         # print("current role: ", self.role)
@@ -1394,18 +1361,6 @@ class ZoomPanWidget(QWidget):
         except:
             print('ZoomPanWidget.change_layer | EXCEPTION | no layer loaded - Aborting')
             return
-        #scale = project_data['data']['scales'][project_data['data']['current_scale']]
-        # layer = scale['alignment_stack'][project_data['data']['current_layer']]
-        # base_file_name = layer['images']['base']['filename']
-        # print('base file name = ', base_file_name)
-        # print("current layer =", scale['alignment_stack'][project_data['data']['current_layer']])
-        # print("\nsetting toggle to: ", not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
-        #alignem_swift.main_win.toggle_skip.setChecked(not scale['alignment_stack'][project_data['data']['current_layer']]['skip'])
-
-        # print("  show_skipped_images = ", show_skipped_images)
-
-        # REMOVING AN ~25 line 'if not show_skipped_image' BLOCK
-        #if not show_skipped_images:
 
         leaving_layer = project_data['data']['current_layer']
         entering_layer = project_data['data']['current_layer'] + layer_delta
@@ -1456,14 +1411,9 @@ class ZoomPanWidget(QWidget):
 
         # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-
         image_library.update() #orig
         self.update_zpa_self() #orig
         self.update_siblings() #orig
-
-        # self.center_image()  # centering the image sooner may prevent glitch
-        # ^^ this definitely keeps things centered, but may not be desirable behavior.
-        # zoom should probably be preserved between layer changes
 
         try:
             scale = project_data['data']['scales'][project_data['data']['current_scale']]
@@ -1476,14 +1426,10 @@ class ZoomPanWidget(QWidget):
 
         main_window.read_project_data_update_gui() #0523
 
-
         # hack to fix center bug when proj is closed on layer 1 (ref not loaded) > re-open project > change_layer
         if self.need_to_center == 1:
             main_window.center_all_images()
             self.need_to_center = 0
-
-        # if isProjectScaled():
-        #     main_window.scales_combobox_switch = 1 #this is precautionary
 
     def wheelEvent(self, event):
         """
@@ -1786,13 +1732,6 @@ class MultiImagePanel(QWidget):
             painter.fillRect(0, 0, self.width(), self.height(), self.bg_color)
         painter.end()
 
-    # def update_spacing(self):
-    #     # print("MultiImagePanel is setting spacing to " + str(self.current_margin))
-    #     # self.hb_layout.setContentsMargin(self.current_margin)    #pyside6 This sets margins around the outer edge of all panels
-    #     # self.hb_layout.setMargin(self.current_margin)    #pyside2 This sets margins around the outer edge of all panels
-    #     self.hb_layout.setSpacing(self.current_margin)  # This sets margins around the outer edge of all panels
-    #     self.repaint()
-
     def update_multi_self(self, exclude=()):
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget) and (not (w in exclude))]
@@ -1928,17 +1867,12 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
         link_all_stacks() #0525
         main_window.update_panels()
         main_window.refresh_all_images()
-        main_window.update_skips_label()
         skip_list = getSkipsList()
         # update_linking_callback()
-        main_window.status_skips_label.setText(str(skip_list))  # settext #status #0503
 
         #0503 possible non-centering bug that occurs when runtime skips change is followed by scale change
-        # self.image_panel.center_all_images()
         if center_switch:
             main_window.image_panel.center_all_images()
-
-
 
 
 def console():
@@ -2236,7 +2170,7 @@ class ToggleSwitch(QCheckBox):
                  bar_color=Qt.gray,
                  # checked_color="#00B0FF",
                  # checked_color="#607cff",
-                 # checked_color="#d3dae3",  # for monjaromix stylesheet
+                 # checked_color="#d3dae3",  # monjaromix stylesheet
                  checked_color="#00ff00",
 
                  handle_color=Qt.white,
@@ -2251,7 +2185,6 @@ class ToggleSwitch(QCheckBox):
         # in the paintEvent.
         self._bar_brush = QBrush(bar_color)
         self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
-
         self._handle_brush = QBrush(handle_color)
         # self._handle_checked_brush = QBrush(QColor(checked_color))
         self._handle_checked_brush = QBrush(QColor('#151a1e'))
@@ -2425,7 +2358,7 @@ class ToggleSkipSwitch(QCheckBox):
             p.setPen(self._black_pen)
             # p.setPen(self.white_pen)
             p.setBrush(self._handle_checked_brush)
-            # p.setFont(QFont('Helvetica', self._fontSize, 75, QFont.Bold)) # for some reason this makes the font italic (?)
+            # p.setFont(QFont('Helvetica', self._fontSize, 75, QFont.Bold)) # oddly makes the font italic
             p.setFont(QFont('Helvetica', self._fontSize, 75))
             p.drawText(xLeft + handleRadius / 2, contRect.center().y() + handleRadius / 2, "KEEP")
 
@@ -2571,9 +2504,7 @@ class MainWindow(QMainWindow):
         # # object, otherwise Qt may not create a global shared context.
         # # https://doc.qt.io/qtforpython-5/PySide2/QtGui/QOpenGLContext.html
         # print('Current QOpenGLContext = ', QOpenGLContext.currentContext())
-        #
-        # print('Setting OpenGL attribute AA_ShareOpenGLContexts...')
-        #
+
         # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)
         # # QtCore.QProcessEnvironment.systemEnvironment() ???
         # print('Current QOpenGLContext = ', QOpenGLContext.currentContext())
@@ -2602,11 +2533,7 @@ class MainWindow(QMainWindow):
         '''This will require moving the image_panel = ImageLibrary() to MainWindow constructor where it should be anyway'''
         # self.define_roles(['ref', 'base', 'aligned'])
 
-        # self.setAttribute(Qt.WA_TranslucentBackground, True) #translucent #dim #opacity #redx
-        # self.setFocusPolicy(Qt.StrongFocus)  #jy #focus
-
-        '''Fix for error message which results from multiprocessing crashing when using Tom's TaskQueue:
-        together with the PyCharm debugger.
+        '''Fix for error message which results from multiprocessing crashing when using TaskQueue w/ PyCharm debugger.
 
         objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
         called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
@@ -2631,8 +2558,6 @@ class MainWindow(QMainWindow):
         # stylesheet must be after QMainWindow.__init__(self)
         # self.setStyleSheet(open('stylesheet.qss').read())
         print("MainWindow | applying stylesheet")
-        # self.setStyleSheet(open(os.path.join(self.pyside_path, 'styles/stylesheet1.qss')).read())
-        # self.main_stylesheet = os.path.join(self.pyside_path, 'styles/stylesheet3.qss')
         self.main_stylesheet = os.path.join(self.pyside_path, 'styles/stylesheet1.qss')
         self.setStyleSheet(open(self.main_stylesheet).read())
 
@@ -2652,7 +2577,7 @@ class MainWindow(QMainWindow):
         # titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
 
-        # pyside2... pyside6 deprecated the 'defaultSettings()' attribute of QWebEngineSettings. These two lines were uncommented.
+        # pyside6 port needed to replace deprecated the 'defaultSettings()' attribute of QWebEngineSettings. These two lines were uncommented.
         # self.web_settings = QWebEngineSettings.defaultSettings()
         # self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
@@ -2710,12 +2635,6 @@ class MainWindow(QMainWindow):
         # self.browser.setUrl(QUrl()) # empty/blank URL (white screen)
         # self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         # self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
-
-        # def demos_view(): #documentationview
-        #     print("\ndocumentation_view():\n")
-        #     self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
-        #     time.sleep(2)
-        #     self.stacked_widget.setCurrentIndex(2)
 
         def documentation_view():  # documentationview
             print("Launching documentation view | MainWindow.documentation_view...")
@@ -2873,19 +2792,12 @@ class MainWindow(QMainWindow):
                 worker = RunnableServerThread()
                 self.threadpool.start(worker)
 
-            # time.sleep(1)
-
-            os.chdir(zarr_project_path)  #tag
+            os.chdir(zarr_project_path)  #refactor
 
             Image.MAX_IMAGE_PIXELS = None
-
             view = 'single'
-            # if self.multiview_bool.isChecked():
-            #     view = 'row'
-
             bind = '127.0.0.1'
             port = 9000
-
             res_x = 2
             res_y = 2
             res_z = 50
@@ -2902,7 +2814,6 @@ class MainWindow(QMainWindow):
 
             # cname = zarray_keys["compressor"]["cname"] #jy
             # clevel = zarray_keys["compressor"]["clevel"] #jy
-
             shape = zarray_keys["shape"]
             print("shape : ", shape)
 
@@ -2918,7 +2829,6 @@ class MainWindow(QMainWindow):
 
             ds_ref = "img_ref_zarr"
             ds_base = "img_base_zarr"
-            # ds_aligned = "img_aligned_zarr" #0406
             ds_aligned = ds_name
             ds_blended = "img_blended_zarr"
 
@@ -3014,7 +2924,6 @@ class MainWindow(QMainWindow):
                     # #layer = ng.Layer()
                     # #layer = ng.ManagedLayer
                     # s.layers['focus'] = ng.LocalVolume(temp)
-
                     # s.layers['focus'] = ng.ManagedLayer(source="zarr://http://localhost:9000/img_blended_zarr",voxel_size=[i * .00000001 for i in resolution])
                     s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
                     s.layout = ng.column_layout(
@@ -3130,12 +3039,9 @@ class MainWindow(QMainWindow):
         def show_memory_usage():
             os.system('python3 memoryusage.py')
 
-
-
         '''------------------------------------------
-        PROJECT INSPECTOR
+        PROJECT INSPECTOR #projectinspector
         ------------------------------------------'''
-        #dock #projectinspector
 
         self.project_inspector = QDockWidget("Project Inspector")
         self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
@@ -3145,8 +3051,6 @@ class MainWindow(QMainWindow):
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
         dock_vlayout = QVBoxLayout(content)
-        # dock_vlayout.setAlignment(Qt.AlignTop)
-
 
         # Skips List
         self.inspector_scales = CollapsibleBox('Skip List')
@@ -3159,7 +3063,6 @@ class MainWindow(QMainWindow):
             )
         lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)
         self.inspector_scales.setContentLayout(lay)
-
 
         # CPU Specs
         self.inspector_cpu = CollapsibleBox('CPU Specs')
@@ -3176,9 +3079,8 @@ class MainWindow(QMainWindow):
         dock_vlayout.addStretch()
 
         '''------------------------------------------
-        PANEL 1: PROJECT
+        PANEL 1: PROJECT #projectpanel
         ------------------------------------------'''
-        #projectpanel
 
         self.documentation_button = QPushButton("Docs")
         self.documentation_button.clicked.connect(documentation_view)
@@ -3214,53 +3116,6 @@ class MainWindow(QMainWindow):
         self.project_functions_layout.addWidget(self.exit_app_button, 1, 0, alignment=Qt.AlignHCenter)
         self.project_functions_layout.addWidget(self.documentation_button, 1, 1, alignment=Qt.AlignHCenter)
         self.project_functions_layout.addWidget(self.remote_viewer_button, 1, 2, alignment=Qt.AlignHCenter)
-
-
-        #--------------PROJECT STATUS FEATURE---------------#
-        # QGridLayout params: row, column, rowSpan, columnSpan
-
-        # #@slot()
-        # def update_base_label(self):
-        #     skip_list = []
-        #     scale = project_data['data']['scales'][project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
-        #     layer = scale['alignment_stack'][project_data['data']['current_layer']]
-        #     base_file_name = layer['images']['base']['filename']
-        #     self.status_base_image_label.setText(str(skip_list))  # settext #status
-
-        self.status_vbox = QVBoxLayout()
-        self.status_hbox_skips = QHBoxLayout()
-        self.status_skips_label = QLabel("[]")
-        self.status_skips_label.setObjectName("status_skips_label")
-        self.spacer_item_status_skips = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.status_hbox_skips.addWidget(QLabel("Skips:"), alignment=Qt.AlignLeft)
-        self.status_hbox_skips.addWidget(self.status_skips_label, alignment=Qt.AlignLeft)
-        self.status_hbox_skips.addSpacerItem(self.spacer_item_status_skips)
-
-        self.status_hbox_base_image = QHBoxLayout()
-        self.status_base_image_label = QLabel("[]")
-        self.status_base_image_label.setObjectName("base_image_label")
-        self.spacer_item_status_base_image = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.status_hbox_base_image.addWidget(QLabel("Base Image:"), alignment=Qt.AlignLeft)
-        self.status_hbox_base_image.addWidget(self.status_base_image_label, alignment=Qt.AlignLeft)
-        self.status_hbox_base_image.addSpacerItem(self.spacer_item_status_base_image)
-
-        self.status_hbox_ref_image = QHBoxLayout()
-        self.status_ref_image_label = QLabel("[]")
-        self.status_ref_image_label.setObjectName("ref_image_label")
-        self.spacer_item_status_ref_image = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.status_hbox_ref_image.addWidget(QLabel("Ref Image:"), alignment=Qt.AlignLeft)
-        self.status_hbox_ref_image.addWidget(self.status_ref_image_label, alignment=Qt.AlignLeft)
-        self.status_hbox_ref_image.addSpacerItem(self.spacer_item_status_ref_image)
-
-        self.status_vbox.addLayout(self.status_hbox_skips)
-        self.status_vbox.addLayout(self.status_hbox_base_image)
-        self.status_vbox.addLayout(self.status_hbox_ref_image)
-        # self.status_vbox.addWidget(QHLine())
-
-        # DISPLAY EXTRAS #MAINPANELLAYOUT #VERBOSE
-        # if enable_stats:  # masterswitch
-        #     self.main_panel_extended_layout.addLayout(self.status_vbox)
-
 
         '''------------------------------------------
         PANEL 2: DATA SELECTION & SCALING
@@ -3300,22 +3155,11 @@ class MainWindow(QMainWindow):
         # self.generate_scales_button.setFixedSize(square_button_width, std_height)
         # self.generate_scales_button.setStyleSheet("font-size: 11px;")
 
-
-        #scales #scalescombobox #scaleslist #030
-        # skip_list = []
-        # for layer_index in range(len(project_data['data']['scales'][getCurScale()]['alignment_stack'])):
-        #     if project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index]['skip'] == True:
-        #         skip_list.append(layer_index)
-        # skip_list = getSkipsList()
-        # print("skip_list = ", skip_list)
-
-
         self.clear_all_skips_button = QPushButton('Reset')
         self.clear_all_skips_button.setToolTip('Reset skips (align all)')
         self.clear_all_skips_button.setMaximumHeight(std_height)
         self.clear_all_skips_button.setFocusPolicy(Qt.NoFocus)
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
-        self.clear_all_skips_button.clicked.connect(self.update_skips_label())
         self.clear_all_skips_button.setFixedWidth(50)
         self.clear_all_skips_button.setFixedHeight(std_height)
 
@@ -3336,7 +3180,7 @@ class MainWindow(QMainWindow):
         self.jump_validator = QIntValidator()
         self.jump_input.setValidator(self.jump_validator)
         # self.jump_input.returnPressed.connect(self.jump_to_layer())
-        self.jump_input.returnPressed.connect(lambda: self.jump_to_layer()) # this has to be lambda for some reason
+        self.jump_input.returnPressed.connect(lambda: self.jump_to_layer()) # must be lambda for some reason
         # self.jump_input.editingFinished.connect(self.jump_to_layer())
         # self.jump_hlayout = QHBoxLayout()
         # self.jump_hlayout.addWidget(jump_label, alignment=Qt.AlignLeft)
@@ -3408,9 +3252,6 @@ class MainWindow(QMainWindow):
         self.swim_input.setFixedHeight(std_height)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
 
-        # self.current_alignment_method_label = QLabel()
-        # self.current_scale_label = QLabel()
-
         self.whitening_grid = QGridLayout()
         self.whitening_grid.setContentsMargins(0, 0, 0, 0)
         self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignLeft)
@@ -3420,27 +3261,6 @@ class MainWindow(QMainWindow):
         self.swim_grid.setContentsMargins(0, 0, 0, 0)
         self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignLeft)
         self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignRight)
-
-        # self.toggle_cafm = ToggleSwitch() #togglecafm
-        # self.toggle_cafm.setChecked(False)
-        # self.toggle_cafm.setV_scale(.8)
-        # self.toggle_cafm.toggled.connect(null_bias_changed_callback)
-        # self.toggle_cafm_hlayout = QHBoxLayout()
-        # self.toggle_cafm_hlayout.addWidget(QLabel("Null Bias:"), alignment=Qt.AlignLeft)
-        # self.toggle_cafm_hlayout.addWidget(self.toggle_cafm, alignment=Qt.AlignRight)
-        #
-        # self.poly_order_input = QLineEdit(self)
-        # self.poly_order_input.setText("0")
-        # self.poly_order_input.setAlignment(Qt.AlignCenter)
-        # self.poly_order_input.setFixedWidth(std_input_size_small)
-        # self.poly_order_input.setFixedHeight(std_height)
-        # # self.whitening_input.setFocusPolicy(Qt.NoFocus) #prevents text entry at runtime
-        # # self.whitening_valid = QDoubleValidator(-5.0, 5.0, 2, self)
-        # self.poly_order_input.setValidator(QDoubleValidator(0, 5.0, 2, self))
-
-        # std_height = int(22)
-        # square_button_width = int(74)
-
 
         # Next Scale Button
         self.next_scale_button = QPushButton('Next Scale  ')
@@ -3499,10 +3319,6 @@ class MainWindow(QMainWindow):
         # self.scale_tabs = QTabWidget()
         self.alignment_layout = QGridLayout()
         self.alignment_layout.setContentsMargins(10, 25, 10, 5) #tag23
-        # self.alignment_layout.addWidget(self.current_alignment_method_label, 0, 0, 1, 2,  alignment=Qt.AlignLeft)
-        # self.alignment_layout.addWidget(self.current_scale_label, 1, 0, 1, 2,  alignment=Qt.AlignLeft)
-        # self.alignment_layout.addWidget(self.scales_combobox, 0, 0,alignment=Qt.AlignRight)
-        # self.alignment_layout.addWidget(self.affine_combobox, 1, 0,alignment=Qt.AlignRight)
         self.alignment_layout.addLayout(self.swim_grid, 0, 0)
         self.alignment_layout.addLayout(self.whitening_grid, 1, 0)
         self.alignment_layout.addWidget(self.prev_scale_button, 0, 1)
@@ -3510,13 +3326,6 @@ class MainWindow(QMainWindow):
         self.alignment_layout.addWidget(self.align_all_button, 2, 1)
         self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 2, 0)
         # (2,0,1,2)
-
-        # self.alignment_layout.addLayout(self.toggle_cafm_hlayout, 0, 2)
-
-        # self.alignment_layout.addWidget(self.prev_scale_button, 3, 0, 1, 2, alignment=Qt.AlignRight)
-        # self.alignment_layout.addWidget(self.next_scale_button, 3, 2, 1, 2, alignment=Qt.AlignRight)
-
-
 
         '''------------------------------------------
         PANEL 3.5: Post-alignment
@@ -3579,7 +3388,6 @@ class MainWindow(QMainWindow):
 
         n_scales_label = QLabel("# of scales:")
         n_scales_label.setToolTip("Number of scale pyramid layers (default=4)")
-        # n_scales_label.setAlignment(Qt.AlignRight)
         self.n_scales_input = QLineEdit(self)
         self.n_scales_input.setAlignment(Qt.AlignCenter)
         self.n_scales_input.setText("4")
@@ -3785,8 +3593,6 @@ class MainWindow(QMainWindow):
         # DOCUMENTATION PANEL
         self.browser = QWebEngineView()
         self.browser_docs = QWebEngineView()
-        # self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/README.md'))
-        # self.browser_docs.setUrl(QUrl('https://github1s.com/mcellteam/swift-ir/blob/development/README.md'))
         self.exit_docs_button = QPushButton("Back")
         self.exit_docs_button.setFixedSize(std_button_size)
         self.exit_docs_button.clicked.connect(exit_docs)
@@ -3797,12 +3603,10 @@ class MainWindow(QMainWindow):
         self.docs_panel_layout = QVBoxLayout()
         self.docs_panel_layout.addWidget(self.browser_docs)
         self.docs_panel_controls_layout = QHBoxLayout()
-        # self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignLeft | Qt.AlignBottom)
         self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignLeft)
         self.docs_panel_controls_layout.addWidget(self.readme_button, alignment=Qt.AlignLeft)
         self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.docs_panel_controls_layout.addSpacerItem(self.spacer_item_docs)
-        # self.docs_panel_controls_layout.setContentsMargins(0, 0, 1300, 0)
         self.docs_panel_layout.addLayout(self.docs_panel_controls_layout)
         self.docs_panel.setLayout(self.docs_panel_layout)
 
@@ -3933,11 +3737,7 @@ class MainWindow(QMainWindow):
                   ]
                   ],
                  ['-', None, None, None, None, None],
-                 ['Threaded Loading', None, self.toggle_threaded_loading, image_library.threaded_loading_enabled, None,
-                  None],
-                 # [ '-', None, None, None, None, None ],
-                 # [ 'Background Color', None, self.set_bg_color, None, None, None ],
-                 # [ 'Border Color', None, self.set_border_color, None, None, None ],
+                 ['Threaded Loading', None, self.toggle_threaded_loading, image_library.threaded_loading_enabled, None, None],
                  ['-', None, None, None, None, None],
                  ['Perform Swims', None, self.not_yet, True, None, None],
                  ['Update CFMs', None, self.not_yet, True, None, None],
@@ -4254,7 +4054,6 @@ class MainWindow(QMainWindow):
             print('next_scale_button_callback | EXCEPTION | Requested scale not available - Returning')
             return None
 
-
         self.read_gui_update_project_data()
         self.read_project_data_update_gui()
         self.update_interface_current_scale()
@@ -4281,43 +4080,6 @@ class MainWindow(QMainWindow):
         self.update_project_inspector()
         return None
 
-
-    @Slot()
-    def update_skips_label(self) -> None:
-        '''Slot to update the skips label on the GUI.'''
-        try:
-            skip_list = getSkipsList()
-            self.status_skips_label.setText(str(skip_list))
-        except:
-            print('update_skips_label | EXCEPTION | Something went wrong')
-            print_exception()
-        return None
-
-    # @Slot()
-    # def update_current_scale_label(self) -> None:
-    #     '''Slot to update the scale label on the GUI.'''
-    #     try:
-    #         cur_scale = getCurScale()
-    #         img_size = get_image_size(project_data['data']['scales'][getCurScale()]['alignment_stack'][0]['images']['base']['filename'])
-    #         self.current_scale_label.setText('Scale %s (%spx, %spx)' % (cur_scale[-1], img_size[0], img_size[1]))
-    #     except:
-    #         print('update_current_scale_label | EXCEPTION | Something went wrong')
-    #         print_exception()
-    #     return None
-
-    # @Slot()
-    # def update_current_alignment_method_label(self) -> None:
-    #     '''Slot to update the current alignment method label on the GUI.'''
-    #     try:
-    #         alignment_method = project_data['data']['scales'][getCurScale()]['method_data']['alignment_option']
-    #         dm_name_to_combo_name = {'init_affine': 'Initialize Affine', 'refine_affine': 'Refine Affine', 'apply_affine': 'Apply Affine'}
-    #         alignment_method_pretty = dm_name_to_combo_name[alignment_method]
-    #         self.current_alignment_method_label.setText(alignment_method_pretty)
-    #     except:
-    #         print('update_current_alignment_method_label | EXCEPTION | Something went wrong')
-    #         print_exception()
-    #     return None
-
     @Slot()
     def show_project_inspector(self):
         self.update_project_inspector()
@@ -4325,8 +4087,9 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def update_project_inspector(self):
-
         self.inspector_label_scales.setText(str(getSkipsList()))
+
+
 
 
 
@@ -4771,11 +4534,10 @@ class MainWindow(QMainWindow):
         }
         '''
 
-    '''
-    THE PURPOSE OF THIS FUNCTION IS TO REPLACE ensure_proper_data_structure
-    '''
     @Slot()
     def apply_project_defaults(self):
+        '''The function replaces ensure_proper_data_structure'''
+
         print('\napply_defaults_to_scales:')
         self.hud.post('Applying project defaults...')
         global project_data
@@ -4981,7 +4743,6 @@ class MainWindow(QMainWindow):
                 self.setWindowTitle('Project: ' + self.current_project_file_name)
             else:
                 self.setWindowTitle('Project: ' + os.path.split(self.current_project_file_name)[-1])
-
             # ignore_changes = False
 
 
@@ -5749,9 +5510,9 @@ class MainWindow(QMainWindow):
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-#----------------------------------------------#
+
 #---------------EMBEDDED LOGGER----------------#
-#----------------------------------------------#
+
 # I think this is a solid implementation of a thread-safe background GUI logger
 # https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 
@@ -5787,7 +5548,6 @@ class Worker(QObject):
             logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
             i += 1
 
-
 class HeadsUpDisplay(QWidget):
 
     COLORS = {
@@ -5804,9 +5564,7 @@ class HeadsUpDisplay(QWidget):
         self.textedit = te = QPlainTextEdit(self)
         # Set whatever the default monospace font is for the platform
         f = QFont()
-        # f.setStyleHint(f.Monospace)
         f.setFamily('monospace')
-        # f.setStyleHint(QFont.TypeWriter)
 
         te.setFont(f)
         te.setReadOnly(True)
@@ -6045,10 +5803,6 @@ dir = os.path.join(project_data['data']['destination_path'], getCurScale(), 'img
 print(len([name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))]))
 
 
-
-''''''
-
-
 zooming issue...
 qt.pointer.dispatch: delivering touch release to same window QWindow(0x0) not QWidgetWindow(0x7f8454c9aef0, name="MainWindowClassWindow")
 qt.pointer.dispatch: skipping QEventPoint(id=1 ts=0 pos=0,0 scn=858.668,722.959 gbl=858.668,722.959 Released ellipse=(1x1 ∡ 0) vel=0,0 press=-858.668,-722.959 last=-858.668,-722.959 Δ 858.668,722.959) : no target window
@@ -6064,7 +5818,6 @@ This bug could have to do with unused lines of code related to focus, i.e. self.
 
 This issue appears to be linked to TensorFlow
 https://github.com/tensorflow/tfjs/issues/1145
-
 
 
 POSSIBLE WORKFLOW FOR VIEWING SINGLE BLEND IN NEUROGLANCER VIEWER
