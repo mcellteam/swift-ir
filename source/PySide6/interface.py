@@ -857,6 +857,8 @@ class ZoomPanWidget(QWidget):
         self.dx = 0  # Offset in x of the image
         self.dy = 0  # Offset in y of the image
 
+        self.need_to_center = 0
+
         self.draw_border = False
         self.draw_annotations = True
         self.draw_full_paths = False
@@ -3915,79 +3917,11 @@ class MainWindow(QMainWindow):
                  # ['-', None, None, None, None, None],
                  # ['Save &Cropped As...', None, self.save_cropped_as, None, None, None],
                  # ['-', None, None, None, None, None],
-                 # ['Set Project Destination', None, self.set_def_proj_dest, None, None, None],
-                 # ['-', None, None, None, None, None],
-                 # ['Set Custom Destination...', None, self.set_destination, None, None, None],
-                 # ['-', None, None, None, None, None],
                  ['Show Project Inspector', None, self.show_project_inspector, None, None, None],
                  ['Update Project Inspector', None, self.update_project_inspector, None, None, None],
                  ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
              ]
              ],
-            # [ '&Images',
-            #   [
-            #     [ 'Define Roles', None, self.define_roles_callback, None, None, None ],
-            #     [ 'Import &Base Images', None, self.import_base_images, None, None, None ],
-            #     [ '-', None, None, None, None, None ],
-            #     [ '&Import into',
-            #       [
-            #         # Empty list to hold the dynamic roles as defined above
-            #       ]
-            #     ],
-            #     [ '&Empty into',
-            #       [
-            #         # Empty list to hold the dynamic roles as defined above
-            #       ]
-            #     ],
-            #     [ '-', None, None, None, None, None ],
-            #     [ 'Center', None, self.center_all_images, None, None, None ],
-            #     [ 'Actual Size', None, self.all_images_actual_size, None, None, None ],
-            #     [ 'Refresh', None, self.not_yet, None, None, None ],
-            #     [ '-', None, None, None, None, None ],
-            #     [ 'Clear Role',
-            #       [
-            #         # Empty list to hold the dynamic roles as defined above
-            #       ]
-            #     ],
-            #     [ 'Remove this Layer', None, self.remove_this_layer, None, None, None ],
-            #     [ 'Remove ALL Layers', None, self.remove_all_layers, None, None, None ],
-            #     # [ 'Remove ALL Panels', None, self.remove_all_panels, None, None, None ]
-            #     [ 'Remove ALL Panels', None, self.not_yet, None, None, None ]
-            #   ]
-            # ],
-            # [ '&Scaling',  # Note that this can NOT contain the string "Scale". "Scaling" is OK.
-            #   [
-            #     [ '&Define Scales', None, self.define_scales_callback, None, None, None ],
-            #     [ '&Generate Scales', None, self.generate_scales_callback, None, None, None ],
-            #     [ '&Generate Scales', None, self.not_yet, None, None, None ],
-            #     [ '&Import All Scales', None, self.not_yet, None, None, None ],
-            #     [ '-', None, None, None, None, None ],
-            #     [ '&Generate Tiled', None, self.not_yet, False, None, None ],
-            #     [ '&Import Tiled', None, self.not_yet, False, None, None ],
-            #     [ '&Show Tiled', None, self.not_yet, False, None, None ]
-            #   ]
-            # ],
-            # [ '&Scale',
-            #   [
-            #     [ '&Scale 1', None, self.do_nothing, True, "Scales", None ]
-            #   ]
-            # ],
-            # [ '&Points',
-            #   [
-            #     [ '&Alignment Point Mode', None, self.not_yet, False, None, None ],
-            #     [ '&Delete Points', None, self.not_yet, False, None, None ],
-            #     [ '&Clear All Alignment Points', None, self.not_yet, None, None, None ],
-            #     [ '-', None, None, None, None, None ],
-            #     [ '&Point Cursor',
-            #       [
-            #         [ 'Crosshair', None, self.not_yet, True, "Cursor", None ],
-            #         [ 'Target', None, self.not_yet, False, "Cursor", None ]
-            #       ]
-            #     ]
-            #   ]
-            # ],
-            # [ '&Set',
-            #stylesheet
             ['&Advanced',
              [
                  ['&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None],
@@ -4207,21 +4141,6 @@ class MainWindow(QMainWindow):
             #                  "border-right-color :#ffe135;"
             #                  "border-bottom-color : #ffe135;")
 
-
-    # if enable_stats:  # masterswitch
-    #     def update_base_label(self):
-    #         scale = project_data['data']['scales'][
-    #             project_data['data']['current_scale']]
-    #         layer = scale['alignment_stack'][project_data['data']['current_layer']]
-    #         base_file_name = layer['images']['base']['filename']
-    #         self.status_base_image_label.setText(os.path.basename(base_file_name))  # settext #status
-    #
-    #     def update_ref_label(self):
-    #         scale = project_data['data']['scales'][
-    #             project_data['data']['current_scale']]
-    #         layer = scale['alignment_stack'][project_data['data']['current_layer']]
-    #         ref_file_name = layer['images']['ref']['filename']
-    #         self.status_ref_image_label.setText(os.path.basename(ref_file_name))  # settext #status
 
     def update_win_self(self):
         print("update_win_self (called by %s):" % inspect.stack()[1].function)
@@ -4490,14 +4409,6 @@ class MainWindow(QMainWindow):
         self.export_and_view_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.set_user_progress()
 
-    #0504
-    # def toggle_on_extra_functions_groupbox(self):
-    #     self.project_functions_stack.setCurrentIndex(1)
-    #     self.project_functions_stack.setStyleSheet("""QWidget {color: #ffffff;}""")
-    # def toggle_off_extra_functions_groupbox(self):
-    #     self.project_functions_stack.setCurrentIndex(0)
-    #     self.project_functions_stack.setStyleSheet("""QGroupBox {color: #4f4f4f; border: 2px dotted #455364;}""")
-
     def toggle_on_images_and_scaling_groupbox(self):
         self.images_and_scaling_stack.setCurrentIndex(1)
         self.images_and_scaling_stack.setStyleSheet(open(self.main_stylesheet).read())
@@ -4591,10 +4502,7 @@ class MainWindow(QMainWindow):
         else:
             self.set_progress_stage_0()
             print('set_user_progress | setting user progress to stage 0')
-            # self.set_progress_stage_1()
-            # print('set_user_progress | Setting user progress to stage 1')
         self.update_project_inspector()
-
 
     @Slot()
     def get_user_progress(self) -> int:
@@ -4608,36 +4516,16 @@ class MainWindow(QMainWindow):
         else:
             return int(0)
 
-
-    def get_user_progress(self):
-        if isAnyScaleAligned():
-            print('Returning project progress stage = 3')
-            return int(3)
-        elif isProjectScaled():
-            print('Returning project progress stage = 2')
-            return int(2)
-        elif isDestinationSet():
-            print('Returning project progress stage = 1')
-            return int(1)
-        else:
-            print('Returning project progress stage = 0')
-            return int(0)
-
-
     @Slot()
     def read_gui_update_project_data(self) -> None:
         '''
         Reads UI data from MainWindow and writes everything to 'project_data'.
-        NOTE: Do NOT write affine combobox back to project_data. That only goes from project_data to GUI.
         '''
         if self.get_null_bias_value() == 'None':
             project_data['data']['scales'][getCurScale()]['null_cafm_trends'] = False
         else:
             project_data['data']['scales'][getCurScale()]['null_cafm_trends'] = True
             project_data['data']['scales'][getCurScale()]['poly_order'] = int(self.get_null_bias_value())
-
-        # project_data['data']['scales'][getCurScale()]['null_cafm_trends'] = self.get_null_bias_state()
-        # project_data['data']['scales'][getCurScale()]['poly_order'] = self.get_poly_input()
 
         project_data['data']['scales'][getCurScale()]['use_bounding_rect'] = self.get_bounding_state()
 
@@ -4648,15 +4536,7 @@ class MainWindow(QMainWindow):
         self.update_project_inspector()
         return
 
-    '''
-    TODO: update_skip_toggle function above works, when called from change_layer. Better idea is to
-    combine all GUI elements into a single function that can be called from change_layer. For example:
-    main_window.read_project_data_update_gui()
-    CALLED BY 'open_project'
-    
-    THIS NEEDS A COUNTERPART FUNCTION WHICH DOES THE OPPOSITE
-    '''
-    @Slot()  #0503 #skiptoggle #toggleskip #skipswitch forgot to define this
+    @Slot()
     def read_project_data_update_gui(self) -> None:
         '''
         Reads 'project_data' values and writes everything to MainWindow.
@@ -4679,7 +4559,6 @@ class MainWindow(QMainWindow):
         except:
             print('read_project_data_update_gui | WARNING | Affine Combobox UI element failed to update its state')
 
-        # if getCurSNR() is not None: # (!!!)going to try without this conditional first #0503
         try:
             cur_whitening_factor = scale['alignment_stack'][project_data['data']['current_layer']]['align_to_ref_method']['method_data']['whitening_factor']
             self.whitening_input.setText(str(cur_whitening_factor))
@@ -4708,8 +4587,6 @@ class MainWindow(QMainWindow):
 
         self.update_project_inspector()
 
-
-
     #0519
     @Slot()
     def get_whitening_input(self) -> float:
@@ -4723,14 +4600,6 @@ class MainWindow(QMainWindow):
     def get_bounding_state(self):
         '''TODO: WHY WAS THIS RETURNING FLOAT NOT BOOL'''
         return self.toggle_bounding_rect.isChecked()
-
-    # @Slot()
-    # def get_poly_input(self) -> float:
-    #     return float(self.poly_order_input.text())
-
-    # @Slot()
-    # def get_null_bias_state(self) -> bool:
-    #     return float(self.toggle_cafm.isChecked())
 
     #0523
     @Slot()
@@ -4757,9 +4626,7 @@ class MainWindow(QMainWindow):
             project_data['data']['current_layer'] = requested_layer
             self.image_panel.update_multi_self()
 
-
-    #0404 seems to be called right before the issue with QPainter
-    @Slot()  #scales #030 #0404
+    @Slot()
     def reload_scales_combobox(self):
         print("reload_scales_combobox:")
         prev_state = self.scales_combobox_switch
@@ -4782,9 +4649,8 @@ class MainWindow(QMainWindow):
 
     @Slot()  #scales
     def fn_scales_combobox(self) -> None:
-        # print('fn_scales_combobox:')
-        # if self.scales_combobox_switch == 1:
-        #     print('fn_scales_combobox | Switch is live')
+
+        # print('fn_scales_combobox | Switch is live')
         if self.scales_combobox_switch == 0:
             print('fn_scales_combobox | Change scales switch is disabled - Returning')
             return None
@@ -4797,10 +4663,6 @@ class MainWindow(QMainWindow):
         
         self.read_project_data_update_gui()
         # self.update_panels()  # 0523 #0528
-
-        # if center_switch:
-        # self.center_all_images() # prob best location, user is using combobox to change scale #orig
-        # self.image_panel.center_all_images() #0503 #0528
         main_window.center_all_images() #0528
         return None
 
@@ -4910,28 +4772,23 @@ class MainWindow(QMainWindow):
         '''
 
     '''
-    THE PURPOSE OF THIS FUNCTION IS TO REPLACE endure_proper_data_structure
+    THE PURPOSE OF THIS FUNCTION IS TO REPLACE ensure_proper_data_structure
     '''
     @Slot()
     def apply_project_defaults(self):
         print('\napply_defaults_to_scales:')
         self.hud.post('Applying project defaults...')
-        global project_data # AHA! NECESSARY TO MODIFY GLOBAL INSIDE OF FUNCTION
+        global project_data
         scales_combobox_switch_ = self.scales_combobox_switch
         self.scales_combobox_switch = 0
         scales_dict = project_data['data']['scales']
         coarsest_scale = list(scales_dict.keys())[-1]
-        # print('apply_project_defaults | BEFORE')
-        # debug_project()
-        # print('')
-
-        # self.set_def_proj_dest() #0529 might be needed #0601 - removing
 
         for scale_key in scales_dict.keys():
             scale = scales_dict[scale_key]
-            scale['null_cafm_trends'] = False  # 0523 need to hardcode this since cannot any longer read the value from toggle
-            scale['poly_order'] = int(0)  # 0523 need to hardcode this as well for similar reason
-            scale['use_bounding_rect'] = True  # 0523 need to hardcode this as well for similar reason
+            scale['null_cafm_trends'] = False #refactor
+            scale['poly_order'] = int(0) #refactor
+            scale['use_bounding_rect'] = True #refactor
 
             for layer_index in range(len(scale['alignment_stack'])):
                 layer = scale['alignment_stack'][layer_index]
@@ -4942,19 +4799,12 @@ class MainWindow(QMainWindow):
                     atrm['method_data'] = {}
                 mdata = atrm['method_data']
                 if not 'win_scale_factor' in mdata:
-                    # print("  Warning: if NOT 'win_scale_factor' in mdata was run")
                     mdata['win_scale_factor'] = float(.8125)
-
-                # print("Evaluating: if not 'whitening_factor' in mdata")
                 if not 'whitening_factor' in mdata:
-                    # print("  Warning: if NOT 'whitening_factor' in mdata was run")
                     mdata['whitening_factor'] = float(-.68)
-
                 if scale_key == coarsest_scale:
-                    # print('Setting %s to init_affine' % scale_key)
                     project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'init_affine'
                 else:
-                    # print('Setting %s to refine_affine' % scale_key)
                     project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
 
 
@@ -5047,11 +4897,6 @@ class MainWindow(QMainWindow):
                 # self.scales_combobox.clear() #why?? #0528
 
 
-
-    '''
-    NOTE: I ACCOMPLISH WITH 'self.read_project_data_update_gui()' WHAT BOB HAD DONE WITH 'view_change_callback'
-    
-    '''
     @Slot()
     def open_project(self):
         self.hud.post('Opening project...')
@@ -5075,7 +4920,6 @@ class MainWindow(QMainWindow):
             return
 
         # ignore_changes = True
-
 
         try:
             print('open_project | Opening the project file and storing text into variable')
@@ -5172,10 +5016,7 @@ class MainWindow(QMainWindow):
                                 if len(layer['images'][role]['filename']) > 0:
                                     layer['images'][role]['filename'] = self.make_relative(
                                         layer['images'][role]['filename'], self.current_project_file_name)
-                # if os.path.exists(self.current_project_file_name):
-                #     print('save_project_to_current_file | project file started with %d characters' % getProjectFileLength(self.current_project_file_name))
-                    # debug_project()
-                    # printProjectDetails(project_data)
+
                 print('------- (!) WRITING TO PROJECT FILE -------')
                 try:
                     print('save_project_to_current_file | Opening project file in write mode')
@@ -5188,10 +5029,6 @@ class MainWindow(QMainWindow):
                 except:
                     print('save_project_to_current_file | EXCEPT | Something went wrong writing to the project file - Aborting')
                     return
-
-                # print('save_project_to_current_file | project file now has %d characters' % getProjectFileLength(self.current_project_file_name))
-                # debug_project()
-                # printProjectDetails(project_data)
 
                 if self.draw_full_paths:
                     self.setWindowTitle("Project: " + self.current_project_file_name)
@@ -5488,7 +5325,6 @@ class MainWindow(QMainWindow):
         # self.save_project()
 
 
-
     def update_panels(self):
         '''NECESSARY. PAINTS THE IMAGES IN VIEWER.'''
         print("MainWindow.update_panels:")
@@ -5520,22 +5356,6 @@ class MainWindow(QMainWindow):
 
         self.import_images(import_role_name, file_name_list)
         # self.center_all_images() #0406
-
-    @Slot()
-    def set_destination(self):
-        print("MainWindow.set_destination:")
-        options = QFileDialog.Options()
-        options |= QFileDialog.Directory
-        options |= QFileDialog.DontUseNativeDialog
-
-        project_data['data']['destination_path'] = QFileDialog.getExistingDirectory(parent=None,
-                                                                                    caption="Select Destination Directory",
-                                                                                    dir=project_data['data'][
-                                                                                        'destination_path'],
-                                                                                    options=options)
-        print_debug(1, "Destination is: " + str(project_data['data']['destination_path']))
-
-        self.status.showMessage("Project File: " + self.current_project_file_name)
 
     @Slot()
     def set_def_proj_dest(self):
@@ -5630,8 +5450,6 @@ class MainWindow(QMainWindow):
     # center try center code from here
     def import_base_images(self):
         print("MainWindow.import_base_images:")
-        # self.hud.post('Importing images...')
-
 
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -5642,24 +5460,16 @@ class MainWindow(QMainWindow):
                                                              "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)",
                                                              "", options)
 
-
         # Attempt to hide the file dialog before opening ...
         for p in self.panel_list:
             p.update_zpa_self()
 
-        # self.update_win_self()
-
         self.import_images('base', file_name_list)
 
         link_all_stacks()
-        self.center_all_images() # patch center all images after importing
-        # if center_switch:
+        self.center_all_images()
         self.update_win_self()
 
-
-
-
-        # print(image_library.__str__())
 
     @Slot()
     def empty_into_role(self, checked):
@@ -5932,12 +5742,6 @@ class MainWindow(QMainWindow):
             sys.exit()
 
 
-
-
-
-
-
-
     @Slot()
     def py_console(self):
         print("@Slot Entering python console, use Control-D or Control-Z when done | MainWindow.py_console...")
@@ -5945,19 +5749,11 @@ class MainWindow(QMainWindow):
         __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
 
-
 #----------------------------------------------#
 #---------------EMBEDDED LOGGER----------------#
 #----------------------------------------------#
-
-'''
-I think this is a solid implementation of a thread-safe background GUI logger
-
-https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
-
-
-'''
-#logging #logger
+# I think this is a solid implementation of a thread-safe background GUI logger
+# https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 
 # Signals need to be contained in a QObject or subclass in order to be correctly initialized.
 class Signaller(QObject):
@@ -5987,7 +5783,7 @@ class Worker(QObject):
         while not QThread.currentThread().isInterruptionRequested():
             delay = 0.5 + random.random() * 2
             time.sleep(delay)
-            level = random.choice(LEVELS)
+            level = logging.INFO
             logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
             i += 1
 
@@ -6070,7 +5866,7 @@ class HeadsUpDisplay(QWidget):
 
     @Slot()
     def manual_update(self):
-        level = random.choice(LEVELS)
+        level = logging.INFO
         extra = {'qThreadName': ctname()}
         logger.log(level, 'Manually logged!', extra=extra)
 
@@ -6082,8 +5878,6 @@ class HeadsUpDisplay(QWidget):
     @Slot()
     def clear_display(self):
         self.textedit.clear()
-
-
 
 
 
@@ -6235,71 +6029,22 @@ print(inspect.stack()[1].function)
  Caller: ' + inspect.stack()[1].function + ' | 
  
  
- ZoomPanWidget.get_settings
- ZoomPanWidget.update_zpa_self
- 
+ZoomPanWidget.get_settings
+ZoomPanWidget.update_zpa_self
 
 
-''''''
-!!! code to see if scales have been generated yet (e.g.):
+
+Check if scales have been generated yet:
 len(project_data['data']['scales']) = 2
 if len(project_data['data']['scales']) > 0:
 
 
-
-
 Print/return the number of aligned images in  <project destination>/<current scale>/img_aligned
 
-DIR = os.path.join(project_data['data']['destination_path'], getCurScale(), 'img_aligned')
-print(len([name for name in os.listdir(DIR) if os.path.isfile(os.path.join(DIR, name))]))
+dir = os.path.join(project_data['data']['destination_path'], getCurScale(), 'img_aligned')
+print(len([name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))]))
 
 
-''''''
-Traceback (most recent call last):
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/py", line 4047, in open_project
-    self.image_panel.update_multi_self()
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/py", line 1599, in update_multi_self
-    alignem_swift.main_win.update_ref_label()
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/py", line 3823, in update_ref_label
-    ref_file_name = layer['images']['ref']['filename']
-KeyError: 'ref'
-
-Occurred pre-scaling, after saving/re-opening. Probably is preventing the image to center. Pressing 'center' successfully centered.
-
-
-''''''
-Encountered an endless cycle of scaling
-
-Worker 2:  Task 189 Completed with RC 1
-Worker 3:  Task 183 Completed with RC 1
-Worker 2:  Stopping
-Worker 3:  Stopping
-
-Need to Requeue 194 Failed Tasks...
-    Task_IDs: [5, 1, 2, 3, 0, 6, 4, 7, 10, 13, 15, 11, 8, 9, 14, 12, 16, 17, 23, 18, 21, 22, 20, 19, 24, 28, 25, 31, 29, 27, 30, 26, 34, 32, 33, 38, 36, 35, 39, 37, 41, 40, 47, 46, 45, 44, 42, 43, 51, 48, 49, 52, 53, 50, 54, 55, 58, 56, 57, 59, 61, 63, 62, 60, 65, 64, 71, 70, 67, 66, 69, 68, 77, 72, 79, 73, 76, 78, 75, 74, 86, 80, 82, 87, 81, 83, 84, 85, 90, 88, 89, 92, 94, 95, 91, 93, 97, 98, 96, 103, 102, 99, 100, 101, 106, 105, 104, 109, 110, 107, 108, 111, 112, 115, 114, 113, 116, 117, 119, 118, 121, 125, 122, 120, 126, 124, 127, 123, 128, 133, 131, 130, 134, 129, 132, 135, 136, 137, 139, 178, 155, 150, 154, 141, 171, 165, 169, 161, 156, 145, 174, 173, 177, 166, 160, 159, 163, 162, 193, 144, 140, 153, 164, 172, 192, 189, 142, 191, 186, 175, 157, 152, 147, 190, 180, 158, 149, 151, 181, 183, 143, 146, 138, 182, 179, 148, 170, 176, 168, 184, 185, 187, 167, 188]
-
-Restarting Task Queue...
-    Restarting Worker 0
-    Restarting Worker 1
-    Restarting Worker 2
-    Restarting Worker 3
-    Restarting Worker 4
-    Restarting Worker 5
-    Restarting Worker 6
-    Restarting Worker 7
-    Done Restarting Task Queue
-Requeuing Failed Task_ID: 5   Retries: 3
-  Task: {'cmd': '/Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3', 'args': ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/R34CA1-BS12_2022-03-24/project_runner_job_file.json', 'init_affine', '4', 'c', '5', '1', '0'], 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>\n    updated_model, need_to_write_json = pyswift_tui.run_json_project (\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 686, in run_json_project\n    if project[\'data\'][\'scales\'][\'scale_%d\'%use_scale][\'alignment_stack\'][0][\'images\'][\'ref\'][\'filename\'] != None:\nKeyError: \'ref\'\n', 'rc': 1, 'status': 'task_error', 'retries': 2, 'dt': 1.8007159233093262}
-
-
-...
-
-  Task: {'cmd': '/Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3', 'args': ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/R34CA1-BS12_2022-03-24/project_runner_job_file.json', 'init_affine', '4', 'c', '188', '1', '0'], 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>\n    updated_model, need_to_write_json = pyswift_tui.run_json_project (\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 686, in run_json_project\n    if project[\'data\'][\'scales\'][\'scale_%d\'%use_scale][\'alignment_stack\'][0][\'images\'][\'ref\'][\'filename\'] != None:\nKeyError: \'ref\'\n', 'rc': 1, 'status': 'task_error', 'retries': 2, 'dt': 2.097774028778076}
-Exiting project_runner > do_alignment
-Worker 0:  Running Task 5
-Exiting project_runner > do_alignment
-
-...
 
 ''''''
 
@@ -6320,68 +6065,14 @@ This bug could have to do with unused lines of code related to focus, i.e. self.
 This issue appears to be linked to TensorFlow
 https://github.com/tensorflow/tfjs/issues/1145
 
-''''''
 
 
-When aligning full res images with 'Apply Affine'
-
-Finished Collecting Results for 270 Tasks
-    Failed Tasks: 19
-    Retries: 10
-
-...
-
-270 Alignment Tasks Completed in 138.09 seconds
-    Num Successful:   251
-    Num Still Queued: 0
-    Num Failed:       19
-
-
-
-...
-
-Task Error:
-   CMD:    /Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3
-   ARGS:   ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/SYGQK_4096x4096_2022-03-01/project_runner_job_file.json', 'apply_affine', '1', 'c', '71', '1', '0']
-   STDERR: Traceback (most recent call last):
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>
-    updated_model, need_to_write_json = pyswift_tui.run_json_project (
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 936, in run_json_project
-    c_afm = align_item.align(c_afm,save=False)
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 149, in align
-    result = self.auto_swim_align(c_afm,save=save)
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 188, in auto_swim_align
-    wwx = int(wsf*wwx_f)                # Window Width in x Scaled
-TypeError: unsupported operand type(s) for *: 'NoneType' and 'int'
-
-...also getting a bunch of this block...
-
- Task: {'cmd': '/Users/joelyancey/anaconda3/envs/ges4_pyside6/bin/python3', 'args': ['/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/SYGQK_4096x4096_2022-03-01/project_runner_job_file.json', 'apply_affine', '1', 'c', '86', '1', '0'], 'stdout': '', 'stderr': 'Traceback (most recent call last):\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/single_alignment_job.py", line 50, in <module>\n    updated_model, need_to_write_json = pyswift_tui.run_json_project (\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 936, in run_json_project\n    c_afm = align_item.align(c_afm,save=False)\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 149, in align\n    result = self.auto_swim_align(c_afm,save=save)\n  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/align_swiftir.py", line 188, in auto_swim_align\n    wwx = int(wsf*wwx_f)                # Window Width in x Scaled\nTypeError: unsupported operand type(s) for *: \'NoneType\' and \'int\'\n', 'rc': 1, 'status': 'task_error', 'retries': 9, 'dt': 1.3530302047729492}
-
-...and finally...
-Traceback (most recent call last):
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/alignem_swift.py", line 1186, in align_all_or_some
-    align_layers(first_layer, num_layers)
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/alignem_swift.py", line 1072, in align_layers
-    running_project.do_alignment(alignment_option=this_scale['method_data']['alignment_option'],
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/project_runner.py", line 339, in do_alignment
-    self.generate_aligned_images()
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/project_runner.py", line 373, in generate_aligned_images
-    pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path)
-  File "/Users/joelyancey/glanceem_swift/swift-ir/source/PySide6/pyswift_tui.py", line 583, in save_bias_analysis
-    snr = np.array(atrm['method_results']['snr'])
-KeyError: 'snr'
-
-
-
-
-
-    # POSSIBLE WORKFLOW FOR VIEWING SINGLE BLEND IN NEUROGLANCER VIEWER
-    # 1. Create blended image
-    # 2. If project.zarr/img_blended_zarr group does not exist, create it
-    # 3. Converted blended image to Zarr using tiffs2zarr utility function (from glanceem_utils.py).
-    # 4. Blended image array is appended to project.zarr/img_blended_zarr
-    # 5. Neuroglancer viewer top panel is updated to display Zarr group img_blended_zarr
+POSSIBLE WORKFLOW FOR VIEWING SINGLE BLEND IN NEUROGLANCER VIEWER
+1. Create blended image
+2. If project.zarr/img_blended_zarr group does not exist, create it
+3. Converted blended image to Zarr using tiffs2zarr utility function (from glanceem_utils.py).
+4. Blended image array is appended to project.zarr/img_blended_zarr
+5. Neuroglancer viewer top panel is updated to display Zarr group img_blended_zarr
 
 
 weird, this randomly appeared:
@@ -6404,6 +6095,5 @@ not provide signals and slots.
 
 QWebSocketCorsAuthenticator¶
 https://doc.qt.io/qtforpython/PySide6/QtWebSockets/QWebSocketCorsAuthenticator.html?highlight=cors
-
 
 '''
