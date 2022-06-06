@@ -3830,7 +3830,6 @@ class MainWindow(QMainWindow):
 
     def export_zarr(self):
             print('\nexport_zarr():')
-            self.hud.post('Exporting scale ' + getCurScale()[-1] + 'to Zarr format...')
 
             # if getNumAligned() < 1:
             if isAnyScaleAligned():
@@ -3847,8 +3846,8 @@ class MainWindow(QMainWindow):
                                              '(4) Export alignment to Zarr format.\n'
                                              '(5) View data in Neuroglancer client')
 
-            self.set_status('Exporting scale %s to Neuroglancer-ready Zarr format...' % str(getCurScale()))
-            self.hud.post('Exporting scale %s to Neuroglancer-ready Zarr format...' % str(getCurScale()))
+            self.set_status('Exporting scale %s to Neuroglancer-ready Zarr format...' % getCurScale()[-1])
+            self.hud.post('Exporting scale %s to Neuroglancer-ready Zarr format...' % getCurScale()[-1])
 
             # allow any scale export...
             self.aligned_path = os.path.join(project_data['data']['destination_path'], getCurScale(), 'img_aligned')
@@ -4223,18 +4222,14 @@ class MainWindow(QMainWindow):
         '''Set user progress (0 to 3)'''
         if isAnyScaleAligned():
             self.set_progress_stage_3()
-            print('set_user_progress | Setting user progress to stage 3')
             self.update_interface_current_scale()
         elif isProjectScaled():
             self.set_progress_stage_2()
-            print('set_user_progress | Setting user progress to stage 2')
             self.update_interface_current_scale()
         elif isDestinationSet():
             self.set_progress_stage_1()
-            print('set_user_progress | Setting user progress to stage 1')
         else:
             self.set_progress_stage_0()
-            print('set_user_progress | setting user progress to stage 0')
         self.update_project_inspector()
 
     @Slot()
@@ -4391,8 +4386,8 @@ class MainWindow(QMainWindow):
         print("fn_scales_combobox | Change scales switch is Enabled, changing to %s"%self.scales_combobox.currentText())
         new_curr_scale = self.scales_combobox.currentText()  #  <class 'str'>
         project_data['data']['current_scale'] = new_curr_scale
-
-        self.hud.post('Setting current image scale to %s' % new_curr_scale[-1])
+        img_size = get_image_size(project_data['data']['scales'][new_curr_scale]['alignment_stack'][0]['images']['base']['filename'])
+        self.hud.post('Setting current image scale to %s (%sx%spx)' % (new_curr_scale[-1], img_size[0], img_size[1]))
         
         self.read_project_data_update_gui()
         # self.update_panels()  # 0523 #0528
@@ -4648,16 +4643,14 @@ class MainWindow(QMainWindow):
 
         if file_name == '':
             print('open_project | No project was opened')
-            self.hud.post('No project was opened', logging.WARNING)
+            self.hud.post('No project was selected', logging.WARNING)
             return
 
         # ignore_changes = True
 
         try:
-            print('open_project | Opening the project file and storing text into variable')
             f = open(file_name, 'r')
             text = f.read()
-            print('open_project | Closing the project file')
             f.close()
         except:
             self.hud.post('No project opened.', logging.WARNING)
@@ -4686,7 +4679,6 @@ class MainWindow(QMainWindow):
             # The data model loaded fine, so initialize the application with the data
             # At this point, self.current_project_file_name is None
             self.current_project_file_name = file_name
-            print('open_project | self.current_project_file_name is now', self.current_project_file_name)
             self.status.showMessage("Loading Project File " + self.current_project_file_name)
 
             print('open_project | Modifying the copy to use absolute paths internally')
@@ -4726,7 +4718,7 @@ class MainWindow(QMainWindow):
 
     def save_project_to_current_file(self):
         print('save_project_to_current_file:')
-        self.hud.post('Saving project')
+        # self.hud.post('Saving project')
         # Save to current file and make known file paths relative to the project file name
         if self.current_project_file_name != None:
             if len(self.current_project_file_name) > 0:
@@ -4734,6 +4726,7 @@ class MainWindow(QMainWindow):
                 if not self.current_project_file_name.endswith('.json'):
                     self.current_project_file_name = self.current_project_file_name + ".json"
                 print("save_project_to_current_file | Saving project_data to file " + str(self.current_project_file_name))
+                self.hud.post('Saving project %s' % self.current_project_file_name)
                 proj_copy = copy.deepcopy(project_data)
                 if project_data['data']['destination_path'] != None:
                     if len(proj_copy['data']['destination_path']) > 0:
@@ -4773,7 +4766,9 @@ class MainWindow(QMainWindow):
     def save_project(self):
         if self.current_project_file_name is None:
             print("save_project | Project file is not named, presenting user with 'save as' dialog")
-            self.save_project_as()
+            # self.save_project_as()
+            self.hud.post('Nothing to save - no project open.', logging.WARNING)
+            return
         else:
             print('save_project | saving current project to its project file')
             try:
@@ -5539,7 +5534,8 @@ class HeadsUpDisplay(QWidget):
         te.setFont(f)
         te.setReadOnly(True)
         te.setStyleSheet("""
-            background-color: #d3dae3;
+            /*background-color: #d3dae3;*/
+            background-color:  #f5ffff;
             /*border-style: solid;*/
             border-style: inset;
             border-color: #455364; /* off-blue-ish color used in qgroupbox border */
