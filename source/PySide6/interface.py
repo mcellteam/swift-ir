@@ -558,7 +558,7 @@ class ImageLibrary:
                     image_ref = self._images[real_norm_path]['image']
             else:
                 # The image is not in the library at all, so force a load now (and wait)
-                print_debug(4, "  Forced load of image: \"" + str(real_norm_path) + "\"")
+                # print_debug(4, "  Forced load of image: \"" + str(real_norm_path) + "\"") #0606
 
                 #0526
                 # image = QImage(real_norm_path)
@@ -2767,7 +2767,7 @@ class MainWindow(QMainWindow):
 
 
             self.hud.post('Loading Neuroglancer viewer...')
-            self.hud.post('Zarr source: ' + zarr_project_path)
+            self.hud.post("  source: '%s'" % zarr_ds_path)
 
             if 'server' in locals():
                 print('ng_view() | server is already running')
@@ -3993,7 +3993,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def get_auto_generate_state(self) -> bool:
-        '''NOTE: NOT data-driven. Simple get function to get boolean state of auto-generate toggle.'''
+        '''Simple get function to get boolean state of auto-generate toggle.'''
 
         if self.toggle_auto_generate.isChecked():
             return True
@@ -4002,6 +4002,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def toggle_auto_generate_callback(self):
+        '''Update HUD with new toggle state. Not data-driven.'''
         if self.toggle_auto_generate.isChecked():
             self.hud.post('Images will be generated automatically after alignment')
         else:
@@ -4380,7 +4381,7 @@ class MainWindow(QMainWindow):
 
         # print('fn_scales_combobox | Switch is live')
         if self.scales_combobox_switch == 0:
-            print('fn_scales_combobox | Change scales switch is disabled - Returning')
+            # print('fn_scales_combobox | Change scales switch is disabled - Returning')
             return None
 
         print("fn_scales_combobox | Change scales switch is Enabled, changing to %s"%self.scales_combobox.currentText())
@@ -4711,9 +4712,10 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
         self.reload_scales_combobox() #0529 just checking if adding this fixes bug
         self.center_all_images() # #0406 redundancy, discard if possible
+        self.hud.post("Project '%s' opened" % self.current_project_file_name)
         self.set_user_progress()
         self.update_project_inspector()
-        print('\nCurrent project: %s\n' % self.current_project_file_name)
+        print("\nProject '%s' opened.\n" % self.current_project_file_name)
 
 
     def save_project_to_current_file(self):
@@ -4725,8 +4727,6 @@ class MainWindow(QMainWindow):
                 # Write out the project
                 if not self.current_project_file_name.endswith('.json'):
                     self.current_project_file_name = self.current_project_file_name + ".json"
-                print("save_project_to_current_file | Saving project_data to file " + str(self.current_project_file_name))
-                self.hud.post('Saving project %s' % self.current_project_file_name)
                 proj_copy = copy.deepcopy(project_data)
                 if project_data['data']['destination_path'] != None:
                     if len(proj_copy['data']['destination_path']) > 0:
@@ -4741,11 +4741,11 @@ class MainWindow(QMainWindow):
                                     layer['images'][role]['filename'] = self.make_relative(
                                         layer['images'][role]['filename'], self.current_project_file_name)
 
-                print('------- (!) WRITING TO PROJECT FILE -------')
+                print("save_project_to_current_file | Writing project_data to '%s'" % self.current_project_file_name)
+                print('------- WRITING TO PROJECT FILE -------')
+                self.hud.post("Saving project '%s'" % self.current_project_file_name)
                 try:
-                    print('save_project_to_current_file | Opening project file in write mode')
                     f = open(self.current_project_file_name, 'w')
-                    print('save_project_to_current_file | Encoding the json')
                     jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
                     proj_json = jde.encode(proj_copy)
                     f.write(proj_json)
@@ -4760,7 +4760,6 @@ class MainWindow(QMainWindow):
                     self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1])
                 self.status.showMessage("Project File: " + self.current_project_file_name)
 
-        print('save_project_to_current_file | Complete')
 
     @Slot()
     def save_project(self):
@@ -5440,7 +5439,6 @@ class MainWindow(QMainWindow):
     def exit_app(self):
         print("MainWindow.exit_app:")
         self.hud.post('Exiting...')
-        self.hud.force_quit()
 
         if areImagesImported():
             message = "<font size = 4 color = gray>Save before exiting?</font>"
@@ -5456,15 +5454,18 @@ class MainWindow(QMainWindow):
                 print('exit_app | reply=Save')
                 self.save_project()
                 print('\nProject saved. Exiting\n')
+                self.hud.kill_thread()
                 sys.exit()
             if reply == QMessageBox.Discard:
                 print('exit_app | reply=Discard\n\nExiting without saving\n')
+                self.hud.kill_thread()
                 sys.exit()
             if reply == QMessageBox.Cancel:
                 print('exit_app | reply=Cancel\n\nCanceling action - Returning control to app\n')
                 return
 
         else:
+            self.hud.kill_thread()
             sys.exit()
 
 
