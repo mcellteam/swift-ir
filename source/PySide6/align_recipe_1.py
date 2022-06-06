@@ -23,7 +23,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     '''TODO: Need to check if images have been imported'''
     print('\nalign_all_or_some:')
-    interface.main_window.hud.post('Calculating alignment transformation matrices of scale ' + getCurScale()[-1] + '...')
+    interface.main_window.hud.post('Computing affine transformation matrices of scale ' + getCurScale()[-1] + '...')
 
     if areImagesImported():
         print("align_all_or_some | Images are imported - Continuing")
@@ -65,7 +65,14 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     interface.main_window.set_status('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
 
     print('align_all_or_some | Removing any previously aligned images...')
-    interface.main_window.hud.post('Removing pre-existing aligned images of scale  ' + getCurScale()[-1] + '...')
+    interface.main_window.hud.post('Removing previously generated scale %s aligned images...' % cur_scale[-1])
+
+    if areAlignedImagesGenerated():
+        print('align_all_or_some | Previously generated aligned images for current scale were found. Removing them.')
+        remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
+    else:
+        print('align_all_or_some | Previously generated aligned images were not found - Continuing...')
+
     remove_aligned(starting_layer=first_layer, prompt=False)
     interface.main_window.hud.post('Aligning...')
     interface.print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
@@ -85,14 +92,15 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     print("align_all_or_some | Wrapping up")
     interface.main_window.set_status('Alignment of scale %s images (%s x %s pixels) complete.' % (cur_scale[-1], img_size[0], img_size[1]))
-    interface.main_window.refresh_all_images()
+    # interface.main_window.refresh_all_images() #0606 remove
     interface.main_window.center_all_images()
-    interface.main_window.update_win_self()
+    # interface.main_window.update_win_self() #0606 remove
     interface.main_window.set_progress_stage_3()
     interface.main_window.update_project_inspector()
     interface.main_window.hud.post('Alignment of scale ' + getCurScale()[-1] + ' complete')
 
     print("\nCalculating alignment transformation matrices complete.\n")
+    interface.main_window.hud.post('Finished computing affien transformation matrices.')
 
 
 # generate_scales_queue calls this w/ defaults in debugger
@@ -108,7 +116,8 @@ def align_layers(first_layer=0, num_layers=-1):
     else:
         print('align_layers | Aligning using SWiFT-IR ...' % (first_layer,first_layer+num_layers-1))
 
-    remove_aligned(starting_layer=first_layer, prompt=False)
+    #0606 pretty sure this is redundant, call is in align_all_or_some - removing
+    # remove_aligned(starting_layer=first_layer, prompt=False)
 
     # ensure_proper_data_structure()
 
@@ -212,7 +221,10 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     the same function implicitly when 'running_project.do_alignment' gets called (assuming 'generate_images=True' is
     passed into the function call)
     '''
-    print('\n\nregenerate_aligned(first_layer=%d, num_layers=%d, prompt=%s):' % (first_layer, num_layers, prompt))
+    print('\nregenerate_aligned(first_layer=%d, num_layers=%d, prompt=%s):' % (first_layer, num_layers, prompt))
+    interface.main_window.hud.post('Generating aligned images...')
+    interface.main_window.hud.update()
+
 
     # isAlignmentOfCurrentScale does not function properly. Come back to this.
     # if isAlignmentOfCurrentScale():
@@ -231,10 +243,14 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     interface.main_window.read_gui_update_project_data()
 
     # interface.print_debug(5, "Removing aligned from scale " + cur_scale + " forward from layer " + str(first_layer) + "  (align_all_or_some)")
-    print('regenerate_aligned | Removing aligned from scale %s' % cur_scale)
+    print('regenerate_aligned | Removing aligned from scale %s' % cur_scale[-1])
 
+    if areAlignedImagesGenerated():
+        print('regenerate_aligned | Previously generated aligned images for current scale were found. Removing them.')
+        remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
+    else:
+        print('regenerate_aligned | Previously generated aligned images were not found - Continuing...')
 
-    remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
     scale_to_run_text = interface.project_data['data']['current_scale']
     dm = copy.deepcopy(interface.project_data)
 
@@ -258,29 +274,31 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     else:
         update_datamodel(updated_model)
 
-    interface.main_window.refresh_all_images()
+    # interface.main_window.refresh_all_images() #0606 remove
 
     interface.main_window.set_status('Regenerating alignment of %s complete.' % cur_scale)
 
     print("regenerate_aligned | Wrapping up...")
     interface.main_window.center_all_images()
-    interface.main_window.update_win_self()
+    # interface.main_window.update_win_self() #0606 remove
 
     # interface.main_window.toggle_on_export_and_view_groupbox()
     interface.main_window.set_progress_stage_3()
 
-    print("\nRegenerating aligned images complete.\n")
+    interface.main_window.hud.post('Finished generating aligned images.')
+    print("\nGenerating aligned images complete.\n")
 
 
 
 def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
-    print('\nremove_aligned:')
-    print("remove_aligned(starting_layer=%d, prompt=%s, clear_results=%s):" % (starting_layer, str(prompt), str(clear_results)))
+    # print('\nremove_aligned:')
+    # print("remove_aligned(starting_layer=%d, prompt=%s, clear_results=%s):" % (starting_layer, str(prompt), str(clear_results)))
 
     # disconnecting 'prompt' and 'actually_remove' variables and checks - Todo: rewrite warnings using glanceem_utils functions
 
     cur_scale = getCurScale()
-    print("remove_aligned | Removing aligned from scale %s forward from layer %s..." % (cur_scale[-1], str(starting_layer)))
+    print("remove_aligned | Removing aligned from scale %s forward from layer %s" % (cur_scale[-1], str(starting_layer)))
+    interface.main_window.hud.post('Removing previously generated scale %s aligned images...' % cur_scale[-1])
 
     delete_list = []
 
@@ -312,10 +330,11 @@ def remove_aligned(starting_layer=0, prompt=True, clear_results=True):
                 interface.image_library.remove_image_reference(fname)
 
     # main_win.update_panels() #bug
-    interface.main_window.update_panels()  # fix
-    interface.main_window.refresh_all_images()
+    # interface.main_window.update_panels()  # fix #0606 -remove
+    # interface.main_window.refresh_all_images() #0606 -remove
 
-    print('\nRemoving aligned images complete.\n')
+
+
 
 
 

@@ -4,6 +4,7 @@ import interface
 import webbrowser
 import operator
 import logging
+import traceback
 import json
 import numpy as np
 import zarr
@@ -47,6 +48,10 @@ center_switch = 0
 # import task_queue_mp as task_queue
 # import task_wrapper
 # import project_runner
+
+def get_trace() -> str:
+    trace = traceback.format_exc()
+    return trace
 
 def getProjectFileLength(path: str) -> int:
     f = open(path, 'r')
@@ -273,7 +278,7 @@ def getNumAligned() -> int:
 
 def getSkipsList() -> list[int]:
     '''Returns the list of skipped images at the current scale'''
-    print('getSkipsList | called by ',inspect.stack()[1].function)
+    # print('getSkipsList | called by ',inspect.stack()[1].function)
     skip_list = []
     try:
         for layer_index in range(len(interface.project_data['data']['scales'][getCurScale()]['alignment_stack'])):
