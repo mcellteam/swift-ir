@@ -615,8 +615,6 @@ class ImageLibrary:
 
     def make_available(self, requested):
         # print('  ImageLibrary.make_available called by ' + inspect.stack()[1].function + '...')
-
-        #tag #memo
         """
         SOMETHING TO LOOK AT:
 
@@ -869,12 +867,12 @@ class ZoomPanWidget(QWidget):
         # focus
 
         #0605 following 6 lines were commented
-        QApplication.instance().focusChanged.connect(self.on_focusChanged)
-
-    def on_focusChanged(self):
-        fwidget = QApplication.focusWidget()
-        if fwidget is not None:
-            print("focus widget name = ", fwidget.objectName())
+        # QApplication.instance().focusChanged.connect(self.on_focusChanged)
+    #
+    # def on_focusChanged(self):
+    #     fwidget = QApplication.focusWidget()
+    #     if fwidget is not None:
+    #         print("focus widget name = ", fwidget.objectName())
 
     def get_settings(self):
         settings_dict = {}
@@ -919,7 +917,7 @@ class ZoomPanWidget(QWidget):
         self.ldy = 0
         self.wheel_index = 0
         # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
-        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
         clear_crop_settings()
 
     # ZoomPanWidget.center_image called once for each role/panel
@@ -1341,13 +1339,6 @@ class ZoomPanWidget(QWidget):
         self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
         self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
 
-
-    '''
-    CALLS 'view_change_callback'
-    
-    need to 'read_gui_update_project_data()' for leaving scale/layer, and 'read_project_data_update_gui()' for entering scale/layer
-    
-    '''
     def change_layer(self, layer_delta):
         """This function iterates the current layer"""
         # print('ZoomPanWidget.change_layer')
@@ -2692,12 +2683,6 @@ class MainWindow(QMainWindow):
             self.stacked_widget.setCurrentIndex(0)
             self.status.showMessage("")
 
-        # webgl2
-        # def exit_microns():
-        #     print("\nexit_microns():\n")
-        #     self.stacked_widget.setCurrentIndex(0)
-        #     self.status.showMessage("")
-
         def print_state_ng():
             self.status.showMessage("Printing viewer state...")
             # viewer_state = json.loads(str(self.viewer.state))
@@ -3122,12 +3107,6 @@ class MainWindow(QMainWindow):
         ------------------------------------------'''
         #datapanel #scalingpanel #importpanel
 
-        #scale = project_data['data']['scales'][
-        #     project_data['data']['current_scale']]  # print(scale) # returns massive wall of text
-        # layer = scale['alignment_stack'][project_data['data']['current_layer']]
-        # base_file_name = layer['images']['base']['filename']
-        # print("current base image = ", base_file_name)
-
         self.import_images_button = QPushButton("Import\nImages")
         self.import_images_button.setToolTip('Import TIFF images.')
         self.import_images_button.clicked.connect(self.import_base_images)
@@ -3354,7 +3333,7 @@ class MainWindow(QMainWindow):
         tip = 'Bounding rectangle (default=ON). Caution: Turning this OFF will result in images that are the same size as the source images but may have missing data, while turning this ON will result in no missing data but may significantly increase the size of the generated images.'
         wrapped = "\n".join(textwrap.wrap(tip, width=35))
         self.bounding_label.setToolTip(wrapped)
-        self.toggle_bounding_rect = ToggleSwitch()  #toggleboundingrect
+        self.toggle_bounding_rect = ToggleSwitch()
         self.toggle_bounding_rect.setToolTip(wrapped)
         # self.toggle_bounding_rect.setChecked(True)
         self.toggle_bounding_rect.setV_scale(.6)
@@ -3538,8 +3517,6 @@ class MainWindow(QMainWindow):
         self.lower_panel_groups.setLayout(self.lower_panel_groups_)
         self.lower_panel_groups.setFixedHeight(cpanel_height + 10)
 
-
-
         # self.main_panel_layout.addLayout(self.lower_panel_groups) #**
         # self.main_panel_layout.setAlignment(Qt.AlignHCenter)
 
@@ -3557,13 +3534,6 @@ class MainWindow(QMainWindow):
         QThread.currentThread().setObjectName('Log')
         logging.getLogger().setLevel(logging.DEBUG)
         self.hud = HeadsUpDisplay(app)
-
-
-
-
-        # self.above_splitter =QWidget()
-        # self.above_splitter.setLayout(self.lower_panel_groups)
-
 
         self.splitter = QSplitter(Qt.Vertical)
         self.splitter.addWidget(self.image_panel)
