@@ -369,43 +369,18 @@ QTabBar::tab:selected, QTabBar::tab:first:selected, QTabBar::tab:hover {
 }
 
 QCheckBox {
-	color: #d3dae3;
-	padding: 2px;
+	color: #808086;
+	padding: 1px;
 }
 QCheckBox:disabled {
-	color: #808086;
-	padding: 2px;
+    /*color: #d3dae3;*/
+	/*color: #808086;*/
+	color: #ffffff;
+	padding: 1px;
 }
 
-QCheckBox:hover {
-	border-radius:4px;
-	border-style:solid;
-	padding-left: 1px;
-	padding-right: 1px;
-	padding-bottom: 1px;
-	padding-top: 1px;
-	border-width:1px;
-	border-color: transparent;
-}
-QCheckBox::indicator:checked {
 
-	height: 10px;
-	width: 10px;
-	border-style:solid;
-	border-width: 1px;
-	border-color: #4fa08b;
-	color: #000000;
-	background-color: qradialgradient(cx:0.4, cy:0.4, radius: 1.5,fx:0, fy:0, stop:0 #1e282c, stop:0.3 #1e282c, stop:0.4 #4fa08b, stop:0.5 #1e282c, stop:1 #1e282c);
-}
-QCheckBox::indicator:unchecked {
 
-	height: 10px;
-	width: 10px;
-	border-style:solid;
-	border-width: 1px;
-	border-color: #4fa08b;
-	color: #000000;
-}
 QRadioButton {
 	color: #d3dae3;
 	padding: 1px;
@@ -418,7 +393,8 @@ QRadioButton::indicator:checked {
 	border-width: 1px;
 	border-color: #4fa08b;
 	color: #a9b7c6;
-	background-color: qradialgradient(cx:0.5, cy:0.5, radius:0.4,fx:0.5, fy:0.5, stop:0 #4fa08b, stop:1 #1e282c);
+	background-color: #00ff00;
+    /*background-color: qradialgradient(cx:0.5, cy:0.5, radius:0.4,fx:0.5, fy:0.5, stop:0 #4fa08b, stop:1 #1e282c);*/
 }
 QRadioButton::indicator:!checked {
 	height: 10px;
