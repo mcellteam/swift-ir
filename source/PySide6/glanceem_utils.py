@@ -291,6 +291,24 @@ def getSkipsList() -> list[int]:
 
     return skip_list
 
+def getNumScales() -> int:
+    '''Returns the number of scales in scale pyramid'''
+    try:
+        n_scales = len(interface.project_data['data']['scales'].keys())
+        return n_scales
+    except:
+        print('getNumScales | EXCEPTION | Unable to return the number of scales')
+
+
+def getScaleKeys() -> list[str]:
+    '''Returns the sorted dictionary keys for the scales in the current project'''
+    try:
+        scale_keys = sorted(interface.main_window.project_data['data']['scales'].keys())
+        return scale_keys
+    except:
+        print('getScaleKeys | EXCEPTION | Unable to return dictionary keys for scales')
+
+
 def isAnyScaleAligned() -> bool:
     '''Checks if there exists a set of aligned images at the current scale'''
 
@@ -298,7 +316,7 @@ def isAnyScaleAligned() -> bool:
         files = glob(interface.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
     except:
         files = '' #0520
-        print('isAnyScaleAligned | WARNING | Looking for *.tif in project dir but didnt find any - Returning empty string')
+        print('isAnyScaleAligned | EXCEPTION | Looking for *.tif in project dir but didnt find any - Returning empty string')
 
     if len(files) > 0:
         # print('isAnyScaleAligned | Returning True')
@@ -306,6 +324,22 @@ def isAnyScaleAligned() -> bool:
     else:
         # print('isAnyScaleAligned | Returning False')
         return False
+
+
+def isScaleAligned(scale: str) -> bool:
+    try:
+        files = glob(interface.project_data['data']['destination_path'] + '/' + scale + '/img_aligned/*.tif')
+    except:
+        print('isScaleAligned | EXCEPTION')
+
+    if len(files) > 0:
+        # print('isAnyScaleAligned | Returning True')
+        return True
+    else:
+        # print('isAnyScaleAligned | Returning False')
+        return False
+
+
 
 # def isAlignmentOfCurrentScale() -> bool:
 #     '''Checks if there exists a set of aligned images at the current scale

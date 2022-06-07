@@ -10,7 +10,8 @@ from http.server import SimpleHTTPRequestHandler, HTTPServer
 from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
     QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
-    QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter
+    QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter, \
+    QRadioButton
 from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
     QSurfaceFormat, QAction, QActionGroup, QPaintEvent, QBrush, QFont, QImageReader, QImage
 from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
@@ -44,10 +45,11 @@ from glanceem_utils import print_exception, getCurScale, isDestinationSet, isPro
     isAnyScaleAligned, returnAlignedImgs, isAnyAlignmentExported, getNumScales, \
     printCurrentDirectory, link_all_stacks, copy_skips_to_all_scales, print_project_data_stats, getCurSNR, \
     areImagesImported, debug_layer, debug_project, printProjectDetails, getProjectFileLength, isCurScaleExported, \
-    getNumImportedImages, update_datamodel
+    getNumImportedImages, update_datamodel, getNumScales, getScaleKeys
 # from glanceem_utils import get_viewer_url
 from glanceem_utils import clear_all_skips
 from scale_pyramid import add_layer
+import project_runner
 # from align_recipe_1 import align_all_or_some, regenerate_aligned #0606
 from get_image_size import get_image_size
 import align_swiftir, pyswift_tui
@@ -283,6 +285,8 @@ def generate_scales_queue():
 
     main_window.scales_combobox_switch = 0
 
+    main_window.project_scales = []
+
     default_scales = ['1']
     cur_scales = [str(v) for v in sorted([get_scale_val(s) for s in project_data['data']['scales'].keys()])]
     if len(cur_scales) > 0:
@@ -307,11 +311,15 @@ def generate_scales_queue():
     main_window.hud.post('Generating scales...')
     QApplication.processEvents()
     image_scales_to_run = [get_scale_val(s) for s in sorted(project_data['data']['scales'].keys())]
+    print('image_scales_to_run = ', str(image_scales_to_run))
+    print('type(image_scales_to_run) = ', type(image_scales_to_run))
+    print("project_data['data']['scales'].keys() = ", project_data['data']['scales'].keys())
+    print("len(project_data['data']['scales'].keys())", len(project_data['data']['scales'].keys()))
+
 
     print("generate_scales_queue | Generating images for these scales: " + str(image_scales_to_run))
 
-    if (project_data['data']['destination_path'] == None) or (
-            len(project_data['data']['destination_path']) <= 0):
+    if (project_data['data']['destination_path'] == None) or (len(project_data['data']['destination_path']) <= 0):
 
         show_warning("Note", "Scales cannot be generated without a destination. Please first 'Save Project As...'")
 
@@ -345,7 +353,6 @@ def generate_scales_queue():
                 iscale2_c = my_path + '../c/bin_tacc/iscale2'
             else:
                 iscale2_c = my_path + '../c/bin_linux/iscale2'
-
 
         for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
 
@@ -459,6 +466,7 @@ def generate_scales_queue():
             print('generate_scales_queue | Project is not scaled - Returning')
             return None
 
+
         main_window.apply_project_defaults()
         main_window.set_progress_stage_2()
         main_window.read_project_data_update_gui()
@@ -480,14 +488,6 @@ def load_image_worker(real_norm_path, image_dict):
     image_dict['loading'] = False
     print_debug(50, "load_image_worker finished for:" + str(real_norm_path))
     image_library.print_load_status()
-
-
-
-
-
-import project_runner
-
-
 
 
 def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
@@ -572,6 +572,9 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     print("align_all_or_some | Calling align_layers w/ first layer = %s, # layers = %s" % (str(first_layer), str(num_layers)))
     align_layers(first_layer, num_layers)  # <-- CALL TO 'align_layers'
 
+    main_window.alignment_status_checkbox.setChecked(isScaleAligned(getCurScale()))
+    QApplication.processEvents()
+
     print("align_all_or_some | Wrapping up")
     main_window.set_status('Alignment of scale %s images (%s x %s pixels) complete.' % (cur_scale[-1], img_size[0], img_size[1]))
     # main_window.refresh_all_images() #0606 remove
@@ -579,7 +582,6 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     # main_window.update_win_self() #0606 remove
     main_window.set_progress_stage_3()
     main_window.update_project_inspector()
-    QApplication.processEvents()
 
     print("\nCalculating alignment transformation matrices complete.\n")
     main_window.hud.post('Completed computing affine transformation matrices for scale %s' % getCurScale()[-1])
@@ -2210,9 +2212,6 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
             scale = project_data['data']['scales'][project_data['data']['current_scale']]
             layer = scale['alignment_stack'][project_data['data']['current_layer']]
             layer['skip'] = new_skip  # skip # this is where skip list is appended to
-            # if update_skips_callback != None:
-            #     # update_skips_callback(bool(state)) #og
-            #     # update_skips_callback(new_skip)  #jy
             copy_skips_to_all_scales()
         else:
             print("skip_changed_callback | EXCEPTION | not called by run_app")
@@ -2915,6 +2914,9 @@ class MainWindow(QMainWindow):
         print("MainWindow | Setting multiprocessing.set_start_method('fork', force=True)...")
         multiprocessing.set_start_method('fork', force=True)
 
+        self.project_progress = 0
+        self.project_scales = []
+        self.project_aligned_scales = []
 
         std_height = int(22)
         std_width = int(118)
@@ -3648,6 +3650,14 @@ class MainWindow(QMainWindow):
         # self.align_all_button.setIcon(icon)
         # self.align_all_button.setLayoutDirection(Qt.RightToLeft)
 
+        self.alignment_status_label = QLabel("Aligned Status:")
+        # self.alignment_status_checkbox = QCheckBox()
+        self.alignment_status_checkbox = QRadioButton()
+        self.alignment_status_checkbox.setEnabled(False)
+        self.alignment_status_layout = QHBoxLayout()
+        self.alignment_status_layout.addWidget(self.alignment_status_label)
+        self.alignment_status_layout.addWidget(self.alignment_status_checkbox)
+
         # Auto-generate Toggle
         # Current implementation is not data-driven.
         self.auto_generate_label = QLabel("Auto-generate Images:")
@@ -3671,7 +3681,7 @@ class MainWindow(QMainWindow):
         self.alignment_layout.addWidget(self.next_scale_button, 1, 1)
         self.alignment_layout.addWidget(self.align_all_button, 2, 1)
         self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 2, 0)
-        # (2,0,1,2)
+        self.alignment_layout.addLayout(self.alignment_status_layout, 3, 1)
 
         '''------------------------------------------
         PANEL 3.5: Post-alignment
@@ -3809,7 +3819,7 @@ class MainWindow(QMainWindow):
         INTEGRATED CONTROL PANEL
         ------------------------------------------'''
         #controlpanel
-        cpanel_height = 145
+        cpanel_height = 170
         cpanel_1_width = 275
         cpanel_2_width = 275
         cpanel_3_width = 370
@@ -4202,7 +4212,7 @@ class MainWindow(QMainWindow):
             # if getNumAligned() < 1:
             if isAnyScaleAligned():
                 print('  export_zarr() | there is an alignment stack at this scale - continuing.')
-                self.status.showMessage('Exporting alignment project to Zarr...')
+                self.status.showMessage('Exporting...')
                 pass
             else:
                 print('  export_zarr() | (!) There is no alignment at this scale to export. Aborting export_zarr().')
@@ -4254,8 +4264,9 @@ class MainWindow(QMainWindow):
             if self.cname == "none":
                 # os.system("python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -nC 1 -d " + destination_path + " -n " + ds_name)
                 os.system("python3 make_zarr.py %s -c '64,64,64' -nS %s -nC 1 -d %s -n %s" % (self.aligned_path, self.n_scales, self.dest_path, self.ds_name))
-                self.status.showMessage("Zarr export complete.")
-                self.set_status('Export of scale %s to Neuroglancer-ready Zarr format complete!' % str(getCurScale()))
+                self.set_status('Export complete')
+                self.hud.post('Export of scale %s to Zarr complete' % getCurScale()[-1])
+                QApplication.processEvents()
             else:
                 # print('\n\n---------ATTEMPTING BACKGROUND ZARR-----------\n\n')
                 # worker = Worker(self.make_zarr_multithreaded, self.aligned_path, self.n_scales, self.cname, self.clevel, self.dest_path, self.ds_name) # Any other args, kwargs are passed to the run function
@@ -4269,9 +4280,8 @@ class MainWindow(QMainWindow):
 
                 os.system("python3 make_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (self.aligned_path, str(self.n_scales), str(self.cname), str(self.clevel), destination_path, self.ds_name))
                 #os.system("python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -cN " + str(cname) + " -cL " + str(clevel) + " -d " + destination_path + " -n " + ds_name)
-                self.status.showMessage("Zarr export complete.")
                 self.set_status('Export complete')
-                self.hud.post('Export of scale %s to Neuroglancer-ready Zarr format complete' % str(getCurScale()))
+                self.hud.post('Export of scale %s to Zarr complete' % getCurScale()[-1])
                 QApplication.processEvents()
 
 
@@ -4359,6 +4369,11 @@ class MainWindow(QMainWindow):
                 self.prev_scale_button.show()
         except:
             print('update_interface_current_scale | Something went wrong updating button visibility')
+
+        try:
+            self.alignment_status_checkbox.setChecked(isScaleAligned(getCurScale()))
+        except:
+            print('update_interface_current_scale | Something went wrong updating alignment_status_checkbox')
 
         try:
             alignment_method = project_data['data']['scales'][getCurScale()]['method_data']['alignment_option']
@@ -4576,6 +4591,7 @@ class MainWindow(QMainWindow):
         self.toggle_off_postalignment_groupbox()
         self.toggle_off_export_and_view_groupbox()
         self.scales_combobox_switch = 0
+        self.project_progress = 0
 
     @Slot()
     def set_progress_stage_1(self):
@@ -4586,6 +4602,7 @@ class MainWindow(QMainWindow):
         self.toggle_off_postalignment_groupbox()
         self.toggle_off_export_and_view_groupbox()
         self.scales_combobox_switch = 0
+        self.project_progress = 1
 
     @Slot()
     def set_progress_stage_2(self):
@@ -4596,6 +4613,7 @@ class MainWindow(QMainWindow):
         self.toggle_on_postalignment_groupbox()
         self.toggle_off_export_and_view_groupbox()
         self.scales_combobox_switch = 1
+        self.project_progress = 2
 
     @Slot()
     def set_progress_stage_3(self):
@@ -4606,6 +4624,7 @@ class MainWindow(QMainWindow):
         self.toggle_on_postalignment_groupbox()
         self.toggle_on_export_and_view_groupbox()
         self.scales_combobox_switch = 1
+        self.project_progress = 3
 
     @Slot()
     def set_user_progress(self):
@@ -5033,6 +5052,8 @@ class MainWindow(QMainWindow):
 
         self.scales_combobox_switch = 0
 
+        self.project_scales = []
+
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
         file_name, filter = QFileDialog.getOpenFileName(parent=None,  # None was self
@@ -5092,6 +5113,7 @@ class MainWindow(QMainWindow):
                             proj_copy['data']['destination_path'], self.current_project_file_name)
             for scale_key in proj_copy['data']['scales'].keys():
                 scale_dict = proj_copy['data']['scales'][scale_key]
+
                 for layer in scale_dict['alignment_stack']:
                     for role in layer['images'].keys():
                         if layer['images'][role]['filename'] != None:
@@ -5108,7 +5130,6 @@ class MainWindow(QMainWindow):
             else:
                 self.setWindowTitle('Project: ' + os.path.split(self.current_project_file_name)[-1])
             # ignore_changes = False
-
 
         self.read_project_data_update_gui()
         self.reload_scales_combobox() #0529 just checking if adding this fixes bug
