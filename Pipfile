@@ -1,0 +1,29 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+numpy = "*"
+opencv-python-headless = "*"
+matplotlib = "*"
+scipy = "*"
+psutil = "*"
+imagecodecs = "*"
+scikit-image = "*"
+zarr = "*"
+tifffile = "*"
+dask = "*"
+neuroglancer = "*"
+"funlib.geometry" = {git = "https://github.com/funkelab/funlib.geometry.git"}
+"funlib.math" = {git = "https://github.com/funkelab/funlib.math.git"}
+daisy = {git = "https://github.com/funkelab/daisy.git"}
+pyqt6 = "*"
+pyqt6-webengine = "*"
+pyside2 = "*"
+qtpy = "*"
+
+[dev-packages]
+
+[requires]
+python_version = "3.9"

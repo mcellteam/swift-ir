@@ -27,23 +27,50 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 For more information, please refer to [http://unlicense.org]
+
+QtPy provides cross-compatibility for PySide2, PySide6, PyQt5, PyQt6
+
+Environment variable QT_API can take the following values:
+    pyqt5 (to use PyQt5).
+    pyside2 (to use PySide2).
+    pyqt6 (to use PyQt6).
+    pyside6 (to use PySide6).
+
+To output a string of Mypy CLI args that will reflect the currently selected Qt API:
+$ qtpy mypy-args
+
 """
+'''globals'''
+global QT_API
+global USES_PYSIDE
+global USES_PYQT
+global USES_QT5
+global USES_QT6
 
 import os
 import argparse
-import interface
 import asyncio
 
 
-'''globals'''
-main_win = None
+os.environ["QT_API"] = 'pyqt6' # Set Python API (pyside2 | pyside6 | pyqt5 | pyqt6)
 
-# LOGGER
-#     logging.DEBUG: 'black',
-#     logging.INFO: 'blue',
-#     logging.WARNING: 'orange',
-#     logging.ERROR: 'red',
-#     logging.CRITICAL: 'purple',
+QT_API = os.environ["QT_API"]
+# os.environ["FORCE_QT_API"] = 'True'
+
+if QT_API in ('pyside2', 'pyside6'):
+    USES_PYSIDE = True
+    USES_PYQT = False
+elif QT_API in ('pyqt5', 'pyqt6'):
+    USES_PYSIDE = False
+    USES_PYQT = True
+
+if QT_API in ('pyside2', 'pyqt5'):
+    USES_QT5 = True
+    USES_QT6 = False
+elif QT_API in ('pyside6', 'pyqt6'):
+    USES_QT5 = False
+    USES_QT6 = True
+
 
 if __name__ == "__main__":
     global_parallel_mode = True
@@ -52,11 +79,15 @@ if __name__ == "__main__":
     # height = 640
     height = 800
 
+    main_win = None # previously outside __main__ scope
+
+    print("run.py | QT_API:", QT_API)
+
     # objc[46147]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint on objc_initializeAfterForkError to debug.
     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
     # print(f'Loading {__name__}')
-    print("Running " + __file__ + ".__main__()")
+    print("run.py | Running " + __file__ + ".__main__()")
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, default=10,help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
@@ -64,13 +95,20 @@ if __name__ == "__main__":
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1,help="Run the C versions of SWiFT tools")
     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0,help="Use files to gather output from tasks")
     args = options.parse_args()
-    interface.DEBUG_LEVEL = int(args.debug)
+    # interface.DEBUG_LEVEL = int(args.debug) #0613
     print("run.py | cli args:", args)
 
+
+    from interface import MainWindow
+    from interface import run_app
+
     if args.parallel != None: global_parallel_mode = args.parallel != 0
-    if args.use_c_version != None: interface.use_c_version = args.use_c_version != 0
+    # if args.use_c_version != None: interface.use_c_version = args.use_c_version != 0 #0613
     if args.use_file_io != None: global_use_file_io = args.use_file_io != 0
-    if args.preload != None: interface.preloading_range = int(args.preload)
+    # if args.preload != None: interface.preloading_range = int(args.preload) #0613
+
+    print('Qt-Python API:')
+    os.system("qtpy mypy-args ")
 
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     source_list = ["run.py","alignem_data_model.py","interface.py","swift_project.py","pyswift_tui.py",
@@ -81,10 +119,12 @@ if __name__ == "__main__":
                    ]
 
     print("run.py | Launching AlignEM-SWiFT with window size %dx%d pixels" % (width, height))
-    main_win = interface.MainWindow(title="GlanceEM_SWiFT") # no more control_model
+    # main_win = interface.MainWindow(title="GlanceEM_SWiFT") # no more control_model
+    main_win = MainWindow(title="GlanceEM_SWiFT") # no more control_model
     main_win.resize(width, height)
     main_win.define_roles(['ref', 'base', 'aligned'])
-    interface.run_app(main_win)
+    # interface.run_app(main_win)
+    run_app(main_win)
 
 
 

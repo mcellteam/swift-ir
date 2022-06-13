@@ -2,31 +2,112 @@
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 
 """
+from run import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
+
+# QT_VERSION = 6
+# QT_API = 'pyqt'
+
 import sys, os, traceback, copy, math, random, json, psutil, shutil, argparse, inspect, threading, \
     concurrent.futures, platform, collections, time, datetime, multiprocessing, logging, operator, random, \
     multiprocessing, logging, random, textwrap
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 
-from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
     QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
     QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter, \
     QRadioButton
-from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
-    QSurfaceFormat, QAction, QActionGroup, QPaintEvent, QBrush, QFont, QImageReader, QImage
-from PySide6.QtCore import Slot, QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
-    QCoreApplication, Property, QRunnable, Signal, Slot, QThreadPool, QThread, QObject, QParallelAnimationGroup, \
+from qtpy.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
+    QSurfaceFormat, QPaintEvent, QBrush, QFont, QImageReader, QImage
+from qtpy.QtCore import QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
+    QCoreApplication, QRunnable, QThreadPool, QThread, QObject, QParallelAnimationGroup, \
     QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup
-from PySide6.QtWebEngineWidgets import QWebEngineView
-from PySide6.QtWebEngineCore import QWebEnginePage, QWebEngineSettings
+# Qt6-only imports
+# from qtpy.QtGui import QAction, QActionGroup
+from qtpy.QtWidgets import QAction, QActionGroup
+from qtpy.QtCore import Qt
+from qtpy.QtCore import Property
+from qtpy.QtWebEngineWidgets import *
+from qtpy.QtWebEngineCore import *
+from qtpy.QtCore import Signal, Slot
+
+# if USES_QT5:
+#     if USES_PYQT:
+#         from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+#             QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
+#             QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
+#             QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter, \
+#             QRadioButton
+#         from PyQt5.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
+#             QSurfaceFormat, QPaintEvent, QBrush, QFont, QImageReader, QImage, QColorConstants
+#         from PyQt5.QtCore import QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
+#             QCoreApplication, QRunnable, QThreadPool, QThread, QObject, QParallelAnimationGroup, \
+#             QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup
+#         from PyQt5.QtWebEngineWidgets import QWebEngineView, QWebEnginePage
+#         from PyQt5.QtCore import pyqtSignal as Signal
+#         from PyQt5.QtCore import pyqtSlot as Slot
+#         # Qt5-only imports
+#         from PyQt5.QtWidgets import QAction, QActionGroup
+#     if USES_PYSIDE:
+#         from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+#             QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
+#             QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
+#             QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter, \
+#             QRadioButton
+#         from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
+#             QSurfaceFormat, QPaintEvent, QBrush, QFont, QImageReader, QImage, QColorConstants
+#         from PySide2.QtCore import QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
+#             QCoreApplication, QRunnable, QThreadPool, QThread, QObject, QParallelAnimationGroup, \
+#             QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup
+#         from PySide2.QtCore import Property
+#         from PySide2.QtWebEngineWidgets import QWebPageEngine
+#         from PySide2.QtWebEngineCore import QWebEngineSettings
+#         from PySide2.QtCore import Signal, Slot
+#
+# if USES_QT6:
+#     if USES_PYQT:
+#         from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+#             QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
+#             QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
+#             QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter, \
+#             QRadioButton
+#         from PyQt6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
+#             QSurfaceFormat, QPaintEvent, QBrush, QFont, QImageReader, QImage
+#         from PyQt6.QtCore import QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
+#             QCoreApplication, QRunnable, QThreadPool, QThread, QObject, QParallelAnimationGroup, \
+#             QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup
+#         # Qt6-only imports
+#         from PyQt6.QtGui import QAction, QActionGroup
+#         from PyQt6.QtCore import Qt
+#         from PyQt6.QtCore import Property
+#         from PyQt6.QtWebEngineWidgets import *
+#         from PyQt6.QtWebEngineCore import *
+#         # from PyQt6.QtWebEngineWidgets import QWebEngineView, QWebEnginePage # this fails
+#         from PyQt6.QtCore import pyqtSignal as Signal
+#         from PyQt6.QtCore import pyqtSlot as Slot
+#
+#     if USES_PYSIDE:
+#         from PySide6.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+#             QStackedWidget, QStackedLayout, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
+#             QSpacerItem, QMenu, QColorDialog, QMessageBox, QComboBox, QRubberBand, QToolButton, QStyle, QDialog, QFrame, \
+#             QStyleFactory, QGroupBox, QPlainTextEdit, QTabWidget, QScrollArea, QToolButton, QDockWidget, QSplitter, \
+#             QRadioButton
+#         from PySide6.QtGui import QPixmap, QColor, QPainter, QPalette, QPen, QCursor, QIntValidator, QDoubleValidator, QIcon, \
+#             QSurfaceFormat, QPaintEvent, QBrush, QFont, QImageReader, QImage
+#         from PySide6.QtCore import QRect, QRectF, QSize, Qt, QPoint, QPointF, QThreadPool, QUrl, QFile, QTextStream, \
+#             QCoreApplication, QRunnable, QThreadPool, QThread, QObject, QParallelAnimationGroup, \
+#             QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup
+#         # Qt6-only imports
+#         from PySide6.QtGui import QAction, QActionGroup
+#         from PySide6.QtCore import Qt
+#         from PySide6.QtCore import Property
+#         from PySide6.QtWebEngineWidgets import QWebPageEngine
+#         from PySide6.QtWebEngineCore import QWebEngineSettings
+#         from PySide6.QtCore import Signal, Slot
 
 
-try:
-    from PySide6.QtCore import Signal, Slot
-except ImportError:
-    from PyQt6.QtCore import pyqtSignal as Signal
-    from PyQt6.QtCore import pyqtSlot as Slot
 
+# pipenv install PyQt6-WebEngine
 
 from pathlib import Path
 import daisy
@@ -57,6 +138,23 @@ import task_queue_mp as task_queue
 import task_wrapper
 import pyswift_tui
 # from caveclient import CAVEclient
+
+print('interface.py (after imports) | Qt-Python API:')
+os.system("qtpy mypy-args ")
+
+# if USES_PYSIDE:
+#
+# 	Signal = QtCore.Signal
+# 	Slot = QtCore.Slot
+# 	Property = QtCore.Property
+# else:
+# 	import_module = _pyqt4_import_module
+#
+# 	Signal = QtCore.pyqtSignal
+# 	Slot = QtCore.pyqtSlot
+# 	Property = QtCore.pyqtProperty
+
+
 
 logger = logging.getLogger(__name__)
 center_switch = 0
@@ -103,7 +201,8 @@ def run_app(main_win=None):
 
     print('run_app | Showing the application now')
     main_window.show() #windows are hidden by default
-    sys.exit(app.exec_())
+    sys.exit(app.exec_()) #0610
+    # sys.exit(app.exec())
 
 def open_ds(path, ds_name):
     """ wrapper for daisy.open_ds """
@@ -140,7 +239,8 @@ def get_json(path):
 
 # For now, always use the limited argument version
 def print_debug(level, p1=None, p2=None, p3=None, p4=None):
-    global DEBUG_LEVEL
+    # global DEBUG_LEVEL
+    DEBUG_LEVEL = 10 #0613 monkey patch
     if level <= DEBUG_LEVEL:
         if p1 == None:
             print("")
@@ -1206,10 +1306,11 @@ class ZoomPanWidget(QWidget):
         self.setAutoFillBackground(True)
         self.border_color = QColor(100, 100, 100, 255)
 
-        self.setBackgroundRole(QPalette.Base)
-        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setBackgroundRole(QPalette.Base)    #0610 removed
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) #0610
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
-        self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+        # self.rubberBand = QRubberBand(QRubberBand.Rectangle, self) #0610 removed
 
         self.setToolTip('GlanceEM_SWiFT')  # tooltip #settooltip
         # tooltip.setTargetWidget(btn)
@@ -1274,7 +1375,7 @@ class ZoomPanWidget(QWidget):
         self.ldx = 0
         self.ldy = 0
         self.wheel_index = 0
-        # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
+        # self.zoom_to_wheel_at ( 0, 0 ) #pyside2 #0613 removed
         self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
         clear_crop_settings()
 
@@ -2029,7 +2130,7 @@ class MultiImagePanel(QWidget):
         super(MultiImagePanel, self).__init__()
 
         p = self.palette()
-        p.setColor(self.backgroundRole(), Qt.black)
+        p.setColor(self.backgroundRole(), QColor('black'))
         self.setPalette(p)
         self.setAutoFillBackground(True)
         self.setStyleSheet("background-color:black;")
@@ -2049,7 +2150,7 @@ class MultiImagePanel(QWidget):
 
         # QWidgets don't get the keyboard focus by default
         # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
-        self.setFocusPolicy(Qt.StrongFocus)  #tag #add #0526 uncommenting, because not certain it does anything and have zoom issue
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  #tag #add #0526 uncommenting, because not certain it does anything and have zoom issue
         self.arrow_direction = 1
 
     #keypress
@@ -2459,23 +2560,24 @@ class RunnableServerThread(QRunnable):
             server.server_close()
             sys.exit(0)
 
-
-class CustomWebEnginePage(QWebEnginePage):
-    """ Custom WebEnginePage to customize how we handle link navigation """
-    # Store external windows.
-    external_windows = []
-
-    def acceptNavigationRequest(self, url, _type, isMainFrame):
-        if (_type == QWebEnginePage.NavigationTypeLinkClicked and url.host() != 'github.com'):
-            # Pop up external links into a new window.
-            w = QWebEngineView()
-            w.setUrl(url)
-            w.show()
-
-            # Keep reference to external window, so it isn't cleared up.
-            self.external_windows.append(w)
-            return False
-        return super().acceptNavigationRequest(url, _type, isMainFrame)
+# Depends on QWebEnginePage
+# QWebEnginePage since Qt5.4
+# class CustomWebEnginePage(QWebEnginePage):
+#     """ Custom WebEnginePage to customize how we handle link navigation """
+#     # Store external windows.
+#     external_windows = []
+#
+#     def acceptNavigationRequest(self, url, _type, isMainFrame):
+#         if (_type == QWebEnginePage.NavigationTypeLinkClicked and url.host() != 'github.com'):
+#             # Pop up external links into a new window.
+#             w = QWebEngineView()
+#             w.setUrl(url)
+#             w.show()
+#
+#             # Keep reference to external window, so it isn't cleared up.
+#             self.external_windows.append(w)
+#             return False
+#         return super().acceptNavigationRequest(url, _type, isMainFrame)
 
 
 # https://stackoverflow.com/questions/5671354/how-to-programmatically-make-a-horizontal-line-in-qt
@@ -2512,25 +2614,26 @@ class QHLine(QFrame):
 # print(render(sample_html))
 
 class ToggleSwitch(QCheckBox):
-    _transparent_pen = QPen(Qt.transparent)
-    _light_grey_pen = QPen(Qt.lightGray)
-    _black_pen = QPen(Qt.black)
+    #0610 after switching to PyQt6... AttributeError: type object 'Qt' has no attribute 'transparent'
+    _transparent_pen = QPen(QColor('transparent'))
+    _light_grey_pen = QPen(QColor('lightgrey'))
+    _black_pen = QPen(QColor('black'))
 
     def __init__(self,
                  parent=None,
-                 bar_color=Qt.gray,
+                 bar_color=QColor('grey'),
                  # checked_color="#00B0FF",
                  # checked_color="#607cff",
                  # checked_color="#d3dae3",  # monjaromix stylesheet
                  checked_color="#00ff00",
 
-                 handle_color=Qt.white,
+                 handle_color=QColor('white'),
                  h_scale=.7,
                  v_scale=.9,
                  fontSize=10):
 
         super().__init__(parent)
-        self.setFocusPolicy(Qt.NoFocus)  # focus don't steal focus from zoompanwidget
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # focus don't steal focus from zoompanwidget
 
         # Save our properties on the object via self, so we can access them later
         # in the paintEvent.
@@ -2564,18 +2667,20 @@ class ToggleSwitch(QCheckBox):
 
     def paintEvent(self, e: QPaintEvent):
 
-        contRect = self.contentsRect()
+        contRect = self.contentsRect() #0610 #TypeError: moveCenter(self, QPointF): argument 1 has unexpected type 'QPoint'
+        # contRect = QPointF(self.contentsRect()) #0613
         width = contRect.width() * self._h_scale
         height = contRect.height() * self._v_scale
         handleRadius = round(0.24 * height)
 
 
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        # p.setRenderHint(QPainter.Antialiasing) #0610
 
         p.setPen(self._transparent_pen)
         barRect = QRectF(0, 0, width - handleRadius, 0.40 * height)
-        barRect.moveCenter(contRect.center())
+        # barRect.moveCenter(contRect.center())
+        barRect.moveCenter(QPointF(contRect.center())) #pyqt6 fix
         rounding = barRect.height() / 2
 
         # the handle will move along this line
@@ -2608,19 +2713,19 @@ class ToggleSwitch(QCheckBox):
     def handle_state_change(self, value):
         self._handle_position = 1 if value else 0
 
-    @Property(float)
-    def handle_position(self):
-        return self._handle_position
+    # @Property(float)
+    # def handle_position(self):
+    #     return self._handle_position
 
-    @handle_position.setter
-    def handle_position(self, pos):
-        """change the property
-           we need to trigger QWidget.update() method, either by:
-           1- calling it here [ what we're doing ].
-           2- connecting the QPropertyAnimation.valueChanged() signal to it.
-        """
-        self._handle_position = pos
-        self.update()
+    # @handle_position.setter
+    # def handle_position(self, pos):
+    #     """change the property
+    #        we need to trigger QWidget.update() method, either by:
+    #        1- calling it here [ what we're doing ].
+    #        2- connecting the QPropertyAnimation.valueChanged() signal to it.
+    #     """
+    #     self._handle_position = pos
+    #     self.update()
 
     def setH_scale(self, value):
         self._h_scale = value
@@ -2637,22 +2742,24 @@ class ToggleSwitch(QCheckBox):
 
 
 class ToggleSkipSwitch(QCheckBox):
-    _transparent_pen = QPen(Qt.transparent)
-    _light_grey_pen = QPen(Qt.lightGray)
-    _black_pen = QPen(Qt.black)
-    white_pen = QPen(Qt.white)
+    #0610 after switching to PyQt6... AttributeError: type object 'Qt' has no attribute 'transparent'
+    _transparent_pen = QPen(QColor('transparent'))
+    _light_grey_pen = QPen(QColor('lightgrey'))
+    _black_pen = QPen(QColor('black'))
+    white_pen = QPen(QColor('white'))
 
     def __init__(self,
                  parent=None,
-                 bar_color=Qt.gray,
+                 bar_color=QColor('grey'),
                  checked_color="#00ff00",
-                 handle_color=Qt.white,
+                 handle_color=QColor('white'),
                  h_scale=1.0,
                  v_scale=0.9,
                  fontSize=8):
 
         super().__init__(parent)
-        self.setFocusPolicy(Qt.NoFocus)  # focus don't steal focus from zoompanwidget
+        # self.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # focus don't steal focus from zoompanwidget #0610
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # focus don't steal focus from zoompanwidget #0610
 
         # Save our properties on the object via self, so we can access them later
         # in the paintEvent.
@@ -2682,19 +2789,25 @@ class ToggleSkipSwitch(QCheckBox):
         return self.contentsRect().contains(pos)
 
     def paintEvent(self, e: QPaintEvent):
-
-        contRect = self.contentsRect()
+        # print("type(self.contentsRect())=",type(self.contentsRect()))
+        # print("str(self.contentsRect())=",str(self.contentsRect()))
+        # type(self.contentsRect())= <class 'PyQt6.QtCore.QRect'>
+        # str(self.contentsRect())= PyQt6.QtCore.QRect(0, 0, 46, 35)
+        contRect = self.contentsRect() #0610
+        # contRect = QPointF(self.contentsRect()) #0613
         width = contRect.width() * self._h_scale
         height = contRect.height() * self._v_scale
         handleRadius = round(0.24 * height)
 
 
         p = QPainter(self)
-        p.setRenderHint(QPainter.Antialiasing)
+        # p.setRenderHint(QPainter.Antialiasing) #0610
 
         p.setPen(self._transparent_pen)
         barRect = QRectF(0, 0, width - handleRadius, 0.40 * height)
-        barRect.moveCenter(contRect.center())
+        # barRect.moveCenter(contRect.center()) #0610
+        # barRect.moveCenter(contRect.center())
+        barRect.moveCenter(QPointF(contRect.center())) #pyqt6 fix
         rounding = barRect.height() / 2
 
         # the handle will move along this line
@@ -2730,19 +2843,19 @@ class ToggleSkipSwitch(QCheckBox):
         print("ToggleSkipSwitch.handle_state_change:")
         self._handle_position = 1 if value else 0
 
-    @Property(float)
-    def handle_position(self):
-        return self._handle_position
-
-    @handle_position.setter
-    def handle_position(self, pos):
-        """change the property
-           we need to trigger QWidget.update() method, either by:
-           1- calling it here [ what we're doing ].
-           2- connecting the QPropertyAnimation.valueChanged() signal to it.
-        """
-        self._handle_position = pos
-        self.update()
+    # @Property(float)
+    # def handle_position(self):
+    #     return self._handle_position
+    #
+    # @handle_position.setter
+    # def handle_position(self, pos):
+    #     """change the property
+    #        we need to trigger QWidget.update() method, either by:
+    #        1- calling it here [ what we're doing ].
+    #        2- connecting the QPropertyAnimation.valueChanged() signal to it.
+    #     """
+    #     self._handle_position = pos
+    #     self.update()
 
     def setH_scale(self, value):
         self._h_scale = value
@@ -2773,7 +2886,8 @@ class CollapsibleBox(QWidget):
         self.toggle_button = QToolButton(self)
         self.toggle_button.setText(title)
 
-        sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        # sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed) #0610
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         self.toggle_button.setSizePolicy(sizePolicy)
@@ -2781,8 +2895,8 @@ class CollapsibleBox(QWidget):
         self.toggle_button.setCheckable(True)
         self.toggle_button.setChecked(False)
         self.toggle_button.setStyleSheet(f"QToolButton {{ border: none; font-weight: bold; background-color: #7c7c7c; }}")
-        self.toggle_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon)
-        self.toggle_button.setArrowType(Qt.RightArrow)
+        # self.toggle_button.setToolButtonStyle(Qt.ToolButtonTextBesideIcon) #0610
+        # self.toggle_button.setArrowType(Qt.RightArrow) #0610
         self.toggle_button.pressed.connect(self.on_pressed)
 
         self.toggle_animation = QParallelAnimationGroup(self)
@@ -2790,8 +2904,9 @@ class CollapsibleBox(QWidget):
         self.content_area = QScrollArea(self)
         self.content_area.setMaximumHeight(0)
         self.content_area.setMinimumHeight(0)
-        self.content_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.content_area.setFrameShape(QFrame.NoFrame)
+        # self.content_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.content_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        # self.content_area.setFrameShape(QFrame.NoFrame) #0610 AttributeError: type object 'QFrame' has no attribute 'NoFrame'
 
         lay = QVBoxLayout(self)
         lay.setSpacing(0)
@@ -2837,6 +2952,8 @@ class MainWindow(QMainWindow):
         self.pyside_path = os.path.dirname(os.path.realpath(__file__))
         print("MainWindow | pyside_path is ", self.pyside_path)
 
+        print('MainWindow | Qt-Python API: ' + QT_API)
+
         print('MainWindow | Setting MESA_GL_VERSION_OVERRIDE')
         os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
         print('MainWindow | MESA_GL_VERSION_OVERRIDE = ', os.environ.get('MESA_GL_VERSION_OVERRIDE'))
@@ -2880,6 +2997,9 @@ class MainWindow(QMainWindow):
         self.mouse_down_callback = None
         self.mouse_move_callback = None
 
+
+        print('MainWindow | USES_PYSIDE=',USES_PYSIDE)
+
         '''This will require moving the image_panel = ImageLibrary() to MainWindow constructor where it should be anyway'''
         # self.define_roles(['ref', 'base', 'aligned'])
 
@@ -2893,7 +3013,8 @@ class MainWindow(QMainWindow):
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "yes"
 
         # print("alignem_swift.py | QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
-        QImageReader.setAllocationLimit(4000)
+        if QT_API == 'pyside6':
+            QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         # print("alignem_swift.py | New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
 
         self.setMinimumWidth(800)
@@ -2936,7 +3057,10 @@ class MainWindow(QMainWindow):
 
         # pyside6
         print("MainWindow | instantiating QWebEngineView()")
-        self.view = QWebEngineView()
+        if USES_PYSIDE:
+            self.view = QWebEngineView()
+        if QT_API == 'pyqt6':
+            self.view = QWebEngineView()
         # PySide6 available options
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
@@ -2944,7 +3068,8 @@ class MainWindow(QMainWindow):
         # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         print("MainWindow | Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True\n")
         print('------------------------------------------------------------\n')
-        self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        if QT_API == 'pyside6':
+            self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True) #pyside6 only #0610
         print('------------------------------------------------------------\n')
 
         def closeEvent(self, event):
@@ -3387,6 +3512,12 @@ class MainWindow(QMainWindow):
 
         self.project_inspector = QDockWidget("Project Inspector")
         self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
+        # if QT_API == 'pyside':
+        #     self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
+        # # elif QT_API == 'pyqt':
+        # #     # self.project_inspector.setAllowedAreas() # ? there is no reference on how to do this
+
+
         scroll = QScrollArea()
         self.project_inspector.setWidget(scroll)
         content = QWidget()
@@ -3415,7 +3546,8 @@ class MainWindow(QMainWindow):
                 "color: #d3dae3;"
                 "border-radius: 12px;"
             )
-        lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)
+        # lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)    #0610
+        lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignmentFlag.AlignTop)
         self.inspector_scales.setContentLayout(lay)
 
         # CPU Specs
@@ -3427,7 +3559,8 @@ class MainWindow(QMainWindow):
                 "color: #d3dae3;"
                 "border-radius: 12px;"
             )
-        lay.addWidget(label, alignment=Qt.AlignTop)
+        # lay.addWidget(label, alignment=Qt.AlignTop)    #0610
+        lay.addWidget(label, alignment=Qt.AlignmentFlag.AlignTop)
         self.inspector_cpu.setContentLayout(lay)
 
         dock_vlayout.addStretch()
@@ -3464,12 +3597,12 @@ class MainWindow(QMainWindow):
         self.project_functions_layout = QGridLayout()
         self.project_functions_layout.setContentsMargins(10, 25, 10, 5)
         self.project_functions_layout.setSpacing(10)  # ***
-        self.project_functions_layout.addWidget(self.new_project_button, 0, 0, alignment=Qt.AlignHCenter)
-        self.project_functions_layout.addWidget(self.open_project_button, 0, 1, alignment=Qt.AlignHCenter)
-        self.project_functions_layout.addWidget(self.save_project_button, 0, 2, alignment=Qt.AlignHCenter)
-        self.project_functions_layout.addWidget(self.exit_app_button, 1, 0, alignment=Qt.AlignHCenter)
-        self.project_functions_layout.addWidget(self.documentation_button, 1, 1, alignment=Qt.AlignHCenter)
-        self.project_functions_layout.addWidget(self.remote_viewer_button, 1, 2, alignment=Qt.AlignHCenter)
+        self.project_functions_layout.addWidget(self.new_project_button, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.project_functions_layout.addWidget(self.open_project_button, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.project_functions_layout.addWidget(self.save_project_button, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.project_functions_layout.addWidget(self.exit_app_button, 1, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.project_functions_layout.addWidget(self.documentation_button, 1, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.project_functions_layout.addWidget(self.remote_viewer_button, 1, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
 
         '''------------------------------------------
         PANEL 2: DATA SELECTION & SCALING
@@ -3506,7 +3639,8 @@ class MainWindow(QMainWindow):
         self.clear_all_skips_button = QPushButton('Reset')
         self.clear_all_skips_button.setToolTip('Reset skips (align all)')
         self.clear_all_skips_button.setMaximumHeight(std_height)
-        self.clear_all_skips_button.setFocusPolicy(Qt.NoFocus)
+        # self.clear_all_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)    #0610
+        self.clear_all_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
         self.clear_all_skips_button.setFixedWidth(50)
         self.clear_all_skips_button.setFixedHeight(std_height)
@@ -3522,7 +3656,7 @@ class MainWindow(QMainWindow):
         self.jump_label.setToolTip('Jump to image #')
         self.jump_input = QLineEdit(self)
         self.jump_input.setToolTip('Jump to image #')
-        self.jump_input.setAlignment(Qt.AlignHCenter)
+        self.jump_input.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         # self.jump_input.setText("--")
         self.jump_input.setFixedSize(std_input_size, std_height)
         self.jump_validator = QIntValidator()
@@ -3531,27 +3665,27 @@ class MainWindow(QMainWindow):
         self.jump_input.returnPressed.connect(lambda: self.jump_to_layer()) # must be lambda for some reason
         # self.jump_input.editingFinished.connect(self.jump_to_layer())
         # self.jump_hlayout = QHBoxLayout()
-        # self.jump_hlayout.addWidget(jump_label, alignment=Qt.AlignLeft)
-        # self.jump_hlayout.addWidget(self.jump_input, alignment=Qt.AlignRight)
+        # self.jump_hlayout.addWidget(jump_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.jump_hlayout.addWidget(self.jump_input, alignment=Qt.AlignmentFlag.AlignRight)
 
 
         self.images_and_scaling_layout = QGridLayout()
         self.images_and_scaling_layout.setContentsMargins(10, 25, 10, 5) #tag23
         self.images_and_scaling_layout.setSpacing(10) # ***
-        self.images_and_scaling_layout.addWidget(self.import_images_button, 0, 0, alignment=Qt.AlignHCenter)
-        # self.images_and_scaling_layout.addWidget(self.center_button, 0, 1, alignment=Qt.AlignHCenter)
-        self.images_and_scaling_layout.addLayout(self.size_buttons_vlayout, 0, 1, alignment=Qt.AlignHCenter)
-        self.images_and_scaling_layout.addWidget(self.generate_scales_button, 0, 2, alignment=Qt.AlignHCenter)
+        self.images_and_scaling_layout.addWidget(self.import_images_button, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.images_and_scaling_layout.addWidget(self.center_button, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.images_and_scaling_layout.addLayout(self.size_buttons_vlayout, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.images_and_scaling_layout.addWidget(self.generate_scales_button, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.toggle_reset_hlayout = QHBoxLayout()
-        self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft)
-        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignHCenter)
-        self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignHCenter)
-        self.toggle_reset_hlayout.addWidget(self.jump_input, alignment=Qt.AlignHCenter)
-        # self.toggle_reset_hlayout.addLayout(self.jump_hlayout, alignment=Qt.AlignHCenter)
-        # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=Qt.AlignHCenter)
-        # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=Qt.AlignHCenter)
-        self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3, alignment=Qt.AlignHCenter)
-        # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=Qt.AlignRight)
+        self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.toggle_reset_hlayout.addWidget(self.jump_input, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.toggle_reset_hlayout.addLayout(self.jump_hlayout, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=Qt.AlignmentFlag.AlignRight)
 
         '''------------------------------------------
         PANEL 3: ALIGNMENT
@@ -3561,13 +3695,14 @@ class MainWindow(QMainWindow):
         self.scales_combobox = QComboBox(self)
         # self.scales_combobox.addItems([skip_list])
         # self.scales_combobox.addItems(['--'])
-        self.scales_combobox.setFocusPolicy(Qt.NoFocus)
+        # self.scales_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)    #0610
+        self.scales_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.scales_combobox.setFixedSize(std_button_size)
         self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
 
         self.affine_combobox = QComboBox(self)
         self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
-        self.affine_combobox.setFocusPolicy(Qt.NoFocus)
+        self.affine_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.affine_combobox.setFixedSize(std_button_size)
 
         # ^^ this should perhaps be connected to a function that updates affine in project file (immediately).. not sure yet
@@ -3582,7 +3717,7 @@ class MainWindow(QMainWindow):
         wrapped = "\n".join(textwrap.wrap(tip, width=35))
         self.whitening_label.setToolTip(wrapped)
         self.whitening_input = QLineEdit(self)
-        self.whitening_input.setAlignment(Qt.AlignCenter)
+        self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.whitening_input.setText("-0.68")
         self.whitening_input.setFixedWidth(std_input_size)
         self.whitening_input.setFixedHeight(std_height)
@@ -3594,7 +3729,7 @@ class MainWindow(QMainWindow):
         wrapped = "\n".join(textwrap.wrap(tip, width=35))
         self.swim_label.setToolTip(wrapped)
         self.swim_input = QLineEdit(self)
-        self.swim_input.setAlignment(Qt.AlignCenter)
+        self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.swim_input.setText("0.8125")
         self.swim_input.setFixedWidth(std_input_size)
         self.swim_input.setFixedHeight(std_height)
@@ -3602,13 +3737,13 @@ class MainWindow(QMainWindow):
 
         self.whitening_grid = QGridLayout()
         self.whitening_grid.setContentsMargins(0, 0, 0, 0)
-        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignLeft)
-        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignRight)
+        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.swim_grid = QGridLayout()
         self.swim_grid.setContentsMargins(0, 0, 0, 0)
-        self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignLeft)
-        self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignRight)
+        self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Next Scale Button
         self.next_scale_button = QPushButton('Next Scale  ')
@@ -3616,10 +3751,22 @@ class MainWindow(QMainWindow):
         self.next_scale_button.clicked.connect(self.next_scale_button_callback)
         # self.next_scale_button.setFixedSize(square_button_width, std_height)
         self.next_scale_button.setFixedSize(std_button_size)
-        self.next_scale_button.setLayoutDirection(Qt.RightToLeft)
+        # self.next_scale_button.setLayoutDirection(Qt.RightToLeft)    #0610
+        self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft) #0610
 
-        pixmap = getattr(QStyle, 'SP_ArrowForward')
-        icon = self.style().standardIcon(pixmap)
+
+        pixmapi = QStyle.StandardPixmap.SP_ArrowForward
+        icon = self.style().standardIcon(pixmapi)
+        # if QT_API == 'pyqt' and QT_VERSION == 6:
+        #     pixmapi = QStyle.StandardPixmap.SP_MessageBoxCritical
+        #     icon = self.style().standardIcon(pixmapi)
+        # else:
+        #     pixmapi = getattr(QStyle, 'SP_ArrowForward')    #0610
+        #     icon = self.style().standardIcon(pixmapi)
+        #     # this syntax might be better for 'else'...
+        #     # pixmapi = QStyle.SP_MessageBoxCritical
+        #     # icon = self.style().standardIcon(pixmapi)
+
         self.next_scale_button.setIcon(icon)
 
         # Previous Scale Button
@@ -3630,13 +3777,25 @@ class MainWindow(QMainWindow):
         # self.prev_scale_button.setFixedSize(square_button_width, std_height)
         self.prev_scale_button.setFixedSize(std_button_size)
 
-        pixmap = getattr(QStyle, 'SP_ArrowBack')
-        icon = self.style().standardIcon(pixmap)
+
+        pixmapi = QStyle.StandardPixmap.SP_ArrowBack
+        icon = self.style().standardIcon(pixmapi)
+        # if QT_API == 'pyqt' and QT_VERSION == 6:
+        #     pixmapi = QStyle.StandardPixmap.SP_ArrowBack
+        #     icon = self.style().standardIcon(pixmapi)
+        # else:
+        #     pixmap = getattr(QStyle, 'SP_ArrowBack')
+        #     icon = self.style().standardIcon(pixmap)
+        #     # this syntax might be better for 'else'...
+        #     # pixmapi = QStyle.SP_MessageBoxCritical
+        #     # icon = self.style().standardIcon(pixmapi)
+
+
         self.prev_scale_button.setIcon(icon)
 
         # self.scale_controls_layout = QHBoxLayout()
-        # self.scale_controls_layout.addWidget(self.prev_scale_button, alignment=Qt.AlignLeft)
-        # self.scale_controls_layout.addWidget(self.next_scale_button, alignment=Qt.AlignRight)
+        # self.scale_controls_layout.addWidget(self.prev_scale_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.scale_controls_layout.addWidget(self.next_scale_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Align All Button
         self.align_all_button = QPushButton('Align')
@@ -3669,8 +3828,8 @@ class MainWindow(QMainWindow):
         self.toggle_auto_generate.setH_scale(.8)
         self.toggle_auto_generate.toggled.connect(self.toggle_auto_generate_callback)
         self.toggle_auto_generate_hlayout = QHBoxLayout()
-        self.toggle_auto_generate_hlayout.addWidget(self.auto_generate_label, alignment=Qt.AlignLeft)
-        self.toggle_auto_generate_hlayout.addWidget(self.toggle_auto_generate, alignment=Qt.AlignRight)
+        self.toggle_auto_generate_hlayout.addWidget(self.auto_generate_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.toggle_auto_generate_hlayout.addWidget(self.toggle_auto_generate, alignment=Qt.AlignmentFlag.AlignRight)
 
         # self.scale_tabs = QTabWidget()
         self.alignment_layout = QGridLayout()
@@ -3697,13 +3856,13 @@ class MainWindow(QMainWindow):
         self.null_bias_combobox.setToolTip(wrapped)
         self.null_bias_combobox.setToolTip('Polynomial bias (default=None)')
         self.null_bias_combobox.addItems(['None', '0', '1', '2', '3', '4'])
-        self.null_bias_combobox.setFocusPolicy(Qt.NoFocus)
+        self.null_bias_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         # self.null_bias_combobox.setFixedSize(std_button_size)
         self.null_bias_combobox.setFixedSize(72, std_height)
 
         self.poly_order_hlayout = QHBoxLayout()
-        self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignLeft)
-        self.poly_order_hlayout.addWidget(self.null_bias_combobox, alignment=Qt.AlignRight)
+        self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.poly_order_hlayout.addWidget(self.null_bias_combobox, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Bounding Box toggle
         self.bounding_label = QLabel("Bounding Box:")
@@ -3718,8 +3877,8 @@ class MainWindow(QMainWindow):
         self.toggle_bounding_rect.setH_scale(.8)
         self.toggle_bounding_rect.toggled.connect(bounding_rect_changed_callback)
         self.toggle_bounding_hlayout = QHBoxLayout()
-        self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignLeft)
-        self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignRight)
+        self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Regenerate Button
         self.regenerate_button = QPushButton('Generate')
@@ -3736,7 +3895,7 @@ class MainWindow(QMainWindow):
 
         self.postalignment_layout.addLayout(self.poly_order_hlayout, 0, 0)
         self.postalignment_layout.addLayout(self.toggle_bounding_hlayout, 1, 0)
-        self.postalignment_layout.addWidget(self.regenerate_button, 2, 0, alignment=Qt.AlignCenter)
+        self.postalignment_layout.addWidget(self.regenerate_button, 2, 0, alignment=Qt.AlignmentFlag.AlignCenter)
 
         '''------------------------------------------
         PANEL 4: EXPORT & VIEW
@@ -3746,7 +3905,7 @@ class MainWindow(QMainWindow):
         n_scales_label = QLabel("# of scales:")
         n_scales_label.setToolTip("Number of scale pyramid layers (default=4)")
         self.n_scales_input = QLineEdit(self)
-        self.n_scales_input.setAlignment(Qt.AlignCenter)
+        self.n_scales_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.n_scales_input.setText("4")
         self.n_scales_input.setFixedWidth(std_input_size_small)
         self.n_scales_input.setFixedHeight(std_height)
@@ -3757,7 +3916,7 @@ class MainWindow(QMainWindow):
         clevel_label = QLabel("clevel (1-9):")
         clevel_label.setToolTip("Zarr Compression Level (default=5)")
         self.clevel_input = QLineEdit(self)
-        self.clevel_input.setAlignment(Qt.AlignCenter)
+        self.clevel_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.clevel_input.setText("5")
         self.clevel_input.setFixedWidth(std_input_size_small)
         self.clevel_input.setFixedHeight(std_height)
@@ -3787,31 +3946,31 @@ class MainWindow(QMainWindow):
         self.ng_button.setStyleSheet("font-size: 9px;")
 
         self.export_and_view_hlayout = QVBoxLayout()
-        self.export_and_view_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignCenter)
-        self.export_and_view_hlayout.addWidget(self.ng_button, alignment=Qt.AlignCenter)
+        self.export_and_view_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.export_and_view_hlayout.addWidget(self.ng_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         self.n_scales_layout = QHBoxLayout()
         self.n_scales_layout.setContentsMargins(0, 0, 0, 0)
-        self.n_scales_layout.addWidget(n_scales_label, alignment=Qt.AlignLeft)
-        self.n_scales_layout.addWidget(self.n_scales_input, alignment=Qt.AlignRight)
+        self.n_scales_layout.addWidget(n_scales_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.n_scales_layout.addWidget(self.n_scales_input, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.clevel_layout = QHBoxLayout()
         self.clevel_layout.setContentsMargins(0, 0, 0, 0)
-        self.clevel_layout.addWidget(clevel_label, alignment=Qt.AlignLeft)
-        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignRight)
+        self.clevel_layout.addWidget(clevel_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.cname_layout = QHBoxLayout()
         # self.cname_layout.setContentsMargins(0,0,0,0)
-        self.cname_layout.addWidget(cname_label, alignment=Qt.AlignLeft)
-        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignRight)
+        self.cname_layout.addWidget(cname_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.export_settings_grid_layout = QGridLayout()
         self.export_settings_grid_layout.addLayout(self.clevel_layout, 1, 0)
         self.export_settings_grid_layout.addLayout(self.cname_layout, 0, 0)
         self.export_settings_grid_layout.addLayout(self.n_scales_layout, 2, 0)
         self.export_settings_grid_layout.addLayout(self.export_and_view_hlayout, 0, 1, 3, 1)
-        # self.export_settings_grid_layout.addWidget(self.export_zarr_button, 1, 1, alignment=Qt.AlignRight)
-        # self.export_settings_grid_layout.addWidget(self.ng_button, 2, 1, alignment=Qt.AlignRight)
+        # self.export_settings_grid_layout.addWidget(self.export_zarr_button, 1, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.export_settings_grid_layout.addWidget(self.ng_button, 2, 1, alignment=Qt.AlignmentFlag.AlignRight)
         self.export_settings_grid_layout.setContentsMargins(10, 25, 10, 5)  # tag23
 
 
@@ -3839,7 +3998,7 @@ class MainWindow(QMainWindow):
         # SCALING & DATA SELECTION CONTROLS
         self.images_and_scaling_groupbox = QGroupBox("Data Selection && Scaling")
         self.images_and_scaling_groupbox_ = QGroupBox("Scaling && Data Selection")
-        # self.images_and_scaling_groupbox.setAlignment(Qt.AlignLeft)
+        # self.images_and_scaling_groupbox.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.images_and_scaling_groupbox.setLayout(self.images_and_scaling_layout)
         self.images_and_scaling_stack = QStackedWidget()
         self.images_and_scaling_stack.setFixedSize(cpanel_2_width, cpanel_height)
@@ -3850,7 +4009,7 @@ class MainWindow(QMainWindow):
         # ALIGNMENT CONTROLS
         self.alignment_groupbox = QGroupBox("Alignment")
         self.alignment_groupbox_ = QGroupBox("Alignment")
-        # self.alignment_groupbox.setAlignment(Qt.AlignLeft)
+        # self.alignment_groupbox.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.alignment_groupbox.setLayout(self.alignment_layout)
         self.alignment_stack = QStackedWidget()
         self.alignment_stack.setFixedSize(cpanel_3_width, cpanel_height)
@@ -3861,7 +4020,7 @@ class MainWindow(QMainWindow):
         # POST-ALIGNMENT CONTROLS
         self.postalignment_groupbox = QGroupBox("Adjust Output")
         self.postalignment_groupbox_ = QGroupBox("Adjust Output")
-        # self.postalignment_groupbox.setAlignment(Qt.AlignLeft)
+        # self.postalignment_groupbox.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.postalignment_groupbox.setLayout(self.postalignment_layout)
         self.postalignment_stack = QStackedWidget()
         self.postalignment_stack.setFixedSize(cpanel_4_width, cpanel_height)
@@ -3886,17 +4045,17 @@ class MainWindow(QMainWindow):
         self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
 
         self.lower_panel_groups_ = QGridLayout()
-        self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.lower_panel_groups = QWidget()
         self.lower_panel_groups.setLayout(self.lower_panel_groups_)
         self.lower_panel_groups.setFixedHeight(cpanel_height + 10)
 
         # self.main_panel_layout.addLayout(self.lower_panel_groups) #**
-        # self.main_panel_layout.setAlignment(Qt.AlignHCenter)
+        # self.main_panel_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         '''------------------------------------------
         MAIN LAYOUT
@@ -3905,7 +4064,8 @@ class MainWindow(QMainWindow):
         self.image_panel = MultiImagePanel()
         self.image_panel.draw_annotations = self.draw_annotations
         self.image_panel.draw_full_paths = self.draw_full_paths
-        self.image_panel.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding)
+        # self.image_panel.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding) #0610
+        self.image_panel.setSizePolicy(QSizePolicy.Policy.Expanding,QSizePolicy.Policy.Expanding)
         self.image_panel.setMinimumHeight(400)
 
         #logger
@@ -3913,7 +4073,12 @@ class MainWindow(QMainWindow):
         logging.getLogger().setLevel(logging.DEBUG)
         self.hud = HeadsUpDisplay(app)
 
-        self.splitter = QSplitter(Qt.Vertical)
+        self.splitter = QSplitter(Qt.Orientation.Vertical)
+        # if USES_PYSIDE:
+        #     self.splitter = QSplitter(Qt.Vertical)    #0610
+        # elif USES_PYQT:
+        #     self.splitter = QSplitter(Qt.Orientation.Vertical)
+
         self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.lower_panel_groups)
         self.splitter.addWidget(self.hud)
@@ -3951,9 +4116,10 @@ class MainWindow(QMainWindow):
         self.docs_panel_layout = QVBoxLayout()
         self.docs_panel_layout.addWidget(self.browser_docs)
         self.docs_panel_controls_layout = QHBoxLayout()
-        self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignLeft)
-        self.docs_panel_controls_layout.addWidget(self.readme_button, alignment=Qt.AlignLeft)
-        self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.docs_panel_controls_layout.addWidget(self.readme_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
+        self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.docs_panel_controls_layout.addSpacerItem(self.spacer_item_docs)
         self.docs_panel_layout.addLayout(self.docs_panel_controls_layout)
         self.docs_panel.setLayout(self.docs_panel_layout)
@@ -3972,9 +4138,10 @@ class MainWindow(QMainWindow):
         self.remote_viewer_panel_layout = QVBoxLayout()
         self.remote_viewer_panel_layout.addWidget(self.browser_remote)
         self.remote_viewer_panel_controls_layout = QHBoxLayout()
-        self.remote_viewer_panel_controls_layout.addWidget(self.exit_remote_button, alignment=Qt.AlignLeft)
-        self.remote_viewer_panel_controls_layout.addWidget(self.reload_remote_button, alignment=Qt.AlignLeft)
-        self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.remote_viewer_panel_controls_layout.addWidget(self.exit_remote_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.remote_viewer_panel_controls_layout.addWidget(self.reload_remote_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
+        self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.remote_viewer_panel_controls_layout.addSpacerItem(self.spacer_item_remote_panel)
         self.remote_viewer_panel_layout.addLayout(self.remote_viewer_panel_controls_layout)
         self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)
@@ -4017,13 +4184,14 @@ class MainWindow(QMainWindow):
         # self.ng_panel_controls_layout.setContentsMargins(500, 0, 0, 0)
         # self.ng_panel_controls_layout.addWidget(self.spacerItem)
         self.ng_panel_controls_layout = QHBoxLayout()
-        self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignLeft)
-        self.ng_panel_controls_layout.addWidget(self.reload_ng_button, alignment=Qt.AlignLeft)
-        self.ng_panel_controls_layout.addWidget(self.print_state_ng_button, alignment=Qt.AlignLeft)
-        self.ng_panel_controls_layout.addWidget(self.print_url_ng_button, alignment=Qt.AlignLeft)
-        # self.ng_panel_controls_layout.addWidget(self.screenshot_ng_button, alignment=Qt.AlignLeft)
-        # self.ng_panel_controls_layout.addWidget(self.blend_ng_button, alignment=Qt.AlignLeft)
-        self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.ng_panel_controls_layout.addWidget(self.reload_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.ng_panel_controls_layout.addWidget(self.print_state_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.ng_panel_controls_layout.addWidget(self.print_url_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.ng_panel_controls_layout.addWidget(self.screenshot_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.ng_panel_controls_layout.addWidget(self.blend_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
+        self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.ng_panel_controls_layout.addSpacerItem(self.spacer_item_ng_panel)
         self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)  # add horizontal layout
         self.ng_panel.setLayout(self.ng_panel_layout)  # set layout
@@ -4836,7 +5004,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def print_structures(self, checked):
-        global DEBUG_LEVEL
+        # global DEBUG_LEVEL #0613
         print("\n:::DATA STRUCTURES:::")
         print_debug(2, "  project_data['version'] = " + str(project_data['version']))
         print_debug(2, "  project_data.keys() = " + str(project_data.keys()))
@@ -4973,10 +5141,10 @@ class MainWindow(QMainWindow):
             msg.setIcon(QMessageBox.Question)
             button_cancel = msg.button(QMessageBox.Cancel)
             button_cancel.setText('Cancel')
-            # button_cancel.setAlignment(Qt.AlignCenter) #todo
+            # button_cancel.setAlignment(Qt.AlignmentFlag.AlignCenter) #todo
             button_ok = msg.button(QMessageBox.Ok)
             button_ok.setText('New Project')
-            # button_ok.setAlignment(Qt.AlignCenter)
+            # button_ok.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             # msg.setStandardButtons(QMessageBox.Cancel | QMessageBox.Ok)
             msg.setDefaultButton(QMessageBox.Cancel)
@@ -5007,13 +5175,17 @@ class MainWindow(QMainWindow):
         print('new_project | setting self.current_project_file_name = None')
         self.current_project_file_name = None
 
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        file_name, filter = QFileDialog.getSaveFileName(parent=None,  # None was self
+        #0610
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
+        # file_name, filter = QFileDialog.getSaveFileName(parent=None,  # None was self
+        #                                                 caption="New Project Save As...",
+        #                                                 filter="Projects (*.json);;All Files (*)",
+        #                                                 selectedFilter="",
+        #                                                 options=options)
+        file_name, filter = QFileDialog.getSaveFileName(parent=self,  # None was self
                                                         caption="New Project Save As...",
-                                                        filter="Projects (*.json);;All Files (*)",
-                                                        selectedFilter="",
-                                                        options=options)
+                                                        filter="Projects (*.json);;All Files (*)")
 
         if not file_name:
             print("new_project | No file_name returned. Reminding user to use .json extension - Returning...")
@@ -5054,13 +5226,19 @@ class MainWindow(QMainWindow):
 
         self.project_scales = []
 
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        file_name, filter = QFileDialog.getOpenFileName(parent=None,  # None was self
+
+        #0610
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
+        # file_name, filter = QFileDialog.getOpenFileName(parent=None,  # None was self
+        #                                                 caption="Open Project",
+        #                                                 filter="Projects (*.json);;All Files (*)",
+        #                                                 selectedFilter="",
+        #                                                 options=options)
+        # print("open_project | Opening project", file_name)
+        file_name, filter = QFileDialog.getOpenFileName(parent=self,  # None was self
                                                         caption="Open Project",
-                                                        filter="Projects (*.json);;All Files (*)",
-                                                        selectedFilter="",
-                                                        options=options)
+                                                        filter="Projects (*.json);;All Files (*)")
         print("open_project | Opening project", file_name)
 
 
@@ -5204,14 +5382,12 @@ class MainWindow(QMainWindow):
     def save_project_as(self):
         print("MainWindow is showing the save project as dialog...")
 
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
         file_name, filter = QFileDialog.getSaveFileName(parent=None,  # None was self
                                                         caption="Save Project",
                                                         filter="Projects (*.json);;All Files (*)",
-                                                        selectedFilter="",
-                                                        options=options)
-        print_debug(60, "save_project_dialog ( " + str(file_name) + ")")
+                                                        selectedFilter="")
 
         if file_name != None:
             if len(file_name) > 0:
@@ -5234,87 +5410,87 @@ class MainWindow(QMainWindow):
 
                 self.set_def_proj_dest()
 
-
-
-    @Slot()
-    def save_cropped_as(self):
-        print('MainWindow.save_cropped_as | saving cropped as...')
-
-        crop_parallel = True
-
-        if crop_mode_role == None:
-            show_warning("Warning", "Cannot save cropped images without a cropping region")
-
-        elif project_data['data']['destination_path'] == None:
-            show_warning("Warning", "Cannot save cropped images without a destination path")
-
-        elif len(project_data['data']['destination_path']) <= 0:
-            show_warning("Warning", "Cannot save cropped images without a valid destination path")
-        else:
-            options = QFileDialog.Options()
-            options |= QFileDialog.Directory
-            options |= QFileDialog.DontUseNativeDialog
-
-            cropped_path = QFileDialog.getExistingDirectory(parent=None, caption="Select Directory for Cropped Images",
-                                                            dir=project_data['data']['destination_path'],
-                                                            options=options)
-            print_debug(1, "Cropped Destination is: " + str(cropped_path))
-
-            if cropped_path != None:
-                if len(cropped_path) > 0:
-                    print("Crop and save images from role " + str(crop_mode_role) + " to " + str(cropped_path))
-                    scale_key = project_data['data']['current_scale']
-                    cropping_queue = None
-                    if crop_parallel:
-                        print("Before: cropping_queue = task_queue.TaskQueue ( sys.executable )")
-                        # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-                        # cropping_queue = task_queue.TaskQueue ( sys.executable )
-                        cropping_queue = task_queue.TaskQueue()
-                        cpus = psutil.cpu_count(logical=False)
-                        if cpus > 48:
-                            cpus = 48
-                        cropping_queue.start(cpus)
-                        cropping_queue.notify = False
-                        cropping_queue.passthrough_stdout = False
-                        cropping_queue.passthrough_stderr = False
-
-                    for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
-                        infile_name = layer['images'][crop_mode_role]['filename']
-                        name_part = os.path.split(infile_name)[1]
-                        if '.' in name_part:
-                            npp = name_part.rsplit('.')
-                            name_part = npp[0] + "_crop." + npp[1]
-                        else:
-                            name_part = name_part + "_crop"
-                        outfile_name = os.path.join(cropped_path, name_part)
-                        print("Cropping image " + infile_name)
-                        print("Saving cropped " + outfile_name)
-
-                        # Use the "extractStraightWindow" function which takes a center and a rectangle
-                        crop_cx = int((crop_mode_corners[0][0] + crop_mode_corners[1][0]) / 2)
-                        crop_cy = int((crop_mode_corners[0][1] + crop_mode_corners[1][1]) / 2)
-                        crop_w = abs(int(crop_mode_corners[1][0] - crop_mode_corners[0][0]))
-                        crop_h = abs(int(crop_mode_corners[1][1] - crop_mode_corners[0][1]))
-                        print("x,y = " + str((crop_cx, crop_cy)) + ", w,h = " + str((crop_w, crop_h)))
-
-                        if crop_parallel:
-                            my_path = os.path.split(os.path.realpath(__file__))[0]
-                            crop_job = os.path.join(my_path, 'single_crop_job.py')
-                            print(
-                                "cropping_queue.add_task ( [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )")
-                            # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
-                            cropping_queue.add_task(
-                                [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h),
-                                 infile_name, outfile_name])
-
-                        else:
-                            img = align_swiftir.swiftir.extractStraightWindow(
-                                align_swiftir.swiftir.loadImage(infile_name), xy=(crop_cx, crop_cy),
-                                siz=(crop_w, crop_h))
-                            align_swiftir.swiftir.saveImage(img, outfile_name)
-
-                    if crop_parallel:
-                        cropping_queue.collect_results()  # It might be good to have an explicit "join" function, but this seems to do so internally.
+    #
+    #
+    # @Slot()
+    # def save_cropped_as(self):
+    #     print('MainWindow.save_cropped_as | saving cropped as...')
+    #
+    #     crop_parallel = True
+    #
+    #     if crop_mode_role == None:
+    #         show_warning("Warning", "Cannot save cropped images without a cropping region")
+    #
+    #     elif project_data['data']['destination_path'] == None:
+    #         show_warning("Warning", "Cannot save cropped images without a destination path")
+    #
+    #     elif len(project_data['data']['destination_path']) <= 0:
+    #         show_warning("Warning", "Cannot save cropped images without a valid destination path")
+    #     else:
+    #         options = QFileDialog.Options()
+    #         options |= QFileDialog.Directory
+    #         options |= QFileDialog.DontUseNativeDialog
+    #
+    #         cropped_path = QFileDialog.getExistingDirectory(parent=None, caption="Select Directory for Cropped Images",
+    #                                                         dir=project_data['data']['destination_path'],
+    #                                                         options=options)
+    #         print_debug(1, "Cropped Destination is: " + str(cropped_path))
+    #
+    #         if cropped_path != None:
+    #             if len(cropped_path) > 0:
+    #                 print("Crop and save images from role " + str(crop_mode_role) + " to " + str(cropped_path))
+    #                 scale_key = project_data['data']['current_scale']
+    #                 cropping_queue = None
+    #                 if crop_parallel:
+    #                     print("Before: cropping_queue = task_queue.TaskQueue ( sys.executable )")
+    #                     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+    #                     # cropping_queue = task_queue.TaskQueue ( sys.executable )
+    #                     cropping_queue = task_queue.TaskQueue()
+    #                     cpus = psutil.cpu_count(logical=False)
+    #                     if cpus > 48:
+    #                         cpus = 48
+    #                     cropping_queue.start(cpus)
+    #                     cropping_queue.notify = False
+    #                     cropping_queue.passthrough_stdout = False
+    #                     cropping_queue.passthrough_stderr = False
+    #
+    #                 for layer in project_data['data']['scales'][scale_key]['alignment_stack']:
+    #                     infile_name = layer['images'][crop_mode_role]['filename']
+    #                     name_part = os.path.split(infile_name)[1]
+    #                     if '.' in name_part:
+    #                         npp = name_part.rsplit('.')
+    #                         name_part = npp[0] + "_crop." + npp[1]
+    #                     else:
+    #                         name_part = name_part + "_crop"
+    #                     outfile_name = os.path.join(cropped_path, name_part)
+    #                     print("Cropping image " + infile_name)
+    #                     print("Saving cropped " + outfile_name)
+    #
+    #                     # Use the "extractStraightWindow" function which takes a center and a rectangle
+    #                     crop_cx = int((crop_mode_corners[0][0] + crop_mode_corners[1][0]) / 2)
+    #                     crop_cy = int((crop_mode_corners[0][1] + crop_mode_corners[1][1]) / 2)
+    #                     crop_w = abs(int(crop_mode_corners[1][0] - crop_mode_corners[0][0]))
+    #                     crop_h = abs(int(crop_mode_corners[1][1] - crop_mode_corners[0][1]))
+    #                     print("x,y = " + str((crop_cx, crop_cy)) + ", w,h = " + str((crop_w, crop_h)))
+    #
+    #                     if crop_parallel:
+    #                         my_path = os.path.split(os.path.realpath(__file__))[0]
+    #                         crop_job = os.path.join(my_path, 'single_crop_job.py')
+    #                         print(
+    #                             "cropping_queue.add_task ( [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )")
+    #                         # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+    #                         cropping_queue.add_task(
+    #                             [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h),
+    #                              infile_name, outfile_name])
+    #
+    #                     else:
+    #                         img = align_swiftir.swiftir.extractStraightWindow(
+    #                             align_swiftir.swiftir.loadImage(infile_name), xy=(crop_cx, crop_cy),
+    #                             siz=(crop_w, crop_h))
+    #                         align_swiftir.swiftir.saveImage(img, outfile_name)
+    #
+    #                 if crop_parallel:
+    #                     cropping_queue.collect_results()  # It might be good to have an explicit "join" function, but this seems to do so internally.
 
 
     @Slot()
@@ -5488,14 +5664,11 @@ class MainWindow(QMainWindow):
 
         print("Importing images dialog for role: " + str(import_role_name))
 
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
         file_name_list, filtr = QFileDialog.getOpenFileNames(None,  # None was self
                                                              "Select Images to Import",
                                                              # self.openFileNameLabel.text(),
                                                              "Select Images",
-                                                             "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)",
-                                                             "", options)
+                                                             "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)")
 
         print_debug(60, "import_images_dialog ( " + str(import_role_name) + ", " + str(file_name_list) + ")")
 
@@ -5600,14 +5773,11 @@ class MainWindow(QMainWindow):
     def import_base_images(self):
         print("MainWindow.import_base_images:")
 
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
         file_name_list, filtr = QFileDialog.getOpenFileNames(None,  # None was self
                                                              "Select Images to Import",
                                                              # self.openFileNameLabel.text(),
                                                              "Select Images",
-                                                             "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)",
-                                                             "", options)
+                                                             "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)",)
 
         # Attempt to hide the file dialog before opening ...
         for p in self.panel_list:
@@ -5955,7 +6125,7 @@ class HeadsUpDisplay(QWidget):
         self.textedit = te = QPlainTextEdit(self)
         # Set whatever the default monospace font is for the platform
         f = QFont()
-        f.setFamily('monospace')
+        f.setStyleHint(QFont.Monospace)
 
         te.setFont(f)
         te.setReadOnly(True)
@@ -6041,7 +6211,7 @@ if __name__ == "__main__":
                          help="Preload +/-, total to preload = 2n-1")
     args = options.parse_args()
 
-    DEBUG_LEVEL = int(args.debug)
+    # DEBUG_LEVEL = int(args.debug) #0613
 
     if args.preload != None:
         preloading_range = int(args.preload)
@@ -6052,7 +6222,7 @@ if __name__ == "__main__":
     main_win.resize(2200, 1200)
     main_win.define_roles(['Stack'])
     main_win.show()
-    sys.exit(app.exec())
+    sys.exit(app.exec_())
 
 
 

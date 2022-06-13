@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 # print(f'glanceem_utils.py | Loading {__name__}')
+
+from run import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
+
+# QT_VERSION = 6
+# QT_API = 'pyqt'
+
 import interface
 import webbrowser
 import operator
@@ -20,15 +26,35 @@ import traceback
 import copy
 from glob import glob
 from PIL import Image
-# from source_tracker import get_hash_and_rev # what was Bob using this for?
+# from source_tracker import get_hash_and_rev # what was this being used for?
 
-from PySide6.QtWidgets import QInputDialog, QDialog, QProgressBar, QMessageBox
-from PySide6.QtCore import QThread, QThreadPool
-try:
-    from PySide6.QtCore import Signal, Slot
-except ImportError:
-    from PyQt6.QtCore import pyqtSignal as Signal
-    from PyQt6.QtCore import pyqtSlot as Slot
+
+from qtpy.QtWidgets import QInputDialog, QDialog, QProgressBar, QMessageBox
+from qtpy.QtCore import QThread, QThreadPool
+from qtpy.QtCore import Signal, Slot
+
+
+# if USES_QT5:
+#     if USES_PYSIDE:
+#         from PySide2.QtWidgets import QInputDialog, QDialog, QProgressBar, QMessageBox
+#         from PySide2.QtCore import QThread, QThreadPool
+#         from PySide2.QtCore import Signal, Slot
+#     if USES_PYQT:
+#         from PyQt5.QtWidgets import QInputDialog, QDialog, QProgressBar, QMessageBox
+#         from PyQt5.QtCore import QThread, QThreadPool
+#         from PyQt5.QtCore import pyqtSignal as Signal
+#         from PyQt5.QtCore import pyqtSlot as Slot
+#
+# if USES_QT6:
+#     if USES_PYSIDE:
+#         from PySide6.QtWidgets import QInputDialog, QDialog, QProgressBar, QMessageBox
+#         from PySide6.QtCore import QThread, QThreadPool
+#         from PySide6.QtCore import Signal, Slot
+#     if USES_PYQT:
+#         from PyQt6.QtWidgets import QInputDialog, QDialog, QProgressBar, QMessageBox
+#         from PyQt6.QtCore import QThread, QThreadPool
+#         from PyQt6.QtCore import pyqtSignal as Signal
+#         from PyQt6.QtCore import pyqtSlot as Slot
 
 from get_image_size import get_image_size
 
