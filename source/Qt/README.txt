@@ -7,9 +7,12 @@ joel@salk.edu
 Version 3.9+ (recommended)
 Version 3.7+ (minimum)
 
+-------- Install Pipenv --------
+curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
+
 -------- Install Python Dependencies --------
 To install the required Python packages using pip:
-python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade pips
 python3 -m pip install neuroglancer numpy psutil opencv-python-headless scikit-image zarr tifffile dask imagecodecs tqdm PySide6
 python3 -m pip install git+https://github.com/funkelab/funlib.math.git#egg=funlib.math
 python3 -m pip install git+https://github.com/funkelab/funlib.geometry.git#egg=funlib.geometry
@@ -29,7 +32,7 @@ Linux: Compilation requires a software called FFTW. Try:
        make -f makefile.linux
 
 -------- Run alignEM-SWiFT --------
-# navigate to /swift-ir/source/PySide6
+# navigate to /swift-ir/source/Qt
 python3 run.py
 
 -----------------------------------
@@ -63,7 +66,7 @@ pip install imagecodecs
 git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
 git checkout joel-dev-pyside6
-python3 source/PySide6/run.py
+python3 source/Qt/run.py
 
 CentOS 7 Tips:
 
