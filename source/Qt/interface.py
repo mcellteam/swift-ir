@@ -1816,8 +1816,10 @@ class ZoomPanWidget(QWidget):
         leaving_layer = project_data['data']['current_layer']
         entering_layer = project_data['data']['current_layer'] + layer_delta
         if leaving_layer + layer_delta < 0:
+            print('change_layer | Cant scroll down any further! %d < 0' % (leaving_layer + layer_delta))
             return
         elif project_data['data']['current_layer'] + 1 + layer_delta > n_imgs:
+            print('change_layer | Cant scroll up any further! %d > %d' % (project_data['data']['current_layer'] + 1 + layer_delta, n_imgs))
             return
         else:
             print("Changing to layer %s" % entering_layer)
@@ -1922,13 +1924,33 @@ class ZoomPanWidget(QWidget):
         global main_win #0529
         global preloading_range
 
-        kmods = event.modifiers()
-        if (int(kmods) & int(Qt.ShiftModifier)) == 0:
+        '''refer to QWheelEvent class documentation'''
 
+
+        kmods = event.modifiers()
+
+        # type(kmods) =  <enum 'KeyboardModifier'>
+        # scroll w/ shift key pressed: str(kmods) =  KeyboardModifier.NoModifier
+        # scroll w/out shift key pressed: str(kmods) =  str(kmods) =  KeyboardModifier.NoModifier
+
+        # if (int(kmods) & int(Qt.ShiftModifier)) == 0: #0615 #PyQt6 crashes with:
+        # TypeError: int() argument must be a string, a bytes-like object or a number, not 'KeyboardModifier'
+        if kmods == Qt.NoModifier:
             # Unshifted Scroll Wheel moves through layers
 
             # layer_delta = int(event.delta()/120)    #pyside2
-            layer_delta = int(event.angleDelta().y() / 120)  # pyside6
+            # layer_delta = int(event.angleDelta().y() / 120)  # pyside6
+            layer_delta = event.angleDelta().y() # 0615
+            # scrolling without shift key pressed...
+            # event.angleDelta().y() =  4
+            # layer_delta =  0
+            # Changing to layer 88
+            # scrolling without shift key pressed...
+            # event.angleDelta().y() =  2
+            # layer_delta =  0
+            # Changing to layer 88
+            # scrolling without shift key pressed...
+            # event.angleDelta().y() =  -2
 
             self.change_layer(layer_delta)
 
@@ -1947,14 +1969,20 @@ class ZoomPanWidget(QWidget):
             # else:
             #     self.wheel_index = 0
 
+            print('event.angleDelta().y() = ', event.angleDelta().y())
+            print('str(event.delta) = ', str(event.delta))
+
         else:
             # Shifted Scroll Wheel zooms
-
             # self.wheel_index += event.delta()/120    #pyside2
-            self.wheel_index += event.angleDelta().y() / 120  # pyside62
+            # self.wheel_index += event.angleDelta().y() / 120  # pyside6
+            self.wheel_index += event.angleDelta().y()  #0615
             # self.zoom_to_wheel_at(event.x(), event.y())
             # AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'x'
             self.zoom_to_wheel_at(event.position())  # return type: PySide6.QtCore.QPointF
+
+            print('event.angleDelta().y() = ', event.angleDelta().y())
+            print('str(event.delta) = ', str(event.delta))
 
     # todo
     # mainWindow.paintEvent is called very frequently. No need to initialize multiple global variables more than once.
@@ -2323,8 +2351,7 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
         # update_linking_callback()
 
         #0503 possible non-centering bug that occurs when runtime skips change is followed by scale change
-        if center_switch:
-            main_window.image_panel.center_all_images()
+        main_window.image_panel.center_all_images()
 
 
 def console():
@@ -5649,7 +5676,7 @@ class MainWindow(QMainWindow):
         self.update_panels() # NECESSARY. PAINTS THE IMAGES IN VIEWER.
         self.update_project_inspector()
         # THIS SHOULD BE FINE SINCE ORIGINAL IMAGES ARE JUST LINKS. ENSURES PROJECT IS IN A KNOWN STATE.
-        # self.save_project()
+        self.save_project() #0615 TURNING ON, GOOD TO HAVE KNOWN FALLBACK PROJECT STATE
 
 
     def update_panels(self):
