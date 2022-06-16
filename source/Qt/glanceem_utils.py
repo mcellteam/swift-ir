@@ -271,22 +271,27 @@ def isProjectScaled() -> bool:
     # print('isProjectScaled | Returning %s' % isScaled)
     return isScaled
 
-def isScaleAligned() -> bool:
+def isCurScaleAligned() -> bool:
     '''Checks if there exists an alignment stack for the current scale
+
+    #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
 
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a project that does not need scales.'''
-    print('isScaleAligned (caller=%s):' % str(inspect.stack()[1].function))
     try:
-        alignment = len(interface.project_data["data"]["scales"][interface.getCurScale()]["alignment_stack"])
-        if alignment > 1:
-            print('isScaleAligned | Returning True')
+        project_dir = interface.project_data['data']['destination_path']
+        bias_dir = os.path.join(project_dir, getCurScale(), 'bias_data')
+        afm_1_file = os.path.join(bias_dir,'afm_1.dat')
+        print('afm_1_file = ', afm_1_file)
+        print('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
+        if os.path.exists(afm_1_file):
+            print('isCurScaleAligned | Returning True')
             return True
         else:
-            print('isScaleAligned | Returning False')
+            print('isCurScaleAligned | Returning False')
             return False
     except:
-        print('isScaleAligned | EXCEPTION | Unexpected function behavior - Returning False')
+        print('isCurScaleAligned | EXCEPTION | Unexpected function behavior - Returning False')
         return False
 
 def getNumAligned() -> int:
@@ -353,16 +358,19 @@ def isAnyScaleAligned() -> bool:
 
 
 def isScaleAligned(scale: str) -> bool:
+    '''Returns boolean based on whether arg scale is aligned '''
     try:
-        files = glob(interface.project_data['data']['destination_path'] + '/' + scale + '/img_aligned/*.tif')
+        project_dir = interface.project_data['data']['destination_path']
+        bias_dir = os.path.join(project_dir, scale, 'bias_data')
+        afm_1_file = os.path.join(bias_dir,'afm_1.dat')
+        if os.path.exists(afm_1_file):
+            print('isScaleAligned | Returning True')
+            return True
+        else:
+            print('isScaleAligned | Returning False')
+            return False
     except:
-        print('isScaleAligned | EXCEPTION')
-
-    if len(files) > 0:
-        # print('isAnyScaleAligned | Returning True')
-        return True
-    else:
-        # print('isAnyScaleAligned | Returning False')
+        print('isScaleAligned | EXCEPTION | Unexpected function behavior - Returning False')
         return False
 
 
