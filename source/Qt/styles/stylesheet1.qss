@@ -187,9 +187,9 @@ QPushButton{
 	/*border-color: #4fa08b;*/
 	/*border-color:  #ffe135;*/
 	/*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
-	border-width: 1px;
+	border-width: 0px;
 	/*border-radius: 5px;*/
-	border-radius: 3px;
+	border-radius: 2px;
 	color: #d3dae3;
 	/*padding: 2px;*/
 	background-color: #151a1e;
@@ -199,7 +199,7 @@ QPushButton:default{
 	border-style: solid;
 	border-color: #050a0e;
 	border-width: 1px;
-	border-radius: 5px;
+	border-radius: 2px;
 	color: #FFFFFF;
 	padding: 2px;
 	background-color: #151a1e;
@@ -231,7 +231,7 @@ QPushButton:disabled{
 	border-left-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(227, 227, 227), stop:1 rgb(217, 217, 217));
 	border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
 	border-width: 1px;
-	border-radius: 5px;
+	border-radius: 2px;
 	color: #808086;
 	padding: 2px;
 	background-color: rgb(142,142,142);
