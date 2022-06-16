@@ -119,6 +119,7 @@ from glob import glob
 from PIL import Image
 import numpy as np
 from tqdm import tqdm
+import qtawesome as qta
 
 from joel_decs import timeit, profileit, dumpit, traceit, countit
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
@@ -1314,7 +1315,7 @@ class ZoomPanWidget(QWidget):
 
         # self.rubberBand = QRubberBand(QRubberBand.Rectangle, self) #0610 removed
 
-        self.setToolTip('GlanceEM_SWiFT')  # tooltip #settooltip
+        # self.setToolTip('GlanceEM_SWiFT')  # tooltip #settooltip
         # tooltip.setTargetWidget(btn)
         #
         # self.lb = QLabel(self)
@@ -2323,7 +2324,10 @@ def bounding_rect_changed_callback(state):
 
 def skip_changed_callback(state):  # 'state' is connected to skip toggle
     print("\nskip_changed_callback(state=%s):" % str(state))
-    # This function gets called whether it's changed by the user or by another part of the program!!!
+    '''Toggle callback for skip image function. Note: a signal is emitted regardless of whether a user or another part 
+    of the program flips the toggle state. Caller is 'run_app' when a user flips the switch. Caller is change_layer 
+    or other user-defined function when the program flips the switch'''
+    # !!!
     # global ignore_changes #0528
     # called by:  change_layer <-- when ZoomPanWidget.change_layer toggles
     # called by:  run_app <-- when user toggles
@@ -2331,6 +2335,8 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
     # for layer_index in range(len(project_data['data']['scales'][getCurScale()]['alignment_stack'])):
     #     if project_data['data']['scales'][getCurScale()]['alignment_stack'][layer_index]['skip'] == True:
     #         skip_list.append(layer_index)
+
+
 
     if areImagesImported():
         skip_list = getSkipsList()
@@ -2656,7 +2662,7 @@ class ToggleSwitch(QCheckBox):
 
                  handle_color=QColor('white'),
                  h_scale=.7,
-                 v_scale=.9,
+                 v_scale=.5,
                  fontSize=10):
 
         super().__init__(parent)
@@ -2679,7 +2685,8 @@ class ToggleSwitch(QCheckBox):
 
         self.stateChanged.connect(self.handle_state_change)
 
-        self.setFixedWidth(40)
+        self.setFixedWidth(36)
+        self.setFixedHeight(30)
 
     def __str__(self):
         return str(self.__class__) + '\n' + '\n'.join(
@@ -2687,7 +2694,8 @@ class ToggleSwitch(QCheckBox):
 
     def sizeHint(self):
         # return QSize(76, 30)
-        return QSize(80, 35)
+        # return QSize(80, 35)
+        return QSize(36, 30)
 
     def hitButton(self, pos: QPoint):
         return self.contentsRect().contains(pos)
@@ -2720,17 +2728,19 @@ class ToggleSwitch(QCheckBox):
             p.drawRoundedRect(barRect, rounding, rounding)
             p.setPen(self._black_pen)
             p.setBrush(self._handle_checked_brush)
-            # p.setFont(QFont('Helvetica', self._fontSize, 75, QFont.Bold)) # for some reason this makes the font italic (?)
-            p.setFont(QFont('Helvetica', self._fontSize, 75))
-            # p.drawText(xLeft + handleRadius / 2, contRect.center().y() + handleRadius / 2, "KEEP")
+            font = QFont("PT Sans", self._fontSize)
+            p.setFont(font)
+            # p.setFont(QFont('Helvetica', self._fontSize, 75))
 
         else:
             p.setBrush(self._bar_brush)
             p.drawRoundedRect(barRect, rounding, rounding)
             p.setPen(self._black_pen)
             p.setBrush(self._handle_brush)
-            p.setFont(QFont('Helvetica', self._fontSize, 75))
-            # p.drawText(contRect.center().x(), contRect.center().y() + handleRadius / 2, "SKIP")
+            font = QFont("PT Sans", self._fontSize)
+            p.setFont(font)
+            # p.setFont(QFont('Helvetica', self._fontSize, 75))
+
 
         p.setPen(self._light_grey_pen)
         p.drawEllipse(QPointF(xPos, barRect.center().y()), handleRadius, handleRadius)
@@ -2780,8 +2790,8 @@ class ToggleSkipSwitch(QCheckBox):
                  bar_color=QColor('grey'),
                  checked_color="#00ff00",
                  handle_color=QColor('white'),
-                 h_scale=1.0,
-                 v_scale=0.9,
+                 h_scale=1,
+                 v_scale=1,
                  fontSize=8):
 
         super().__init__(parent)
@@ -2802,7 +2812,8 @@ class ToggleSkipSwitch(QCheckBox):
 
         self.stateChanged.connect(self.handle_state_change)
 
-        self.setFixedWidth(54)
+        self.setFixedWidth(50)
+        self.setFixedHeight(28)
 
     def __str__(self):
         return str(self.__class__) + '\n' + '\n'.join(
@@ -2810,7 +2821,8 @@ class ToggleSkipSwitch(QCheckBox):
 
     def sizeHint(self):
         # return QSize(76, 30)
-        return QSize(80, 35)
+        # return QSize(80, 35)
+        return QSize(50, 28)
 
     def hitButton(self, pos: QPoint):
         return self.contentsRect().contains(pos)
@@ -2848,8 +2860,9 @@ class ToggleSkipSwitch(QCheckBox):
             p.setPen(self._black_pen)
             # p.setPen(self.white_pen)
             p.setBrush(self._handle_checked_brush)
-            # p.setFont(QFont('Helvetica', self._fontSize, 75, QFont.Bold)) # oddly makes the font italic
-            p.setFont(QFont('Helvetica', self._fontSize, 75))
+            font = QFont("PT Sans", self._fontSize, QFont.Bold)
+            p.setFont(font)
+            # p.setFont(QFont('Helvetica', self._fontSize, 75))
             p.drawText(xLeft + handleRadius / 2, contRect.center().y() + handleRadius / 2, "KEEP")
 
         else:
@@ -2857,8 +2870,9 @@ class ToggleSkipSwitch(QCheckBox):
             p.drawRoundedRect(barRect, rounding, rounding)
             p.setPen(self._black_pen)
             p.setBrush(self._handle_brush)
-            # p.setFont(QFont('Helvetica', self._fontSize, 75, QFont.Bold))
-            p.setFont(QFont('Helvetica', self._fontSize, 75))
+            font = QFont("PT Sans", self._fontSize, QFont.Bold)
+            p.setFont(font)
+            # p.setFont(QFont('Helvetica', self._fontSize, 75))
             p.drawText(contRect.center().x(), contRect.center().y() + handleRadius / 2, "SKIP")
 
         p.setPen(self._light_grey_pen)
@@ -2867,7 +2881,6 @@ class ToggleSkipSwitch(QCheckBox):
 
     @Slot(int)
     def handle_state_change(self, value):
-        print("ToggleSkipSwitch.handle_state_change:")
         self._handle_position = 1 if value else 0
 
     # @Property(float)
@@ -3067,10 +3080,10 @@ class MainWindow(QMainWindow):
         self.project_aligned_scales = []
 
         std_height = int(22)
-        std_width = int(118)
+        std_width = int(96)
         std_button_size = QSize(std_width, std_height)
-        square_button_height = int(38)
-        square_button_width = int(74)
+        square_button_height = int(32)
+        square_button_width = int(72)
         square_button_size = QSize(square_button_width,square_button_height)
         std_input_size = int(56)
         std_input_size_small = int(36)
@@ -3537,22 +3550,34 @@ class MainWindow(QMainWindow):
         PROJECT INSPECTOR #projectinspector
         ------------------------------------------'''
 
-        self.project_inspector = QDockWidget("Project Inspector")
-        self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
-        # if QT_API == 'pyside':
-        #     self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
-        # # elif QT_API == 'pyqt':
-        # #     # self.project_inspector.setAllowedAreas() # ? there is no reference on how to do this
-
-
-        scroll = QScrollArea()
-        self.project_inspector.setWidget(scroll)
-        content = QWidget()
-        scroll.setWidget(content)
-        scroll.setWidgetResizable(True)
-        dock_vlayout = QVBoxLayout(content)
-
-        # # Project Status
+        # self.project_inspector = QDockWidget("Project Inspector")
+        # self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
+        # # if QT_API == 'pyside':
+        # #     self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
+        # # # elif QT_API == 'pyqt':
+        # # #     # self.project_inspector.setAllowedAreas() # ? there is no reference on how to do this
+        #
+        #
+        # scroll = QScrollArea()
+        # self.project_inspector.setWidget(scroll)
+        # content = QWidget()
+        # scroll.setWidget(content)
+        # scroll.setWidgetResizable(True)
+        # dock_vlayout = QVBoxLayout(content)
+        #
+        # # # Project Status
+        # # self.inspector_scales = CollapsibleBox('Skip List')
+        # # dock_vlayout.addWidget(self.inspector_scales)
+        # # lay = QVBoxLayout()
+        # # self.inspector_label_scales = QLabel('')
+        # # self.inspector_label_scales.setStyleSheet(
+        # #         "color: #d3dae3;"
+        # #         "border-radius: 12px;"
+        # #     )
+        # # lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)
+        # # self.inspector_scales.setContentLayout(lay)
+        #
+        # # Skips List
         # self.inspector_scales = CollapsibleBox('Skip List')
         # dock_vlayout.addWidget(self.inspector_scales)
         # lay = QVBoxLayout()
@@ -3561,96 +3586,100 @@ class MainWindow(QMainWindow):
         #         "color: #d3dae3;"
         #         "border-radius: 12px;"
         #     )
-        # lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)
+        # # lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)    #0610
+        # lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignmentFlag.AlignTop)
         # self.inspector_scales.setContentLayout(lay)
-
-        # Skips List
-        self.inspector_scales = CollapsibleBox('Skip List')
-        dock_vlayout.addWidget(self.inspector_scales)
-        lay = QVBoxLayout()
-        self.inspector_label_scales = QLabel('')
-        self.inspector_label_scales.setStyleSheet(
-                "color: #d3dae3;"
-                "border-radius: 12px;"
-            )
-        # lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)    #0610
-        lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignmentFlag.AlignTop)
-        self.inspector_scales.setContentLayout(lay)
-
-        # CPU Specs
-        self.inspector_cpu = CollapsibleBox('CPU Specs')
-        dock_vlayout.addWidget(self.inspector_cpu)
-        lay = QVBoxLayout()
-        label = QLabel("CPU #: %s\nSystem : %s" % ( psutil.cpu_count(logical=False), platform.system() ))
-        label.setStyleSheet(
-                "color: #d3dae3;"
-                "border-radius: 12px;"
-            )
-        # lay.addWidget(label, alignment=Qt.AlignTop)    #0610
-        lay.addWidget(label, alignment=Qt.AlignmentFlag.AlignTop)
-        self.inspector_cpu.setContentLayout(lay)
-
-        dock_vlayout.addStretch()
+        #
+        # # CPU Specs
+        # self.inspector_cpu = CollapsibleBox('CPU Specs')
+        # dock_vlayout.addWidget(self.inspector_cpu)
+        # lay = QVBoxLayout()
+        # label = QLabel("CPU #: %s\nSystem : %s" % ( psutil.cpu_count(logical=False), platform.system() ))
+        # label.setStyleSheet(
+        #         "color: #d3dae3;"
+        #         "border-radius: 12px;"
+        #     )
+        # # lay.addWidget(label, alignment=Qt.AlignTop)    #0610
+        # lay.addWidget(label, alignment=Qt.AlignmentFlag.AlignTop)
+        # self.inspector_cpu.setContentLayout(lay)
+        #
+        # dock_vlayout.addStretch()
 
         '''------------------------------------------
         PANEL 1: PROJECT #projectpanel
         ------------------------------------------'''
 
-        self.documentation_button = QPushButton("Docs")
+        self.new_project_button = QPushButton(" New")
+        self.new_project_button.clicked.connect(self.new_project)
+        self.new_project_button.setFixedSize(square_button_size)
+        # self.new_project_button.setIcon(qta.icon("ei.stackoverflow", color="#d3dae3"))
+        # self.new_project_button.setIcon(qta.icon("ph.stack-fill", color="#d3dae3"))
+        self.new_project_button.setIcon(qta.icon("msc.add", color="#d3dae3"))
+        # self.new_project_button.setIconSize(QSize(20, 20))
+
+        self.open_project_button = QPushButton(" Open")
+        self.open_project_button.clicked.connect(self.open_project)
+        self.open_project_button.setFixedSize(square_button_size)
+        self.open_project_button.setIcon(qta.icon("fa.folder-open", color="#d3dae3"))
+
+        self.save_project_button = QPushButton(" Save")
+        self.save_project_button.clicked.connect(self.save_project)
+        self.save_project_button.setFixedSize(square_button_size)
+        self.save_project_button.setIcon(qta.icon("mdi.content-save", color="#d3dae3"))
+
+        # self.documentation_button = QPushButton("Docs")
+        self.documentation_button = QPushButton(" Help")
         self.documentation_button.clicked.connect(documentation_view)
         self.documentation_button.setFixedSize(square_button_size)
+        # self.documentation_button.setIcon(qta.icon("fa.github", color="#d3dae3"))
+        self.documentation_button.setIcon(qta.icon("mdi.help", color="#d3dae3"))
 
-        self.remote_viewer_button = QPushButton("Remote\nNeuroglancer\nViewer")
+        self.exit_app_button = QPushButton(" Exit")
+        self.exit_app_button.clicked.connect(self.exit_app)
+        self.exit_app_button.setFixedSize(square_button_size)
+        # self.exit_app_button.setIcon(qta.icon("mdi.exit-to-app", color="#d3dae3"))
+        self.exit_app_button.setIcon(qta.icon("mdi6.close", color="#d3dae3"))
+
+        self.remote_viewer_button = QPushButton("Neuroglancer\nServer")
         self.remote_viewer_button.clicked.connect(remote_view)
         self.remote_viewer_button.setFixedSize(square_button_size)
         self.remote_viewer_button.setStyleSheet("font-size: 9px;")
 
-        self.new_project_button = QPushButton("New")
-        self.new_project_button.clicked.connect(self.new_project)
-        self.new_project_button.setFixedSize(square_button_size)
-
-        self.open_project_button = QPushButton("Open")
-        self.open_project_button.clicked.connect(self.open_project)
-        self.open_project_button.setFixedSize(square_button_size)
-
-        self.save_project_button = QPushButton("Save")
-        self.save_project_button.clicked.connect(self.save_project)
-        self.save_project_button.setFixedSize(square_button_size)
-
-        self.exit_app_button = QPushButton("Exit")
-        self.exit_app_button.clicked.connect(self.exit_app)
-        self.exit_app_button.setFixedSize(square_button_size)
-
         self.project_functions_layout = QGridLayout()
         self.project_functions_layout.setContentsMargins(10, 25, 10, 5)
-        self.project_functions_layout.setSpacing(10)  # ***
-        self.project_functions_layout.addWidget(self.new_project_button, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.project_functions_layout.addWidget(self.open_project_button, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.project_functions_layout.addWidget(self.save_project_button, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.project_functions_layout.addWidget(self.exit_app_button, 1, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.project_functions_layout.addWidget(self.documentation_button, 1, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.project_functions_layout.addWidget(self.remote_viewer_button, 1, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.project_functions_layout.setSpacing(10)  # ***
+        self.project_functions_layout.addWidget(self.new_project_button, 0, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.open_project_button, 0, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.save_project_button, 0, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.exit_app_button, 1, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.documentation_button, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.remote_viewer_button, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
 
         '''------------------------------------------
         PANEL 2: DATA SELECTION & SCALING
         ------------------------------------------'''
         #datapanel #scalingpanel #importpanel
 
-        self.import_images_button = QPushButton("Import\nImages")
+        self.import_images_button = QPushButton(" Import\n Images")
         self.import_images_button.setToolTip('Import TIFF images.')
         self.import_images_button.clicked.connect(self.import_base_images)
         self.import_images_button.setFixedSize(square_button_size)
+        # self.import_images_button.setIcon(qta.icon("ph.stack-fill", color="#d3dae3"))
+        self.import_images_button.setIcon(qta.icon("fa5s.file-import", color="#d3dae3"))
+        self.import_images_button.setStyleSheet("font-size: 10px;")
         # self.import_images_button.setFixedSize(square_button_width, std_height)
 
         self.center_button = QPushButton('Center')
         self.center_button.setToolTip('Center all images.')
         self.center_button.clicked.connect(self.center_callback)
         self.center_button.setFixedSize(square_button_width, std_height)
+        self.center_button.setStyleSheet("font-size: 10px;")
 
         self.actual_size_button = QPushButton('Actual Size')
         self.actual_size_button.setToolTip('Actual-size all images.')
         self.actual_size_button.clicked.connect(self.actual_size_callback)
         self.actual_size_button.setFixedSize(square_button_width, std_height)
+        self.actual_size_button.setStyleSheet("font-size: 10px;")
 
         self.size_buttons_vlayout = QVBoxLayout()
         self.size_buttons_vlayout.addWidget(self.center_button)
@@ -3660,26 +3689,27 @@ class MainWindow(QMainWindow):
         self.generate_scales_button.setToolTip('Generate scale pyramid with chosen # of levels.')
         self.generate_scales_button.clicked.connect(generate_scales_queue)
         self.generate_scales_button.setFixedSize(square_button_size)
+        self.generate_scales_button.setStyleSheet("font-size: 10px;")
+        self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color="#d3dae3"))
         # self.generate_scales_button.setFixedSize(square_button_width, std_height)
         # self.generate_scales_button.setStyleSheet("font-size: 11px;")
 
-        self.clear_all_skips_button = QPushButton('Reset')
-        self.clear_all_skips_button.setToolTip('Reset skips (align all)')
-        self.clear_all_skips_button.setMaximumHeight(std_height)
-        # self.clear_all_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)    #0610
+        # self.clear_all_skips_button = QPushButton('Reset')
+        self.clear_all_skips_button = QPushButton()
+        self.clear_all_skips_button.setToolTip('Reset skips (keep all)')
         self.clear_all_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.clear_all_skips_button.clicked.connect(clear_all_skips)
-        self.clear_all_skips_button.setFixedWidth(50)
-        self.clear_all_skips_button.setFixedHeight(std_height)
+        self.clear_all_skips_button.setFixedSize(std_height, std_height)
+        self.clear_all_skips_button.setIcon(qta.icon("mdi.undo", color="#d3dae3"))
 
         self.toggle_skip = ToggleSkipSwitch()  #toggleskip
         self.toggle_skip.setToolTip('Skip current image (do not align)')
         self.toggle_skip.setChecked(True)
-        self.toggle_skip.setH_scale(.9)
-        self.toggle_skip.setV_scale(1.0)
+        # self.toggle_skip.setH_scale(.9)
+        # self.toggle_skip.setV_scale(1.0)
         self.toggle_skip.toggled.connect(skip_changed_callback)
 
-        self.jump_label = QLabel("Jump To:")
+        self.jump_label = QLabel("Go to:")
         self.jump_label.setToolTip('Jump to image #')
         self.jump_input = QLineEdit(self)
         self.jump_input.setToolTip('Jump to image #')
@@ -3698,20 +3728,20 @@ class MainWindow(QMainWindow):
 
         self.images_and_scaling_layout = QGridLayout()
         self.images_and_scaling_layout.setContentsMargins(10, 25, 10, 5) #tag23
-        self.images_and_scaling_layout.setSpacing(10) # ***
+        # self.images_and_scaling_layout.setSpacing(10) # ***
         self.images_and_scaling_layout.addWidget(self.import_images_button, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
         # self.images_and_scaling_layout.addWidget(self.center_button, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.images_and_scaling_layout.addLayout(self.size_buttons_vlayout, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.images_and_scaling_layout.addWidget(self.generate_scales_button, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.toggle_reset_hlayout = QHBoxLayout()
+        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button)
         self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignmentFlag.AlignRight)
         self.toggle_reset_hlayout.addWidget(self.jump_input, alignment=Qt.AlignmentFlag.AlignHCenter)
         # self.toggle_reset_hlayout.addLayout(self.jump_hlayout, alignment=Qt.AlignmentFlag.AlignHCenter)
         # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
         # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3)
         # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=Qt.AlignmentFlag.AlignRight)
 
         '''------------------------------------------
@@ -3773,56 +3803,38 @@ class MainWindow(QMainWindow):
         self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Apply All Button
-        self.apply_all_button = QPushButton('Apply Settings All')
+        # self.apply_all_label = QLabel("Apply Settings All:")
+        self.apply_all_label = QLabel("Apply All:")
+        # self.apply_all_button = QPushButton('Apply To All')
+        self.apply_all_button = QPushButton()
         self.apply_all_button.setToolTip('Apply these settings to the entire project.')
         self.apply_all_button.clicked.connect(self.apply_all_callback)
-        self.apply_all_button.setFixedSize(std_button_size)
+        # self.apply_all_button.setFixedSize(std_button_size)
+        self.apply_all_button.setFixedSize(std_height, std_height)
+        # self.apply_all_button.setIcon(qta.icon("fa.mail-forward", color="#d3dae3"))
+        self.apply_all_button.setIcon(qta.icon("mdi6.transfer", color="#d3dae3"))
+
+        self.apply_all_layout = QHBoxLayout()
+        self.apply_all_layout.addWidget(self.apply_all_label)
+        self.apply_all_layout.addWidget(self.apply_all_button)
 
         # Next Scale Button
-        self.next_scale_button = QPushButton('Next Scale  ')
+        self.next_scale_button = QPushButton('Next Scale ')
         self.next_scale_button.setToolTip('Go forward to the next scale.')
         self.next_scale_button.clicked.connect(self.next_scale_button_callback)
-        # self.next_scale_button.setFixedSize(square_button_width, std_height)
         self.next_scale_button.setFixedSize(std_button_size)
-        # self.next_scale_button.setLayoutDirection(Qt.RightToLeft)    #0610
         self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft) #0610
-
-
-        pixmapi = QStyle.StandardPixmap.SP_ArrowForward
-        icon = self.style().standardIcon(pixmapi)
-        # if QT_API == 'pyqt' and QT_VERSION == 6:
-        #     pixmapi = QStyle.StandardPixmap.SP_MessageBoxCritical
-        #     icon = self.style().standardIcon(pixmapi)
-        # else:
-        #     pixmapi = getattr(QStyle, 'SP_ArrowForward')    #0610
-        #     icon = self.style().standardIcon(pixmapi)
-        #     # this syntax might be better for 'else'...
-        #     # pixmapi = QStyle.SP_MessageBoxCritical
-        #     # icon = self.style().standardIcon(pixmapi)
-
-        self.next_scale_button.setIcon(icon)
+        self.next_scale_button.setIcon(qta.icon("ri.arrow-right-line", color="#d3dae3"))
+        self.next_scale_button.setStyleSheet("font-size: 10px;")
 
         # Previous Scale Button
-        self.prev_scale_button = QPushButton('  Prev Scale')
+        self.prev_scale_button = QPushButton(' Prev Scale')
         self.prev_scale_button.setToolTip('Go back to the previous scale.')
         self.prev_scale_button.clicked.connect(self.prev_scale_button_callback)
         self.prev_scale_button.setFixedSize(std_button_size)
         # self.prev_scale_button.setFixedSize(square_button_width, std_height)
-        self.prev_scale_button.setFixedSize(std_button_size)
-
-
-        pixmapi = QStyle.StandardPixmap.SP_ArrowBack
-        icon = self.style().standardIcon(pixmapi)
-        # if QT_API == 'pyqt' and QT_VERSION == 6:
-        #     pixmapi = QStyle.StandardPixmap.SP_ArrowBack
-        #     icon = self.style().standardIcon(pixmapi)
-        # else:
-        #     pixmap = getattr(QStyle, 'SP_ArrowBack')
-        #     icon = self.style().standardIcon(pixmap)
-        #     # this syntax might be better for 'else'...
-        #     # pixmapi = QStyle.SP_MessageBoxCritical
-        #     # icon = self.style().standardIcon(pixmapi)
-        self.prev_scale_button.setIcon(icon)
+        self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color="#d3dae3"))
+        self.prev_scale_button.setStyleSheet("font-size: 10px;")
 
         # self.scale_controls_layout = QHBoxLayout()
         # self.scale_controls_layout.addWidget(self.prev_scale_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -3834,16 +3846,21 @@ class MainWindow(QMainWindow):
         self.align_all_button.clicked.connect(align_all_or_some)
         # self.align_all_button.setFixedSize(square_button_width, std_height)
         self.align_all_button.setFixedSize(std_button_size)
+        # self.align_all_button.setIcon(qta.icon("mdi.format-align-middle", color="#d3dae3"))
+        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color="#d3dae3"))
+        self.align_all_button.setStyleSheet("font-size: 10px;")
 
         # pixmap = getattr(QStyle, 'SP_MediaPlay')
         # icon = self.style().standardIcon(pixmap)
         # self.align_all_button.setIcon(icon)
         # self.align_all_button.setLayoutDirection(Qt.RightToLeft)
 
-        self.alignment_status_label = QLabel("Align Status:")
+        self.alignment_status_label = QLabel("Status:")
+        self.alignment_status_label.setToolTip('Alignment status')
         # self.alignment_status_checkbox = QCheckBox()
         self.alignment_status_checkbox = QRadioButton()
         self.alignment_status_checkbox.setEnabled(False)
+        self.alignment_status_checkbox.setToolTip('Alignment status')
         self.alignment_status_layout = QHBoxLayout()
         self.alignment_status_layout.addWidget(self.alignment_status_label)
         self.alignment_status_layout.addWidget(self.alignment_status_checkbox)
@@ -3855,8 +3872,8 @@ class MainWindow(QMainWindow):
         self.toggle_auto_generate = ToggleSwitch()  #toggleboundingrect
         self.toggle_auto_generate.setToolTip('Automatically generate aligned images.')
         self.toggle_auto_generate.setChecked(True)
-        self.toggle_auto_generate.setV_scale(.6)
-        self.toggle_auto_generate.setH_scale(.8)
+        # self.toggle_auto_generate.setV_scale(.6)
+        # self.toggle_auto_generate.setH_scale(.8)
         self.toggle_auto_generate.toggled.connect(self.toggle_auto_generate_callback)
         self.toggle_auto_generate_hlayout = QHBoxLayout()
         self.toggle_auto_generate_hlayout.addWidget(self.auto_generate_label, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -3865,14 +3882,16 @@ class MainWindow(QMainWindow):
         # self.scale_tabs = QTabWidget()
         self.alignment_layout = QGridLayout()
         self.alignment_layout.setContentsMargins(10, 25, 10, 5) #tag23
-        self.alignment_layout.addLayout(self.swim_grid, 0, 0)
-        self.alignment_layout.addLayout(self.whitening_grid, 1, 0)
-        self.alignment_layout.addWidget(self.prev_scale_button, 0, 1)
-        self.alignment_layout.addWidget(self.next_scale_button, 1, 1)
-        self.alignment_layout.addWidget(self.align_all_button, 2, 1)
-        self.alignment_layout.addWidget(self.apply_all_button, 2, 0, alignment=Qt.AlignmentFlag.AlignRight)
-        self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 3, 0)
-        self.alignment_layout.addLayout(self.alignment_status_layout, 3, 1)
+        self.alignment_layout.addLayout(self.swim_grid, 0, 0, 1, 2)
+        self.alignment_layout.addLayout(self.whitening_grid, 1, 0, 1 ,2)
+        self.alignment_layout.addWidget(self.prev_scale_button, 0, 2)
+        self.alignment_layout.addWidget(self.next_scale_button, 1, 2)
+        self.alignment_layout.addWidget(self.align_all_button, 2, 2)
+        # self.alignment_layout.addWidget(self.apply_all_button, 2, 0, alignment=Qt.AlignmentFlag.AlignRight)
+        self.alignment_layout.addLayout(self.apply_all_layout, 2, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        # self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 3, 0)
+        self.alignment_layout.addLayout(self.alignment_status_layout, 2, 0)
+
 
         '''------------------------------------------
         PANEL 3.5: Post-alignment
@@ -3905,17 +3924,28 @@ class MainWindow(QMainWindow):
         self.toggle_bounding_rect = ToggleSwitch()
         self.toggle_bounding_rect.setToolTip(wrapped)
         # self.toggle_bounding_rect.setChecked(True)
-        self.toggle_bounding_rect.setV_scale(.6)
-        self.toggle_bounding_rect.setH_scale(.8)
+        # self.toggle_bounding_rect.setV_scale(.6)
+        # self.toggle_bounding_rect.setH_scale(.8)
         self.toggle_bounding_rect.toggled.connect(bounding_rect_changed_callback)
         self.toggle_bounding_hlayout = QHBoxLayout()
         self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignLeft)
         self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Regenerate Button
-        self.regenerate_button = QPushButton('(Re-)Generate')
+        # mdi6.reload
+        self.regenerate_label = QLabel('(Re)generate:')
+        self.regenerate_label.setToolTip('Regenerate aligned with adjusted settings')
+        # self.regenerate_button = QPushButton('(Re-)Generate')
+        self.regenerate_button = QPushButton()
+        self.regenerate_button.setToolTip('Regenerate aligned with adjusted settings')
+        # self.regenerate_button.setIcon(qta.icon("fa.refresh", color="#d3dae3"))
+        self.regenerate_button.setIcon(qta.icon("fa.refresh", color="#d3dae3"))
         self.regenerate_button.clicked.connect(regenerate_aligned)
-        self.regenerate_button.setFixedSize(std_button_size)
+        self.regenerate_button.setFixedSize(std_height, std_height)
+
+        self.regenerate_hlayout = QHBoxLayout()
+        self.regenerate_hlayout.addWidget(self.regenerate_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.regenerate_hlayout.addWidget(self.regenerate_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         # pixmap = getattr(QStyle, 'SP_BrowserReload')
         # icon = self.style().standardIcon(pixmap)
@@ -3925,9 +3955,10 @@ class MainWindow(QMainWindow):
         self.postalignment_layout = QGridLayout()
         self.postalignment_layout.setContentsMargins(10, 25, 10, 5)  # tag23
 
-        self.postalignment_layout.addLayout(self.poly_order_hlayout, 0, 0)
-        self.postalignment_layout.addLayout(self.toggle_bounding_hlayout, 1, 0)
-        self.postalignment_layout.addWidget(self.regenerate_button, 2, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.postalignment_layout.addLayout(self.poly_order_hlayout, 0, 0, alignment=Qt.AlignmentFlag.AlignTop)
+        self.postalignment_layout.addLayout(self.toggle_bounding_hlayout, 1, 0, alignment=Qt.AlignmentFlag.AlignTop)
+        # self.postalignment_layout.addWidget(self.regenerate_button, 2, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.postalignment_layout.addLayout(self.regenerate_hlayout, 2, 0, alignment=Qt.AlignmentFlag.AlignTop)
 
         '''------------------------------------------
         PANEL 4: EXPORT & VIEW
@@ -3963,19 +3994,23 @@ class MainWindow(QMainWindow):
         self.cname_combobox.setFixedSize(72, std_height)
 
         self.export_and_view_hbox = QHBoxLayout()
-        self.export_zarr_button = QPushButton("Export To\nZarr")
+        self.export_zarr_button = QPushButton(" Export\n Zarr")
         tip = "To view data in Neuroglancer, it is necessary to export to a compatible format such as Zarr. This function exports all aligned .TIF images for current scale to the chunked and compressed Zarr (.zarr) format with scale pyramid. Uses parallel processing."
         wrapped = "\n".join(textwrap.wrap(tip, width=35))
         self.export_zarr_button.setToolTip(wrapped)
         self.export_zarr_button.clicked.connect(self.export_zarr)
         self.export_zarr_button.setFixedSize(square_button_size)
-        self.export_zarr_button.setStyleSheet("font-size: 11px;")
+        self.export_zarr_button.setStyleSheet("font-size: 10px;")
+        # self.export_zarr_button.setIcon(qta.icon("fa5s.file-export", color="#d3dae3"))
+        self.export_zarr_button.setIcon(qta.icon("fa5s.cubes", color="#d3dae3"))
 
-        self.ng_button = QPushButton("View In\nNeuroglancer")
+        # self.ng_button = QPushButton("View In\nNeuroglancer")
+        self.ng_button = QPushButton("3DEM")
         self.ng_button.setToolTip('View Zarr export in Neuroglancer.')
         self.ng_button.clicked.connect(ng_view)  # parenthesis were causing the member function to be evaluated early
         self.ng_button.setFixedSize(square_button_size)
-        self.ng_button.setStyleSheet("font-size: 9px;")
+        self.ng_button.setIcon(qta.icon("ph.cube-light", color="#d3dae3"))
+        # self.ng_button.setStyleSheet("font-size: 9px;")
 
         self.export_and_view_hlayout = QVBoxLayout()
         self.export_and_view_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -4010,12 +4045,12 @@ class MainWindow(QMainWindow):
         INTEGRATED CONTROL PANEL
         ------------------------------------------'''
         #controlpanel
-        cpanel_height = 170
-        cpanel_1_width = 275
-        cpanel_2_width = 275
-        cpanel_3_width = 370
-        cpanel_4_width = 155
-        cpanel_5_width = 280
+        cpanel_height = 138
+        cpanel_1_width = 260
+        cpanel_2_width = 260
+        cpanel_3_width = 320
+        cpanel_4_width = 150
+        cpanel_5_width = 240
 
         # PROJECT CONTROLS
         self.project_functions_groupbox = QGroupBox("Project")
@@ -4084,7 +4119,7 @@ class MainWindow(QMainWindow):
         self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.lower_panel_groups = QWidget()
         self.lower_panel_groups.setLayout(self.lower_panel_groups_)
-        self.lower_panel_groups.setFixedHeight(cpanel_height + 10)
+        # self.lower_panel_groups.setFixedHeight(cpanel_height + 10)
 
         # self.main_panel_layout.addLayout(self.lower_panel_groups) #**
         # self.main_panel_layout.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -4125,7 +4160,7 @@ class MainWindow(QMainWindow):
         self.main_panel = QWidget()
         # self.main_panel_layout = QVBoxLayout()
         self.main_panel_layout = QGridLayout()
-        self.main_panel_layout.setSpacing(10) # this will inherit downward
+        self.main_panel_layout.setSpacing(4) # this will inherit downward
 
         self.main_panel_layout.addWidget(self.splitter,1,0)
         self.main_panel.setLayout(self.main_panel_layout)
@@ -5169,22 +5204,34 @@ class MainWindow(QMainWindow):
             scale['poly_order'] = int(0) #refactor
             scale['use_bounding_rect'] = True #refactor
 
-            for layer_index in range(len(scale['alignment_stack'])):
-                layer = scale['alignment_stack'][layer_index]
-                if not 'align_to_ref_method' in layer:
-                    layer['align_to_ref_method'] = {}
-                atrm = layer['align_to_ref_method']
-                if not 'method_data' in atrm:
-                    atrm['method_data'] = {}
-                mdata = atrm['method_data']
-                if not 'win_scale_factor' in mdata:
-                    mdata['win_scale_factor'] = float(.8125)
-                if not 'whitening_factor' in mdata:
-                    mdata['whitening_factor'] = float(-.68)
-                if scale_key == coarsest_scale:
-                    project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'init_affine'
-                else:
-                    project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
+            # for layer_index in range(len(scale['alignment_stack'])):
+            #     layer = scale['alignment_stack'][layer_index]
+            #     if not 'align_to_ref_method' in layer:
+            #         layer['align_to_ref_method'] = {}
+            #     atrm = layer['align_to_ref_method']
+            #     if not 'method_data' in atrm:
+            #         atrm['method_data'] = {}
+            #     mdata = atrm['method_data']
+            #     if not 'win_scale_factor' in mdata:
+            #         mdata['win_scale_factor'] = float(.8125)
+            #     if not 'whitening_factor' in mdata:
+            #         mdata['whitening_factor'] = float(-.68)
+            #     if scale_key == coarsest_scale:
+            #         project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'init_affine'
+            #     else:
+            #         project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
+        for layer_index in range(len(scale['alignment_stack'])):
+            layer = scale['alignment_stack'][layer_index]
+            layer['align_to_ref_method'] = {}
+            atrm = layer['align_to_ref_method']
+            atrm['method_data'] = {}
+            mdata = atrm['method_data']
+            mdata['win_scale_factor'] = float(.8125)
+            mdata['whitening_factor'] = float(-.68)
+            if scale_key == coarsest_scale:
+                project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'init_affine'
+            else:
+                project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
 
 
         # self.save_project() #0601 - removing
@@ -6181,7 +6228,8 @@ class HeadsUpDisplay(QWidget):
 
     COLORS = {
         logging.DEBUG: 'black',
-        logging.INFO: 'blue',
+        # logging.INFO: 'blue',
+        logging.INFO: '#d3dae3',
         logging.WARNING: 'orange',
         logging.ERROR: 'red',
         logging.CRITICAL: 'purple',
@@ -6194,12 +6242,12 @@ class HeadsUpDisplay(QWidget):
         # Set whatever the default monospace font is for the platform
         f = QFont()
         f.setStyleHint(QFont.Monospace)
-
         te.setFont(f)
         te.setReadOnly(True)
         te.setStyleSheet("""
             /*background-color: #d3dae3;*/
-            background-color:  #f5ffff;
+            /*background-color:  #f5ffff;*/
+            background-color:  #151a1e;;
             /*border-style: solid;*/
             border-style: inset;
             border-color: #455364; /* off-blue-ish color used in qgroupbox border */

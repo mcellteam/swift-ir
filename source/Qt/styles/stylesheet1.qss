@@ -99,7 +99,7 @@ QToolTip {
 
 QGroupBox {
   font-weight: bold;
-  border: 1px solid #455364; /* off blue-ish color */
+  border: 2px solid #455364; /* off blue-ish color */
   /*border: 2px solid #151a1e;*/
   border-radius: 4px;
   /*padding: 2px;*/
@@ -185,7 +185,7 @@ QPushButton{
 	border-style: outset;
 	/*border-color: #050a0e;*/
 	/*border-color: #4fa08b;*/
-	border-color:  #ffe135;
+	/*border-color:  #ffe135;*/
 	/*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
 	border-width: 1px;
 	/*border-radius: 5px;*/

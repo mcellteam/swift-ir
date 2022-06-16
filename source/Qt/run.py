@@ -48,8 +48,10 @@ global USES_QT5
 global USES_QT6
 
 import os
+import sys
 import argparse
 import asyncio
+import subprocess
 
 
 
@@ -81,12 +83,31 @@ elif QT_API in ('pyside6', 'pyqt6'):
     USES_QT6 = True
 
 
+reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
+installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
+if 'QtAwesome' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','QtAwesome'])
+if 'QtPy' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','QtPy'])
+if 'imagecodecs' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','imagecodecs'])
+if 'zarr' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','zarr'])
+if 'tifffile' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','tifffile'])
+if 'tqdm' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','tqdm'])
+
+
+'''setup.py'''
+
 if __name__ == "__main__":
     global_parallel_mode = True
     global_use_file_io = False
-    width = 1580
+    # width = 1580
+    width = 1320
     # height = 640
-    height = 800
+    height = 780
 
     main_win = None # previously outside __main__ scope
 
