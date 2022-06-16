@@ -3774,6 +3774,12 @@ class MainWindow(QMainWindow):
         self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
+        # Apply All Button
+        self.apply_all_button = QPushButton('Apply Settings All')
+        self.apply_all_button.setToolTip('Apply these settings to the entire project.')
+        self.apply_all_button.clicked.connect(self.apply_all_callback)
+        self.apply_all_button.setFixedSize(std_button_size)
+
         # Next Scale Button
         self.next_scale_button = QPushButton('Next Scale  ')
         self.next_scale_button.setToolTip('Go forward to the next scale.')
@@ -3818,8 +3824,6 @@ class MainWindow(QMainWindow):
         #     # this syntax might be better for 'else'...
         #     # pixmapi = QStyle.SP_MessageBoxCritical
         #     # icon = self.style().standardIcon(pixmapi)
-
-
         self.prev_scale_button.setIcon(icon)
 
         # self.scale_controls_layout = QHBoxLayout()
@@ -3868,7 +3872,8 @@ class MainWindow(QMainWindow):
         self.alignment_layout.addWidget(self.prev_scale_button, 0, 1)
         self.alignment_layout.addWidget(self.next_scale_button, 1, 1)
         self.alignment_layout.addWidget(self.align_all_button, 2, 1)
-        self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 2, 0)
+        self.alignment_layout.addWidget(self.apply_all_button, 2, 0, alignment=Qt.AlignmentFlag.AlignRight)
+        self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 3, 0)
         self.alignment_layout.addLayout(self.alignment_status_layout, 3, 1)
 
         '''------------------------------------------
@@ -4546,6 +4551,34 @@ class MainWindow(QMainWindow):
     #     # self.hud.update()
     #     regenerate_aligned(0, -1, True)
 
+    @Slot() #123
+    def apply_all_callback(self) -> None:
+        '''Apply alignment settings to all images for all scales'''
+
+        swim_val = self.get_swim_input()
+        whitening_val = self.get_whitening_input()
+        scales_dict = project_data['data']['scales']
+        # coarsest_scale = list(scales_dict.keys())[-1]
+
+        self.hud.post('Applying these alignment settings to project...')
+        self.hud.post('  SWIM Window  : %s' % str(swim_val))
+        self.hud.post('  Whitening    : %s' % str(whitening_val))
+        QApplication.processEvents()
+
+        for scale_key in scales_dict.keys():
+            scale = scales_dict[scale_key]
+            for layer_index in range(len(scale['alignment_stack'])):
+                layer = scale['alignment_stack'][layer_index]
+                atrm = layer['align_to_ref_method']
+                mdata = atrm['method_data']
+                mdata['win_scale_factor'] = swim_val
+                mdata['whitening_factor'] = whitening_val
+
+
+
+
+
+
     #0530
     @Slot()
     def update_interface_current_scale(self) -> None:
@@ -4906,12 +4939,9 @@ class MainWindow(QMainWindow):
         except:
             print('read_project_data_update_gui | WARNING | Whitening Input UI element failed to update its state')
 
-        try:
-            layer = scale['alignment_stack'][project_data['data']['current_layer']] # we only want the current layer
-        except:
-            print("read_project_data_update_gui | WARNING | unable to define variable 'layer'")
 
         try:
+            layer = scale['alignment_stack'][project_data['data']['current_layer']] # we only want the current layer
             cur_swim_window = layer['align_to_ref_method']['method_data']['win_scale_factor']
             self.swim_input.setText(str(cur_swim_window))
         except:
