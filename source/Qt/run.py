@@ -51,9 +51,18 @@ import os
 import argparse
 import asyncio
 
+
+
+################### GLOBAL SETTINGS ##################
+
 # Set Python API (pyside2 | pyside6 | pyqt5 | pyqt6)
-# os.environ["QT_API"] = 'pyqt6'
-os.environ["QT_API"] = 'pyside2'
+os.environ["QT_API"] = 'pyqt6'
+# os.environ["QT_API"] = 'pyside2'
+
+
+######################################################
+
+
 
 QT_API = os.environ["QT_API"]
 # os.environ["FORCE_QT_API"] = 'True'
