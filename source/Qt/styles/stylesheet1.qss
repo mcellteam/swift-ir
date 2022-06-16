@@ -101,7 +101,7 @@ QGroupBox {
   font-weight: bold;
   border: 2px solid #455364; /* off blue-ish color */
   /*border: 2px solid #151a1e;*/
-  border-radius: 4px;
+  border-radius: 2px;
   /*padding: 2px;*/
   padding: 0px; /* #0529 */
   margin-top: 2px;
@@ -187,7 +187,7 @@ QPushButton{
 	/*border-color: #4fa08b;*/
 	/*border-color:  #ffe135;*/
 	/*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
-	border-width: 0px;
+	border-width: 1px;
 	/*border-radius: 5px;*/
 	border-radius: 2px;
 	color: #d3dae3;

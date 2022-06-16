@@ -3056,10 +3056,10 @@ class MainWindow(QMainWindow):
         if QT_API == 'pyside6':
             QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         # print("alignem_swift.py | New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
-
-        self.setMinimumWidth(800)
-        self.setMinimumHeight(400)
-        self.resize(2000, 1200)
+        #
+        # self.setMinimumWidth(800)
+        # self.setMinimumHeight(400)
+        # self.resize(2000, 1200)
 
         self.need_to_center=0
 
@@ -3825,7 +3825,7 @@ class MainWindow(QMainWindow):
         self.next_scale_button.setFixedSize(std_button_size)
         self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft) #0610
         self.next_scale_button.setIcon(qta.icon("ri.arrow-right-line", color="#d3dae3"))
-        self.next_scale_button.setStyleSheet("font-size: 10px;")
+        # self.next_scale_button.setStyleSheet("font-size: 10px;")
 
         # Previous Scale Button
         self.prev_scale_button = QPushButton(' Prev Scale')
@@ -3834,7 +3834,7 @@ class MainWindow(QMainWindow):
         self.prev_scale_button.setFixedSize(std_button_size)
         # self.prev_scale_button.setFixedSize(square_button_width, std_height)
         self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color="#d3dae3"))
-        self.prev_scale_button.setStyleSheet("font-size: 10px;")
+        # self.prev_scale_button.setStyleSheet("font-size: 10px;")
 
         # self.scale_controls_layout = QHBoxLayout()
         # self.scale_controls_layout.addWidget(self.prev_scale_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -3848,7 +3848,7 @@ class MainWindow(QMainWindow):
         self.align_all_button.setFixedSize(std_button_size)
         # self.align_all_button.setIcon(qta.icon("mdi.format-align-middle", color="#d3dae3"))
         self.align_all_button.setIcon(qta.icon("ph.stack-fill", color="#d3dae3"))
-        self.align_all_button.setStyleSheet("font-size: 10px;")
+        # self.align_all_button.setStyleSheet("font-size: 10px;")
 
         # pixmap = getattr(QStyle, 'SP_MediaPlay')
         # icon = self.style().standardIcon(pixmap)
@@ -3939,7 +3939,7 @@ class MainWindow(QMainWindow):
         self.regenerate_button = QPushButton()
         self.regenerate_button.setToolTip('Regenerate aligned with adjusted settings')
         # self.regenerate_button.setIcon(qta.icon("fa.refresh", color="#d3dae3"))
-        self.regenerate_button.setIcon(qta.icon("fa.refresh", color="#d3dae3"))
+        self.regenerate_button.setIcon(qta.icon("ri.refresh-line", color="#d3dae3"))
         self.regenerate_button.clicked.connect(regenerate_aligned)
         self.regenerate_button.setFixedSize(std_height, std_height)
 
