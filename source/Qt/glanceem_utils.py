@@ -282,13 +282,13 @@ def isCurScaleAligned() -> bool:
         project_dir = interface.project_data['data']['destination_path']
         bias_dir = os.path.join(project_dir, getCurScale(), 'bias_data')
         afm_1_file = os.path.join(bias_dir,'afm_1.dat')
-        print('afm_1_file = ', afm_1_file)
-        print('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
+        # print('afm_1_file = ', afm_1_file)
+        # print('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
         if os.path.exists(afm_1_file):
-            print('isCurScaleAligned | Returning True')
+            # print('isCurScaleAligned | Returning True')
             return True
         else:
-            print('isCurScaleAligned | Returning False')
+            # print('isCurScaleAligned | Returning False')
             return False
     except:
         print('isCurScaleAligned | EXCEPTION | Unexpected function behavior - Returning False')
