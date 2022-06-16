@@ -3605,7 +3605,7 @@ class MainWindow(QMainWindow):
         self.remote_viewer_button.setFixedSize(square_button_size)
         self.remote_viewer_button.setStyleSheet("font-size: 9px;")
 
-        self.new_project_button = QPushButton("New\nProject")
+        self.new_project_button = QPushButton("New")
         self.new_project_button.clicked.connect(self.new_project)
         self.new_project_button.setFixedSize(square_button_size)
 
@@ -3829,7 +3829,7 @@ class MainWindow(QMainWindow):
         # self.scale_controls_layout.addWidget(self.next_scale_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Align All Button
-        self.align_all_button = QPushButton('Align')
+        self.align_all_button = QPushButton('Align Stack')
         self.align_all_button.setToolTip('Align This Scale')
         self.align_all_button.clicked.connect(align_all_or_some)
         # self.align_all_button.setFixedSize(square_button_width, std_height)
@@ -3840,7 +3840,7 @@ class MainWindow(QMainWindow):
         # self.align_all_button.setIcon(icon)
         # self.align_all_button.setLayoutDirection(Qt.RightToLeft)
 
-        self.alignment_status_label = QLabel("Aligned Status:")
+        self.alignment_status_label = QLabel("Align Status:")
         # self.alignment_status_checkbox = QCheckBox()
         self.alignment_status_checkbox = QRadioButton()
         self.alignment_status_checkbox.setEnabled(False)
@@ -3913,7 +3913,7 @@ class MainWindow(QMainWindow):
         self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Regenerate Button
-        self.regenerate_button = QPushButton('Generate')
+        self.regenerate_button = QPushButton('(Re-)Generate')
         self.regenerate_button.clicked.connect(regenerate_aligned)
         self.regenerate_button.setFixedSize(std_button_size)
 
