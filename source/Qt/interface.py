@@ -1971,8 +1971,7 @@ class ZoomPanWidget(QWidget):
             # else:
             #     self.wheel_index = 0
 
-            print('event.angleDelta().y() = ', event.angleDelta().y())
-            print('str(event.delta) = ', str(event.delta))
+            # print('event.angleDelta().y() = ', event.angleDelta().y())
 
         else:
             # Shifted Scroll Wheel zooms
@@ -1983,8 +1982,7 @@ class ZoomPanWidget(QWidget):
             # AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'x'
             self.zoom_to_wheel_at(event.position())  # return type: PySide6.QtCore.QPointF
 
-            print('event.angleDelta().y() = ', event.angleDelta().y())
-            print('str(event.delta) = ', str(event.delta))
+            # print('event.angleDelta().y() = ', event.angleDelta().y())
 
     # todo
     # mainWindow.paintEvent is called very frequently. No need to initialize multiple global variables more than once.

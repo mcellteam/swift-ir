@@ -59,7 +59,6 @@ import asyncio
 os.environ["QT_API"] = 'pyqt6'
 # os.environ["QT_API"] = 'pyside2'
 
-
 ######################################################
 
 
