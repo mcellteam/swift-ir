@@ -111,6 +111,7 @@ from qtpy.QtCore import Signal, Slot
 
 from pathlib import Path
 import daisy
+import skimage
 import skimage.measure
 import dask.array as da
 import neuroglancer as ng
@@ -122,7 +123,7 @@ from tqdm import tqdm
 from joel_decs import timeit, profileit, dumpit, traceit, countit
 from alignem_data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 from glanceem_utils import print_exception, getCurScale, isDestinationSet, isProjectScaled, \
-    isScaleAligned, getNumAligned, getNumAligned, getSkipsList, areAlignedImagesGenerated, \
+    isScaleAligned, isCurScaleAligned, getNumAligned, getNumAligned, getSkipsList, areAlignedImagesGenerated, \
     isAnyScaleAligned, returnAlignedImgs, isAnyAlignmentExported, getNumScales, \
     printCurrentDirectory, link_all_stacks, copy_skips_to_all_scales, print_project_data_stats, getCurSNR, \
     areImagesImported, debug_layer, debug_project, printProjectDetails, getProjectFileLength, isCurScaleExported, \
@@ -644,26 +645,25 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     img_size = get_image_size(project_data['data']['scales'][cur_scale]['alignment_stack'][0]['images']['base']['filename'])
     main_window.set_status('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
 
-    print('align_all_or_some | Removing any previously aligned images...')
-    main_window.hud.post('Removing previously generated scale %s aligned images...' % cur_scale[-1])
-    QApplication.processEvents()
 
     if areAlignedImagesGenerated():
+        print('align_all_or_some | Removing any previously aligned images...')
+        main_window.hud.post('Removing previously generated scale %s aligned images...' % cur_scale[-1])
+        QApplication.processEvents()
         print('align_all_or_some | Previously generated aligned images for current scale were found. Removing them.')
         remove_aligned(starting_layer=first_layer, prompt=False, clear_results=False)
     else:
         print('align_all_or_some | Previously generated aligned images were not found - Continuing...')
 
-    remove_aligned(starting_layer=first_layer, prompt=False)
-    main_window.hud.post('Aligning...')
+    # remove_aligned(starting_layer=first_layer, prompt=False)
+
+    print('align_all_or_some | Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
+    main_window.hud.post('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
     QApplication.processEvents()
-    print_debug(30, "Aligning Forward with SWiFT-IR from layer " + str(first_layer) + " ...")
-    # print_debug(70, "Control Model = " + str(control_model))
 
     combo_name_to_dm_name = {'Init Affine': 'init_affine', 'Refine Affine': 'refine_affine', 'Apply Affine': 'apply_affine'}
     dm_name_to_combo_name = {'init_affine': 'Init Affine', 'refine_affine': 'Refine Affine', 'apply_affine': 'Apply Affine'}
 
-    # thing_to_do = init_ref_app.get_value ()
     thing_to_do = main_window.affine_combobox.currentText()  # jy #mod #change #march #wtf #combobox
     scale_to_run_text = project_data['data']['current_scale']
     print('align_all_or_some | affine: %s, scale: %s' % (thing_to_do,scale_to_run_text))
@@ -672,7 +672,9 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     print("align_all_or_some | Calling align_layers w/ first layer = %s, # layers = %s" % (str(first_layer), str(num_layers)))
     align_layers(first_layer, num_layers)  # <-- CALL TO 'align_layers'
 
-    main_window.alignment_status_checkbox.setChecked(isScaleAligned(getCurScale()))
+    main_window.save_project() # hack to make update_alignment_status_indicator work. afm_1.dat only in memory.
+
+    main_window.update_alignment_status_indicator()
     QApplication.processEvents()
 
     print("align_all_or_some | Wrapping up")
@@ -4565,10 +4567,7 @@ class MainWindow(QMainWindow):
         except:
             print('update_interface_current_scale | Something went wrong updating button visibility')
 
-        try:
-            self.alignment_status_checkbox.setChecked(isScaleAligned(getCurScale()))
-        except:
-            print('update_interface_current_scale | Something went wrong updating alignment_status_checkbox')
+        self.update_alignment_status_indicator()
 
         try:
             alignment_method = project_data['data']['scales'][getCurScale()]['method_data']['alignment_option']
@@ -4593,7 +4592,15 @@ class MainWindow(QMainWindow):
             return False
 
     @Slot()
-    def toggle_auto_generate_callback(self):
+    def update_alignment_status_indicator(self) -> None:
+        '''Simple function to update alignment status indicator'''
+        print('update_alignment_status_indicator:')
+        self.alignment_status_checkbox.setChecked(isCurScaleAligned())
+        return None
+
+
+    @Slot()
+    def toggle_auto_generate_callback(self) -> None:
         '''Update HUD with new toggle state. Not data-driven.'''
         if self.toggle_auto_generate.isChecked():
             self.hud.post('Images will be generated automatically after alignment')
@@ -4602,6 +4609,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Images will not be generated automatically after alignment')
             QApplication.processEvents()
         pass
+        return None
 
     @Slot()
     def next_scale_button_callback(self) -> None:
@@ -4612,11 +4620,11 @@ class MainWindow(QMainWindow):
             print('next_scale_button_callback | current index:',cur_index)
             new_index = cur_index - 1
             new_text = self.scales_combobox.itemText(new_index)
-            print('next_scale_button_callbac | Requested scale:',new_text)
+            print('next_scale_button_callback | Requested scale:',new_text)
             self.scales_combobox.setCurrentIndex(new_index)
         except:
             print('next_scale_button_callback | EXCEPTION | Requested scale not available - Returning')
-            return None
+        return None
 
         self.read_gui_update_project_data()
         self.read_project_data_update_gui()
@@ -4873,7 +4881,7 @@ class MainWindow(QMainWindow):
         '''
         Reads 'project_data' values and writes everything to MainWindow.
         '''
-        # print("read_project_data_update_gui | called by " + inspect.stack()[1].function)
+        print("read_project_data_update_gui | called by " + inspect.stack()[1].function)
         scale = project_data['data']['scales'][project_data['data']['current_scale']] # we only want the current scale
 
         try:
@@ -4916,6 +4924,9 @@ class MainWindow(QMainWindow):
             self.toggle_bounding_rect_switch = 1
         except:
             print('read_project_data_update_gui | WARNING | Bounding Rect UI element failed to update its state')
+
+        self.update_interface_current_scale()
+        self.update_alignment_status_indicator()
 
         # main_window.refresh_all_images() #0528 is something like this needed?
         caller = inspect.stack()[1].function
@@ -4986,17 +4997,19 @@ class MainWindow(QMainWindow):
 
     @Slot()  #scales
     def fn_scales_combobox(self) -> None:
+        print('\nfn_scales_combobox | called by %s' % inspect.stack()[1].function)
+
 
         # print('fn_scales_combobox | Switch is live')
         if self.scales_combobox_switch == 0:
-            # print('fn_scales_combobox | Change scales switch is disabled - Returning')
+            print('fn_scales_combobox | Change scales switch is disabled - Returning')
             return None
 
+        print('fn_scales_combobox | self.scales_combobox.currentText() = %s' % self.scales_combobox.currentText())
         print("fn_scales_combobox | Change scales switch is Enabled, changing to %s"%self.scales_combobox.currentText())
         new_curr_scale = self.scales_combobox.currentText()  #  <class 'str'>
         project_data['data']['current_scale'] = new_curr_scale
-        img_size = get_image_size(project_data['data']['scales'][new_curr_scale]['alignment_stack'][0]['images']['base']['filename'])
-        self.hud.post('Setting current image scale to %s (%sx%spx)' % (new_curr_scale[-1], img_size[0], img_size[1]))
+        self.hud.post('Setting current scale to %s' % new_curr_scale)
         QApplication.processEvents()
         
         self.read_project_data_update_gui()

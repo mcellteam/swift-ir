@@ -348,6 +348,11 @@ class project_runner:
             if self.generate_images:
                 self.generate_aligned_images()
 
+            #0615 fix bug where bias_data is on saved if/when images are generated
+            cur_scale = self.project['data']['current_scale']
+            bias_data_path = os.path.join(self.project['data']['destination_path'], self.project['data']['current_scale'], 'bias_data')
+            pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
+
 
         #   Run Project in Serial Mode:
         #   Note: does not generate aligned images here
@@ -380,7 +385,7 @@ class project_runner:
 
         destination_path = self.project['data']['destination_path']
         bias_data_path = os.path.join(destination_path, cur_scale, 'bias_data')
-        pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path)
+        pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
 
         use_bounding_rect = self.project['data']['scales'][cur_scale]['use_bounding_rect']
 
