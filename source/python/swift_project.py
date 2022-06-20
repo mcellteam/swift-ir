@@ -5,11 +5,9 @@ import os
 import errno
 import numpy as np
 import scipy.stats as sps
-import swiftir
-import align_swiftir
+from source.Qt.package import align_swiftir, swiftir
 import json
 import copy
-import matplotlib.pyplot as plt
 
 
 # Do Linear Regression of X,Y data
@@ -160,10 +158,10 @@ def BiasMat(x,bias_funcs):
   bias_mat = swiftir.identityAffine()
 
   # Compose bias matrix as skew*scale*rot*trans
-  bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-  bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-  bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-  bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
+  bias_mat = swiftir.composeAffine(skew_x_bias_mat, bias_mat)
+  bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
+  bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
+  bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
 
   return bias_mat
 
@@ -187,10 +185,10 @@ def InitCafm(bias_funcs):
   c_afm_init = swiftir.identityAffine()
 
   # Compose bias matrix as skew*scale*rot*trans
-  c_afm_init = swiftir.composeAffine(init_skew_x_mat,c_afm_init)
-  c_afm_init = swiftir.composeAffine(init_scale_mat,c_afm_init)
-  c_afm_init = swiftir.composeAffine(init_rot_mat,c_afm_init)
-  c_afm_init = swiftir.composeAffine(init_trans_mat,c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_skew_x_mat, c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_scale_mat, c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_rot_mat, c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_trans_mat, c_afm_init)
 
   return c_afm_init
 
@@ -363,10 +361,10 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
       # Compose bias matrix as skew*scale*rot*trans
       bias_mat = swiftir.identityAffine()
-      bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
+      bias_mat = swiftir.composeAffine(skew_x_bias_mat, bias_mat)
+      bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
+      bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
+      bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
 #      print("Refine affine using bias mat:\n", bias_mat)
 
     for i in range(1,len(s_tbd)):
@@ -389,10 +387,10 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
           # Compose bias matrix as skew*scale*rot*trans
           bias_mat = swiftir.identityAffine()
-          bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
+          bias_mat = swiftir.composeAffine(skew_x_bias_mat, bias_mat)
+          bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
+          bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
+          bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
 
           align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
 #          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=swiftir.composeAffine(bias_mat,afm_scaled[i]))
@@ -595,8 +593,8 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
     rect = BoundingRect(align_list,siz)
 
 #    im_aligned = swiftir.affineImage(c_afm_init,im_sta)
-    im_aligned = swiftir.affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
-    swiftir.saveImage(im_aligned,al_fn)
+    im_aligned = swiftir.affineImage(c_afm_init, im_sta, rect=rect, grayBorder=True)
+    swiftir.saveImage(im_aligned, al_fn)
     if not 'aligned' in s_tbd[0]['images']:
       s_tbd[0]['images']['aligned'] = {}
     s_tbd[0]['images']['aligned']['filename'] = al_fn

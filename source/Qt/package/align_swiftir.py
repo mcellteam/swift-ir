@@ -1,14 +1,15 @@
 #!/usr/bin/env python2.7
 
-import swiftir
-from get_image_size import get_image_size
+try: import package.swiftir as swiftir
+except: import swiftir
+try: from package.get_image_size import get_image_size
+except: from get_image_size import get_image_size
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
 import platform
 import subprocess as sp
-from tqdm import tqdm
 
 '''
 align_swiftir.py implements a simple generic interface for aligning two images in SWiFT-IR
@@ -24,7 +25,7 @@ Together these ingredients comprise a procedure, or "recipe".
 #pyswift_tui calls this -jy
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 0  # A larger value prints more stuff
+debug_level = 100  # A larger value prints more stuff
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the
@@ -105,6 +106,8 @@ class alignment_process:
     self.im_sta_fn = im_sta_fn
     self.im_mov_fn = im_mov_fn
     self.align_dir = align_dir
+
+    print('\n\nalign_swiftir | class=alignment_process | self.align_dir = %s\n\n' % align_dir)
 
     if layer_dict != None:
       self.layer_dict = layer_dict
@@ -327,6 +330,8 @@ class alignment_process:
       im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
 #      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
       ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
+      print('align_swiftir | class=alignment_process | fn saveAligned | ofn =  ', ofn)
+
       print_debug(4, "  saving as: " + str(ofn))
       if apodize:
         im_apo = swiftir.apodize2(im_aligned, wfrac=1/3.)
@@ -403,6 +408,7 @@ class align_recipe:
 
 # Universal class for alignment ingredients of recipes
 class align_ingredient:
+  '''Initialized with paths to mir/swim'''
 
   # Constructor for ingredient of a recipe
   # Ingredients come in 3 main types where the type is determined by value of align_mode
@@ -442,18 +448,26 @@ class align_ingredient:
 
     # Configure platform-specific path to executables for C SWiFT-IR
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+    print('(tag) | align_swiftir | align_ingredient | my_path = ',my_path)
+    print('')
     self.system = platform.system()
     self.node = platform.node()
     if self.system == 'Darwin':
-      self.swim_c = my_path + '../c/bin_darwin/swim'
-      self.mir_c = my_path + '../c/bin_darwin/mir'
+      # self.swim_c = my_path + '../c/bin_darwin/swim'
+      self.swim_c = my_path + '../../c/bin_darwin/swim'
+      # self.mir_c = my_path + '../c/bin_darwin/mir'
+      self.mir_c = my_path + '../../c/bin_darwin/mir'
     elif self.system == 'Linux':
       if '.tacc.utexas.edu' in self.node:
-        self.swim_c = my_path + '../c/bin_tacc/swim'
-        self.mir_c = my_path + '../c/bin_tacc/mir'
+        # self.swim_c = my_path + '../c/bin_tacc/swim'
+        self.swim_c = my_path + '../../c/bin_tacc/swim'
+        # self.mir_c = my_path + '../c/bin_tacc/mir'
+        self.mir_c = my_path + '../../c/bin_tacc/mir'
       else:
-        self.swim_c = my_path + '../c/bin_linux/swim'
-        self.mir_c = my_path + '../c/bin_linux/mir'
+        # self.swim_c = my_path + '../c/bin_linux/swim'
+        self.swim_c = my_path + '../../c/bin_linux/swim'
+        # self.mir_c = my_path + '../c/bin_linux/mir'
+        self.mir_c = my_path + '../../c/bin_linux/mir'
 
     #if self.swiftir_mode == 'c':
     #  print_debug ( 70, "Actually loading images" )
@@ -837,7 +851,7 @@ if __name__=='__main__':
   # These are the defaults
   f1 = "vj_097_shift_rot_skew_crop_1.jpg"
   f2 = "vj_097_shift_rot_skew_crop_2.jpg"
-  out = os.path.join ( ".", "aligned" )
+  out = os.path.join ("..", "aligned")
 
   # Process and remove the fixed positional arguments
   args = sys.argv

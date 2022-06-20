@@ -8,7 +8,7 @@ import psutil
 import time
 from tqdm import tqdm
 
-print_switch = 0
+print_switch = 1
 
 #
 # Function run by worker processes
@@ -17,7 +17,8 @@ def worker(worker_id, task_q, result_q):
     t_start = time.time()
     # type(task_q.get) =  <class 'method'>
 
-    for task_id, task in tqdm(iter(task_q.get, 'END_TASKS')):
+    # for task_id, task in tqdm(iter(task_q.get, 'END_TASKS')):
+    for task_id, task in iter(task_q.get, 'END_TASKS'):
         if print_switch:
             sys.stderr.write('task_queue_mp.py | Worker %d:  Running Task %d\n' % (worker_id, task_id))
         t0 = time.time()
@@ -170,8 +171,9 @@ class TaskQueue:
                 sys.stderr.write('    Task_IDs: %s\n' % (str(retry_list)))
                 self.restart()
                 for task_id in retry_list:
-                    sys.stderr.write('Requeuing Failed Task_ID: %d   Retries: %d\n' % (task_id, retries_tot + 1))
-                    sys.stderr.write('  Task: %s\n' % (str(self.task_dict[task_id])))
+                    sys.stderr.write('task_queue_mp | Requeuing Failed Task_ID: %d   Retries: %d\n' % (task_id, retries_tot + 1))
+                    # sys.stderr.write('  Task: %s\n' % (str(self.task_dict[task_id])))
+                    [print(key,':',value) for key, value in self.task_dict[task_id].items()]
                     self.requeue_task(task_id)
             retries_tot += 1
 

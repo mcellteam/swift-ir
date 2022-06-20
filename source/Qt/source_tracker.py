@@ -1,8 +1,10 @@
 import hashlib
 import json
 import os
+import inspect
 
 def get_hash_and_rev ( source_list=None, hash_file_name="source_info.json" ):
+    print("source_tracker.get_hash_and_rev was called by " + inspect.stack()[1].function)
 
     if source_list == None:
       source_list = [ __file__ ]

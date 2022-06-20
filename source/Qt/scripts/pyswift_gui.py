@@ -72,10 +72,8 @@ import base64
 
 import time
 import os
-import sys
 import json
 import math
-import random
 import shutil
 
 
@@ -83,7 +81,6 @@ if gtk_mode:
 
   import pygtk
   pygtk.require('2.0')
-  import gobject
   import gtk
 
 if not gtk_mode:
@@ -311,12 +308,11 @@ if not gtk_mode:
 
   import sys
   import argparse
-  import cv2
 
   from PySide2 import QtWidgets  # This was done in the standarddialogs.py example
   from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QGridLayout, QLineEdit
   from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
-  from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
+  from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPointF
 
   import py_swift_tiff
 
@@ -3021,9 +3017,8 @@ def clear_snr_skip_to_skip_callback ( flag ):
   return True
 
 
-import thread
+from source.Qt.package import align_swiftir
 
-import align_swiftir
 
 class StringBufferFile:
   def __init__ ( self ):
@@ -3509,10 +3504,10 @@ def run_alignment_callback ( align_all ):
         shutil.copyfile ( alignment_layer_list[i].base_image_name, os.path.join(scale_dest_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
         # Create a new identity transform for this layer even though it's not otherwise needed
-        alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                               scale_dest_path, layer_dict=layer_dict,
-                                                                               x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                               cumulative_afm=None )
+        alignment_layer_list[j].align_proc = align_swiftir.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                              scale_dest_path, layer_dict=layer_dict,
+                                                                              x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                              cumulative_afm=None)
 
         alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
         #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -3546,10 +3541,10 @@ def run_alignment_callback ( align_all ):
         print_debug ( 10, "\nAligning: i=" + str(i) + " to j=" + str(j) )
         print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + scale_dest_path + " )" )
 
-        alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                               scale_dest_path, layer_dict=layer_dict,
-                                                                               x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                               cumulative_afm=prev_afm )
+        alignment_layer_list[j].align_proc = align_swiftir.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                              scale_dest_path, layer_dict=layer_dict,
+                                                                              x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                              cumulative_afm=prev_afm)
         print_debug ( 70, "\nBefore alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
 
@@ -4628,12 +4623,12 @@ def menu_callback ( widget, data=None ):
                 if False:
                   # Generate internally
                   # Don't know how to do this and make tiles yet
-                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                  align_swiftir.swiftir.saveImage ( img, new_name )
+                  img = align_swiftir.swiftir.scaleImage (align_swiftir.swiftir.loadImage (original_name), fac=scale)
+                  align_swiftir.swiftir.saveImage (img, new_name)
                 else:
                   # Scale as before:
-                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                  align_swiftir.swiftir.saveImage ( img, new_name )
+                  img = align_swiftir.swiftir.scaleImage (align_swiftir.swiftir.loadImage (original_name), fac=scale)
+                  align_swiftir.swiftir.saveImage (img, new_name)
                   # Use "convert" from ImageMagick to hopefully tile in place
                   import subprocess
                   p = subprocess.Popen ( ['/usr/bin/convert', '-version'] )
@@ -4651,8 +4646,8 @@ def menu_callback ( widget, data=None ):
                     shutil.copyfile ( original_name, new_name )
                 else:
                   print_debug ( 70, "Resizing " + original_name + " to " + new_name )
-                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
-                  align_swiftir.swiftir.saveImage ( img, new_name )
+                  img = align_swiftir.swiftir.scaleImage (align_swiftir.swiftir.loadImage (original_name), fac=scale)
+                  align_swiftir.swiftir.saveImage (img, new_name)
             except:
               print_debug ( 10, "Error: Failed to copy?" )
               pass
@@ -5139,7 +5134,7 @@ def menu_callback ( widget, data=None ):
                 print ( mir_script )
 
                 # Run the actual mir script
-                align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+                align_swiftir.run_command ("mir", arg_list=[], cmd_input=mir_script)
                 first_pass = False
 
     elif command == "DefGrid":
@@ -5212,7 +5207,7 @@ def menu_callback ( widget, data=None ):
 
                   # print ( mir_script )
 
-                  align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+                  align_swiftir.run_command ("mir", arg_list=[], cmd_input=mir_script)
 
                 else:
 
@@ -5251,7 +5246,7 @@ def menu_callback ( widget, data=None ):
                     swim_script += "swim -i 2 -x 0 -y 0 " + f1 + " " + str(p[0]) + " " + str(p[1]) + " " + f2 + " " + str(p[0]) + " " + str(p[1]) + os.linesep
 
                   print ( "\n=========== Swim Script ============\n" + str(swim_script) + "============================\n" )
-                  o = align_swiftir.run_command ( "swim", arg_list=[str(ww)], cmd_input=swim_script )
+                  o = align_swiftir.run_command ("swim", arg_list=[str(ww)], cmd_input=swim_script)
                   swim_out_lines = o['out'].strip().split('\n')
                   swim_err_lines = o['err'].strip().split('\n')
 
@@ -5293,7 +5288,7 @@ def menu_callback ( widget, data=None ):
 
                   # print ( mir_script )
 
-                  align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+                  align_swiftir.run_command ("mir", arg_list=[], cmd_input=mir_script)
 
                 f1 = f2
 
@@ -5455,7 +5450,7 @@ def menu_callback ( widget, data=None ):
 
       global debug_level
       debug_level = int(command[6:])
-      print_debug ( -1, "Changing debug level from " + str(align_swiftir.debug_level) + " to " + str(debug_level) )
+      print_debug (-1, "Changing debug level from " + str(align_swiftir.debug_level) + " to " + str(debug_level))
       align_swiftir.debug_level = debug_level
 
     else:
@@ -5730,9 +5725,9 @@ def main_gtk_version():
     # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Perform Swims",   ("DoSwims", zpa_original ), default=align_swiftir.global_do_swims )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Update CFMs",   ("DoCFMs", zpa_original ), default=align_swiftir.global_do_cfms )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Images",   ("GenImgs", zpa_original ), default=align_swiftir.global_gen_imgs )
+    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Perform Swims", ("DoSwims", zpa_original ), default=align_swiftir.global_do_swims)
+    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Update CFMs", ("DoCFMs", zpa_original ), default=align_swiftir.global_do_cfms)
+    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Generate Images", ("GenImgs", zpa_original ), default=align_swiftir.global_gen_imgs)
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )
     zpa_original.add_menu_sep  ( this_menu )
@@ -6104,7 +6099,7 @@ def main_gtk_version():
   store.append ( ['Internal Swim Align'] )
   store.append ( ['External Swim Align'] )
   # Dynamic alignment runners
-  runner_files = [ f for f in os.listdir(".") if f.startswith('pyswift_run_') and f.endswith('.py') ]
+  runner_files = [f for f in os.listdir("../../..") if f.startswith('pyswift_run_') and f.endswith('.py')]
   runner_files = [ f for f in runner_files if f != "pyswift_run_external.py" ]
   runner_files = sorted(runner_files)
   print_debug ( 70, "Runner files = " + str(runner_files) )
@@ -6361,7 +6356,7 @@ def qt_main():
   if 'tiff' in args:
     if args.tiff != None:
       tname = args.tiff
-      py_swift_tiff.dump_tiff ( tname )
+      py_swift_tiff.dump_tiff (tname)
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 

@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 
 import sys
-import time
-import random
 
 import argparse
-import align_swiftir
+from source.Qt.package import align_swiftir
 
 if __name__ == '__main__':
 
@@ -24,8 +22,8 @@ if __name__ == '__main__':
   #img = align_swiftir.swiftir.scaleImage (align_swiftir.swiftir.loadImage(arg_space.infile), fac=arg_space.scale)
   #align_swiftir.swiftir.saveImage (img, arg_space.outfile)
 
-  img = align_swiftir.swiftir.extractStraightWindow ( align_swiftir.swiftir.loadImage(arg_space.infile), xy=(arg_space.x,arg_space.y), siz=(arg_space.w,arg_space.h) )
-  align_swiftir.swiftir.saveImage ( img, arg_space.outfile )
+  img = align_swiftir.swiftir.extractStraightWindow (align_swiftir.swiftir.loadImage(arg_space.infile), xy=(arg_space.x, arg_space.y), siz=(arg_space.w, arg_space.h))
+  align_swiftir.swiftir.saveImage (img, arg_space.outfile)
 
   sys.stdout.close()
   sys.stderr.close()

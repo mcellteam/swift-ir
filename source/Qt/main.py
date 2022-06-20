@@ -40,48 +40,16 @@ To output a string of Mypy CLI args that will reflect the currently selected Qt 
 $ qtpy mypy-args
 
 """
-'''globals'''
-global QT_API
-global USES_PYSIDE
-global USES_PYQT
-global USES_QT5
-global USES_QT6
 
 import os
 import sys
 import argparse
-import asyncio
 import subprocess
 
-
-
-################### GLOBAL SETTINGS ##################
-
-# Set Python API (pyside2 | pyside6 | pyqt5 | pyqt6)
-os.environ["QT_API"] = 'pyqt6'
-# os.environ["QT_API"] = 'pyside2'
-
-######################################################
-
-
-
-QT_API = os.environ["QT_API"]
-# os.environ["FORCE_QT_API"] = 'True'
-
-if QT_API in ('pyside2', 'pyside6'):
-    USES_PYSIDE = True
-    USES_PYQT = False
-elif QT_API in ('pyqt5', 'pyqt6'):
-    USES_PYSIDE = False
-    USES_PYQT = True
-
-if QT_API in ('pyside2', 'pyqt5'):
-    USES_QT5 = True
-    USES_QT6 = False
-elif QT_API in ('pyside6', 'pyqt6'):
-    USES_QT5 = False
-    USES_QT6 = True
-
+import package.globals
+from package.interface import MainWindow
+from package.interface import run_app
+import package.glanceem_utils
 
 reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
 installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
@@ -99,8 +67,6 @@ if 'tqdm' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','tqdm'])
 
 
-'''setup.py'''
-
 if __name__ == "__main__":
     global_parallel_mode = True
     global_use_file_io = False
@@ -111,44 +77,57 @@ if __name__ == "__main__":
 
     main_win = None # previously outside __main__ scope
 
-    print("run.py | QT_API:", QT_API)
-
     # objc[46147]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint on objc_initializeAfterForkError to debug.
     os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
     # print(f'Loading {__name__}')
-    print("run.py | Running " + __file__ + ".__main__()")
+    print("main.py | Running " + __file__ + ".__main__()")
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, default=10,help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
     options.add_argument("-l", "--preload", type=int, required=False, default=3,help="Preload +/-, total to preload = 2n-1")
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1,help="Run the C versions of SWiFT tools")
     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0,help="Use files to gather output from tasks")
+    options.add_argument("-a", "--api", type=str, required=False, default='pyqt6',help="Use files to gather output from tasks")
     args = options.parse_args()
     # interface.DEBUG_LEVEL = int(args.debug) #0613
-    print("run.py | cli args:", args)
+    print("main.py | cli args:", args)
 
+    global QT_API
 
-    from interface import MainWindow
-    from interface import run_app
+    package.globals.QT_API = args.api # Set Python API (pyside2 | pyside6 | pyqt5 | pyqt6)
+
+    print('package.globals.QT_API = ', package.globals.QT_API )
+
+    os.environ["QT_API"] = package.globals.QT_API
+    # os.environ["FORCE_QT_API"] = 'True'
+
+    print("main.py | QT_API:", package.globals.QT_API)
+
+    if package.globals.QT_API in ('pyside2', 'pyside6'):
+        package.globals.USES_PYSIDE = True
+        package.globals.USES_PYQT = False
+    elif package.globals.QT_API in ('pyqt5', 'pyqt6'):
+        package.globals.USES_PYSIDE = False
+        package.globals.USES_PYQT = True
+
+    if package.globals.QT_API in ('pyside2', 'pyqt5'):
+        package.globals.USES_QT5 = True
+        package.globals.USES_QT6 = False
+    elif package.globals.QT_API in ('pyside6', 'pyqt6'):
+        package.globals.USES_QT5 = False
+        package.globals.USES_QT6 = True
+
 
     if args.parallel != None: global_parallel_mode = args.parallel != 0
     # if args.use_c_version != None: interface.use_c_version = args.use_c_version != 0 #0613
     if args.use_file_io != None: global_use_file_io = args.use_file_io != 0
     # if args.preload != None: interface.preloading_range = int(args.preload) #0613
 
-    print('Qt-Python API:')
-    os.system("qtpy mypy-args ")
 
-    my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
-    source_list = ["run.py","alignem_data_model.py","interface.py","swift_project.py","pyswift_tui.py",
-                   "swiftir.py","align_swiftir.py","source_tracker.py","task_queue.py","task_queue2.py",
-                   "task_wrapper.py","single_scale_job.py","multi_scale_job.py","project_runner.py",
-                   "single_alignment_job.py","single_crop_job.py","stylesheet.qss","make_zarr.py","glanceem_ng.py",
-                   "glanceem_utils.py","align_recipe_1.py"
-                   ]
+    # path = os.path.split(os.path.realpath(__file__))[0] + '/'
 
-    print("run.py | Launching AlignEM-SWiFT with window size %dx%d pixels" % (width, height))
+    print("main.py | Launching AlignEM-SWiFT with window size %dx%d pixels" % (width, height))
     # main_win = interface.MainWindow(title="GlanceEM_SWiFT") # no more control_model
     main_win = MainWindow(title="GlanceEM_SWiFT") # no more control_model
     main_win.resize(width, height)

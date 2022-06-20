@@ -5,29 +5,22 @@ import os
 import time
 import json
 import copy
-import errno
 import inspect
-import argparse
 import psutil
-import numpy as np
-import scipy.stats as sps
-import matplotlib.pyplot as plt
+import inspect
 from tqdm import tqdm
-import swiftir
-import align_swiftir
-# import task_queue as task_queue
-# import task_queue2 as task_queue
-import task_queue_mp as task_queue
-import task_wrapper
-import pyswift_tui
-from glanceem_utils import printProjectDetails
 
 
+try: import package.task_queue_mp as task_queue
+except: import task_queue_mp as task_queue
+
+try: import package.pyswift_tui as pyswift_tui
+except: import pyswift_tui
 
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 0  # A larger value prints more stuff
-print_switch = 0
+debug_level = 100  # A larger value prints more stuff
+print_switch = 1
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the
@@ -159,9 +152,13 @@ class project_runner:
             self.task_queue.start(cpus)
 
             my_path = os.path.split(os.path.realpath(__file__))[0]
+            # align_job = os.path.join(my_path, 'source/Qt/package/single_alignment_job.py')
             align_job = os.path.join(my_path, 'single_alignment_job.py')
+            print('(tag) (do_align) project_runner | do_alignment | align_job=',align_job)
+            # (tag) (do_align) project_runner | do_alignment | align_job= /Users/joelyancey/glanceem_swift/swift-ir/source/Qt/package/single_alignment_job.py
 
-            for layer in tqdm(alstack):
+            # for layer in tqdm(alstack):
+            for layer in alstack:
                 lnum = alstack.index(layer)
                 skip = False
                 if 'skip' in layer:
@@ -348,7 +345,8 @@ class project_runner:
             if self.generate_images:
                 self.generate_aligned_images()
 
-            #0615 fix bug where bias_data is on saved if/when images are generated
+            #0615 fix bug where bias_data is only saved if/when images are generated
+            #0619 this is probably causing the problems
             cur_scale = self.project['data']['current_scale']
             bias_data_path = os.path.join(self.project['data']['destination_path'], self.project['data']['current_scale'], 'bias_data')
             pyswift_tui.save_bias_analysis(self.project['data']['scales'][cur_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
@@ -360,6 +358,7 @@ class project_runner:
 
             # Run the project directly as one serial model
             # print ( "Running the project as one serial model")
+
             self.updated_model, self.need_to_write_json = pyswift_tui.run_json_project(
                 project=self.project,
                 alignment_option=self.alignment_option,
@@ -369,12 +368,12 @@ class project_runner:
                 num_layers=self.num_layers)
             self.project = self.updated_model
 
-        # printProjectDetails(self.project)
         # print("\nAlignment Complete\n")
 
     # Class Method to Generate the Aligned Images
     def generate_aligned_images(self):
-        print("\nproject_runner.generate_aligned_images:")
+        print("\nproject_runner.generate_aligned_images was called by " + inspect.stack()[1].function)
+
 
         cur_scale = self.project['data']['current_scale']
 
@@ -409,8 +408,9 @@ class project_runner:
         self.task_queue.start(cpus)
 
         my_path = os.path.split(os.path.realpath(__file__))[0]
+        # apply_affine_job = os.path.join(my_path, 'source/Qt/package/image_apply_affine.py')
         apply_affine_job = os.path.join(my_path, 'image_apply_affine.py')
-
+        print("(tag) project_runnner | class=project_runner | apply_affine_job=",apply_affine_job)
         scale_key = "scale_%d" % self.use_scale
         alstack = self.project['data']['scales'][scale_key]['alignment_stack']
 
@@ -502,7 +502,6 @@ class project_runner:
         del self.task_queue
         self.task_queue = None
 
-        printProjectDetails(self.project)
         print('\nGenerating Aligned Images Complete\n')
 
 

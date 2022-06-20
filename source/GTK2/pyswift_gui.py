@@ -72,10 +72,8 @@ import base64
 
 import time
 import os
-import sys
 import json
 import math
-import random
 import shutil
 
 
@@ -83,7 +81,6 @@ if gtk_mode:
 
   import pygtk
   pygtk.require('2.0')
-  import gobject
   import gtk
 
 if not gtk_mode:
@@ -311,14 +308,14 @@ if not gtk_mode:
 
   import sys
   import argparse
-  import cv2
 
   from PySide2 import QtWidgets  # This was done in the standarddialogs.py example
   from PySide2.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAction, QSizePolicy, QGridLayout, QLineEdit
   from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
-  from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPoint, QPointF
+  from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPointF
 
-  import py_swift_tiff
+  from scripts import py_swift_tiff
+
 
   class app_window:
 
@@ -3020,8 +3017,6 @@ def clear_snr_skip_to_skip_callback ( flag ):
     p.queue_draw()
   return True
 
-
-import thread
 
 import align_swiftir
 
@@ -6361,7 +6356,7 @@ def qt_main():
   if 'tiff' in args:
     if args.tiff != None:
       tname = args.tiff
-      py_swift_tiff.dump_tiff ( tname )
+      py_swift_tiff.dump_tiff (tname)
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 

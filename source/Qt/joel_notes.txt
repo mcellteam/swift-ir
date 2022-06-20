@@ -190,3 +190,6 @@ QWebSocketCorsAuthenticator¶
 https://doc.qt.io/qtforpython/PySide6/QtWebSockets/QWebSocketCorsAuthenticator.html?highlight=cors
 
 '''
+
+
+Talk to Tom about globals, specifically 'global_swiftir_mode' see: 'pyswift_tui' and 'align_swiftir' where it is hardcoded to 'python'

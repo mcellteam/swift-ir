@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-import align_swiftir
+from source.Qt.package import align_swiftir
 
 if __name__ == '__main__':
   # Args: self source_image s1 t1 s2 t2 s3 t3
@@ -18,5 +18,5 @@ if __name__ == '__main__':
     scale_target_pair_list = [[m[2*i],m[(2*i)+1]] for i in range(int(len(m)/2)) ]
 
     for arg_pair in scale_target_pair_list:
-      scaled_image = align_swiftir.swiftir.scaleImage ( source_image, fac=int(arg_pair[0]) )
-      align_swiftir.swiftir.saveImage ( scaled_image, arg_pair[1] )
+      scaled_image = align_swiftir.swiftir.scaleImage (source_image, fac=int(arg_pair[0]))
+      align_swiftir.swiftir.saveImage (scaled_image, arg_pair[1])

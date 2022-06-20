@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 
 import sys
-import time
-import random
-
 import argparse
-import align_swiftir
+import package.align_swiftir as align_swiftir
 
 if __name__ == '__main__':
 

@@ -1,11 +1,9 @@
 #!/usr/bin/env python2.7
 
 import sys
-import os
-import json
-import argparse
 import numpy as np
-import swiftir
+try: import package.swiftir
+except: import swiftir
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
@@ -48,7 +46,7 @@ def image_apply_affine(in_fn=None,out_fn=None,afm=None,rect=None,grayBorder=Fals
     print_debug(12, "    grayBorder = " + str(grayBorder))
     out_img = swiftir.affineImage(afm, in_img, rect=rect, grayBorder=grayBorder)
     print_debug(4, "  saving transformed image as: " + str(out_fn))
-    swiftir.saveImage(out_img,out_fn)
+    swiftir.saveImage(out_img, out_fn)
 
 
 
