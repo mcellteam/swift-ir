@@ -323,8 +323,8 @@ def generate_scales_queue():
         return
 
 
-    main_window.status.showMessage("Generating scales...")
-    main_window.hud.post('Generating scales...')
+    main_window.status.showMessage("Scaling...")
+    main_window.hud.post('Generating scale image hierarchy...')
     QApplication.processEvents()
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
 
@@ -368,7 +368,7 @@ def generate_scales_queue():
         for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
 
             print("generate_scales_queue | Preparing to generate images for scale " + str(scale))
-            main_window.status.showMessage("Preparing to generate images for scale " + str(scale) + " ...")
+            # main_window.status.showMessage("Preparing to generate images for scale " + str(scale) + " ...")
 
             scale_key = str(scale)
             if not 'scale_' in scale_key:
@@ -475,8 +475,10 @@ def generate_scales_queue():
             isProjectScaled()
         except:
             print('generate_scales_queue | Project is not scaled - Returning')
+            main_window.status.showMessage('Idle')
+            main_window.hud.post('Project is not scaled - Returning', logging.WARNING)
+            QApplication.processEvents()
             return None
-
 
         main_window.apply_project_defaults()
         main_window.set_progress_stage_2()
@@ -489,7 +491,8 @@ def generate_scales_queue():
         main_window.update_project_inspector()
 
         print("\nGenerating scales complete.\n")
-        main_window.status.showMessage("Generating scales complete.")
+        # main_window.status.showMessage("Generating scales complete.")
+        main_window.status.showMessage("Idle")
 
 # Load the image
 def load_image_worker(real_norm_path, image_dict):
@@ -512,6 +515,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     '''TODO: Need to check if images have been imported'''
     print('\nalign_all_or_some:')
+    main_window.status.showMessage('Aligning...')
     main_window.hud.post('Computing affine transformation matrices of scale ' + getCurScale()[-1] + '...')
     QApplication.processEvents()
 
@@ -520,7 +524,8 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         pass
     else:
         print("align_all_or_some | User selected align but no images are imported - Exiting")
-        main_window.set_status("Scales must be generated prior to alignment.")
+        main_window.hud.post("Scales must be generated prior to alignment.", logging.WARNING)
+        QApplication.processEvents()
         show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
                                         "--> (1) Open a project or import images and save.\n"
@@ -528,6 +533,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
                                         "(3) Align each scale starting with the coarsest.\n"
                                         "(4) Export project to Zarr format.\n"
                                         "(5) View data in Neuroglancer client")
+        main_window.status.showMessage('Idle')
         return
 
     if isProjectScaled():
@@ -538,7 +544,6 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
         print("align_all_or_some | User clicked align but project is not scaled - Exiting")
         main_window.hud.post('Dataset must be scaled prior to alignment', logging.WARNING)
         QApplication.processEvents()
-        main_window.set_status('Dataset must be scaled prior to alignment')
         show_warning("Warning", "Project cannot be aligned at this stage.\n\n"
                                         "Typical workflow:\n"
                                         "(1) Open a project or import images and save.\n"
@@ -546,6 +551,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
                                         "(3) Align each scale starting with the coarsest.\n"
                                         "(4) Export project to Zarr format.\n"
                                         "(5) View data in Neuroglancer client")
+        main_window.status.showMessage('Idle')
         return
 
     main_window.read_gui_update_project_data()
@@ -553,7 +559,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     cur_scale = getCurScale()
     n_imgs = getNumImportedImages()
     img_size = get_image_size.get_image_size(cfg.project_data['data']['scales'][cur_scale]['alignment_stack'][0]['images']['base']['filename'])
-    main_window.set_status('Aligning %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
+    main_window.hud.post('Preparing to align %s images at scale %s (%s x %s pixels)...' % (n_imgs, cur_scale[-1], img_size[0], img_size[1]))
 
     # # NOTE: remove_aligned used to always just run here, no conditional
     # if areAlignedImagesGenerated():
@@ -581,7 +587,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     this_scale = cfg.project_data['data']['scales'][scale_to_run_text]
     this_scale['method_data']['alignment_option'] = str(combo_name_to_dm_name[thing_to_do])
     print("align_all_or_some | Calling align_layers w/ first layer = %s, # layers = %s" % (str(first_layer), str(num_layers)))
-    align_layers(first_layer, num_layers)  # <-- CALL TO 'align_layers'
+    align_layers(first_layer, num_layers)                                                # <-- CALL TO 'align_layers'
 
     main_window.save_project() # hack to make update_alignment_status_indicator work. afm_1.dat only in memory.
 
@@ -589,7 +595,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     QApplication.processEvents()
 
     print("align_all_or_some | Wrapping up")
-    main_window.set_status('Alignment of scale %s images (%s x %s pixels) complete.' % (cur_scale[-1], img_size[0], img_size[1]))
+    main_window.hud.post('Alignment of scale %s images (%s x %s pixels) complete.' % (cur_scale[-1], img_size[0], img_size[1]))
     # main_window.refresh_all_images() #0606 remove
     main_window.center_all_images()
     # main_window.update_win_self() #0606 remove
@@ -597,6 +603,7 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
     main_window.update_project_inspector()
 
     print("\nCalculating alignment transformation matrices complete.\n")
+    main_window.status.showMessage('Idle')
     main_window.hud.post('Completed computing affine transformation matrices for scale %s' % getCurScale()[-1])
     QApplication.processEvents()
 
@@ -718,6 +725,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     '''
     # global cfg.project_data
     print('\nregenerate_aligned(first_layer=%d, num_layers=%d, prompt=%s):' % (first_layer, num_layers, prompt))
+    main_window.status.showMessage('Generating iamges...')
     main_window.hud.post('Generating aligned images...')
     QApplication.processEvents()
 
@@ -772,7 +780,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
 
     # main_window.refresh_all_images() #0606 remove
 
-    main_window.set_status('Regenerating alignment of %s complete.' % cur_scale)
+    main_window.status.showMessage('Idle')
 
     print("regenerate_aligned | Wrapping up...")
     main_window.center_all_images()
@@ -781,9 +789,10 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     # main_window.toggle_on_export_and_view_groupbox()
     main_window.set_progress_stage_3()
 
-    main_window.hud.post('Completed generating aligned images.')
+    print('\nGenerating aligned images complete.\n')
+    main_window.status.showMessage('Idle')
+    main_window.hud.post('Generating aligned images complete.')
     QApplication.processEvents()
-    print("\nGenerating aligned images complete.\n")
 
 
 
@@ -2001,7 +2010,9 @@ class ZoomPanWidget(QWidget):
         try:
             layer = scale['alignment_stack'][cfg.project_data['data']['current_layer']]
         except:
-            print('ZoomPanWidget.change_layer | EXCEPTION | No layer loaded - Aborting')
+            main_window.status.showMessage('Idle')
+            main_window.hud.post('No layer loaded - Returning', logging.WARNING)
+            QApplication.processEvents()
             return
 
         n_imgs = getNumImportedImages()
@@ -3357,21 +3368,22 @@ class MainWindow(QMainWindow):
 
         def documentation_view():  # documentationview
             print("Launching documentation view | MainWindow.documentation_view...")
+            self.stacked_widget.setCurrentIndex(2)
+            self.hud.post("Switching to GlanceEM_SWiFT Documentation")
             # don't force the reload, add home button instead
             self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
-            self.stacked_widget.setCurrentIndex(2)
-            self.status.showMessage("GlanceEM_SWiFT Documentation")
+
 
         def documentation_view_home():
             print("Launching documentation view home | MainWindow.documentation_view_home...")
             self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
-            self.status.showMessage("GlanceEM_SWiFT Documentation")
+            # self.status.showMessage("GlanceEM_SWiFT Documentation")
 
         def remote_view():
             print("Launching remote viewer | MainWindow.remote_view...")
             self.stacked_widget.setCurrentIndex(4)
+            self.hud.post("Switching to Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
             self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-            self.status.showMessage("Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
 
         # webgl2
         def microns_view():
@@ -3379,7 +3391,7 @@ class MainWindow(QMainWindow):
             self.stacked_widget.setCurrentIndex(5)
             self.browser_microns.setUrl(QUrl(
                 'https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
-            self.status.showMessage("MICrONS (http://layer23.microns-explorer.org)")
+            # self.status.showMessage("MICrONS (http://layer23.microns-explorer.org)")
             # self.browser_microns.setUrl(QUrl('https://get.webgl.org/webgl2/'))
             # self.status.showMessage("Checking WebGL2.0 support.")
 
@@ -3394,25 +3406,24 @@ class MainWindow(QMainWindow):
         def exit_ng():
             print("Exiting Neuroglancer...")
             self.stacked_widget.setCurrentIndex(0)
-            self.status.showMessage("")
+            self.status.showMessage("Idle")
 
         def exit_docs():
             print("Exiting docs...")
             self.stacked_widget.setCurrentIndex(0)
-            self.status.showMessage("")
+            self.status.showMessage("Idle")
 
         def exit_remote():
             print("Exiting remote viewer...")
             self.stacked_widget.setCurrentIndex(0)
-            self.status.showMessage("")
+            self.status.showMessage("Idle")
 
         def exit_demos():
             print("Exiting demos...")
             self.stacked_widget.setCurrentIndex(0)
-            self.status.showMessage("")
+            self.status.showMessage("Idle")
 
         def print_state_ng():
-            self.status.showMessage("Printing viewer state...")
             # viewer_state = json.loads(str(self.viewer.state))
             print(self.viewer.state)
             print("\n")
@@ -3425,7 +3436,6 @@ class MainWindow(QMainWindow):
             # self.status.showMessage("Viewing aligned images in Neuroglancer.")
 
         def print_url_ng():
-            self.status.showMessage("Printing viewer URL...")
             print(ng.to_url(self.viewer.state))
             # print("\nURL : " + self.viewer.get_viewer_url() + "\n")
 
@@ -3465,7 +3475,8 @@ class MainWindow(QMainWindow):
                                              "--> (3) Align each scale starting with the coarsest.\n"
                                              "--> (4) Export alignment to Zarr format.\n"
                                              "(5) View data in Neuroglancer client")
-                print("ng_view() | EXCEPTION | This scale must be aligned and exported before viewing in Neuroglancer - Aborting")
+                print("ng_view() | EXCEPTION | This scale must be aligned and exported before viewing in Neuroglancer - Returning")
+                self.status.showMessage('Idle')
                 return
             else:
                 print('ng_view() | Alignment at this scale exists - Continuing')
@@ -3481,7 +3492,8 @@ class MainWindow(QMainWindow):
                                              "(3) Align each scale starting with the coarsest.\n"
                                              "--> (4) Export alignment to Zarr format.\n"
                                              "(5) View data in Neuroglancer client")
-                print("ng_view() | EXCEPTION | Alignment must be exported before it can be viewed in Neuroglancer - Aborting")
+                print("ng_view() | EXCEPTION | Alignment must be exported before it can be viewed in Neuroglancer - Returning")
+                self.status.showMessage('Idle')
                 return
             else:
                 print('ng_view() | Exported alignment at this scale exists - Continuing')
@@ -3716,11 +3728,9 @@ class MainWindow(QMainWindow):
             # print('ng_view() | viewer URL                           :', self.viewer.get_viewer_url())
             # print('Neuroglancer view (remote viewer)                :', ng.to_url(viewer.state))
 
-            try:
-                cur_scale = getCurScale()
-            except:
-                print('ERROR: There was a problem with getCurScale()')
-            self.status.showMessage('Viewing aligned images at ' + cur_scale + ' in Neuroglancer.')
+
+            cur_scale = getCurScale()
+            self.hud.post('Viewing aligned images at scale ' + cur_scale[-1] + ' in Neuroglancer.')
 
             print("\n<<<<<<<<<<<<<<<< EXITING ng_view()\n")
 
@@ -4633,10 +4643,12 @@ class MainWindow(QMainWindow):
         # Status Bar
         self.status = self.statusBar()
         if fname == None:
-            self.status.showMessage('No project open.')
+            # self.status.showMessage('No project open.')
+            self.status.showMessage('Idle')
         else:
+            self.status.showMessage('Idle')
             # self.status.showMessage("File: "+fname)
-            self.status.showMessage('File: unknown')
+            # self.status.showMessage('File: unknown')
 
 
     def make_zarr_multithreaded(self, aligned_path, n_scales, cname, clevel, destination_path, ds_name):
@@ -4648,10 +4660,9 @@ class MainWindow(QMainWindow):
             # if getNumAligned() < 1:
             if isAnyScaleAligned():
                 print('  export_zarr() | there is an alignment stack at this scale - continuing.')
-                self.status.showMessage('Exporting...')
                 pass
             else:
-                print('  export_zarr() | (!) There is no alignment at this scale to export. Aborting export_zarr().')
+                print('  export_zarr() | (!) There is no alignment at this scale to export. Returning from export_zarr().')
                 show_warning('No Alignment', 'There is no alignment to export.\n\n'
                                              'Typical workflow:\n'
                                              '(1) Open a project or import images and save.\n'
@@ -4659,8 +4670,10 @@ class MainWindow(QMainWindow):
                                              '--> (3) Align each scale starting with the coarsest.\n'
                                              '(4) Export alignment to Zarr format.\n'
                                              '(5) View data in Neuroglancer client')
+                return
 
-            self.set_status('Exporting scale %s to Neuroglancer-ready Zarr format...' % getCurScale()[-1])
+
+            self.status.showMessage('Exporting...')
             self.hud.post('Exporting scale %s to Neuroglancer-ready Zarr format...' % getCurScale()[-1])
             QApplication.processEvents()
 
@@ -4700,7 +4713,8 @@ class MainWindow(QMainWindow):
             if self.cname == "none":
                 # os.system("python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -nC 1 -d " + destination_path + " -n " + ds_name)
                 os.system("python3 make_zarr.py %s -c '64,64,64' -nS %s -nC 1 -d %s -n %s" % (self.aligned_path, self.n_scales, self.dest_path, self.ds_name))
-                self.set_status('Export complete')
+                # self.set_status('Idle')
+                self.status.showMessage('Idle')
                 self.hud.post('Export of scale %s to Zarr complete' % getCurScale()[-1])
                 QApplication.processEvents()
             else:
@@ -4716,7 +4730,8 @@ class MainWindow(QMainWindow):
 
                 os.system("python3 make_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (self.aligned_path, str(self.n_scales), str(self.cname), str(self.clevel), destination_path, self.ds_name))
                 #os.system("python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -cN " + str(cname) + " -cL " + str(clevel) + " -d " + destination_path + " -n " + ds_name)
-                self.set_status('Export complete')
+                # self.set_status('Idle')
+                self.status.showMessage('Idle')
                 self.hud.post('Export of scale %s to Zarr complete' % getCurScale()[-1])
                 QApplication.processEvents()
 
@@ -4892,6 +4907,8 @@ class MainWindow(QMainWindow):
             self.scales_combobox.setCurrentIndex(new_index)
         except:
             print('next_scale_button_callback | EXCEPTION | Requested scale not available - Returning')
+            self.hud.post('Requested scale not available - Returning', logging.WARNING)
+            QApplication.processEvents()
         return None
 
         self.read_gui_update_project_data()
@@ -4903,7 +4920,6 @@ class MainWindow(QMainWindow):
     @Slot()
     def prev_scale_button_callback(self) -> None:
         '''Callback function for the Previous Scale button (scales combobox may not be visible but controls the current scale).'''
-
         try:
             cur_index = self.scales_combobox.currentIndex()
             print('next_scale_button_callback | current index:',cur_index)
@@ -4913,6 +4929,8 @@ class MainWindow(QMainWindow):
             self.scales_combobox.setCurrentIndex(new_index)
         except:
             print('prev_scale_button_callback | EXCEPTION | Requested scale not available - Returning')
+            self.hud.post('Requested scale not available - Returning', logging.WARNING)
+            QApplication.processEvents()
             return None
         self.read_gui_update_project_data()
         self.read_project_data_update_gui()
@@ -5401,6 +5419,7 @@ class MainWindow(QMainWindow):
         print('\nnew_project:')
 
         self.hud.post('Creating new project...')
+        self.status.showMessage('Creating new project...')
         QApplication.processEvents()
         if isDestinationSet():
             print('(!) Warning user about data loss if a new project is started now.')
@@ -5426,7 +5445,8 @@ class MainWindow(QMainWindow):
                 print("new_project | reponse was 'Ok' - Continuing")
                 pass
             else:
-                print('new_project | user did not click Ok - Aborting')
+                print('new_project | user did not click Ok - Returning')
+                self.status.showMessage('Idle')
                 return
 
         self.scales_combobox_switch = 0
@@ -5489,9 +5509,13 @@ class MainWindow(QMainWindow):
                 self.set_progress_stage_1()
                 # self.scales_combobox.clear() #why?? #0528
 
+        self.status.showMessage('New project created. Project file: ' + self.current_project_file_name)
+        main_window.status.showMessage("Idle")
+
 
     @Slot()
     def open_project(self):
+        main_window.status.showMessage("Opening...")
         self.hud.post('Opening project...')
         QApplication.processEvents()
         print('\nopen_project:')
@@ -5527,8 +5551,11 @@ class MainWindow(QMainWindow):
             text = f.read()
             f.close()
         except:
-            self.hud.post('No project opened.', logging.WARNING)
-            print('open_project | EXCEPTION | Something went wrong opening the project file (read-only) - Aborting')
+            print('open_project | EXCEPTION | Something went wrong opening the project file (read-only) - Returning')
+            self.status.showMessage('Idle')
+            self.hud.post('No project opened', logging.WARNING)
+            QApplication.processEvents()
+
             return
 
         for count, line in enumerate(text):
@@ -5553,7 +5580,8 @@ class MainWindow(QMainWindow):
             # The data model loaded fine, so initialize the application with the data
             # At this point, self.current_project_file_name is None
             self.current_project_file_name = file_name
-            self.status.showMessage("Loading Project File " + self.current_project_file_name)
+            # self.status.showMessage("Loading Project File " + self.current_project_file_name)
+            self.status.showMessage("Loading...")
 
             print('open_project | Modifying the copy to use absolute paths internally')
             # Modify the copy to use absolute paths internally
@@ -5589,10 +5617,14 @@ class MainWindow(QMainWindow):
         QApplication.processEvents()
         self.set_user_progress()
         self.update_project_inspector()
+
+        # self.status.showMessage("Loading Project File " + self.current_project_file_name)
+        self.status.showMessage("Idle")
         print("\nProject '%s' opened.\n" % self.current_project_file_name)
 
 
     def save_project_to_current_file(self):
+        main_window.status.showMessage("Saving...")
         print('save_project_to_current_file:')
         # self.hud.post('Saving project')
         # Save to current file and make known file paths relative to the project file name
@@ -5626,14 +5658,19 @@ class MainWindow(QMainWindow):
                     f.write(proj_json)
                     f.close()
                 except:
-                    print('save_project_to_current_file | EXCEPT | Something went wrong writing to the project file - Aborting')
+                    print('save_project_to_current_file | EXCEPT | Something went wrong writing the project file - Returning')
+                    main_window.status.showMessage('Idle')
+                    main_window.hud.post('Something went wrong writing the project file', logging.WARNING)
+                    QApplication.processEvents()
                     return
 
                 if self.draw_full_paths:
                     self.setWindowTitle("Project: " + self.current_project_file_name)
                 else:
                     self.setWindowTitle("Project: " + os.path.split(self.current_project_file_name)[-1])
-                self.status.showMessage("Project File: " + self.current_project_file_name)
+                # self.status.showMessage("Project File: " + self.current_project_file_name)
+
+        main_window.status.showMessage("Idle")
 
 
     @Slot()
@@ -5881,6 +5918,7 @@ class MainWindow(QMainWindow):
         #0411 need to give user a choice of what to do with imported images. Add to current project, or start a new project.
         '''
         print('\nMainWindow.import_images:')
+        self.status.showMessage('Importing...')
         self.hud.post('Importing images for role %s' % str(role_to_import))
         QApplication.processEvents()
         global preloading_range
@@ -5917,6 +5955,7 @@ class MainWindow(QMainWindow):
         else:
             self.hud.post('No images imported', logging.WARNING)
             QApplication.processEvents()
+            self.status.showMessage('Idle')
             return
 
         # if center_switch:
@@ -5927,6 +5966,7 @@ class MainWindow(QMainWindow):
         self.update_project_inspector()
         # THIS SHOULD BE FINE SINCE ORIGINAL IMAGES ARE JUST LINKS. ENSURES PROJECT IS IN A KNOWN STATE.
         self.save_project() #0615 TURNING ON, GOOD TO HAVE KNOWN FALLBACK PROJECT STATE
+        self.status.showMessage('Idle')
 
 
     def update_panels(self):
@@ -5964,9 +6004,11 @@ class MainWindow(QMainWindow):
               inspect.stack()[1].function + ")...")
         print("  Default project destination is set to: ", str(self.current_project_file_name))
         if self.current_project_file_name == None:
-            self.status.showMessage("Unable to set a project destination without a project file.\nPlease save the project file first.")
+            # self.status.showMessage("Unable to set a project destination without a project file.\nPlease save the project file first.")
+            pass
         elif len(self.current_project_file_name) == 0:
-            self.status.showMessage("Unable to set a project destination without a project file.\nPlease save the project file first.")
+            # self.status.showMessage("Unable to set a project destination without a project file.\nPlease save the project file first.")
+            pass
         else:
             p, e = os.path.splitext(self.current_project_file_name)
             if not (e.lower() == '.json'):
@@ -5980,8 +6022,7 @@ class MainWindow(QMainWindow):
 
                 proj_path = self.current_project_file_name
                 dest_path = str(cfg.project_data['data']['destination_path'])
-                self.status.showMessage("Project File: " + proj_path)
-                
+                # self.status.showMessage("Project File: " + proj_path)
 
     #0527
     def load_images_in_role(self, role, file_names):
@@ -6309,6 +6350,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def exit_app(self):
         print("MainWindow.exit_app:")
+        self.status.showMessage('Leaving...')
         self.hud.post('Exiting...')
         QApplication.processEvents()
 
@@ -6334,6 +6376,9 @@ class MainWindow(QMainWindow):
                 sys.exit()
             if reply == QMessageBox.Cancel:
                 print('exit_app | reply=Cancel\n\nCanceling action - Returning control to app\n')
+                self.hud.post('Canceling action - Returning control to app')
+                self.status.showMessage('Idle')
+                QApplication.processEvents()
                 return
 
         else:
