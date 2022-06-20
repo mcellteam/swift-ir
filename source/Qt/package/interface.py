@@ -725,7 +725,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
     '''
     # global cfg.project_data
     print('\nregenerate_aligned(first_layer=%d, num_layers=%d, prompt=%s):' % (first_layer, num_layers, prompt))
-    main_window.status.showMessage('Generating iamges...')
+    main_window.status.showMessage('Generating...')
     main_window.hud.post('Generating aligned images...')
     QApplication.processEvents()
 
@@ -5419,7 +5419,7 @@ class MainWindow(QMainWindow):
         print('\nnew_project:')
 
         self.hud.post('Creating new project...')
-        self.status.showMessage('Creating new project...')
+        self.status.showMessage('New project...')
         QApplication.processEvents()
         if isDestinationSet():
             print('(!) Warning user about data loss if a new project is started now.')
@@ -5484,6 +5484,7 @@ class MainWindow(QMainWindow):
         if not file_name:
             print("new_project | No file_name returned. Reminding user to use .json extension - Returning...")
             self.hud.post('Project file must use .json extension (for example my-project.json)', logging.WARNING)
+            QApplication.processEvents()
             return
 
         print("new_project | Creating new project %s" % file_name)
@@ -5541,7 +5542,9 @@ class MainWindow(QMainWindow):
 
         if file_name == '':
             print('open_project | No project was opened')
+            self.status.showMessage('Idle')
             self.hud.post('No project was selected', logging.WARNING)
+            QApplication.processEvents()
             return
 
         # ignore_changes = True
@@ -5680,6 +5683,7 @@ class MainWindow(QMainWindow):
             # self.save_project_as()
             print("save_project | WARNING | Nothing to save")
             self.hud.post('Nothing to save - no project open.', logging.WARNING)
+            QApplication.processEvents()
             return
         else:
             print('save_project | Saving...')
@@ -6350,7 +6354,6 @@ class MainWindow(QMainWindow):
     @Slot()
     def exit_app(self):
         print("MainWindow.exit_app:")
-        self.status.showMessage('Leaving...')
         self.hud.post('Exiting...')
         QApplication.processEvents()
 
@@ -6376,7 +6379,7 @@ class MainWindow(QMainWindow):
                 sys.exit()
             if reply == QMessageBox.Cancel:
                 print('exit_app | reply=Cancel\n\nCanceling action - Returning control to app\n')
-                self.hud.post('Canceling action - Returning control to app')
+                self.hud.post('Canceling exit application - Returning')
                 self.status.showMessage('Idle')
                 QApplication.processEvents()
                 return
@@ -6487,7 +6490,7 @@ class HeadsUpDisplay(QWidget):
         self.worker.moveToThread(self.worker_thread)
         # This will start an event loop in the worker thread
         self.worker_thread.start()
-        self.post('Starting heads-up display...')
+        self.post('Initializing heads-up display...')
 
     def kill_thread(self):
         self.worker_thread.requestInterruption()
