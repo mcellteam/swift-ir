@@ -6,22 +6,36 @@ import json
 import copy
 import errno
 import inspect
-import argparse
-import psutil
 import numpy as np
 import scipy.stats as sps
-import matplotlib.pyplot as plt
-import swiftir
-import align_swiftir
-from get_image_size import get_image_size
-import task_queue
-from tqdm import tqdm
 
+'''
+print('\npyswift_tui | sys.path:')
+print(sys.path)
+
+pyswift_tui | sys.path:
+['/Users/joelyancey/glanceem_swift/swift-ir/source/Qt', 
+ '/opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/python39.zip', 
+ '/opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9', 
+ '/opt/local/Library/Frameworks/Python.framework/Versions/3.9/lib/python3.9/lib-dynload', 
+ '/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages']
+'''
+
+try: import package.align_swiftir as align_swiftir
+except: import align_swiftir
+
+try: import package.swiftir as swiftir
+except: import swiftir
+
+try: from package.get_image_size import get_image_size
+except: from get_image_size import get_image_size
 
 # import project_runner  # Not really used yet
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 0  # A larger value prints more stuff
+
+
+debug_level = 100  # A larger value prints more stuff
 
 # Using the Python version does not work because the Python 3 code can't
 # even be parsed by Python2. It could be dynamically compiled, or use the
@@ -83,6 +97,8 @@ def lin_fit(x, y):
 
 # align_swiftir.global_swiftir_mode = 'c'
 align_swiftir.global_swiftir_mode = 'python'
+
+# print("\npyswift_tui.py | Setting align_swiftir.global_swiftir_mode = 'python'\n")
 
 '''
 # Find the bias functions that best fit the trends in c_afm across the whole align_list
@@ -440,9 +456,14 @@ def InitCafm(bias_funcs):
 # Calculate and set the value of the c_afm (with optional bias) for a single layer_dict item
 def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
     atrm = layer_dict['align_to_ref_method']
+    print("pyswift_tui | atrm = layer_dict['align_to_ref_method'] = ", str(atrm) )
     try:
         afm = np.array(atrm['method_results']['affine_matrix'])
     except:
+        '''
+        THIS EXCEPT IS BEING TRIGGERED #0619
+        '''
+
         print_debug(-1, 'SetSingleCafm error: empty affine_matrix in base image: %s' % (
         layer_dict['images']['base']['filename']))
         print_debug(-1, 'Automatically skipping base image: %s' % (layer_dict['images']['base']['filename']))
@@ -568,6 +589,8 @@ def BoundingRect(al_stack):
 
 
 def save_bias_analysis(al_stack, bias_data_path):
+    print('(tag) save_bias_analysis | bias_data_path=', bias_data_path)
+
     snr_file = open(os.path.join(bias_data_path, 'snr_1.dat'), 'w')
     bias_x_file = open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'w')
     bias_y_file = open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'w')
@@ -666,6 +689,28 @@ def evaluate_project_status(project):
         proj_status['scales'][scale_key] = {}
 
         alstack = project['data']['scales'][scale_key]['alignment_stack']
+        # print('\nalstack:')
+        # from pprint import pprint
+        # pprint(alstack)
+
+        '''
+ {'align_to_ref_method': {'method_data': {'whitening_factor': -0.68,
+                                          'win_scale_factor': 0.8125},
+                          'method_options': ['None'],
+                          'method_results': {},
+                          'selected_method': 'None'},
+  'images': {'base': {'filename': '/Users/joelyancey/glanceem_swift/test_projects/test9999/scale_2/img_src/R34CA1-BS12.107.tif',
+                      'metadata': {'annotations': [], 'match_points': []}},
+             'ref': {'filename': '/Users/joelyancey/glanceem_swift/test_projects/test9999/scale_2/img_src/R34CA1-BS12.106.tif',
+                     'metadata': {'annotations': [], 'match_points': []}}},
+  'skip': False},
+
+
+        '''
+
+
+
+
         num_alstack = len(alstack)
 
         #    afm_list = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in alstack if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
@@ -693,6 +738,7 @@ def evaluate_project_status(project):
 def run_json_project(project=None, alignment_option='init_affine', use_scale=0, swiftir_code_mode='python',
                      start_layer=0, num_layers=-1, alone=False):
     '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.'''
+    print("\npyswift_tui | run_json_project | alignment_option = \n", alignment_option)
     print_debug_enter(40)
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
     first_layer_has_ref = False
@@ -706,8 +752,8 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
         project['data']['scales']['scale_%d' % use_scale]['alignment_stack'][0]['images']['ref']['filename']) + "\"")
 
     print_debug(10, 80 * "!")
-    print_debug(10, "run_json_project called with: " + str(
-        [alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone]))
+    print("run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone]))
+    print("\npyswift_tui.py > run_json_project | Setting align_swiftir.global_swiftir_mode to %s\n" % str(swiftir_code_mode))
     align_swiftir.global_swiftir_mode = swiftir_code_mode
 
     destination_path = project['data']['destination_path']

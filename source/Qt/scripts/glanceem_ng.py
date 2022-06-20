@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
 
-from glanceem_utils import RequestHandler, Server, add_layer, tiffs2zarr, create_scale_pyramid
+from package.glanceem_utils import RequestHandler, add_layer, tiffs2zarr
 import neuroglancer as ng
 import zarr
-import argparse, os, sys, time
-import numpy as np
+import argparse
 import daisy
 import os, sys
-import dask
 import dask.array as da
 import skimage
 from PIL import Image
 # Documentation on PIL.Image:
 # https://pillow.readthedocs.io/en/stable/reference/Image.html
-import webbrowser
 from glob import glob
-from numcodecs import Blosc, Delta, LZMA, Zstd
+from numcodecs import Blosc
 import json
 import multiprocessing
 

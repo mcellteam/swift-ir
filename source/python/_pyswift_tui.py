@@ -12,6 +12,8 @@ import copy
 import matplotlib.pyplot as plt
 
 
+print('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n source/python/pyswift_tui \n\n\n\n\n\n\n')
+
 # Do Linear Regression of X,Y data
 def lin_fit(x,y):
 

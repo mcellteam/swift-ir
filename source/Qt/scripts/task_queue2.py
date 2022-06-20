@@ -9,7 +9,6 @@ else:
 import threading
 import subprocess as sp
 import time
-from tqdm import tqdm
 
 # This is monotonic (0 to 100) with the amount of output:
 debug_level = 0  # A larger value prints more stuff
@@ -212,11 +211,12 @@ class TaskQueue:
     self.n_threads = 0
     self.python_exec = python_path
     self.module_dir_path = os.path.dirname(os.path.realpath(__file__))
-    module_file_path = os.path.join(self.module_dir_path, 'task_wrapper.py')
+    module_file_path = os.path.join(self.module_dir_path, '../package/task_wrapper.py')
     self.task_wrapper = module_file_path
     self.notify = False
     self.passthrough_stdout = False
     self.passthrough_stderr = False
+
 
   def start(self,n_threads):
     if n_threads > self.n_threads:
@@ -229,6 +229,7 @@ class TaskQueue:
       for i in range(self.n_threads - n_threads):
         self.work_q.put(None) # This is a signal for the thread to exit
     self.n_threads = n_threads
+
 
   def run_q_item(self):
     while True:
@@ -246,18 +247,22 @@ class TaskQueue:
 
       if self.notify:
         if debug_level > 4: sys.stdout.write('Starting PID {0} {1}\n'.format(pid, cmd))
-      out_q = OutputQueue()
-#      if debug_level > 4: sys.stdout.write('sending:  {0}\n'.format(cmd).encode().decode())
       task['status'] = 'running'
-      self.task_dict[pid]['output'] = []
-      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough_stdout=self.passthrough_stdout, passthrough_stderr=self.passthrough_stderr, output_list=self.task_dict[pid]['output'])
-      self.task_dict[pid]['stdout'] = res[0]
-      self.task_dict[pid]['stderr'] = res[1]
-      process.stdin.close()
+      task['output'] = []
+
+#      out_q = OutputQueue()
+#      rc, res = out_q.run_proc(process, arg_in=[cmd, args], passthrough_stdout=self.passthrough_stdout, passthrough_stderr=self.passthrough_stderr, output_list=self.task_dict[pid]['output'])
+#      self.task_dict[pid]['stdout'] = res[0]
+#      self.task_dict[pid]['stderr'] = res[1]
+
+      outs, errs = process.communicate()
+      rc = process.returncode
+      outs = '' if outs == None else outs.decode('utf-8')
+      errs = '' if errs == None else errs.decode('utf-8')
+      task['stdout'] = outs
+      task['stderr'] = errs
       process.stdout.close()
       process.stderr.close()
-#      self.task_dict[pid]['text'].write(res[0])
-#      self.task_dict[pid]['text'].write(res[1])
       if task['status'] != 'died':
         if rc == 0:
           task['status'] = 'completed'
@@ -267,12 +272,16 @@ class TaskQueue:
           task['status'] = 'died'
       if self.notify:
         if debug_level > 4: sys.stdout.write('Task PID {0}  status: {1}  return code: {2}\n'.format(pid, task['status'], rc))
+
       self.work_q.task_done()
+
     if debug_level > 4: sys.stdout.write('Worker thread %s exiting\n' % (threading.currentThread().getName()))
+
 
   def clear_queue(self):
     with self.work_q.mutex:
       self.work_q.queue.clear()
+
 
   def add_task(self,cmd='',args='',wd=None,env=None):
 
@@ -309,13 +318,32 @@ class TaskQueue:
     return process
     '''
 
-  def create_process(self,work):
+
+  def regularize_task_spec(self, cmd=None, args=None):
+    task_spec = []
+    if type(cmd) == type([]):
+      task_spec.extend(cmd)
+    else:
+      task_spec.extend([cmd])
+    if type(args) == type([]):
+      task_spec.extend(args)
+    else:
+      task_spec.extend([args])
+
+    return task_spec
+
+
+  def create_process(self, work):
 # changing this up due to possible interpeter bug in 'eval' seems to cause blocking in the process
 #    process = eval(work['process_template'])
 
     # Let's create the process this way instead:
-    popen_args = [ self.python_exec, self.task_wrapper, work['wd'] ]
-    process = sp.Popen(popen_args, env=work['env'], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+#    popen_args = [ self.python_exec, self.task_wrapper, work['wd'] ]
+#    process = sp.Popen(popen_args, env=work['env'], bufsize=1, shell=False, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE)
+
+    task_spec = self.regularize_task_spec(cmd=work['cmd'], args=work['args'])
+
+    process = sp.Popen(task_spec, cwd=work['wd'], env=work['env'], bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
 
     pid = process.pid
     self.task_dict[pid] = {}
@@ -343,6 +371,7 @@ class TaskQueue:
         proc.terminate()
         task['status'] = 'died'
         self.work_q.task_done()
+
 
   def shutdown(self):
 

@@ -25,10 +25,6 @@ import os
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
 import numpy as np
 import cv2
-from tqdm import tqdm
-
-
-from joel_decs import timeit, profileit, dumpit, traceit, countit
 
 apo = []
 apo0 = []
@@ -880,7 +876,8 @@ if __name__=='__main__':
         remod(ifns, ofnbase, 3, 0, True, True)
 
 
-    f = os.path.join('..','..','tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
+    # f = os.path.join('../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
+    f = os.path.join('../../..', '..', 'tests', 'vj_097_1k1k_exact', 'as_tif', 'vj_097_shift_rot_skew_crop_1k1k_1.tif')
     print('Loading ' + f)
     t = time.time()
     img = loadImage(f,.1)

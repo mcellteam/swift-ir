@@ -9,8 +9,13 @@
 import os
 import sys
 import json
-import pyswift_tui
-from tqdm import tqdm
+
+try: import package.pyswift_tui as pyswift_tui
+except: import pyswift_tui
+
+# print('pyswift_tui | sys.path:')
+# print(sys.path)
+
 
 if __name__ == '__main__':
 
@@ -27,7 +32,7 @@ if __name__ == '__main__':
     num_layers =     int(sys.argv[6].strip())
     use_file_io =  ( int(sys.argv[7].strip()) != 0 )
 
-    '''
+    #0620 uncommenting below
     print ( "Inside single_alignment_job with: " +
                                          str(project_name) + ', ' +
                                          str(alignment_option) + ', ' +
@@ -35,7 +40,7 @@ if __name__ == '__main__':
                                          str(swiftir_code_mode) + ', ' +
                                          str(start_layer) + ', ' +
                                          str(num_layers) )
-    '''
+
 
     # Read the project from the JSON file
     f = open ( project_name, 'r' )
@@ -48,7 +53,8 @@ if __name__ == '__main__':
 
     # print ( "\n\n\nBefore running JSON DATA MODEL\n\n" )
 
-    updated_model, need_to_write_json = pyswift_tui.run_json_project (
+    # updated_model, need_to_write_json =  pyswift_tui.run_json_project ( #0619
+    updated_model, need_to_write_json =  pyswift_tui.run_json_project (
                                          project = project_dict,
                                          alignment_option = alignment_option,
                                          use_scale = use_scale,

@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import os
-from task_queue import OutputQueue
+try: from package.task_queue import OutputQueue
+except: from task_queue import OutputQueue
 import sys
 import signal
 import subprocess as sp
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 0  # A larger value prints more stuff
+debug_level = 100  # A larger value prints more stuff
 
 def print_debug ( level, p1=None, p2=None, p3=None, p4=None ):
     global debug_level

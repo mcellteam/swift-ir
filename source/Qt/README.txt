@@ -1,7 +1,10 @@
-Howdy! alignEM-SWiFT is a software for cryo-EM image registration. It is under *very* active development.
+Howdy! AlignEM-SWiFT is a software for serial section electron micrograph alignment ("registration").
 
-Please report ANY specific issues that could motivate new fixes or features. Contact:
-joel@salk.edu
+AlignEM-SWiFT is under active development and becoming more stable by the day.
+
+Please report any specific issues that may motivate fixes or new features.
+
+Contact: joel@salk.edu
 
 -------- Install Python --------
 Version 3.9+ (recommended)
