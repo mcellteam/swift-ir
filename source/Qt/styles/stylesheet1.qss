@@ -78,6 +78,8 @@ QMainWindow {
 	/*background-color:#151a1e;*/
 	/*background-color:#2e2e2e;*/ /* 18% gray */
 	background-color: #7c7c7c;
+	/*background-color: #4b4b4b;*/ /*18% grey, lighter shade of Cellblender GUI*/
+	/*background-color: #404040;*//*darker shade of Cellblender GUI*/
 	color: #151a1e; /* dark */
 }
 
@@ -196,12 +198,12 @@ QPushButton{
 
 }
 QPushButton:default{
-	border-style: solid;
-	border-color: #050a0e;
+	border-style: outset;
+	/*border-color: #050a0e*/
 	border-width: 1px;
 	border-radius: 2px;
 	color: #FFFFFF;
-	padding: 2px;
+	/*padding: 2px;*/
 	background-color: #151a1e;
 }
 QPushButton:hover{

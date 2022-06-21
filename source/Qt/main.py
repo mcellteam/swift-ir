@@ -46,7 +46,7 @@ import sys
 import argparse
 import subprocess
 
-import package.globals
+import package.config
 from package.interface import MainWindow
 from package.interface import run_app
 import package.glanceem_utils
@@ -88,35 +88,35 @@ if __name__ == "__main__":
     options.add_argument("-l", "--preload", type=int, required=False, default=3,help="Preload +/-, total to preload = 2n-1")
     options.add_argument("-c", "--use_c_version", type=int, required=False, default=1,help="Run the C versions of SWiFT tools")
     options.add_argument("-f", "--use_file_io", type=int, required=False, default=0,help="Use files to gather output from tasks")
-    options.add_argument("-a", "--api", type=str, required=False, default='pyqt6',help="Use files to gather output from tasks")
+    options.add_argument("-a", "--api", type=str, required=False, default='pyqt6',help="Select Python API from: pyqt6, pyqt5, pyside6, pyside2")
     args = options.parse_args()
     # interface.DEBUG_LEVEL = int(args.debug) #0613
     print("main.py | cli args:", args)
 
     global QT_API
 
-    package.globals.QT_API = args.api # Set Python API (pyside2 | pyside6 | pyqt5 | pyqt6)
+    package.config.QT_API = args.api # Set Python API (pyside2 | pyside6 | pyqt5 | pyqt6)
 
-    print('package.globals.QT_API = ', package.globals.QT_API )
+    print('package.config.QT_API = ', package.config.QT_API )
 
-    os.environ["QT_API"] = package.globals.QT_API
+    os.environ["QT_API"] = package.config.QT_API
     # os.environ["FORCE_QT_API"] = 'True'
 
-    print("main.py | QT_API:", package.globals.QT_API)
+    print("main.py | QT_API:", package.config.QT_API)
 
-    if package.globals.QT_API in ('pyside2', 'pyside6'):
-        package.globals.USES_PYSIDE = True
-        package.globals.USES_PYQT = False
-    elif package.globals.QT_API in ('pyqt5', 'pyqt6'):
-        package.globals.USES_PYSIDE = False
-        package.globals.USES_PYQT = True
+    if package.config.QT_API in ('pyside2', 'pyside6'):
+        package.config.USES_PYSIDE = True
+        package.config.USES_PYQT = False
+    elif package.config.QT_API in ('pyqt5', 'pyqt6'):
+        package.config.USES_PYSIDE = False
+        package.config.USES_PYQT = True
 
-    if package.globals.QT_API in ('pyside2', 'pyqt5'):
-        package.globals.USES_QT5 = True
-        package.globals.USES_QT6 = False
-    elif package.globals.QT_API in ('pyside6', 'pyqt6'):
-        package.globals.USES_QT5 = False
-        package.globals.USES_QT6 = True
+    if package.config.QT_API in ('pyside2', 'pyqt5'):
+        package.config.USES_QT5 = True
+        package.config.USES_QT6 = False
+    elif package.config.QT_API in ('pyside6', 'pyqt6'):
+        package.config.USES_QT5 = False
+        package.config.USES_QT6 = True
 
 
     if args.parallel != None: global_parallel_mode = args.parallel != 0

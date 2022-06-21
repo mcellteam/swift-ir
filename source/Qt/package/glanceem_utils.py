@@ -23,8 +23,8 @@ from PIL import Image
 # from source_tracker import get_hash_and_rev # what was this being used for?
 
 # from package.globals import cfg.project_data
-import package.globals as cfg
-from package.globals import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
+import package.config as cfg
+from package.config import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
 from package.get_image_size import get_image_size
 
 center_switch = 0

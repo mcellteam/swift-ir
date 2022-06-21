@@ -77,7 +77,7 @@ def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
 def print_debug_enter(level):
     if level <= debug_level:
         call_stack = inspect.stack()
-        sys.stderr.write("Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) + '\n')
+        sys.stderr.write("pyswift_tui | Call Stack: " + str([stack_item.function for stack_item in call_stack][1:]) + '\n')
 
 
 # Do Linear Regression of X,Y data
@@ -364,7 +364,7 @@ def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
     if init_scalars:
         bias_funcs['y'][poly_order] = p[poly_order]
 
-    print_debug(50, "\nBias Funcs: \n%s\n" % (str(bias_funcs)))
+    print_debug(50, "\npyswift_tui | Bias Funcs: \n%s\n" % (str(bias_funcs)))
 
     return bias_funcs
 
@@ -464,9 +464,9 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         THIS EXCEPT IS BEING TRIGGERED #0619
         '''
 
-        print_debug(-1, 'SetSingleCafm error: empty affine_matrix in base image: %s' % (
+        print_debug(-1, 'pyswift_tui | SetSingleCafm error: empty affine_matrix in base image: %s' % (
         layer_dict['images']['base']['filename']))
-        print_debug(-1, 'Automatically skipping base image: %s' % (layer_dict['images']['base']['filename']))
+        print_debug(-1, 'pyswift_tui | Automatically skipping base image: %s' % (layer_dict['images']['base']['filename']))
         layer_dict['skip'] = True
         afm = swiftir.identityAffine()
         atrm['method_results']['affine_matrix'] = afm.tolist()
@@ -489,7 +489,7 @@ def ApplyBiasFuncs(align_list):
     print_debug_enter(70)
 
     # Iteratively determine and null out bias in c_afm
-    print_debug(50, "\nComputing and Nulling Biases...\n")
+    print_debug(50, "\npyswift_tui | Computing and Nulling Biases...\n")
     bias_funcs = BiasFuncs(align_list)
     c_afm_init = InitCafm(bias_funcs)
     bias_iters = 2
@@ -511,7 +511,7 @@ def ApplyBiasFuncs(align_list):
 def SetStackCafm(scale_dict, null_biases=False):
     print_debug_enter(70)
 
-    print_debug(50, "\nComputing Cafm and Nulling Biases...\n")
+    print_debug(50, "\npyswift_tui | Computing Cafm and Nulling Biases...\n")
 
     # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
@@ -634,9 +634,9 @@ def save_bias_analysis(al_stack, bias_data_path):
             c_afm_file.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (
             i, c_afm[0, 0], c_afm[0, 1], c_afm[0, 2], c_afm[1, 0], c_afm[1, 1], c_afm[1, 2]))
 
-            print_debug(50, 'AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
+            print_debug(50, 'pyswift_tui | AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
             i, afm[0, 0], afm[0, 1], afm[0, 2], afm[1, 0], afm[1, 1], afm[1, 2]))
-            print_debug(50, 'CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
+            print_debug(50, 'pyswift_tui | CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
             i, c_afm[0, 0], c_afm[0, 1], c_afm[0, 2], c_afm[1, 0], c_afm[1, 1], c_afm[1, 2]))
 
     snr_file.close()
@@ -747,13 +747,13 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
                    'filename']) > 0:
             first_layer_has_ref = True
 
-    print_debug(20, "first_layer_has_ref = " + str(first_layer_has_ref))
-    print_debug(20, "  ref = \"" + str(
+    print_debug(20, "pyswift_tui | first_layer_has_ref = " + str(first_layer_has_ref))
+    print_debug(20, "pyswift_tui |   ref = \"" + str(
         project['data']['scales']['scale_%d' % use_scale]['alignment_stack'][0]['images']['ref']['filename']) + "\"")
 
     print_debug(10, 80 * "!")
-    print("run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone]))
-    print("\npyswift_tui.py > run_json_project | Setting align_swiftir.global_swiftir_mode to %s\n" % str(swiftir_code_mode))
+    print("pyswift_tui | run_json_project called with: " + str([alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers, alone]))
+    print("\npyswift_tui | run_json_project | Setting align_swiftir.global_swiftir_mode to %s\n" % str(swiftir_code_mode))
     align_swiftir.global_swiftir_mode = swiftir_code_mode
 
     destination_path = project['data']['destination_path']
@@ -787,25 +787,25 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
             allow_scale_climb = proj_status['scales'][next_scale_key]['all_aligned']
 
     if ((not allow_scale_climb) & (alignment_option != 'init_affine')):
-        print_debug(-1, 'AlignEM SWiFT Error: Cannot perform alignment_option: %s at scale: %d' % (
+        print_debug(-1, 'pyswift_tui | AlignEM SWiFT Error: Cannot perform alignment_option: %s at scale: %d' % (
         alignment_option, scale_tbd))
-        print_debug(-1, '                       Because next coarsest scale is not fully aligned')
+        print_debug(-1, 'pyswift_tui |                        Because next coarsest scale is not fully aligned')
 
         return (project, False)
 
     if scale_tbd:
         if use_scale:
             print_debug(5,
-                        "Performing alignment_option: %s  at user specified scale: %d" % (alignment_option, scale_tbd))
-            print_debug(5, "Finest scale completed: ", finest_scale_done)
-            print_debug(5, "Next coarsest scale completed: ", next_scale)
-            print_debug(5, "Upscale factor: ", upscale)
+                        "pyswift_tui | Performing alignment_option: %s  at user specified scale: %d" % (alignment_option, scale_tbd))
+            print_debug(5, "pyswift_tui | Finest scale completed: ", finest_scale_done)
+            print_debug(5, "pyswift_tui | Next coarsest scale completed: ", next_scale)
+            print_debug(5, "pyswift_tui | Upscale factor: ", upscale)
         else:
-            print_debug(5, "Performing alignment_option: %s  at automatically determined scale: %d" % (
+            print_debug(5, "pyswift_tui | Performing alignment_option: %s  at automatically determined scale: %d" % (
             alignment_option, scale_tbd))
-            print_debug(5, "Finest scale completed: ", finest_scale_done)
-            print_debug(5, "Next coarsest scale completed: ", next_scale)
-            print_debug(5, "Upscale factor: ", upscale)
+            print_debug(5, "pyswift_tui | Finest scale completed: ", finest_scale_done)
+            print_debug(5, "pyswift_tui | Next coarsest scale completed: ", next_scale)
+            print_debug(5, "pyswift_tui | Upscale factor: ", upscale)
 
         scale_tbd_dir = os.path.join(destination_path, 'scale_' + str(scale_tbd))
 
@@ -844,7 +844,7 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
         # Align Forward Change:
         range_to_process = list(range(start_layer, start_layer + actual_num_layers))
         print_debug(10, 80 * "@")
-        print_debug(10, "Range limited to: " + str(range_to_process))
+        print_debug(10, "pyswift_tui | Range limited to: " + str(range_to_process))
         print_debug(10, 80 * "@")
 
         #   Copy skip, swim, and match point settings
@@ -919,11 +919,11 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
             # Copy the affine_matrices from s_tbd and scale the translation part to use as the initial guess for s_tbd
             afm_tmp = np.array([al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd])
-            print_debug(50, '\n>>>>>>> Original affine matrices: \n\n')
+            print_debug(50, '\npyswift_tui | >>>>>>> Original affine matrices: \n\n')
             print_debug(50, str(afm_tmp))
             afm_scaled = afm_tmp.copy()
             afm_scaled[:, :, 2] = afm_scaled[:, :, 2] * upscale
-            print_debug(50, '\n>>>>>>> Scaled affine matrices: \n\n')
+            print_debug(50, '\npyswift_tui | >>>>>>> Scaled affine matrices: \n\n')
             print_debug(50, str(afm_scaled))
         #      exit(0)
         else:
@@ -959,7 +959,7 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
                 align_list.append({'i': i, 'proc': align_proc, 'do': (i in range_to_process)})
 
         print_debug(10, 80 * "#")
-        print_debug(10, "Before aligning, align_list: " + str(align_list))
+        print_debug(10, "pyswift_tui | Before aligning, align_list: " + str(align_list))
         print_debug(10, 80 * "#")
 
         # Initialize c_afm to identity matrix
@@ -968,7 +968,7 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
         # Align Forward Change:
         if (range_to_process[0] != 0) and not alone:
             print_debug(10, 80 * "@")
-            print_debug(10, "Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
+            print_debug(10, "pyswift_tui | Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
             print_debug(10, 80 * "@")
             # Set the c_afm to the afm of the previously aligned image
             # TODO: Check this for handling skips!!!
@@ -988,7 +988,7 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
         # Align Forward Change:
         if (range_to_process[0] != 0) and not alone:
             print_debug(10, 80 * "@")
-            print_debug(10, "Initialize to non-zero biases")
+            print_debug(10, "pyswift_tui | Initialize to non-zero biases")
             print_debug(10, 80 * "@")
 
         # Calculate AFM for each align_item (i.e for each ref-base pair of images)
@@ -996,13 +996,13 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
 
             if item['do']:
                 align_item = item['proc']
-                print_debug(4, '\nAligning: %s %s' % (
+                print_debug(4, '\npyswift_tui | Aligning: %s %s' % (
                 os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
                 # align_item.cumulative_afm = c_afm
                 c_afm = align_item.align(c_afm, save=False)
             else:
                 align_item = item['proc']
-                print_debug(50, '\nNot Aligning: %s %s' % (
+                print_debug(50, '\npyswift_tui | Not Aligning: %s %s' % (
                 os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
 
         '''
@@ -1067,7 +1067,7 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
         '''
 
         print_debug(1, 30 * "|=|")
-        print_debug(1, "Returning True")
+        print_debug(1, "pyswift_tui | Returning True")
         print_debug(1, 30 * "|=|")
 
         # The code generally returns "True"
@@ -1076,7 +1076,7 @@ def run_json_project(project=None, alignment_option='init_affine', use_scale=0, 
     else:  # if scale_tbd:
 
         print_debug(1, 30 * "|=|")
-        print_debug(1, "Returning False")
+        print_debug(1, "pyswift_tui | Returning False")
         print_debug(1, 30 * "|=|")
 
         return (project, False)
@@ -1168,7 +1168,7 @@ if (__name__ == '__main__'):
     if run_as_worker:
 
         # This task was called to just process one layer
-        print_debug(1, "Running as a worker for just one layer with PID=" + str(os.getpid()))
+        print_debug(1, "pyswift_tui | Running as a worker for just one layer with PID=" + str(os.getpid()))
         # Chop up the JSON project so that the only layer is the one requested
         for scale_key in d['data']['scales'].keys():
             scale = d['data']['scales'][scale_key]
@@ -1185,23 +1185,23 @@ if (__name__ == '__main__'):
                                                  alone=True)
 
         # When run as a worker, always return the data model to the master on stdout
-        print("NEED TO RETURN DATA MODEL TO MASTER from PID=" + str(os.getpid()))
+        print("pyswift_tui | NEED TO RETURN DATA MODEL TO MASTER from PID=" + str(os.getpid()))
 
     elif run_as_master:
 
         # This task was called to process the entire stack in parallel mode
         # This will create a task manager instance and have it run the jobs
 
-        print_debug(-1, "Warning: The \"run_as_master\" flag isn't supported yet.")
+        print_debug(-1, "pyswift_tui | Warning: The \"run_as_master\" flag isn't supported yet.")
         exit(99)
 
     else:
 
         # This task was called to process the entire stack in serial mode
-        print_debug(1, "Running in serial mode with PID=" + str(os.getpid()))
+        print_debug(1, "pyswift_tui | Running in serial mode with PID=" + str(os.getpid()))
 
         align_swiftir.debug_level = debug_level
-        print_debug(20, "Before RJP: " + str(
+        print_debug(20, "pyswift_tui | Before RJP: " + str(
             [d['data']['current_scale'], alignment_option, use_scale, swiftir_code_mode, start_layer, num_layers,
              alone]))
 
@@ -1214,7 +1214,7 @@ if (__name__ == '__main__'):
                                                  alone=False)
         if need_to_write_json:
             # Write out updated json project file
-            print_debug(50, "Writing project to file: ", proj_ofn)
+            print_debug(50, "pyswift_tui | Writing project to file: ", proj_ofn)
             ofp = open(proj_ofn, 'w')
             json.dump(d, ofp, sort_keys=True, indent=2, separators=(',', ': '))
 

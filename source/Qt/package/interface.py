@@ -37,8 +37,8 @@ from tqdm import tqdm
 import qtawesome as qta
 
 
-import package.globals as cfg
-from package.globals import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
+import package.config as cfg
+from package.config import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
 from package.joel_decs import timeit, profileit, dumpit, traceit, countit
 from package.glanceem_utils import getCurScale, isDestinationSet, isProjectScaled, \
     isScaleAligned, isCurScaleAligned, getNumAligned, getSkipsList, areAlignedImagesGenerated, \
@@ -59,7 +59,7 @@ import package.pyswift_tui as pyswift_tui
 import package.task_wrapper
 # from caveclient import CAVEclient
 
-# if package.globals.USES_PYSIDE:
+# if package.config.USES_PYSIDE:
 #
 # 	Signal = QtCore.Signal
 # 	Slot = QtCore.Slot
@@ -3206,7 +3206,7 @@ class MainWindow(QMainWindow):
         self.pyside_path = os.path.dirname(os.path.realpath(__file__))
         print("MainWindow | pyside_path is ", self.pyside_path)
 
-        print("MainWindow | Qt-Python API: ", package.globals.QT_API)
+        print("MainWindow | Qt-Python API: ", package.config.QT_API)
 
         print('MainWindow | Setting MESA_GL_VERSION_OVERRIDE')
         os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
@@ -3252,7 +3252,7 @@ class MainWindow(QMainWindow):
         self.mouse_move_callback = None
 
 
-        print('MainWindow | package.globals.USES_PYSIDE=',package.globals.USES_PYSIDE)
+        print('MainWindow | package.config.USES_PYSIDE=',package.config.USES_PYSIDE)
 
         '''This will require moving the image_panel = ImageLibrary() to MainWindow constructor where it should be anyway'''
         # self.define_roles(['ref', 'base', 'aligned'])
@@ -3265,7 +3265,7 @@ class MainWindow(QMainWindow):
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "yes"
 
 
-        # if package.globals.QT_API == 'pyside6':
+        # if package.config.QT_API == 'pyside6':
         #     print("alignem_swift.py | QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         #     print("alignem_swift.py | New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
@@ -3312,9 +3312,9 @@ class MainWindow(QMainWindow):
 
         # pyside6
         print("MainWindow | instantiating QWebEngineView()")
-        if package.globals.USES_PYSIDE:
+        if package.config.USES_PYSIDE:
             self.view = QWebEngineView()
-        if package.globals.QT_API == 'pyqt6':
+        if package.config.QT_API == 'pyqt6':
             self.view = QWebEngineView()
         # PySide6 available options
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -3323,7 +3323,7 @@ class MainWindow(QMainWindow):
         # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         print("MainWindow | Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True\n")
         print('---------------------\n')
-        if package.globals.USES_QT6:
+        if package.config.USES_QT6:
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         print('---------------------\n')
 
@@ -3768,9 +3768,9 @@ class MainWindow(QMainWindow):
         #
         # self.project_inspector = QDockWidget("Project Inspector")
         # self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
-        # # if package.globals.QT_API == 'pyside':
+        # # if package.config.QT_API == 'pyside':
         # #     self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
-        # # # elif package.globals.QT_API == 'pyqt':
+        # # # elif package.config.QT_API == 'pyqt':
         # # #     # self.project_inspector.setAllowedAreas() # ? there is no reference on how to do this
         #
         #
@@ -4358,9 +4358,9 @@ class MainWindow(QMainWindow):
         self.hud = HeadsUpDisplay(app)
 
         self.splitter = QSplitter(Qt.Orientation.Vertical)
-        # if package.globals.USES_PYSIDE:
+        # if package.config.USES_PYSIDE:
         #     self.splitter = QSplitter(Qt.Vertical)    #0610
-        # elif package.globals.USES_PYQT:
+        # elif package.config.USES_PYQT:
         #     self.splitter = QSplitter(Qt.Orientation.Vertical)
 
         self.splitter.addWidget(self.image_panel)
