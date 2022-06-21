@@ -7,12 +7,6 @@ from package.alignem_data_model import new_project_template
 
 # print('\n Initializing globals \n')
 
-# global QT_API
-# global USES_PYSIDE
-# global USES_PYQT
-# global USES_QT5
-# global USES_QT6
-
 QT_API = None
 USES_PYSIDE = None
 USES_PYQT = None
