@@ -490,6 +490,9 @@ def generate_scales_queue():
         main_window.update_scale_controls() #0618 <-- refactor this so not called twice. ideall would be called once with read_project_data_update_gui
         main_window.update_project_inspector()
 
+        main_window.hud.post('Complete')
+        QApplication.processEvents()
+
         print("\nGenerating scales complete.\n")
         # main_window.status.showMessage("Generating scales complete.")
         main_window.status.showMessage("Idle")
@@ -604,7 +607,8 @@ def align_all_or_some(first_layer=0, num_layers=-1, prompt=True):
 
     print("\nCalculating alignment transformation matrices complete.\n")
     main_window.status.showMessage('Idle')
-    main_window.hud.post('Completed computing affine transformation matrices for scale %s' % getCurScale()[-1])
+    # main_window.hud.post('Completed computing affine transformation matrices for scale %s' % getCurScale()[-1])
+    main_window.hud.post('Complete')
     QApplication.processEvents()
 
 
@@ -791,7 +795,7 @@ def regenerate_aligned(first_layer=0, num_layers=-1, prompt=True):
 
     print('\nGenerating aligned images complete.\n')
     main_window.status.showMessage('Idle')
-    main_window.hud.post('Generating aligned images complete.')
+    main_window.hud.post('Complete')
     QApplication.processEvents()
 
 
@@ -4732,7 +4736,8 @@ class MainWindow(QMainWindow):
                 #os.system("python3 make_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -cN " + str(cname) + " -cL " + str(clevel) + " -d " + destination_path + " -n " + ds_name)
                 # self.set_status('Idle')
                 self.status.showMessage('Idle')
-                self.hud.post('Export of scale %s to Zarr complete' % getCurScale()[-1])
+                # self.hud.post('Export of scale %s to Zarr complete' % getCurScale()[-1])
+                self.hud.post('Complete')
                 QApplication.processEvents()
 
 
@@ -5516,10 +5521,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def open_project(self):
+        print('\nopen_project:')
         main_window.status.showMessage("Opening...")
         self.hud.post('Opening project...')
         QApplication.processEvents()
-        print('\nopen_project:')
 
         self.scales_combobox_switch = 0
 
@@ -5953,6 +5958,8 @@ class MainWindow(QMainWindow):
         if areImagesImported():
             # img_size = get_image_size.get_image_size(cfg.project_data['data']['scales'][getCurScale()]['alignment_stack'][0]['images']['base']['filename'])
             img_size = get_image_size.get_image_size(cfg.project_data['data']['scales'][getCurScale()]['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
+            n_images = getNumImportedImages()
+            self.hud.post('%d Images successfully imported' % n_images)
             self.hud.post('Image dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
             QApplication.processEvents()
             pass
@@ -6094,6 +6101,9 @@ class MainWindow(QMainWindow):
     # center try center code from here
     def import_base_images(self):
         print("MainWindow.import_base_images:")
+        self.status.showMessage('Importing...')
+        self.hud.post('Selecting images...')
+        QApplication.processEvents()
 
         file_name_list, filtr = QFileDialog.getOpenFileNames(None,  # None was self
                                                              "Select Images to Import",
@@ -6354,6 +6364,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def exit_app(self):
         print("MainWindow.exit_app:")
+        self.status.showMessage('Exiting...')
         self.hud.post('Exiting...')
         QApplication.processEvents()
 
