@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-import swiftir
+from python_swiftir import swiftir
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -9,12 +9,12 @@ import subprocess as sp
 
 
 '''
-align_swiftir.py implements a simple generic interface for aligning two images in SWiFT-IR
+_alignment_process.py implements a simple generic interface for aligning two images in SWiFT-IR
 This version uses swiftir.py
 
 The interface is composed of two classes:  align_recipe and align_ingredient
 The general concept is that the alignment of two images is accomplished by applying a
-a series of steps, or "ingredients" to first estimate and then refine the affine transform
+a series of steps, or "ingredients" to first estimate and then refine the python_swiftir transform
 which brings the "moving" image into alignment with the "stationary" image.
 Together these ingredients comprise a procedure, or "recipe".
 '''
@@ -236,7 +236,7 @@ class alignment_process:
 
 
   def setCafm(self,c_afm,bias_mat=None):
-    self.cumulative_afm = swiftir.composeAffine(self.recipe.afm,c_afm)
+    self.cumulative_afm = swiftir.composeAffine(self.recipe.afm, c_afm)
     '''
     # Previous method for applying trans bias
     self.cumulative_afm[0,2] -= self.x_bias
@@ -244,7 +244,7 @@ class alignment_process:
     '''
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
-      self.cumulative_afm = swiftir.composeAffine(bias_mat,self.cumulative_afm)
+      self.cumulative_afm = swiftir.composeAffine(bias_mat, self.cumulative_afm)
 
     return self.cumulative_afm
 
@@ -256,10 +256,10 @@ class alignment_process:
 #      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
       ofn = os.path.join ( self.align_dir, os.path.basename(self.im_mov_fn) )
       if apodize:
-        im_apo = swiftir.apodize2(im_aligned, wfrac=1/3.)
-        swiftir.saveImage(im_apo,ofn)
+        im_apo = swiftir.apodize2(im_aligned, wfrac=1 / 3.)
+        swiftir.saveImage(im_apo, ofn)
       else:
-        swiftir.saveImage(im_aligned,ofn)
+        swiftir.saveImage(im_aligned, ofn)
 
 
 
@@ -659,10 +659,10 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
   recipe.execute()
 
-  global_afm = swiftir.composeAffine(recipe.afm,global_afm)
-  im_aligned = swiftir.affineImage(global_afm,im_mov)
+  global_afm = swiftir.composeAffine(recipe.afm, global_afm)
+  im_aligned = swiftir.affineImage(global_afm, im_mov)
   ofn = os.path.join ( align_dir, os.path.basename(im_mov_fn) )
-  swiftir.saveImage(im_aligned,ofn)
+  swiftir.saveImage(im_aligned, ofn)
 
   return (global_afm, recipe)
 

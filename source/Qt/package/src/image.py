@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 #!/usr/bin/env python2.7
-# print(f'pyswift_tui.py.Loading {__name__}')
+# print(f'py.Loading {__name__}')
 # import sys
 # import os
 # import json
@@ -10,8 +10,9 @@
 import numpy as np
 # import scipy.stats as sps
 
-from utils.helpers import print_debug
-from utils.get_image_size import get_image_size
+from .helpers import print_debug
+from .get_image_size import get_image_size
+from .python_swiftir import *
 
 
 __all__ = ['BiasMat',
@@ -36,7 +37,7 @@ debug_level = 70
 
 # Return the bias matrix at position x in the stack as given by the bias_funcs
 def BiasMat(x, bias_funcs):
-    print('pyswift_tui.BiasMat >>>>>>>>')
+    print('BiasMat >>>>>>>>')
 
     #  xdot = np.array([4.0,3.0,2.0,1.0])
 
@@ -79,15 +80,15 @@ def BiasMat(x, bias_funcs):
     rot_bias_mat = np.array([[np.cos(rot_bias), -np.sin(rot_bias), 0.0], [np.sin(rot_bias), np.cos(rot_bias), 0.0]])
     trans_bias_mat = np.array([[1.0, 0.0, x_bias], [0.0, 1.0, y_bias]])
 
-    bias_mat = swiftir.identityAffine()
+    bias_mat = identityAffine()
 
     # Compose bias matrix as skew*scale*rot*trans
-    bias_mat = swiftir.composeAffine(skew_x_bias_mat, bias_mat)
-    bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
-    bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
-    bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
+    bias_mat = composeAffine(skew_x_bias_mat, bias_mat)
+    bias_mat = composeAffine(scale_bias_mat, bias_mat)
+    bias_mat = composeAffine(rot_bias_mat, bias_mat)
+    bias_mat = composeAffine(trans_bias_mat, bias_mat)
 
-    print('<<<<<<<< pyswift_tui.BiasMat')
+    print('<<<<<<<< BiasMat')
 
     return bias_mat
 
@@ -96,7 +97,7 @@ def BiasMat(x, bias_funcs):
 # Find the bias functions that best fit the trends in c_afm across the whole stack
 # For now the form of the functions is an Nth-order polynomial
 def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
-    print('pyswift_tui.BiasFuncs >>>>>>>>')
+    print('BiasFuncs >>>>>>>>')
     print_debug(50, 50 * 'B0')
     poly_order=int(poly_order)
     if type(bias_funcs) == type(None):
@@ -176,19 +177,19 @@ def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
     if init_scalars:
         bias_funcs['y'][poly_order] = p[poly_order]
 
-    print_debug(50, "\npyswift_tui.BiasFuncs | Bias Funcs: \n%s\n" % (str(bias_funcs)))
+    print_debug(50, "\nBiasFuncs | Bias Funcs: \n%s\n" % (str(bias_funcs)))
 
-    print('<<<<<<<< pyswift_tui.BiasFuncs')
+    print('<<<<<<<< BiasFuncs')
 
 
     return bias_funcs
 
 
 def ApplyBiasFuncs(align_list):
-    print('pyswift_tui.ApplyBiasFuncs >>>>>>>>')
+    print('ApplyBiasFuncs >>>>>>>>')
 
     # Iteratively determine and null out bias in c_afm
-    print_debug(50, "\npyswift_tui.ApplyBiasFuncs | Computing and Nulling Biases...\n")
+    print_debug(50, "\nApplyBiasFuncs | Computing and Nulling Biases...\n")
     bias_funcs = BiasFuncs(align_list)
     c_afm_init = InitCafm(bias_funcs)
     bias_iters = 2
@@ -202,13 +203,13 @@ def ApplyBiasFuncs(align_list):
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(align_list, bias_funcs=bias_funcs)
 
-    print('<<<<<<<< pyswift_tui.ApplyBiasFuncs')
+    print('<<<<<<<< ApplyBiasFuncs')
     return c_afm_init
 
 
 # Get the initial c_afm from the constant terms of the bias_funcs
 def InitCafm(bias_funcs):
-    print('pyswift_tui.InitCafm >>>>>>>>')
+    print('InitCafm >>>>>>>>')
 
     init_skew_x = -bias_funcs['skew_x'][-1]
     init_scale_x = 1.0 / bias_funcs['scale_x'][-1]
@@ -223,25 +224,25 @@ def InitCafm(bias_funcs):
     init_rot_mat = np.array([[np.cos(init_rot), -np.sin(init_rot), 0.0], [np.sin(init_rot), np.cos(init_rot), 0.0]])
     init_trans_mat = np.array([[1.0, 0.0, init_x], [0.0, 1.0, init_y]])
 
-    c_afm_init = swiftir.identityAffine()
+    c_afm_init = identityAffine()
 
     # Compose bias matrix as skew*scale*rot*trans
-    c_afm_init = swiftir.composeAffine(init_skew_x_mat, c_afm_init)
-    c_afm_init = swiftir.composeAffine(init_scale_mat, c_afm_init)
-    c_afm_init = swiftir.composeAffine(init_rot_mat, c_afm_init)
-    c_afm_init = swiftir.composeAffine(init_trans_mat, c_afm_init)
+    c_afm_init = composeAffine(init_skew_x_mat, c_afm_init)
+    c_afm_init = composeAffine(init_scale_mat, c_afm_init)
+    c_afm_init = composeAffine(init_rot_mat, c_afm_init)
+    c_afm_init = composeAffine(init_trans_mat, c_afm_init)
 
-    print('<<<<<<<< pyswift_tui.InitCafm')
+    print('<<<<<<<< InitCafm')
 
     return c_afm_init
 
 
 # Calculate and set the value of the c_afm (with optional bias) for a single layer_dict item
 def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
-    # print('pyswift_tui.SetSingleCafm >>>>>>>>')
+    print('SetSingleCafm >>>>>>>>')
 
     atrm = layer_dict['align_to_ref_method']
-    # print("pyswift_tui.atrm = layer_dict['align_to_ref_method'] = ", str(atrm) )
+    print("SetSingleCafm | atrm = layer_dict['align_to_ref_method'] = ", str(atrm) )
     try:
         afm = np.array(atrm['method_results']['affine_matrix'])
     except:
@@ -249,25 +250,25 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         THIS EXCEPT IS BEING TRIGGERED #0619
         '''
 
-        print_debug(-1, 'pyswift_tui.SetSingleCafm | ERROR | empty affine_matrix in base image: %s' % (
+        print('SetSingleCafm | ERROR | empty affine_matrix in base image: %s' % (
         layer_dict['images']['base']['filename']))
-        print_debug(-1, 'pyswift_tui.SetSingleCafm | Automatically skipping base image: %s' % (layer_dict['images']['base']['filename']))
+        print('SetSingleCafm | Automatically skipping base image: %s' % (layer_dict['images']['base']['filename']))
         layer_dict['skip'] = True
-        afm = swiftir.identityAffine()
+        afm = identityAffine()
         atrm['method_results']['affine_matrix'] = afm.tolist()
         # atrm['method_results']['snr'] = [0.0]
         # atrm['method_results']['snr_report'] = 'SNR: --'
 
     c_afm = np.array(c_afm)
-    c_afm = swiftir.composeAffine(afm, c_afm)
+    c_afm = composeAffine(afm, c_afm)
 
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
-        c_afm = swiftir.composeAffine(bias_mat, c_afm)
+        c_afm = composeAffine(bias_mat, c_afm)
 
     atrm['method_results']['cumulative_afm'] = c_afm.tolist()
 
-    # print('<<<<<<<< pyswift_tui.SetSingleCafm')
+    print('<<<<<<<< SetSingleCafm')
 
     return c_afm
 
@@ -275,9 +276,9 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 # Calculate c_afm across the whole stack with optional bias correction
 # @countit #sus #crash #bug #0405
 def SetStackCafm(scale_dict, null_biases=False):
-    print('pyswift_tui.SetStackCafm >>>>>>>>')
+    print('SetStackCafm >>>>>>>>')
 
-    print_debug(50, "\npyswift_tui.SetStackCafm | Computing Cafm and Nulling Biases...\n")
+    print_debug(50, "\nSetStackCafm | Computing Cafm and Nulling Biases...\n")
 
     # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
@@ -291,7 +292,7 @@ def SetStackCafm(scale_dict, null_biases=False):
         bias_funcs = BiasFuncs(al_stack, poly_order=scale_dict['poly_order'])
         c_afm_init = InitCafm(bias_funcs)
     else:
-        c_afm_init = swiftir.identityAffine()
+        c_afm_init = identityAffine()
     if null_biases:
         bias_iters = 2
     else:
@@ -305,7 +306,7 @@ def SetStackCafm(scale_dict, null_biases=False):
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(al_stack, bias_funcs=bias_funcs)
 
-    print('<<<<<<<< pyswift_tui.SetStackCafm')
+    print('<<<<<<<< SetStackCafm')
     return c_afm_init
 
 
@@ -313,7 +314,7 @@ def SetStackCafm(scale_dict, null_biases=False):
 
 # Determine Bounding Rectangle for a stack of images
 def BoundingRect(al_stack):
-    print('pyswift_tui.BoundingRect >>>>>>>>')
+    print('BoundingRect >>>>>>>>')
 
     model_bounds = None
 
@@ -325,21 +326,21 @@ def BoundingRect(al_stack):
         c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
 
         if type(model_bounds) == type(None):
-            model_bounds = swiftir.modelBounds2(c_afm, siz)
+            model_bounds = modelBounds2(c_afm, siz)
         else:
-            model_bounds = np.append(model_bounds, swiftir.modelBounds2(c_afm, siz), axis=0)
+            model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
 
     border_width = max(0 - model_bounds[:, 0].min(), 0 - model_bounds[:, 1].min(), model_bounds[:, 0].max() - siz[0], model_bounds[:, 1].max() - siz[0])
 
     rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[0] + 2 * border_width]
 
-    print('<<<<<<<< pyswift_tui.BoundingRect')
+    print('<<<<<<<< BoundingRect')
     return rect
 
 
 def composeAffine(afm, bfm):
-    '''COMPOSEAFFINE - Compose two affine transforms
-    COMPOSEAFFINE(afm1, afm2) returns the affine transform AFM1 ∘ AFM2
+    '''COMPOSEAFFINE - Compose two python_swiftir transforms
+    COMPOSEAFFINE(afm1, afm2) returns the python_swiftir transform AFM1 ∘ AFM2
     that applies AFM1 after AFM2.
     Affine matrices must be 2x3 numpy arrays.'''
     afm = np.vstack((afm, [0,0,1]))
@@ -348,16 +349,16 @@ def composeAffine(afm, bfm):
     return fm[0:2,:]
 
 def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply affine transform to a point
-    xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
+    '''APPLYAFFINE - Apply python_swiftir transform to a point
+    xy_ = APPLYAFFINE(afm, xy) applies the python_swiftir matrix AFM to the point XY
     Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
     if not type(xy)==np.ndarray:
         xy = np.array([xy[0], xy[1]])
     return np.matmul(afm[0:2,0:2], xy) + reptoshape(afm[0:2,2], xy)
 
 def identityAffine():
-    '''IDENTITYAFFINE - Return an idempotent affine transform
-    afm = IDENTITYAFFINE() returns an affine transform that is
+    '''IDENTITYAFFINE - Return an idempotent python_swiftir transform
+    afm = IDENTITYAFFINE() returns an python_swiftir transform that is
     an identity transform.'''
     return np.array([[1., 0., 0.],
                      [0., 1., 0.]])
@@ -365,7 +366,7 @@ def identityAffine():
 def modelBounds2(afm, siz):
     '''MODELBOUNDS - Returns a bounding rectangle in model space
     (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
-    of an input rectangle (siz) in model space if pixel lookup is through affine
+    of an input rectangle (siz) in model space if pixel lookup is through python_swiftir
     transform AFM.'''
     inv = invertAffine(afm)
     w, h = si_unpackSize(siz)

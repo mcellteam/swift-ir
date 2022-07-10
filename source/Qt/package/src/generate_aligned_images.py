@@ -5,59 +5,67 @@ import sys
 import time
 import psutil
 import config as cfg
-import alignem_utils as em
-from utils.image import BoundingRect, SetStackCafm
-import task_queue_mp
-from align.remove_aligned_images import remove_aligned_images
+# import src.alignem_utils as em
+from .alignem_utils import get_scale_key, get_scale_val, getCurScale, areAlignedImagesGenerated, \
+    makedirs_exist_ok, print_exception
+# from qtpy.QtCore import QThread
+from .image import BoundingRect, SetStackCafm
+from .task_queue_mp import TaskQueue
+from .remove_aligned_images import remove_aligned_images
+from .save_bias_analysis import save_bias_analysis
 
 __all__ = ['generate_aligned_images']
 
 def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     '''Called one time without arguments by 'do_alignment' '''
     print('generate_aligned_images >>>>>>>>')
-    if use_scale == None:  use_scale = em.getCurScale()
-
+    if use_scale == None:
+        use_scale = get_scale_val(getCurScale())
+    use_scale_key = get_scale_key(use_scale)
     # Ensure the directories exist to put aligned images into
-    if em.areAlignedImagesGenerated():
+    if areAlignedImagesGenerated():
         cfg.main_window.hud.post('Ensuring proper directory structure...')
-        create_align_directories(use_scale=use_scale)
+        create_align_directories(use_scale=use_scale_kay)
 
     cfg.main_window.status.showMessage('Generating Images...')
-    if em.areAlignedImagesGenerated():
-        cfg.main_window.hud.post('Removing the Scale %s Images Generated in a Previous Run...' % use_scale[-1])
+    if areAlignedImagesGenerated():
+        cfg.main_window.hud.post('Removing the Scale %s Images Generated in a Previous Run...' % use_scale)
         remove_aligned_images(start_layer=start_layer)
     cfg.main_window.hud.post('Generating Aligned Images (Applying Affines)...')
 
-    use_scale_val = em.get_scale_key(use_scale)
-
     cfg.main_window.hud.post('Propogating AFMs to generate CFMs at each layer...')
     # Propagate the AFMs to generate and appropriate CFM at each layer
-    null_biases = cfg.project_data['data']['scales'][use_scale]['null_cafm_trends']
+    try:
+        print("cfg.project_data['data']['scales'][use_scale_key]['null_cafm_trends'] = ")
+        print(str(cfg.project_data['data']['scales'][use_scale_key]['null_cafm_trends']))
+        null_biases = cfg.project_data['data']['scales'][use_scale_key]['null_cafm_trends']
+    except:
+        print_exception()
     # SetStackCafm ( cfg.project_data['data']['scales'][use_scale]['alignment_stack'], null_biases )
-    SetStackCafm(cfg.project_data['data']['scales'][use_scale], null_biases=null_biases)
+    SetStackCafm(cfg.project_data['data']['scales'][use_scale_key], null_biases=null_biases)
     destination_path = cfg.project_data['data']['destination_path']
-    bias_data_path = os.path.join(destination_path, use_scale, 'bias_data')
-    em.save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path)  # <-- call to save bias data
-    use_bounding_rect = cfg.project_data['data']['scales'][use_scale]['use_bounding_rect']
+    bias_data_path = os.path.join(destination_path, use_scale_key, 'bias_data')
+    save_bias_analysis(cfg.project_data['data']['scales'][use_scale_key]['alignment_stack'], bias_data_path)  # <-- call to save bias data
+    use_bounding_rect = cfg.project_data['data']['scales'][use_scale_key]['use_bounding_rect']
 
     with open(os.path.join(bias_data_path, 'bounding_rect.dat'), 'w') as file:  # Use file to refer to the file object
         if use_bounding_rect:
-            rect = BoundingRect(cfg.project_data['data']['scales'][use_scale]['alignment_stack'])
+            rect = BoundingRect(cfg.project_data['data']['scales'][use_scale_key]['alignment_stack'])
+            print("bounding rect size: '%d %d %d %d\n'" % (rect[0], rect[1], rect[2], rect[3]))
             file.write("%d %d %d %d\n" % (rect[0], rect[1], rect[2], rect[3]))
         else:
             file.write("None\n")
 
     # Finally generate the images with a parallel run of image_apply_affine.py
-    task_queue = task_queue_mp.TaskQueue()
+    task_queue = TaskQueue()
     cpus = min(psutil.cpu_count(logical=False), 48)
     task_queue.start(cpus)
 
     path = os.path.split(os.path.realpath(__file__))[0]
     # apply_affine_job = os.path.join(path, 'image_apply_affine.py')
-    apply_affine_job = os.path.join(path, '../ingredients/image_apply_affine.py')
+    apply_affine_job = os.path.join(path, 'image_apply_affine.py')
     print("(tag) project_runnner | class=apply_affine_job=", apply_affine_job)
-    scale_key = "scale_%d" % use_scale
-    alstack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
+    alstack = cfg.project_data['data']['scales'][use_scale_key]['alignment_stack']
 
     if num_layers == -1:  end_layer = len(alstack)
     else:                 end_layer = start_layer + num_layers
@@ -130,6 +138,6 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
 
 def create_align_directories(use_scale):
     source_dir = os.path.join(cfg.project_data['data']['destination_path'], use_scale, "img_src")
-    em.makedirs_exist_ok(source_dir, exist_ok=True)
+    makedirs_exist_ok(source_dir, exist_ok=True)
     target_dir = os.path.join(cfg.project_data['data']['destination_path'], use_scale, "img_aligned")
-    em.makedirs_exist_ok(target_dir, exist_ok=True)
+    makedirs_exist_ok(target_dir, exist_ok=True)

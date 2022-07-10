@@ -60,15 +60,12 @@ import base64
 
 import time
 import os
-import sys
 import json
 import math
-import random
 import shutil
 
 import pygtk
 pygtk.require('2.0')
-import gobject
 import gtk
 
 import app_window
@@ -1996,9 +1993,8 @@ def clear_snr_skip_to_skip_callback ( flag ):
   return True
 
 
-import thread
+import _alignment_process
 
-import align_swiftir
 
 class StringBufferFile:
   def __init__ ( self ):
@@ -2169,8 +2165,8 @@ def write_json_project ( project_file_name, fb=None ):
             #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
             if type(a.results_dict) != type(None):
-              if 'affine' in a.results_dict:
-                smat = str(a.results_dict['affine'])
+              if 'python_swiftir' in a.results_dict:
+                smat = str(a.results_dict['python_swiftir'])
                 smat = smat.replace ( 'nan', 'NaN' )
                 f.write ( '                "affine_matrix": ' + smat + ',\n' )
               if 'cumulative_afm' in a.results_dict:
@@ -2424,10 +2420,10 @@ def run_alignment_callback ( align_all ):
       print_debug ( 50, "  translation addx         = " + str(alignment_layer_list[j].trans_addx) )
       print_debug ( 50, "  translation addy         = " + str(alignment_layer_list[j].trans_addy) )
       print_debug ( 50, "" )
-      print_debug ( 50, "  affine enabled           = " + str(alignment_layer_list[j].affine_enabled) )
-      print_debug ( 50, "  affine window width      = " + str(alignment_layer_list[j].affine_ww) )
-      print_debug ( 50, "  affine addx              = " + str(alignment_layer_list[j].affine_addx) )
-      print_debug ( 50, "  affine addy              = " + str(alignment_layer_list[j].affine_addy) )
+      print_debug ( 50, "  python_swiftir enabled           = " + str(alignment_layer_list[j].affine_enabled) )
+      print_debug ( 50, "  python_swiftir window width      = " + str(alignment_layer_list[j].affine_ww) )
+      print_debug ( 50, "  python_swiftir addx              = " + str(alignment_layer_list[j].affine_addx) )
+      print_debug ( 50, "  python_swiftir addy              = " + str(alignment_layer_list[j].affine_addy) )
       print_debug ( 50, "" )
       print_debug ( 50, "  bias enabled             = " + str(alignment_layer_list[j].bias_enabled) )
       print_debug ( 50, "  bias dx                  = " + str(alignment_layer_list[j].bias_dx) )
@@ -2502,14 +2498,14 @@ def run_alignment_callback ( align_all ):
 
         alignment_layer_list[j].results_dict = {}
         alignment_layer_list[j].results_dict['snr'] = snr_value
-        alignment_layer_list[j].results_dict['affine'] = [ [1, 0, 0], [0, 1, 0] ]
+        alignment_layer_list[j].results_dict['python_swiftir'] = [ [1, 0, 0], [0, 1, 0] ]
         alignment_layer_list[j].results_dict['cumulative_afm'] = [ [1, 0, 0], [0, 1, 0] ]
 
         alignment_layer_list[j].image_dict['aligned'].clear_non_marker_graphics()
         alignment_layer_list[j].image_dict['aligned'].add_file_name_graphic()
 
         alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 26, "SNR: inf", coordsys='p', color=[1, .5, .5]) )
-        alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['affine']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+        alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['python_swiftir']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
         alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
 
@@ -2517,7 +2513,7 @@ def run_alignment_callback ( align_all ):
         # Align the image at index j with the reference at index i
 
         if not 'cumulative_afm' in alignment_layer_list[i].results_dict:
-          print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative affine matrix." )
+          print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative python_swiftir matrix." )
           return
 
         c_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
@@ -2526,10 +2522,10 @@ def run_alignment_callback ( align_all ):
         print_debug ( 10, "\nAligning: i=" + str(i) + " to j=" + str(j) )
         print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + scale_dest_path + " )" )
 
-        alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                               scale_dest_path, layer_dict=layer_dict,
-                                                                               x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                               cumulative_afm=c_afm )
+        alignment_layer_list[j].align_proc = alignment_process.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                                  scale_dest_path, layer_dict=layer_dict,
+                                                                                  x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                                  cumulative_afm=c_afm)
         print_debug ( 70, "\nBefore alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
 
@@ -2613,7 +2609,7 @@ def run_alignment_callback ( align_all ):
 
         alignment_layer_list[j].results_dict = {}
         alignment_layer_list[j].results_dict['snr'] = snr_value
-        alignment_layer_list[j].results_dict['affine'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
+        alignment_layer_list[j].results_dict['python_swiftir'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
         alignment_layer_list[j].results_dict['cumulative_afm'] = [ [ c for c in r ] for r in alignment_layer_list[j].align_proc.cumulative_afm ]  # Make a copy
 
       # Check to see if this image should be marked for SNR skipping:
@@ -2909,7 +2905,7 @@ def load_from_proj_dict ( proj_dict ):
                           print_debug ( 60, "Loading a cumulative_afm from JSON" )
 
                           a.results_dict['snr'] = json_method_results['snr'] # Copy
-                          a.results_dict['affine'] = [ [ c for c in r ] for r in json_method_results['affine_matrix'] ] # Copy
+                          a.results_dict['python_swiftir'] = [ [ c for c in r ] for r in json_method_results['affine_matrix'] ] # Copy
                           a.results_dict['cumulative_afm'] = [ [ c for c in r ] for r in json_method_results['cumulative_afm'] ] # Copy
 
                     # Load match points into the base image (if found)
@@ -3605,7 +3601,7 @@ def menu_callback ( widget, data=None ):
                   align_swiftir.swiftir.saveImage ( img, new_name )
                 else:
                   # Scale as before:
-                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  img = align_swiftir.swiftir.scaleImage (ingredients.swiftir.loadImage (original_name), fac=scale)
                   align_swiftir.swiftir.saveImage ( img, new_name )
                   # Use "convert" from ImageMagick to hopefully tile in place
                   import subprocess
@@ -3624,7 +3620,7 @@ def menu_callback ( widget, data=None ):
                     shutil.copyfile ( original_name, new_name )
                 else:
                   print_debug ( 70, "Resizing " + original_name + " to " + new_name )
-                  img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage ( original_name ), fac=scale )
+                  img = ingredients.swiftir.scaleImage (ingredients.swiftir.loadImage (original_name), fac=scale)
                   align_swiftir.swiftir.saveImage ( img, new_name )
             except:
               print_debug ( 10, "Error: Failed to copy?" )
@@ -3887,14 +3883,14 @@ def menu_callback ( widget, data=None ):
 
       # This is a toggle
       if align_swiftir.global_swiftir_mode == 'python':
-        align_swiftir.global_swiftir_mode = 'c'
+        alignment_process.global_swiftir_mode = 'c'
       else:
         align_swiftir.global_swiftir_mode = 'python'
 
     elif command == "DoSwims":
 
       # This is a toggle
-      if align_swiftir.global_do_swims == True:
+      if alignment_process.global_do_swims == True:
         align_swiftir.global_do_swims = False
       else:
         align_swiftir.global_do_swims = True
@@ -4112,7 +4108,7 @@ def menu_callback ( widget, data=None ):
                 print ( mir_script )
 
                 # Run the actual mir script
-                align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+                alignment_process.run_command ("mir", arg_list=[], cmd_input=mir_script)
                 first_pass = False
 
     elif command == "DefGrid":
@@ -4266,7 +4262,7 @@ def menu_callback ( widget, data=None ):
 
                   # print ( mir_script )
 
-                  align_swiftir.run_command ( "mir", arg_list=[], cmd_input=mir_script )
+                  _alignment_process.run_command ("mir", arg_list=[], cmd_input=mir_script)
 
                 f1 = f2
 
@@ -4429,7 +4425,7 @@ def menu_callback ( widget, data=None ):
       global debug_level
       debug_level = int(command[6:])
       print_debug ( -1, "Changing debug level from " + str(align_swiftir.debug_level) + " to " + str(debug_level) )
-      align_swiftir.debug_level = debug_level
+      alignment_process.debug_level = debug_level
 
     else:
 
@@ -4703,8 +4699,8 @@ def main():
     # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Perform Swims",   ("DoSwims", zpa_original ), default=align_swiftir.global_do_swims )
-    zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Update CFMs",   ("DoCFMs", zpa_original ), default=align_swiftir.global_do_cfms )
+    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Perform Swims", ("DoSwims", zpa_original ), default=alignment_process.global_do_swims)
+    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Update CFMs", ("DoCFMs", zpa_original ), default=alignment_process.global_do_cfms)
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Images",   ("GenImgs", zpa_original ), default=align_swiftir.global_gen_imgs )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )

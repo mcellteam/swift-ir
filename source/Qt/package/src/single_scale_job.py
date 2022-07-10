@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-# This program is just a stub to call pyswift_tui.run_json_project
-# This function could be done in the main of pyswift_tui.py itself,
+# This program is just a stub to call run_json_project
+# This function could be done in the main of py itself,
 # but since that file is being simultaneously changed for other
 # reasons, it makes sense to have a separate runner stub. At some
 # point this functionality could be added back or refactored other ways.

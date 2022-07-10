@@ -18,7 +18,7 @@ Documentation is presently only in the form of docstrings for each function.
 The main functions to look at are: LOADIMAGE, SWIM, MIRAFFINE, AVERAGEIMAGE,
 AVERAGEIMAGENOBLACK, REMOD, SAVEIMAGE.
 
-Example scripts that implement the most common use cases of the original
+Example src that implement the most common use cases of the original
 programs are planned.'''
 
 import numpy as np
@@ -68,8 +68,8 @@ def shiftAffine(afm, dx):
     return afm + np.array([[0,0,dx[0]],[0,0,dx[1]]])
             
 def invertAffine(afm):
-    '''INVERTAFFINE - Invert affine transform
-    INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
+    '''INVERTAFFINE - Invert python_swiftir transform
+    INVERTAFFINE(afm), where AFM is a 2x3 python_swiftir transformation matrix,
     returns the inverse transform.'''
     afm = np.vstack((afm, [0,0,1]))
     ifm = np.linalg.inv(afm)
@@ -82,8 +82,8 @@ def invertLinear(tfm):
     return np.linalg.inv(tfm)
 
 def composeAffine(afm, bfm):
-    '''COMPOSEAFFINE - Compose two affine transforms
-    COMPOSEAFFINE(afm1, afm2) returns the affine transform AFM1 ∘ AFM2
+    '''COMPOSEAFFINE - Compose two python_swiftir transforms
+    COMPOSEAFFINE(afm1, afm2) returns the python_swiftir transform AFM1 ∘ AFM2
     that applies AFM1 after AFM2.
     Affine matrices must be 2x3 numpy arrays.'''
     afm = np.vstack((afm, [0,0,1]))
@@ -92,30 +92,30 @@ def composeAffine(afm, bfm):
     return fm[0:2,:]
 
 def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply affine transform to a point
-    xy_ = APPLYAFFINE(afm, xy) applies the affine matrix AFM to the point XY
+    '''APPLYAFFINE - Apply python_swiftir transform to a point
+    xy_ = APPLYAFFINE(afm, xy) applies the python_swiftir matrix AFM to the point XY
     Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
     if not type(xy)==np.ndarray:
         xy = np.array([xy[0], xy[1]])
     return np.matmul(afm[0:2,0:2], xy) + reptoshape(afm[0:2,2], xy)
 
 def identityAffine():
-    '''IDENTITYAFFINE - Return an idempotent affine transform
-    afm = IDENTITYAFFINE() returns an affine transform that is
+    '''IDENTITYAFFINE - Return an idempotent python_swiftir transform
+    afm = IDENTITYAFFINE() returns an python_swiftir transform that is
     an identity transform.'''
     return np.array([[1., 0., 0.],
                      [0., 1., 0.]])
 
 def mirAffine(pa, pb):
-    '''MIRAFFINE - Calculate affine transform for matching points
-    (afm, rms, iworst) = MIRAFFINE(pa, pb) calculates the affine transform
+    '''MIRAFFINE - Calculate python_swiftir transform for matching points
+    (afm, rms, iworst) = MIRAFFINE(pa, pb) calculates the python_swiftir transform
     AFM that maps the points PA (2xN matrix) to the points PB
     (2xN matrix).
     If there are three or fewer points, the resulting AFM is a transform
     such that AFM PA = PB. In particular, if there is only one pair of
     points, the result is a simple translation; if there are two, a
     translation combined with an isotropic scaling and rotation;
-    if there are three, a perfectly fitting affine transform.
+    if there are three, a perfectly fitting python_swiftir transform.
     If there are more than three pairs, the result is the least-
     squares solution: rms = sqrt(sum(||AFM PA - PB||^2)) is minimized.
     The index of the worst matching point is returned as well.'''
@@ -140,7 +140,7 @@ def mirAffine(pa, pb):
                                      pb.astype('float32').transpose())
         return (afm, 0, 0)
     
-    # Add row of ones so we can treat the affine as a 3x3 matrix
+    # Add row of ones so we can treat the python_swiftir as a 3x3 matrix
     # multiplying against [x, y, 1]'.
     pa = np.vstack((pa, np.ones((1,N))))
     pb = np.vstack((pb, np.ones((1,N))))
@@ -201,7 +201,7 @@ def mirIterate(pa, pb, ethresh=3.0, leastpts=4):
 def movingToStationary(afm, pmov):
     '''MOVINGTOSTATIONARY - Calculate positions in stationary image
     psta = MOVINGTOSTATIONARY(afm, pmov) calculates positions in stationary
-    image given positions in moving image and an affine transformation returned
+    image given positions in moving image and an python_swiftir transformation returned
     by MIRAFFINE(psta_, pmov_).'''
     psta = applyAffine(invertAffine(afm), pmov)
     return psta
@@ -209,26 +209,26 @@ def movingToStationary(afm, pmov):
 def stationaryToMoving(afm, psta):
     '''STATIONARYTOMOVING - Calculate positions in moving image
     pmov = STATIONARYTOMOVING(afm, psta) calculates positions in moving
-    image given positions in stationary image and an affine transformation
+    image given positions in stationary image and an python_swiftir transformation
     returned by MIRAFFINE(psta_, pmov_).'''
     pmov = applyAffine(afm, psta)
     return pmov
 
 def toLocal(afm, topleft):
-    '''TOLOCAL - Modify affine transform for use with local coordinates
-    lafm = TOLOCAL(afm, topleft) takes an affine that transforms global
+    '''TOLOCAL - Modify python_swiftir transform for use with local coordinates
+    lafm = TOLOCAL(afm, topleft) takes an python_swiftir that transforms global
     model coordinates to coordinates in a moving image and returns an
-    affine that for use on a stationary image located at the given 
+    python_swiftir that for use on a stationary image located at the given
     position. That is, if AFM acts by p_moving = AFM p_model, then LAFM 
     acts by p_moving = LAFM p_stationary = AFM (p_stationary + topleft).'''
     dp = applyAffine(afm, topleft) - applyAffine(afm, [0,0])
     return shiftAffine(afm, dp)
 
 def toGlobal(afm, topleft):
-    '''TOGLOBAL - Modify affine transform for use with global coordinates
-    afm = TOGLOBAL(lafm, topleft) takes an affine that transforms 
+    '''TOGLOBAL - Modify python_swiftir transform for use with global coordinates
+    afm = TOGLOBAL(lafm, topleft) takes an python_swiftir that transforms
     coordinates in a stationary image to coordinates in a moving image 
-    and returns an affine that for use on global model coordinates, given
+    and returns an python_swiftir that for use on global model coordinates, given
     that the stationary image is located at the provided TOPLEFT position.
     That is, if LAFM acts by p_moving = LAFM p_stationary, then AFM acts by
     p_moving = AFM p_model = LAFM (p_model - topleft).'''
@@ -325,9 +325,9 @@ def extractTransformedWindow(img, xy=None, tfm=None, siz=512):
                           flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR)
 
 def affineImage(afm, img, rect=None):
-    '''AFFINEIMAGE - Apply an affine transformation to an image
+    '''AFFINEIMAGE - Apply an python_swiftir transformation to an image
     res = AFFINEIMAGE(afm, img) returns an image the same size of IMG
-    looking up pixels in the original using affine transformation.
+    looking up pixels in the original using python_swiftir transformation.
     res = AFFINEIMAGE(afm, img, rect), where rect is an (x0,y0,w,h)-tuple
     as from MODELBOUNDS, returns the given rectangle of model space.'''
     if rect is None:
@@ -342,7 +342,7 @@ def affineImage(afm, img, rect=None):
 def modelBounds(afm, img):
     '''MODELBOUNDS - Returns image bounding rectangle in model space
     (x0, y0, w, h) = MODELBOUNDS(afm, img) returns the bounding rectangle
-    of the image IMG in model space if pixel lookup is through affine
+    of the image IMG in model space if pixel lookup is through python_swiftir
     transform AFM.'''
     inv = invertAffine(afm)
     p0 = np.floor(applyAffine(inv, [0,0])).astype('int32')
@@ -523,12 +523,12 @@ def movingPatches(img, pp, afm, siz=512):
     and specify the centers of the patches in image coordinates. That is, 
     AFM is _not_ applied to PP.
     Patch size SIZ is given as (W,H) or simply W and defaults to 512.
-    AFM is an affine transform that is applied to the points PP.
+    AFM is an python_swiftir transform that is applied to the points PP.
     The result is a list of arrays that are Fourier transformed so
     they can be fed directly to MULTISWIM. Note that moving patches 
     are _not_ apodized.
     MOVINGPATCHES also returns the locations of the points after
-    affine transformation.'''
+    python_swiftir transformation.'''
     n = pp.shape[1]
     res = []
     tfm = afm[:,0:2]
@@ -734,12 +734,12 @@ def remod(ifns, ofns, halfwidth=10, halfexclwidth=0, topbot=False,
             abovesum += stack[idx(k - halfwidth - halfexclwidth)]
 
 def copyTriangle(dst, src, tria, afm):
-    '''COPYTRIANGLE - Copy a triangular area with affine transform
+    '''COPYTRIANGLE - Copy a triangular area with python_swiftir transform
     dst = COPYTRIANGLE(dst, src, tria, afm) fills the area defined by
     TRIA in the DST image with pixels from the SRC image. Pixel lookup
-    in the SRC image is through affine transform AFM: p_src = AFM(p_dst).
+    in the SRC image is through python_swiftir transform AFM: p_src = AFM(p_dst).
     TRIA must be a 2x3 array of integer pixel coordinates in the DST
-    image. AFM must be a 2x3 array defining an affine transform.'''
+    image. AFM must be a 2x3 array defining an python_swiftir transform.'''
     
     p_topleft = np.min(tria, 1)
     p_bottomright = np.max(tria, 1) + 1
@@ -791,10 +791,10 @@ if __name__=='__main__':
         print('snr', snr)
     
         (afm, rms, iworst) = mirAffine(pa, pb)
-        print('affine matrix from mir', afm, rms, iworst)
+        print('python_swiftir matrix from mir', afm, rms, iworst)
         
         (movs, pb) = movingPatches(img, pa, afm)
-        print('affine places points at', pb)
+        print('python_swiftir places points at', pb)
         (dp, ss, snr) = multiSwim(stas, movs)
         pb = pb + dp
         print('after second swim', pb)
@@ -802,10 +802,10 @@ if __name__=='__main__':
         print('snr', snr)
     
         (afm, rms, iworst) = mirAffine(pa, pb)
-        print('affine matrix from mir', afm, rms, iworst)
+        print('python_swiftir matrix from mir', afm, rms, iworst)
         
         (movs, pb) = movingPatches(img, pa, afm)
-        print('affine places points at', pb)
+        print('python_swiftir places points at', pb)
         (dp, ss, snr) = multiSwim(stas, movs)
         pb = pb + dp
         print('after third swim', pb)
@@ -813,7 +813,7 @@ if __name__=='__main__':
         print('snr', snr)
 
         (afm, rms, iworst) = mirAffine(pa, pb)
-        print('affine matrix from mir', afm, rms, iworst)
+        print('python_swiftir matrix from mir', afm, rms, iworst)
 
     def testRemod():
         ifns = np.array(range(30))

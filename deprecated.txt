@@ -873,3 +873,438 @@
     #         p.border_color = c
     #         p.update_zpa_self()
     #         p.repaint()
+
+
+
+
+
+
+# def mousePressEvent(self, event):
+#         global crop_mode_origin
+#         global crop_mode_role
+#         global crop_mode_disp_rect
+#         global crop_mode_callback
+#         crop_mode_role = None
+#         crop_mode_disp_rect = None
+#         crop_mode = False
+#         mode = None
+#         if crop_mode_callback != None:
+#             mode = crop_mode_callback()
+#             if mode == 'Crop':
+#                 crop_mode = True
+#             else:
+#                 # Note: since we don't currently have a callback from a mode change,
+#                 #  remove the crop box upon any mouse click.
+#                 if crop_mode_origin != None:
+#                     # Remove the box and force a redraw
+#                     crop_mode_origin = None
+#                     crop_mode_disp_rect = None
+#                     crop_mode_role = None
+#                     self.update_zpa_self()
+#                     self.update_siblings()
+#
+#         if crop_mode:
+#             crop_mode_role = self.role
+#             ### New Rubber Band Code
+#             crop_mode_origin = event.pos()
+#             ex = event.x()
+#             ey = event.y()
+#             print_debug ( 60, "Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) + ", (x,y) is " + str([ex, ey]) + ", wxy is " + str([self.image_x(ex), self.image_y(ey)]) )
+#             if not self.rubberBand:
+#                 self.rubberBand = QRubberBand(QRubberBand.Rectangle, self)
+#             self.rubberBand.setGeometry(QRect(crop_mode_origin,QSize()))
+#             self.rubberBand.show()
+#             self.update_siblings()
+#             #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+#         else:
+#             event_handled = False
+#
+#             ex = event.x()
+#             ey = event.y()
+#
+#             if main_window.mouse_down_callback != None:
+#                 event_handled = main_window.mouse_down_callback ( self.role, (ex,ey), (self.image_x(ex),self.image_y(ey)), int(event.button()) )
+#
+#             if not event_handled:
+#
+#                 self.last_button = event.button()
+#                 if event.button() == Qt.MouseButton.RightButton:
+#                     # Resest the pan and zoom
+#                     self.dx = self.mdx = self.ldx = 0
+#                     self.dy = self.mdy = self.ldy = 0
+#                     self.wheel_index = 0
+#                     self.zoom_scale = 1.0
+#                 elif event.button() == Qt.MouseButton.MiddleButton:
+#                     self.dump()
+#                 else:
+#                     # Set the Mouse Down position to be the screen location of the mouse
+#                     self.mdx = ex
+#                     self.mdy = ey
+#
+#             self.update_zpa_self()
+#
+#     def mouseMoveEvent(self, event):
+#         global crop_mode_origin
+#         global crop_mode_role
+#         global crop_mode_disp_rect
+#         global crop_mode_callback
+#         crop_mode = False
+#         if crop_mode_callback != None:
+#             mode = crop_mode_callback()
+#             if mode == 'Crop':
+#                 crop_mode = True
+#             else:
+#                 # Note: since we don't currently have a callback from a mode change,
+#                 #  try to remove the crop box upon mouse motion. However, this will
+#                 #  require enabling all mouse motion events (not just with buttons).
+#                 if crop_mode_origin != None:
+#                     # Remove the box and force a redraw
+#                     crop_mode_origin = None
+#                     crop_mode_disp_rect = None
+#                     crop_mode_role = None
+#                     self.update_zpa_self()
+#                     self.update_siblings()
+#
+#         if crop_mode:
+#             ### New Rubber Band Code
+#             print_debug ( 60, "Move: Current Mode = " + str(mode) + ", crop_mode_origin is " + str(crop_mode_origin) + ", mouse is " + str(event.pos()) )
+#             if crop_mode_origin != None:
+#                 self.rubberBand.setGeometry(QRect(crop_mode_origin,event.pos()).normalized())
+#         else:
+#             event_handled = False
+#
+#             if main_window.mouse_move_callback != None:
+#                 event_handled = main_window.mouse_move_callback ( self.role, (0,0), (0,0), int(event.button()) )  # These will be ignored anyway for now
+#
+#             if not event_handled:
+#
+#                 if self.last_button == Qt.MouseButton.LeftButton:
+#                     self.dx = (event.x() - self.mdx) / self.zoom_scale
+#                     self.dy = (event.y() - self.mdy) / self.zoom_scale
+#                     self.update_zpa_self()
+#
+#     def mouseReleaseEvent(self, event):
+#         global crop_mode_origin
+#         global crop_mode_role
+#         global crop_mode_disp_rect
+#         global crop_mode_corners
+#         global crop_mode_callback
+#
+#         global crop_window_mode  # mouse_rectangle or mouse_square or fixed
+#         global crop_window_width
+#         global crop_window_height
+#
+#         crop_mode = False
+#         if crop_mode_callback != None:
+#             mode = crop_mode_callback()
+#             if mode == 'Crop':
+#                 crop_mode = True
+#         if crop_mode:
+#             self.rubberBand.hide()
+#             if crop_mode_origin != None:
+#
+#                 print_debug ( 50, "Mouse drawn from (" + str(crop_mode_origin.x()) + "," + str(crop_mode_origin.y()) + ") to (" + str(event.x()) + "," + str(event.y()) + ")")
+#                 print_debug ( 50, "Cropping with mode: " + str(crop_window_mode) )
+#
+#                 if crop_window_mode == 'mouse_rectangle':
+#
+#                     # Convert to image coordinates
+#                     img_orig_x = self.image_x(crop_mode_origin.x())
+#                     img_orig_y = self.image_y(crop_mode_origin.y())
+#                     img_rel_x = self.image_x(event.x())
+#                     img_rel_y = self.image_y(event.y())
+#
+#                     # Save the cropping corners for the actual cropping which is done later
+#                     crop_mode_corners = [ [ img_orig_x, img_orig_y ], [ img_rel_x, img_rel_y ] ]
+#                     print_debug ( 50, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+#
+#                     # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
+#                     crop_w = img_orig_x + self.image_x(event.x() - crop_mode_origin.x())
+#                     crop_h = img_orig_y + self.image_y(event.y() - crop_mode_origin.y())
+#                     crop_mode_disp_rect = [ [ img_orig_x, img_orig_y ], [ crop_w, crop_h ] ]
+#
+#                 elif crop_window_mode == 'mouse_square':
+#
+#                     # Convert to image coordinates:
+#                     img_orig_x = self.image_x(crop_mode_origin.x())
+#                     img_orig_y = self.image_y(crop_mode_origin.y())
+#                     img_rel_x = self.image_x(event.x())
+#                     img_rel_y = self.image_y(event.y())
+#
+#                     # Find the center of the selected region in image coordinates (might be a single point)
+#                     img_ctr_x = (img_orig_x + img_rel_x) / 2.0
+#                     img_ctr_y = (img_orig_y + img_rel_y) / 2.0
+#
+#                     # Find the width and height and the square root of the equivalent area
+#                     img_width = abs(img_rel_x - img_orig_x)
+#                     img_height = abs(img_rel_y - img_orig_y)
+#                     area = img_width * img_height
+#                     img_side = int ( round(math.sqrt ( area )) )
+#                     print_debug ( 30, "Cropped image will be " + str(img_side) + "x" + str(img_side) )
+#
+#                     # Compute the upper left and lower right corners in image coordinates
+#                     img_p0_x = img_ctr_x - (img_side/2)
+#                     img_p0_y = img_ctr_y - (img_side/2)
+#                     img_p1_x = img_p0_x + img_side
+#                     img_p1_y = img_p0_y + img_side
+#
+#                     # Save the cropping corners for the actual cropping which is done later
+#                     crop_mode_corners = [ [ img_p0_x, img_p0_y ], [ img_p1_x, img_p1_y ] ]
+#                     print_debug ( 50, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+#
+#                     # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
+#                     crop_w = img_p0_x + self.image_x(self.win_x(img_p1_x) - self.win_x(img_p0_x))
+#                     crop_h = img_p0_y + self.image_y(self.win_y(img_p1_y) - self.win_y(img_p0_y))
+#                     crop_mode_disp_rect = [ [ img_p0_x, img_p0_y ], [ crop_w, crop_h ] ]
+#
+#                 elif crop_window_mode == 'mouse_center_fixed':
+#
+#                     # Convert to image coordinates:
+#                     img_orig_x = self.image_x(crop_mode_origin.x())
+#                     img_orig_y = self.image_y(crop_mode_origin.y())
+#                     img_rel_x = self.image_x(event.x())
+#                     img_rel_y = self.image_y(event.y())
+#
+#                     # Calculate the center of selection in image coordinates
+#                     img_ctr_x = (img_orig_x + img_rel_x) / 2.0
+#                     img_ctr_y = (img_orig_y + img_rel_y) / 2.0
+#
+#                     # Calculate the image width (just the original fixed value)
+#                     img_width = float(crop_window_width)
+#                     img_height = float(crop_window_height)
+#
+#                     # Calculate the corners of the rectangle in image coordinates
+#                     img_p0_x = img_ctr_x - (img_width/2)
+#                     img_p0_y = img_ctr_y - (img_height/2)
+#                     img_p1_x = img_p0_x + img_width
+#                     img_p1_y = img_p0_y + img_height
+#
+#                     # Save the cropping corners for the actual cropping which is done later
+#                     crop_mode_corners = [ [ img_p0_x, img_p0_y ], [ img_p1_x, img_p1_y ] ]
+#                     print_debug ( 50, "Crop Corners: " + str(crop_mode_corners) ) ### These appear to be correct
+#
+#                     # Convert the crop_mode_corners from image mode back into screen mode for crop_mode_disp_rect
+#                     crop_w = img_p0_x + self.image_x(self.win_x(img_p1_x) - self.win_x(img_p0_x))
+#                     crop_h = img_p0_y + self.image_y(self.win_y(img_p1_y) - self.win_y(img_p0_y))
+#                     crop_mode_disp_rect = [ [ img_p0_x, img_p0_y ], [ crop_w, crop_h ] ]
+#
+#                 self.update_zpa_self()
+#                 self.update_siblings()
+#
+#         else:
+#
+#             if event.button() == Qt.MouseButton.LeftButton:
+#                 self.ldx = self.ldx + self.dx
+#                 self.ldy = self.ldy + self.dy
+#                 self.dx = 0
+#                 self.dy = 0
+#                 self.update_zpa_self()
+#
+#     def mouseDoubleClickEvent(self, event):
+#         print_debug ( 50, "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()) )
+#         self.update_zpa_self()
+#
+#
+#     def zoom_to_wheel_at ( self, mouse_win_x, mouse_win_y ):
+#         clear_crop_settings()
+#         old_scale = self.zoom_scale
+#         new_scale = self.zoom_scale = pow (self.scroll_factor, self.wheel_index)
+#
+#         self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+#         self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+
+
+
+# def clear_match_points():
+#     print('\nCalling clear_match_points() in alignem_swift.py:\n')
+#
+#     # global match_pt_mode
+#     # if not match_pt_mode.get_value():
+#     if view_match_crop.get_value() != 'Match':
+#         print('"\nMust be in \"Match\" mode to delete all match points."')
+#     else:
+#         print('Deleting all match points for this layer')
+#         scale_key = cfg.project_data['data']['current_scale']
+#         layer_num = cfg.project_data['data']['current_layer']
+#         stack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
+#         layer = stack[layer_num]
+#
+#         for role in layer['images'].keys():
+#             if 'metadata' in layer['images'][role]:
+#                 layer['images'][role]['metadata']['match_points'] = []
+#                 layer['images'][role]['metadata']['annotations'] = []
+#         cfg.main_window.update_win_self()
+#         cfg.main_window.refresh_all_images()
+
+
+
+    #
+    #
+    # @Slot()
+    # def save_cropped_as(self):
+    #     print('MainWindow.save_cropped_as | saving cropped as...')
+    #
+    #     crop_parallel = True
+    #
+    #     if crop_mode_role == None:
+    #         show_warning("Warning", "Cannot save cropped images without a cropping region")
+    #
+    #     elif cfg.project_data['data']['destination_path'] == None:
+    #         show_warning("Warning", "Cannot save cropped images without a destination path")
+    #
+    #     elif len(cfg.project_data['data']['destination_path']) <= 0:
+    #         show_warning("Warning", "Cannot save cropped images without a valid destination path")
+    #     else:
+    #         options = QFileDialog.Options()
+    #         options |= QFileDialog.Directory
+    #         options |= QFileDialog.DontUseNativeDialog
+    #
+    #         cropped_path = QFileDialog.getExistingDirectory(parent=None, caption="Select Directory for Cropped Images",
+    #                                                         dir=cfg.project_data['data']['destination_path'],
+    #                                                         options=options)
+    #         print_debug(1, "Cropped Destination is: " + str(cropped_path))
+    #
+    #         if cropped_path != None:
+    #             if len(cropped_path) > 0:
+    #                 print("Crop and save images from role " + str(crop_mode_role) + " to " + str(cropped_path))
+    #                 scale_key = cfg.project_data['data']['current_scale']
+    #                 cropping_queue = None
+    #                 if crop_parallel:
+    #                     print("Before: cropping_queue = task_queue.TaskQueue ( sys.executable )")
+    #                     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+    #                     # cropping_queue = task_queue.TaskQueue ( sys.executable )
+    #                     cropping_queue = task_queue.TaskQueue()
+    #                     cpus = psutil.cpu_count(logical=False)
+    #                     if cpus > 48:
+    #                         cpus = 48
+    #                     cropping_queue.start(cpus)
+    #                     cropping_queue.notify = False
+    #                     cropping_queue.passthrough_stdout = False
+    #                     cropping_queue.passthrough_stderr = False
+    #
+    #                 for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
+    #                     infile_name = layer['images'][crop_mode_role]['filename']
+    #                     name_part = os.path.split(infile_name)[1]
+    #                     if '.' in name_part:
+    #                         npp = name_part.rsplit('.')
+    #                         name_part = npp[0] + "_crop." + npp[1]
+    #                     else:
+    #                         name_part = name_part + "_crop"
+    #                     outfile_name = os.path.join(cropped_path, name_part)
+    #                     print("Cropping image " + infile_name)
+    #                     print("Saving cropped " + outfile_name)
+    #
+    #                     # Use the "extractStraightWindow" function which takes a center and a rectangle
+    #                     crop_cx = int((crop_mode_corners[0][0] + crop_mode_corners[1][0]) / 2)
+    #                     crop_cy = int((crop_mode_corners[0][1] + crop_mode_corners[1][1]) / 2)
+    #                     crop_w = abs(int(crop_mode_corners[1][0] - crop_mode_corners[0][0]))
+    #                     crop_h = abs(int(crop_mode_corners[1][1] - crop_mode_corners[0][1]))
+    #                     print("x,y = " + str((crop_cx, crop_cy)) + ", w,h = " + str((crop_w, crop_h)))
+    #
+    #                     if crop_parallel:
+    #                         my_path = os.path.split(os.path.realpath(__file__))[0]
+    #                         crop_job = os.path.join(my_path, 'single_crop_job.py')
+    #                         print(
+    #                             "cropping_queue.add_task ( [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h), infile_name, outfile_name] )")
+    #                         # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
+    #                         cropping_queue.add_task(
+    #                             [sys.executable, crop_job, str(crop_cx), str(crop_cy), str(crop_w), str(crop_h),
+    #                              infile_name, outfile_name])
+    #
+    #                     else:
+    #                         img = align_swiftir.swiftir.extractStraightWindow(
+    #                             align_swiftir.swiftir.loadImage(infile_name), xy=(crop_cx, crop_cy),
+    #                             siz=(crop_w, crop_h))
+    #                         align_swiftir.swiftir.saveImage(img, outfile_name)
+    #
+    #                 if crop_parallel:
+    #                     cropping_queue.collect_results()  # It might be good to have an explicit "join" function, but this seems to do so internally.
+
+    # @Slot()
+    # def toggle_full_paths(self, checked):
+    #     print('MainWindow.toggle_full_paths:')
+    #     self.draw_full_paths = checked
+    #     self.image_panel.draw_full_paths = self.draw_full_paths
+    #     self.image_panel.update_multi_self()
+    #     for p in self.panel_list:
+    #         p.draw_full_paths = self.draw_full_paths
+    #         p.update_zpa_self()
+    #
+    #     if self.draw_full_paths:
+    #         self.setWindowTitle("Project: " + self.project_filename)
+    #     else:
+    #         self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
+
+
+    # @Slot()
+    # def save_project_as(self):
+    #     print("MainWindow is showing the save project as dialog...")
+    #     cfg.main_window.status.showMessage("Saving...")
+    #     # options = QFileDialog.Options()
+    #     # options |= QFileDialog.DontUseNativeDialog
+    #     file_name, filter = QFileDialog.getSaveFileName(parent=None,  # None was self
+    #                                                     caption="Save Project",
+    #                                                     filter="Projects (*.json);;All Files (*)",
+    #                                                     selectedFilter="")
+    #     if file_name != None:
+    #         if len(file_name) > 0:
+    #             self.project_filename = file_name
+    #
+    #             # Attempt to hide the file dialog before opening ...
+    #             for p in self.panel_list:
+    #                 p.update_zpa_self()
+    #             # self.update_win_self()
+    #             try:
+    #                 self.save_project_to_file()
+    #             except:
+    #                 print("save_project_as | WARNING | Project not saved.")
+    #                 self.set_idle()
+    #                 return
+    #
+    #             try:
+    #                 self.setWindowTitle("Project: " + self.project_filename)
+    #             except:
+    #                 self.set_idle()
+    #                 return
+    #
+    #             self.set_def_proj_dest()
+    #     self.set_idle()
+
+
+
+
+        # This could be used to optionally simplify menus:
+        '''
+        if simple_mode:
+            ml[0] = [ '&File',
+                [
+                  [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
+                  [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Save &Cropped As...', None, self.save_cropped_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
+                ]
+              ]
+
+        '''
+
+        # This could be used to optionally simplify menus:
+        '''
+        if simple_mode:
+            ml[0] = [ '&File',
+                [
+                  [ '&New Project', 'Ctrl+N', self.new_project, None, None, None ],
+                  [ '&Open Project', 'Ctrl+O', self.open_project, None, None, None ],
+                  [ '&Save Project', 'Ctrl+S', self.save_project, None, None, None ],
+                  [ 'Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'Save &Cropped As...', None, self.save_cropped_as, None, None, None ],
+                  [ '-', None, None, None, None, None ],
+                  [ 'E&xit', 'Ctrl+Q', self.exit_app, None, None, None ]
+                ]
+              ]
+
+        '''

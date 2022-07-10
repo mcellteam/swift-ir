@@ -5,26 +5,17 @@
 #import numpy as np
 #import cv2
 
-import time
 import os
 import sys
-import json
-import math
-import random
 import shutil
 
 from pyswift_gui import annotated_image
-from pyswift_gui import graphic_primitive
-from pyswift_gui import graphic_line
-from pyswift_gui import graphic_rect
-from pyswift_gui import graphic_marker
 from pyswift_gui import graphic_dot
 from pyswift_gui import graphic_text
-from pyswift_gui import alignment_layer
 from pyswift_gui import str2D
 from pyswift_gui import print_debug
 
-import align_swiftir
+import _alignment_process
 
 
 def run_alignment ( align_all,
@@ -155,10 +146,10 @@ def run_alignment ( align_all,
     print_debug ( 50, "  translation addx         = " + str(alignment_layer_list[j].trans_addx) )
     print_debug ( 50, "  translation addy         = " + str(alignment_layer_list[j].trans_addy) )
     print_debug ( 50, "" )
-    print_debug ( 50, "  affine enabled           = " + str(alignment_layer_list[j].affine_enabled) )
-    print_debug ( 50, "  affine window width      = " + str(alignment_layer_list[j].affine_ww) )
-    print_debug ( 50, "  affine addx              = " + str(alignment_layer_list[j].affine_addx) )
-    print_debug ( 50, "  affine addy              = " + str(alignment_layer_list[j].affine_addy) )
+    print_debug ( 50, "  python_swiftir enabled           = " + str(alignment_layer_list[j].affine_enabled) )
+    print_debug ( 50, "  python_swiftir window width      = " + str(alignment_layer_list[j].affine_ww) )
+    print_debug ( 50, "  python_swiftir addx              = " + str(alignment_layer_list[j].affine_addx) )
+    print_debug ( 50, "  python_swiftir addy              = " + str(alignment_layer_list[j].affine_addy) )
     print_debug ( 50, "" )
     print_debug ( 50, "  bias enabled             = " + str(alignment_layer_list[j].bias_enabled) )
     print_debug ( 50, "  bias dx                  = " + str(alignment_layer_list[j].bias_dx) )
@@ -215,10 +206,10 @@ def run_alignment ( align_all,
       shutil.copyfile      ( alignment_layer_list[i].base_image_name,           os.path.join(destination_path,os.path.basename(alignment_layer_list[i].base_image_name)) )
 
       # Create a new identity transform for this layer even though it's not otherwise needed
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                             destination_path, layer_dict=layer_dict,
-                                                                             x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                             cumulative_afm=None )
+      alignment_layer_list[j].align_proc = alignment_process.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                                destination_path, layer_dict=layer_dict,
+                                                                                x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                                cumulative_afm=None)
 
       alignment_layer_list[j].image_dict['ref'] = annotated_image(None, role="ref")
       #alignment_layer_list[j].image_dict['base'] = annotated_image(clone_from=alignment_layer_list[j].base_annotated_image, role="base")
@@ -228,14 +219,14 @@ def run_alignment ( align_all,
 
       alignment_layer_list[j].results_dict = {}
       alignment_layer_list[j].results_dict['snr'] = snr_value
-      alignment_layer_list[j].results_dict['affine'] = [ [1, 0, 0], [0, 1, 0] ]
+      alignment_layer_list[j].results_dict['python_swiftir'] = [ [1, 0, 0], [0, 1, 0] ]
       alignment_layer_list[j].results_dict['cumulative_afm'] = [ [1, 0, 0], [0, 1, 0] ]
 
       alignment_layer_list[j].image_dict['aligned'].clear_non_marker_graphics()
       alignment_layer_list[j].image_dict['aligned'].add_file_name_graphic()
 
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 26, "SNR: inf", coordsys='p', color=[1, .5, .5]) )
-      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['affine']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+      alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['python_swiftir']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
       alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
 
@@ -243,7 +234,7 @@ def run_alignment ( align_all,
       # Align the image at index j with the reference at index i
 
       if not 'cumulative_afm' in alignment_layer_list[i].results_dict:
-        print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative affine matrix." )
+        print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative python_swiftir matrix." )
         return
 
       prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
@@ -251,10 +242,10 @@ def run_alignment ( align_all,
       print_debug ( 40, "Aligning: i=" + str(i) + " to j=" + str(j) )
       print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
 
-      alignment_layer_list[j].align_proc = align_swiftir.alignment_process ( alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                             destination_path, layer_dict=layer_dict,
-                                                                             x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                             cumulative_afm=prev_afm )
+      alignment_layer_list[j].align_proc = _alignment_process.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                                 destination_path, layer_dict=layer_dict,
+                                                                                 x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                                 cumulative_afm=prev_afm)
       alignment_layer_list[j].align_proc.align()
       recipe = alignment_layer_list[j].align_proc.recipe
       new_name = os.path.join ( destination_path, os.path.basename(alignment_layer_list[j].base_image_name) )
@@ -311,7 +302,7 @@ def run_alignment ( align_all,
 
       alignment_layer_list[j].results_dict = {}
       alignment_layer_list[j].results_dict['snr'] = snr_value
-      alignment_layer_list[j].results_dict['affine'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
+      alignment_layer_list[j].results_dict['python_swiftir'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
       alignment_layer_list[j].results_dict['cumulative_afm'] = [ [ c for c in r ] for r in alignment_layer_list[j].align_proc.cumulative_afm ]  # Make a copy
 
     # Check to see if this image should be marked for SNR skipping:

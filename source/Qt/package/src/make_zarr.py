@@ -58,16 +58,15 @@ import multiprocessing
 import logging, argparse, os, sys, time, shutil, re, subprocess, json
 import zarr
 import numpy as np
-from numcodecs import Blosc, Delta, LZMA, \
-    Zstd  # blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
+from numcodecs import Blosc, Delta, LZMA, Zstd  # blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
 import codecs
 import numcodecs
 from pathlib import Path
 from datetime import datetime
 from contextlib import redirect_stdout
 
-from utils.tiffs2zarr import tiffs2zarr
-from utils.scale_pyramid import create_scale_pyramid
+from .tiffs2zarr import tiffs2zarr
+from .scale_pyramid import create_scale_pyramid
 
 if __name__ == '__main__':
     print('\n>>>>>>>>>>>>>>>> RUNNING make_zarr.py\n')

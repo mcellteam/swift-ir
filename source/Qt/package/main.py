@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+print(f'Loading {__name__} at top of script')
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 
@@ -52,8 +52,8 @@ from pathlib import Path
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
 
-from package.interface import MainWindow
-import package.config as cfg
+from interface import MainWindow
+import config as cfg
 
 # logFormatter = logging.Formatter("%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s")
 
@@ -84,7 +84,7 @@ if 'tqdm' not in installed_packages:
 # main_win = None # previously outside __main__ scope
 logging.root.handlers = []
 if __name__ == "__main__":
-    print(f'Loading {__name__}')
+    print(f'Loading {__name__} in __main__')
     logger = logging.getLogger(__name__)
     # logger = logging.getLogger('AlignEMLogger')
     logging.basicConfig(

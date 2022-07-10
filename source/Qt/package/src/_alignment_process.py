@@ -1,6 +1,6 @@
 #!/usr/bin/env python2.7
 
-# This file was previously named 'alignment_process.py'
+# This file was previously named '_alignment_process.py'
 import numpy as np
 # import matplotlib.pyplot as plt
 import os
@@ -8,8 +8,8 @@ import sys
 import platform
 import subprocess as sp
 from .get_image_size import get_image_size
-from .loadImage import loadImage
-from .saveImage import saveImage
+from python_swiftir.loadImage import loadImage
+from python_swiftir.saveImage import saveImage
 from .python_swiftir.affineImage import affineImage
 from .python_swiftir.swiftir import apodize2
 from .python_swiftir.swiftir import mirIterate
@@ -21,7 +21,7 @@ from .python_swiftir.swiftir import multiSwim
 __all__ = ['alignment_process']
 
 '''
-alignment_process.py implements a simple generic interface for aligning two images in SWiFT-IR
+_alignment_process.py implements a simple generic interface for aligning two images in SWiFT-IR
 This version uses py
 
 The interface is composed of two classes:  align_recipe and align_ingredient

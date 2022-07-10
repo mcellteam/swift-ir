@@ -6,8 +6,8 @@ import numpy as np
 __all__ = ['composeAffine']
 
 def composeAffine(afm, bfm):
-    '''COMPOSEAFFINE - Compose two affine transforms
-    COMPOSEAFFINE(afm1, afm2) returns the affine transform AFM1 ∘ AFM2
+    '''COMPOSEAFFINE - Compose two python_swiftir transforms
+    COMPOSEAFFINE(afm1, afm2) returns the python_swiftir transform AFM1 ∘ AFM2
     that applies AFM1 after AFM2.
     Affine matrices must be 2x3 numpy arrays.'''
     afm = np.vstack((afm, [0,0,1]))

@@ -8,8 +8,8 @@ import psutil
 import time
 import logging
 import config as cfg
-import alignem_utils as em
-import task_queue_mp as task_queue
+import src.alignem_utils as em
+from .task_queue_mp import TaskQueue
 
 __all__ = ['generate_scales']
 
@@ -35,7 +35,7 @@ def generate_scales(progress_callback=None):
     print("generate_scales | Scale Factors : " + str(image_scales_to_run))
     print("generate_scales | # of Images   : ", n_images)
 
-    scaling_queue = task_queue.TaskQueue(n_tasks=n_tasks)
+    scaling_queue = TaskQueue(n_tasks=n_tasks)
     # scaling_queue = task_queue.TaskQueue(n_tasks=n_images, progress_callback=progress_callback)
 
     cpus = min(psutil.cpu_count(logical=False), 48)
@@ -51,18 +51,24 @@ def generate_scales(progress_callback=None):
     cfg.main_window.hud.post("Configuring platform-specific path to SWiFT-IR executables")
     '''TODO: Check for SWiFT-IR executables at startup'''
     if my_system == 'Darwin':
-        iscale2_c = os.path.join(my_path, 'package/lib/bin_darwin/iscale2')
+        iscale2_c = os.path.join(my_path, '../lib/bin_darwin/iscale2')
     elif my_system == 'Linux':
         if '.tacc.utexas.edu' in my_node:
-            iscale2_c = os.path.join(my_path, 'package/lib/bin_tacc/iscale2')
+            iscale2_c = os.path.join(my_path, '../lib/bin_tacc/iscale2')
         else:
-            iscale2_c = os.path.join(my_path, 'lib/bin_linux/iscale2')
+            iscale2_c = os.path.join(my_path, '../lib/bin_linux/iscale2')
+    print('my path = %s' % my_path)
+    print('iscale2_c path = %s' % iscale2_c)
+    # my path = / Users / joelyancey / glanceem_swift / swift - ir / source / Qt / package / src /
+    # iscale2_c path = / lib / bin_darwin / iscale2
+
     try:
         os.path.isfile(iscale2_c)
     except:
         cfg.main_window.hud.post('iscale2_c Executable Was Not Found At Path %s. It Must Be Compiled.' % iscale2_c, logging.ERROR)
         print('EXCEPTION')
         return
+
 
     cfg.main_window.hud.post("Creating project directory structure...")
     try:

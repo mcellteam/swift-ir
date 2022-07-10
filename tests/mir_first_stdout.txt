@@ -1,3 +1,0 @@
-========== First pass mir to align vj_097_shift_rot_skew_crop_2.jpg ==========
-vj_097_shift_rot_skew_crop_2.jpg AF  0.999207 -0.0126256 -71.3392  0.0145699 1.00008 76.839
-vj_097_shift_rot_skew_crop_2.jpg AI  1.00061 0.0126322 70.412  -0.0145776 0.999734 -77.8585

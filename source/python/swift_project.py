@@ -5,7 +5,8 @@ import os
 import errno
 import numpy as np
 import scipy.stats as sps
-from source.Qt.package import align_swiftir, swiftir
+from source.Qt.package import alignment_process
+from python_swiftir import swiftir
 import json
 import copy
 
@@ -219,7 +220,7 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
   print ( 80*"!" )
   print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode]) )
-  align_swiftir.global_swiftir_mode = swiftir_code_mode
+  alignment_process.global_swiftir_mode = swiftir_code_mode
 
   print ( str ( project['data']['scales'].keys() ) )
   scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
@@ -227,8 +228,8 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
   if use_scale==0:
     # Iterate over scales from finest to coarsest
-    # Identify coarsest scale lacking affine matrices in method_results
-    #   and the finest scale which has affine matrices
+    # Identify coarsest scale lacking python_swiftir matrices in method_results
+    #   and the finest scale which has python_swiftir matrices
     for scale in scales:
       sn = project['data']['scales'][scale]['alignment_stack']
       afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in sn if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
@@ -288,7 +289,7 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
       x_bias = atrm['method_data']['bias_x_per_image']
       y_bias = atrm['method_data']['bias_y_per_image']
 
-      # check for affine biases
+      # check for python_swiftir biases
       # if not present then add identity matrix values to dictionary
       if 'bias_rot_per_image' in atrm['method_data'].keys():
         rot_bias = atrm['method_data']['bias_rot_per_image']
@@ -365,7 +366,7 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
       bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
       bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
       bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
-#      print("Refine affine using bias mat:\n", bias_mat)
+#      print("Refine python_swiftir using bias mat:\n", bias_mat)
 
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:

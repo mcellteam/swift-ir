@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import swiftir
+from python_swiftir import swiftir
 import numpy as np
 import matplotlib.pyplot as plt
 

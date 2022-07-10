@@ -10,20 +10,21 @@ import copy
 import json
 # from qtpy.QtCore import QThread
 
-import task_queue_mp
+from .task_queue_mp import TaskQueue
 import config as cfg
-import alignem_utils as em
-from utils.helpers import print_debug
-from utils.get_image_size import get_image_size
-from ingredients.run_json_project import run_json_project
-from align.remove_aligned_images import remove_aligned_images
-from align.generate_aligned_images import generate_aligned_images
+from .helpers import print_debug
+from .get_image_size import get_image_size
+from .run_json_project import run_json_project
+from .remove_aligned_images import remove_aligned_images
+from .generate_aligned_images import generate_aligned_images
+from .save_bias_analysis import save_bias_analysis
+import src.alignem_utils as em
 
 __all__ = ['compute_affine_transformations']
 
 # def compute_affines():
 def compute_affine_transformations(use_scale=None, start_layer=0, num_layers=-1):
-    '''Compute the affine transformation matrices for the current scale stack of images according to Recipe1.'''
+    '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
 
     print('compute_affines >>>>>>>>')
 
@@ -53,7 +54,9 @@ def compute_affine_transformations(use_scale=None, start_layer=0, num_layers=-1)
 
     cfg.main_window.read_gui_update_project_data()
     remove_aligned_images(start_layer=start_layer)
-    em.ensure_proper_data_structure()
+    #******************************************
+    em.ensure_proper_data_structure() #0709
+    #******************************************
     if rename_switch:  rename_layers(use_scale=use_scale, alignment_dict=alignment_dict)
     n_imgs = em.getNumImportedImages()
     img_size = get_image_size(cfg.project_data['data']['scales'][use_scale]['alignment_stack'][0]['images']['base']['filename'])
@@ -95,7 +98,7 @@ def compute_affine_transformations(use_scale=None, start_layer=0, num_layers=-1)
         f.close()
 
         # task_queue = task_queue.TaskQueue() #0704
-        task_queue = task_queue_mp.TaskQueue(n_tasks=len(alstack))
+        task_queue = TaskQueue(n_tasks=len(alstack))
         cpus = min(psutil.cpu_count(logical=False), 48)
         print("Starting Project Runner Task Queue with %d CPUs (TaskQueue.start)" % (cpus))
         task_queue.start(cpus)
@@ -103,7 +106,7 @@ def compute_affine_transformations(use_scale=None, start_layer=0, num_layers=-1)
         my_path = os.path.split(os.path.realpath(__file__))[0]
         # align_job = os.path.join(my_path, 'source/Qt/package/single_alignment_job.py')
         # align_job = os.path.join(my_path, 'single_alignment_job.py')
-        align_job = os.path.join(my_path, '../ingredients/single_alignment_job.py')
+        align_job = os.path.join(my_path, 'single_alignment_job.py')
         print('align_job=', align_job)
 
         for layer in alstack:
@@ -238,7 +241,7 @@ def compute_affine_transformations(use_scale=None, start_layer=0, num_layers=-1)
         print('Saving bias analysis...')
         use_scale = project['data']['current_scale']
         bias_data_path = os.path.join(project['data']['destination_path'], project['data']['current_scale'], 'bias_data')
-        em.save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
+        save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
     else:
         '''Run the project directly in Serial mode. Does not generate aligned images.'''
 

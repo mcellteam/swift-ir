@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
-# This program is just a stub to call pyswift_tui.run_json_project
-# This function could be done in the main of pyswift_tui.py itself,
+# This program is just a stub to call run_json_project
+# This function could be done in the main of py itself,
 # but since that file is being simultaneously changed for other
 # reasons, it makes sense to have a separate runner stub. At some
 # point this functionality could be added back or refactored other ways.
 import os
 import sys
 import json
+# import run_json_project
+from .run_json_project import run_json_project
 
 if __name__ == '__main__':
     '''This is passed by 'project_runner' into 'task_queue_mp' as the task argument for worker threads '''
@@ -49,7 +51,6 @@ if __name__ == '__main__':
         # print ( str(project_dict['data']['scales']['scale_%d'%use_scale]['alignment_stack'][0]['images']['ref']['filename']) )
 
         # print ( "\n\n\nBefore running JSON DATA MODEL\n\n" )
-        from  run_json_project import run_json_project
         updated_model, need_to_write_json = run_json_project(
                 project=project_dict,
                 alignment_option=alignment_option,
