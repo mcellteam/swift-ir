@@ -1,0 +1,5 @@
+========== Swim Third ==========
+58.01: vj_097_shift_rot_skew_crop_1.jpg 903 890 vj_097_shift_rot_skew_crop_2.jpg 988.171 793.147  1024 (3.75006 -5.4151 6.58683)
+67.0162: vj_097_shift_rot_skew_crop_1.jpg 903 -109 vj_097_shift_rot_skew_crop_2.jpg 967.247 -205.457  1024 (-4.54114 -4.28584 6.24423)
+55.4249: vj_097_shift_rot_skew_crop_1.jpg -96 -109 vj_097_shift_rot_skew_crop_2.jpg -31.6412 -181.814  1024 (-2.81973 4.77982 5.54955)
+55.8827: vj_097_shift_rot_skew_crop_1.jpg -96 890 vj_097_shift_rot_skew_crop_2.jpg -10.4111 816.274  1024 (5.77744 3.13495 6.57318)

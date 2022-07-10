@@ -1,0 +1,56 @@
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+did first FFT
+sumsq 4.03615e+10
+avg 196.08  var 44.1862  sd 6.64727
+max 255 at 582 441 ... 8.86372
+min 0 at 506 519 ... 29.4979
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+sumsq 4.05474e+10
+avg 196.534  var 43.5031  sd 6.59568
+max 255 at 602 526 ... 8.86431
+min 0 at 515 513 ... 29.7973
+keep 29.9015: vj_097_shift_rot_skew_crop_1.jpg 903 890 vj_097_shift_rot_skew_crop_2.jpg 985.407 798.783  0
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+did first FFT
+sumsq 3.9768e+10
+avg 194.66  var 33.1913  sd 5.76119
+max 255 at 559 460 ... 10.4735
+min 0 at 518 519 ... 33.7881
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+sumsq 4.00957e+10
+avg 195.462  var 32.9658  sd 5.74158
+max 255 at 555 454 ... 10.3697
+min 0 at 514 513 ... 34.0432
+keep 34.1742: vj_097_shift_rot_skew_crop_1.jpg 903 -109 vj_097_shift_rot_skew_crop_2.jpg 972.434 -200.025  0
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+did first FFT
+sumsq 3.96255e+10
+avg 194.266  var 50.6734  sd 7.11853
+max 255 at 578 399 ... 8.53187
+min 0 at 517 501 ... 27.2902
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+sumsq 3.91125e+10
+avg 193.004  var 50.1549  sd 7.08201
+max 255 at 432 421 ... 8.75404
+min 0 at 512 511 ... 27.2527
+keep 27.3462: vj_097_shift_rot_skew_crop_1.jpg -96 -109 vj_097_shift_rot_skew_crop_2.jpg -26.8771 -185.397  0
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+did first FFT
+sumsq 4.3096e+10
+avg 202.633  var 39.2888  sd 6.26807
+max 255 at 515 381 ... 8.3545
+min 0 at 505 503 ... 32.3278
+LOOP ia 0  wht_expon -0.65
+ia 0 a 0  1 0  1
+sumsq 4.32137e+10
+avg 202.909  var 39.9503  sd 6.32063
+max 255 at 559 604 ... 8.2415
+min 0 at 514 512 ... 32.1026
+keep 32.2147: vj_097_shift_rot_skew_crop_1.jpg -96 890 vj_097_shift_rot_skew_crop_2.jpg -14.5716 813.271  0
