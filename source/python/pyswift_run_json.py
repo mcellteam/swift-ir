@@ -5,15 +5,8 @@
 #import numpy as np
 #import cv2
 
-import time
 import os
-import sys
 import json
-import math
-import random
-import shutil
-
-import align_swiftir
 
 global debug_level
 debug_level = 50
@@ -181,7 +174,7 @@ def run_alignment ( project_file_name,
                       print ( "Loading a cumulative_afm from JSON" )
 
                       print ( "results_dict['snr'] = " + str(json_method_results['snr']) ) # Copy
-                      print ( "results_dict['affine'] = " + str([ [ c for c in r ] for r in json_method_results['affine_matrix'] ]) ) # Copy
+                      print ( "results_dict['python_swiftir'] = " + str([ [ c for c in r ] for r in json_method_results['affine_matrix'] ]) ) # Copy
                       print ( "results_dict['cumulative_afm'] = " + str([ [ c for c in r ] for r in json_method_results['cumulative_afm'] ]) ) # Copy
 
                 # Load match points into the base image (if found)

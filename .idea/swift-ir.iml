@@ -5,17 +5,17 @@
       <sourceFolder url="file://$MODULE_DIR$" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/source/Qt" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/source/Qt/package" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/source/Qt/package/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/source/Qt/package/src/align" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/source/Qt/package/src/ingredients" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/source/Qt/package/lib" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/source/Qt/releases" />
       <excludeFolder url="file://$MODULE_DIR$/source/Qt/gtk_all_in_one" />
       <excludeFolder url="file://$MODULE_DIR$/source/Qt/daisy_logs" />
-      <excludeFolder url="file://$MODULE_DIR$/source/Qt/scripts" />
+      <excludeFolder url="file://$MODULE_DIR$/source/Qt/other_scripts" />
     </content>
     <orderEntry type="jdk" jdkName="Pipenv (swift-ir)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-  </component>
-  <component name="PyDocumentationSettings">
-    <option name="format" value="PLAIN" />
-    <option name="myDocStringFormat" value="Plain" />
   </component>
 </module>

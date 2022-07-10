@@ -1,8 +1,12 @@
 '''
+
+
 ------------------------
  Recipe 1 To-Do list
 ------------------------
 cafm = cumulative affine matrix
+
+
 
 To do:
 [x] jump to functionality
@@ -84,6 +88,8 @@ To do:
 [] make a better README.txt, add list of packages
 [] test everything on Ubuntu
 [] add check for c binaries at startup -> else quit application
+[] get rid of OopenCV/cv2 entirely
+[]
 
 Things project_data should include:
 * is project scaled (bool)
@@ -189,7 +195,48 @@ not provide signals and slots.
 QWebSocketCorsAuthenticator¶
 https://doc.qt.io/qtforpython/PySide6/QtWebSockets/QWebSocketCorsAuthenticator.html?highlight=cors
 
+
+
+
+
+
+
 '''
 
 
-Talk to Tom about globals, specifically 'global_swiftir_mode' see: 'pyswift_tui' and 'align_swiftir' where it is hardcoded to 'python'
+
+
+Special Thanks:
+https://forum.image.sc/t/store-many-tiffs-into-equal-sized-tiff-stacks-for-hdf5-zarr-chunks-using-ome-tiff-format/61055
+https://stackoverflow.com/questions/43064054/how-to-use-tqdm-through-multi-process-in-python
+https://www.cloudcity.io/blog/2019/02/27/things-i-wish-they-told-me-about-multiprocessing-in-python/
+https://docs.python-guide.org/writing/structure/
+
+
+
+Repaint versus Update
+update()
+*   This function does not cause an immediate repaint; instead it schedules a paint event
+    for processing when Qt returns to the main event loop. This permits Qt to optimize
+    for more speed and less flicker than a call to repaint() does.
+*   Calling update() several times normally results in just one paintEvent() call.
+*   In most cases, update () is better because it allows QT to optimize speed and prevent
+    flicker. For example, during an animation.
+*   Updates the widgets and when QT returns to the main event, it plans the drawing events to be
+    processed. This allows QT to be optimized for faster speeds than calling repaint ()
+repaint()
+*   If you need to redraw NOW, it is recommended to use repaint
+*   Warning: If you call repaint () in a function and it is called by PaintEvent () yourself,
+    you may see a wireless loop.
+Trade-Offs
+
+
+____________________
+swiftir.py functions that need to get rid of in order to remove align_ swiftir + OpenCV/cv2 dependencies:
+single_scale_job ->
+  img = align_ swiftir.swiftir.scaleImage (align_ swiftir.swiftir.loadImage(arg_space.infile), fac=arg_space.scale)
+  align_ swiftir.swiftir.saveImage (img, arg_space.outfile)
+
+run_json_project ->
+  align_proc = align_ swiftir.alignment_process(align_dir=align_dir, layer_dict=s_tbd[i],init_affine_matrix=afm_scaled[i])
+  align_proc = align_ swiftir.alignment_process(align_dir=align_dir, layer_dict=s_tbd[i],init_affine_matrix=ident)

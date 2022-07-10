@@ -22,6 +22,13 @@ pyqt6 = "*"
 pyqt6-webengine = "*"
 pyside2 = "*"
 qtpy = "*"
+qtawesome = "*"
+pyqt5 = "*"
+pyqtwebengine-qt5 = "*"
+pyqtwebengine = "*"
+pyqtconsole = "*"
+tqdm = "*"
+dill = "*"
 
 [dev-packages]
 

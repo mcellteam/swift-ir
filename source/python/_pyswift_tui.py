@@ -5,14 +5,12 @@ import os
 import errno
 import numpy as np
 import scipy.stats as sps
-import swiftir
-import align_swiftir
+import _alignment_process
+from python_swiftir import swiftir
 import json
 import copy
-import matplotlib.pyplot as plt
 
-
-print('\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n source/python/pyswift_tui \n\n\n\n\n\n\n')
+print('\n\n\n\n\n\n\n source/python/pyswift_tui \n\n\n\n\n\n\n')
 
 # Do Linear Regression of X,Y data
 def lin_fit(x,y):
@@ -29,7 +27,7 @@ def lin_fit(x,y):
   return(m,b,r,p,stderr)
 
 #align_swiftir.global_swiftir_mode = 'c'
-align_swiftir.global_swiftir_mode = 'python'
+# align_swiftir.global_swiftir_mode = 'python' #0707
 
 
 def BiasFuncs(align_list,bias_funcs=None):
@@ -162,10 +160,10 @@ def BiasMat(x,bias_funcs):
   bias_mat = swiftir.identityAffine()
 
   # Compose bias matrix as skew*scale*rot*trans
-  bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-  bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-  bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-  bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
+  bias_mat = swiftir.composeAffine(skew_x_bias_mat, bias_mat)
+  bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
+  bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
+  bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
 
   return bias_mat
 
@@ -189,10 +187,10 @@ def InitCafm(bias_funcs):
   c_afm_init = swiftir.identityAffine()
 
   # Compose bias matrix as skew*scale*rot*trans
-  c_afm_init = swiftir.composeAffine(init_skew_x_mat,c_afm_init)
-  c_afm_init = swiftir.composeAffine(init_scale_mat,c_afm_init)
-  c_afm_init = swiftir.composeAffine(init_rot_mat,c_afm_init)
-  c_afm_init = swiftir.composeAffine(init_trans_mat,c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_skew_x_mat, c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_scale_mat, c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_rot_mat, c_afm_init)
+  c_afm_init = swiftir.composeAffine(init_trans_mat, c_afm_init)
 
   return c_afm_init
 
@@ -221,15 +219,15 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
   print ( 80*"!" )
   print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode]) )
-  align_swiftir.global_swiftir_mode = swiftir_code_mode
+  alignment_process.global_swiftir_mode = swiftir_code_mode
 
   scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
   destination_path = project['data']['destination_path']
 
   if use_scale==0:
     # Iterate over scales from finest to coarsest
-    # Identify coarsest scale lacking affine matrices in method_results
-    #   and the finest scale which has affine matrices
+    # Identify coarsest scale lacking python_swiftir matrices in method_results
+    #   and the finest scale which has python_swiftir matrices
     for scale in scales:
       sn = project['data']['scales'][str(scale)]['alignment_stack']
       afm = np.array([ i['align_to_ref_method']['method_results']['affine_matrix'] for i in sn if 'affine_matrix' in i['align_to_ref_method']['method_results'] ])
@@ -289,7 +287,7 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
       x_bias = atrm['method_data']['bias_x_per_image']
       y_bias = atrm['method_data']['bias_y_per_image']
 
-      # check for affine biases
+      # check for python_swiftir biases
       # if not present then add identity matrix values to dictionary
       if 'bias_rot_per_image' in atrm['method_data'].keys():
         rot_bias = atrm['method_data']['bias_rot_per_image']
@@ -362,11 +360,11 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
       # Compose bias matrix as skew*scale*rot*trans
       bias_mat = swiftir.identityAffine()
-      bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-      bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
-#      print("Refine affine using bias mat:\n", bias_mat)
+      bias_mat = swiftir.composeAffine(skew_x_bias_mat, bias_mat)
+      bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
+      bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
+      bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
+#      print("Refine python_swiftir using bias mat:\n", bias_mat)
 
     for i in range(1,len(s_tbd)):
       if not s_tbd[i]['skip']:
@@ -388,15 +386,15 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
           # Compose bias matrix as skew*scale*rot*trans
           bias_mat = swiftir.identityAffine()
-          bias_mat = swiftir.composeAffine(skew_x_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(scale_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(rot_bias_mat,bias_mat)
-          bias_mat = swiftir.composeAffine(trans_bias_mat,bias_mat)
+          bias_mat = swiftir.composeAffine(skew_x_bias_mat, bias_mat)
+          bias_mat = swiftir.composeAffine(scale_bias_mat, bias_mat)
+          bias_mat = swiftir.composeAffine(rot_bias_mat, bias_mat)
+          bias_mat = swiftir.composeAffine(trans_bias_mat, bias_mat)
 
           align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
 #          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=swiftir.composeAffine(bias_mat,afm_scaled[i]))
         else:
-          align_proc = align_swiftir.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
+          align_proc = _alignment_process.alignment_process(im_sta_fn, im_mov_fn, align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
         align_list.append([i,align_proc])
 
     # Initialize c_afm to identity matrix
@@ -594,8 +592,8 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
     rect = BoundingRect(align_list,siz)
 
 #    im_aligned = swiftir.affineImage(c_afm_init,im_sta)
-    im_aligned = swiftir.affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
-    swiftir.saveImage(im_aligned,al_fn)
+    im_aligned = swiftir.affineImage(c_afm_init, im_sta, rect=rect, grayBorder=True)
+    swiftir.saveImage(im_aligned, al_fn)
     if not 'aligned' in s_tbd[0]['images']:
       s_tbd[0]['images']['aligned'] = {}
     s_tbd[0]['images']['aligned']['filename'] = al_fn

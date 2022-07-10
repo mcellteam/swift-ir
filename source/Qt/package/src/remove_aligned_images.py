@@ -2,7 +2,7 @@
 
 import os
 import config as cfg
-import alignem_utils as em
+import src.alignem_utils as em
 
 __all__ = ['remove_aligned_images']
 

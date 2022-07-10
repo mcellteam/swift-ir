@@ -9,9 +9,9 @@ __all__ = ['affineImage','shiftAffine']
 
 
 def affineImage(afm, img, rect=None, grayBorder=False ):
-    '''AFFINEIMAGE - Apply an affine transformation to an image
+    '''AFFINEIMAGE - Apply an python_swiftir transformation to an image
     res = AFFINEIMAGE(afm, img) returns an image the same size of IMG
-    looking up pixels in the original using affine transformation.
+    looking up pixels in the original using python_swiftir transformation.
     res = AFFINEIMAGE(afm, img, rect), where rect is an (x0,y0,w,h)-tuple
     as from MODELBOUNDS, returns the given rectangle of model space.
     If grayBorder is True, set the image border color to the mean image value'''

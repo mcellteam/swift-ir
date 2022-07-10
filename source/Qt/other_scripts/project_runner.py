@@ -175,7 +175,7 @@ class project_runner:
 
             my_path = os.path.split(os.path.realpath(__file__))[0]
             # align_job = os.path.join(my_path, 'source/Qt/package/single_alignment_job.py')
-            align_job = os.path.join(my_path, 'single_alignment_job.py')
+            align_job = os.path.join(my_path, '../package/ingredients/single_alignment_job.py')
             print('project_runner.do_alignment | do_alignment | align_job=',align_job)
             # (tag) (do_align) project_runner | do_alignment | align_job= /Users/joelyancey/glanceem_swift/swift-ir/source/Qt/package/single_alignment_job.py
 
@@ -855,7 +855,7 @@ class project_runner:
 
         my_path = os.path.split(os.path.realpath(__file__))[0]
         # apply_affine_job = os.path.join(my_path, 'source/Qt/package/image_apply_affine.py')
-        apply_affine_job = os.path.join(my_path, 'image_apply_affine.py')
+        apply_affine_job = os.path.join(my_path, '../package/ingredients/image_apply_affine.py')
         print("(tag) project_runnner | class=project_runner | apply_affine_job=", apply_affine_job)
         scale_key = "scale_%d" % self.use_scale
         alstack = self.project['data']['scales'][scale_key]['alignment_stack']

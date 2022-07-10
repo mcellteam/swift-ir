@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#!/usr/bin/env python
+#  #!/usr/bin/env python
 
 #-------------------------------------------------------------------------------
 # Name:        get_image_size
@@ -17,6 +17,7 @@
 import sys
 import os
 import struct
+from . import *
 
 __all__ = ['get_image_size']
 

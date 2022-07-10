@@ -17,14 +17,14 @@ from tqdm import tqdm
 # import dill
 # import pickle
 import config as cfg
-import alignem_utils as em
+import src.alignem_utils as em
 
 # redirect logger
 import logging
 
 __all__ = ['TaskQueue']
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
 
 
 
@@ -319,7 +319,7 @@ class TaskQueue:
 
         '''Get results from tasks'''
         print("\nTaskQueue.collect_results  >>>>>>>>")
-        cfg.main_window.hud.post('Collecting Results...')
+        # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         print('TaskQueue | n_pending = %d' % n_pending)
         print('TaskQueue | self.retries = %d' % n_pending)
@@ -512,7 +512,7 @@ task= ['/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_aligned/R34CA1-BS12.105.tif']
 
 generate_scales task (example)
-task = ['/Users/joelyancey/glanceem_swift/swift-ir/source/Qt/package/../lib/bin_darwin/iscale2', 
+task = ['/Users/joelyancey/glanceem_swift/swift-ir/source/Qt/package//lib/bin_darwin/iscale2', 
         '+4', 
         'of=/Users/joelyancey/glanceem_swift/test_projects/test16/scale_4/img_src/R34CA1-BS12.117.tif', 
         '/Users/joelyancey/glanceem_swift/test_projects/test16/scale_1/img_src/R34CA1-BS12.117.tif']
@@ -547,6 +547,17 @@ project_runner.do_alignment | Starting task_queue_mp with args:
   1
   0
 
+HOW IS ^^ THAT DIFFERENT FROM THIS:
+Starting task_queue_mp with args:
+  /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
+  /Users/joelyancey/glanceem_swift/swift-ir/source/Qt/package/src/single_alignment_job.py
+  /Users/joelyancey/glanceEM_SWiFT/test_projects/test94/project_runner_job_file.json
+  init_affine
+  4
+  c
+  14
+  1
+  0
 
 
 

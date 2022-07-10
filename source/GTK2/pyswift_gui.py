@@ -314,7 +314,7 @@ if not gtk_mode:
   from PySide2.QtGui import QPixmap, QColor, QPainter, QPalette, QPen
   from PySide2.QtCore import Slot, qApp, QRect, QRectF, QSize, Qt, QPointF
 
-  from scripts import py_swift_tiff
+  from src import py_swift_tiff
 
 
   class app_window:
@@ -3189,8 +3189,8 @@ def write_json_project ( project_file_name, fb=None ):
             #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
             if type(a.results_dict) != type(None):
-              if 'affine' in a.results_dict:
-                smat = str(a.results_dict['affine'])
+              if 'python_swiftir' in a.results_dict:
+                smat = str(a.results_dict['python_swiftir'])
                 smat = smat.replace ( 'nan', 'NaN' )
                 f.write ( '                "affine_matrix": ' + smat + ',\n' )
               if 'cumulative_afm' in a.results_dict:
@@ -3444,10 +3444,10 @@ def run_alignment_callback ( align_all ):
       print_debug ( 50, "  translation addx         = " + str(alignment_layer_list[j].trans_addx) )
       print_debug ( 50, "  translation addy         = " + str(alignment_layer_list[j].trans_addy) )
       print_debug ( 50, "" )
-      print_debug ( 50, "  affine enabled           = " + str(alignment_layer_list[j].affine_enabled) )
-      print_debug ( 50, "  affine window width      = " + str(alignment_layer_list[j].affine_ww) )
-      print_debug ( 50, "  affine addx              = " + str(alignment_layer_list[j].affine_addx) )
-      print_debug ( 50, "  affine addy              = " + str(alignment_layer_list[j].affine_addy) )
+      print_debug ( 50, "  python_swiftir enabled           = " + str(alignment_layer_list[j].affine_enabled) )
+      print_debug ( 50, "  python_swiftir window width      = " + str(alignment_layer_list[j].affine_ww) )
+      print_debug ( 50, "  python_swiftir addx              = " + str(alignment_layer_list[j].affine_addx) )
+      print_debug ( 50, "  python_swiftir addy              = " + str(alignment_layer_list[j].affine_addy) )
       print_debug ( 50, "" )
       print_debug ( 50, "  bias enabled             = " + str(alignment_layer_list[j].bias_enabled) )
       print_debug ( 50, "  bias dx                  = " + str(alignment_layer_list[j].bias_dx) )
@@ -3517,14 +3517,14 @@ def run_alignment_callback ( align_all ):
 
         alignment_layer_list[j].results_dict = {}
         alignment_layer_list[j].results_dict['snr'] = snr_value
-        alignment_layer_list[j].results_dict['affine'] = [ [1, 0, 0], [0, 1, 0] ]
+        alignment_layer_list[j].results_dict['python_swiftir'] = [ [1, 0, 0], [0, 1, 0] ]
         alignment_layer_list[j].results_dict['cumulative_afm'] = [ [1, 0, 0], [0, 1, 0] ]
 
         alignment_layer_list[j].image_dict['aligned'].clear_non_marker_graphics()
         alignment_layer_list[j].image_dict['aligned'].add_file_name_graphic()
 
         alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 26, "SNR: inf", coordsys='p', color=[1, .5, .5]) )
-        alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['affine']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
+        alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 46, "Affine: " + str2D(alignment_layer_list[j].results_dict['python_swiftir']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
         alignment_layer_list[j].image_dict['aligned'].graphics_items.append ( graphic_text(2, 66, "CumAff: " + str2D(alignment_layer_list[j].results_dict['cumulative_afm']), coordsys='p', color=[1, .5, .5],graphic_group="Affines") )
 
 
@@ -3532,7 +3532,7 @@ def run_alignment_callback ( align_all ):
         # Align the image at index j with the reference at index i
 
         if not 'cumulative_afm' in alignment_layer_list[i].results_dict:
-          print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative affine matrix." )
+          print_debug ( 1, "Cannot align from here (" + str(i) + " to " + str(j) + ") without a previous cumulative python_swiftir matrix." )
           return
 
         prev_afm = [ [ c for c in r ] for r in alignment_layer_list[i].results_dict['cumulative_afm'] ]  # Gets the cumulative from the stored values in previous layer
@@ -3628,7 +3628,7 @@ def run_alignment_callback ( align_all ):
 
         alignment_layer_list[j].results_dict = {}
         alignment_layer_list[j].results_dict['snr'] = snr_value
-        alignment_layer_list[j].results_dict['affine'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
+        alignment_layer_list[j].results_dict['python_swiftir'] = [ [ c for c in r ] for r in recipe.afm ]  # Make a copy
         alignment_layer_list[j].results_dict['cumulative_afm'] = [ [ c for c in r ] for r in alignment_layer_list[j].align_proc.cumulative_afm ]  # Make a copy
 
       # Check to see if this image should be marked for SNR skipping:
@@ -3931,7 +3931,7 @@ def load_from_proj_dict ( proj_dict ):
                           print_debug ( 60, "Loading a cumulative_afm from JSON" )
 
                           a.results_dict['snr'] = json_method_results['snr'] # Copy
-                          a.results_dict['affine'] = [ [ c for c in r ] for r in json_method_results['affine_matrix'] ] # Copy
+                          a.results_dict['python_swiftir'] = [ [ c for c in r ] for r in json_method_results['affine_matrix'] ] # Copy
                           a.results_dict['cumulative_afm'] = [ [ c for c in r ] for r in json_method_results['cumulative_afm'] ] # Copy
 
                     # Load match points into the base image (if found)

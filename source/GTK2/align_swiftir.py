@@ -9,12 +9,12 @@ import subprocess as sp
 
 
 '''
-align_swiftir.py implements a simple generic interface for aligning two images in SWiFT-IR
+_alignment_process.py implements a simple generic interface for aligning two images in SWiFT-IR
 This version uses swiftir.py
 
 The interface is composed of two classes:  align_recipe and align_ingredient
 The general concept is that the alignment of two images is accomplished by applying a
-a series of steps, or "ingredients" to first estimate and then refine the affine transform
+a series of steps, or "ingredients" to first estimate and then refine the python_swiftir transform
 which brings the "moving" image into alignment with the "stationary" image.
 Together these ingredients comprise a procedure, or "recipe".
 '''
@@ -451,7 +451,7 @@ class align_ingredient:
 
     # print_debug ( 50, "mir_script: " + mir_script )
 
-    # This "mir" command combines the deltas into a single affine matrix - No images are produced
+    # This "mir" command combines the deltas into a single python_swiftir matrix - No images are produced
     o = run_command ( "mir", arg_list=[], cmd_input=mir_script )
 
     mir_out_lines = o['out'].strip().split('\n')
