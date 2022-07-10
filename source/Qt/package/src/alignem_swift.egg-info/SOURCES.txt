@@ -1,0 +1,5 @@
+setup.py
+src/alignem_swift.egg-info/PKG-INFO
+src/alignem_swift.egg-info/SOURCES.txt
+src/alignem_swift.egg-info/dependency_links.txt
+src/alignem_swift.egg-info/top_level.txt
