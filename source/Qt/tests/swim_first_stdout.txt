@@ -1,2 +1,0 @@
-========== Swim First ==========
-11.3898: vj_097_shift_rot_skew_crop_1.jpg 403 390 vj_097_shift_rot_skew_crop_2.jpg 477.74 305.965  0 (74.74 -84.0352 112.463)

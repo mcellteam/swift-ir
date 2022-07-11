@@ -5,7 +5,7 @@ import os
 import errno
 import numpy as np
 import scipy.stats as sps
-from source.Qt.package import alignment_process
+from scripts import alignment_process
 from python_swiftir import swiftir
 import json
 import copy

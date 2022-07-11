@@ -53,6 +53,7 @@ source/Qt/daisy_logs/
 **/.DS_Store
 
 
+<<<<<<< Updated upstream
 
 
 ### Python ###
@@ -120,3 +121,9 @@ venv.bak/
 
 # mkdocs documentation
 /site
+=======
+package/daisy_logs
+package/daisy_logs/*
+package/daisy_logs/**
+
+>>>>>>> Stashed changes
