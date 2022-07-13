@@ -1,1 +1,0 @@
-../python/swift_project.py

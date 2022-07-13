@@ -9,7 +9,7 @@ import subprocess as sp
 
 
 '''
-_alignment_process.py implements a simple generic interface for aligning two images in SWiFT-IR
+alignment__process.py implements a simple generic interface for aligning two images in SWiFT-IR
 This version uses swiftir.py
 
 The interface is composed of two classes:  align_recipe and align_ingredient
@@ -551,7 +551,7 @@ class align_ingredient:
 
     if debug_level >= 90:
       print_debug ( 50, "Entering the command line debugger:" )
-      __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+      # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     return(self.afm)
 

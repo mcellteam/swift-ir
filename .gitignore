@@ -1,8 +1,8 @@
 
-source/Qt/daisy_logs/**
-source/Qt/daisy_logs
-source/Qt/joel_notes.txt
-source/Qt/_stylesheet.qss
+source/alignEM/daisy_logs/**
+source/alignEM/daisy_logs
+source/alignEM/joel_notes.txt
+source/alignEM/_stylesheet.qss
 Cross_Platform/*
 .idea/*
 Image_Libs/*
@@ -34,22 +34,22 @@ libraries
 *.pyc
 *.json
 source/.DS_Store
-source/Qt/.DS_Store
-source/Qt/afm_1.dat
-source/Qt/alignem2.py
-source/Qt/alignem_swift2.py
-source/Qt/bias_det_1.dat
-source/Qt/bias_rot_1.dat
-source/Qt/bias_scale_x_1.dat
-source/Qt/bias_scale_y_1.dat
-source/Qt/bias_skew_x_1.dat
-source/Qt/bias_x_1.dat
-source/Qt/bias_y_1.dat
-source/Qt/c_afm_1.dat
-source/Qt/idle.py
-source/Qt/out/
-source/Qt/snr_1.dat
-source/Qt/daisy_logs/
+source/alignEM/.DS_Store
+source/alignEM/afm_1.dat
+source/alignEM/alignem2.py
+source/alignEM/alignem_swift2.py
+source/alignEM/bias_det_1.dat
+source/alignEM/bias_rot_1.dat
+source/alignEM/bias_scale_x_1.dat
+source/alignEM/bias_scale_y_1.dat
+source/alignEM/bias_skew_x_1.dat
+source/alignEM/bias_x_1.dat
+source/alignEM/bias_y_1.dat
+source/alignEM/c_afm_1.dat
+source/alignEM/idle.py
+source/alignEM/out/
+source/alignEM/snr_1.dat
+source/alignEM/daisy_logs/
 **/.DS_Store
 
 

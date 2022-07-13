@@ -1271,7 +1271,7 @@ except:
 global plotting_available
 plotting_available = not ( None in (np, sps, plt) )
 
-# Code common to GTK and Qt
+# Code common to GTK and alignEM
 
 global image_hbox
 image_hbox = None
@@ -6348,7 +6348,7 @@ def qt_main():
   options.add_argument("-f", "--file", type=str, required=True)
   options.add_argument("-t", "--tiff", type=str, required=False)
   args = options.parse_args()
-  print ( "Qt Mode: " + str(args) )
+  print ( "alignEM Mode: " + str(args) )
   fname = ''
   if 'file' in args:
     fname = args.file
@@ -6360,7 +6360,7 @@ def qt_main():
 
   #__import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
-  # Qt Application
+  # alignEM Application
   app = QApplication(sys.argv)
 
   window = app_window.MainWindow(fname)

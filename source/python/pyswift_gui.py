@@ -1993,7 +1993,7 @@ def clear_snr_skip_to_skip_callback ( flag ):
   return True
 
 
-import _alignment_process
+import alignment__process
 
 
 class StringBufferFile:
@@ -2522,10 +2522,10 @@ def run_alignment_callback ( align_all ):
         print_debug ( 10, "\nAligning: i=" + str(i) + " to j=" + str(j) )
         print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + scale_dest_path + " )" )
 
-        alignment_layer_list[j].align_proc = alignment_process.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
-                                                                                  scale_dest_path, layer_dict=layer_dict,
-                                                                                  x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
-                                                                                  cumulative_afm=c_afm)
+        alignment_layer_list[j].align_proc = _alignment_process.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+                                                                                   scale_dest_path, layer_dict=layer_dict,
+                                                                                   x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
+                                                                                   cumulative_afm=c_afm)
         print_debug ( 70, "\nBefore alignment:\n" )
         print_debug ( 70, str(alignment_layer_list[j].align_proc) )
 
@@ -3883,14 +3883,14 @@ def menu_callback ( widget, data=None ):
 
       # This is a toggle
       if align_swiftir.global_swiftir_mode == 'python':
-        alignment_process.global_swiftir_mode = 'c'
+        _alignment_process.global_swiftir_mode = 'c'
       else:
         align_swiftir.global_swiftir_mode = 'python'
 
     elif command == "DoSwims":
 
       # This is a toggle
-      if alignment_process.global_do_swims == True:
+      if _alignment_process.global_do_swims == True:
         align_swiftir.global_do_swims = False
       else:
         align_swiftir.global_do_swims = True
@@ -4108,7 +4108,7 @@ def menu_callback ( widget, data=None ):
                 print ( mir_script )
 
                 # Run the actual mir script
-                alignment_process.run_command ("mir", arg_list=[], cmd_input=mir_script)
+                alignment__process.run_command ("mir", arg_list=[], cmd_input=mir_script)
                 first_pass = False
 
     elif command == "DefGrid":
@@ -4262,7 +4262,7 @@ def menu_callback ( widget, data=None ):
 
                   # print ( mir_script )
 
-                  _alignment_process.run_command ("mir", arg_list=[], cmd_input=mir_script)
+                  alignment__process.run_command ("mir", arg_list=[], cmd_input=mir_script)
 
                 f1 = f2
 
@@ -4425,7 +4425,7 @@ def menu_callback ( widget, data=None ):
       global debug_level
       debug_level = int(command[6:])
       print_debug ( -1, "Changing debug level from " + str(align_swiftir.debug_level) + " to " + str(debug_level) )
-      alignment_process.debug_level = debug_level
+      _alignment_process.debug_level = debug_level
 
     else:
 
@@ -4699,8 +4699,8 @@ def main():
     # zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Limited Zoom",   ("LimZoom", zpa_original ) )
     zpa_original.add_menu_item ( this_menu, menu_callback, "Max Image Size",   ("MaxFileSize", zpa_original ) )
     zpa_original.add_menu_sep  ( this_menu )
-    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Perform Swims", ("DoSwims", zpa_original ), default=alignment_process.global_do_swims)
-    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Update CFMs", ("DoCFMs", zpa_original ), default=alignment_process.global_do_cfms)
+    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Perform Swims", ("DoSwims", zpa_original ), default=alignment__process.global_do_swims)
+    zpa_original.add_checkmenu_item (this_menu, menu_callback, "Update CFMs", ("DoCFMs", zpa_original ), default=_alignment_process.global_do_cfms)
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Generate Images",   ("GenImgs", zpa_original ), default=align_swiftir.global_gen_imgs )
     zpa_original.add_menu_sep  ( this_menu )
     zpa_original.add_checkmenu_item ( this_menu, menu_callback, "Use C Version",   ("UseCVersion", zpa_original ), default=False )

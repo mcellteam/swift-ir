@@ -29,6 +29,8 @@ pyqtwebengine = "*"
 pyqtconsole = "*"
 tqdm = "*"
 dill = "*"
+blosc = "*"
+pyside6 = "*"
 
 [dev-packages]
 
