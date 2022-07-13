@@ -1349,3 +1349,33 @@
     #                     crop_window_width = w_h[0]
     #                     crop_window_height = w_h[0]
     #                 print_debug(10, "Crop Window will be " + str(crop_window_width) + "x" + str(crop_window_height))
+
+
+
+    # if self.role == crop_mode_role:
+    #     if crop_mode_disp_rect != None:
+    #         painter.setPen(QPen(QColor(255, 100, 100, 255), 3))
+    #         rect_to_draw = QRectF(self.win_x(crop_mode_disp_rect[0][0]), self.win_y(crop_mode_disp_rect[0][1]),
+    #                               self.win_x(crop_mode_disp_rect[1][0] - crop_mode_disp_rect[0][0]),
+    #                               self.win_y(crop_mode_disp_rect[1][1] - crop_mode_disp_rect[0][1]))
+    #         painter.drawRect(rect_to_draw)
+
+    # Note: It's difficult to use this on a Mac because of the focus policy combined with the shared single menu.
+    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+
+    # print("standalone function exiting paintEvent")
+
+
+                 # ['Define Waves', None, self.not_yet, None, None, None],
+                 # ['Make Waves', None, self.not_yet, None, None, None],
+                 # ['-', None, None, None, None, None],
+                 # ['Define Grid', None, self.not_yet, None, None, None],
+                 # ['Grid Align', None, self.not_yet, None, None, None],
+                 # ['-', None, None, None, None, None],
+                 # ['Show Waves', None, self.not_yet, False, "GridMode", None],
+                 # ['Show Grid Align', None, self.not_yet, False, "GridMode", None],
+                 # ['Show Aligned', None, self.not_yet, True, "GridMode", None],
+                 # ['-', None, None, None, None, None],
+                 # ['&Python Console', 'Ctrl+P', self.py_console, None, None, None], #orig
+                 # ['&Python Console', 'Ctrl+P', console, None, None, None],
+                 # ['-', None, None, None, None, None],

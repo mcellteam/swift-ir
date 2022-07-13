@@ -116,7 +116,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
         image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)'''
 
         perc_complete = em.percentage(task_id, n_tasks)
-        # sys.stderr.write('mp_queue.py | Worker %d:  Running Task %d\n' % (worker_id, task_id))
+        # sys.stderr.write('mp_queue.py | RunnableWorker %d:  Running Task %d\n' % (worker_id, task_id))
         # sys.stderr.write("Total complete: %s\n" % perc_complete)
 
         t0 = time.time()
@@ -129,7 +129,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
             outs = '' if outs == None else outs.decode('utf-8')
             errs = '' if errs == None else errs.decode('utf-8')
             rc = task_proc.returncode
-            # sys.stderr.write('mp_queue.py | Worker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
+            # sys.stderr.write('mp_queue.py | RunnableWorker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
         except:
             outs = ''
             errs = 'TaskQueue worker %d : task exception: %s' % (worker_id, str(sys.exc_info()[0]))
@@ -146,7 +146,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     task_q.task_done()
     # task_q.close() #jy
     # time.sleep(1)
-    # sys.stderr.write('<<<<<<<<  Worker %d Finished' % (worker_id))
+    # sys.stderr.write('<<<<<<<<  RunnableWorker %d Finished' % (worker_id))
 
 
 # def pbar_listener(pbar_q, n_tasks:int, progress_callback=None):
@@ -247,9 +247,9 @@ class TaskQueue:
         print('mp_queue.start | self.n_tasks = ', self.n_tasks)
         self.pbar_proc = self.ctx.Process(target=pbar_listener, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
-        cfg.main_window.hud.post('Running Worker Threads...')
+        cfg.main_window.hud.post('Running RunnableWorker Threads...')
         for i in range(self.n_workers):
-            sys.stderr.write('Restarting Worker %d >>>>>>>>' % i)
+            sys.stderr.write('Restarting RunnableWorker %d >>>>>>>>' % i)
             # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers))
             p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
             # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
@@ -268,7 +268,7 @@ class TaskQueue:
         self.pbar_proc = self.ctx.Process(target=pbar_listener, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
         for i in range(self.n_workers):
-            sys.stderr.write('Restarting Worker %d >>>>>>>>' % i)
+            sys.stderr.write('Restarting RunnableWorker %d >>>>>>>>' % i)
             # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers))
             p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
             # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
@@ -632,7 +632,7 @@ Starting mp_queue with args:
 #     # for task_id, task in tqdm(iter(task_q.get, 'END_TASKS')):
 #     for task_id, task in iter(task_q.get, 'END_TASKS'):
 #         if print_switch:
-#             sys.stderr.write('mp_queue.py | Worker %d:  Running Task %d\n' % (worker_id, task_id))
+#             sys.stderr.write('mp_queue.py | RunnableWorker %d:  Running Task %d\n' % (worker_id, task_id))
 #         t0 = time.time()
 #         outs = ''
 #         errs = ''
@@ -646,7 +646,7 @@ Starting mp_queue with args:
 #             errs = '' if errs == None else errs.decode('utf-8')
 #             rc = task_proc.returncode
 #             if print_switch:
-#                 sys.stderr.write('mp_queue.py | Worker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
+#                 sys.stderr.write('mp_queue.py | RunnableWorker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
 #         except:
 #
 #             outs = ''
@@ -660,7 +660,7 @@ Starting mp_queue with args:
 #
 #     result_q.close()
 #     # result_q.join_thread()
-#     sys.stderr.write('Worker %d:  Stopping\n' % (worker_id))
+#     sys.stderr.write('RunnableWorker %d:  Stopping\n' % (worker_id))
 #     task_q.task_done()
 #
 #
@@ -698,7 +698,7 @@ Starting mp_queue with args:
 #         self.workers = []
 #
 #         for i in range(self.n_workers):
-#             sys.stderr.write('    Restarting Worker %d\n' % (i))
+#             sys.stderr.write('    Restarting RunnableWorker %d\n' % (i))
 #             p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue))
 #             self.workers.append(p)
 #             self.workers[i].start()

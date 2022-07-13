@@ -21,7 +21,7 @@ __all__ = ['get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'are_images_imported', 'print_sanity_check', 'is_cur_scale_exported',
            'get_num_imported_images', 'print_exception', 'get_scale_key', 'get_scale_val',
            'set_scales_from_string', 'makedirs_exist_ok', 'force_project_defaults',
-           'clear_all_skips', 'verify_image_file',
+           'clear_all_skips', 'verify_image_file', 'print_debug',
            'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project']
 
 logger = logging.getLogger(__name__)
@@ -763,13 +763,9 @@ The basic rules for global keyword in Python are:
 '''
 
 ########################################################################################################################
-########################################################################################################################
-########################################################################################################################
 
-debug_level = 50
-
-# For now, always use the limited argument version
 def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
+    debug_level = 50
     if level <= debug_level:
         if p1 == None:
             sys.stderr.write("" + '\n')
