@@ -31,7 +31,7 @@
 # @Slot()
 # def set_current_scale(self, checked):
 #     print("@Slot Setting current scale | MainWindow.set_current_scale...")
-#     local_cur_scale = get_cur_scale()
+#     local_cur_scale = get_cur_layer()
 #     print_debug ( 30, "Set current Scale to " + str(self.sender().text()) )
 #     old_scale = local_cur_scale
 #     new_scale = get_scale_key ( str ( self.sender().text() ) )
@@ -1308,3 +1308,44 @@
               ]
 
         '''
+
+            # @Slot()
+    # def set_crop_square(self):
+    #     global crop_window_mode
+    #     crop_window_mode = 'mouse_square'
+    #     print_debug(10, "Crop window will be square")
+    #
+    # @Slot()
+    # def set_crop_rect(self):
+    #     global crop_window_mode
+    #     crop_window_mode = 'mouse_rectangle'
+    #     print_debug(10, "Crop window will be rectangular")
+    #
+    # @Slot()
+    # def set_crop_fixed(self):
+    #     global crop_window_mode
+    #     global crop_window_width
+    #     global crop_window_height
+    #
+    #     crop_window_mode = 'mouse_center_fixed'
+    #     current = str(crop_window_width) + 'x' + str(crop_window_height)
+    #     input_str, ok = QInputDialog().getText(None, "Set Crop Window Size", "Current: " + current,
+    #                                            echo=QLineEdit.Normal, text=current)
+    #     if ok:
+    #         wh = input_str.strip()
+    #         if len(wh) > 0:
+    #             w_h = []
+    #             if 'x' in wh:
+    #                 w_h = [f.strip() for f in wh.split('x')]
+    #             elif ' ' in wh:
+    #                 w_h = [f.strip() for f in wh.split(' ')]
+    #             if len(w_h) > 0:
+    #                 if len(w_h) >= 2:
+    #                     # Set independently
+    #                     crop_window_width = w_h[0]
+    #                     crop_window_height = w_h[1]
+    #                 else:
+    #                     # Set together
+    #                     crop_window_width = w_h[0]
+    #                     crop_window_height = w_h[0]
+    #                 print_debug(10, "Crop Window will be " + str(crop_window_width) + "x" + str(crop_window_height))

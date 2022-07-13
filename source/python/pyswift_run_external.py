@@ -15,7 +15,7 @@ from pyswift_gui import graphic_text
 from pyswift_gui import str2D
 from pyswift_gui import print_debug
 
-import _alignment_process
+import alignment__process
 
 
 def run_alignment ( align_all,
@@ -242,7 +242,7 @@ def run_alignment ( align_all,
       print_debug ( 40, "Aligning: i=" + str(i) + " to j=" + str(j) )
       print_debug ( 50, "  Calling align_swiftir.align_images( " + alignment_layer_list[i].base_image_name + ", " + alignment_layer_list[j].base_image_name + ", " + destination_path + " )" )
 
-      alignment_layer_list[j].align_proc = _alignment_process.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
+      alignment_layer_list[j].align_proc = alignment__process.alignment_process (alignment_layer_list[i].base_image_name, alignment_layer_list[j].base_image_name,
                                                                                  destination_path, layer_dict=layer_dict,
                                                                                  x_bias=alignment_layer_list[j].bias_dx, y_bias=alignment_layer_list[j].bias_dy,
                                                                                  cumulative_afm=prev_afm)

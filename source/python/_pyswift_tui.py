@@ -5,7 +5,7 @@ import os
 import errno
 import numpy as np
 import scipy.stats as sps
-import _alignment_process
+import alignment__process
 from python_swiftir import swiftir
 import json
 import copy
@@ -219,7 +219,7 @@ def run_json_project ( project, alignment_option, scale_done, use_scale, scale_t
 
   print ( 80*"!" )
   print ( "run_json_project called with: " + str([alignment_option, scale_done, use_scale, scale_tbd, swiftir_code_mode]) )
-  alignment_process.global_swiftir_mode = swiftir_code_mode
+  _alignment_process.global_swiftir_mode = swiftir_code_mode
 
   scales = sorted([ int(s[len('scale_'):]) for s in project['data']['scales'].keys() ])
   destination_path = project['data']['destination_path']
