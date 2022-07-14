@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import inspect
 from qtpy.QtGui import QPainter, QPen, QColor
 from qtpy.QtWidgets import QWidget, QRubberBand
 from qtpy.QtCore import Qt, QPointF, QRectF, QSize
@@ -117,6 +118,7 @@ class ZoomPanWidget(QWidget):
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
+        print("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
         # print("  ZoomPanWidget is centering image for " + str(self.role))
 
         if cfg.project_data != None:
