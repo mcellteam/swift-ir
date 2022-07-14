@@ -29,7 +29,7 @@ python3 -m pip install git+https://github.com/funkelab/daisy.git#egg=daisy
 -------- Clone Repo & Switch Branch --------
 git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
-git checkout joel-dev-pyside6
+git checkout joel-dev-alignem
 
 -------- Compile C Binaries --------
 MacOS: Precompiled binaries for MacOS are bundled, xand will be used automatically
@@ -59,7 +59,7 @@ git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
 git checkout joel-dev-alignem
 pip install psutils PySide6 scikit-image dask neuroglancer zarr matplotlib opencv-python imagecodecs
-and lastly compile c code!
+and lastly compile c code!git
 
 MacOS Tips:
 
