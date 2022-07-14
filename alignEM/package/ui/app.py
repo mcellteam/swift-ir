@@ -1911,7 +1911,7 @@ class MainWindow(QMainWindow):
             self.hud.post('There Was a Problem. Try Re-aligning First.', logging.ERROR);  self.set_idle()
 
     def make_zarr_multithreaded(self, aligned_path, n_scales, cname, clevel, destination_path, ds_name):
-        os.system("python3 convert_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (
+        os.system("python3 ../convert_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (
         aligned_path, str(n_scales), str(cname), str(clevel), destination_path, ds_name))
 
     def export_zarr(self):
@@ -1971,7 +1971,7 @@ class MainWindow(QMainWindow):
         self.dest_path = destination_path
         if self.cname == "none":
             # os.system("python3 convert_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -nC 1 -d " + destination_path + " -n " + ds_name)
-            os.system("python3 convert_zarr.py %s -c '64,64,64' -nS %s -nC 1 -d %s -n %s" % (
+            os.system("python3 ../convert_zarr.py %s -c '64,64,64' -nS %s -nC 1 -d %s -n %s" % (
             self.aligned_path, self.n_scales, self.dest_path, self.ds_name))
             # self.set_status('Idle')
             self.set_idle()
@@ -1988,7 +1988,7 @@ class MainWindow(QMainWindow):
 
             # make_zarr_multithreaded(aligned_path, n_scales, cname, clevel, destination_path, ds_name) # THIS WORKS
 
-            os.system("python3 convert_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (
+            os.system("python3 ../convert_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (
             self.aligned_path, str(self.n_scales), str(self.cname), str(self.clevel), destination_path, self.ds_name))
             # os.system("python3 convert_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -cN " + str(cname) + " -cL " + str(clevel) + " -d " + destination_path + " -n " + ds_name)
             # self.set_status('Idle')
