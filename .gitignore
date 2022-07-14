@@ -50,6 +50,7 @@ source/alignEM/idle.py
 source/alignEM/out/
 source/alignEM/snr_1.dat
 source/alignEM/daisy_logs/
+package/ui/daisy_logs/
 **/.DS_Store
 
 

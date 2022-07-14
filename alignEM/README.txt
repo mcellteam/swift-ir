@@ -40,8 +40,8 @@ Linux: Compilation requires a software called FFTW. Try:
        make -f makefile.linux
 
 -------- Run alignEM-SWiFT --------
-# navigate to /swift-ir/source/Qt
-python3 run.py
+# navigate to /swift-ir/alignEM
+python3 main.py
 
 -----------------------------------
 -----------------------------------
