@@ -35,7 +35,7 @@ from package.em_utils import *
 from package.scale_pyramid import add_layer
 from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 from package.get_image_size import get_image_size
-from package.compute_affines import solve_affine
+from package.compute_affines import compute_affines
 from package.generate_aligned_images import generate_aligned_images
 from package.generate_scales import generate_scales
 from .heads_up_display import HeadsUpDisplay
@@ -169,7 +169,7 @@ def link_all_stacks():
         skip_list = []
         for layer_index in range(len(cfg.project_data['data']['scales'][scale_key]['alignment_stack'])):
             if cfg.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
-                print('  appending layer ' + str(layer_index) + ' to skip_list')
+                print('  appending layer ' + str(layer_index) + ' to skip_list')       #0714 <-- issue w/ scope
                 skip_list.append(layer_index)  # skip
 
         for layer_index in range(len(cfg.project_data['data']['scales'][scale_key]['alignment_stack'])):
@@ -1801,8 +1801,10 @@ class MainWindow(QMainWindow):
         self.hud.post('Scale image hierarchy will have these scale levels: %s' % input_val)
         # worker = RunnableWorker(self.execute_this_fn) # Any other args, kwargs are passed to the run function
 
-        try:  generate_scales()
-        except:  cfg.main_window.hud.post('Generating Scales Triggered an Exception',logging.WARNING)
+        try:
+            generate_scales()
+        except:
+            cfg.main_window.hud.post('Generating Scales Triggered an Exception',logging.WARNING)
         else:
             link_all_stacks()
             self.save_project()
@@ -1845,31 +1847,32 @@ class MainWindow(QMainWindow):
             return
         self.status.showMessage('Aligning...')
         try:
-            # solve_affine(use_scale=get_cur_scale_key())
-            solve_affine(use_scale=get_cur_scale_key())
+            compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1, generate_images=True)
         except:
             print_exception()
-        if is_cur_scale_aligned():
-            self.update_alignment_status_indicator()
-            # self.update_win_self() #0606 remove
-            if are_aligned_images_generated():
-                self.save_project()
-                self.set_progress_stage_3()
-                self.center_all_images()
-                img_size = get_image_size(
-                        cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0]['images']['base'][
-                            'filename'])
-                # self.alignment_groupbox.setTitle("Align Scale %s of %d | %sx%spx | %s ") #-0713
-                self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")
-                self.set_idle()
-            else:
-                self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
-                self.set_idle()
-                return
-        else:
+
+        if not is_cur_scale_aligned():
             self.hud.post('Something went wrong during alignment.', logging.ERROR)
             self.set_idle()
             return
+
+        self.update_alignment_status_indicator()
+        self.update_win_self()
+        if are_aligned_images_generated():
+            self.save_project()
+            self.set_progress_stage_3()
+            self.center_all_images()
+            img_size = get_image_size(
+                    cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0]['images']['base'][
+                        'filename'])
+            # self.alignment_groupbox.setTitle("Align Scale %s of %d | %sx%spx | %s ") #-0713
+            self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")
+            self.set_idle()
+        else:
+            self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
+            self.set_idle()
+            return
+
         self.set_progress_stage_3()
         self.save_project()
         self.read_project_data_update_gui()

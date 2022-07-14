@@ -4,15 +4,15 @@ from . import ui
 from .ui import *
 __all__.extend(ui.__all__)
 __all__.append('ui')
-#
+
 # from . import swiftir
-# from package.swiftir import *
+# from .swiftir import *
 # __all__.extend(swiftir.__all__)
 #
 # from . import em_utils
-# from package.em_utils import *
+# from .em_utils import *
 # __all__.extend(em_utils.__all__)
-#
+
 # from . import align_swiftir
 # from package.align_swiftir import *
 # __all__.extend(align_swiftir.__all__)
@@ -24,7 +24,7 @@ __all__.append('ui')
 # from . import pyswift_tui
 # from package.pyswift_tui import *
 # __all__.extend(pyswift_tui.__all__)
-#
+
 #
 #
 # # __all__.extend(swiftir.__all__)
@@ -47,7 +47,7 @@ __all__.append('ui')
 # from .swiftir import *
 # from .mp_queue import TaskQueue
 # # from .run_json_project import run_json_project
-# from .compute_affines import solve_affine
+# from .compute_affines import compute_affines
 # from .generate_aligned_images import generate_aligned_images
 # from .generate_scales import generate_scales
 # from .get_image_size import get_image_size
