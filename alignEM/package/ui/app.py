@@ -2,8 +2,7 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
-import os, copy, json, inspect, concurrent.futures, collections, multiprocessing, logging, textwrap
-import sys
+import os, sys, copy, json, inspect, collections, multiprocessing, logging, textwrap
 from random import randint
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
@@ -44,6 +43,7 @@ from .image_library import ImageLibrary, SmartImageLibrary
 from .runnable_server import RunnableServer
 from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
+from .. import save_bias_analysis
 
 __all__ = ['MainWindow']
 
@@ -1891,13 +1891,21 @@ class MainWindow(QMainWindow):
             )
         except:
             print_exception()
+        try:
+            bias_data_path = os.path.join(project['data']['destination_path'], project['data']['current_scale'],
+                                          'bias_data')
+            save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'],
+                               bias_data_path)  # <-- call to save bias data
+        except:
+            print_exception()
+
         if are_aligned_images_generated():
             self.save_project()  # hack to make update_alignment_status_indicator work. afm_1.dat only in memory.
             self.update_alignment_status_indicator()
             self.set_progress_stage_3()
             self.read_project_data_update_gui()
             self.center_all_images()
-            self.save_propject()
+            self.save_project()
             self.hud.post('Image Generation Complete')
         else:
             self.hud.post('There Was a Problem. Try Re-aligning First.', logging.ERROR);  self.set_idle()
@@ -3087,7 +3095,6 @@ class MainWindow(QMainWindow):
     def center_all_images(self, all_images_in_stack=True):
         '''NOTE: CALLS COULD BE REDUCED BY CENTERING ALL STACKS OF IMAGES NOT JUST CURRENT SCALE
         self.image_panel is a MultiImagePanel object'''
-
         logging.info("center_all_images | called by " + inspect.stack()[1].function)
         self.image_panel.center_all_images(all_images_in_stack=all_images_in_stack)
 

@@ -99,13 +99,14 @@ def generate_scales(progress_callback=None):
                                     try:
                                         os.unlink(outfile_name)
                                     except:
-                                        print("generate_scales | Error UnLinking " + outfile_name)
+                                        # print("generate_scales | Error UnLinking " + outfile_name)
+                                        pass
                                     try:
                                         # print("generate_scales | Linking from " + abs_file_name + " to " + outfile_name)
                                         os.symlink(abs_file_name, outfile_name)
                                     except:
-                                        logging.warning("generate_scales | Unable to link from " + abs_file_name + " to " + outfile_name)
-                                        logging.warning("generate_scales | Copying file instead")
+                                        # logging.warning("generate_scales | Unable to link from " + abs_file_name + " to " + outfile_name)
+                                        # logging.warning("generate_scales | Copying file instead")
                                         # Not all operating systems allow linking for all users (Windows 10, for example, requires admin rights)
                                         try:
                                             shutil.copy(abs_file_name, outfile_name)

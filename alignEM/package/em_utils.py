@@ -633,22 +633,19 @@ def is_any_scale_aligned_and_generated() -> bool:
 
 def is_scale_aligned(scale: str) -> bool:
     '''Returns boolean based on whether arg scale is aligned '''
-    print('is_scale_aligned | called by ', inspect.stack()[1].function)
-
+    # print('is_scale_aligned | called by ', inspect.stack()[1].function)
     try:
-        project_dir = cfg.project_data['data']['destination_path']
-        bias_dir = os.path.join(project_dir, scale, 'bias_data')
-        afm_1_file = os.path.join(bias_dir, 'afm_1.dat')
+        afm_1_file = os.path.join(cfg.project_data['data']['destination_path'], scale, 'bias_data', 'afm_1.dat')
         if os.path.exists(afm_1_file):
             if os.path.getsize(afm_1_file) > 1:
                 # check if file is large than 1 byte
-                print('is_scale_aligned | Returning True')
+                # print('is_scale_aligned | Returning True')
                 return True
             else:
-                print('is_scale_aligned | Returning False (afm_1.dat exists but contains no data)')
-
+                return False
+                # print('is_scale_aligned | Returning False (afm_1.dat exists but contains no data)')
         else:
-            print('is_scale_aligned | Returning False (afm_1.dat does not exist)')
+            # print('is_scale_aligned | Returning False (afm_1.dat does not exist)')
             return False
     except:
         print('is_scale_aligned | EXCEPTION | Unexpected function behavior - Returning False')
