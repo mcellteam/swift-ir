@@ -14,6 +14,7 @@
       <sourceFolder url="file://$MODULE_DIR$/alignEM/package/lib" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/alignEM/package/ui" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/alignEM/package/utils" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/alignEM" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/.idea" />
       <excludeFolder url="file://$MODULE_DIR$/source/alignEM/releases" />
       <excludeFolder url="file://$MODULE_DIR$/source/alignEM/gtk_all_in_one" />

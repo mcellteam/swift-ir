@@ -45,7 +45,8 @@ logging.basicConfig(
 def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     '''Called one time without arguments by 'do_alignment' '''
     logging.info('\ngenerate_aligned_images >>>>>>>>\n')
-    if use_scale == None:  use_scale=em.get_cur_scale_key()
+    if use_scale == None:
+        use_scale=em.get_cur_scale_key()
     QThread.currentThread().setObjectName('ApplyAffines')
     print('generate_aligned_images | use_scale = %s' % use_scale)
     scale_key = get_scale_key(use_scale)
@@ -56,15 +57,17 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
         remove_aligned_images(start_layer=start_layer)
     cfg.main_window.hud.post('Propogating AFMs to generate CFMs at each layer...')
     null_bias = cfg.project_data['data']['scales'][get_cur_scale_key()]['null_cafm_trends']
-    try:     SetStackCafm(cfg.project_data['data']['scales'][scale_key], null_biases=null_bias)
-    except:  print_exception()
+    try:
+        SetStackCafm(cfg.project_data['data']['scales'][scale_key], null_biases=null_bias)
+    except:
+        print_exception()
     destination_path = cfg.project_data['data']['destination_path']
     bias_data_path = os.path.join(destination_path, scale_key, 'bias_data')
     print('generate_aligned_images | bias (.dat) path=%s' % bias_data_path)
-    try:
-        save_bias_analysis(cfg.project_data['data']['scales'][scale_key]['alignment_stack'], bias_data_path)
-    except:
-        print('generate_aligned_images | EXCEPTION | There was a problem saving bias analysis')
+    # try:
+    #     save_bias_analysis(cfg.project_data['data']['scales'][scale_key]['alignment_stack'], bias_data_path)
+    # except:
+    #     print('generate_aligned_images | EXCEPTION | There was a problem saving bias analysis')
     use_bounding_rect = cfg.project_data['data']['scales'][scale_key]['use_bounding_rect']
     with open(os.path.join(bias_data_path, 'bounding_rect.dat'), 'w') as file:
         if use_bounding_rect:
@@ -114,6 +117,9 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     cfg.main_window.hud.post('Image Generation (ImageApplyAffine) Completed in %.2f seconds' % (dt))
     task_queue.stop()
     del task_queue
+
+    bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], use_scale, 'bias_data')
+    save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path)  # <-- call to save bias data
 
     cfg.main_window.hud.post('Wrapping up...')
     cfg.main_window.center_all_images()

@@ -15,9 +15,13 @@ logging.basicConfig(
 )
 
 def save_bias_analysis(al_stack, bias_data_path):
-    '''Save bias analysis results to named .dat files.'''
+    """Saves bias analysis results to separate '.dat' files in the project directory.
+    :param al_stack: The alignment data to be saved
+    :type al_stack: dict
+    :param bias_data_path: Path to where the bias data will be saved.
+    :type bias_data_path: str"""
     logging.info('save_bias_analysis >>>>>>>>')
-    logging.info('Saving Bias Data (.dat)...')
+    logging.info('Saving Bias Data (.dat) at path %s' % bias_data_path)
 
     snr_file = open(os.path.join(bias_data_path, 'snr_1.dat'), 'w')
     bias_x_file = open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'w')

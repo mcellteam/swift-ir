@@ -1835,6 +1835,7 @@ class MainWindow(QMainWindow):
         self.save_project()
         self.set_idle()
 
+
     @Slot()
     def run_alignment(self) -> None:
         print('run_alignment >>>>>>>>')
@@ -1855,6 +1856,25 @@ class MainWindow(QMainWindow):
             self.hud.post('Something went wrong during alignment.', logging.ERROR)
             self.set_idle()
             return
+
+        # try:
+        #     generate_aligned_images(
+        #             use_scale=get_cur_scale_key(),
+        #             start_layer=0,
+        #             num_layers=-1
+        #     )
+        # except:
+        #     self.hud.post('Something went wrong during alignment.', logging.ERROR)
+        #     self.set_idle()
+        #     return
+
+
+
+        # #0615 fixed bug where bias_data is only saved if/when images are generated
+        # print('Saving bias analysis...')
+        # use_scale = project['data']['current_scale']
+        # bias_data_path = os.path.join(project_data['data']['destination_path'], project_data['data']['current_scale'], 'bias_data')
+        # save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
 
         self.update_alignment_status_indicator()
         self.update_win_self()
