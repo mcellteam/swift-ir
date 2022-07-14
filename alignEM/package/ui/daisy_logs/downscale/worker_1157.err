@@ -1,0 +1,45 @@
+                                                                                                                                                              ERROR:daisy.client:Block downscale/11549 with read ROI [9600:9700, 2048:2304, 7424:7680] (100, 256, 256) and write ROI [9600:9700, 2048:2304, 7424:7680] (100, 256, 256) failed in worker 1157
+Traceback (most recent call last):
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/client.py", line 85, in acquire_block
+    yield block
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/task.py", line 179, in _process_blocks
+    self.process_function(block)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 688, in <lambda>
+    process_function=lambda b: downscale_block(
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 640, in downscale_block
+    out_data = skimage.measure.block_reduce(in_data, factor, np.mean)
+NameError: name 'skimage' is not defined
+downscale ▶:   0%|                                                                                  | 0/7056 [00:33<?, ?blocks/s, ⧗=0, ▶=41, ✔=0, ✗=5545, ∅=0]                                                                                                                                                              ERROR:daisy.client:Block downscale/774 with read ROI [9600:9700, 2560:2816, 512:768] (100, 256, 256) and write ROI [9600:9700, 2560:2816, 512:768] (100, 256, 256) failed in worker 1157
+Traceback (most recent call last):
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/client.py", line 85, in acquire_block
+    yield block
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/task.py", line 179, in _process_blocks
+    self.process_function(block)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 688, in <lambda>
+    process_function=lambda b: downscale_block(
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 640, in downscale_block
+    out_data = skimage.measure.block_reduce(in_data, factor, np.mean)
+NameError: name 'skimage' is not defined
+downscale ▶:   0%|                                                                                  | 0/7056 [00:33<?, ?blocks/s, ⧗=0, ▶=41, ✔=0, ✗=5545, ∅=0]                                                                                                                                                              ERROR:daisy.client:Block downscale/5564 with read ROI [9600:9700, 2816:3072, 4352:4608] (100, 256, 256) and write ROI [9600:9700, 2816:3072, 4352:4608] (100, 256, 256) failed in worker 1157
+Traceback (most recent call last):
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/client.py", line 85, in acquire_block
+    yield block
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/task.py", line 179, in _process_blocks
+    self.process_function(block)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 688, in <lambda>
+    process_function=lambda b: downscale_block(
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 640, in downscale_block
+    out_data = skimage.measure.block_reduce(in_data, factor, np.mean)
+NameError: name 'skimage' is not defined
+downscale ▶:   0%|                                                                                  | 0/7056 [00:33<?, ?blocks/s, ⧗=0, ▶=41, ✔=0, ✗=5545, ∅=0]                                                                                                                                                              ERROR:daisy.client:Block downscale/17419 with read ROI [9600:9700, 3072:3328, 7936:8192] (100, 256, 256) and write ROI [9600:9700, 3072:3328, 7936:8192] (100, 256, 256) failed in worker 1157
+Traceback (most recent call last):
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/client.py", line 85, in acquire_block
+    yield block
+  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/daisy/task.py", line 179, in _process_blocks
+    self.process_function(block)
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 688, in <lambda>
+    process_function=lambda b: downscale_block(
+  File "/Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/scale_pyramid.py", line 640, in downscale_block
+    out_data = skimage.measure.block_reduce(in_data, factor, np.mean)
+NameError: name 'skimage' is not defined
+downscale ▶:   0%|                                                                                  | 0/7056 [00:34<?, ?blocks/s, ⧗=0, ▶=41, ✔=0, ✗=5545, ∅=0]
