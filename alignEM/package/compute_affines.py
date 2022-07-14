@@ -25,6 +25,14 @@ from .save_bias_analysis import save_bias_analysis
 
 __all__ = ['compute_affines']
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(message)s",
+        datefmt='%H:%M:%S',
+        handlers=[ logging.StreamHandler() ]
+)
+
 # def compute_affines():
 def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_images=False):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
@@ -46,36 +54,31 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
     rename_switch = False
     if use_scale == None:
         use_scale = get_cur_scale_key()
+
     # Create links or copy files in the expected directory structure
     # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
     scale_dict = cfg.project_data['data']['scales'][use_scale]
     alignment_dict = cfg.project_data['data']['scales'][use_scale]['alignment_stack']
     alignment_option = scale_dict['method_data']['alignment_option']
+    logging.info('Computing Affine Transformations with:')
+    logging.info('use_scale          = %s' % use_scale)
+    logging.info('cfg.CODE_MODE      = %s' % cfg.CODE_MODE)
+    logging.info('cfg.PARALLEL_MODE  = %s' % cfg.PARALLEL_MODE)
+    logging.info('cfg.USE_FILE_IO    = %d' % cfg.USE_FILE_IO)
+    logging.info('start_layer        = %d' % start_layer)
+    logging.info('num_layers         = %d' % num_layers)
+    logging.info('generate_images    = %s' % generate_images)
 
-    print('Computing Affine Transformations with:')
-    print('use_scale          = ', use_scale)
-    print('cfg.CODE_MODE          = ', cfg.CODE_MODE)
-    print('cfg.PARALLEL_MODE      = ', cfg.PARALLEL_MODE)
-    print('cfg.USE_FILE_IO        = ', cfg.USE_FILE_IO)
-    print('start_layer        = ', start_layer)
-    print('num_layers         = ', num_layers)
-    print('generate_images    = ', generate_images)
-
-    cfg.main_window.read_gui_update_project_data()
+    cfg.main_window.alignment_status_checkbox.setChecked(False)
     remove_aligned_images(start_layer=start_layer)
-    #******************************************
+    cfg.main_window.hud.post("Using SWiFT-IR to Compute Affine Transformations (Affine: %s, Scale: %s)..."
+                             % (alignment_option, use_scale[-1]))
+
     # ensure_proper_data_structure() #0709
-    #******************************************
+
     if rename_switch:
         rename_layers(use_scale=use_scale, alignment_dict=alignment_dict)
-    n_imgs = get_num_imported_images()
-    img_size = get_image_size(cfg.project_data['data']['scales'][use_scale]['alignment_stack'][0]['images']['base']['filename'])
-    cfg.main_window.alignment_status_checkbox.setChecked(False)
-    cfg.main_window.hud.post("Using SWiFT-IR to Solve Affine Transformations (%s Images, %sx%s pixels)..." % (n_imgs, img_size[0], img_size[1]))
-    affine_ingredient = cfg.main_window.affine_combobox.currentText()
-    cfg.main_window.hud.post('Affine: %s, Scale: %s' % (affine_ingredient, use_scale[-1]))
 
-    print("Aligning scale %s..." % use_scale[-1])
     # Copy the data model for this project to add local fields for SWiFT
     dm = copy.deepcopy(cfg.project_data)
     alignment_dict = dm['data']['scales'][use_scale]['alignment_stack']
@@ -84,42 +87,32 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
-    print("alignment_option is ", scale_dict['method_data']['alignment_option'])
-    if get_scale_val(use_scale) == 1:  cfg.main_window.hud.post("Solving Affine Transformations at Scale %s (Full Resolution)..." % use_scale[-1])
-    else:  cfg.main_window.hud.post("Solving Affine Transformations at Scale %s..." % use_scale[-1])
-
     project = copy.deepcopy(cfg.project_data)
-
-    print('alignment_option = ', alignment_option)
-    # scale_key = "scale_%d" % use_scale
-    scale_key = get_cur_scale_key()
-    alstack = project['data']['scales'][scale_key]['alignment_stack']
+    alstack = project['data']['scales'][use_scale]['alignment_stack']
 
     if cfg.PARALLEL_MODE:
         '''Run the project as a series of jobs'''
-
         # Write the entire project as a single JSON file with a unique stable name for this run
         print("Copy project file to 'project_runner_job_file.json'")
         run_project_name = os.path.join(project['data']['destination_path'], "project_runner_job_file.json")
-        f = open(run_project_name, 'w')
-        jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-        proj_json = jde.encode(project)
-        f.write(proj_json)
-        f.close()
-        # task_queue = task_queue.TaskQueue() #0704
+
+        with open(run_project_name, 'w') as f:
+            f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(project))
+
         task_queue = TaskQueue(n_tasks=len(alstack))
-        # task_queue = TaskQueue()
         cpus = min(psutil.cpu_count(logical=False), 48)
-        print("Starting Project Runner Task Queue with %d CPUs (TaskQueue.start)" % (cpus))
+        cfg.main_window.hud.post("Starting Project Runner Task Queue with %d CPUs (TaskQueue.start)" % cpus)
         task_queue.start(cpus)
         align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 
         for layer in alstack:
             lnum = alstack.index(layer)
             skip = False
-            if 'skip' in layer:
+            try:
                 skip = layer['skip']
-            if False and skip:
+            except:
+                pass
+            if skip is True:
                 print('Skipping layer %s' % str(lnum))
             else:
                 print_debug(50, "Starting a task for layer " + str(lnum))
@@ -176,7 +169,7 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
             t = task_queue.task_dict[k]
             task_dict[int(t['args'][5])] = t
 
-        task_list = [task for task in sorted(task_dict.keys())]
+        task_list = [task_dict[k] for k in sorted(task_dict.keys())]
 
         print("Copying 'cfg.project_data'...")
         updated_model = copy.deepcopy(cfg.project_data) # Integrate output of each task into a new combined data model
@@ -217,7 +210,6 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
 
                 al_stack_old[lnum] = al_stack_new[lnum]
 
-                #0714 likely cause
                 if task_list[tnum]['status'] == 'task_error':
                     ref_fn = al_stack_old[lnum]['images']['ref']['filename']
                     base_fn = al_stack_old[lnum]['images']['base']['filename']
@@ -234,6 +226,8 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
 
         cfg.project_data = updated_model
 
+        generate_images = True
+
         if generate_images:
             generate_aligned_images(
                     use_scale=get_cur_scale_key(),
@@ -241,10 +235,8 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
                     num_layers=num_layers
             )
 
-        #0615 fixed bug where bias_data is only saved if/when images are generated
         print('Saving bias analysis...')
-        use_scale = project['data']['current_scale']
-        bias_data_path = os.path.join(project['data']['destination_path'], project['data']['current_scale'], 'bias_data')
+        bias_data_path = os.path.join(project['data']['destination_path'], use_scale, 'bias_data')
         save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
     else:
         '''Run the project directly in Serial mode. Does not generate aligned images.'''
