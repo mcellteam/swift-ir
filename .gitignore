@@ -1,21 +1,16 @@
-
-package/alignEM/daisy_logs/**
-package/alignEM/daisy_logs
-package/alignEM/joel_notes.txt
-package/alignEM/_stylesheet.qss
 Cross_Platform/*
 .idea/*
 Image_Libs/*
-package/*.jpg
-package/*.JPG
-package/*.tif
-package/*.tiff
-package/*.png
-package/*.xcf
-package/*.mir
-package/*.txt
-package/*.json
-package/*.sh
+swift-ir/*.jpg
+swift-ir/*.JPG
+swift-ir/*.tif
+swift-ir/*.tiff
+swift-ir/*.png
+swift-ir/*.xcf
+swift-ir/*.mir
+swift-ir/*.txt
+swift-ir/*.json
+swift-ir/*.sh
 versions/*
 tests/*
 data/*
@@ -33,24 +28,13 @@ libraries
 *.png
 *.pyc
 *.json
-package/.DS_Store
-package/alignEM/.DS_Store
-package/alignEM/afm_1.dat
-package/alignEM/alignem2.py
-package/alignEM/alignem_swift2.py
-package/alignEM/bias_det_1.dat
-package/alignEM/bias_rot_1.dat
-package/alignEM/bias_scale_x_1.dat
-package/alignEM/bias_scale_y_1.dat
-package/alignEM/bias_skew_x_1.dat
-package/alignEM/bias_x_1.dat
-package/alignEM/bias_y_1.dat
-package/alignEM/c_afm_1.dat
-package/alignEM/idle.py
-package/alignEM/out/
-package/alignEM/snr_1.dat
-package/alignEM/daisy_logs/
-package/ui/daisy_logs/
+swift-ir/.DS_Store
+swift-ir/alignEM/daisy_logs/
+swift-ir/ui/daisy_logs/
+swift-ir/alignEM/daisy_logs/**
+swift-ir/alignEM/daisy_logs
+swift-ir/alignEM/joel_notes.txt
+swift-ir/alignEM/_stylesheet.qss
 **/.DS_Store
 
 
@@ -123,8 +107,8 @@ venv.bak/
 # mkdocs documentation
 /site
 =======
-package/daisy_logs
-package/daisy_logs/*
-package/daisy_logs/**
+swift-ir/daisy_logs
+swift-ir/daisy_logs/*
+swift-ir/daisy_logs/**
 
 >>>>>>> Stashed changes
