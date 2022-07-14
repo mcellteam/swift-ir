@@ -78,6 +78,7 @@ def generate_scales(progress_callback=None):
         return
 
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
+        print('generate_scales | Entering loop, scale = ', scale )
         cfg.main_window.hud.post("Preparing to generate images for scale " + str(scale))
         scale_key = em.get_scale_key(scale)
         for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
@@ -99,10 +100,10 @@ def generate_scales(progress_callback=None):
                                     try:
                                         os.unlink(outfile_name)
                                     except:
-                                        # print("generate_scales | Error UnLinking " + outfile_name)
+                                        print("generate_scales | Error UnLinking " + outfile_name)
                                         pass
                                     try:
-                                        # print("generate_scales | Linking from " + abs_file_name + " to " + outfile_name)
+                                        print("generate_scales | Linking from " + abs_file_name + " to " + outfile_name)
                                         os.symlink(abs_file_name, outfile_name)
                                     except:
                                         # logging.warning("generate_scales | Unable to link from " + abs_file_name + " to " + outfile_name)
