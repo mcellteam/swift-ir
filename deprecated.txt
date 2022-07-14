@@ -1379,3 +1379,20 @@
                  # ['&Python Console', 'Ctrl+P', self.py_console, None, None, None], #orig
                  # ['&Python Console', 'Ctrl+P', console, None, None, None],
                  # ['-', None, None, None, None, None],
+
+
+
+# update_linking_callback = None
+# update_skips_callback = None
+# crop_mode_callback = None
+# crop_mode_role = None
+# crop_mode_origin = None
+# crop_mode_disp_rect = None
+# crop_mode_corners = None
+# current_scale = 'scale_1'
+# alignem_swift.main_win = None #jy 0525
+
+# crop_window_mode = 'mouse_rectangle'  # mouse_rectangle or mouse_square or fixed
+# crop_window_width = 1024
+# crop_window_height = 1024
+

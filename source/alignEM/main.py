@@ -49,7 +49,8 @@ import signal
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
 # from ui.interface import MainWindow
-from package.ui.interface import MainWindow
+from package.ui.app import MainWindow
+from config import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
 import config as cfg
 
 reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
@@ -91,42 +92,37 @@ if __name__ == "__main__":
     options.add_argument("-a", "--api", type=str, required=False, default='pyqt6',help="Select Python API from: pyqt6, pyqt5, pyside6, pyside2")
     options.add_argument("-i", "--interactive", required=False, default=False, action='store_true', help="Run with interactive python console in separate window")
     args = options.parse_args()
-
-    cfg.global_parallel_mode = args.parallel
-    cfg.global_use_file_io = args.use_file_io
+    cfg.PARALLEL_MODE = args.parallel
+    cfg.USE_FILE_IO = args.use_file_io
     cfg.QT_API = args.api
 
-    if cfg.QT_API in ('pyside2', 'pyside6'):
-        cfg.USES_PYSIDE, cfg.USES_PYQT = True, False
-    elif cfg.QT_API in ('pyqt5', 'pyqt6'):
-        cfg.USES_PYQT, cfg.USES_PYSIDE = True, False
-    if cfg.QT_API in ('pyside2', 'pyqt5'):
-        cfg.USES_QT5, cfg.USES_QT6 = True, False
-    elif cfg.QT_API in ('pyside6', 'pyqt6'):
-        cfg.USES_QT6, cfg.USES_QT5 = True, False
+
+    if cfg.QT_API in ('pyside2', 'pyside6'): cfg.USES_PYSIDE, cfg.USES_PYQT = True, False
+    if cfg.QT_API in ('pyqt5', 'pyqt6'):     cfg.USES_PYQT, cfg.USES_PYSIDE = True, False
+    if cfg.QT_API in ('pyside2', 'pyqt5'):   cfg.USES_QT5, cfg.USES_QT6 = True, False
+    if cfg.QT_API in ('pyside6', 'pyqt6'):   cfg.USES_QT6, cfg.USES_QT5 = True, False
 
     # os.environ["FORCE_QT_API"] = 'True'
     os.environ['QT_API'] = cfg.QT_API
-    logging.info('main | QT_API                              : %s' % os.environ.get('QT_API'))
     os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    logging.info('main | MESA_GL_VERSION_OVERRIDE            : %s' % os.environ.get('MESA_GL_VERSION_OVERRIDE'))
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    logging.info('main | QT_API                              : %s' % os.environ.get('QT_API'))
+    logging.info('main | MESA_GL_VERSION_OVERRIDE            : %s' % os.environ.get('MESA_GL_VERSION_OVERRIDE'))
     logging.info('main | OBJC_DISABLE_INITIALIZE_FORK_SAFETY : %s' % os.environ.get('OBJC_DISABLE_INITIALIZE_FORK_SAFETY'))
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
     logging.info('main | Attribute alignEM::AA_ShareOpenGLContext set')
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
     app = QApplication(sys.argv)
+    app.setStyle('Fusion')
     logging.info('main | QApplication() created')
     logging.info('main | app.__str__() = %s' % app.__str__())
-    app.setStyle('Fusion')
-    logging.info('main | App style set to Fusion')
     logging.info('main | Instantiating MainWindow...')
-    cfg.main_window = MainWindow(title="AlignEM-SWiFT") # no more control_model
+    cfg.main_window = MainWindow(title="AlignEM-SWiFT")
     cfg.main_window.resize(cfg.WIDTH, cfg.HEIGHT)
     cfg.main_window.define_roles(['ref', 'base', 'aligned'])
     logging.info('main | Window Size is %dx%d pixels' % (cfg.WIDTH, cfg.HEIGHT))
     logging.info('main | Showing AlignEM-SWiFT')
-    cfg.main_window.show() #windows are hidden by default
+    cfg.main_window.show()
     try:  sys.exit(app.exec())
     except:  sys.exit(app.exec_())
 

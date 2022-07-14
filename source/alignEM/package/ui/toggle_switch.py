@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
-
-from qtpy.QtCore import Slot, QSize, QPointF, QPoint, QRectF
 from qtpy.QtWidgets import QCheckBox
-from qtpy.QtGui import Qt, QBrush, QColor, QFont, QPen, QPaintEvent, QPainter
+from qtpy.QtCore import Qt, Slot, QSize, QPointF, QPoint, QRectF
+from qtpy.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter
 
 __all__ = ['ToggleSwitch']
 

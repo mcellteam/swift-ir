@@ -2,16 +2,18 @@
 
 import os
 import sys
-
-from qtpy.QtCore import QRunnable, Slot
-
+from http.server import SimpleHTTPRequestHandler
+from http.server import HTTPServer
+from qtpy.QtCore import QRunnable
+from qtpy.QtCore import Slot
 import config as cfg
 
+__all__ = ['RunnableServer']
 
-class RunnableServerThread(QRunnable):
+class RunnableServer(QRunnable):
     #    def __init__(self, fn, *args, **kwargs):
     def __init__(self):
-        super(RunnableServerThread, self).__init__()
+        super(RunnableServer, self).__init__()
         """
         # Store constructor arguments (re-used for processing)
         self.fn = fn
@@ -68,3 +70,17 @@ class RunnableServerThread(QRunnable):
             print("\nMaximum reconnection attempts reached. Disconnecting...\n")
             server.server_close()
             sys.exit(0)
+
+
+class RequestHandler(SimpleHTTPRequestHandler):
+    '''A simple HTTP request handler'''
+    def end_headers(self):
+        self.send_header('Access-Control-Allow-Origin', '*')
+        SimpleHTTPRequestHandler.end_headers(self)
+
+
+class Server(HTTPServer):
+    '''A simple HTTP server'''
+    protocol_version = 'HTTP/1.1'
+    def __init__(self, server_address):
+        HTTPServer.__init__(self, server_address, RequestHandler)

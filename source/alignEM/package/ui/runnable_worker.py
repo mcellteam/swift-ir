@@ -2,8 +2,10 @@
 
 import sys
 import traceback
-
-from PySide6.QtCore import Signal, Slot, QRunnable
+from qtpy.QtCore import Slot
+from qtpy.QtCore import Signal
+from qtpy.QtCore import QObject
+from qtpy.QtCore import QRunnable
 
 __all__ = ['RunnableWorker', 'WorkerSignals']
 

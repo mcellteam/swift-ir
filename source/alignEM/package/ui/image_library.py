@@ -1,16 +1,13 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import psutil
 import threading
 import concurrent
 from qtpy.QtGui import QPixmap
-
-from ..utils import print_debug
 import config as cfg
-from em_utils import get_scale_val
-
-
+from ..em_utils import get_scale_val
 
 __all__ = ['ImageLibrary','SmartImageLibrary']
 
@@ -54,7 +51,7 @@ class ImageLibrary:
 
     def get_image_reference(self, file_path):
         # print("Getting image reference | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.get_image_reference")
-        print_debug(50, "get_image_reference ( " + str(file_path) + " )")
+        # print_debug(50, "get_image_reference ( " + str(file_path) + " )")
         self.print_load_status()
         image_ref = None
         real_norm_path = self.pathkey(file_path)
@@ -62,21 +59,21 @@ class ImageLibrary:
             # This is an actual path
             if real_norm_path in self._images:
                 # This file is already in the library ... it may be complete or still loading
-                print_debug(50, "  Image name is in the library")
+                # print_debug(50, "  Image name is in the library")
                 if self._images[real_norm_path]['loaded']:
                     # The image is already loaded, so return it
-                    print_debug(50, "  Image was already loaded")
+                    # print_debug(50, "  Image was already loaded")
                     image_ref = self._images[real_norm_path]['image']
                 elif self._images[real_norm_path]['loading']:
                     # The image is still loading, so wait for it to complete
-                    print_debug(4, "  Image still loading ... wait")
+                    # print_debug(4, "  Image still loading ... wait")
                     self._images[real_norm_path]['task'].join()
                     self._images[real_norm_path]['task'] = None
                     self._images[real_norm_path]['loaded'] = True
                     self._images[real_norm_path]['loading'] = False
                     image_ref = self._images[real_norm_path]['image']
                 else:
-                    print_debug(3, "  Load Warning for: \"" + str(real_norm_path) + "\"")
+                    # print_debug(3, "  Load Warning for: \"" + str(real_norm_path) + "\"")
                     image_ref = self._images[real_norm_path]['image']
             else:
                 # The image is not in the library at all, so force a load now (and wait)
@@ -344,3 +341,20 @@ class SmartImageLibrary:
 
         self.prev_scale_val = cur_scale_val
         self.prev_layer_index = cur_layer_index
+
+
+def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
+    debug_level = 0
+    if level <= debug_level:
+        if p1 == None:
+            sys.stderr.write("" + '\n')
+        elif p2 == None:
+            sys.stderr.write(str(p1) + '\n')
+        elif p3 == None:
+            sys.stderr.write(str(p1) + str(p2) + '\n')
+        elif p4 == None:
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + '\n')
+        elif p5 == None:
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '\n')
+        else:
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '\n')

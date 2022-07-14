@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-
-from qtpy.QtWebEngineWidgets import QWebEnginePage, QWebEngineView
+from qtpy.QtWebEngineWidgets import QWebEngineView
+from qtpy.QtWebEngineWidgets import QWebEnginePage
 
 __all__ = ['CustomWebEnginePage']
-
 
 class CustomWebEnginePage(QWebEnginePage):
     """ Custom WebEnginePage to customize how we handle link navigation
