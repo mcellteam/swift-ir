@@ -20,9 +20,12 @@ __all__ = ['get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'get_num_scales', 'print_path', 'copy_skips_to_all_scales',
            'are_images_imported', 'print_sanity_check', 'is_cur_scale_exported',
            'get_num_imported_images', 'print_exception', 'get_scale_key', 'get_scale_val',
-           'set_scales_from_string', 'makedirs_exist_ok', 'force_project_defaults',
+           'set_scales_from_string', 'makedirs_exist_ok', 'set_default_settings',
            'clear_all_skips', 'verify_image_file', 'print_debug',
-           'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project']
+           'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project',
+           'ensure_proper_data_structure', 'is_cur_scale_ready_for_alignment',
+           'get_aligned_scales_list','get_not_aligned_scales_list','get_scales_list',
+           'get_next_coarsest_scale_key']
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(
@@ -31,6 +34,21 @@ logging.basicConfig(
         datefmt='%H:%M:%S',
         handlers=[ logging.StreamHandler() ]
 )
+
+def get_scales_list() -> list[str]:
+    '''Get scales list.
+    Faster than O(n*m) performance.
+    Preserves order of scales.'''
+    return [key for key in cfg.project_data['data']['scales'].keys()]
+
+def get_aligned_scales_list() -> list[str]:
+    '''Get aligned scales list.'''
+    return [key for key in cfg.project_data['data']['scales'].keys() if is_scale_aligned(key)]
+
+def get_not_aligned_scales_list() -> list[str]:
+    '''Get not aligned scales list.'''
+    return [key for key in get_scales_list() if key not in set(get_aligned_scales_list())]
+
 
 def verify_image_file(path: str) -> str:
     '''Tries to determine the filetype of an image using the Python standard library.
@@ -70,16 +88,65 @@ def create_project_structure_directories(subdir_path) -> None:
         os.mkdir(src_path)
         os.mkdir(aligned_path)
         os.mkdir(bias_data_path)
-    except:  print_exception()
+    except:
+        pass
 
 
-def force_project_defaults() -> None:
+def is_cur_scale_ready_for_alignment() -> bool:
+    logging.info('is_cur_scale_ready_for_alignment:')
+    scales_dict = cfg.project_data['data']['scales']
+    cur_scale_key = get_cur_scale_key()
+    coarsest_scale = list(scales_dict.keys())[-1]
+    if cur_scale_key == coarsest_scale:
+        return True
+    scales_list = []
+    for scale_key in scales_dict.keys():
+        scales_list.append(scale_key)
+    cur_scale_index = scales_list.index(cur_scale_key)
+    next_coarsest_scale_key = scales_list[cur_scale_index + 1]
+    if is_scale_aligned(next_coarsest_scale_key):
+        return True
+    else:
+        return False
+
+def get_next_coarsest_scale_key() -> str:
+    scales_dict = cfg.project_data['data']['scales']
+    cur_scale_key = get_cur_scale_key()
+    coarsest_scale = list(scales_dict.keys())[-1]
+    if cur_scale_key == coarsest_scale:
+        return cur_scale_key
+    scales_list = []
+    for scale_key in scales_dict.keys():
+        scales_list.append(scale_key)
+    cur_scale_index = scales_list.index(cur_scale_key)
+    next_coarsest_scale_key = scales_list[cur_scale_index + 1]
+    return next_coarsest_scale_key
+
+
+
+def set_default_precedure() -> None:
+    scales_dict = cfg.project_data['data']['scales']
+    coarsest_scale = list(scales_dict.keys())[-1]
+    for scale_key in scales_dict.keys():
+        scale = scales_dict[scale_key]
+        if scale_key == coarsest_scale:  scale['method_data']['alignment_option'] = 'init_affine'
+        else:  scale['method_data']['alignment_option'] = 'refine_affine'
+        for layer_index in range(len(scale['alignment_stack'])):
+            layer = scale['alignment_stack'][layer_index]
+            if scale_key == coarsest_scale:
+                layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+            else:
+                layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+
+
+def set_default_settings() -> None:
     '''Force project defaults.'''
-    logging.info('force_project_defaults:')
+    logging.info('set_default_settings:')
     cfg.main_window.hud.post('Applying Project Defaults...')
     scales_dict = cfg.project_data['data']['scales']
     coarsest_scale = list(scales_dict.keys())[-1]
     for scale_key in scales_dict.keys():
+        print('scale_key = ', scale_key)
         scale = scales_dict[scale_key]
         scale['use_bounding_rect']    = cfg.DEFAULT_BOUNDING_BOX
         scale['null_cafm_trends']     = cfg.DEFAULT_NULL_BIAS
@@ -89,18 +156,44 @@ def force_project_defaults() -> None:
         else:
             cfg.project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
         for layer_index in range(len(scale['alignment_stack'])):
+            print('layer_index = ', layer_index)
             layer = scale['alignment_stack'][layer_index]
+            print(layer)
             atrm = layer['align_to_ref_method']
             mdata = atrm['method_data']
-            layer['align_to_ref_method'] = {}
-            atrm['method_data'] = {}
             mdata['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
             mdata['whitening_factor'] = cfg.DEFAULT_WHITENING
             if scale_key == coarsest_scale:
-                scale['alignment_stack'][layer_index]['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+                layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
             else:
-                scale['alignment_stack'][layer_index]['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+                layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
+def ensure_proper_data_structure():
+    '''Called by link_all_stacks'''
+    print('\nensure_proper_data_structure:')
+    ''' Try to ensure that the data model is usable. '''
+    scales_dict = cfg.project_data['data']['scales']
+    coarsest_scale = list(scales_dict.keys())[-1]
+    for scale_key in scales_dict.keys():
+        scale = scales_dict[scale_key]
+        if not 'use_bounding_rect' in scale: scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
+        if not 'null_cafm_trends' in scale:  scale['null_cafm_trends']  = cfg.DEFAULT_NULL_BIAS
+        if not 'poly_order' in scale:        scale['poly_order']        = cfg.DEFAULT_POLY_ORDER
+        for layer_index in range(len(scale['alignment_stack'])):
+            layer = scale['alignment_stack'][layer_index]
+            atrm = layer['align_to_ref_method']
+            mdata = atrm['method_data']
+            if not 'align_to_ref_method' in layer: layer['align_to_ref_method'] = {}
+            if not 'method_data' in atrm:atrm['method_data'] = {}
+            if not 'win_scale_factor' in mdata: mdata['win_scale_factor'] = float(cfg.main_window.get_swim_input())
+            if not 'whitening_factor' in mdata: mdata['whitening_factor'] = float(cfg.main_window.get_whitening_input())
+            if scale_key == coarsest_scale:
+                layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+            else:
+                layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+
+
+    print("Exiting ensure_proper_data_structure")
 
 def set_scales_from_string(scale_string: str):
     '''This is not pretty. Needs to be refactored ASAP.
@@ -150,20 +243,15 @@ def set_scales_from_string(scale_string: str):
 def update_datamodel(updated_model):
     '''This function is called by align_layers and regenerate_aligned. It is called when
     'run_json_project' returns with need_to_write_json=false'''
-
     print('update_datamodel >>>>>>>>')
-
     # Load the alignment stack after the alignment has completed
     aln_image_stack = []
     scale_to_run_text = cfg.project_data['data']['current_scale']
     stack_at_this_scale = cfg.project_data['data']['scales'][scale_to_run_text]['alignment_stack']
-
     for layer in stack_at_this_scale:
-
         image_name = None
         if 'base' in layer['images'].keys():
             image_name = layer['images']['base']['filename']
-
         # Convert from the base name to the standard aligned name:
         aligned_name = None
         if image_name != None:
@@ -174,19 +262,13 @@ def update_datamodel(updated_model):
             else:
                 name_parts = os.path.split(image_name)
                 if len(name_parts) >= 2:
-                    aligned_name = os.path.join(os.path.split(name_parts[0])[0],
-                                                os.path.join('img_aligned', name_parts[1]))
+                    aligned_name = os.path.join(os.path.split(name_parts[0])[0], os.path.join('img_aligned', name_parts[1]))
         aln_image_stack.append(aligned_name)
         # print_debug(30, "Adding aligned image " + aligned_name)
         layer['images']['aligned'] = {}
         layer['images']['aligned']['filename'] = aligned_name
-    try:
-        print('update_datamodel | trying to load_images_into_role')
-        cfg.main_window.load_images_in_role('aligned', aln_image_stack)
-    except:
-        print('Error from main_win.load_images_in_role.')
-        print_exception()
-        pass
+    try:  cfg.main_window.load_images_in_role('aligned', aln_image_stack)
+    except:  print_exception()
     cfg.main_window.refresh_all_images()
 
     # center
@@ -413,13 +495,13 @@ def get_num_imported_images() -> int:
 
 def get_skips_list() -> list[int]:
     '''Returns the list of skipped images at the current scale'''
-    print('get_skips_list | called by ',inspect.stack()[1].function)
+    # print('get_skips_list | called by ',inspect.stack()[1].function)
     skip_list = []
     try:
         for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
             if cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]['skip'] == True:
                 skip_list.append(layer_index)
-            print('get_skips_list() | Skips List:\n %s' % str(skip_list))
+            # print('get_skips_list() | Skips List:\n %s' % str(skip_list))
     except:  print('get_skips_list | EXCEPTION | Unable to get skips list!');  return []  # 0711
     else:    return skip_list
 
@@ -544,18 +626,15 @@ def get_num_aligned() -> int:
 
 def is_any_scale_aligned_and_generated() -> bool:
     '''Checks if there exists a set of aligned images at the current scale'''
-    try:
-        files = glob(cfg.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif*')
-        print('is_any_scale_aligned_and_generated | *.tif WERE found in project dir - Returning True')
-    except:
-        files = []
-        print('is_any_scale_aligned_and_generated | *.tif WERE NOT found in project dir - Returning False')
+    files = glob(cfg.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif*')
     if len(files) > 0:  return True
-    else:  return False
+    else:               return False
 
 
 def is_scale_aligned(scale: str) -> bool:
     '''Returns boolean based on whether arg scale is aligned '''
+    print('is_scale_aligned | called by ', inspect.stack()[1].function)
+
     try:
         project_dir = cfg.project_data['data']['destination_path']
         bias_dir = os.path.join(project_dir, scale, 'bias_data')
@@ -860,7 +939,7 @@ def update_skip_annotations():
 #
 #     # Update all of the annotations based on the skip values
 #     copy_skips_to_all_scales()
-#     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into interface.py
+#     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into app.py
 #     print("Exiting update_skips_callback(new_state)")
 
 

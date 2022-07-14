@@ -1,25 +1,17 @@
 #!/usr/bin/env python3
 
-__all__ = ['ZoomPanWidget']
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QWidget
-from PyQt6.QtCore import QRectF
-from PyQt6.QtGui import QPainter
-from PySide2.QtCore import QSize
-from PySide2.QtGui import QPen
-from qtpy.QtWidgets import QRubberBand
-from qtpy.QtCore import QPointF
+from qtpy.QtGui import QPainter, QPen, QColor
+from qtpy.QtWidgets import QWidget, QRubberBand
+from qtpy.QtCore import Qt, QPointF, QRectF, QSize
 from qtpy.QtWidgets import QSizePolicy
 
 import config as cfg
-from utils import print_debug
-from em_utils import get_num_imported_images
-from em_utils import get_cur_layer
-from em_utils import get_cur_scale_key
-from .multi_image_panel import MultiImagePanel
+from ..utils.print_debug import print_debug
+from ..em_utils import get_num_imported_images
+from ..em_utils import get_cur_layer
+from ..em_utils import get_cur_scale_key
 
+__all__ = ['ZoomPanWidget']
 
 class ZoomPanWidget(QWidget):
     """A widget to display a single annotated image with zooming and panning."""
@@ -96,9 +88,8 @@ class ZoomPanWidget(QWidget):
     def update_siblings(self):
         # This will cause the normal "update_self" function to be called on each sibling
         print_debug(30, "Update_siblings called, calling siblings.update_self")
-        if type(self.parent) == MultiImagePanel:
-            print_debug(60, "Child of MultiImagePanel")
-            self.parent.update_multi_self(exclude=[self])
+        # if type(self.parent) == MultiImagePanel:  #0712 - had to remove circular reference
+        self.parent.update_multi_self(exclude=[self])
 
     def update_zpa_self(self):
         # print('Updating zpa self | Caller: ' + inspect.stack()[1].function + ' |  ZoomPanWidget.update_zpa_self...')
@@ -296,7 +287,7 @@ class ZoomPanWidget(QWidget):
         scale = get_cur_scale_key()
         leaving = get_cur_layer()
         requested = leaving + layer_delta
-        rng = preload_range
+        rng = cfg.PRELOAD_RANGE
         if requested in range(n_imgs): pass
         elif requested < 0: print('Cant layer down any further!'); cfg.main_window.set_idle(); return
         elif requested > n_imgs - 1: print('Cant layer up any further!'); cfg.main_window.set_idle(); return
@@ -354,8 +345,6 @@ class ZoomPanWidget(QWidget):
         # zoom: want use angleDelta().y() for vertical scrolling
 
         """
-        global preload_range
-
         '''refer to QWheelEvent class documentation'''
 
 

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
+import sys
 def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
-    debug_level = 50
+    debug_level = 0
     if level <= debug_level:
         if p1 == None:
             sys.stderr.write("" + '\n')

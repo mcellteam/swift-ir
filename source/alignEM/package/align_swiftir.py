@@ -48,9 +48,7 @@ else:
 
 # For now, always use the limited argument version
 def print_debug(level, p1=None, p2=None, p3=None, p4=None):
-    # print_debug ( 1, "This is really important!!" )
-    # print_debug ( 99, "This isn't very important." )
-    global debug_level
+    debug_layer = 0
     if level <= debug_level:
         if p1 == None:
             sys.stderr.write('' + '\n')
@@ -64,8 +62,8 @@ def print_debug(level, p1=None, p2=None, p3=None, p4=None):
             sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '\n')
 
 
-global_swiftir_mode = 'python'  # Either 'python' or 'c'
-# global_swiftir_mode = 'c'   # Either 'python' or 'c'
+# global_swiftir_mode = 'python'  # Either 'python' or 'c'
+global_swiftir_mode = 'c'   # Either 'python' or 'c'
 global_do_swims = True
 global_do_cfms = True
 global_gen_imgs = True
@@ -451,20 +449,20 @@ class align_ingredient:
         self.node = platform.node()
         if self.system == 'Darwin':
             # self.swim_c = my_path + '../c/bin_darwin/swim'
-            self.swim_c = my_path + '../../c/bin_darwin/swim'
+            self.swim_c = my_path + 'lib/bin_darwin/swim'
             # self.mir_c = my_path + '../c/bin_darwin/mir'
-            self.mir_c = my_path + '../../c/bin_darwin/mir'
+            self.mir_c = my_path + 'lib/bin_darwin/mir'
         elif self.system == 'Linux':
             if '.tacc.utexas.edu' in self.node:
                 # self.swim_c = my_path + '../c/bin_tacc/swim'
-                self.swim_c = my_path + '../../c/bin_tacc/swim'
+                self.swim_c = my_path + 'lib/bin_tacc/swim'
                 # self.mir_c = my_path + '../c/bin_tacc/mir'
-                self.mir_c = my_path + '../../c/bin_tacc/mir'
+                self.mir_c = my_path + 'lib/bin_tacc/mir'
             else:
                 # self.swim_c = my_path + '../c/bin_linux/swim'
-                self.swim_c = my_path + '../../c/bin_linux/swim'
+                self.swim_c = my_path + 'lib/bin_linux/swim'
                 # self.mir_c = my_path + '../c/bin_linux/mir'
-                self.mir_c = my_path + '../../c/bin_linux/mir'
+                self.mir_c = my_path + 'lib/bin_linux/mir'
 
         # if self.swiftir_mode == 'c':
         #  print_debug ( 70, "Actually loading images" )

@@ -23,6 +23,8 @@ project_data = None
 main_window = None
 image_library = None
 
+PRELOAD_RANGE = 5
+
 USE_FILE_IO = 0
 PARALLEL_MODE = True
 CODE_MODE = 'c'
@@ -33,5 +35,5 @@ CODE_MODE = 'c'
 ICON_COLOR = '#455364' # off blue-ish color
 
 WIDTH = 1320
-HEIGHT = 780
+HEIGHT = 850
 

@@ -24,15 +24,7 @@ logging.basicConfig(
 
 def generate_scales(progress_callback=None):
     print("generate_scales >>>>>>>>")
-    #todo come back to this #0406
-    # try:
-    #     self.scales_combobox.disconnect()
-    # except Exception:
-    #     print(
-    #         "BenignException: could not disconnect scales_combobox from handlers or nothing to disconnect. Continuing...")
-
-    #0531 TODO: NEED TO HANDLE CHANGING OF NUMBER OF SCALES, ESPECIALLY WHEN DECREASED. MUST REMOVE PRE-EXISTING DATA (bias data, scaled images, and aligned images)
-
+    #0531 TODO: better handle clean up when # of scales is changed
     logging.info('generate_scales >>>>>>>>')
     QThread.currentThread().setObjectName('ScaleImages')
     cfg.main_window.hud.post('Preparing to Generate Scale Image Hierarchy...')
@@ -41,21 +33,18 @@ def generate_scales(progress_callback=None):
     n_scales = em.get_num_scales()
     n_tasks = n_images * (n_scales+1)
     image_scales_to_run = [em.get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
-    logging.info("generate_scales | Scale Factors : " + str(image_scales_to_run))
-    logging.info("generate_scales | # of Images   : ", n_images)
+    logging.info("generate_scales | Scale Factors : %s" % str(image_scales_to_run))
+    logging.info("generate_scales | # of Images   : %d" % n_images)
 
     scaling_queue = TaskQueue(n_tasks=n_tasks)
-    # scaling_queue = TaskQueue()
-#0709    # scaling_queue = task_queue.TaskQueue(n_tasks=n_images, progress_callback=progress_callback)
-
     cpus = min(psutil.cpu_count(logical=False), 48)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     my_system = platform.system()
     my_node = platform.node()
-    logging.info("generate_scales | # cpus        :" % cpus)
-    logging.info("generate_scales | my_path       :" % my_path)
-    logging.info("generate_scales | my_system     :" % my_system)
-    logging.info("generate_scales | my_node       :" % my_node)
+    logging.info("generate_scales | # cpus        : %d" % cpus)
+    logging.info("generate_scales | my_path       : %s" % my_path)
+    logging.info("generate_scales | my_system     : %s" % my_system)
+    logging.info("generate_scales | my_node       : %s" % my_node)
     logging.info('generate_scales | Starting the scaling queue...')
     scaling_queue.start(cpus)  # cpus = 8 for my laptop
     cfg.main_window.hud.post("Configuring platform-specific path to SWiFT-IR executables")
@@ -68,19 +57,14 @@ def generate_scales(progress_callback=None):
             iscale2_c = os.path.join(my_path, 'lib/bin_tacc/iscale2')
         else:
             iscale2_c = os.path.join(my_path, 'lib/bin_linux/iscale2')
-
-
-    # my path = / Users / joelyancey / glanceem_swift / swift - ir / source / alignEM / package / src /
-    # iscale2_c path = / lib / bin_darwin / iscale2
-
     try:
         logging.info('Checking if iscale_2 (%s) is a file...' % iscale2_c)
         os.path.isfile(iscale2_c)
     except:
         cfg.main_window.hud.post('iscale2_c Executable Was Not Found At Path %s. It Must Be Compiled.' % iscale2_c, logging.ERROR)
         logging.warning('generate_scales | EXCEPTION | iscale2_c Executable Was Not Found At Path')
+        em.print_exception()
         return
-
 
     cfg.main_window.hud.post("Creating project directory structure...")
     try:
@@ -90,24 +74,18 @@ def generate_scales(progress_callback=None):
             em.create_project_structure_directories(subdir_path)
     except:
         cfg.main_window.hud.post("There was a problem creating the directory structure", logging.ERROR)
+        em.print_exception()
         return
 
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
         cfg.main_window.hud.post("Preparing to generate images for scale " + str(scale))
         scale_key = em.get_scale_key(scale)
-        # scale_key = str(scale)
-        # if not 'scale_' in scale_key:
-        #     scale_key = 'scale_' + scale_key
         for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
             # Remove previously aligned images from panel ??
-
             # Copy (or link) the source images to the expected scale_key"/img_src" directory
             for role in layer['images'].keys():
                 # Only copy files for roles "ref" and "base"
                 if role in ['ref', 'base']:
-                    # print("  Generating images for scale : " + str(scale) + "  layer: "\
-                    #       + str(cfg.project_data['data']['scales'][scale_key]['alignment_stack'].index(layer))\
-                    #       + "  role: " + str(role))
                     base_file_name = layer['images'][role]['filename']
                     if base_file_name != None:
                         if len(base_file_name) > 0:
@@ -119,11 +97,9 @@ def generate_scales(progress_callback=None):
                                 if em.get_best_path(abs_file_name) != em.get_best_path(outfile_name):
                                     # The paths are different so make the link
                                     try:
-                                        # print("generate_scales | UnLinking " + outfile_name)
                                         os.unlink(outfile_name)
                                     except:
-                                        pass
-                                        # print("generate_scales | Error UnLinking " + outfile_name)
+                                        print("generate_scales | Error UnLinking " + outfile_name)
                                     try:
                                         # print("generate_scales | Linking from " + abs_file_name + " to " + outfile_name)
                                         os.symlink(abs_file_name, outfile_name)
@@ -135,13 +111,9 @@ def generate_scales(progress_callback=None):
                                             shutil.copy(abs_file_name, outfile_name)
                                         except:
                                             logging.warning("generate_scales | Unable to link or copy from " + abs_file_name + " to " + outfile_name)
+
                             else:
                                 try:
-                                    # Do the scaling
-                                    # print(
-                                    #     "Copying and scaling from " + abs_file_name + " to " + outfile_name + " by " + str(
-                                    #         scale))
-
                                     if os.path.split(os.path.split(os.path.split(abs_file_name)[0])[0])[
                                         1].startswith('scale_'):
                                         # Convert the source from whatever scale is currently processed to scale_1

@@ -9,7 +9,7 @@ import time
 import psutil
 import copy
 import json
-# from qtpy.QtCore import QThread
+from qtpy.QtCore import QThread
 
 from .mp_queue import TaskQueue
 import config as cfg
@@ -29,7 +29,7 @@ __all__ = ['solve_affine']
 def solve_affine(use_scale=None, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
     print('compute_affines >>>>>>>>')
-    # QThread.currentThread().setObjectName('ComputeAffines')
+    QThread.currentThread().setObjectName('ComputeAffines')
 
     if em.are_images_imported():  pass
     else:  cfg.main_window.hud.post("Images must be imported prior to alignment.", logging.WARNING); return
