@@ -1849,7 +1849,7 @@ class MainWindow(QMainWindow):
             return
         self.status.showMessage('Aligning...')
         try:
-            compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1, generate_images=True)
+            compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
         except:
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
             print_exception()
@@ -1859,6 +1859,8 @@ class MainWindow(QMainWindow):
             self.set_idle()
             return
 
+        self.update_alignment_status_indicator()
+
         try:
             generate_aligned_images(
                     use_scale=get_cur_scale_key(),
@@ -1866,18 +1868,18 @@ class MainWindow(QMainWindow):
                     num_layers=-1
             )
         except:
-            self.hud.post('Something Went Wrong During Scale Generation.', logging.ERROR)
+            self.hud.post('Something Went Wrong During Image Generation.', logging.ERROR)
             self.set_idle()
+            print_exception()
             return
 
         if are_aligned_images_generated():
             self.save_project()
             self.set_progress_stage_3()
             self.center_all_images()
-            self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")
+            self.hud.post('Image Generation Complete')
         else:
             self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
-        self.update_alignment_status_indicator()
         self.update_win_self()
         self.set_idle()
 

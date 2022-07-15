@@ -31,7 +31,7 @@ logging.basicConfig(
 )
 
 # def compute_affines():
-def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_images=False):
+def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
     print('compute_affines >>>>>>>>')
     QThread.currentThread().setObjectName('ComputeAffines')
@@ -64,7 +64,6 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
     logging.info('cfg.USE_FILE_IO    = %d' % cfg.USE_FILE_IO)
     logging.info('start_layer        = %d' % start_layer)
     logging.info('num_layers         = %d' % num_layers)
-    logging.info('generate_images    = %s' % generate_images)
 
     cfg.main_window.alignment_status_checkbox.setChecked(False)
     remove_aligned_images(start_layer=start_layer)
@@ -179,7 +178,7 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
 
             if cfg.USE_FILE_IO:
                 # Get the updated data model from the file written by single_alignment_job
-                output_dir = os.path.join(os.path.split(run_project_name)[0], scale_key)
+                output_dir = os.path.join(os.path.split(run_project_name)[0], get_cur_scale_key())
                 output_file = "single_alignment_out_" + str(tnum) + ".json"
                 with open(os.path.join(output_dir, output_file), 'r') as f:  # Use file to refer to the file object
                     dm_text = f.read()

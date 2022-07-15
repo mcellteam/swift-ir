@@ -47,7 +47,7 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     QThread.currentThread().setObjectName('ApplyAffines')
     cfg.main_window.read_gui_update_project_data()
     scale_key = get_scale_key(use_scale)
-    create_align_directories(use_scale=scale_key)
+    # create_align_directories(use_scale=scale_key)
     cfg.main_window.hud.post('Generating Aligned Images (Applying Affines)...')
     if are_aligned_images_generated():
         cfg.main_window.hud.post('Removing the Scale %s Images Generated in a Previous Run...' % use_scale)
@@ -99,6 +99,24 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
         ref_name = layer['images']['ref']['filename']
         al_path, fn = os.path.split(base_name)
         logging.info('generate_aligned_images | basename=%s, ref_name=%s, al_path=%s, fn=%s' % (base_name,ref_name,al_path,fn))
+
+        '''(FROM AN INITIAL ALIGN)
+        INFO:root:generate_aligned_images | 
+            basename=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttttttt/scale_4/img_src/R34CA1-BS12.114.tif, 
+            ref_name=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttttttt/scale_4/img_src/R34CA1-BS12.113.tif, 
+            al_path=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttttttt/scale_4/img_src, fn=R34CA1-BS12.114.tif
+
+        '''
+
+
+        '''(FROM A REGENERATE:)
+        INFO:root:generate_aligned_images | 
+            basename=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttt/scale_4/img_src/R34CA1-BS12.107.tif, 
+            ref_name=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttt/scale_4/img_src/R34CA1-BS12.106.tif, 
+            al_path=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttt/scale_4/img_src, fn=R34CA1-BS12.107.tif
+
+        '''
+
         al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
         layer['images']['aligned'] = {}
         layer['images']['aligned']['filename'] = al_name
