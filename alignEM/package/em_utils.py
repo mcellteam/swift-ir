@@ -5,6 +5,7 @@ import numpy as np
 import os
 import sys
 import copy
+import json
 import imghdr
 import logging
 import inspect
@@ -12,13 +13,18 @@ import traceback
 from glob import glob
 from datetime import datetime
 import config as cfg
+try:
+    import builtins
+except:
+    pass
 
 
 __all__ = ['get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'is_dataset_scaled', 'is_cur_scale_aligned', 'get_num_aligned',
            'get_skips_list', 'are_aligned_images_generated', 'is_any_scale_aligned_and_generated',
-           'get_num_scales', 'print_path', 'copy_skips_to_all_scales',
-           'are_images_imported', 'print_sanity_check', 'is_cur_scale_exported',
+           'print_path', 'print_alignment_layer', 'print_dat_files', 'print_sanity_check',
+           'copy_skips_to_all_scales', 'get_num_scales',
+           'are_images_imported',  'is_cur_scale_exported',
            'get_num_imported_images', 'print_exception', 'get_scale_key', 'get_scale_val',
            'set_scales_from_string', 'makedirs_exist_ok', 'set_default_settings',
            'clear_all_skips', 'verify_image_file', 'print_debug',
@@ -345,6 +351,60 @@ def debug_project():
     print('-------------------------------------------\n')
 
 
+def print_path() -> None:
+    '''Prints the current working directory (os.getcwd), the 'running in' path, and sys.path.'''
+    print('Current directory is...')
+    print('os.getcwd()           : %s' % os.getcwd())
+    print('Running In (__file__) : %s' % os.path.dirname(os.path.realpath(__file__)))
+    print('sys.path              : %s' % sys.path)
+
+
+def print_alignment_layer() -> None:
+    '''Prints a single alignment layer (the last layer) for the current scale from the project dictionary.'''
+    try:
+        al_layer = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][-1]
+        print(json.dumps(al_layer, indent = 2))
+    except:
+        print('No Alignment Layers Found for the Current Scale')
+
+def print_dat_files() -> None:
+    '''Prints the .dat files for the current scale, if they exist .'''
+    bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(), 'bias_data')
+
+    try:
+        with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
+            snr_1 = f.read()
+            print('snr_1:\n%s\n' % snr_1)
+        with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
+            bias_x_1 = f.read()
+            print('bias_x_1:\n%s\n' % bias_x_1)
+        with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
+            bias_y_1 = f.read()
+            print('bias_y_1:\n%s\n' % bias_y_1)
+        with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
+            bias_rot_1 = f.read()
+            print('bias_rot_1:\n%s\n' % bias_rot_1)
+        with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
+            bias_scale_x_1 = f.read()
+            print('bias_scale_x_1:\n%s\n' % bias_scale_x_1)
+        with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
+            bias_scale_y_1 = f.read()
+            print('bias_scale_y_1:\n%s\n' % bias_scale_y_1)
+        with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
+            bias_skew_x_1 = f.read()
+            print('bias_skew_x_1:\n%s\n' % bias_skew_x_1)
+        with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
+            bias_det_1 = f.read()
+            print('bias_det_1:\n%s\n' % bias_det_1)
+        with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
+            afm_1 = f.read()
+            print('afm_1:\n%s\n' % afm_1)
+        with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
+            c_afm_1 = f.read()
+            print('c_afm_1:\n%s\n' % c_afm_1)
+    except:
+        pass
+
 def print_sanity_check():
     # logging.debug('print_sanity_check | logger is logging')
     print("\n___________________DEBUG LAYER_____________________")
@@ -433,18 +493,6 @@ def print_sanity_check():
     print("  Is current scale exported?                       :", is_cur_scale_exported())
 
 
-def print_path() -> None:
-    '''Checks if there exists a set of aligned images at the current scale'''
-    print('Current directory is...')
-    print('os.getcwd()) = ', os.getcwd())
-    print('sys.path = ', sys.path)
-    print('The parent directory of the directory where program resides is:')
-    print(os.path.join(os.path.dirname(__file__), '..'))
-    print("The canonicalised (?) directory where the program resides ('running in'):")
-    print(os.path.dirname(os.path.realpath(__file__)))
-    print('The absolute path of the directory where the program resides.:')
-    print(os.path.abspath(os.path.dirname(__file__)))
-
 
 def module_debug() -> None:
     '''Simple helper function to debug available modules.'''
@@ -462,7 +510,6 @@ def module_debug() -> None:
     # Courtesy of https://github.com/wimglenn
     import sys
     try:
-        import builtins
         old_import = builtins.__import__
         def my_import(name, *args, **kwargs):
             if name not in sys.modules:  print('importing --> {}'.format(name))
@@ -612,7 +659,7 @@ def is_cur_scale_aligned() -> bool:
 
 
 def get_num_aligned() -> int:
-    '''Returns the count aligned images for the current scale'''
+    '''Returns the count aligned and generated images for the current scale.'''
 
     path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(), 'img_aligned')
     # print('get_num_aligned | path=', path)
@@ -709,7 +756,7 @@ def are_aligned_images_generated():
 
 
 def return_aligned_imgs() -> list:
-    '''Checks if there exists a set of aligned images at the current scale'''
+    '''Returns the list of paths for aligned images at the current scale, if any exist.'''
 
     try:
         files = glob(cfg.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
