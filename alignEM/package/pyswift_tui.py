@@ -517,7 +517,7 @@ def ApplyBiasFuncs(align_list):
 # Calculate c_afm across the whole stack with optional bias correction
 # @countit #sus #crash #bug #0405
 def SetStackCafm(scale_dict, null_biases=False):
-    print_debug_enter(70)
+    print_debug_enter(100)
 
     print_debug(50, "\npyswift_tui | Computing Cafm and Nulling Biases...\n")
 
@@ -543,6 +543,7 @@ def SetStackCafm(scale_dict, null_biases=False):
         for align_idx in range(len(al_stack)):
             if null_biases:
                 bias_mat = BiasMat(align_idx, bias_funcs)
+            __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
             c_afm = SetSingleCafm(al_stack[align_idx], c_afm, bias_mat=bias_mat)
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(al_stack, bias_funcs=bias_funcs)

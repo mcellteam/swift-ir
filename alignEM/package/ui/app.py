@@ -1874,7 +1874,7 @@ class MainWindow(QMainWindow):
             return
 
         if are_aligned_images_generated():
-            self.save_project()
+            # self.save_project()
             self.set_progress_stage_3()
             self.center_all_images()
             self.hud.post('Image Generation Complete')
@@ -1891,7 +1891,7 @@ class MainWindow(QMainWindow):
             self.set_idle()
             return
         self.status.showMessage('Busy...')
-        self.read_gui_update_project_data()
+        # self.read_gui_update_project_data()
         self.save_project()
 
         try:
@@ -1907,7 +1907,7 @@ class MainWindow(QMainWindow):
             return
 
         if are_aligned_images_generated():
-            self.save_project()
+            # self.save_project()
             self.set_progress_stage_3()
             self.center_all_images()
             self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")

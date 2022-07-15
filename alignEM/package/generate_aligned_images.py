@@ -144,8 +144,11 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     task_queue.stop()
     del task_queue
 
+    cfg.main_window.save_project()
+
+    # Regenerate Images seems to be overwriting bias data unwittingly. Moving this to app.py member funcs.
     bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], use_scale, 'bias_data')
-    save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path)  # <-- call to save bias data
+    save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path)
 
     cfg.main_window.hud.post('Wrapping up...')
     cfg.main_window.center_all_images()
