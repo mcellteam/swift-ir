@@ -1079,7 +1079,7 @@ class MainWindow(QMainWindow):
         self.clear_all_skips_button.setIcon(qta.icon("mdi.undo", color=cfg.ICON_COLOR))
 
         self.toggle_skip = ToggleSwitch()
-        self.skip_label = QLabel("Skip:")
+        self.skip_label = QLabel("Include:")
         # self.skip_label.setPointSize(9)
         # self.skip_label.setFixedSize(80, 30)
 
@@ -1091,7 +1091,8 @@ class MainWindow(QMainWindow):
         self.skip_layout.addStretch(4)
         self.toggle_skip.setToolTip('Skip current image (do not align)')
         self.skip_label.setToolTip('Skip current image (do not align)')
-        self.toggle_skip.setChecked(True)
+        # self.toggle_skip.setChecked(True)
+        self.toggle_skip.setChecked(False)
         # self.toggle_skip.setH_scale(.9)
         # self.toggle_skip.setV_scale(1.0)
         self.toggle_skip.toggled.connect(skip_changed_callback)
@@ -1754,6 +1755,8 @@ class MainWindow(QMainWindow):
                          ['Print Image Library', None, self.print_image_library, None, None, None],
                          ['Print Affine Grep', None, debug_project, None, None, None],
                          ['Print Aligned Scales List', None, get_aligned_scales_list, None, None, None],
+                         ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
+                         ['Print .dat Files', None, print_dat_files, None, None, None],
                          ['Update Panels', None, self.update_panels, None, None, None],
                          ['Refresh All Images', None, self.refresh_all_images, None, None, None],
                          ['Print Working Directory', None, print_path, None, None, None],
@@ -1807,7 +1810,6 @@ class MainWindow(QMainWindow):
             cfg.main_window.hud.post('Generating Scales Triggered an Exception',logging.WARNING)
         else:
             link_all_stacks()
-            self.save_project()
             set_default_settings()
 
         if is_dataset_scaled():
@@ -1830,9 +1832,10 @@ class MainWindow(QMainWindow):
             self.align_all_button.setEnabled(is_cur_scale_ready_for_alignment())
             self.center_all_images()
             self.hud.post('Scaling Completed Successfully.')
+            print('\nScaling Completed Successfully.\n')
         else:
             self.hud.post('Scaling Was Not Successful.', logging.ERROR)
-        self.save_project()
+            print('\nScaling Was Not Successful.\n')
         self.set_idle()
 
 
@@ -1874,10 +1877,10 @@ class MainWindow(QMainWindow):
             return
 
         if are_aligned_images_generated():
-            # self.save_project()
             self.set_progress_stage_3()
             self.center_all_images()
             self.hud.post('Image Generation Complete')
+            print('\nImage Generation Complete\n')
         else:
             self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
         self.update_win_self()
@@ -1886,14 +1889,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def run_regenerate_alignment(self) -> None:
         print('run_regenerate_alignment >>>>>>>>')
+        self.read_gui_update_project_data()
         if not is_cur_scale_aligned():
             self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
             self.set_idle()
             return
         self.status.showMessage('Busy...')
-        # self.read_gui_update_project_data()
-        self.save_project()
-
         try:
             generate_aligned_images(
                     use_scale=get_cur_scale_key(),
@@ -1901,16 +1902,16 @@ class MainWindow(QMainWindow):
                     num_layers=-1
             )
         except:
-            self.hud.post('Something Went Wrong During Scale Generation.', logging.ERROR)
+            self.hud.post('Something Went Wrong During ImageGeneration.', logging.ERROR)
             self.set_idle()
             print_exception()
             return
 
         if are_aligned_images_generated():
-            # self.save_project()
             self.set_progress_stage_3()
             self.center_all_images()
-            self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")
+            self.hud.post("Regenerate Complete")
+            print('\nRegenerate Complete\n')
         else:
             self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning First.', logging.ERROR)
         self.update_win_self()
@@ -2151,7 +2152,7 @@ class MainWindow(QMainWindow):
 
         self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
         self.align_label_affine.setText(alignment_method_string)
-        self.align_label_scales_remaining.setText('Remaining: %d' % len(get_not_aligned_scales_list()))
+        self.align_label_scales_remaining.setText('# Scales Unaligned: %d' % len(get_not_aligned_scales_list()))
 
     @Slot()
     def update_alignment_status_indicator(self) -> None:
@@ -2626,7 +2627,6 @@ class MainWindow(QMainWindow):
         if are_images_imported():
             self.center_all_images()
             self.refresh_all_images()
-            self.save_project_to_file()
 
     def import_images_dialog(self):
         '''Dialog for importing images. Returns list of filenames.'''

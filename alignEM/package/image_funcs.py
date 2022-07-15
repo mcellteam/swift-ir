@@ -3,13 +3,15 @@
 
 import sys
 import numpy as np
-try:
-    from package.get_image_size import get_image_size
-    from package.swiftir import *
-except:
-    from .get_image_size import get_image_size
+# try:
+#     from package.get_image_size import get_image_size
+#     from package.swiftir import *
+# except:
+from .get_image_size import get_image_size
+from .swiftir import *
 
 
+# from .swiftir import identityAffine, composeAffine, invertAffine, applyAffine, modelBounds2, si_unpackSize
 
 __all__ = ['BiasMat',
            'BiasFuncs',
@@ -334,92 +336,92 @@ def BoundingRect(al_stack):
 
     print('<<<<<<<< BoundingRect')
     return rect
-
-
-def composeAffine(afm, bfm):
-    '''COMPOSEAFFINE - Compose two python_swiftir transforms
-    COMPOSEAFFINE(afm1, afm2) returns the python_swiftir transform AFM1 ∘ AFM2
-    that applies AFM1 after AFM2.
-    Affine matrices must be 2x3 numpy arrays.'''
-    afm = np.vstack((afm, [0,0,1]))
-    bfm = np.vstack((bfm, [0,0,1]))
-    fm = np.matmul(afm, bfm)
-    return fm[0:2,:]
-
-def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply python_swiftir transform to a point
-    xy_ = APPLYAFFINE(afm, xy) applies the python_swiftir matrix AFM to the point XY
-    Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
-    if not type(xy)==np.ndarray:
-        xy = np.array([xy[0], xy[1]])
-    return np.matmul(afm[0:2,0:2], xy) + reptoshape(afm[0:2,2], xy)
-
-def identityAffine():
-    '''IDENTITYAFFINE - Return an idempotent python_swiftir transform
-    afm = IDENTITYAFFINE() returns an python_swiftir transform that is
-    an identity transform.'''
-    return np.array([[1., 0., 0.],
-                     [0., 1., 0.]])
-
-def modelBounds2(afm, siz):
-    '''MODELBOUNDS - Returns a bounding rectangle in model space
-    (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
-    of an input rectangle (siz) in model space if pixel lookup is through python_swiftir
-    transform AFM.'''
-    inv = invertAffine(afm)
-    w, h = si_unpackSize(siz)
-    c = [applyAffine(inv, [0, 0])]
-    c = np.append(c,[applyAffine(inv, [w, 0])],axis=0)
-    c = np.append(c,[applyAffine(inv, [0, h])],axis=0)
-    c = np.append(c,[applyAffine(inv, [w, h])],axis=0)
-    c_min = [np.floor(c[:,0].min()).astype('int32'), np.floor(c[:,1].min()).astype('int32')]
-    c_max = [np.ceil(c[:,0].max()).astype('int32'), np.ceil(c[:,1].max()).astype('int32')]
-    return np.array([c_min, c_max])
-
-def invertAffine(afm):
-    '''INVERTAFFINE - Invert affine transform
-    INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
-    returns the inverse transform.'''
-    afm = np.vstack((afm, [0,0,1]))
-    ifm = np.linalg.inv(afm)
-    return ifm[0:2,:]
-
-def si_unpackSize(siz):
-    '''SI_UNPACKSIZE - Interprets size arguments
-    Sizes are rounded up to next even number. Size may be given as one
-    or two numbers. Unpacks to tuple.'''
-    if type(siz)==np.ndarray or type(siz)==list or type(siz)==tuple:
-        w = siz[0]
-        h = siz[-1]
-    else:
-        w = h = siz
-    if w % 2:
-        w += 1
-    if h % 2:
-        h += 1
-    return (w, h)
-
-def reptoshape(mat, pattern):
-    '''REPTOSHAPE - Repeat a matrix to match shape of other matrix
-    REPTOSHAPE(mat, pattern) returns a copy of the matrix MAT replicated
-    to match the shape of PATTERNS. For instance, if MAT is an N-vector
-    or an Nx1 matrix, and PATTERN is NxK, the output will be an NxK matrix
-    of which each the columns is filled with the contents of MAT.
-    Higher dimensional cases are handled as well, but non-singleton dimensions
-    of MAT must always match the corresponding dimension of PATTERN.'''
-    ps = [x for x in pattern.shape]
-    ms = [x for x in mat.shape]
-    while len(ms)<len(ps):
-        ms.append(1)
-    mat = np.reshape(mat, ms)
-    for d in range(len(ps)):
-        if ms[d]==1:
-            mat = np.repeat(mat, ps[d], d)
-        elif ms[d] != ps[d]:
-            raise ValueError('Cannot broadcast'  + str(mat.shape) + ' to '
-                             + str(pattern.shape))
-    return mat
-
+#
+#
+# def composeAffine(afm, bfm):
+#     '''COMPOSEAFFINE - Compose two python_swiftir transforms
+#     COMPOSEAFFINE(afm1, afm2) returns the python_swiftir transform AFM1 ∘ AFM2
+#     that applies AFM1 after AFM2.
+#     Affine matrices must be 2x3 numpy arrays.'''
+#     afm = np.vstack((afm, [0,0,1]))
+#     bfm = np.vstack((bfm, [0,0,1]))
+#     fm = np.matmul(afm, bfm)
+#     return fm[0:2,:]
+#
+# def applyAffine(afm, xy):
+#     '''APPLYAFFINE - Apply python_swiftir transform to a point
+#     xy_ = APPLYAFFINE(afm, xy) applies the python_swiftir matrix AFM to the point XY
+#     Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
+#     if not type(xy)==np.ndarray:
+#         xy = np.array([xy[0], xy[1]])
+#     return np.matmul(afm[0:2,0:2], xy) + reptoshape(afm[0:2,2], xy)
+#
+# def identityAffine():
+#     '''IDENTITYAFFINE - Return an idempotent python_swiftir transform
+#     afm = IDENTITYAFFINE() returns an python_swiftir transform that is
+#     an identity transform.'''
+#     return np.array([[1., 0., 0.],
+#                      [0., 1., 0.]])
+#
+# def modelBounds2(afm, siz):
+#     '''MODELBOUNDS - Returns a bounding rectangle in model space
+#     (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
+#     of an input rectangle (siz) in model space if pixel lookup is through python_swiftir
+#     transform AFM.'''
+#     inv = invertAffine(afm)
+#     w, h = si_unpackSize(siz)
+#     c = [applyAffine(inv, [0, 0])]
+#     c = np.append(c,[applyAffine(inv, [w, 0])],axis=0)
+#     c = np.append(c,[applyAffine(inv, [0, h])],axis=0)
+#     c = np.append(c,[applyAffine(inv, [w, h])],axis=0)
+#     c_min = [np.floor(c[:,0].min()).astype('int32'), np.floor(c[:,1].min()).astype('int32')]
+#     c_max = [np.ceil(c[:,0].max()).astype('int32'), np.ceil(c[:,1].max()).astype('int32')]
+#     return np.array([c_min, c_max])
+#
+# def invertAffine(afm):
+#     '''INVERTAFFINE - Invert affine transform
+#     INVERTAFFINE(afm), where AFM is a 2x3 affine transformation matrix,
+#     returns the inverse transform.'''
+#     afm = np.vstack((afm, [0,0,1]))
+#     ifm = np.linalg.inv(afm)
+#     return ifm[0:2,:]
+#
+# def si_unpackSize(siz):
+#     '''SI_UNPACKSIZE - Interprets size arguments
+#     Sizes are rounded up to next even number. Size may be given as one
+#     or two numbers. Unpacks to tuple.'''
+#     if type(siz)==np.ndarray or type(siz)==list or type(siz)==tuple:
+#         w = siz[0]
+#         h = siz[-1]
+#     else:
+#         w = h = siz
+#     if w % 2:
+#         w += 1
+#     if h % 2:
+#         h += 1
+#     return (w, h)
+#
+# def reptoshape(mat, pattern):
+#     '''REPTOSHAPE - Repeat a matrix to match shape of other matrix
+#     REPTOSHAPE(mat, pattern) returns a copy of the matrix MAT replicated
+#     to match the shape of PATTERNS. For instance, if MAT is an N-vector
+#     or an Nx1 matrix, and PATTERN is NxK, the output will be an NxK matrix
+#     of which each the columns is filled with the contents of MAT.
+#     Higher dimensional cases are handled as well, but non-singleton dimensions
+#     of MAT must always match the corresponding dimension of PATTERN.'''
+#     ps = [x for x in pattern.shape]
+#     ms = [x for x in mat.shape]
+#     while len(ms)<len(ps):
+#         ms.append(1)
+#     mat = np.reshape(mat, ms)
+#     for d in range(len(ps)):
+#         if ms[d]==1:
+#             mat = np.repeat(mat, ps[d], d)
+#         elif ms[d] != ps[d]:
+#             raise ValueError('Cannot broadcast'  + str(mat.shape) + ' to '
+#                              + str(pattern.shape))
+#     return mat
+#
 
 # For now, always use the limited argument version
 def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):

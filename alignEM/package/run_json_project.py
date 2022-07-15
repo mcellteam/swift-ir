@@ -39,6 +39,7 @@ project_runner.py
 
 '''
 import copy
+import json
 import errno
 # from python_swiftir.invertAffine import invertAffine
 # from python_swiftir.reptoshape import reptoshape
@@ -52,29 +53,28 @@ import numpy as np
 import os
 import platform
 import subprocess as sp
-# from python_swiftir.loadImage import loadImage
-# from python_swiftir.saveImage import saveImage
-# from .python_swiftir.affineImage import affineImage
-# from .python_swiftir.swiftir import apodize2
-# from .python_swiftir.swiftir import mirIterate
-# from .python_swiftir.swiftir import stationaryToMoving
-# from .python_swiftir.swiftir import stationaryPatches
-# from .python_swiftir.swiftir import movingPatches
-# from .python_swiftir.swiftir import multiSwim
-# from .python_swiftir.composeAffine import composeAffine
-# from .get_image_size import get_image_size
 
-from package.swiftir import loadImage
-from package.swiftir import saveImage
-from package.swiftir import affineImage
-from package.swiftir import apodize2
-from package.swiftir import mirIterate
-from package.swiftir import stationaryToMoving
-from package.swiftir import stationaryPatches
-from package.swiftir import movingPatches
-from package.swiftir import multiSwim
-from package.swiftir import composeAffine
-from package.get_image_size import get_image_size
+# from swiftir import loadImage
+# from swiftir import saveImage
+# from swiftir import affineImage
+# from swiftir import apodize2
+# from swiftir import mirIterate
+# from swiftir import stationaryToMoving
+# from swiftir import stationaryPatches
+# from swiftir import movingPatches
+# from swiftir import multiSwim
+# from swiftir import composeAffine
+
+
+try:
+    import package.swiftir as swiftir
+except:
+    import swiftir
+
+try:
+    from package.get_image_size import get_image_size
+except:
+    from get_image_size import get_image_size
 
 
 
@@ -135,7 +135,7 @@ def run_json_project(project,
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
 
     '''
-    print('run_json_project >>>>>>>>')
+    print('\n\nrun_json_project >>>>>>>>\n\n')
     print("run_json_project | alignment_option = ", alignment_option)
     print("run_json_project | use_scale = ", use_scale)
     print("run_json_project | code_mode = ", swiftir_code_mode)
@@ -149,7 +149,6 @@ def run_json_project(project,
 
     print_debug(20, "run_json_project | first_layer_has_ref = " + str(first_layer_has_ref))
     print_debug(20, "run_json_project | ref = \"" + str(project['data']['scales']['scale_%d' % use_scale]['alignment_stack'][0]['images']['ref']['filename']) + "\"")
-
     print_debug(10, 80 * "!")
     # align_global_mode = code_mode #0707
 
@@ -272,11 +271,11 @@ def run_json_project(project,
 
             # Upscale x & y bias values
             if 'bias_x_per_image' in atrm['method_data']:
-                atrm['method_data']['bias_x_per_image'] = upscale * atrm['method_data']['bias_x_per_image']
+                atrm['method_data']['bias_x_per_image'] *= upscale
             else:
                 atrm['method_data']['bias_x_per_image'] = 0
             if 'bias_y_per_image' in atrm['method_data']:
-                atrm['method_data']['bias_y_per_image'] = upscale * atrm['method_data']['bias_y_per_image']
+                atrm['method_data']['bias_y_per_image'] *= upscale
             else:
                 atrm['method_data']['bias_y_per_image'] = 0
             # TODO: handle bias values in a better way than this
@@ -305,6 +304,8 @@ def run_json_project(project,
             atrm['method_data']['bias_scale_x_per_image'] = scale_x_bias
             atrm['method_data']['bias_scale_y_per_image'] = scale_y_bias
             atrm['method_data']['bias_skew_x_per_image'] = skew_x_bias
+            print('run_json_project | method_data\n%s' % json.dumps(atrm['method_data'], indent = 2))
+
 
             # put updated atrm into s_tbd
             s_tbd[i]['align_to_ref_method'] = atrm
@@ -424,7 +425,7 @@ def run_json_project(project,
         base_fn = os.path.basename(im_sta_fn)
         al_fn = os.path.join(align_dir,base_fn)
         print_debug(50,"Saving first image in align dir: ", al_fn)
-        im_sta = loadImage(im_sta_fn)
+        im_sta = swiftir.loadImage(im_sta_fn)
 
         rect = None
         if project['data']['scales']['scale_'+str(scale_tbd)]['use_bounding_rect']:
@@ -434,10 +435,10 @@ def run_json_project(project,
         print_debug(10,'Bounding Rectangle: %s' % (str(rect)))
 
         print_debug(10,"Applying python_swiftir: " + str(c_afm_init))
-        im_aligned = affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
+        im_aligned = swiftir.affineImage(c_afm_init,im_sta,rect=rect,grayBorder=True)
         del im_sta
         print_debug(10,"Saving image: " + al_fn)
-        saveImage(im_aligned,al_fn)
+        swiftir.saveImage(im_aligned,al_fn)
         if not 'aligned' in s_tbd[0]['images']:
           s_tbd[0]['images']['aligned'] = {}
         s_tbd[0]['images']['aligned']['filename'] = al_fn
@@ -468,7 +469,7 @@ def run_json_project(project,
 
         # The code generally returns "True"
         #jy ^ which makes --> need_to_write_json = True
-        print('<<<<<<<< run_json_project')
+        print('\n\n<<<<<<<< run_json_project\n\n')
         return (project, True)
 
     else:  # if scale_tbd:
@@ -477,7 +478,7 @@ def run_json_project(project,
         print_debug(1, "run_json_project | Returning False")
         print_debug(1, 30 * "|=|")
 
-        print('<<<<<<<< run_json_project')
+        print('\n\n<<<<<<<< run_json_project\n\n')
         return (project, False)
 
 def evaluate_project_status(project):
@@ -497,24 +498,8 @@ def evaluate_project_status(project):
         proj_status['scales'][scale_key] = {}
 
         alstack = project['data']['scales'][scale_key]['alignment_stack']
-        # print('\nalstack:')
-        # from pprint import pprint
-        # pprint(alstack)
-
-        '''
- {'align_to_ref_method': {'method_data': {'whitening_factor': -0.68,
-                                          'win_scale_factor': 0.8125},
-                          'method_options': ['None'],
-                          'method_results': {},
-                          'selected_method': 'None'},
-  'images': {'base': {'filename': '/Users/joelyancey/glanceem_swift/test_projects/test9999/scale_2/img_src/R34CA1-BS12.107.tif',
-                      'metadata': {'annotations': [], 'match_points': []}},
-             'ref': {'filename': '/Users/joelyancey/glanceem_swift/test_projects/test9999/scale_2/img_src/R34CA1-BS12.106.tif',
-                     'metadata': {'annotations': [], 'match_points': []}}},
-  'skip': False},
-
-
-        '''
+        print('\nevaluate_project_status | alstack:')
+        print(alstack)
 
         num_alstack = len(alstack)
 
@@ -755,8 +740,8 @@ class alignment_process:
         print_debug(20, "********************************")
         print_debug(50, "\n\n")
 
-        #    im_sta = loadImage(self.im_sta_fn)
-        #    im_mov = loadImage(self.im_mov_fn)
+        #    im_sta = swiftir.loadImage(self.im_sta_fn)
+        #    im_mov = swiftir.loadImage(self.im_mov_fn)
         #    siz = (int(im_sta.shape[0]), int(im_sta.shape[1]))
 
         # Get Image Size
@@ -886,13 +871,13 @@ class alignment_process:
 
     def setCafm(self, c_afm, bias_mat=None):
         '''Calculate new cumulative python_swiftir for current stack location'''
-        self.cumulative_afm = composeAffine(self.recipe.afm, c_afm)
+        self.cumulative_afm = swiftir.composeAffine(self.recipe.afm, c_afm)
         # matrix multiplication of current python_swiftir matrix with c_afm (cumulative) -jy
         # current cumulative "at this point in the stack"
 
         # Apply bias_mat if given
         if type(bias_mat) != type(None):
-            self.cumulative_afm = composeAffine(bias_mat, self.cumulative_afm)
+            self.cumulative_afm = swiftir.composeAffine(bias_mat, self.cumulative_afm)
 
         return self.cumulative_afm
 
@@ -900,7 +885,7 @@ class alignment_process:
 
         print_debug(12, "\nsaveAligned self.cumulative_afm: " + str(self.cumulative_afm))
 
-        im_mov = loadImage(self.im_mov_fn)
+        im_mov = swiftir.loadImage(self.im_mov_fn)
         print_debug(4, "\nTransforming " + str(self.im_mov_fn))
         print_debug(12, " with:")
         print_debug(12, "  self.cumulative_afm = " + str(self.cumulative_afm))
@@ -912,17 +897,17 @@ class alignment_process:
         # rect = [-116, -116, 914, 914]
         # print ( 100*'#' )
         # print ( 100*'#' )
-        im_aligned = affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
-        #      im_aligned = affineImage(self.cumulative_afm, im_mov, rect=rect)
+        im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect, grayBorder=grayBorder)
+        #      im_aligned = swiftir.affineImage(self.cumulative_afm, im_mov, rect=rect)
         ofn = os.path.join(self.align_dir, os.path.basename(self.im_mov_fn))
         print('align_swiftir | class=alignment_process | fn saveAligned | ofn =  ', ofn)
 
         print_debug(4, "  saving as: " + str(ofn))
         if apodize:
-            im_apo = apodize2(im_aligned, wfrac=1 / 3.)
-            saveImage(im_apo, ofn)
+            im_apo = swiftir.apodize2(im_aligned, wfrac=1 / 3.)
+            swiftir.saveImage(im_apo, ofn)
         else:
-            saveImage(im_aligned, ofn)
+            swiftir.saveImage(im_aligned, ofn)
 
         # del the images to allow for automatic garbage collection
         del im_mov
@@ -976,8 +961,8 @@ class align_recipe:
         # Load images now but only in 'python' mode
         #    C SWiFT-IR loads its own images
         if self.swiftir_mode == 'python':
-            self.im_sta = loadImage(self.im_sta_fn)
-            self.im_mov = loadImage(self.im_mov_fn)
+            self.im_sta = swiftir.loadImage(self.im_sta_fn)
+            self.im_mov = swiftir.loadImage(self.im_mov_fn)
 
         # Initialize afm to afm of first ingredient in recipe
         if type(self.ingredients[0].afm) != type(None):
@@ -1035,31 +1020,33 @@ class align_ingredient:
         #    global global_swiftir_mode
         #    self.swiftir_mode = global_swiftir_mode
 
+
         # Configure platform-specific path to executables for C SWiFT-IR
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+        print('my_path = %s' % my_path)
         self.system = platform.system()
         self.node = platform.node()
         if self.system == 'Darwin':
             # self.swim_c = my_path + 'lib/bin_darwin/swim'
-            self.swim_c = my_path + '../lib/bin_darwin/swim'
+            self.swim_c = my_path + 'lib/bin_darwin/swim'
             # self.mir_c = my_path + 'lib/bin_darwin/mir'
-            self.mir_c = my_path + '../lib/bin_darwin/mir'
+            self.mir_c = my_path + 'lib/bin_darwin/mir'
         elif self.system == 'Linux':
             if '.tacc.utexas.edu' in self.node:
                 # self.swim_c = my_path + 'lib/bin_tacc/swim'
-                self.swim_c = my_path + '../lib/bin_tacc/swim'
+                self.swim_c = my_path + 'lib/bin_tacc/swim'
                 # self.mir_c = my_path + 'lib/bin_tacc/mir'
-                self.mir_c = my_path + '../lib/bin_tacc/mir'
+                self.mir_c = my_path + 'lib/bin_tacc/mir'
             else:
                 # self.swim_c = my_path + 'lib/bin_linux/swim'
-                self.swim_c = my_path + '../lib/bin_linux/swim'
+                self.swim_c = my_path + 'lib/bin_linux/swim'
                 # self.mir_c = my_path + 'lib/bin_linux/mir'
-                self.mir_c = my_path + '../lib/bin_linux/mir'
+                self.mir_c = my_path + 'lib/bin_linux/mir'
 
         # if self.swiftir_mode == 'c':
         #  print_debug ( 70, "Actually loading images" )
-        #  self.im_sta = loadImage(self.im_sta_fn)
-        #  self.im_mov = loadImage(self.im_mov_fn)
+        #  self.im_sta = swiftir.loadImage(self.im_sta_fn)
+        #  self.im_mov = swiftir.loadImage(self.im_mov_fn)
 
     def __str__(self):
         s = "ingredient:\n"
@@ -1279,7 +1266,7 @@ class align_ingredient:
         # If ww==None then this is a Matching Point ingredient of a recipe
         # Calculate afm directly using psta and pmov as the matching points
         if self.align_mode == 'match_point_align':
-            (self.afm, err, n) = mirIterate(self.psta, self.pmov)
+            (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
             self.ww = (0.0, 0.0)
             self.snr = np.zeros(len(self.psta[0]))
             snr_array = self.snr
@@ -1310,17 +1297,17 @@ class align_ingredient:
         else:
 
             print_debug(50, "Running python version of swim")
-            self.pmov = stationaryToMoving(afm, self.psta)
-            sta = stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
+            self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+            sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
             for i in range(self.iters):
                 print_debug(50, 'psta = ' + str(self.psta))
                 print_debug(50, 'pmov = ' + str(self.pmov))
-                mov = movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
-                (dp, ss, snr) = multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
+                mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
+                (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
                 print_debug(50, '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
                 self.pmov = self.pmov + dp
-                (afm, err, n) = mirIterate(self.psta, self.pmov)
-                self.pmov = stationaryToMoving(afm, self.psta)
+                (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+                self.pmov = swiftir.stationaryToMoving(afm, self.psta)
                 print_debug(50, '  Affine err:  %g' % (err))
                 print_debug(50, '  SNR:  ' + str(snr))
             self.snr = snr
@@ -1360,8 +1347,8 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
     if type(global_afm) == type(None):
         global_afm = identityAffine()
 
-    im_sta = loadImage(im_sta_fn)
-    im_mov = loadImage(im_mov_fn)
+    im_sta = swiftir.loadImage(im_sta_fn)
+    im_mov = swiftir.loadImage(im_mov_fn)
 
     pa = np.zeros((2, 1))
     wwx = int(im_sta.shape[0])
@@ -1408,10 +1395,10 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
 
     recipe.execute()
 
-    global_afm = composeAffine(recipe.afm, global_afm)
-    im_aligned = affineImage(global_afm, im_mov)
+    global_afm = swiftir.composeAffine(recipe.afm, global_afm)
+    im_aligned = swiftir.affineImage(global_afm, im_mov)
     ofn = os.path.join(align_dir, os.path.basename(im_mov_fn))
-    saveImage(im_aligned, ofn)
+    swiftir.saveImage(im_aligned, ofn)
 
     return (global_afm, recipe)
 
@@ -1530,8 +1517,8 @@ if __name__ == '__main__':
         print_debug(50, "Loading the images")
         if not (align_proc.recipe is None):
             if not (align_proc.recipe.ingredients is None):
-                im_sta = loadImage(f1)
-                im_mov = loadImage(f2)
+                im_sta = swiftir.loadImage(f1)
+                im_mov = swiftir.loadImage(f2)
                 for ing in align_proc.recipe.ingredients:
                     ing.im_sta = im_sta
                     ing.im_mov = im_mov
@@ -1560,10 +1547,10 @@ if __name__ == '__main__':
     psta[0,0] = cx
     psta[1,0] = cy
 
-    pmov = stationaryToMoving(afm, psta)
-    sta = stationaryPatches(im_sta, psta, ww)
-    mov = movingPatches(im_mov, pmov, afm, ww)
-    (dp, ss, snr) = multiSwim(sta, mov, pp=pmov, afm=afm, wht=-.65)
+    pmov = swiftir.stationaryToMoving(afm, psta)
+    sta = swiftir.stationaryPatches(im_sta, psta, ww)
+    mov = swiftir.movingPatches(im_mov, pmov, afm, ww)
+    (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=pmov, afm=afm, wht=-.65)
     print_debug ( 50, snr)
     print_debug ( 50, afm)
 

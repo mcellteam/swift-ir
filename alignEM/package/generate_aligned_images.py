@@ -9,27 +9,11 @@ from qtpy.QtCore import QThread
 import config as cfg
 
 from .em_utils import get_scale_key, get_scale_val, get_cur_scale_key, are_aligned_images_generated, \
-    makedirs_exist_ok, print_exception, get_num_imported_images, get_num_scales
+    makedirs_exist_ok, print_exception, get_num_imported_images, get_num_scales, print_alignment_layer, print_dat_files
 from .mp_queue import TaskQueue
 from .remove_aligned_images import remove_aligned_images
 from .save_bias_analysis import save_bias_analysis
 from .image_funcs import *
-
-# FROM WORKING EXAMPLE
-# import os
-# import sys
-# import time
-# import psutil
-# import config as cfg
-# # import src.alignem_utils as em
-# from .glanceem_utils import get_scale_key, get_scale_val, getCurScale, areAlignedImagesGenerated, \
-#     makedirs_exist_ok, print_exception
-# # from qtpy.QtCore import QThread
-# # from .image import BoundingRect, SetStackCafm
-# from .task_queue_mp import TaskQueue
-# from .remove_aligned_images import remove_aligned_images
-# from .save_bias_analysis import save_bias_analysis
-
 
 __all__ = ['generate_aligned_images']
 
@@ -43,7 +27,11 @@ logging.basicConfig(
 
 def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     '''Called one time without arguments by 'do_alignment' '''
+
     logging.info('\ngenerate_aligned_images >>>>>>>>\n')
+    print_alignment_layer()
+    print_dat_files()
+
     QThread.currentThread().setObjectName('ApplyAffines')
     cfg.main_window.read_gui_update_project_data()
     scale_key = get_scale_key(use_scale)
@@ -55,13 +43,6 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     cfg.main_window.hud.post('Propogating AFMs to generate CFMs at each layer...')
     scale_dict = cfg.project_data['data']['scales'][scale_key]
     null_bias = cfg.project_data['data']['scales'][get_cur_scale_key()]['null_cafm_trends']
-
-    print('generate_aligned_images | str(null_bias) = %s' % str(null_bias))
-    print('Calling SetStackCafm with args...')
-    print('null_bias = %s' % str(null_bias))
-    print('type(null_bias) = %s' % type(null_bias))
-    print('scale_dict = %s' % str(scale_dict))
-
     try:
         SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
     except:
@@ -92,8 +73,10 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     logging.info('generate_aligned_images | path =' + str(path))
     logging.info('generate_aligned_images | job path = %s' % apply_affine_job)
     alstack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
-    if num_layers == -1:  end_layer = len(alstack)
-    else:  end_layer = start_layer + num_layers
+    if num_layers == -1:
+        end_layer = len(alstack)
+    else:
+        end_layer = start_layer + num_layers
     for layer in alstack[start_layer:end_layer + 1]:
         base_name = layer['images']['base']['filename']
         ref_name = layer['images']['ref']['filename']
@@ -144,16 +127,13 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     task_queue.stop()
     del task_queue
 
-    cfg.main_window.save_project()
-
-    # Regenerate Images seems to be overwriting bias data unwittingly. Moving this to app.py member funcs.
-    bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], use_scale, 'bias_data')
-    save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path)
+    # cfg.main_window.save_project()
+    # print_alignment_layer()
+    # print_dat_files()
 
     cfg.main_window.hud.post('Wrapping up...')
     cfg.main_window.center_all_images()
     cfg.main_window.update_win_self()
-    cfg.main_window.refresh_all_images()
     logging.info('<<<<<<<< generate_aligned_images')
     print('\nImage Generation Complete\n')
 

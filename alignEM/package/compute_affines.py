@@ -11,7 +11,8 @@ import json
 from qtpy.QtCore import QThread
 
 import config as cfg
-from .em_utils import are_images_imported, is_dataset_scaled, get_cur_scale_key, get_scale_val
+from .em_utils import are_images_imported, is_dataset_scaled, get_cur_scale_key, get_scale_val, \
+    print_alignment_layer, print_dat_files
 from .mp_queue import TaskQueue
 from .generate_aligned_images import generate_aligned_images
 from .remove_aligned_images import remove_aligned_images
@@ -35,6 +36,10 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
     print('compute_affines >>>>>>>>')
     QThread.currentThread().setObjectName('ComputeAffines')
+
+    print('_____________Compute Affines Beginning_____________')
+    print_alignment_layer()
+    print_dat_files()
 
     if are_images_imported():
         pass
@@ -220,8 +225,9 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
         task_queue.stop()
         del task_queue
 
-
-        # cfg.main_window.save_project()
+        print('_____________Compute Affines End_____________')
+        print_alignment_layer()
+        print_dat_files()
 
         cfg.project_data = updated_model
         bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], use_scale, 'bias_data')

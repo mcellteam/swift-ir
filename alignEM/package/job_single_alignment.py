@@ -10,11 +10,12 @@ import os
 import sys
 import json
 
-try: import package.pyswift_tui as pyswift_tui
-except: import pyswift_tui
+# try: import package.pyswift_tui as pyswift_tui
+# except: import pyswift_tui
 
-# print('pyswift_tui | sys.path:')
-# print(sys.path)
+from run_json_project import run_json_project
+# import swiftir
+
 
 
 if __name__ == '__main__':
@@ -49,7 +50,7 @@ if __name__ == '__main__':
     project_dict = json.loads ( text )
 
     # updated_model, need_to_write_json =  pyswift_tui.run_json_project ( #0619
-    updated_model, need_to_write_json =  pyswift_tui.run_json_project (
+    updated_model, need_to_write_json =  run_json_project (
                                          project = project_dict,
                                          alignment_option = alignment_option,
                                          use_scale = use_scale,
