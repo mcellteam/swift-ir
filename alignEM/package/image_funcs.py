@@ -240,7 +240,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
     print('SetSingleCafm >>>>>>>>')
 
     atrm = layer_dict['align_to_ref_method']
-    print("SetSingleCafm | atrm = layer_dict['align_to_ref_method'] = ", str(atrm) )
+
     try:
         afm = np.array(atrm['method_results']['affine_matrix'])
     except:
@@ -250,7 +250,10 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         print('SetSingleCafm | ERROR | empty affine_matrix in base image: %s' % (
         layer_dict['images']['base']['filename']))
         print('SetSingleCafm | Automatically skipping base image: %s' % (layer_dict['images']['base']['filename']))
-        layer_dict['skip'] = True
+
+        #0714- THIS SHOULD NOT BE CHANGED LIKE THIS (!!!)
+        # layer_dict['skip'] = True
+
         afm = identityAffine()
         atrm['method_results']['affine_matrix'] = afm.tolist()
         # atrm['method_results']['snr'] = [0.0]
