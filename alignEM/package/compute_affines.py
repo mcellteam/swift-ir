@@ -90,8 +90,8 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
         '''Run the project as a series of jobs'''
         # Write the entire project as a single JSON file with a unique stable name for this run
         print("Copy project file to 'project_runner_job_file.json'")
-        run_project_name = os.path.join(project['data']['destination_path'], "project_runner_job_file.json")
 
+        run_project_name = os.path.join(project['data']['destination_path'], "project_runner_job_file.json")
         with open(run_project_name, 'w') as f:
             f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(project))
 
@@ -219,6 +219,9 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
         # Reset task_queue
         task_queue.stop()
         del task_queue
+
+
+        # cfg.main_window.save_project()
 
         cfg.project_data = updated_model
         bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], use_scale, 'bias_data')

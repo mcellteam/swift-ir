@@ -14,7 +14,7 @@ logging.basicConfig(
         handlers=[ logging.StreamHandler() ]
 )
 
-def save_bias_analysis(al_stack, bias_data_path):
+def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
     """Saves bias analysis results to separate '.dat' files in the project directory.
     :param al_stack: The alignment data to be saved
     :type al_stack: dict
@@ -29,9 +29,10 @@ def save_bias_analysis(al_stack, bias_data_path):
 
             atrm = al_stack[i]['align_to_ref_method']
             c_afm = np.array(atrm['method_results']['cumulative_afm'])
+            snr = np.array(atrm['method_results']['snr'])
             rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
             afm = np.array(atrm['method_results']['affine_matrix'])
-            snr = np.array(atrm['method_results']['snr'])
+
             scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
             scale_y = (c_afm[1, 1] * np.cos(rot)) - (c_afm[0, 1] * np.sin(rot))
             skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y
@@ -60,9 +61,9 @@ def save_bias_analysis(al_stack, bias_data_path):
                 f.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (
                         i, c_afm[0, 0], c_afm[0, 1], c_afm[0, 2], c_afm[1, 0], c_afm[1, 1], c_afm[1, 2]))
 
-            print('save_bias_analysis | AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
+            logging.info('save_bias_analysis | AFM:  %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
             i, afm[0, 0], afm[0, 1], afm[0, 2], afm[1, 0], afm[1, 1], afm[1, 2]))
-            print('save_bias_analysis | CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
+            logging.info('save_bias_analysis | CAFM: %d %.6g %.6g %.6g %.6g %.6g %.6g' % (
             i, c_afm[0, 0], c_afm[0, 1], c_afm[0, 2], c_afm[1, 0], c_afm[1, 1], c_afm[1, 2]))
 
     logging.info('<<<<<<<< save_bias_analysis')
