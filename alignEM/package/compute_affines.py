@@ -11,13 +11,10 @@ import json
 from qtpy.QtCore import QThread
 
 import config as cfg
-from .em_utils import are_images_imported, get_num_imported_images, is_dataset_scaled, get_cur_scale_key, \
-    get_scale_val
-from .get_image_size import get_image_size
+from .em_utils import are_images_imported, is_dataset_scaled, get_cur_scale_key, get_scale_val
 from .mp_queue import TaskQueue
 from .generate_aligned_images import generate_aligned_images
 from .remove_aligned_images import remove_aligned_images
-
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
 # from package.pyswift_tui import run_json_project
@@ -225,19 +222,22 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1, generate_image
         del task_queue
 
         cfg.project_data = updated_model
-
-        generate_images = True
-
-        if generate_images:
-            generate_aligned_images(
-                    use_scale=get_cur_scale_key(),
-                    start_layer=start_layer,
-                    num_layers=num_layers
-            )
-
-        print('Saving bias analysis...')
-        bias_data_path = os.path.join(project['data']['destination_path'], use_scale, 'bias_data')
+        bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], use_scale, 'bias_data')
         save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
+
+
+        # generate_images = True
+        #
+        # if generate_images:
+        #     generate_aligned_images(
+        #             use_scale=get_cur_scale_key(),
+        #             start_layer=start_layer,
+        #             num_layers=num_layers
+        #     )
+        #
+        # print('Saving bias analysis...')
+        # bias_data_path = os.path.join(project['data']['destination_path'], use_scale, 'bias_data')
+        # save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
     else:
         '''Run the project directly in Serial mode. Does not generate aligned images.'''
 

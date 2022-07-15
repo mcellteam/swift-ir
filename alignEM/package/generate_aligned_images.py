@@ -10,7 +10,6 @@ import config as cfg
 
 from .em_utils import get_scale_key, get_scale_val, get_cur_scale_key, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, get_num_imported_images, get_num_scales
-# from .image import BoundingRect, SetStackCafm
 from .mp_queue import TaskQueue
 from .remove_aligned_images import remove_aligned_images
 from .save_bias_analysis import save_bias_analysis
@@ -45,10 +44,8 @@ logging.basicConfig(
 def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     '''Called one time without arguments by 'do_alignment' '''
     logging.info('\ngenerate_aligned_images >>>>>>>>\n')
-    if use_scale == None:
-        use_scale=em.get_cur_scale_key()
     QThread.currentThread().setObjectName('ApplyAffines')
-    print('generate_aligned_images | use_scale = %s' % use_scale)
+    cfg.main_window.read_gui_update_project_data()
     scale_key = get_scale_key(use_scale)
     create_align_directories(use_scale=scale_key)
     cfg.main_window.hud.post('Generating Aligned Images (Applying Affines)...')
@@ -56,18 +53,26 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
         cfg.main_window.hud.post('Removing the Scale %s Images Generated in a Previous Run...' % use_scale)
         remove_aligned_images(start_layer=start_layer)
     cfg.main_window.hud.post('Propogating AFMs to generate CFMs at each layer...')
+    scale_dict = cfg.project_data['data']['scales'][scale_key]
     null_bias = cfg.project_data['data']['scales'][get_cur_scale_key()]['null_cafm_trends']
+
+    print('generate_aligned_images | str(null_bias) = %s' % str(null_bias))
+    print('Calling SetStackCafm with args...')
+    print('null_bias = %s' % str(null_bias))
+    print('type(null_bias) = %s' % type(null_bias))
+    print('scale_dict = %s' % str(scale_dict))
+
     try:
-        SetStackCafm(cfg.project_data['data']['scales'][scale_key], null_biases=null_bias)
+        SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
     except:
         print_exception()
     destination_path = cfg.project_data['data']['destination_path']
     bias_data_path = os.path.join(destination_path, scale_key, 'bias_data')
-    print('generate_aligned_images | bias (.dat) path=%s' % bias_data_path)
+    logging.info('generate_aligned_images | bias (.dat) path=%s' % bias_data_path)
     # try:
     #     save_bias_analysis(cfg.project_data['data']['scales'][scale_key]['alignment_stack'], bias_data_path)
     # except:
-    #     print('generate_aligned_images | EXCEPTION | There was a problem saving bias analysis')
+    #     print_exception()
     use_bounding_rect = cfg.project_data['data']['scales'][scale_key]['use_bounding_rect']
     with open(os.path.join(bias_data_path, 'bounding_rect.dat'), 'w') as file:
         if use_bounding_rect:
@@ -84,8 +89,8 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     task_queue.start(cpus)
     path = os.path.split(os.path.realpath(__file__))[0]
     apply_affine_job = os.path.join(path, 'job_apply_affine.py')
-    print('generate_aligned_images | path =' + str(path))
-    print('generate_aligned_images | job path = %s' % apply_affine_job)
+    logging.info('generate_aligned_images | path =' + str(path))
+    logging.info('generate_aligned_images | job path = %s' % apply_affine_job)
     alstack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
     if num_layers == -1:  end_layer = len(alstack)
     else:  end_layer = start_layer + num_layers
@@ -93,7 +98,7 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
         base_name = layer['images']['base']['filename']
         ref_name = layer['images']['ref']['filename']
         al_path, fn = os.path.split(base_name)
-        print('generate_aligned_images | basename=%s, ref_name=%s, al_path=%s, fn=%s' % (base_name,ref_name,al_path,fn))
+        logging.info('generate_aligned_images | basename=%s, ref_name=%s, al_path=%s, fn=%s' % (base_name,ref_name,al_path,fn))
         al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
         layer['images']['aligned'] = {}
         layer['images']['aligned']['filename'] = al_name
@@ -111,10 +116,13 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     logging.info('Running ImageApplyAffine to Generate Aligned Images...')
     cfg.main_window.hud.post('Running ImageApplyAffine to Generate Aligned Images...')
     t0 = time.time()
-    try:  task_queue.collect_results()
-    except:  print('generate_aligned_images | task_queue.collect_results() encountered a problem'); print_exception()
+    try:
+        task_queue.collect_results()
+    except:
+        logging.info('generate_aligned_images | task_queue.collect_results() encountered a problem',logging.WARNING)
+        print_exception()
     dt = time.time() - t0
-    cfg.main_window.hud.post('Image Generation (ImageApplyAffine) Completed in %.2f seconds' % (dt))
+    cfg.main_window.hud.post('Image Generation (ImageApplyAffine) Completed in %.2f seconds' % dt)
     task_queue.stop()
     del task_queue
 

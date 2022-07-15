@@ -1840,72 +1840,25 @@ class MainWindow(QMainWindow):
     def run_alignment(self) -> None:
         print('run_alignment >>>>>>>>')
         self.read_gui_update_project_data()
+        # This should be impossible to trigger due to disabling/enabling of buttons.
         if not is_cur_scale_ready_for_alignment():
             error_msg = "Scale %s must be aligned first!" % get_next_coarsest_scale_key()[-1]
             cfg.main_window.hud.post(error_msg, logging.WARNING)
-            error_dialog = QErrorMessage()
-            error_dialog.showMessage(error_msg)
+            # error_dialog = QErrorMessage()
+            # error_dialog.showMessage(error_msg)
             return
         self.status.showMessage('Aligning...')
         try:
             compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1, generate_images=True)
         except:
+            self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
             print_exception()
 
         if not is_cur_scale_aligned():
-            self.hud.post('Something went wrong during alignment.', logging.ERROR)
+            self.hud.post('Something Went Wrong During Alignment.', logging.ERROR)
             self.set_idle()
             return
 
-        # try:
-        #     generate_aligned_images(
-        #             use_scale=get_cur_scale_key(),
-        #             start_layer=0,
-        #             num_layers=-1
-        #     )
-        # except:
-        #     self.hud.post('Something went wrong during alignment.', logging.ERROR)
-        #     self.set_idle()
-        #     return
-
-
-
-        # #0615 fixed bug where bias_data is only saved if/when images are generated
-        # print('Saving bias analysis...')
-        # use_scale = project['data']['current_scale']
-        # bias_data_path = os.path.join(project_data['data']['destination_path'], project_data['data']['current_scale'], 'bias_data')
-        # save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
-
-        self.update_alignment_status_indicator()
-        self.update_win_self()
-        if are_aligned_images_generated():
-            self.save_project()
-            self.set_progress_stage_3()
-            self.center_all_images()
-            img_size = get_image_size(
-                    cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0]['images']['base'][
-                        'filename'])
-            # self.alignment_groupbox.setTitle("Align Scale %s of %d | %sx%spx | %s ") #-0713
-            self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")
-            self.set_idle()
-        else:
-            self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
-            self.set_idle()
-            return
-
-        self.set_progress_stage_3()
-        self.save_project()
-        self.read_project_data_update_gui()
-        self.set_idle()
-
-    @Slot()
-    def run_regenerate_alignment(self) -> None:
-        print('run_regenerate_alignment >>>>>>>>')
-        self.status.showMessage('Aligning...')
-        if not is_cur_scale_aligned():
-            self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
-            self.set_idle()
-            return
         try:
             generate_aligned_images(
                     use_scale=get_cur_scale_key(),
@@ -1913,25 +1866,53 @@ class MainWindow(QMainWindow):
                     num_layers=-1
             )
         except:
-            print_exception()
-        try:
-            bias_data_path = os.path.join(project['data']['destination_path'], project['data']['current_scale'],
-                                          'bias_data')
-            save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'],
-                               bias_data_path)  # <-- call to save bias data
-        except:
-            print_exception()
+            self.hud.post('Something Went Wrong During Scale Generation.', logging.ERROR)
+            self.set_idle()
+            return
 
         if are_aligned_images_generated():
-            self.save_project()  # hack to make update_alignment_status_indicator work. afm_1.dat only in memory.
-            self.update_alignment_status_indicator()
-            self.set_progress_stage_3()
-            self.read_project_data_update_gui()
-            self.center_all_images()
             self.save_project()
-            self.hud.post('Image Generation Complete')
+            self.set_progress_stage_3()
+            self.center_all_images()
+            self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")
         else:
-            self.hud.post('There Was a Problem. Try Re-aligning First.', logging.ERROR);  self.set_idle()
+            self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
+        self.update_alignment_status_indicator()
+        self.update_win_self()
+        self.set_idle()
+
+    @Slot()
+    def run_regenerate_alignment(self) -> None:
+        print('run_regenerate_alignment >>>>>>>>')
+        if not is_cur_scale_aligned():
+            self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
+            self.set_idle()
+            return
+        self.status.showMessage('Busy...')
+        self.read_gui_update_project_data()
+        self.save_project()
+
+        try:
+            generate_aligned_images(
+                    use_scale=get_cur_scale_key(),
+                    start_layer=0,
+                    num_layers=-1
+            )
+        except:
+            self.hud.post('Something Went Wrong During Scale Generation.', logging.ERROR)
+            self.set_idle()
+            print_exception()
+            return
+
+        if are_aligned_images_generated():
+            self.save_project()
+            self.set_progress_stage_3()
+            self.center_all_images()
+            self.hud.post("Alignment Complete (Click 'Next Scale' to Continue Aligning)")
+        else:
+            self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning First.', logging.ERROR)
+        self.update_win_self()
+        self.set_idle()
 
     def make_zarr_multithreaded(self, aligned_path, n_scales, cname, clevel, destination_path, ds_name):
         os.system("python3 ../convert_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (
@@ -2917,6 +2898,7 @@ class MainWindow(QMainWindow):
             n_images = get_num_imported_images()
             self.hud.post('%d images imported' % n_images)
             self.hud.post('Image dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
+            link_all_stacks() #0714+
             self.center_all_images()
             self.update_panels()
             self.save_project()  # good to have known fallback state
