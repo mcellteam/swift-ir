@@ -122,7 +122,6 @@ class ZoomPanWidget(QWidget):
         print("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
         # print("  ZoomPanWidget is centering image for " + str(self.role))
         try:
-
             if cfg.project_data != None:
                 # s = get_cur_scale_key()
                 s = cfg.project_data['data']['current_scale']

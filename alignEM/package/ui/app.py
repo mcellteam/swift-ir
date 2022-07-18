@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QSpacerItem, QMenu, QMessageBox, QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, \
     QRadioButton,  QErrorMessage, QFrame, QTreeView, QHeaderView, QDockWidget
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QPainter, \
-    QBrush, QPen, QColor, QFont
+    QBrush, QPen, QColor, QFont, QRegExpValidator
 from qtpy.QtCore import Qt, QSize, QUrl, QRunnable, QObject, QAbstractAnimation, QPropertyAnimation, \
     QParallelAnimationGroup, QThreadPool, QThread, Signal, Slot, QRect, QFileInfo
 from qtpy.QtWidgets import QAction, QActionGroup
@@ -2168,9 +2168,10 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def update_scale_controls(self) -> None:
-        '''This method does two things:
+        '''This method does three things:
         (1) Update the visibility of next/prev scale buttons depending on current scale.
-        (2) Set the enabled/disabled state of the align-all button'''
+        (2) Set the enabled/disabled state of the align-all button
+        (3) Sets the input validator on the jump-to lineedit widget'''
         if self.project_progress >= 2:
             try:
                 n_scales = get_num_scales()
@@ -2191,6 +2192,10 @@ class MainWindow(QMainWindow):
                 self.align_all_button.setEnabled(is_cur_scale_ready_for_alignment())
             except:
                 print('update_scale_controls | WARNING | Something went wrong enabling/disabling align all button')
+            try:
+                self.jump_validator = QIntValidator(0,get_num_imported_images())
+            except:
+                print('update_scale_controls | WARNING | Something went wrong setting validator on jump_input')
 
 
     @Slot()
@@ -2490,6 +2495,11 @@ class MainWindow(QMainWindow):
         except:
             print('read_project_data_update_gui | WARNING | toggle_skip UI element failed to update its state')
 
+        try:
+            self.jump_input.setText(str(get_cur_layer()))
+        except:
+            pass
+
 
         if is_dataset_scaled():
             try:
@@ -2521,8 +2531,9 @@ class MainWindow(QMainWindow):
             self.update_alignment_status_indicator()
         except:
             print('read_project_data_update_gui | WARNING | Unable to update alignment status indicator')
-
             pass
+
+
 
 
         caller = inspect.stack()[1].function
