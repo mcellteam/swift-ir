@@ -23,12 +23,11 @@ class MultiImagePanel(QWidget):
         self.setAutoFillBackground(True)
         self.setStyleSheet("background-color:black;")
 
-        # self.current_margin = 0
         self.hb_layout = QHBoxLayout()
-        # self.update_spacing()
         self.setLayout(self.hb_layout)
         self.actual_children = []
-        self.setContentsMargins(0, 0, 0, 0)
+        self.hb_layout.setContentsMargins(0, 0, 0, 0)
+        self.hb_layout.setSpacing(0)
         self.draw_border = False
         self.draw_annotations = True
         # self.bg_color = QColor(40, 50, 50, 255)
@@ -68,6 +67,7 @@ class MultiImagePanel(QWidget):
                 p.change_layer(layer_delta)
                 p.update_zpa_self()
                 p.repaint()
+
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -123,6 +123,8 @@ class MultiImagePanel(QWidget):
                 # zpw.draw_border = self.draw_border #border #0520
                 zpw.draw_annotations = self.draw_annotations
                 self.add_panel(zpw)
+
+
 
     def remove_all_panels(self):
         logging.info("MainWindow | MultiImagePanel.remove_all_panels:")

@@ -13,18 +13,43 @@ import subprocess as sp
 import inspect
 import psutil
 import time
-import tqdm
+from tqdm import tqdm
 # import dill
 # import pickle
 import config as cfg
 import package.em_utils as em
 # from qtpy.QtCore import QThread
 import logging
+from package.ui.TqdmToLogger import TqdmToLogger
+from package.ui.heads_up_display import logger
+# from package.ui.heads_up_display import logger
 
 __all__ = ['TaskQueue']
 
-# logger = logging.getLogger(__name__)
+import logging
+import time
 
+import io
+import config as cfg
+
+class TqdmToLogger(io.StringIO):
+    """
+        Output stream for TQDM which will output to logger module instead of
+        the StdOut.
+    """
+    logger = None
+    level = None
+    buf = ''
+    def __init__(self,logger,level=None):
+        super(TqdmToLogger, self).__init__()
+        # self.logger = logger
+        self.logger = logger
+        self.level = level or logging.INFO
+    def write(self,buf):
+        self.buf = buf.strip('\r\n\t ')
+    def flush(self):
+        # self.logger.log(self.level, self.buf)
+        self.logger.log(self.level, self.buf)
 
 
 
@@ -158,12 +183,18 @@ def pbar_listener(pbar_q, n_tasks:int):
     # log = logging.getLogger(__name__)
     # log.setLevel(logging.INFO)
     # log.addHandler(TqdmLoggingHandler())
-    pbar = tqdm.tqdm(total = n_tasks)
-    n = 0
+
+    logger = logging.getLogger('package.ui.heads_up_display')
+    tqdm_out = TqdmToLogger(logger, level=logging.INFO)
+    pbar = tqdm(total = n_tasks, file=tqdm_out)
+
+
+    # pbar = tqdm(total = n_tasks)
+    # n = 0
     # for item in iter(pbar_q.get, None):
     for item in iter(pbar_q.get, None):
         # print('TaskQueue.pbar_listener | n = ', n)
-        n += 1
+        # n += 1
         pbar.update()
         # cfg.main_window.hud.post(str(n) + '%% Complete')
         # if progress_callback is not None:
