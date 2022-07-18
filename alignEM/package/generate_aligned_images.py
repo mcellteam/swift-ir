@@ -89,10 +89,7 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
             ref_name=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttttttt/scale_4/img_src/R34CA1-BS12.113.tif, 
             al_path=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttttttt/scale_4/img_src, fn=R34CA1-BS12.114.tif
 
-        '''
-
-
-        '''(FROM A REGENERATE:)
+        (FROM A REGENERATE:)
         INFO:root:generate_aligned_images | 
             basename=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttt/scale_4/img_src/R34CA1-BS12.107.tif, 
             ref_name=/Users/joelyancey/glanceEM_SWiFT/test_projects/testttt/scale_4/img_src/R34CA1-BS12.106.tif, 
