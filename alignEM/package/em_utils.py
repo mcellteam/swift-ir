@@ -373,8 +373,8 @@ def print_dat_files() -> None:
     if are_images_imported():
         try:
             print()
-            print("\n____________________BIAS DATA_____________________")
-            print("Scale %s__________________________________________\n" % get_cur_scale_key()[-1])
+            print("\n_____________________BIAS DATA_____________________")
+            print("\nScale %s____________________________________________\n" % get_cur_scale_key()[-1])
             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
                 snr_1 = f.read()
                 print('snr_1               : %s' % snr_1)
