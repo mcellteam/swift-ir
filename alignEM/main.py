@@ -52,6 +52,7 @@ from qtpy.QtCore import Qt, QCoreApplication
 from package.ui.app import MainWindow
 from config import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
 import config as cfg
+from package.ui.json_treeview import JsonModel
 
 reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
 installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
