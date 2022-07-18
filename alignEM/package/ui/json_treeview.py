@@ -146,12 +146,15 @@ class JsonModel(QAbstractItemModel):
 
         return True
 
+    # def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
     def data(self, index: QModelIndex, role: Qt.ItemDataRole) -> Any:
         """Override from QAbstractItemModel
 
         Return data from a json item according index and role
 
         """
+        # role = Qt.DisplayRole  # 0718+
+
         if not index.isValid():
             return None
 
@@ -168,6 +171,7 @@ class JsonModel(QAbstractItemModel):
             if index.column() == 1:
                 return item.value
 
+    # def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole):
     def setData(self, index: QModelIndex, value: Any, role: Qt.ItemDataRole):
         """Override from QAbstractItemModel
 
@@ -179,6 +183,8 @@ class JsonModel(QAbstractItemModel):
             role (Qt.ItemDataRole)
 
         """
+        role = Qt.DisplayRole #0718+
+
         if role == Qt.EditRole:
             if index.column() == 1:
                 item = index.internalPointer()
@@ -193,14 +199,16 @@ class JsonModel(QAbstractItemModel):
 
         return False
 
-    def headerData(
-        self, section: int, orientation: Qt.Orientation, role: Qt.ItemDataRole
-    ):
+    # def headerData(self, section: int, orientation: Qt.Orientation, role: Qt.ItemDataRole):
+    def headerData(self, section: int, orientation: Qt.Orientation, role: Qt.ItemDataRole):
         """Override from QAbstractItemModel
 
         For the JsonModel, it returns only data for columns (orientation = Horizontal)
 
         """
+
+        # role = Qt.DisplayRole  # 0718+
+
         if role != Qt.DisplayRole:
             return None
 

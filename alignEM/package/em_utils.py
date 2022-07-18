@@ -370,44 +370,48 @@ def print_alignment_layer() -> None:
 def print_dat_files() -> None:
     '''Prints the .dat files for the current scale, if they exist .'''
     bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(), 'bias_data')
-
-    try:
-        with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
-            snr_1 = f.read()
-            print('snr_1:\n%s\n' % snr_1)
-        with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
-            bias_x_1 = f.read()
-            print('bias_x_1:\n%s\n' % bias_x_1)
-        with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
-            bias_y_1 = f.read()
-            print('bias_y_1:\n%s\n' % bias_y_1)
-        with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
-            bias_rot_1 = f.read()
-            print('bias_rot_1:\n%s\n' % bias_rot_1)
-        with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
-            bias_scale_x_1 = f.read()
-            print('bias_scale_x_1:\n%s\n' % bias_scale_x_1)
-        with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
-            bias_scale_y_1 = f.read()
-            print('bias_scale_y_1:\n%s\n' % bias_scale_y_1)
-        with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
-            bias_skew_x_1 = f.read()
-            print('bias_skew_x_1:\n%s\n' % bias_skew_x_1)
-        with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
-            bias_det_1 = f.read()
-            print('bias_det_1:\n%s\n' % bias_det_1)
-        with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
-            afm_1 = f.read()
-            print('afm_1:\n%s\n' % afm_1)
-        with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
-            c_afm_1 = f.read()
-            print('c_afm_1:\n%s\n' % c_afm_1)
-    except:
-        pass
+    if are_images_imported():
+        try:
+            print()
+            print("\n____________________BIAS DATA_____________________")
+            print("Scale %s__________________________________________\n" % get_cur_scale_key()[-1])
+            with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
+                snr_1 = f.read()
+                print('snr_1               : %s' % snr_1)
+            with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
+                bias_x_1 = f.read()
+                print('bias_x_1            : %s' % bias_x_1)
+            with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
+                bias_y_1 = f.read()
+                print('bias_y_1            : %s' % bias_y_1)
+            with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
+                bias_rot_1 = f.read()
+                print('bias_rot_1          : %s' % bias_rot_1)
+            with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
+                bias_scale_x_1 = f.read()
+                print('bias_scale_x_1      : %s' % bias_scale_x_1)
+            with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
+                bias_scale_y_1 = f.read()
+                print('bias_scale_y_1      : %s' % bias_scale_y_1)
+            with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
+                bias_skew_x_1 = f.read()
+                print('bias_skew_x_1       : %s' % bias_skew_x_1)
+            with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
+                bias_det_1 = f.read()
+                print('bias_det_1          : %s' % bias_det_1)
+            with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
+                afm_1 = f.read()
+                print('afm_1               : %s' % afm_1)
+            with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
+                c_afm_1 = f.read()
+                print('c_afm_1             : %s' % c_afm_1)
+        except:
+            print('There was a problem reading from the .dat files')
+            pass
 
 def print_sanity_check():
     # logging.debug('print_sanity_check | logger is logging')
-    print("\n___________________DEBUG LAYER_____________________")
+    print("\n___________________SANITY CHECK____________________")
     print("\nProject____________________________________________")
     if cfg.project_data['data']['source_path']:
         print("  Source path                                      :", cfg.project_data['data']['source_path'])

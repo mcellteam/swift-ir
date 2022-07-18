@@ -927,9 +927,12 @@ class MainWindow(QMainWindow):
         '''------------------------------------------
         PROJECT INSPECTOR #projectinspector
         ------------------------------------------'''
-        self.inspector_label_scales = QLabel('')
+        # self.inspector_label_skips = QLabel('')
+        self.inspector_label_skips = QLabel()
 
         self.project_inspector = QDockWidget("Project Inspector")
+        self.project_inspector.setMinimumWidth(160)
+        self.project_inspector.hide()
         self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
         # if cfg.QT_API == 'pyside':
         #     self.addDockWidget(alignEM.RightDockWidgetArea, self.project_inspector)
@@ -944,29 +947,19 @@ class MainWindow(QMainWindow):
         scroll.setWidgetResizable(True)
         dock_vlayout = QVBoxLayout(content)
 
-        # # Project Status
-        # self.inspector_scales = CollapsibleBox('Skip List')
-        # dock_vlayout.addWidget(self.inspector_scales)
-        # lay = QVBoxLayout()
-        # self.inspector_label_scales = QLabel('')
-        # self.inspector_label_scales.setStyleSheet(
-        #         "color: #d3dae3;"
-        #         "border-radius: 12px;"
-        #     )
-        # lay.addWidget(self.inspector_label_scales, alignment=alignEM.AlignTop)
-        # self.inspector_scales.setContentLayout(lay)
+        # Project Status
 
         # Skips List
         self.inspector_scales = CollapsibleBox('Skip List')
+
         dock_vlayout.addWidget(self.inspector_scales)
         lay = QVBoxLayout()
 
-        self.inspector_label_scales.setStyleSheet(
+        self.inspector_label_skips.setStyleSheet(
                 "color: #d3dae3;"
                 "border-radius: 12px;"
             )
-        # lay.addWidget(self.inspector_label_scales, alignment=alignEM.AlignTop)    #0610
-        lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)
+        lay.addWidget(self.inspector_label_skips, alignment=Qt.AlignTop)
         self.inspector_scales.setContentLayout(lay)
 
         # CPU Specs
@@ -1060,6 +1053,16 @@ class MainWindow(QMainWindow):
         self.project_view_button.setFixedSize(square_button_size)
         self.project_view_button.setStyleSheet("font-size: 10px;")
 
+        self.print_sanity_check_button = QPushButton("Print\nSanity Check")
+        self.print_sanity_check_button.clicked.connect(print_sanity_check)
+        self.print_sanity_check_button.setFixedSize(square_button_size)
+        self.print_sanity_check_button.setStyleSheet("font-size: 9px;")
+
+        self.print_bias_data_button = QPushButton("Print\nBias Data")
+        self.print_bias_data_button.clicked.connect(print_dat_files)
+        self.print_bias_data_button.setFixedSize(square_button_size)
+        self.print_bias_data_button.setStyleSheet("font-size: 9px;")
+
         self.actual_size_button = QPushButton('Actual Size')
         self.actual_size_button.setToolTip('Actual-size all images.')
         self.actual_size_button.clicked.connect(self.actual_size_callback)
@@ -1147,7 +1150,9 @@ class MainWindow(QMainWindow):
         # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=alignEM.AlignmentFlag.AlignHCenter)
         # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignHCenter)
         self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3)
-        self.images_and_scaling_layout.addWidget(self.project_view_button, 2, 1)
+        self.images_and_scaling_layout.addWidget(self.print_sanity_check_button, 2, 0)
+        self.images_and_scaling_layout.addWidget(self.print_bias_data_button, 2, 1)
+        self.images_and_scaling_layout.addWidget(self.project_view_button, 2, 2)
         # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=alignEM.AlignmentFlag.AlignRight)
 
         '''------------------------------------------
@@ -1620,12 +1625,17 @@ class MainWindow(QMainWindow):
         self.refresh_project_view_button = QPushButton("Refresh")
         self.refresh_project_view_button.setFixedSize(std_button_size)
         self.refresh_project_view_button.clicked.connect(self.project_view_callback)
+        self.save_project_project_view_button = QPushButton("Save")
+        self.save_project_project_view_button.setFixedSize(std_button_size)
+        self.save_project_project_view_button.clicked.connect(self.save_project)
 
         self.project_view_panel = QWidget()
         self.project_view_panel_layout = QVBoxLayout()
         self.project_view_panel_layout.addWidget(self.project_view)
         self.project_view_panel_controls_layout = QHBoxLayout()
         self.project_view_panel_controls_layout.addWidget(self.exit_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.project_view_panel_controls_layout.addWidget(self.refresh_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.project_view_panel_controls_layout.addWidget(self.save_project_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
         self.project_view_panel_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
         self.project_view_panel_layout.addLayout(self.project_view_panel_controls_layout)
         self.project_view_panel.setLayout(self.project_view_panel_layout)
@@ -1765,7 +1775,8 @@ class MainWindow(QMainWindow):
                          ['&Open Project', 'Ctrl+O', self.open_project, None, None, None],
                          ['&Save Project', 'Ctrl+S', self.save_project, None, None, None],
                          ['Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None],
-                         ['Show Project Inspector', None, self.show_project_inspector, None, None, None],
+                         ['View Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
+                         ['Show/Hide Project Inspector', None, self.show_hide_project_inspector, None, None, None],
                          ['Update Project Inspector', None, self.update_project_inspector, None, None, None],
                          ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
                     ]
@@ -2291,16 +2302,23 @@ class MainWindow(QMainWindow):
     #     #     self.next_scale_button.setEnabled()
 
     @Slot()
-    def show_project_inspector(self):
-        self.update_project_inspector()
-        self.project_inspector.show()
+    def show_hide_project_inspector(self):
+        print('show_hide_project_inspector:')
+        if self.project_inspector.isHidden():
+            print('show_hide_project_inspector | Showing project inspector...')
+            self.update_project_inspector()
+            self.project_inspector.show()
+        elif self.project_inspector.isVisible():
+            print('show_hide_project_inspector | Hiding project inspector...')
+            self.project_inspector.hide()
+
 
     @Slot()
     def update_project_inspector(self):
         try:
             skips_list = str(get_skips_list())
             skips_list_wrapped = "\n".join(textwrap.wrap(skips_list, width=10))
-            self.inspector_label_scales.setText(skips_list_wrapped)
+            self.inspector_label_skips.setText(skips_list_wrapped)
         except:
             print('update_project_inspector | EXCEPTION | Failed to update_skips_list')
             print_exception()
