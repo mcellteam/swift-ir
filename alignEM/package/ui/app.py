@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QSpacerItem, QMenu, QMessageBox, QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, \
     QRadioButton,  QErrorMessage, QFrame, QTreeView, QHeaderView, QDockWidget
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QPainter, \
-    QBrush, QPen, QColor, QFont, QRegExpValidator
+    QBrush, QPen, QColor, QFont
 from qtpy.QtCore import Qt, QSize, QUrl, QRunnable, QObject, QAbstractAnimation, QPropertyAnimation, \
     QParallelAnimationGroup, QThreadPool, QThread, Signal, Slot, QRect, QFileInfo
 from qtpy.QtWidgets import QAction, QActionGroup
