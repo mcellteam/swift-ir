@@ -11,6 +11,7 @@ from ..utils.print_debug import print_debug
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
 from ..em_utils import get_cur_scale_key
+from ..em_utils import print_exception
 
 __all__ = ['ZoomPanWidget']
 
@@ -120,100 +121,104 @@ class ZoomPanWidget(QWidget):
     def center_image(self, all_images_in_stack=True):
         print("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
         # print("  ZoomPanWidget is centering image for " + str(self.role))
+        try:
 
-        if cfg.project_data != None:
-            # s = get_cur_scale_key()
-            s = cfg.project_data['data']['current_scale']
-            l = cfg.project_data['data']['current_layer']
+            if cfg.project_data != None:
+                # s = get_cur_scale_key()
+                s = cfg.project_data['data']['current_scale']
+                l = cfg.project_data['data']['current_layer']
 
-            if len(cfg.project_data['data']['scales']) > 0:
-                #print("s = ", s) #0406
-                # if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0: #0509
-                if len(cfg.project_data['data']['scales'][s]['alignment_stack']):
+                if len(cfg.project_data['data']['scales']) > 0:
+                    #print("s = ", s) #0406
+                    # if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0: #0509
+                    if len(cfg.project_data['data']['scales'][s]['alignment_stack']):
 
-                    image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                        image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
 
-                    if self.role in image_dict.keys():
-                        # print("current role: ", self.role)
-                        ann_image = image_dict[self.role] # <class 'dict'>
-                        # class is ZoomPanWidget
-                        pixmap = cfg.image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
+                        if self.role in image_dict.keys():
+                            # print("current role: ", self.role)
+                            ann_image = image_dict[self.role] # <class 'dict'>
+                            # class is ZoomPanWidget
+                            pixmap = cfg.image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
 
-                        if pixmap is None: print("center_image | WARNING | 'pixmap' is set to None")
+                            if pixmap is None: print("center_image | WARNING | 'pixmap' is set to None")
 
-                        if (pixmap != None) or all_images_in_stack:
-                            img_w = 0
-                            img_h = 0
-                            if pixmap != None:
-                                img_w = pixmap.width()
-                                img_h = pixmap.height()
-                            win_w = self.width()
-                            win_h = self.height()
-                            # print("win_w = %d, win_h = %d" % (win_w, win_h))
+                            if (pixmap != None) or all_images_in_stack:
+                                img_w = 0
+                                img_h = 0
+                                if pixmap != None:
+                                    img_w = pixmap.width()
+                                    img_h = pixmap.height()
+                                win_w = self.width()
+                                win_h = self.height()
+                                # print("win_w = %d, win_h = %d" % (win_w, win_h))
 
-                            if all_images_in_stack:
-                                # Search through all images in this stack to find bounds
-                                stack = cfg.project_data['data']['scales'][s]['alignment_stack']
-                                for layer in stack:
-                                    if 'images' in layer.keys():
-                                        if self.role in layer['images'].keys():
-                                            other_pixmap = cfg.image_library.get_image_reference_if_loaded(layer['images'][self.role]['filename'])
-                                            if other_pixmap != None:
-                                                other_w = other_pixmap.width()
-                                                other_h = other_pixmap.height()
-                                                img_w = max(img_w, other_w)
-                                                img_h = max(img_h, other_h)
+                                if all_images_in_stack:
+                                    # Search through all images in this stack to find bounds
+                                    stack = cfg.project_data['data']['scales'][s]['alignment_stack']
+                                    for layer in stack:
+                                        if 'images' in layer.keys():
+                                            if self.role in layer['images'].keys():
+                                                other_pixmap = cfg.image_library.get_image_reference_if_loaded(layer['images'][self.role]['filename'])
+                                                if other_pixmap != None:
+                                                    other_w = other_pixmap.width()
+                                                    other_h = other_pixmap.height()
+                                                    img_w = max(img_w, other_w)
+                                                    img_h = max(img_h, other_h)
 
-                            if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (win_h <= 0):  # Zero or negative dimensions might lock up?
-                                self.need_to_center = 1
-                                print("center_image | WARNING | Image or Window dimension is zero. Cannot center image for role \"" + str(self.role) + "\"")
+                                if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (win_h <= 0):  # Zero or negative dimensions might lock up?
+                                    self.need_to_center = 1
+                                    print("center_image | WARNING | Image or Window dimension is zero. Cannot center image for role \"" + str(self.role) + "\"")
 
-                            else:
-                                # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
-                                self.zoom_scale = 1.0
-                                self.ldx = 0
-                                self.ldy = 0
-                                self.wheel_index = 0
-                                # self.zoom_to_wheel_at ( 0, 0 )
+                                else:
+                                    # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
+                                    self.zoom_scale = 1.0
+                                    self.ldx = 0
+                                    self.ldy = 0
+                                    self.wheel_index = 0
+                                    # self.zoom_to_wheel_at ( 0, 0 )
 
-                                # Enlarge the image (scaling up) while it is within the size of the window
-                                while (self.win_x(img_w) <= win_w) and (self.win_y(img_h) <= win_h):
-                                    print_debug(70, "Enlarging image to fit in center.")
-                                    # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
-                                    self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
-                                    self.wheel_index += 1
-                                    print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while enlarging")
-                                    print_debug(80,
-                                                "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
-                                                    win_w) + "x" + str(win_h))
-                                    print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                    if abs(self.wheel_index) > 100:
-                                        print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
-                                        break
+                                    # Enlarge the image (scaling up) while it is within the size of the window
+                                    while (self.win_x(img_w) <= win_w) and (self.win_y(img_h) <= win_h):
+                                        print_debug(70, "Enlarging image to fit in center.")
+                                        # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
+                                        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+                                        self.wheel_index += 1
+                                        print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while enlarging")
+                                        print_debug(80,
+                                                    "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
+                                                        win_w) + "x" + str(win_h))
+                                        print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
+                                        if abs(self.wheel_index) > 100:
+                                            print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
+                                            break
 
-                                # Shrink the image (scaling down) while it is larger than the size of the window
-                                while (self.win_x(img_w) > win_w) or (self.win_y(img_h) > win_h):
-                                    print_debug(70, "Shrinking image to fit in center.")
-                                    # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
-                                    self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
-                                    self.wheel_index += -1
-                                    print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while shrinking")
-                                    print_debug(80,
-                                                "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
-                                                    win_w) + "x" + str(win_h))
-                                    print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                    if abs(self.wheel_index) > 100:
-                                        print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
-                                        break
+                                    # Shrink the image (scaling down) while it is larger than the size of the window
+                                    while (self.win_x(img_w) > win_w) or (self.win_y(img_h) > win_h):
+                                        print_debug(70, "Shrinking image to fit in center.")
+                                        # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
+                                        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+                                        self.wheel_index += -1
+                                        print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while shrinking")
+                                        print_debug(80,
+                                                    "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
+                                                        win_w) + "x" + str(win_h))
+                                        print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
+                                        if abs(self.wheel_index) > 100:
+                                            print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
+                                            break
 
-                                # Adjust the offsets to center
-                                extra_x = win_w - self.win_x(img_w)
-                                extra_y = win_h - self.win_y(img_h)
+                                    # Adjust the offsets to center
+                                    extra_x = win_w - self.win_x(img_w)
+                                    extra_y = win_h - self.win_y(img_h)
 
-                                # Bias the y value downward to make room for text at top
-                                extra_y = 1.7 * extra_y
-                                self.ldx = (extra_x / 2) / self.zoom_scale
-                                self.ldy = (extra_y / 2) / self.zoom_scale
+                                    # Bias the y value downward to make room for text at top
+                                    extra_y = 1.7 * extra_y
+                                    self.ldx = (extra_x / 2) / self.zoom_scale
+                                    self.ldy = (extra_y / 2) / self.zoom_scale
+        except:
+            print('ZoomPanWidget.center | EXCEPTION | Failed to Center')
+            print_exception()
 
     def win_x(self, image_x):
         return self.zoom_scale * (image_x + self.ldx + self.dx)

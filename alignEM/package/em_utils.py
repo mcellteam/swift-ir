@@ -100,6 +100,10 @@ def create_project_structure_directories(subdir_path) -> None:
 
 def is_cur_scale_ready_for_alignment() -> bool:
     logging.info('is_cur_scale_ready_for_alignment:')
+    if not are_images_imported():
+        return False
+    if not is_dataset_scaled():
+        return False
     scales_dict = cfg.project_data['data']['scales']
     cur_scale_key = get_cur_scale_key()
     coarsest_scale = list(scales_dict.keys())[-1]
@@ -443,20 +447,26 @@ def print_sanity_check():
         print("  Skip list                                        :", get_skips_list())
     else:
         print("  Skip list                                        : n/a")
-    print("  Is scaled?                                       :", is_dataset_scaled())
+    print("  Is dataset scaled?                                 :", is_dataset_scaled())
     if is_dataset_scaled():
         print("  How many scales?                                 :", get_num_scales())
     else:
         print("  How many scales?                                 : n/a")
-    print("  Which scales?                                    :", str(getScaleKeys()))
+    print("  Which scales?                                    :", get_scales_list())
 
     print("\nAlignment__________________________________________")
     print("  Is any scale aligned?                            :", is_any_scale_aligned_and_generated())
     print("  Is this scale aligned?                           :", is_cur_scale_aligned())
+    print("  Is this scale ready to be aligned?               :", is_cur_scale_ready_for_alignment())
     try:
         print("  How many aligned?                                :", get_num_aligned())
     except:
         print("  How many aligned?                                : n/a")
+    try:
+        print("  Which scales are aligned?                        :", str(get_aligned_scales_list()))
+    except:
+        print("  Which scales are aligned?                        : n/a")
+
     print("  alignment_option                                 :",
           cfg.project_data['data']['scales'][get_cur_scale_key()]['method_data']['alignment_option'])
     try:
