@@ -7,6 +7,7 @@ from qtpy.QtCore import Qt, QRectF
 from qtpy.QtGui import QPainter, QPen, QColor
 import config as cfg
 from .zoom_pan_widget import ZoomPanWidget
+from package.em_utils import are_images_imported, is_dataset_scaled
 
 __all__ = ['MultiImagePanel']
 
@@ -46,9 +47,20 @@ class MultiImagePanel(QWidget):
 
         layer_delta = 0
         if event.key() == Qt.Key_Up:
-            layer_delta = 1 * self.arrow_direction
+            if are_images_imported():
+                layer_delta = 1 * self.arrow_direction
         if event.key() == Qt.Key_Down:
-            layer_delta = -1 * self.arrow_direction
+            if are_images_imported():
+                layer_delta = -1 * self.arrow_direction
+        if event.key() == Qt.Key_Left:
+            if is_dataset_scaled():
+                if cfg.main_window.prev_scale_button.isVisible():
+                    cfg.main_window.prev_scale_button_callback()
+
+        if event.key() == Qt.Key_Right:
+            if is_dataset_scaled():
+                if cfg.main_window.next_scale_button.isVisible():
+                    cfg.main_window.next_scale_button_callback()
 
         if (layer_delta != 0) and (self.actual_children != None):
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
