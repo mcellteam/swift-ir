@@ -7,20 +7,22 @@ from random import randint
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QCheckBox, \
     QSpacerItem, QMenu, QMessageBox, QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, \
-    QRadioButton,  QErrorMessage, QFrame
+    QRadioButton,  QErrorMessage, QFrame, QTreeView, QHeaderView, QDockWidget
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QPainter, \
     QBrush, QPen, QColor, QFont
 from qtpy.QtCore import Qt, QSize, QUrl, QRunnable, QObject, QAbstractAnimation, QPropertyAnimation, \
-    QParallelAnimationGroup, QThreadPool, QThread, Signal, Slot, QRect
+    QParallelAnimationGroup, QThreadPool, QThread, Signal, Slot, QRect, QFileInfo
 from qtpy.QtWidgets import QAction, QActionGroup
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWebEngineCore import *
+import qtawesome as qta
 import daisy
 import neuroglancer as ng
 from glob import glob
 from PIL import Image
 import numpy as np
-import qtawesome as qta
+import psutil
+import platform
 import config as cfg
 # from package.em_utils import get_cur_scale_key, is_destination_set, is_dataset_scaled, \
 #     is_cur_scale_aligned, get_num_aligned, get_skips_list, are_aligned_images_generated,
@@ -43,7 +45,7 @@ from .image_library import ImageLibrary, SmartImageLibrary
 from .runnable_server import RunnableServer
 from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
-from .. import save_bias_analysis
+from .json_treeview import JsonModel
 
 __all__ = ['MainWindow']
 
@@ -386,7 +388,7 @@ class CollapsibleBox(QWidget):
         content_animation.setEndValue(content_height)
 
 
-# mainwindow
+#mainwindow
 class MainWindow(QMainWindow):
     def __init__(self, fname=None, panel_roles=None, title="AlignEM-SWiFT"):
         app = QApplication.instance()
@@ -588,6 +590,12 @@ class MainWindow(QMainWindow):
 
         def exit_demos():
             logging.info("Exiting demos...")
+            self.stacked_widget.setCurrentIndex(0)
+            self.set_idle()
+
+        def back_callback():
+
+            logging.info("Returning Home...")
             self.stacked_widget.setCurrentIndex(0)
             self.set_idle()
 
@@ -920,61 +928,61 @@ class MainWindow(QMainWindow):
         PROJECT INSPECTOR #projectinspector
         ------------------------------------------'''
         self.inspector_label_scales = QLabel('')
-        #
-        # self.project_inspector = QDockWidget("Project Inspector")
-        # self.addDockWidget(alignEM.RightDockWidgetArea, self.project_inspector)
-        # # if cfg.QT_API == 'pyside':
-        # #     self.addDockWidget(alignEM.RightDockWidgetArea, self.project_inspector)
-        # # # elif cfg.QT_API == 'pyqt':
-        # # #     # self.project_inspector.setAllowedAreas() # ? there is no reference on how to do this
-        #
-        #
-        # scroll = QScrollArea()
-        # self.project_inspector.setWidget(scroll)
-        # content = QWidget()
-        # scroll.setWidget(content)
-        # scroll.setWidgetResizable(True)
-        # dock_vlayout = QVBoxLayout(content)
-        #
-        # # # Project Status
-        # # self.inspector_scales = CollapsibleBox('Skip List')
-        # # dock_vlayout.addWidget(self.inspector_scales)
-        # # lay = QVBoxLayout()
-        # # self.inspector_label_scales = QLabel('')
-        # # self.inspector_label_scales.setStyleSheet(
-        # #         "color: #d3dae3;"
-        # #         "border-radius: 12px;"
-        # #     )
-        # # lay.addWidget(self.inspector_label_scales, alignment=alignEM.AlignTop)
-        # # self.inspector_scales.setContentLayout(lay)
-        #
-        # # Skips List
+
+        self.project_inspector = QDockWidget("Project Inspector")
+        self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
+        # if cfg.QT_API == 'pyside':
+        #     self.addDockWidget(alignEM.RightDockWidgetArea, self.project_inspector)
+        # # elif cfg.QT_API == 'pyqt':
+        # #     # self.project_inspector.setAllowedAreas() # ? there is no reference on how to do this
+
+
+        scroll = QScrollArea()
+        self.project_inspector.setWidget(scroll)
+        content = QWidget()
+        scroll.setWidget(content)
+        scroll.setWidgetResizable(True)
+        dock_vlayout = QVBoxLayout(content)
+
+        # # Project Status
         # self.inspector_scales = CollapsibleBox('Skip List')
         # dock_vlayout.addWidget(self.inspector_scales)
         # lay = QVBoxLayout()
-        #
+        # self.inspector_label_scales = QLabel('')
         # self.inspector_label_scales.setStyleSheet(
         #         "color: #d3dae3;"
         #         "border-radius: 12px;"
         #     )
-        # # lay.addWidget(self.inspector_label_scales, alignment=alignEM.AlignTop)    #0610
-        # lay.addWidget(self.inspector_label_scales, alignment=alignEM.AlignmentFlag.AlignTop)
+        # lay.addWidget(self.inspector_label_scales, alignment=alignEM.AlignTop)
         # self.inspector_scales.setContentLayout(lay)
-        #
-        # # CPU Specs
-        # self.inspector_cpu = CollapsibleBox('CPU Specs')
-        # dock_vlayout.addWidget(self.inspector_cpu)
-        # lay = QVBoxLayout()
-        # label = QLabel("CPU #: %s\nSystem : %s" % ( psutil.cpu_count(logical=False), platform.system() ))
-        # label.setStyleSheet(
-        #         "color: #d3dae3;"
-        #         "border-radius: 12px;"
-        #     )
-        # # lay.addWidget(label, alignment=alignEM.AlignTop)    #0610
-        # lay.addWidget(label, alignment=alignEM.AlignmentFlag.AlignTop)
-        # self.inspector_cpu.setContentLayout(lay)
-        #
-        # dock_vlayout.addStretch()
+
+        # Skips List
+        self.inspector_scales = CollapsibleBox('Skip List')
+        dock_vlayout.addWidget(self.inspector_scales)
+        lay = QVBoxLayout()
+
+        self.inspector_label_scales.setStyleSheet(
+                "color: #d3dae3;"
+                "border-radius: 12px;"
+            )
+        # lay.addWidget(self.inspector_label_scales, alignment=alignEM.AlignTop)    #0610
+        lay.addWidget(self.inspector_label_scales, alignment=Qt.AlignTop)
+        self.inspector_scales.setContentLayout(lay)
+
+        # CPU Specs
+        self.inspector_cpu = CollapsibleBox('CPU Specs')
+        dock_vlayout.addWidget(self.inspector_cpu)
+        lay = QVBoxLayout()
+        label = QLabel("CPU #: %s\nSystem : %s" % ( psutil.cpu_count(logical=False), platform.system() ))
+        label.setStyleSheet(
+                "color: #d3dae3;"
+                "border-radius: 12px;"
+            )
+        # lay.addWidget(label, alignment=alignEM.AlignTop)    #0610
+        lay.addWidget(label, alignment=Qt.AlignTop)
+        self.inspector_cpu.setContentLayout(lay)
+
+        dock_vlayout.addStretch()
 
         '''------------------------------------------
         PANEL 1: PROJECT #projectpanel
@@ -1045,6 +1053,12 @@ class MainWindow(QMainWindow):
         self.center_button.clicked.connect(self.center_all_images)
         self.center_button.setFixedSize(square_button_width, std_height)
         self.center_button.setStyleSheet("font-size: 10px;")
+
+        self.project_view_button = QPushButton('Inspect\nJSON')
+        self.project_view_button.setToolTip('Center all images.')
+        self.project_view_button.clicked.connect(self.project_view_callback)
+        self.project_view_button.setFixedSize(square_button_size)
+        self.project_view_button.setStyleSheet("font-size: 10px;")
 
         self.actual_size_button = QPushButton('Actual Size')
         self.actual_size_button.setToolTip('Actual-size all images.')
@@ -1133,6 +1147,7 @@ class MainWindow(QMainWindow):
         # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=alignEM.AlignmentFlag.AlignHCenter)
         # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignHCenter)
         self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3)
+        self.images_and_scaling_layout.addWidget(self.project_view_button, 2, 1)
         # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=alignEM.AlignmentFlag.AlignRight)
 
         '''------------------------------------------
@@ -1593,6 +1608,27 @@ class MainWindow(QMainWindow):
         '''------------------------------------------
         AUXILIARY PANELS
         ------------------------------------------'''
+        # PROJECT VIEW PANEL
+        self.project_view = QTreeView()
+        self.project_model = JsonModel()
+        self.project_view.setModel(self.project_model)
+        self.project_view.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.project_view.setAlternatingRowColors(True)
+        self.exit_project_view_button = QPushButton("Back")
+        self.exit_project_view_button.setFixedSize(std_button_size)
+        self.exit_project_view_button.clicked.connect(back_callback)
+        self.refresh_project_view_button = QPushButton("Refresh")
+        self.refresh_project_view_button.setFixedSize(std_button_size)
+        self.refresh_project_view_button.clicked.connect(self.project_view_callback)
+
+        self.project_view_panel = QWidget()
+        self.project_view_panel_layout = QVBoxLayout()
+        self.project_view_panel_layout.addWidget(self.project_view)
+        self.project_view_panel_controls_layout = QHBoxLayout()
+        self.project_view_panel_controls_layout.addWidget(self.exit_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.project_view_panel_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.project_view_panel_layout.addLayout(self.project_view_panel_controls_layout)
+        self.project_view_panel.setLayout(self.project_view_panel_layout)
 
         # DOCUMENTATION PANEL
         self.browser = QWebEngineView()
@@ -1694,7 +1730,9 @@ class MainWindow(QMainWindow):
         self.stacked_widget.addWidget(self.ng_panel)  # (1) ng_panel
         self.stacked_widget.addWidget(self.docs_panel)  # (2) docs_panel
         self.stacked_widget.addWidget(self.demos_panel)  # (3) demos_panel
-        self.stacked_widget.addWidget(self.remote_viewer_panel)  # (4) docs_panel
+        self.stacked_widget.addWidget(self.remote_viewer_panel)  # (4) remote_viewer_panel
+        # self.stacked_widget.addWidget(self.project_view)  # (5) self.project_view
+        self.stacked_widget.addWidget(self.project_view_panel)  # (5) self.project_view
         self.stacked_widget.setCurrentIndex(0)
 
         # This can be invisible, will still use to organize QStackedWidget
@@ -1704,6 +1742,7 @@ class MainWindow(QMainWindow):
         self.pageComboBox.addItem("Documentation")
         self.pageComboBox.addItem("Demos")
         self.pageComboBox.addItem("Remote Viewer")
+        self.pageComboBox.addItem("Project View")
         self.pageComboBox.activated[int].connect(self.stacked_widget.setCurrentIndex)
         # self.pageComboBox.activated.connect(self.stackedLayout.s_etCurrentIndex)
 
@@ -1769,6 +1808,17 @@ class MainWindow(QMainWindow):
                 ],
             ]
         self.build_menu_from_list(self.menu, ml)
+
+    @Slot()
+    def project_view_callback(self):
+        # json_path = QFileInfo(__file__).absoluteDir().filePath(self.project_filename)
+        # with open(json_path) as f:
+        #     document = json.load(f)
+        #     self.project_model.load(document)
+        self.project_model.load(cfg.project_data)
+        self.project_view.show()
+        self.stacked_widget.setCurrentIndex(5)
+        # 0718
 
     @Slot()
     def run_scaling(self) -> None:
@@ -2444,7 +2494,14 @@ class MainWindow(QMainWindow):
 
         # self.reload_scales_combobox() #0713-
         # self.update_scale_controls() #<-- this does not need to be called on every change of layer
-        self.update_alignment_status_indicator()
+        try:
+            self.update_alignment_status_indicator()
+        except:
+            print('read_project_data_update_gui | WARNING | Unable to update alignment status indicator')
+
+            pass
+
+
         caller = inspect.stack()[1].function
         if caller != 'change_layer': print(
             'read_project_data_update_gui | GUI is in sync with cfg.project_data for current scale + layer.')
@@ -2607,7 +2664,6 @@ class MainWindow(QMainWindow):
         self.save_project_to_file()
         self.set_progress_stage_1()
         self.scales_combobox.clear()  # why? #0528
-        self.set_status("New project '%s'" % self.project_filename)
         self.set_idle()
 
     def import_into_role(self):

@@ -7,10 +7,8 @@ import json
 import sys
 from typing import Any, Iterable, List, Dict, Union
 
-from PySide6.QtWidgets import QTreeView, QApplication, QHeaderView
-from PySide6.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
-
-
+from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
+from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
 
 
 class TreeItem:
