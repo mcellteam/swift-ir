@@ -108,7 +108,6 @@ def create_project_structure_directories(subdir_path) -> None:
 
 
 def is_cur_scale_ready_for_alignment() -> bool:
-    logging.info('is_cur_scale_ready_for_alignment:')
     if not are_images_imported():
         return False
     if not is_dataset_scaled():
