@@ -375,6 +375,7 @@ def print_dat_files() -> None:
     '''Prints the .dat files for the current scale, if they exist .'''
     bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(), 'bias_data')
     if are_images_imported():
+        cfg.main_window.hud.post('Printing .dat Files')
         try:
             print()
             print("\n_____________________BIAS DATA_____________________")
@@ -410,13 +411,14 @@ def print_dat_files() -> None:
                 c_afm_1 = f.read()
                 print('c_afm_1             : %s' % c_afm_1)
         except:
-            print('There was a problem reading from the .dat files')
+            print('Is this scale aligned? No .dat files were found at this scale.')
             pass
 
 def print_sanity_check():
     # logging.debug('print_sanity_check | logger is logging')
     print("\n___________________SANITY CHECK____________________")
     print("\nProject____________________________________________")
+    cfg.main_window.hud.post('Printing Sanity Check')
     if cfg.project_data['data']['source_path']:
         print("  Source path                                      :", cfg.project_data['data']['source_path'])
     else:

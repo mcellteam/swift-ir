@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import os
 import inspect
 from qtpy.QtGui import QPainter, QPen, QColor
 from qtpy.QtWidgets import QWidget, QRubberBand
@@ -133,15 +134,13 @@ class ZoomPanWidget(QWidget):
                     if len(cfg.project_data['data']['scales'][s]['alignment_stack']):
 
                         image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
-
                         if self.role in image_dict.keys():
                             # print("current role: ", self.role)
                             ann_image = image_dict[self.role] # <class 'dict'>
-                            # class is ZoomPanWidget
                             pixmap = cfg.image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
+                            img_text = ann_image['filename']
 
                             if pixmap is None: print("center_image | WARNING | 'pixmap' is set to None")
-
                             if (pixmap != None) or all_images_in_stack:
                                 img_w = 0
                                 img_h = 0
@@ -533,6 +532,11 @@ class ZoomPanWidget(QWidget):
                     if img_text != None:
                         # Draw the image name
                         painter.setPen(QPen(QColor(100, 100, 255, 255), 5))
+                        if os.path.sep in img_text:
+                            # Only split the path if it's splittable
+                            painter.drawText(10, 40, os.path.split(img_text)[-1])
+                        else:
+                            painter.drawText(10, 40, img_text)
 
                     if len(cfg.project_data['data']['scales']) > 0:
                         scale = cfg.project_data['data']['scales'][s]

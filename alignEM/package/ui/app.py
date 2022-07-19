@@ -2698,8 +2698,8 @@ class MainWindow(QMainWindow):
         cfg.project_data = copy.deepcopy(new_project_template)
         print("new_project | Creating new project %s" % filename)
         self.project_filename = filename
+        self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
         self.set_def_proj_dest()
-
         self.save_project_to_file()
         self.set_progress_stage_1()
         self.scales_combobox.clear()  # why? #0528
@@ -2715,10 +2715,10 @@ class MainWindow(QMainWindow):
         self.set_status('Importing...')
         self.hud.post('Importing images...')
         base_images = sorted(self.import_images_dialog())
-
-        try:    self.import_images('base', base_images)
-        except: logging.info('Something went wrong during import', logging.WARNING)
-
+        try:
+            self.import_images('base', base_images)
+        except:
+            logging.info('Something went wrong during import', logging.WARNING)
         if are_images_imported():
             self.update_scale_controls()
             self.center_all_images()
@@ -2783,6 +2783,7 @@ class MainWindow(QMainWindow):
                 return
             self.hud.post("Loading project '%s'" % filename)
             self.project_filename = filename
+            self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
             print('open_project | Modifying the copy to use absolute paths internally')
 
             # Modify the copy to use absolute paths internally
@@ -2808,7 +2809,8 @@ class MainWindow(QMainWindow):
             self.reload_scales_combobox()
             self.auto_set_user_progress()
             self.update_scale_controls()
-            if are_images_imported(): self.generate_scales_button.setEnabled(True)
+            if are_images_imported():
+                self.generate_scales_button.setEnabled(True)
             self.center_all_images()
             self.hud.post("Project '%s'" % self.project_filename)
         else:
