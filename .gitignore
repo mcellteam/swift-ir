@@ -37,6 +37,9 @@ swift-ir/alignEM/joel_notes.txt
 swift-ir/alignEM/_stylesheet.qss
 swift-ir/deprecated.txt
 **/.DS_Store
+alignEM/package/ui/daisy_logs
+alignEM/package/ui/daisy_logs/*
+
 
 
 <<<<<<< Updated upstream
