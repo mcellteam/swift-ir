@@ -18,7 +18,7 @@ class TqdmToLogger(io.StringIO):
     def __init__(self,logger,level=None):
         super(TqdmToLogger, self).__init__()
         # self.logger = logger
-        self.logger = logging.getLogger('package.ui.heads_up_display')
+        self.logger = logging.getLogger(__name__)
         self.level = level or logging.INFO
     def write(self,buf):
         self.buf = buf.strip('\r\n\t ')

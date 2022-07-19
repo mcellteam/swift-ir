@@ -20,9 +20,7 @@ import config as cfg
 import package.em_utils as em
 # from qtpy.QtCore import QThread
 import logging
-from package.ui.TqdmToLogger import TqdmToLogger
-from package.ui.heads_up_display import logger
-# from package.ui.heads_up_display import logger
+# from package.ui.TqdmToLogger import TqdmToLogger
 
 __all__ = ['TaskQueue']
 
@@ -30,7 +28,6 @@ import logging
 import time
 
 import io
-import config as cfg
 
 class TqdmToLogger(io.StringIO):
     """
@@ -174,32 +171,37 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     # sys.stderr.write('<<<<<<<<  RunnableWorker %d Finished' % (worker_id))
 
 
-# def pbar_listener(pbar_q, n_tasks:int, progress_callback=None):
-def pbar_listener(pbar_q, n_tasks:int):
-    '''Pretty sure this is better off as a separate function, at least with multiprocessing'''
-    print('TaskQueue.pbar_listener (caller=%s, n_tasks=%d):' % (str(inspect.stack()[1].function), n_tasks))
-    # print('about to call self.progress_callback.emit(1)...')
-    # progress_callback.emit(1)
-    # log = logging.getLogger(__name__)
-    # log.setLevel(logging.INFO)
-    # log.addHandler(TqdmLoggingHandler())
 
-    logger = logging.getLogger('package.ui.heads_up_display')
-    tqdm_out = TqdmToLogger(logger, level=logging.INFO)
-    pbar = tqdm(total = n_tasks, file=tqdm_out)
+# # def pbar_listener(pbar_q, n_tasks:int, progress_callback=None):
+# def pbar_listener(pbar_q, n_tasks:int):
+#     '''Pretty sure this is better off as a separate function, at least with multiprocessing'''
+#     print('TaskQueue.pbar_listener (caller=%s, n_tasks=%d):' % (str(inspect.stack()[1].function), n_tasks))
+#     # print('about to call self.progress_callback.emit(1)...')
+#     # progress_callback.emit(1)
+#     # log = logging.getLogger(__name__)
+#     # log.setLevel(logging.INFO)
+#     # log.addHandler(TqdmLoggingHandler())
+#
+#
+#     logger = logging.getLogger(__name__)
+#     logger.addHandler(cfg.main_window.hud.ha)
+#     tqdm_out = TqdmToLogger(logger, level=logging.INFO)
+#     pbar = tqdm(total = n_tasks, file=tqdm_out)
+#
+#
+#     # pbar = tqdm(total = n_tasks)
+#     # n = 0
+#     # for item in iter(pbar_q.get, None):
+#     for item in iter(pbar_q.get, None):
+#         # print('TaskQueue.pbar_listener | n = ', n)
+#         # n += 1
+#         pbar.update()
+#         # cfg.main_window.hud.post(str(n) + '%% Complete')
+#         # if progress_callback is not None:
+#         #     progress_callback.emit(n)
+#     pbar.close()
 
 
-    # pbar = tqdm(total = n_tasks)
-    # n = 0
-    # for item in iter(pbar_q.get, None):
-    for item in iter(pbar_q.get, None):
-        # print('TaskQueue.pbar_listener | n = ', n)
-        # n += 1
-        pbar.update()
-        # cfg.main_window.hud.post(str(n) + '%% Complete')
-        # if progress_callback is not None:
-        #     progress_callback.emit(n)
-    pbar.close()
 
 # class TqdmLoggingHandler(logging.Handler):
 #     def __init__(self, level=logging.NOTSET):
@@ -215,7 +217,7 @@ def pbar_listener(pbar_q, n_tasks:int):
 
 class TaskQueue:
     # def __init__(self, n_tasks, start_method='forkserver', progress_callback=None):
-    def __init__(self, n_tasks, start_method='forkserver'):
+    def __init__(self, n_tasks, start_method='forkserver',logging_handler=None):
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
         self.task_dict = {}
@@ -225,6 +227,7 @@ class TaskQueue:
         # self.ctx = mp.get_context(self.start_method)
         if sys.version_info >= (3, 7):
             self.close_worker = True
+        self.logging_handler = logging_handler
 
         mpl = mp.log_to_stderr()
         mpl.setLevel(logging.INFO)
@@ -238,21 +241,27 @@ class TaskQueue:
 
         # logging.basicConfig(level=logging.INFO)
 
-    # def pbar_listener(self, pbar_q, n_tasks:int):
-    #
-    #     # print('TaskQueue.pbar_listener (caller=%s, n_tasks=):' % (str(inspect.stack()[1].function, str(n_tasks))))
-    #     # print('about to call self.progress_callback.emit(2)...')
-    #     '''self.progress_callback has an identical location in memory'''
-    #     # self.progress_callback.emit(2)
-    #     pbar = tqdm(total = n_tasks)
-    #     n = 0
-    #     for item in iter(pbar_q.get, None):
-    #         # print('TaskQueue.pbar_listener | n = ', n)
-    #         n += 1
-    #         pbar.update()
-    #         # if self.progress_callback is not None:
-    #         # self.progress_callback.emit(n)
-    #     pbar.close()
+    def pbar_listener(self, pbar_q, n_tasks:int):
+
+        # print('TaskQueue.pbar_listener (caller=%s, n_tasks=):' % (str(inspect.stack()[1].function, str(n_tasks))))
+        # print('about to call self.progress_callback.emit(2)...')
+        '''self.progress_callback has an identical location in memory'''
+        # self.progress_callback.emit(2)
+        pbar = tqdm(total = n_tasks)
+
+        # logger = logging.getLogger("hud")
+        # # logger.addHandler(cfg.main_window.hud.handler)
+        # tqdm_out = TqdmToLogger(logger, level=logging.INFO)
+        # pbar = tqdm(total=n_tasks, file=tqdm_out)
+
+        n = 0
+        for item in iter(pbar_q.get, None):
+            # print('TaskQueue.pbar_listener | n = ', n)
+            n += 1
+            pbar.update()
+            # if self.progress_callback is not None:
+            # self.progress_callback.emit(n)
+        pbar.close()
 
     def start(self, n_workers, retries=0) -> None:
 
@@ -276,7 +285,7 @@ class TaskQueue:
         cfg.main_window.hud.post('Using %d workers in parallel to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
         # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
         print('mp_queue.start | self.n_tasks = ', self.n_tasks)
-        self.pbar_proc = self.ctx.Process(target=pbar_listener, args=(self.pbar_q, self.n_tasks, ))
+        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
         cfg.main_window.hud.post('Running RunnableWorker Threads...')
         for i in range(self.n_workers):
@@ -296,7 +305,7 @@ class TaskQueue:
         self.pbar_q = self.ctx.Queue()
         self.workers = []
         # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
-        self.pbar_proc = self.ctx.Process(target=pbar_listener, args=(self.pbar_q, self.n_tasks, ))
+        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
         for i in range(self.n_workers):
             sys.stderr.write('Restarting RunnableWorker %d >>>>>>>>' % i)

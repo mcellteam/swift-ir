@@ -12,10 +12,12 @@ import logging
 from qtpy.QtCore import QObject, Signal, Slot, QThread
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
+from package.ui.TqdmToLogger import TqdmToLogger
 
 __all__ = ['HeadsUpDisplay', 'HudWorker']
 
-logger = logging.getLogger(__name__)
+# logger = logging.getLogger(__name__)
+logger = logging.getLogger("hud")
 
 # print('HeadsUpDisplay | str(logger) = %s' % str(logger))
 

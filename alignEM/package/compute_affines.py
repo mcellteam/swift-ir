@@ -100,6 +100,7 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
         with open(run_project_name, 'w') as f:
             f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(project))
 
+        # task_queue = TaskQueue(n_tasks=len(alstack))
         task_queue = TaskQueue(n_tasks=len(alstack))
         cpus = min(psutil.cpu_count(logical=False), 48)
         cfg.main_window.hud.post("Starting Project Runner Task Queue with %d CPUs (TaskQueue.start)" % cpus)
