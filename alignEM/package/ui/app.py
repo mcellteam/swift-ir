@@ -16,6 +16,7 @@ from qtpy.QtWidgets import QAction, QActionGroup
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWebEngineCore import *
 import qtawesome as qta
+import pyqtgraph as pg
 import daisy
 import neuroglancer as ng
 from glob import glob
@@ -462,6 +463,8 @@ class MainWindow(QMainWindow):
 
         self.scales_combobox_switch = 0
 
+        self.always_generate_images = True
+
         # std_height = int(22)
         std_height = 24
         std_width = int(96)
@@ -592,12 +595,6 @@ class MainWindow(QMainWindow):
 
         def exit_demos():
             logging.info("Exiting demos...")
-            self.stacked_widget.setCurrentIndex(0)
-            self.set_idle()
-
-        def back_callback():
-
-            logging.info("Returning Home...")
             self.stacked_widget.setCurrentIndex(0)
             self.set_idle()
 
@@ -1594,19 +1591,22 @@ class MainWindow(QMainWindow):
         self.image_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.image_panel.setMinimumHeight(400)
 
-        # print('threading.current_thread().name = ', threading.current_thread().name)
-        # threading.current_thread().name =  MainThread
-        # logging.getLogger().setLevel(logging.DEBUG)
+        self.bottom_panel_stacked_widget = QStackedWidget()
+        self.bottom_panel_stacked_widget.addWidget(self.hud)
+        # self.bottom_panel_plot_widget = QWidget()
+        # self.bottom_panel_plot_layout = QVBoxLayout()
+        # self.bottom_panel_plot_widget.
+        self.plot_widget = pg.PlotWidget()
+        self.bottom_panel_stacked_widget.addWidget(self.plot_widget)
+        self.bottom_panel_stacked_widget.setCurrentIndex(0)
+
 
         self.splitter = QSplitter(Qt.Orientation.Vertical)
-        # if cfg.USES_PYSIDE:
-        #     self.splitter = QSplitter(alignEM.Vertical)    #0610
-        # elif cfg.USES_PYQT:
-        #     self.splitter = QSplitter(alignEM.Orientation.Vertical)
-
         self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.lower_panel_groups)
-        self.splitter.addWidget(self.hud)
+        # self.splitter.addWidget(self.hud)
+        self.splitter.addWidget(self.bottom_panel_stacked_widget)
+
         # self.splitter.addWidget(self.progress_bar)
         # self.progress_bar.setGeometry(200, 80, 250, 20)
         # https://stackoverflow.com/questions/14397653/qsplitter-with-one-fixed-size-widget-and-one-variable-size-widget
@@ -1636,7 +1636,7 @@ class MainWindow(QMainWindow):
         self.project_view.setAlternatingRowColors(True)
         self.exit_project_view_button = QPushButton("Back")
         self.exit_project_view_button.setFixedSize(std_button_size)
-        self.exit_project_view_button.clicked.connect(back_callback)
+        self.exit_project_view_button.clicked.connect(self.back_callback)
         self.refresh_project_view_button = QPushButton("Refresh")
         self.refresh_project_view_button.setFixedSize(std_button_size)
         self.refresh_project_view_button.clicked.connect(self.project_view_callback)
@@ -1775,12 +1775,15 @@ class MainWindow(QMainWindow):
         self.stacked_layout.addWidget(self.stacked_widget)
         self.setCentralWidget(self.stacked_widget)  # setCentralWidget to QStackedWidget
 
-        #menu Menu Bar
+        #status bar
+        self.status = self.statusBar()
+        self.set_idle()
+
+        #menu bar
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
-        self.status = self.statusBar()
-        self.set_idle()
+
 
         ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
         ml = [
@@ -1792,44 +1795,47 @@ class MainWindow(QMainWindow):
                          ['Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None],
                          ['View Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
                          ['Show/Hide Project Inspector', None, self.show_hide_project_inspector, None, None, None],
-                         ['Update Project Inspector', None, self.update_project_inspector, None, None, None],
+                         ['Go Back', None, self.back_callback, None, None, None],
                          ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
                     ]
                  ],
-                ['&Advanced',
+                ['&Tools',
                     [
-                         ['&Max Image Size', 'Ctrl+M', self.set_max_image_size, None, None, None],
-                         ['Generate Images', None, self.run_regenerate_alignment, True, None, None],
-                         ['&Stylesheets',
+                        ['Go Back', None, self.back_callback, None, None, None],
+                        ['Plot SNRs', None, self.plot_snr, None, None, None],
+                        ['Apply Project Defaults', None, set_default_settings, None, None, None],
+                        ['Print Sanity Check', None, print_sanity_check, None, None, None],
+                        ['Print Structures', None, self.print_structures, None, None, None],
+                        ['Print Image Library', None, self.print_image_library, None, None, None],
+                        ['Print Affine Grep', None, debug_project, None, None, None],
+                        ['Print Aligned Scales List', None, get_aligned_scales_list, None, None, None],
+                        ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
+                        ['Print SNR List', None, print_snr_list, None, None, None],
+                        ['Print .dat Files', None, print_dat_files, None, None, None],
+                        ['Print Working Directory', None, print_path, None, None, None],
+                        ['&Stylesheets',
                             [
-                              ['Style #1 - Joel Style', None, self.apply_stylesheet_1, None, None, None],
-                              # ['Style #2 - Light2', None, self.apply_stylesheet_2, None, None, None],
-                              ['Style #3 - Light3', None, self.apply_stylesheet_3, None, None, None],
-                              ['Style #4 - Grey', None, self.apply_stylesheet_4, None, None, None],
-                              ['Style #11 - Screamin Green', None, self.apply_stylesheet_11, None, None, None],
-                              ['Style #12 - Dark12', None, self.apply_stylesheet_12, None, None, None],
-                              ['Minimal', None, self.minimal_stylesheet, None, None, None],
+                                 ['Style #1 - Joel Style', None, self.apply_stylesheet_1, None, None, None],
+                                 # ['Style #2 - Light2', None, self.apply_stylesheet_2, None, None, None],
+                                 ['Style #3 - Light3', None, self.apply_stylesheet_3, None, None, None],
+                                 ['Style #4 - Grey', None, self.apply_stylesheet_4, None, None, None],
+                                 ['Style #11 - Screamin Green', None, self.apply_stylesheet_11, None, None, None],
+                                 ['Style #12 - Dark12', None, self.apply_stylesheet_12, None, None, None],
+                                 ['Minimal', None, self.minimal_stylesheet, None, None, None],
                             ]
-                        ],
+                         ],
+
                     ]
-                ],
+                 ],
                 ['&Debug',
                     [
-                         ['Print Sanity Check', None, print_sanity_check, None, None, None],
-                         ['Print Structures', None, self.print_structures, None, None, None],
-                         ['Print Image Library', None, self.print_image_library, None, None, None],
-                         ['Print Affine Grep', None, debug_project, None, None, None],
-                         ['Print Aligned Scales List', None, get_aligned_scales_list, None, None, None],
-                         ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
-                         ['Print .dat Files', None, print_dat_files, None, None, None],
                          ['Update Panels', None, self.update_panels, None, None, None],
                          ['Refresh All Images', None, self.refresh_all_images, None, None, None],
-                         ['Print Working Directory', None, print_path, None, None, None],
                          ['Read project_data Update GUI', None, self.read_project_data_update_gui, None, None, None],
                          ['Read GUI Update project_data', None, self.read_gui_update_project_data, None, None, None],
-                         ['Apply Project Defaults', None, set_default_settings, None, None, None],
                          ['Link Images Stacks', None, link_all_stacks, None, None, None],
                          ['Reload Scales Combobox', None, self.reload_scales_combobox, None, None, None],
+                         ['Update Project Inspector', None, self.update_project_inspector, None, None, None],
                     ]
                 ],
             ]
@@ -1940,30 +1946,30 @@ class MainWindow(QMainWindow):
             self.hud.post('Something Went Wrong During Alignment.', logging.ERROR)
             self.set_idle()
             return
-
         self.update_alignment_status_indicator()
 
-        try:
-            generate_aligned_images(
-                    use_scale=get_cur_scale_key(),
-                    start_layer=0,
-                    num_layers=-1
-            )
-        except:
-            self.hud.post('Something Went Wrong During Image Generation.', logging.ERROR)
-            self.set_idle()
-            print_exception()
-            return
+        if self.always_generate_images:
+            try:
+                generate_aligned_images(
+                        use_scale=get_cur_scale_key(),
+                        start_layer=0,
+                        num_layers=-1
+                )
+            except:
+                self.hud.post('Something Went Wrong During Image Generation.', logging.ERROR)
+                self.set_idle()
+                print_exception()
+                return
 
-        if are_aligned_images_generated():
-            self.set_progress_stage_3()
-            self.center_all_images()
-            self.hud.post('Image Generation Complete')
-            print('\nImage Generation Complete\n')
-        else:
-            self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
-        self.update_win_self()
-        self.set_idle()
+            if are_aligned_images_generated():
+                self.set_progress_stage_3()
+                self.center_all_images()
+                self.hud.post('Image Generation Complete')
+                print('\nImage Generation Complete\n')
+            else:
+                self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
+            self.update_win_self()
+            self.set_idle()
 
     @Slot()
     def run_regenerate_alignment(self) -> None:
@@ -2147,6 +2153,7 @@ class MainWindow(QMainWindow):
 
                     parent.addAction(action)
 
+
     @Slot()
     def apply_all_callback(self) -> None:
         '''Apply alignment settings to all images for all scales'''
@@ -2310,6 +2317,30 @@ class MainWindow(QMainWindow):
     #     #     self.next_scale_button.setEnabled()
 
     @Slot()
+    def plot_snr(self):
+
+        snr_list = get_snr_list()
+        x_axis = [x for x in range(0,len(snr_list))]
+        # pen = pg.mkPen(color=(255, 0, 0), width=5, style=Qt.SolidLine)
+        pen = pg.mkPen(color=(0, 0, 0), width=5, style=Qt.SolidLine)
+        styles = {'color': '#000000', 'font-size': '13px'}
+        self.plot_widget.setLabel('left', 'SNR', **styles)
+        self.plot_widget.setLabel('bottom', 'Layer', **styles)
+        # self.plot_widget.setXRange(0, get_num_imported_images())
+        # self.plot_widget.setBackground(QColor(100, 50, 254, 25))
+        self.plot_widget.plot(x_axis, snr_list, name = "SNR", pen=pen, symbol='+')
+        # self.plot_widget.setXRange(0,len(snr_list))
+        # x_ax = self.plot_widget.getAxis("bottom")
+        self.bottom_panel_stacked_widget.setCurrentIndex(1)
+
+    @Slot()
+    def back_callback(self):
+        logging.info("Returning Home...")
+        self.stacked_widget.setCurrentIndex(0)
+        self.bottom_panel_stacked_widget.setCurrentIndex(0)
+        self.set_idle()
+
+    @Slot()
     def show_hide_project_inspector(self):
         print('show_hide_project_inspector:')
         if self.project_inspector.isHidden():
@@ -2395,6 +2426,7 @@ class MainWindow(QMainWindow):
         self.project_functions_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.images_and_scaling_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.alignment_stack.setStyleSheet(open(self.main_stylesheet).read())
+        self.postalignment_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.export_and_view_stack.setStyleSheet(open(self.main_stylesheet).read())
         # self.auto_set_user_progress() #0713-
 
@@ -2532,9 +2564,6 @@ class MainWindow(QMainWindow):
         except:
             print('read_project_data_update_gui | WARNING | Unable to update alignment status indicator')
             pass
-
-
-
 
         caller = inspect.stack()[1].function
         if caller != 'change_layer': print(
@@ -2723,6 +2752,8 @@ class MainWindow(QMainWindow):
             self.update_scale_controls()
             self.center_all_images()
             self.refresh_all_images()
+            self.save_project()  # good to have known fallback state
+
 
     def import_images_dialog(self):
         '''Dialog for importing images. Returns list of filenames.'''
@@ -3002,7 +3033,6 @@ class MainWindow(QMainWindow):
             link_all_stacks() #0714+
             self.center_all_images()
             self.update_panels()
-            # self.save_project()  # good to have known fallback state #0718-
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
 
