@@ -38,8 +38,6 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
     QThread.currentThread().setObjectName('ComputeAffines')
 
     print('_____________Compute Affines Beginning_____________')
-    print_alignment_layer()
-    print_dat_files()
 
     if are_images_imported():
         pass

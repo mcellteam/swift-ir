@@ -13,6 +13,8 @@ __all__ = ['MultiImagePanel']
 
 
 class MultiImagePanel(QWidget):
+    '''MultiImagePanel is a container around the image panels (roles).
+    This class is responsible for initializing ZoomPanWidget.'''
 
     def __init__(self):
         super(MultiImagePanel, self).__init__()
@@ -91,6 +93,15 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
 
+    def refresh_all_images(self):
+        print('MultiImagePanel.refresh_all_images (caller=%s):' % str(inspect.stack()[1].function))
+        if self.actual_children != None:
+            panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
+            for p in panels_to_update:
+                p.update_zpa_self()
+                p.repaint()
+        self.repaint()
+
     def add_panel(self, panel):
         if not panel in self.actual_children:
             self.actual_children.append(panel)
@@ -132,15 +143,6 @@ class MultiImagePanel(QWidget):
             self.hb_layout.removeWidget(self.actual_children[-1])
             self.actual_children[-1].deleteLater()
             self.actual_children = self.actual_children[0:-1]
-        self.repaint()
-
-    def refresh_all_images(self):
-        print('MultiImagePanel.refresh_all_images (caller=%s):' % str(inspect.stack()[1].function))
-        if self.actual_children != None:
-            panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
-            for p in panels_to_update:
-                p.update_zpa_self()
-                p.repaint()
         self.repaint()
 
     def center_all_images(self, all_images_in_stack=True):

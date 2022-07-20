@@ -23,6 +23,7 @@ from glob import glob
 from PIL import Image
 import numpy as np
 import psutil
+import operator
 import platform
 import config as cfg
 # from package.em_utils import get_cur_scale_key, is_destination_set, is_dataset_scaled, \
@@ -462,6 +463,9 @@ class MainWindow(QMainWindow):
         self.project_aligned_scales = []
 
         self.scales_combobox_switch = 0
+
+        self.jump_to_worst_ticker = 1 # begin iter at 1 to skip first image (has no ref)
+        self.jump_to_best_ticker = 0
 
         self.always_generate_images = True
 
@@ -1796,14 +1800,15 @@ class MainWindow(QMainWindow):
                          ['View Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
                          ['Show/Hide Project Inspector', None, self.show_hide_project_inspector, None, None, None],
                          ['Go Back', None, self.back_callback, None, None, None],
+                         ['Show Console', None, self.back_callback, None, None, None],
                          ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
                     ]
                  ],
                 ['&Tools',
                     [
-                        ['Go Back', None, self.back_callback, None, None, None],
                         ['Plot SNRs', None, self.plot_snr, None, None, None],
-                        ['Apply Project Defaults', None, set_default_settings, None, None, None],
+                        ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
+                        ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
                         ['Print Sanity Check', None, print_sanity_check, None, None, None],
                         ['Print Structures', None, self.print_structures, None, None, None],
                         ['Print Image Library', None, self.print_image_library, None, None, None],
@@ -1813,6 +1818,15 @@ class MainWindow(QMainWindow):
                         ['Print SNR List', None, print_snr_list, None, None, None],
                         ['Print .dat Files', None, print_dat_files, None, None, None],
                         ['Print Working Directory', None, print_path, None, None, None],
+                        ['Apply Project Defaults', None, set_default_settings, None, None, None],
+                            ['&Set User Progress',
+                                [
+                                     ['0', None, self.set_progress_stage_0, None, None, None],
+                                     ['1', None, self.set_progress_stage_1, None, None, None],
+                                     ['2', None, self.set_progress_stage_2, None, None, None],
+                                     ['3', None, self.set_progress_stage_3, None, None, None],
+                                ]
+                             ],
                         ['&Stylesheets',
                             [
                                  ['Style #1 - Joel Style', None, self.apply_stylesheet_1, None, None, None],
@@ -1830,16 +1844,31 @@ class MainWindow(QMainWindow):
                 ['&Debug',
                     [
                          ['Update Panels', None, self.update_panels, None, None, None],
-                         ['Refresh All Images', None, self.refresh_all_images, None, None, None],
+                         ['Update Win Self (Update MainWindow)', None, self.update_win_self, None, None, None],
+                         ['Update Multiself (Repaint+Update Panels)', None, self.image_panel.update_multi_self, None, None, None],
+                         ['Refresh All Images (Repaint+Update Panels)', None, self.refresh_all_images, None, None, None],
                          ['Read project_data Update GUI', None, self.read_project_data_update_gui, None, None, None],
                          ['Read GUI Update project_data', None, self.read_gui_update_project_data, None, None, None],
                          ['Link Images Stacks', None, link_all_stacks, None, None, None],
                          ['Reload Scales Combobox', None, self.reload_scales_combobox, None, None, None],
                          ['Update Project Inspector', None, self.update_project_inspector, None, None, None],
+                         ['Update Scale Controls', None, self.update_scale_controls, None, None, None],
                     ]
                 ],
             ]
         self.build_menu_from_list(self.menu, ml)
+
+    def update_panels(self):
+        '''Repaint the viewing port.'''
+        logging.info("MainWindow.update_panels:")
+        for p in self.panel_list:
+            p.update_zpa_self()
+        self.update_win_self()
+
+    @Slot()
+    def refresh_all_images(self):
+        # print("  MainWindow is refreshing all images (called by " + inspect.stack()[1].function + ")...")
+        self.image_panel.refresh_all_images()
 
     @Slot()
     def project_view_callback(self):
@@ -2518,6 +2547,8 @@ class MainWindow(QMainWindow):
     @Slot()
     def read_project_data_update_gui(self) -> None:
         '''Reads 'cfg.project_data' values and writes everything to MainWindow.'''
+
+        # Parts of the GUI that should be updated at any stage of progress
         try:
             scale = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]  # we only want the current scale
         except:
@@ -2532,7 +2563,7 @@ class MainWindow(QMainWindow):
         except:
             pass
 
-
+        # Parts of the GUI that should be updated only if the project is scaled
         if is_dataset_scaled():
             try:
                 cur_whitening_factor = \
@@ -2557,13 +2588,13 @@ class MainWindow(QMainWindow):
             except:
                 print('read_project_data_update_gui | WARNING | Bounding Rect UI element failed to update its state')
 
-        # self.reload_scales_combobox() #0713-
-        # self.update_scale_controls() #<-- this does not need to be called on every change of layer
-        try:
-            self.update_alignment_status_indicator()
-        except:
-            print('read_project_data_update_gui | WARNING | Unable to update alignment status indicator')
-            pass
+            # self.reload_scales_combobox() #0713-
+            # self.update_scale_controls() #<-- this does not need to be called on every change of layer
+            try:
+                self.update_alignment_status_indicator()
+            except:
+                print('read_project_data_update_gui | WARNING | Unable to update alignment status indicator')
+                pass
 
         caller = inspect.stack()[1].function
         if caller != 'change_layer': print(
@@ -2600,15 +2631,94 @@ class MainWindow(QMainWindow):
         if self.jump_input.text() == '':
             pass
         else:
-            requested_layer = int(self.jump_input.text())
-            print("Jumping to layer " + str(requested_layer))
-            self.hud.post("Jumping to layer " + str(requested_layer))
-            num_layers = len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])
-            if requested_layer >= num_layers:  # Limit to largest
-                requested_layer = num_layers - 1
+            try:
+                self.read_gui_update_project_data()
+                requested_layer = int(self.jump_input.text())
+                print("Jumping to layer " + str(requested_layer))
+                self.hud.post("Jumping to Layer " + str(requested_layer))
+                n_layers = len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])
+                if requested_layer >= n_layers:  # Limit to largest
+                    requested_layer = n_layers - 1
 
-            cfg.project_data['data']['current_layer'] = requested_layer
+                cfg.project_data['data']['current_layer'] = requested_layer
+                self.read_project_data_update_gui()
+                self.image_panel.update_multi_self()
+            except:
+                print_exception()
+
+    @Slot()
+    def jump_to_worst_snr(self) -> None:
+        self.set_status('Busy...')
+        if not are_images_imported():
+            self.hud.post("You Must Import Some Images First!")
+            self.set_idle()
+            return
+        if not are_aligned_images_generated():
+            self.hud.post("You Must Align This Scale First!")
+            self.set_idle()
+            return
+        try:
+            self.read_gui_update_project_data()
+            snr_list = get_snr_list()
+            enumerate_obj = enumerate(snr_list)
+            sorted_pairs = sorted(enumerate_obj, key=operator.itemgetter(1))
+            sorted_indices = [index for index, element in sorted_pairs] # <- rearranged indices
+
+            next_layer = sorted_indices[self.jump_to_worst_ticker]  # int
+            snr = sorted_pairs[self.jump_to_worst_ticker]           # tuple
+            rank = self.jump_to_worst_ticker                        # int
+            self.hud.post("Jumping to Layer %d (Badness Rank = %d, SNR = %.2f)" % (next_layer, rank, snr[1]))
+
+            cfg.project_data['data']['current_layer'] = next_layer
+            self.read_project_data_update_gui()
             self.image_panel.update_multi_self()
+
+            self.jump_to_worst_ticker += 1
+
+        except:
+            self.jump_to_worst_ticker = 1
+            print_exception()
+
+        self.image_panel.update_multi_self()
+        self. set_idle()
+
+
+    @Slot()
+    def jump_to_best_snr(self) -> None:
+        self.set_status('Busy...')
+        if not are_images_imported():
+            self.hud.post("You Must Import Some Images First!")
+            self.set_idle()
+            return
+        if not are_aligned_images_generated():
+            self.hud.post("You Must Align This Scale First!")
+            self.set_idle()
+            return
+        try:
+            self.read_gui_update_project_data()
+            snr_list = get_snr_list()
+            enumerate_obj = enumerate(snr_list)
+            sorted_pairs = sorted(enumerate_obj, key=operator.itemgetter(1), reverse=True)
+            sorted_indices = [index for index, element in sorted_pairs] # <- rearranged indices
+            # sorted_indices = list(reversed(sorted_indices))
+            next_layer = sorted_indices[self.jump_to_best_ticker]
+            snr = sorted_pairs[self.jump_to_best_ticker]
+            rank = self.jump_to_best_ticker
+            self.hud.post("Jumping to layer %d (Goodness Rank = %d, SNR = %.2f)" % (next_layer, rank, snr[1]))
+
+            cfg.project_data['data']['current_layer'] = next_layer
+            self.read_project_data_update_gui()
+            self.image_panel.update_multi_self()
+
+            self.jump_to_best_ticker += 1
+
+        except:
+            self.jump_to_best_ticker = 0
+            print_exception()
+
+        self.image_panel.update_multi_self()
+        self. set_idle()
+
 
     @Slot()
     def reload_scales_combobox(self) -> None:
@@ -3038,13 +3148,6 @@ class MainWindow(QMainWindow):
 
         self.set_idle()
 
-    def update_panels(self):
-        '''Repaint the viewing port.'''
-        logging.info("MainWindow.update_panels:")
-        for p in self.panel_list:
-            p.update_zpa_self()
-        self.update_win_self()
-
     @Slot()
     def set_def_proj_dest(self):
         '''TODO Refactor this into trash funcs'''
@@ -3233,11 +3336,6 @@ class MainWindow(QMainWindow):
         self.image_panel is a MultiImagePanel object'''
         logging.info("center_all_images | called by " + inspect.stack()[1].function)
         self.image_panel.center_all_images(all_images_in_stack=all_images_in_stack)
-
-    @Slot()
-    def refresh_all_images(self):
-        # print("  MainWindow is refreshing all images (called by " + inspect.stack()[1].function + ")...")
-        self.image_panel.refresh_all_images()
 
     @Slot()
     def all_images_actual_size(self):

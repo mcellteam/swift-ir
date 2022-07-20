@@ -39,6 +39,8 @@ swift-ir/deprecated.txt
 **/.DS_Store
 alignEM/package/ui/daisy_logs
 alignEM/package/ui/daisy_logs/*
+alignEM/sandbox
+alignEM/sandbox/*
 
 
 
