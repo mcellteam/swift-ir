@@ -43,12 +43,15 @@ class ZoomPanWidget(QWidget):
         self.draw_annotations = True
 
         self.setAutoFillBackground(True)
-        self.setContentsMargins(10, 10, 10, 10)
+        # self.setContentsMargins(10, 10, 10, 10) #0719-
+
+
         # self.border_color = QColor(100, 100, 100, 255)
 
         # self.setBackgroundRole(QPalette.Base)    #0610 removed
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) #0610
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0719
 
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self) #0610 removed  #0701 activated
 
@@ -159,6 +162,7 @@ class ZoomPanWidget(QWidget):
                                             if self.role in layer['images'].keys():
                                                 other_pixmap = cfg.image_library.get_image_reference_if_loaded(layer['images'][self.role]['filename'])
                                                 if other_pixmap != None:
+                                                    '''TODO This will need to be rafactored for non-square images'''
                                                     other_w = other_pixmap.width()
                                                     other_h = other_pixmap.height()
                                                     img_w = max(img_w, other_w)
@@ -252,11 +256,15 @@ class ZoomPanWidget(QWidget):
 
     # minimum #windowsize #qsize
     def minimumSizeHint(self):
+        pass
         # return QSize(50, 50)
-        return QSize(250, 250)
+        # return QSize(250, 250) #0719-
 
     def sizeHint(self):
-        return QSize(180, 180)
+        pass
+        # return QSize(180, 180) #0719-
+        # return
+
 
     def mousePressEvent(self, event):
         self.update_zpa_self()
@@ -279,14 +287,18 @@ class ZoomPanWidget(QWidget):
         old_scale = self.zoom_scale
         new_scale = self.zoom_scale = pow(self.scroll_factor, self.wheel_index)
 
-        # self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale) #pyside2
-        # self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale) #pyside2
+        # if cfg.USES_QT5:
+        #     self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale) #pyside2
+        #     self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale) #pyside2
+        # else:
         self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
         self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
 
     def change_layer(self, layer_delta):
         """This function loads the next or previous layer"""
         cfg.main_window.set_status('Loading...')
+        cfg.main_window.jump_to_worst_ticker = 1
+        cfg.main_window.jump_to_best_ticker = 1
         cfg.main_window.read_gui_update_project_data()
         n_imgs = get_num_imported_images()
         scale = get_cur_scale_key()
@@ -361,9 +373,13 @@ class ZoomPanWidget(QWidget):
         if kmods == Qt.NoModifier:
             # Unshifted Scroll Wheel moves through layers
 
-            # layer_delta = int(event.delta()/120)    #pyside2
+            if cfg.USES_QT5 == True:
+                layer_delta = int(event.delta()/120)    #pyside2
+            else:
+                layer_delta = event.angleDelta().y()  # 0615 #0719
+
             # layer_delta = int(event.angleDelta().y() / 120)  # pyside6
-            layer_delta = event.angleDelta().y() # 0615
+            # layer_delta = event.angleDelta().y() # 0615
             # scrolling without shift key pressed...
             # event.angleDelta().y() =  4
             # layer_delta =  0
@@ -396,9 +412,13 @@ class ZoomPanWidget(QWidget):
 
         elif kmods == Qt.ShiftModifier:
             # Shifted Scroll Wheel zooms
-            # self.wheel_index += event.delta()/120    #pyside2
+            if cfg.USES_QT5 == True:
+                self.wheel_index += event.delta()/120    #pyside2
+            else:
+                self.wheel_index += event.angleDelta().y()  # 0615
+
             # self.wheel_index += event.angleDelta().y() / 120  # pyside6
-            self.wheel_index += event.angleDelta().y()  #0615
+            # self.wheel_index += event.angleDelta().y()  #0615 #0719- orig
             # self.zoom_to_wheel_at(event.x(), event.y())
             # AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'x'
             self.zoom_to_wheel_at(event.position())  # return type: PySide6.QtCore.QPointF

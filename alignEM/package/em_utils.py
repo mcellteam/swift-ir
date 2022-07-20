@@ -386,6 +386,9 @@ def print_alignment_layer() -> None:
     except:
         print('No Alignment Layers Found for the Current Scale')
 
+# def print_zoom_pan_widget_members() -> None:
+#     print(cfg.main_window.)
+
 
 def print_dat_files() -> None:
     '''Prints the .dat files for the current scale, if they exist .'''
@@ -478,9 +481,9 @@ def print_sanity_check():
     print("  Is this scale aligned?                           :", is_cur_scale_aligned())
     print("  Is this scale ready to be aligned?               :", is_cur_scale_ready_for_alignment())
     try:
-        print("  How many aligned?                                :", get_num_aligned())
+        print("  How many aligned at this scale?                  :", get_num_aligned())
     except:
-        print("  How many aligned?                                : n/a")
+        print("  How many aligned at this scale?                  : n/a")
     try:
         print("  Which scales are aligned?                        :", str(get_aligned_scales_list()))
     except:
@@ -500,7 +503,11 @@ def print_sanity_check():
                   'win_scale_factor'])
     except:
         print("  SWIM window (current layer)                      : n/a")
-    print("  Layer SNR                                        :", get_cur_snr())
+    try:
+        print("  SNR (current layer)                              :", get_cur_snr())
+    except:
+        print("  SNR (current layer)                              : n/a")
+
 
     print("\nPost-alignment_____________________________________")
     # try:
