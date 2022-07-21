@@ -5,6 +5,8 @@
 
 __all__ = ['run_json_project','alignment_process']
 
+
+
 print(f'py.Loading run_json_project {__name__}')
 
 '''This is called by:
@@ -41,29 +43,23 @@ project_runner.py
 import copy
 import json
 import errno
-# from python_swiftir.invertAffine import invertAffine
-# from python_swiftir.reptoshape import reptoshape
-# from python_swiftir.swiftir import si_unpackSize
-# from python_swiftir import invertAffine
-# from alignment_process import alignment_process
-
-# This file was previously named '_alignment_process.py'
 import numpy as np
 # import matplotlib.pyplot as plt
 import os
 import platform
 import subprocess as sp
+import traceback
 
 # from swiftir import loadImage
 # from swiftir import saveImage
-# from swiftir import affineImage
+# from swiftir import affineImage # USES cv2
 # from swiftir import apodize2
-# from swiftir import mirIterate
+# from swiftir import mirIterate # USES cv2 (mirAffine)!
 # from swiftir import stationaryToMoving
-# from swiftir import stationaryPatches
-# from swiftir import movingPatches
-# from swiftir import multiSwim
-# from swiftir import composeAffine
+# from swiftir import stationaryPatches  # USES cv2 (fft)!
+# from swiftir import movingPatches  # USES cv2 (fft)!
+# from swiftir import multiSwim  #no cv2
+# from swiftir import composeAffine  #no cv2
 
 
 try:
@@ -75,6 +71,7 @@ try:
     from package.get_image_size import get_image_size
 except:
     from get_image_size import get_image_size
+
 
 
 
@@ -207,7 +204,7 @@ def run_json_project(project,
         scale_tbd_dir = os.path.join(destination_path, 'scale_' + str(scale_tbd))
 
         #    ident = identityAffine().tolist()
-        ident = identityAffine()
+        ident = swiftir.identityAffine()
 
         s_tbd = project['data']['scales']['scale_' + str(scale_tbd)]['alignment_stack']
         common_length = len(s_tbd)
@@ -365,7 +362,7 @@ def run_json_project(project,
         print_debug(10, 80 * "#")
 
         # Initialize c_afm to identity matrix
-        c_afm = identityAffine()
+        c_afm = swiftir.identityAffine()
 
         # Align Forward Change:
         if (range_to_process[0] != 0) and not alone:
@@ -525,79 +522,8 @@ def evaluate_project_status(project):
     print('<<<<<<<< evaluate_project_status')
     return proj_status
 
-def modelBounds2(afm, siz):
-    '''MODELBOUNDS - Returns a bounding rectangle in model space
-    (x0, y0, w, h) = MODELBOUNDS(afm, siz) returns the bounding rectangle
-    of an input rectangle (siz) in model space if pixel lookup is through python_swiftir
-    transform AFM.'''
-    inv = invertAffine(afm)
-    w, h = si_unpackSize(siz)
-    c = [applyAffine(inv, [0, 0])]
-    c = np.append(c,[applyAffine(inv, [w, 0])],axis=0)
-    c = np.append(c,[applyAffine(inv, [0, h])],axis=0)
-    c = np.append(c,[applyAffine(inv, [w, h])],axis=0)
-    c_min = [np.floor(c[:,0].min()).astype('int32'), np.floor(c[:,1].min()).astype('int32')]
-    c_max = [np.ceil(c[:,0].max()).astype('int32'), np.ceil(c[:,1].max()).astype('int32')]
-    return np.array([c_min, c_max])
 
-def identityAffine():
-    '''IDENTITYAFFINE - Return an idempotent python_swiftir transform
-    afm = IDENTITYAFFINE() returns an python_swiftir transform that is
-    an identity transform.'''
-    return np.array([[1., 0., 0.],
-                     [0., 1., 0.]])
 
-def applyAffine(afm, xy):
-    '''APPLYAFFINE - Apply python_swiftir transform to a point
-    xy_ = APPLYAFFINE(afm, xy) applies the python_swiftir matrix AFM to the point XY
-    Affine matrix must be a 2x3 numpy array. XY may be a list or an array.'''
-    if not type(xy)==np.ndarray:
-        xy = np.array([xy[0], xy[1]])
-    return np.matmul(afm[0:2,0:2], xy) + reptoshape(afm[0:2,2], xy)
-
-def invertAffine(afm):
-    '''INVERTAFFINE - Invert python_swiftir transform
-    INVERTAFFINE(afm), where AFM is a 2x3 python_swiftir transformation matrix,
-    returns the inverse transform.'''
-    afm = np.vstack((afm, [0,0,1]))
-    ifm = np.linalg.inv(afm)
-    return ifm[0:2,:]
-
-def reptoshape(mat, pattern):
-    '''REPTOSHAPE - Repeat a matrix to match shape of other matrix
-    REPTOSHAPE(mat, pattern) returns a copy of the matrix MAT replicated
-    to match the shape of PATTERNS. For instance, if MAT is an N-vector
-    or an Nx1 matrix, and PATTERN is NxK, the output will be an NxK matrix
-    of which each the columns is filled with the contents of MAT.
-    Higher dimensional cases are handled as well, but non-singleton dimensions
-    of MAT must always match the corresponding dimension of PATTERN.'''
-    ps = [x for x in pattern.shape]
-    ms = [x for x in mat.shape]
-    while len(ms)<len(ps):
-        ms.append(1)
-    mat = np.reshape(mat, ms)
-    for d in range(len(ps)):
-        if ms[d]==1:
-            mat = np.repeat(mat, ps[d], d)
-        elif ms[d] != ps[d]:
-            raise ValueError('Cannot broadcast'  + str(mat.shape) + ' to '
-                             + str(pattern.shape))
-    return mat
-
-def si_unpackSize(siz):
-    '''SI_UNPACKSIZE - Interprets size arguments
-    Sizes are rounded up to next even number. Size may be given as one
-    or two numbers. Unpacks to tuple.'''
-    if type(siz)==np.ndarray or type(siz)==list or type(siz)==tuple:
-        w = siz[0]
-        h = siz[-1]
-    else:
-        w = h = siz
-    if w % 2:
-        w += 1
-    if h % 2:
-        h += 1
-    return (w, h)
 
 '''
 #broken
@@ -696,10 +622,10 @@ class alignment_process:
                     }
             }
         if type(init_affine_matrix) == type(None):
-            self.init_affine_matrix = identityAffine()
+            self.init_affine_matrix = swiftir.identityAffine()
         else:
             self.init_affine_matrix = init_affine_matrix
-        self.cumulative_afm = identityAffine()
+        self.cumulative_afm = swiftir.identityAffine()
 
     def __str__(self):
         s = "alignment_process: \n"
@@ -732,13 +658,7 @@ class alignment_process:
     '''' #0707 (!) auto_swim_align function '''
 
     def auto_swim_align(self, c_afm, save=True):
-        print('#0707 align_alignment_process | auto_swim_align >>>>>>>>')
-
-        print_debug(50, "\n\n\n")
-        print_debug(20, "********************************")
-        print_debug(20, "*** Top of auto_swim_align() ***")
-        print_debug(20, "********************************")
-        print_debug(50, "\n\n")
+        print('\nalign_alignment_process | auto_swim_align >>>>>>>>\n')
 
         #    im_sta = swiftir.loadImage(self.im_sta_fn)
         #    im_mov = swiftir.loadImage(self.im_mov_fn)
@@ -927,7 +847,7 @@ class align_recipe:
         self.im_mov = None
         self.im_sta_fn = im_sta_fn
         self.im_mov_fn = im_mov_fn
-        self.afm = identityAffine()
+        self.afm = swiftir.identityAffine()
 
         global global_swiftir_mode
         self.swiftir_mode = global_swiftir_mode
@@ -995,8 +915,7 @@ class align_ingredient:
     #        supplied afm matrix but do not refine the afm matrix
     #  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
     def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align'):
-        print('\n\n\n\n\n')
-        print('align_align_ingredient >>>>>>>>')
+        print('\nalign_align_ingredient >>>>>>>>\n')
 
         self.swim_drift = 0.5
 
@@ -1266,14 +1185,16 @@ class align_ingredient:
         # If ww==None then this is a Matching Point ingredient of a recipe
         # Calculate afm directly using psta and pmov as the matching points
         if self.align_mode == 'match_point_align':
-            (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-            self.ww = (0.0, 0.0)
-            self.snr = np.zeros(len(self.psta[0]))
-            snr_array = self.snr
-            self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
-                    snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
-            print_debug(10, self.snr_report)
-            return self.afm
+            pass
+            #0720
+            # (self.afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+            # self.ww = (0.0, 0.0)
+            # self.snr = np.zeros(len(self.psta[0]))
+            # snr_array = self.snr
+            # self.snr_report = 'SNR: %.1f (+-%.1f n:%d)  <%.1f  %.1f>' % (
+            #         snr_array.mean(), snr_array.std(), len(snr_array), snr_array.min(), snr_array.max())
+            # print_debug(10, self.snr_report)
+            # return self.afm
         elif self.align_mode == 'apply_affine_align':
             self.snr = np.zeros(1)
             snr_array = self.snr
@@ -1286,7 +1207,7 @@ class align_ingredient:
         #  Refine the afm via swim and mir
         afm = self.afm
         if type(afm) == type(None):
-            afm = identityAffine()
+            afm = swiftir.identityAffine()
 
         if self.recipe.swiftir_mode == 'c':
 
@@ -1295,22 +1216,23 @@ class align_ingredient:
             afm = self.run_swim_c()
 
         else:
-
-            print_debug(50, "Running python version of swim")
-            self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-            sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
-            for i in range(self.iters):
-                print_debug(50, 'psta = ' + str(self.psta))
-                print_debug(50, 'pmov = ' + str(self.pmov))
-                mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
-                (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
-                print_debug(50, '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
-                self.pmov = self.pmov + dp
-                (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
-                self.pmov = swiftir.stationaryToMoving(afm, self.psta)
-                print_debug(50, '  Affine err:  %g' % (err))
-                print_debug(50, '  SNR:  ' + str(snr))
-            self.snr = snr
+            pass
+            #0720
+            # print_debug(50, "Running python version of swim")
+            # self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+            # sta = swiftir.stationaryPatches(self.recipe.im_sta, self.psta, self.ww)
+            # for i in range(self.iters):
+            #     print_debug(50, 'psta = ' + str(self.psta))
+            #     print_debug(50, 'pmov = ' + str(self.pmov))
+            #     mov = swiftir.movingPatches(self.recipe.im_mov, self.pmov, afm, self.ww)
+            #     (dp, ss, snr) = swiftir.multiSwim(sta, mov, pp=self.pmov, afm=afm, wht=self.wht)
+            #     print_debug(50, '  dp,ss,snr = ' + str(dp) + ', ' + str(ss) + ', ' + str(snr))
+            #     self.pmov = self.pmov + dp
+            #     (afm, err, n) = swiftir.mirIterate(self.psta, self.pmov)
+            #     self.pmov = swiftir.stationaryToMoving(afm, self.psta)
+            #     print_debug(50, '  Affine err:  %g' % (err))
+            #     print_debug(50, '  SNR:  ' + str(snr))
+            # self.snr = snr
 
         snr_array = np.array(self.snr)
         #    self.snr = [snr_array.mean()]
@@ -1342,10 +1264,9 @@ class align_ingredient:
 
 
 def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
-    print_debug(50,
-                "\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%% Static Function Call to align_images %%%%%%%%%%%%%%%%%%%%%%%%%%%\n")
+    print('\n%%%%%%%%%%%%%%%%%%%%%%%%%%% Static Function Call to align_images %%%%%%%%%%%%%%%%%%%%%%%%%%%\n')
     if type(global_afm) == type(None):
-        global_afm = identityAffine()
+        global_afm = swiftir.identityAffine()
 
     im_sta = swiftir.loadImage(im_sta_fn)
     im_mov = swiftir.loadImage(im_mov_fn)
@@ -1398,7 +1319,11 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
     global_afm = swiftir.composeAffine(recipe.afm, global_afm)
     im_aligned = swiftir.affineImage(global_afm, im_mov)
     ofn = os.path.join(align_dir, os.path.basename(im_mov_fn))
-    swiftir.saveImage(im_aligned, ofn)
+    try:
+        swiftir.saveImage(im_aligned, ofn)
+    except Exception:
+        print(traceback.format_exc())
+
 
     return (global_afm, recipe)
 

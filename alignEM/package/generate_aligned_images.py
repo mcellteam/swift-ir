@@ -54,7 +54,8 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
     #     save_bias_analysis(cfg.project_data['data']['scales'][scale_key]['alignment_stack'], bias_data_path)
     # except:
     #     print_exception()
-    use_bounding_rect = cfg.project_data['data']['scales'][scale_key]['use_bounding_rect']
+    use_bounding_rect = bool(cfg.project_data['data']['scales'][scale_key]['use_bounding_rect'])
+    print('generate_aligned_images | use_bounding_rect = ', use_bounding_rect)
     with open(os.path.join(bias_data_path, 'bounding_rect.dat'), 'w') as file:
         if use_bounding_rect:
             rect = BoundingRect(cfg.project_data['data']['scales'][scale_key]['alignment_stack'])
@@ -120,7 +121,7 @@ def generate_aligned_images(use_scale=None, start_layer=0, num_layers=-1):
         logging.info('generate_aligned_images | task_queue.collect_results() encountered a problem',logging.WARNING)
         print_exception()
     dt = time.time() - t0
-    cfg.main_window.hud.post('Image Generation (ImageApplyAffine) Completed in %.2f seconds' % dt)
+    cfg.main_window.hud.post('Image Generation Completed in %.2f seconds' % dt)
     task_queue.stop()
     del task_queue
 
