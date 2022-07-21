@@ -1,4 +1,5 @@
 Cross_Platform/*
+.idea
 .idea/*
 Image_Libs/*
 swift-ir/*.jpg
