@@ -1282,23 +1282,30 @@ class MainWindow(QMainWindow):
         # self.align_all_button.setIcon(icon)
         # self.align_all_button.setLayoutDirection(alignEM.RightToLeft)
 
-        self.alignment_status_label = QLabel("Is Aligned: ")
+        self.alignment_status_label = QLabel()
+        self.align_label_resolution = QLabel()
+        self.align_label_affine = QLabel()
+        self.align_label_scales_remaining = QLabel()
         self.alignment_status_label.setFont(QFont('Terminus', 12, QFont.Bold))
+        self.align_label_resolution.setFont(QFont('Terminus', 12, QFont.Bold))
+        self.align_label_affine.setFont(QFont('Terminus', 12, QFont.Bold))
+        self.align_label_scales_remaining.setFont(QFont('Terminus', 12, QFont.Bold))
+        self.alignment_status_label.hide()
+        self.align_label_resolution.hide()
+        self.align_label_affine.hide()
+        self.align_label_scales_remaining.hide()
+
         self.alignment_status_label.setToolTip('Alignment status')
-        # self.alignment_status_checkbox = QCheckBox()
         self.alignment_status_checkbox = QRadioButton()
         self.alignment_status_checkbox.setEnabled(False)
         self.alignment_status_checkbox.setToolTip('Alignment status')
+        self.alignment_status_checkbox.hide()
+
         self.alignment_status_layout = QHBoxLayout()
         self.alignment_status_layout.addWidget(self.alignment_status_label)
         self.alignment_status_layout.addWidget(self.alignment_status_checkbox)
 
-        self.align_label_resolution = QLabel()
-        self.align_label_resolution.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_affine = QLabel()
-        self.align_label_affine.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_scales_remaining = QLabel()
-        self.align_label_scales_remaining.setFont(QFont('Terminus', 12, QFont.Bold))
+
         self.align_details_layout = QGridLayout()
         self.align_details_layout.addWidget(self.align_label_resolution, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         self.align_details_layout.addWidget(self.align_label_affine, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -1843,9 +1850,8 @@ class MainWindow(QMainWindow):
                  ],
                 ['&Debug',
                     [
-                         ['Update Panels', None, self.update_panels, None, None, None],
+                         ['Auto Set User Progress', None, self.auto_set_user_progress(), None, None, None],
                          ['Update Win Self (Update MainWindow)', None, self.update_win_self, None, None, None],
-                         ['Update Multiself (Repaint+Update Panels)', None, self.image_panel.update_multi_self, None, None, None],
                          ['Refresh All Images (Repaint+Update Panels)', None, self.refresh_all_images, None, None, None],
                          ['Read project_data Update GUI', None, self.read_project_data_update_gui, None, None, None],
                          ['Read GUI Update project_data', None, self.read_gui_update_project_data, None, None, None],
@@ -1945,6 +1951,7 @@ class MainWindow(QMainWindow):
             print('str(AllItems) = %s' % str(AllItems))
             self.update_scale_controls()
             self.center_all_images()
+            self.save_project()
             self.hud.post('Scaling Completed Successfully.')
             print('\nScaling Completed Successfully.\n')
         else:
@@ -1975,7 +1982,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Something Went Wrong During Alignment.', logging.ERROR)
             self.set_idle()
             return
-        self.update_alignment_status_indicator()
+        self.update_alignment_details()
 
         if self.always_generate_images:
             try:
@@ -1998,6 +2005,7 @@ class MainWindow(QMainWindow):
             else:
                 self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.', logging.WARNING)
             self.update_win_self()
+            self.refresh_all_images()
             self.set_idle()
 
     @Slot()
@@ -2248,25 +2256,35 @@ class MainWindow(QMainWindow):
             self.hud.post('Images will not be generated automatically after alignment')
 
 
-    def update_alignment_details(self):
-        dm_name_to_combo_name = {'init_affine' : 'Initialize Affine',
-                                 'refine_affine': 'Refine Affine',
-                                 'apply_affine': 'Apply Affine'}
-        img_size = get_image_size(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0][
-                                      'images']['base']['filename'])
-        alignment_method_string = dm_name_to_combo_name[cfg.project_data['data']['scales'][get_cur_scale_key()][
-            'method_data']['alignment_option']]
-
-        self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
-        self.align_label_affine.setText(alignment_method_string)
-        self.align_label_scales_remaining.setText('# Scales Unaligned: %d' % len(get_not_aligned_scales_list()))
 
     @Slot()
-    def update_alignment_status_indicator(self) -> None:
-        '''Simple function to update alignment status indicator'''
-        # print("update_alignment_status_indicator | called by " + inspect.stack()[1].function)
+    def update_alignment_details(self) -> None:
+        '''Update alignment details in the Alignment control panel group box.'''
         self.alignment_status_checkbox.setChecked(is_cur_scale_aligned())
-        self.update_alignment_details()
+        if is_cur_scale_aligned():
+            self.alignment_status_label.show()
+            self.align_label_resolution.show()
+            self.align_label_affine.show()
+            self.align_label_scales_remaining.show()
+            dm_name_to_combo_name = {'init_affine'  : 'Initialize Affine',
+                                     'refine_affine': 'Refine Affine',
+                                     'apply_affine' : 'Apply Affine'}
+            img_size = get_image_size(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0][
+                                          'images']['base']['filename'])
+            alignment_method_string = dm_name_to_combo_name[cfg.project_data['data']['scales'][get_cur_scale_key()][
+                'method_data']['alignment_option']]
+
+            self.alignment_status_checkbox.show()
+            self.alignment_status_label.setText("Is Aligned: ")
+            self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
+            self.align_label_affine.setText(alignment_method_string)
+            self.align_label_scales_remaining.setText('# Scales Unaligned: %d' % len(get_not_aligned_scales_list()))
+        else:
+            self.alignment_status_label.hide()
+            self.align_label_resolution.hide()
+            self.align_label_affine.hide()
+            self.align_label_scales_remaining.hide()
+            print('update_alignment_details | WARNING | Function was called but current scale is not aligned')
 
 
     @Slot()
@@ -2591,7 +2609,7 @@ class MainWindow(QMainWindow):
             # self.reload_scales_combobox() #0713-
             # self.update_scale_controls() #<-- this does not need to be called on every change of layer
             try:
-                self.update_alignment_status_indicator()
+                self.update_alignment_details()
             except:
                 print('read_project_data_update_gui | WARNING | Unable to update alignment status indicator')
                 pass

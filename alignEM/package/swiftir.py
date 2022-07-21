@@ -25,6 +25,9 @@ import os
 os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
 import numpy as np
 import cv2
+import tifffile #0720+
+# import scipy
+
 
 apo = []
 apo0 = []
@@ -290,7 +293,8 @@ def loadImage(ifn, stretch=False):
     Backends for http, DVID, etc., would be a useful extension.'''
     if type(stretch)==bool and stretch:
         stretch = 0.1
-    img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+    # img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+    img = tifffile.imread(ifn) #0720+
     if stretch:
         N = img.size
         ilo = int(.01*stretch*N)
@@ -314,14 +318,18 @@ def saveImage(img, ofn, qual=None, comp=1):
             if comp != None:
                 # code 1 means uncompressed tif
                 # code 5 means LZW compressed tif
-                cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
+                # cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
+                tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
             else:
                 # Use default
-                cv2.imwrite(ofn, img)
+                # cv2.imwrite(ofn, img)
+                tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
         else:
-            cv2.imwrite(ofn, img)
+            # cv2.imwrite(ofn, img)
+            tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
     else:
-        cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
+        # cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
+        tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
 
 def extractStraightWindow(img, xy=None, siz=512):
     '''EXTRACTSTRAIGHTWINDOW - Extract a window from an image
@@ -392,6 +400,20 @@ def affineImage(afm, img, rect=None, grayBorder=False ):
         return cv2.warpAffine(img, shiftAffine(afm, p2-p1), (rect[2], rect[3]),
                               flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR,
                               borderValue=border)
+
+'''
+    if grayBorder:
+      border = img.mean()
+    else:
+      border = 0
+    if rect is None:
+        return cv2.warpAffine(img, afm, (img.shape[1],img.shape[0]), flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR, borderValue=border)
+    else:
+        p1 = applyAffine(afm, (0,0))
+        p2 = applyAffine(afm, (rect[0], rect[1]))
+        return cv2.warpAffine(img, shiftAffine(afm, p2-p1), (rect[2], rect[3]), flags=cv2.WARP_INVERSE_MAP + cv2.INTER_LINEAR, borderValue=border)
+
+'''
 
 def modelBounds(afm, img):
     '''MODELBOUNDS - Returns image bounding rectangle in model space
@@ -962,4 +984,40 @@ if __name__=='__main__':
     print('dt = ', time.time() - t)
     '''
 
+'''
+>>> path = 'R34CA1-BS12.255.tif'
+>>> img = cv2.imread(path, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+>>> import imageio
+>>> img_cv2 = cv2.imread(path, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+>>> img_imageio = imageio.imread(path)
+<stdin>:1: DeprecationWarning: Starting with ImageIO v3 the behavior of this function will switch to that of iio.v3.imread. To keep the current behavior (and make this warning dissapear) use `import imageio.v2 as imageio` or call `imageio.v2.imread` directly.
+>>> import imageio.v2 as imageio
+>>> img_imageio = imageio.imread(path)
+>>> type(img_imageio)
+<class 'imageio.core.util.Array'>
+>>> import numpy
+>>> img_imageio = numpy.asarray(imageio.imread(path))
+>>> img_cv2.size
+16777216
+>>> img_imageio.size
+16777216
+>>> from PIL import Image
+>>> img_pil = Image.read(path)
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/Users/joelyancey/Library/Python/3.8/lib/python/site-packages/PIL/Image.py", line 65, in __getattr__
+    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
+AttributeError: module 'PIL.Image' has no attribute 'read'
+>>> img_pil = Image.open(path)
+>>> type(img_pil)
+<class 'PIL.TiffImagePlugin.TiffImageFile'>
+>>> type(numpy.asarray(img_pil))
+<class 'numpy.ndarray'>
+>>> numpy.asarray(img_pil).size
+16777216
+>>> import tifffile
+>>> img_tifffile = tifffile.imread(path)
+>>> img_tifffile.size
+16777216
 
+'''

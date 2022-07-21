@@ -2,11 +2,12 @@
 
 import sys
 import numpy as np
+import traceback
 try: import package.swiftir
 except: import swiftir
 
 # This is monotonic (0 to 100) with the amount of output:
-debug_level = 0  # A larger value prints more stuff
+debug_level = 100  # A larger value prints more stuff
 
 # For now, always use the limited argument version
 def print_debug ( level, p1=None, p2=None, p3=None, p4=None, p5=None ):
@@ -36,17 +37,23 @@ def print_debug_enter (level):
 
 def image_apply_affine(in_fn=None,out_fn=None,afm=None,rect=None,grayBorder=False):
 
-    print_debug(12, "\nimage_apply_affine afm: " + str(afm))
 
-    in_img = swiftir.loadImage(in_fn)
-    print_debug(4, "\nTransforming " + str(in_fn) )
-    print_debug(12, "  with:" )
-    print_debug(12, "    afm = " + str(afm))
-    print_debug(12, "    rect = " + str(rect))
-    print_debug(12, "    grayBorder = " + str(grayBorder))
-    out_img = swiftir.affineImage(afm, in_img, rect=rect, grayBorder=grayBorder)
-    print_debug(4, "  saving transformed image as: " + str(out_fn))
-    swiftir.saveImage(out_img, out_fn)
+        print_debug(12, "\nimage_apply_affine afm: " + str(afm))
+
+        in_img = swiftir.loadImage(in_fn)
+        print_debug(4, "\nTransforming " + str(in_fn) )
+        print_debug(12, "  with:" )
+        print_debug(12, "    afm = " + str(afm))
+        print_debug(12, "    rect = " + str(rect))
+        print_debug(12, "    grayBorder = " + str(grayBorder))
+        out_img = swiftir.affineImage(afm, in_img, rect=rect, grayBorder=grayBorder) #0720 NOTE CALL TO swiftir.affineImage
+        print_debug(4, "  saving transformed image as: " + str(out_fn))
+        try:
+            swiftir.saveImage(out_img, out_fn)
+        except Exception:
+            print('job_apply_affine.image_apply_affine | There was a problem saving the aligned images')
+            print(traceback.format_exc())
+
 
 
 
