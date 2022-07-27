@@ -1,9 +1,5 @@
 import logging
-import time
-from tqdm import tqdm
 import io
-import config as cfg
-
 
 __all__ = ['TqdmToLogger']
 

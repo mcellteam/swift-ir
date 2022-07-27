@@ -54,25 +54,32 @@ tifffile new fsspec implementation
 https://github.com/cgohlke/tifffile
 
 """
-import multiprocessing
-import logging, argparse, os, sys, time, shutil, re, subprocess, json
-import zarr
+import os
+import sys
+import time
+import shutil
+import logging
+import argparse
 import numpy as np
-from numcodecs import Blosc, Delta, LZMA, Zstd # blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
-import codecs
-import numcodecs
+import multiprocessing
 from pathlib import Path
 from datetime import datetime
 from contextlib import redirect_stdout
+import zarr
+
+from numcodecs import Blosc, Delta, LZMA, Zstd # blosc.list_compressors() -> ['blosclz', 'lz4', 'lz4hc', 'zlib', 'zstd']
 
 from tiffs2zarr import tiffs2zarr
 from scale_pyramid import create_scale_pyramid
 
-if __name__ == '__main__':
-    print('\n>>>>>>>>>>>>>>>> RUNNING convert_zarr.py\n')
+logger = logging.getLogger(__name__)
 
-    logfile = 'make_zarr.log'
-    logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+
+if __name__ == '__main__':
+    logger.info('convert_zarr.py >>>>')
+
+    # logfile = 'make_zarr.log'
+    # logging.basicConfig(filename=logfile, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
     # PARSE COMMAND LINE INPUTS
     ap = argparse.ArgumentParser()
@@ -130,40 +137,40 @@ if __name__ == '__main__':
 
     # CHECK IF SOURCE MAKES SENSE
     if not src.is_dir():
-        print("(script) convert_zarr.py | EXCEPTION | source '%s' is not a directory - Aborting" % str(src))
-        print("\n<<<<<<<<<<<<<<<< EXITING convert_zarr.py\n")
+        logger.warning("Source '%s' is not a directory - Aborting" % str(src))
+        logger.warning("<<<< convert_zarr.py")
         sys.exit()
 
     if src.suffix == '.zarr':
-        print("\n(script) convert_zarr.py | EXCEPTION | source has '.zarr' suffix, cannot export Zarr to Zarr - Aborting\n")
-        print("\n<<<<<<<<<<<<<<<< EXITING convert_zarr.py\n")
+        logger.warning("Source has '.zarr' suffix, cannot export Zarr to Zarr - Aborting")
+        logger.warning("<<<< convert_zarr.py")
         sys.exit()
 
     # SET PYTHON 'multiprocessing' TO USE 'fork'
-    print("(script) convert_zarr.py | setting multiprocessing start method to 'fork'...")
+    logger.info("setting multiprocessing start method to 'fork'...")
     try:
         multiprocessing.set_start_method('fork', force=True)
     except:
-        print('(script) convert_zarr.py | WARNING | something went wrong while setting multiprocessing start method')
+        logger.warning('Something went wrong while setting multiprocessing start method')
         pass
 
     # CHECK IF TARGET DIRECTORY EXISTS; OVERWRITE?
-    print('(script) convert_zarr.py | checking if export path already exists...')
+    logger.info('checking if export path already exists...')
     if os.path.isdir(zarr_ds_path):
         if overwrite is False:
-            print('\n(script) convert_zarr.py | EXCEPTION | target already exists & overwrite is disabled - Aborting\n')
-            print("\n<<<<<<<<<<<<<<<< EXITING convert_zarr.py\n")
+            logger.info('EXCEPTION | target already exists & overwrite is disabled - Aborting')
+            logger.info("<<<<<<<<<<<<<<<< EXITING convert_zarr.py")
             sys.exit()
-        print("(script) convert_zarr.py | target '%s' already exists, overwrite=%s" %  (zarr_ds_path, overwrite))
-        print("(script) convert_zarr.py | removing '%s'..." % zarr_ds_path)
+        logger.info("target '%s' already exists, overwrite=%s" %  (zarr_ds_path, overwrite))
+        logger.info("removing '%s'..." % zarr_ds_path)
         try:
             shutil.rmtree(zarr_ds_path)
         except:
-            print("(script) convert_zarr.py | WARNING | unable to remove '%s'" % zarr_ds_path)
+            logger.warning("Unable to remove '%s'" % zarr_ds_path)
             pass
 
 
-    print('(script) convert_zarr.py | loading file list...')
+    logger.info('loading file list...')
 
     if not no_compression:
         config_str = src.as_posix() + "_" + str(n_imgs) + 'imgs_multiscale' + str(n_scales) + \
@@ -178,28 +185,28 @@ if __name__ == '__main__':
 
     # CONSOLE DUMP
 
-    print('(script) convert_zarr.py | export path (Zarr)       :', zarr_path)
-    print('(script) convert_zarr.py | zarr url                 :', zarr_ds_path)
-    print('(script) convert_zarr.py | overwrite                :', str(overwrite))
-    print('(script) convert_zarr.py | source                   :', src)
-    print('(script) convert_zarr.py | src.name                 :', src.name)
-    print('(script) convert_zarr.py | # of images found        :', n_imgs)
-    print('(script) convert_zarr.py | first image              :', first_file)
-    print('(script) convert_zarr.py | last image               :', last_file)
-    print('(script) convert_zarr.py | # of scales              :', n_scales)
-    print('(script) convert_zarr.py | scales                   :', scales_list)
-    print('(script) convert_zarr.py | chunk shape              :', str(chunk_shape_tuple))
-    print('(script) convert_zarr.py | compression type         :', cname)
-    print('(script) convert_zarr.py | compression level        :', clevel)
-    print('(script) convert_zarr.py | compression type         :', cname)
-    print('(script) convert_zarr.py | no_compression           :', no_compression)
+    logger.info('export path (Zarr)       :', zarr_path)
+    logger.info('zarr url                 :', zarr_ds_path)
+    logger.info('overwrite                :', str(overwrite))
+    logger.info('source                   :', src)
+    logger.info('src.name                 :', src.name)
+    logger.info('# of images found        :', n_imgs)
+    logger.info('first image              :', first_file)
+    logger.info('last image               :', last_file)
+    logger.info('# of scales              :', n_scales)
+    logger.info('scales                   :', scales_list)
+    logger.info('chunk shape              :', str(chunk_shape_tuple))
+    logger.info('compression type         :', cname)
+    logger.info('compression level        :', clevel)
+    logger.info('compression type         :', cname)
+    logger.info('no_compression           :', no_compression)
     try:
-        print('(script) convert_zarr.py | compressor               :', str(Blosc(cname=cname, clevel=clevel)))
+        logger.info('compressor               :', str(Blosc(cname=cname, clevel=clevel)))
     except:
-        print("(script) convert_zarr.py | WARNING | could not evaluate 'str(Blosc(cname=cname, clevel=clevel))'")
+        logger.warning("Could not evaluate 'str(Blosc(cname=cname, clevel=clevel))'")
 
     # CALL 'tiffs2zarr'
-    print("(script) convert_zarr.py | converting original scale images to Zarr...")
+    logger.info("converting original scale images to Zarr...")
     t = time.time()
     if no_compression:
         tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compressor=None, overwrite=overwrite) # might pass in 'None'
@@ -215,7 +222,7 @@ if __name__ == '__main__':
     t_to_zarr = time.time() - t
 
     # WRITE NEUROGLANCER & OME-NGFF-COMPATIBLE METADATA
-    print('(script) convert_zarr.py | setting Neuroglancer & OME-NGFF compatible meta-data...')
+    logger.info('setting Neuroglancer & OME-NGFF compatible meta-data...')
     ds = zarr.open(zarr_path + '/' + ds_name, mode='a')
     ds.attrs['n_images'] = n_imgs
     ds.attrs['offset'] = [0, 0, 0]
@@ -225,11 +232,11 @@ if __name__ == '__main__':
     ds.attrs['scale_factors'] = scales_list
     ds.attrs['_ARRAY_DIMENSIONS'] = ['z', 'y', 'x']
 
-    print("\n--------original scale Zarr info (pre-scaling)--------")
-    print(ds.info)
+    logger.info("--------original scale Zarr info (pre-scaling)--------")
+    logger.info(ds.info)
 
     # COMPUTE SCALE PYRAMID
-    print('(script) convert_zarr.py | Generating scales...')
+    logger.info('Generating scales...')
     t = time.time()
     if no_compression:
         compressor = None
@@ -244,82 +251,44 @@ if __name__ == '__main__':
     t_total = t_to_zarr + t_gen_scales
 
     # CONSOLIDATE META-DATA
-    print("(script) convert_zarr.py | consolidating Zarr metadata")
+    logger.info("consolidating Zarr metadata")
     zarr.consolidate_metadata(zarr_path)
 
     # COLLECT RUN DATA AND SAVE TO FILE
     f_txt = os.path.join(destination, "make_zarr_dump.txt")
-    print("(script) convert_zarr.py | dumping run details to '%s'" % f_txt)
+    logger.info("dumping run details to '%s'" % f_txt)
     with open(f_txt, mode='a') as f:
         with redirect_stdout(f):
-            print(timestr)
-            print("____ RESULTS - MAKE ZARR ____")
-            print("source             :", args.path)
-            print("output file        :", zarr_path)
-            print("first file         :", os.path.basename(first_file))
-            print("last file          :", os.path.basename(last_file))
-            print("# images found     :", n_imgs)
-            print("time make .zarr    :", t_to_zarr)
-            print("time multiscales   :", t_gen_scales)
-            print("n_scales           :", n_scales)
-            print("scale_ratio        :", scale_ratio)
-            print("chunks             :", chunks)
-            print("dataset            :", ds_name)
-            print("[cli arguments]")
-            print(vars(args))
-            print("[ds.info - s0 only]")
-            print(ds.info)
-            print("Done.\n")
+            logger.info(timestr)
+            logger.info("____ RESULTS - MAKE ZARR ____")
+            logger.info("source             :", args.path)
+            logger.info("output file        :", zarr_path)
+            logger.info("first file         :", os.path.basename(first_file))
+            logger.info("last file          :", os.path.basename(last_file))
+            logger.info("# images found     :", n_imgs)
+            logger.info("time make .zarr    :", t_to_zarr)
+            logger.info("time multiscales   :", t_gen_scales)
+            logger.info("n_scales           :", n_scales)
+            logger.info("scale_ratio        :", scale_ratio)
+            logger.info("chunks             :", chunks)
+            logger.info("dataset            :", ds_name)
+            logger.info("[cli arguments]")
+            logger.info(vars(args))
+            logger.info("[ds.info - s0 only]")
+            logger.info(ds.info)
+            logger.info("Done.")
 
 
 
-    print("(script) convert_zarr.py | printing result as tree...")
+    logger.info("printing result as tree...")
     ds = zarr.open(zarr_path)
-    print(ds.tree())
+    logger.info(ds.tree())
 
-    print('\n---------------------------------------------------------------------')
-    print('Time Elapsed (copy data to Zarr)                 : {:.2f} seconds'.format(t_to_zarr))
-    print('Time Elapsed (generate scales)                   : {:.2f} seconds'.format(t_gen_scales))
-    print('Total Time Elapsed                               : {:.2f} seconds'.format(t_total))
-    print('---------------------------------------------------------------------')
-
-    print("\n<<<<<<<<<<<<<<<< EXITING convert_zarr.py\n")
-
+    logger.info('---------------------------------------------------------------------')
+    logger.info('Time Elapsed (copy data to Zarr)                 : {:.2f} seconds'.format(t_to_zarr))
+    logger.info('Time Elapsed (generate scales)                   : {:.2f} seconds'.format(t_gen_scales))
+    logger.info('Total Time Elapsed                               : {:.2f} seconds'.format(t_total))
+    logger.info('---------------------------------------------------------------------')
+    logger.info("<<<< Exiting convert_zarr.py")
 
 
-
-
-
-
-
-
-
-
-    '''
-    
-        print('(script) convert_zarr.py | dumping run details to JSON')
-    data = {
-        'time': timestr,
-        'path_source': args.path,
-        #'magic_info': magic_info,
-        'n_imgs': n_imgs,
-        'first_image': first_file,
-        'last_image': last_file,
-        'resolution': resolution,
-        'path_zarr_target': zarr_path,
-        'ds_name': ds_name,
-        #'overwrite': args.force,
-        't_to_zarr': t_to_zarr,
-        't_gen_scales': t_gen_scales,
-        'n_scales': n_scales,
-        'scale_ratio': str(np.concatenate(scale_ratio)),
-        'cname': cname,
-        'clevel': clevel,
-        'chunks': chunks,
-    }
-    f_json = config_str + "_dump" +  ".json"
-    print("Dumping run details to ", f_json)
-    with open(f_json, mode='a') as f:
-       json.dump(data, f, indent=4, skipkeys=True)
-
-    '''

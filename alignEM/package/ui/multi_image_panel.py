@@ -5,12 +5,13 @@ import logging
 from qtpy.QtWidgets import QWidget, QHBoxLayout
 from qtpy.QtCore import Qt, QRectF
 from qtpy.QtGui import QPainter, QPen, QColor
-import config as cfg
+import package.config as cfg
 from .zoom_pan_widget import ZoomPanWidget
 from package.em_utils import are_images_imported, is_dataset_scaled
 
 __all__ = ['MultiImagePanel']
 
+logger = logging.getLogger(__name__)
 
 class MultiImagePanel(QWidget):
     '''MultiImagePanel is a container around the image panels (roles).
@@ -44,7 +45,7 @@ class MultiImagePanel(QWidget):
     #keypress
     def keyPressEvent(self, event):
 
-        # print("Key press event: " + str(event))
+        # logger.info("Key press event: " + str(event))
 
         layer_delta = 0
         if event.key() == Qt.Key_Up:
@@ -94,7 +95,7 @@ class MultiImagePanel(QWidget):
                 p.repaint()
 
     def refresh_all_images(self):
-        print('MultiImagePanel.refresh_all_images (caller=%s):' % str(inspect.stack()[1].function))
+        logger.info('Refreshing all images, called by %s' % str(inspect.stack()[1].function))
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in panels_to_update:
@@ -110,7 +111,7 @@ class MultiImagePanel(QWidget):
             self.repaint()
 
     def set_roles(self, roles_list):
-        logging.info("MainWindow | MultiImagePanel.set_roles:")
+        logger.info("Setting roles...")
         if len(roles_list) > 0:
             # Save these roles
             role_settings = {}
@@ -123,7 +124,7 @@ class MultiImagePanel(QWidget):
             try:
                 self.remove_all_panels()
             except:
-                print("EXCEPTION | MultiImagePanel.set_roles was unable to 'self.remove_all_panels()'")
+                logger.warning("MultiImagePanel.set_roles was unable to 'self.remove_all_panels()'")
                 pass
             # Create the new panels
             for role in roles_list:
@@ -138,7 +139,7 @@ class MultiImagePanel(QWidget):
 
 
     def remove_all_panels(self):
-        logging.info("MainWindow | MultiImagePanel.remove_all_panels:")
+        logger.info("MultiImagePanel.remove_all_panels:")
         while len(self.actual_children) > 0:
             self.hb_layout.removeWidget(self.actual_children[-1])
             self.actual_children[-1].deleteLater()
@@ -146,7 +147,7 @@ class MultiImagePanel(QWidget):
         self.repaint()
 
     def center_all_images(self, all_images_in_stack=True):
-        # print('MultiImagePanel.center_all_images (caller=%s):' % str(inspect.stack()[1].function))
+        logger.info('Called by %s' % str(inspect.stack()[1].function))
         if self.actual_children != None:
             #NOTE THIS CALL CAN BE USED TO OBTAIN HANDLES TO THE THREE ZoomPanWidget OBJECTS
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
@@ -158,7 +159,7 @@ class MultiImagePanel(QWidget):
         # self.refresh_all_images() #jy #0701 removed
 
     def all_images_actual_size(self):
-        print("MultiImagePanel.all_images_actual_size:")
+        logger.info("MultiImagePanel.all_images_actual_size:")
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in panels_to_update:

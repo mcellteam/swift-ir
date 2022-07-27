@@ -4,16 +4,16 @@ import os
 import sys
 import argparse
 import time
+import logging
 import tifffile
 import dask.array as da
 import imagecodecs
 from numcodecs import Blosc
-import package.swiftir
+# from image_utils import loadImage, saveImage
+from swiftir import loadImage, saveImage
+from swiftir import scaleImage
 
-
-
-from swiftir import loadImage, scaleImage, saveImage
-
+logger = logging.getLogger(__name__)
 
 def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
     def imread(filename):
@@ -41,7 +41,7 @@ zarr_ds_path = 'path/path/path'
 overwrite = True
 
 # CALL 'tiffs2zarr'
-print("(script) convert_zarr.py | converting original scale images to Zarr...")
+logger.info("(script) convert_zarr.py | converting original scale images to Zarr...")
 t = time.time()
 if no_compression:
     tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compressor=None,
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     parser.add_argument("outfile", help="file name of the scaled image")
     arg_space = parser.parse_args()
 
-    print("SCALE: " + str(arg_space.scale) + " " + arg_space.infile + " " + arg_space.outfile)
+    logger.info("SCALE: " + str(arg_space.scale) + " " + arg_space.infile + " " + arg_space.outfile)
 
     # img = align_swiftir.swiftir.scaleImage(align_swiftir.swiftir.loadImage(arg_space.infile), fac=arg_space.scale)
     # align_swiftir.swiftir.saveImage(img, arg_space.outfile)

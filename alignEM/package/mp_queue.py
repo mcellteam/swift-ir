@@ -3,31 +3,29 @@
 import multiprocessing as mp
 # from multiprocessing import Queue
 # from multiprocessing import JoinableQueue
-
 # from multiprocessing import Pool
 # import multiprocessing.process.AuthenticationString # <-- does not import
 # import multiprocess as mp
 # import multiprocess.context as ctx
+import io
 import sys
-import subprocess as sp
+import time
 import inspect
 import psutil
-import time
+import logging
+import subprocess as sp
 from tqdm import tqdm
 # import dill
 # import pickle
-import config as cfg
+import package.config as cfg
 import package.em_utils as em
-# from qtpy.QtCore import QThread
-import logging
-# from package.ui.TqdmToLogger import TqdmToLogger
+from qtpy.QtCore import QThread
+
 
 __all__ = ['TaskQueue']
 
-import logging
-import time
+logger = logging.getLogger(__name__)
 
-import io
 
 class TqdmToLogger(io.StringIO):
     """
@@ -224,19 +222,21 @@ class TaskQueue:
         self.workers = []
         self.close_worker = False
         self.n_tasks = n_tasks
-        # self.ctx = mp.get_context(self.start_method)
         if sys.version_info >= (3, 7):
             self.close_worker = True
         self.logging_handler = logging_handler
+        self.work_queue = self.ctx.JoinableQueue()
+        self.result_queue = self.ctx.Queue()
+        self.pbar_q = self.ctx.Queue()
 
         mpl = mp.log_to_stderr()
         mpl.setLevel(logging.INFO)
 
-        print('TaskQueue | INITIALIZATION')
-        print('TaskQueue | self.start_method = ', self.start_method)
-        print('TaskQueue | self.close_worker = ', self.close_worker)
-        print('TaskQueue | self.n_tasks = ', self.n_tasks)
-        print('TaskQueue | sys.version_info = ', sys.version_info)
+        print('TaskQueue Initialization')
+        print('self.start_method = ', self.start_method)
+        print('self.close_worker = ', self.close_worker)
+        print('self.n_tasks = ', self.n_tasks)
+        print('sys.version_info = ', sys.version_info)
         # self.progress_callback = progress_callback
 
         # logging.basicConfig(level=logging.INFO)
@@ -269,56 +269,54 @@ class TaskQueue:
            type(result_q)= <class 'multiprocessing.queues.Queue'>'''
         '''mp_queue.TaskQueue.start | type(self.progress_callback) =  <class 'PyQt5.QtCore.pyqtBoundSignal'>
         mp_queue.TaskQueue.start | str(self.progress_callback) =  <bound PYQT_SIGNAL progressSignal of WorkerSignals object at 0x186f84dc0>'''
-        print('TaskQueue.start >>>>>>>>')
+        print('TaskQueue.start >>>>')
         print('TaskQueue.start | sys.getsizeof(self.task_dict) = ', sys.getsizeof(self.task_dict))
         # log = logging.getLogger('AlignEMLogger')
         # log.setLevel(logging.INFO)
         # log.addHandler(TqdmLoggingHandler())
-
-        self.task_dict = {}
+        
         self.task_id = 0
-        self.retries = retries
         self.n_workers = n_workers
-        self.work_queue = self.ctx.JoinableQueue()
-        self.result_queue = self.ctx.Queue()
-        self.pbar_q = self.ctx.Queue()
+        self.retries = retries
+        self.task_dict = {}
+
         cfg.main_window.hud.post('Using %d workers in parallel to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
         # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
         print('mp_queue.start | self.n_tasks = ', self.n_tasks)
-        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
+        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
         cfg.main_window.hud.post('Running RunnableWorker Threads...')
         for i in range(self.n_workers):
             sys.stderr.write('Restarting RunnableWorker %d >>>>>>>>' % i)
             # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers))
-            p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
+            p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
             # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
             self.workers.append(p)
             self.workers[i].start()
-        print('<<<<<<<< Exiting TaskQueue.start')
+        print('<<<< Exiting TaskQueue.start')
 
     def restart(self) -> None:
-        sys.stderr.write('TaskQueue.restart >>>>>>>>')
+        sys.stderr.write('TaskQueue.restart >>>>')
         cfg.main_window.hud.post('Restarting the Task Queue...')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.pbar_q = self.ctx.Queue()
         self.workers = []
         # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
-        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
+        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
         for i in range(self.n_workers):
-            sys.stderr.write('Restarting RunnableWorker %d >>>>>>>>' % i)
+            sys.stderr.write('Restarting RunnableWorker %d >>>>' % i)
             # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers))
-            p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
+            p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
             # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
             self.workers.append(p)
             self.workers[i].start()
-        sys.stderr.write('<<<<<<<<  TaskQueue.restart')
+        sys.stderr.write('<<<<  TaskQueue.restart')
 
     def end_tasks(self) -> None:
         '''Tell child processes to stop'''
-        print('TaskQueue.end_tasks >>>>>>>>')
+        print('TaskQueue.end_tasks >>>>')
         # cfg.main_window.hud.post('Cleaning up running tasks...')
         for i in range(self.n_workers):
             self.work_queue.put('END_TASKS')
@@ -327,7 +325,7 @@ class TaskQueue:
         # for i in range(self.n_workers):
         #     worker_id, dt = self.result_queue.get()
         #     print('TaskQueue worker: %d  total time: %.2f' % (worker_id, dt))
-        print('<<<<<<<< TaskQueue.end_tasks')
+        print('<<<< TaskQueue.end_tasks')
 
     def stop(self) -> None:
         '''Stop all workers'''
@@ -373,11 +371,11 @@ class TaskQueue:
     def collect_results(self) -> None:
 
         '''Get results from tasks'''
-        print("\nTaskQueue.collect_results  >>>>>>>>")
+        print("\nTaskQueue.collect_results  >>>>")
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
-        print('TaskQueue | n_pending = %d' % n_pending)
-        print('TaskQueue | self.retries = %d' % n_pending)
+        print('n_pending = %d' % n_pending)
+        print('self.retries = %d' % n_pending)
         retries_tot = 0
         # if n_pending == 0:
         #     print('TaskQueue.collect_results | No tasks to run - Returning')
@@ -388,7 +386,7 @@ class TaskQueue:
             # i+=1
             # pbar.update()
             # self.progress_callback.emit(int((i/n)*100))
-            print('mp_queue.collect_results | n_pending = %d' % n_pending)
+            print('# Tasks Pending: %d' % n_pending)
             self.end_tasks()
             self.work_queue.join()
             self.stop()
@@ -396,7 +394,7 @@ class TaskQueue:
             # pbar_ = tqdm(total=self.n_tasks)
             for j in range(n_pending):
                 # pbar_.update(1)
-                # print('mp_queue | j = ', j)
+                # print('j = ', j)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 # sys.stderr.write('Collected results from Task_ID %d\n' % (task_id))
                 self.task_dict[task_id]['stdout'] = outs
@@ -411,28 +409,31 @@ class TaskQueue:
             '''Restart Queue and Requeue failed tasks'''
             n_pending = len(retry_list)
             if (retries_tot < self.retries) and n_pending:
-                sys.stderr.write('mp_queue | Requeuing Any Failed Tasks...')
-                sys.stderr.write('mp_queue | Failed Tasks: %d' % n_pending)
-                sys.stderr.write('mp_queue |     Task IDs: %s' % str(retry_list))
+                logger.info('Requeuing Failed Tasks...')
+                logger.info('  # Failed Tasks: %d' % n_pending)
+                logger.info('  Task IDs: %s' % str(retry_list))
 
                 self.restart()
                 for task_id in retry_list:
-                    sys.stderr.write('mp_queue | Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
+                    logger.info('Requeuing Failed Task ID: %d   Retries: %d' % (task_id, retries_tot + 1))
                     # sys.stderr.write('mp_queue |                     Task: %s' % (str(self.task_dict[task_id])))
-                    # [print(key,':',value) for key, value in self.task_dict[task_id].items()]
+                    # [logger.info(key,':',value) for key, value in self.task_dict[task_id].items()]
                     self.requeue_task(task_id)
             retries_tot += 1
         sys.stderr.write('    Finished Collecting Results for %d Tasks\n' % (len(self.task_dict)))
         sys.stderr.write('    Failed Tasks: %d\n' % (n_pending))
         sys.stderr.write('    Retries: %d\n\n' % (retries_tot - 1))
         if n_pending == 0:
-            print('Failed Tasks   : %d' % n_pending)
-            print('Retries        : %d' % (retries_tot - 1))
+            logger.info('Failed Tasks   : %d' % n_pending)
+            logger.info('Retries        : %d' % (retries_tot - 1))
+            logger.info('Complete')
         else:
-            print('Failed Tasks: %d' % n_pending, logging.WARNING)
-            print('Retries        : %d' % (retries_tot - 1), logging.WARNING)
+            logger.error('Something Went Wrong')
+            logger.error('Failed Tasks  : %d' % n_pending)
+            logger.error('Retries       : %d' % (retries_tot - 1))
+            logger.error('Complete')
 
-        print('<<<<<<<<  TaskQueue.collect_results')
+        print('<<<<  TaskQueue.collect_results')
 
 
 
@@ -823,7 +824,7 @@ Starting mp_queue with args:
 #                 sys.stderr.write('    Task_IDs: %s\n' % (str(retry_list)))
 #                 self.restart()
 #                 for task_id in retry_list:
-#                     sys.stderr.write('mp_queue | Requeuing Failed Task_ID: %d   Retries: %d\n' % (task_id, retries_tot + 1))
+#                     sys.stderr.write('Requeuing Failed Task_ID: %d   Retries: %d\n' % (task_id, retries_tot + 1))
 #                     # sys.stderr.write('  Task: %s\n' % (str(self.task_dict[task_id])))
 #                     [print(key,':',value) for key, value in self.task_dict[task_id].items()]
 #                     self.requeue_task(task_id)

@@ -6,8 +6,8 @@ Below are some notes I took on installation, they are not correct. They are not 
 suggestions, and is probably not up to date. You can use any of the following Python-Qt APIs (PySide6, PySide2,
 PyQt5, or PyQt6) by passing in the option --api at the command line when you run the program like this:
 
-{# main.py is the script to run to launch the program.}
-{python3 main --api pyqt6}
+{# alignEM.py is the script to run to launch the program.}
+{python3 alignEM.py --api pyqt6}
 
 Contact: joel@salk.edu. This branch may not be stable.
 
@@ -41,7 +41,7 @@ Linux: Compilation requires a software called FFTW. Try:
 
 -------- Run alignEM-SWiFT --------
 # navigate to /swift-ir/alignEM
-python3 main.py
+python3 alignEM.py
 
 -----------------------------------
 -----------------------------------
@@ -75,7 +75,7 @@ git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
 git checkout joel-dev-alignem
 cd alignEM
-python3 main # <-- Command to Run AlignEM-SWiFT
+python3 alignEM # <-- Command to Run AlignEM-SWiFT
 
 CentOS 7 Tips:
 

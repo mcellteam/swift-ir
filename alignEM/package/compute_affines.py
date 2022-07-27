@@ -10,66 +10,53 @@ import copy
 import json
 from qtpy.QtCore import QThread
 
-import config as cfg
-from .em_utils import are_images_imported, is_dataset_scaled, get_cur_scale_key, get_scale_val, \
-    print_alignment_layer, print_dat_files
+import package.config as cfg
+from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_dat_files
+from .image_utils import remove_aligned
 from .mp_queue import TaskQueue
-from .generate_aligned_images import generate_aligned_images
-from .remove_aligned_images import remove_aligned_images
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
-# from package.pyswift_tui import run_json_project
-# from package.pyswift_tui import save_bias_analysis
+
 
 __all__ = ['compute_affines']
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt='%H:%M:%S',
-        handlers=[ logging.StreamHandler() ]
-)
+
+debug_level = 0
 
 # def compute_affines():
-def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
+def compute_affines(use_scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
-    print('compute_affines >>>>>>>>')
     QThread.currentThread().setObjectName('ComputeAffines')
 
-    print('_____________Compute Affines Beginning_____________')
+    print('_____________Compute Affines Begin_____________')
 
     if are_images_imported():
         pass
     else:
-        cfg.main_window.hud.post("Images must be imported prior to alignment.", logging.WARNING)
-        return
-
-    if is_dataset_scaled():
-        pass
-    else:
-        cfg.main_window.hud.post('Dataset must be scaled prior to alignment', logging.WARNING)
+        cfg.main_window.hud.post("Images must be imported prior to alignment.", logger.WARNING)
         return
 
     rename_switch = False
-    if use_scale == None:
-        use_scale = get_cur_scale_key()
-
     # Create links or copy files in the expected directory structure
     # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
     scale_dict = cfg.project_data['data']['scales'][use_scale]
     alignment_dict = cfg.project_data['data']['scales'][use_scale]['alignment_stack']
     alignment_option = scale_dict['method_data']['alignment_option']
-    logging.info('Computing Affine Transformations with:')
-    logging.info('use_scale          = %s' % use_scale)
-    logging.info('cfg.CODE_MODE      = %s' % cfg.CODE_MODE)
-    logging.info('cfg.PARALLEL_MODE  = %s' % cfg.PARALLEL_MODE)
-    logging.info('cfg.USE_FILE_IO    = %d' % cfg.USE_FILE_IO)
-    logging.info('start_layer        = %d' % start_layer)
-    logging.info('num_layers         = %d' % num_layers)
+    logger.info('Computing Affine Transformations with:')
+    logger.info('use_scale          = %s' % use_scale)
+    logger.info('cfg.CODE_MODE      = %s' % cfg.CODE_MODE)
+    logger.info('cfg.PARALLEL_MODE  = %s' % cfg.PARALLEL_MODE)
+    logger.info('cfg.USE_FILE_IO    = %d' % cfg.USE_FILE_IO)
+    logger.info('start_layer        = %d' % start_layer)
+    logger.info('num_layers         = %d' % num_layers)
 
     cfg.main_window.alignment_status_checkbox.setChecked(False)
-    remove_aligned_images(start_layer=start_layer)
+    cfg.main_window.hud.post('Removing previously generated images for Scale %s...' % use_scale[-1])
+    remove_aligned(use_scale=use_scale,
+                   project_dict=cfg.project_data,
+                   image_library=cfg.image_library,
+                   start_layer=start_layer)
     cfg.main_window.hud.post("Using SWiFT-IR to Compute Affine Transformations (Affine: %s, Scale: %s)..."
                              % (alignment_option, use_scale[-1]))
 
@@ -90,9 +77,10 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
     alstack = project['data']['scales'][use_scale]['alignment_stack']
 
     if cfg.PARALLEL_MODE:
+        logger.info('cfg.PARALLEL_MODE was True...')
         '''Run the project as a series of jobs'''
         # Write the entire project as a single JSON file with a unique stable name for this run
-        print("Copy project file to 'project_runner_job_file.json'")
+        logger.info("Copying project file to 'project_runner_job_file.json'")
 
         run_project_name = os.path.join(project['data']['destination_path'], "project_runner_job_file.json")
         with open(run_project_name, 'w') as f:
@@ -105,17 +93,16 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
         task_queue.start(cpus)
         align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 
-        for layer in alstack:
+        for i,layer in enumerate(alstack):
             lnum = alstack.index(layer)
             skip = False
             try:
                 skip = layer['skip']
             except:
-                pass
+                logger.warning('skip could not be read in project_data')
             if skip is True:
-                print('Skipping layer %s' % str(lnum))
+                logger.info('Skipping layer %s' % str(lnum))
             else:
-                print_debug(50, "Starting a task for layer " + str(lnum))
                 task_args = [sys.executable,
                              align_job,  # Python program to run (single_alignment_job)
                              str(run_project_name),  # Project file name
@@ -126,16 +113,18 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
                              str(1),  # Number of layers to run
                              str(cfg.USE_FILE_IO)  # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
                              ]
-                print("Starting mp_queue with args:")
-                for p in task_args:
-                    print_debug(50, "  " + str(p))
+                if i == 0:
+                    example = [str(p) for p in task_args]
+                    # logger.info("Starting mp_queue with args (First Layer Only, Example):\n\n%s\n" % "\n".join(example))
+                    cfg.main_window.hud.post("Starting mp_queue with args (First Layer Only, Example):\n%s\n" % "\n".join(example))
+
 
                 task_queue.add_task(task_args)
 
         # task_queue.work_q.join()
 
         t0 = time.time()
-        print_debug(50, 'Waiting for Alignment Tasks to Complete...')
+        cfg.main_window.hud.post('Waiting for Alignment Tasks to Complete...')
         task_queue.collect_results()
         dt = time.time() - t0
         cfg.main_window.hud.post('Alignment Completed in %.2f seconds' % (dt))
@@ -171,20 +160,20 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
 
         task_list = [task_dict[k] for k in sorted(task_dict.keys())]
 
-        print("Copying 'cfg.project_data'...")
+        logger.info("Copying 'cfg.project_data'...")
         updated_model = copy.deepcopy(cfg.project_data) # Integrate output of each task into a new combined data model
 
         use_scale_new_key = updated_model['data']['current_scale']
         # if use_scale > 0:
         # use_scale_new_key = get_scale_key(use_scale)
-
+    
         for tnum in range(len(task_list)):
 
             if cfg.USE_FILE_IO:
                 # Get the updated data model from the file written by single_alignment_job
                 output_dir = os.path.join(os.path.split(run_project_name)[0], get_cur_scale_key())
                 output_file = "single_alignment_out_" + str(tnum) + ".json"
-                with open(os.path.join(output_dir, output_file), 'r') as f:  # Use file to refer to the file object
+                with open(os.path.join(output_dir, output_file), 'r') as f:
                     dm_text = f.read()
 
             else:
@@ -217,37 +206,30 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
                     cfg.main_window.hud.post('Automatically Skipping Layer %d' % (lnum))
                     cfg.main_window.hud.post('ref image: %s   base image: %s' % (ref_fn, base_fn))
                     al_stack_old[lnum]['skip'] = True
-                # print("results_dict['need_to_write_json'] = ", results_dict['need_to_write_json'])
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
-
-        # Reset task_queue
+        
+        
+        logger.info('Stopping task queue...')
         task_queue.stop()
         del task_queue
-
-        print('_____________Compute Affines End_____________')
-        print_alignment_layer()
-        print_dat_files()
+        
+        print('updated_model (Example Layer):')
+        try:
+            al_layer = updated_model['data']['scales'][use_scale]['alignment_stack'][-1]
+            logger.info(json.dumps(al_layer, indent=2))
+        except:
+            logger.info('No Alignment Layer Found')
 
         cfg.project_data = updated_model
         bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], use_scale, 'bias_data')
         save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
-
-
-        # generate_images = True
-        #
-        # if generate_images:
-        #     generate_aligned_images(
-        #             use_scale=get_cur_scale_key(),
-        #             start_layer=start_layer,
-        #             num_layers=num_layers
-        #     )
-        #
-        # print('Saving bias analysis...')
-        # bias_data_path = os.path.join(project['data']['destination_path'], use_scale, 'bias_data')
-        # save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
+        
+        print_alignment_layer()
+        print_dat_files()
+        
     else:
         '''Run the project directly in Serial mode. Does not generate aligned images.'''
-
+        logger.info('Calling run_json_project (cfg.PARALLEL_MODE was False)...')
         updated_model, need_to_write_json = run_json_project(
                 project=project,
                 alignment_option=alignment_option,
@@ -257,6 +239,9 @@ def compute_affines(use_scale=None, start_layer=0, num_layers=-1):
                 num_layers=num_layers)
         if need_to_write_json:
             cfg.project_data = updated_model
+        logger.info('run_json_project returned need_to_write_json=%s' % str(need_to_write_json))
+
+    print('_____________Compute Affines End_____________')
 
 def rename_layers(use_scale, alignment_dict):
     source_dir = os.path.join(cfg.project_data['data']['destination_path'], use_scale, "img_src")
@@ -269,26 +254,6 @@ def rename_layers(use_scale, alignment_dict):
                 destination_image_name = os.path.join(source_dir, image_name)
                 shutil.copyfile(image.image_file_name, destination_image_name)
             except:
-                print('EXCEPTION | Something went wrong with renaming the alignment layers')
+                logger.warning('Something went wrong with renaming the alignment layers')
                 pass
 
-
-
-
-
-# For now, always use the limited argument version
-def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
-    debug_level = 50
-    if level <= debug_level:
-        if p1 == None:
-            sys.stderr.write("" + '\n')
-        elif p2 == None:
-            sys.stderr.write(str(p1) + '\n')
-        elif p3 == None:
-            sys.stderr.write(str(p1) + str(p2) + '\n')
-        elif p4 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + '\n')
-        elif p5 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '\n')
-        else:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '\n')

@@ -6,7 +6,7 @@ from http.server import SimpleHTTPRequestHandler
 from http.server import HTTPServer
 from qtpy.QtCore import QRunnable
 from qtpy.QtCore import Slot
-import config as cfg
+import package.config as cfg
 
 __all__ = ['RunnableServer']
 

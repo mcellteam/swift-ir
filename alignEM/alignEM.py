@@ -42,17 +42,66 @@ $ qtpy mypy-args
 
 import os
 import sys
+import signal
+import logging
 import argparse
 import subprocess
-import logging
-import signal
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
 # from ui.interface import MainWindow
 from package.ui.app import MainWindow
-from config import QT_API, USES_PYSIDE, USES_PYQT, USES_QT5, USES_QT6
-import config as cfg
-from package.ui.json_treeview import JsonModel
+import package.config as cfg
+
+
+class CustomFormatter(logging.Formatter):
+
+    grey = "\x1b[38;20m"
+    yellow = "\x1b[33;20m"
+    red = "\x1b[31;20m"
+    bold_red = "\x1b[31;1m"
+    reset = "\x1b[0m"
+    format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
+
+    FORMATS = {
+        logging.DEBUG: grey + format + reset,
+        logging.INFO: grey + format + reset,
+        logging.WARNING: yellow + format + reset,
+        logging.ERROR: red + format + reset,
+        logging.CRITICAL: bold_red + format + reset
+    }
+
+    def format(self, record):
+        log_fmt = self.FORMATS.get(record.levelno)
+        formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
+        return formatter.format(record)
+
+logger = logging.getLogger() # <-- use this logger initialization in main, to apply formatting to root logger
+if (logger.hasHandlers()):
+    logger.handlers.clear()
+
+logger.setLevel(cfg.LOG_LEVEL)
+ch = logging.StreamHandler()
+ch.setLevel(logging.INFO)
+ch.setFormatter(CustomFormatter())
+logger.addHandler(ch)
+
+# fileConfig('logger.ini')
+
+# logging.basicConfig(
+#         level=logging.DEBUG,
+#         format='%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] | %(message)s',
+#         datefmt='%H:%M:%S',
+#         handlers=[ logging.StreamHandler() ]
+# )
+
+# create logger with 'spam_application'
+
+# logger.setLevel(logging.DEBUG)
+# ch = logging.StreamHandler()
+# ch.setLevel(logging.DEBUG)
+# formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] | %(message)s')
+# ch.setFormatter(formatter)
+# logger.addHandler(ch)
 
 reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
 installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
@@ -69,21 +118,35 @@ if 'tifffile' not in installed_packages:
 if 'tqdm' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','tqdm'])
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt='%H:%M:%S',
-        handlers=[ logging.StreamHandler() ]
-)
+
+# logger = logging.getLogger('AlignEMLogger')
+# logger.setLevel(logging.DEBUG)  # <- critical instruction else logger will break.
+# logging.basicConfig(
+#         format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
+#         datefmt='%H:%M:%S',
+#         handlers=[logger.StreamHandler()]
+# )
+# formatter = logging.Formatter('%(asctime)s - %(name)s - %(process)d - %(threadName)s - %(levelname)s - %(message)s')
+# formatter = logging.Formatter("[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s")
+# formatter = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
+# handler.setFormatter(formatter)
+# logger.addHandler(handler)
+
+
 
 if __name__ == "__main__":
-    # sys.stdout.write("\nWelcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.\n")
+
+    # logger.debug("debug message")
+    # logger.info("info message")
+    # logger.warning("warning message")
+    # logger.error("error message")
+    # logger.critical("critical message")
+
     sys.stdout.write('\n===================================================================================\n')
     sys.stdout.write('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.\n')
     sys.stdout.write('===================================================================================\n\n')
     sys.stdout.flush()
-    logging.info("main | Running " + __file__ + ".__main__()")
+    logger.info("Running " + __file__ + ".__main__()")
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, default=10,help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
@@ -97,7 +160,6 @@ if __name__ == "__main__":
     cfg.USE_FILE_IO = args.use_file_io
     cfg.QT_API = args.api
 
-
     if cfg.QT_API in ('pyside2', 'pyside6'): cfg.USES_PYSIDE, cfg.USES_PYQT = True, False
     if cfg.QT_API in ('pyqt5', 'pyqt6'):     cfg.USES_PYQT, cfg.USES_PYSIDE = True, False
     if cfg.QT_API in ('pyside2', 'pyqt5'):   cfg.USES_QT5, cfg.USES_QT6 = True, False
@@ -107,24 +169,26 @@ if __name__ == "__main__":
     os.environ['QT_API'] = cfg.QT_API
     os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    logging.info('main | QT_API                              : %s' % os.environ.get('QT_API'))
-    logging.info('main | MESA_GL_VERSION_OVERRIDE            : %s' % os.environ.get('MESA_GL_VERSION_OVERRIDE'))
-    logging.info('main | OBJC_DISABLE_INITIALIZE_FORK_SAFETY : %s' % os.environ.get('OBJC_DISABLE_INITIALIZE_FORK_SAFETY'))
+    logger.info('QT_API=%s' % os.environ.get('QT_API'))
+    logger.info('MESA_GL_VERSION_OVERRID=%s' % os.environ.get('MESA_GL_VERSION_OVERRIDE'))
+    logger.info('OBJC_DISABLE_INITIALIZE_FORK_SAFETY=%s' % os.environ.get('OBJC_DISABLE_INITIALIZE_FORK_SAFETY'))
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
-    logging.info('main | Attribute alignEM::AA_ShareOpenGLContext set')
+    logger.info('Attribute alignEM::AA_ShareOpenGLContext set')
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
-    logging.info('main | QApplication() created')
-    logging.info('main | app.__str__() = %s' % app.__str__())
-    logging.info('main | Instantiating MainWindow...')
+    logger.info('QApplication() created')
+    logger.info('app.__str__() = %s' % app.__str__())
+    logger.info('Instantiating MainWindow...')
     cfg.main_window = MainWindow(title="AlignEM-SWiFT")
     cfg.main_window.resize(cfg.WIDTH, cfg.HEIGHT)
     cfg.main_window.define_roles(['ref', 'base', 'aligned'])
-    logging.info('main | Window Size is %dx%d pixels' % (cfg.WIDTH, cfg.HEIGHT))
-    logging.info('main | Showing AlignEM-SWiFT')
+    logger.info('Window Size is %dx%d pixels' % (cfg.WIDTH, cfg.HEIGHT))
+    logger.info('Showing AlignEM-SWiFT')
     cfg.main_window.show()
-    try:  sys.exit(app.exec())
-    except:  sys.exit(app.exec_())
+    try:
+        sys.exit(app.exec())
+    except:
+        sys.exit(app.exec_())
 
 

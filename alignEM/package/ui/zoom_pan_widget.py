@@ -1,20 +1,25 @@
 #!/usr/bin/env python3
 
 import os
+import logging
 import inspect
 from qtpy.QtGui import QPainter, QPen, QColor
 from qtpy.QtWidgets import QWidget, QRubberBand
-from qtpy.QtCore import Qt, QPointF, QRectF, QSize
+from qtpy.QtCore import Qt, QPointF, QRectF
 from qtpy.QtWidgets import QSizePolicy
 
-import config as cfg
+import package.config as cfg
 from ..utils.print_debug import print_debug
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
 from ..em_utils import get_cur_scale_key
 from ..em_utils import print_exception
+from ..em_utils import is_dataset_scaled
+
 
 __all__ = ['ZoomPanWidget']
+
+logger = logging.getLogger(__name__)
 
 class ZoomPanWidget(QWidget):
     """A widget to display a single annotated image with zooming and panning."""
@@ -49,9 +54,10 @@ class ZoomPanWidget(QWidget):
         # self.border_color = QColor(100, 100, 100, 255)
 
         # self.setBackgroundRole(QPalette.Base)    #0610 removed
-        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) #0610
+        # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
 
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0719
+        # self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0719
 
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self) #0610 removed  #0701 activated
 
@@ -75,7 +81,7 @@ class ZoomPanWidget(QWidget):
     # def on_focusChanged(self):
     #     fwidget = QApplication.focusWidget()
     #     if fwidget is not None:
-    #         print("focus widget name = ", fwidget.objectName())
+    #         logger.info("focus widget name = ", fwidget.objectName())
 
     def get_settings(self):
         settings_dict = {}
@@ -98,7 +104,7 @@ class ZoomPanWidget(QWidget):
         self.parent.update_multi_self(exclude=[self])
 
     def update_zpa_self(self):
-        # print('Updating zpa self | Caller: ' + inspect.stack()[1].function + ' |  ZoomPanWidget.update_zpa_self...')
+        # logger.info('Updating zpa self | Caller: ' + inspect.stack()[1].function + ' |  ZoomPanWidget.update_zpa_self...')
         # Call the super "update" function for this panel's QWidget (this "self")
         if self.parent != None:
             # self.draw_border = self.parent.draw_border #border #0520
@@ -113,7 +119,7 @@ class ZoomPanWidget(QWidget):
         #     self.setToolTip('%s\n%s\n%s' % ( get_cur_scale_key(), self.role, str(get_cur_snr() ) ))
 
     def show_actual_size(self):
-        # print("Showing actual size | ZoomPanWidget.show_actual_size...")
+        # logger.info("Showing actual size | ZoomPanWidget.show_actual_size...")
         self.zoom_scale = 1.0
         self.ldx = 0
         self.ldy = 0
@@ -123,8 +129,8 @@ class ZoomPanWidget(QWidget):
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
-        print("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
-        # print("  ZoomPanWidget is centering image for " + str(self.role))
+        # logger.info("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
+        # logger.info("  ZoomPanWidget is centering image for " + str(self.role))
         try:
             if cfg.project_data != None:
                 # s = get_cur_scale_key()
@@ -132,18 +138,18 @@ class ZoomPanWidget(QWidget):
                 l = cfg.project_data['data']['current_layer']
 
                 if len(cfg.project_data['data']['scales']) > 0:
-                    #print("s = ", s) #0406
+                    #logger.info("s = ", s) #0406
                     # if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0: #0509
                     if len(cfg.project_data['data']['scales'][s]['alignment_stack']):
 
                         image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
                         if self.role in image_dict.keys():
-                            # print("current role: ", self.role)
+                            # logger.info("current role: ", self.role)
                             ann_image = image_dict[self.role] # <class 'dict'>
                             pixmap = cfg.image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
                             img_text = ann_image['filename']
 
-                            if pixmap is None: print("center_image | WARNING | 'pixmap' is set to None")
+                            if pixmap is None: logger.warning("'pixmap' is set to None")
                             if (pixmap != None) or all_images_in_stack:
                                 img_w = 0
                                 img_h = 0
@@ -152,7 +158,7 @@ class ZoomPanWidget(QWidget):
                                     img_h = pixmap.height()
                                 win_w = self.width()
                                 win_h = self.height()
-                                # print("win_w = %d, win_h = %d" % (win_w, win_h))
+                                # logger.info("win_w = %d, win_h = %d" % (win_w, win_h))
 
                                 if all_images_in_stack:
                                     # Search through all images in this stack to find bounds
@@ -170,7 +176,8 @@ class ZoomPanWidget(QWidget):
 
                                 if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (win_h <= 0):  # Zero or negative dimensions might lock up?
                                     self.need_to_center = 1
-                                    print("center_image | WARNING | Image or Window dimension is zero. Cannot center image for role \"" + str(self.role) + "\"")
+                                    logger.warning("Cannot center image for role %s. Called by %s" % (
+                                        self.role, inspect.stack()[1].function))
 
                                 else:
                                     # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
@@ -219,7 +226,7 @@ class ZoomPanWidget(QWidget):
                                     self.ldx = (extra_x / 2) / self.zoom_scale
                                     self.ldy = (extra_y / 2) / self.zoom_scale
         except:
-            print('ZoomPanWidget.center | EXCEPTION | Failed to Center')
+            logger.warning('Failed to Center Images')
             print_exception()
 
     def win_x(self, image_x):
@@ -254,16 +261,16 @@ class ZoomPanWidget(QWidget):
         self.antialiased = antialiased
         self.update_zpa_self()
 
-    # minimum #windowsize #qsize
-    def minimumSizeHint(self):
-        pass
-        # return QSize(50, 50)
-        # return QSize(250, 250) #0719-
+    # # minimum #windowsize #qsize
+    # def minimumSizeHint(self):
+    #     pass
+    #     # return QSize(50, 50)
+    #     # return QSize(250, 250) #0719-
 
-    def sizeHint(self):
-        pass
-        # return QSize(180, 180) #0719-
-        # return
+    # def sizeHint(self):
+    #     pass
+    #     # return QSize(180, 180) #0719-
+    #     # return
 
 
     def mousePressEvent(self, event):
@@ -299,16 +306,17 @@ class ZoomPanWidget(QWidget):
         cfg.main_window.set_status('Loading...')
         cfg.main_window.jump_to_worst_ticker = 1
         cfg.main_window.jump_to_best_ticker = 1
-        cfg.main_window.read_gui_update_project_data()
+        if is_dataset_scaled():
+            cfg.main_window.read_gui_update_project_data()
         n_imgs = get_num_imported_images()
         scale = get_cur_scale_key()
         leaving = get_cur_layer()
         requested = leaving + layer_delta
         rng = cfg.PRELOAD_RANGE
         if requested in range(n_imgs): pass
-        elif requested < 0: print('Cant layer down any further!'); cfg.main_window.set_idle(); return
-        elif requested > n_imgs - 1: print('Cant layer up any further!'); cfg.main_window.set_idle(); return
-        print("Changing to layer %s" % requested)
+        elif requested < 0: logger.info('Cant layer down any further!'); cfg.main_window.set_idle(); return
+        elif requested > n_imgs - 1: logger.info('Cant layer up any further!'); cfg.main_window.set_idle(); return
+        logger.info("Changing to layer %s" % requested)
         stack = cfg.project_data['data']['scales'][scale]['alignment_stack']
         cfg.project_data['data']['current_layer'] = requested
         preload_imgs = set()
@@ -319,7 +327,8 @@ class ZoomPanWidget(QWidget):
                         if len(local_image['filename']) > 0:
                             preload_imgs.add(local_image['filename'])
         cfg.image_library.make_available(preload_imgs)
-        cfg.main_window.read_project_data_update_gui()
+        if is_dataset_scaled():
+            cfg.main_window.read_project_data_update_gui()
         cfg.image_library.update() #orig #0701
         self.update_zpa_self() #orig #0701
         self.update_siblings() # <- change all layers
@@ -408,7 +417,7 @@ class ZoomPanWidget(QWidget):
             # else:
             #     self.wheel_index = 0
 
-            # print('event.angleDelta().y() = ', event.angleDelta().y())
+            # logger.info('event.angleDelta().y() = ', event.angleDelta().y())
 
         elif kmods == Qt.ShiftModifier:
             # Shifted Scroll Wheel zooms
@@ -423,7 +432,7 @@ class ZoomPanWidget(QWidget):
             # AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'x'
             self.zoom_to_wheel_at(event.position())  # return type: PySide6.QtCore.QPointF
 
-            # print('event.angleDelta().y() = ', event.angleDelta().y())
+            # logger.info('event.angleDelta().y() = ', event.angleDelta().y())
 
     def paintEvent(self, event):
         # global crop_mode_role  #tag why repeatedly define these globals on each paint event?
@@ -432,7 +441,7 @@ class ZoomPanWidget(QWidget):
         if not self.already_painting:
             self.already_painting = True
 
-            # print("standalone function attempting paintEvent...")
+            # logger.info("standalone function attempting paintEvent...")
 
             painter = QPainter(self)
 
@@ -577,5 +586,5 @@ class ZoomPanWidget(QWidget):
 
                 self.already_painting = False
             except:
-                print('\nEXCEPTION | ZoomPanWidget Something Went Wrong\n')
+                logger.warning('Something Went Wrong During Paint Event')
                 pass
