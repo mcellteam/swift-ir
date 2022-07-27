@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import numpy as np
-
 import os
 import sys
 import copy
@@ -11,13 +9,14 @@ import logging
 import inspect
 import traceback
 from glob import glob
-from datetime import datetime
-import config as cfg
-
+from pathlib import Path
+import package.config as cfg
 try:
     import builtins
 except:
     pass
+
+from package.utils.treeview import Treeview
 
 __all__ = ['get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'is_dataset_scaled', 'is_cur_scale_aligned', 'get_num_aligned',
@@ -31,15 +30,15 @@ __all__ = ['get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project',
            'ensure_proper_data_structure', 'is_cur_scale_ready_for_alignment',
            'get_aligned_scales_list', 'get_not_aligned_scales_list', 'get_scales_list',
-           'get_next_coarsest_scale_key','get_snr_list', 'print_snr_list']
+           'get_next_coarsest_scale_key','get_snr_list', 'print_snr_list', 'print_project_tree']
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        datefmt='%H:%M:%S',
-        handlers=[logging.StreamHandler()]
-)
+# logging.basicConfig(
+#         level=logger.info,
+#         format="%(asctime)s [%(levelname)s] %(message)s",
+#         datefmt='%H:%M:%S',
+#         handlers=[logging.StreamHandler()]
+# )
 
 
 def get_scales_list() -> list[str]:
@@ -63,7 +62,7 @@ def verify_image_file(path: str) -> str:
     '''Tries to determine the filetype of an image using the Python standard library.
     Returns a string.'''''
     imhgr_type = imghdr.what(path)
-    print('verify_image_file | imhgr_type = ' % imhgr_type)
+    logger.info('verify_image_file | imhgr_type = ' % imhgr_type)
     return imhgr_type
 
 
@@ -80,6 +79,7 @@ def percentage(part, whole) -> str:
 
 
 def get_best_path(file_path):
+    '''Normalize path for different OS'''
     return os.path.abspath(os.path.normpath(file_path))
 
 
@@ -94,7 +94,7 @@ def make_absolute(file_path, proj_path):
 
 
 def create_project_structure_directories(subdir_path) -> None:
-    logging.info('create_project_structure_directories:')
+    logger.info('create_project_structure_directories:')
     src_path = os.path.join(subdir_path, 'img_src')
     aligned_path = os.path.join(subdir_path, 'img_aligned')
     bias_data_path = os.path.join(subdir_path, 'bias_data')
@@ -110,8 +110,8 @@ def create_project_structure_directories(subdir_path) -> None:
 def is_cur_scale_ready_for_alignment() -> bool:
     if not are_images_imported():
         return False
-    if not is_dataset_scaled():
-        return False
+    # if not is_dataset_scaled(): #0721-
+    #     return False
     scales_dict = cfg.project_data['data']['scales']
     cur_scale_key = get_cur_scale_key()
     coarsest_scale = list(scales_dict.keys())[-1]
@@ -161,12 +161,11 @@ def set_default_precedure() -> None:
 
 def set_default_settings() -> None:
     '''Force project defaults.'''
-    logging.info('set_default_settings:')
+    logger.info('set_default_settings:')
     cfg.main_window.hud.post('Applying Project Defaults...')
     scales_dict = cfg.project_data['data']['scales']
     coarsest_scale = list(scales_dict.keys())[-1]
     for scale_key in scales_dict.keys():
-        print('scale_key = ', scale_key)
         scale = scales_dict[scale_key]
         scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
         scale['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
@@ -176,9 +175,7 @@ def set_default_settings() -> None:
         else:
             cfg.project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
         for layer_index in range(len(scale['alignment_stack'])):
-            print('layer_index = ', layer_index)
             layer = scale['alignment_stack'][layer_index]
-            print(layer)
             atrm = layer['align_to_ref_method']
             mdata = atrm['method_data']
             mdata['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
@@ -191,7 +188,7 @@ def set_default_settings() -> None:
 
 def ensure_proper_data_structure():
     '''Called by link_all_stacks'''
-    print('\nensure_proper_data_structure:')
+    logger.info('ensure_proper_data_structure >>>>')
     ''' Try to ensure that the data model is usable. '''
     scales_dict = cfg.project_data['data']['scales']
     coarsest_scale = list(scales_dict.keys())[-1]
@@ -213,7 +210,7 @@ def ensure_proper_data_structure():
             else:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
-    print("Exiting ensure_proper_data_structure")
+    logger.info("<<<< ensure_proper_data_structure")
 
 
 def set_scales_from_string(scale_string: str):
@@ -227,7 +224,7 @@ def set_scales_from_string(scale_string: str):
         try:
             input_scales = [str(v) for v in sorted([get_scale_val(s) for s in scale_string.strip().split(' ')])]
         except:
-            print("set_scales_from_string | Bad input: (" + str(scale_string) + "), Scales not changed")
+            logger.info("set_scales_from_string | Bad input: (" + str(scale_string) + "), Scales not changed")
             input_scales = []
 
         if not (input_scales == cur_scales):
@@ -259,13 +256,13 @@ def set_scales_from_string(scale_string: str):
                 cfg.project_data['data']['scales'][scale_key] = {'alignment_stack': new_stack,
                                                                  'method_data'    : {'alignment_option': 'init_affine'}}
     else:
-        print("set_scales_from_string | No input: Scales not changed")
+        logger.info("set_scales_from_string | No input: Scales not changed")
 
 
 def update_datamodel(updated_model):
     '''This function is called by align_layers and regenerate_aligned. It is called when
     'run_json_project' returns with need_to_write_json=false'''
-    print('update_datamodel >>>>>>>>')
+    logger.info('update_datamodel >>>>>>>>')
     # Load the alignment stack after the alignment has completed
     aln_image_stack = []
     scale_to_run_text = cfg.project_data['data']['current_scale']
@@ -301,14 +298,13 @@ def update_datamodel(updated_model):
     # main_win.update_win_self()
     # cfg.main_window.center_all_images()
     # cfg.main_window.update_win_self()
-    print('<<<<<<<< update_datamodel')
+    logger.info('<<<<<<<< update_datamodel')
 
 
 def makedirs_exist_ok(path_to_build, exist_ok=False):
     # Needed for old python which doesn't have the exist_ok option!!!
-    print(" Make dirs for " + path_to_build)
-    parts = path_to_build.split(
-            os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
+    logger.info("makedirs_exist_ok | Making directories for path %s" % path_to_build)
+    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
     full = ""
     if len(parts[0]) == 0:
         # This happens with an absolute PosixPath
@@ -327,11 +323,11 @@ def makedirs_exist_ok(path_to_build, exist_ok=False):
             os.makedirs(full)
         elif not exist_ok:
             pass
-            # print("Warning: Attempt to create existing directory: " + full)
+            # logger.info("Warning: Attempt to create existing directory: " + full)
 
 
 def printProjectDetails(project_data: dict) -> None:
-    print('\nIn Memory:')
+    print('In Memory:')
     print("  project_data['data']['destination_path']         :", project_data['data']['destination_path'])
     print("  project_data['data']['source_path']              :", project_data['data']['source_path'])
     print("  project_data['data']['current_scale']            :", project_data['data']['current_scale'])
@@ -350,7 +346,7 @@ def printProjectDetails(project_data: dict) -> None:
 
 
 def debug_project():
-    print('\n-------------- DEBUG PROJECT --------------')
+    logger.info('-------------- DEBUG PROJECT --------------')
     path = cfg.project_data['data']['destination_path']
     cat_str = 'cat %s.json' % path
     n_init_affine = os.system(cat_str + ' |grep init_affine')
@@ -363,12 +359,46 @@ def debug_project():
     print('  refine_affine (project FILE)            :', n_refine_affine)
     print('  apply_affine (project FILE)             :', n_apply_affine)
     print('  alignment_option (project_FILE)         :')
-    print('\ncfg.project_data:')
+    print('cfg.project_data:')
     print('  init_affine (cfg.project_data)    :', str(cfg.project_data).count('init_affine'))
     print('  refine_affine (cfg.project_data)  :', str(cfg.project_data).count('refine_affine'))
     print('  apply_affine (cfg.project_data)   :', str(cfg.project_data).count('apply_affine'))
-    print('-------------------------------------------\n')
+    print('-------------------------------------------')
+    
+def is_not_hidden(path):
+    return not path.name.startswith(".")
+    
+def print_project_tree() -> None:
+    '''
+    Recursive function that lists project directory contents as a tree.
+    
+    :return:
+    :rtype:
+    '''
+    
+    # paths = Treeview.make_tree(
+    #     Path('doc'),
+    #     criteria=is_not_hidden
+    # )
+    # for path in paths:
+    #     print(path.displayable())
+    
+    # # With a criteria (skip hidden files)
+    # def is_not_hidden(path):
+    #     return not path.name.startswith(".")
+    
+    paths = Treeview.make_tree(Path(cfg.project_data['data']['destination_path']))
+    for path in paths:
+        print(path.displayable())
 
+# def list_files(startpath):
+#     for root, dirs, files in os.walk(startpath):
+#         level = root.replace(startpath, '').count(os.sep)
+#         indent = ' ' * 4 * (level)
+#         print('{}{}/'.format(indent, os.path.basename(root)))
+#         subindent = ' ' * 4 * (level + 1)
+#         for f in files:
+#             print('{}{}'.format(subindent, f))
 
 def print_path() -> None:
     '''Prints the current working directory (os.getcwd), the 'running in' path, and sys.path.'''
@@ -387,7 +417,7 @@ def print_alignment_layer() -> None:
         print('No Alignment Layers Found for the Current Scale')
 
 # def print_zoom_pan_widget_members() -> None:
-#     print(cfg.main_window.)
+#     logger.info(cfg.main_window.)
 
 
 def print_dat_files() -> None:
@@ -396,48 +426,53 @@ def print_dat_files() -> None:
     if are_images_imported():
         cfg.main_window.hud.post('Printing .dat Files')
         try:
-            print()
-            print("\n_____________________BIAS DATA_____________________")
-            print("\nScale %s____________________________________________\n" % get_cur_scale_key()[-1])
+            logger.info()
+            logger.info("_____________________BIAS DATA_____________________")
+            logger.info("Scale %s____________________________________________" % get_cur_scale_key()[-1])
             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
                 snr_1 = f.read()
-                print('snr_1               : %s' % snr_1)
+                logger.info('snr_1               : %s' % snr_1)
             with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'r') as f:
                 bias_x_1 = f.read()
-                print('bias_x_1            : %s' % bias_x_1)
+                logger.info('bias_x_1            : %s' % bias_x_1)
             with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'r') as f:
                 bias_y_1 = f.read()
-                print('bias_y_1            : %s' % bias_y_1)
+                logger.info('bias_y_1            : %s' % bias_y_1)
             with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'r') as f:
                 bias_rot_1 = f.read()
-                print('bias_rot_1          : %s' % bias_rot_1)
+                logger.info('bias_rot_1          : %s' % bias_rot_1)
             with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'r') as f:
                 bias_scale_x_1 = f.read()
-                print('bias_scale_x_1      : %s' % bias_scale_x_1)
+                logger.info('bias_scale_x_1      : %s' % bias_scale_x_1)
             with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'r') as f:
                 bias_scale_y_1 = f.read()
-                print('bias_scale_y_1      : %s' % bias_scale_y_1)
+                logger.info('bias_scale_y_1      : %s' % bias_scale_y_1)
             with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'r') as f:
                 bias_skew_x_1 = f.read()
-                print('bias_skew_x_1       : %s' % bias_skew_x_1)
+                logger.info('bias_skew_x_1       : %s' % bias_skew_x_1)
             with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'r') as f:
                 bias_det_1 = f.read()
-                print('bias_det_1          : %s' % bias_det_1)
+                logger.info('bias_det_1          : %s' % bias_det_1)
             with open(os.path.join(bias_data_path, 'afm_1.dat'), 'r') as f:
                 afm_1 = f.read()
-                print('afm_1               : %s' % afm_1)
+                logger.info('afm_1               : %s' % afm_1)
             with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'r') as f:
                 c_afm_1 = f.read()
-                print('c_afm_1             : %s' % c_afm_1)
+                logger.info('c_afm_1             : %s' % c_afm_1)
         except:
-            print('Is this scale aligned? No .dat files were found at this scale.')
+            logger.info('Is this scale aligned? No .dat files were found at this scale.')
             pass
 
 
 def print_sanity_check():
     # logging.debug('print_sanity_check | logger is logging')
-    print("\n___________________SANITY CHECK____________________")
-    print("\nProject____________________________________________")
+    print("___________________SANITY CHECK____________________")
+    print("Project____________________________________________")
+    # try:
+    #     print_project_tree()
+    # except:
+    #     logger.info('Unable to print project tree at this time')
+    
     cfg.main_window.hud.post('Printing Sanity Check')
     if cfg.project_data['data']['source_path']:
         print("  Source path                                      :", cfg.project_data['data']['source_path'])
@@ -450,7 +485,7 @@ def print_sanity_check():
     cur_scale = cfg.project_data['data']['current_scale']
     try:
         scale = cfg.project_data['data']['scales'][
-            cfg.project_data['data']['current_scale']]  # print(scale) returns massive wall of text
+            cfg.project_data['data']['current_scale']]  # logger.info(scale) returns massive wall of text
     except:
         pass
     print("  Current scale                                    :", cur_scale)
@@ -462,30 +497,34 @@ def print_sanity_check():
                   'alignment_option'])
     except:
         print("  Alignment Option                                 : n/a")
-    print("\nData Selection & Scaling___________________________")
+    print("Data Selection & Scaling___________________________")
     print("  Are images imported?                             :", are_images_imported())
     print("  How many images?                                 :", get_num_imported_images())
     if get_skips_list():
         print("  Skip list                                        :", get_skips_list())
     else:
         print("  Skip list                                        : n/a")
-    print("  Is dataset scaled?                                 :", is_dataset_scaled())
+    print("  Is dataset scaled?                               :", is_dataset_scaled())
     if is_dataset_scaled():
         print("  How many scales?                                 :", get_num_scales())
     else:
         print("  How many scales?                                 : n/a")
     print("  Which scales?                                    :", get_scales_list())
 
-    print("\nAlignment__________________________________________")
+    print("Alignment__________________________________________")
     print("  Is any scale aligned?                            :", is_any_scale_aligned_and_generated())
     print("  Is this scale aligned?                           :", is_cur_scale_aligned())
     print("  Is this scale ready to be aligned?               :", is_cur_scale_ready_for_alignment())
     try:
+        
         print("  How many aligned at this scale?                  :", get_num_aligned())
     except:
         print("  How many aligned at this scale?                  : n/a")
     try:
-        print("  Which scales are aligned?                        :", str(get_aligned_scales_list()))
+        if get_aligned_scales_list() == []:
+            print("  Which scales are aligned?                        : n/a")
+        else:
+            print("  Which scales are aligned?                        :", str(get_aligned_scales_list()))
     except:
         print("  Which scales are aligned?                        : n/a")
 
@@ -509,12 +548,12 @@ def print_sanity_check():
         print("  SNR (current layer)                              : n/a")
 
 
-    print("\nPost-alignment_____________________________________")
+    print("Post-alignment_____________________________________")
     # try:
     #     null_cafm_trends = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['null_cafm_trends']
-    #     print("  null_cafm_trends                                 :", null_cafm_trends)
+    #     logger.info("  null_cafm_trends                                 :", null_cafm_trends)
     # except:
-    #     print("  null_cafm_trends                                 : n/a")
+    #     logger.info("  null_cafm_trends                                 : n/a")
     try:
         poly_order = cfg.project_data['data']['scales'][get_cur_scale_key()]['poly_order']
         print("  poly_order (all layers)                          :", poly_order)
@@ -528,7 +567,7 @@ def print_sanity_check():
     except:
         print("  use_bounding_rect (all layers)                   : n/a")
 
-    print("\nExport & View______________________________________")
+    print("Export & View______________________________________")
     print("  Is any alignment exported?                       :", is_any_alignment_exported())
     print("  Is current scale exported?                       :", is_cur_scale_exported())
 
@@ -538,13 +577,13 @@ def module_debug() -> None:
     import sys, os
     modulenames = set(sys.modules) & set(globals())
     allmodules = [sys.modules[name] for name in modulenames]
-    print('========================================================' +
-          '\n_____________________MODULE DEBUG_______________________' +
-          '\nscript       : ' + str(print(sys.argv[0])) + '\nrunning in   :' +
-          str(os.path.dirname(os.path.realpath(__file__))) + '\nsys.pathc    : ' + str(sys.path) +
-          '\nmodule names : ' + str(modulenames) + '\nallmodules   : ' + str(allmodules) +
-          '\nIn module products sys.path[0] = ' + str(sys.path[0]) + '\n__package__ = ' +
-          str(__package__) + '\n========================================================')
+    logger.info('========================================================' +
+          '_____________________MODULE DEBUG_______________________' +
+          'script       : ' + str(logger.info(sys.argv[0])) + 'running in   :' +
+          str(os.path.dirname(os.path.realpath(__file__))) + 'sys.pathc    : ' + str(sys.path) +
+          'module names : ' + str(modulenames) + 'allmodules   : ' + str(allmodules) +
+          'In module products sys.path[0] = ' + str(sys.path[0]) + '__package__ = ' +
+          str(__package__) + '========================================================')
 
     # Courtesy of https://github.com/wimglenn
     import sys
@@ -552,7 +591,7 @@ def module_debug() -> None:
         old_import = builtins.__import__
 
         def my_import(name, *args, **kwargs):
-            if name not in sys.modules:  print('importing --> {}'.format(name))
+            if name not in sys.modules:  logger.info('importing --> {}'.format(name))
             return old_import(name, *args, **kwargs)
 
         builtins.__import__ = my_import
@@ -583,22 +622,22 @@ def get_num_imported_images() -> int:
     try:
         n_imgs = len(cfg.project_data['data']['scales']['scale_1']['alignment_stack'])
     except:
-        print('get_num_imported_images | No image layers were found');  return 0  # 0711
+        logger.info('get_num_imported_images | No image layers were found');  return 0  # 0711
     else:
         return n_imgs
 
 
 def get_skips_list() -> list[int]:
     '''Returns the list of skipped images at the current scale'''
-    # print('get_skips_list | called by ',inspect.stack()[1].function)
+    # logger.info('get_skips_list | called by ',inspect.stack()[1].function)
     skip_list = []
     try:
         for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
             if cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]['skip'] == True:
                 skip_list.append(layer_index)
-            # print('get_skips_list() | Skips List:\n %s' % str(skip_list))
+            # logger.info('get_skips_list() | Skips List: %s' % str(skip_list))
     except:
-        print('get_skips_list | EXCEPTION | Unable to get skips list!');  return []  # 0711
+        logger.warning('Unable to get skips list!');  return []  # 0711
     else:
         return skip_list
 
@@ -637,11 +676,11 @@ def get_scale_val(scale_of_any_type):
         #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
         #    traceback.print_stack()
     except:
-        print("Error converting " + str(scale_of_any_type) + " to a value.")
+        logger.warning("Error converting " + str(scale_of_any_type) + " to a value.")
         exi = sys.exc_info()
-        print("  Exception type = " + str(exi[0]))
-        print("  Exception value = " + str(exi[1]))
-        print("  Exception traceback:")
+        logger.warning("  Exception type = " + str(exi[0]))
+        logger.warning("  Exception value = " + str(exi[1]))
+        logger.warning("  Exception traceback:")
         traceback.print_tb(exi[2])
         return -1
 
@@ -652,8 +691,8 @@ def get_num_scales() -> int:
         n_scales = len(cfg.project_data['data']['scales'].keys())
         return n_scales
     except:
-        print('get_num_scales | WARNING | Failed to return the # of scales.')
         print_exception()
+        logger.warning('Unable to return the # of scales.')
 
 
 def getScaleKeys() -> list[str]:
@@ -662,8 +701,8 @@ def getScaleKeys() -> list[str]:
         scale_keys = sorted(cfg.project_data['data']['scales'].keys())
         return scale_keys
     except:
-        print('getScaleKeys | EXCEPTION | Unable to return dictionary keys for scales')
         print_exception()
+        logger.warning('Unable to return dictionary keys for scales')
 
 
 def is_dataset_scaled() -> bool:
@@ -676,8 +715,8 @@ def is_dataset_scaled() -> bool:
     else:
         isScaled = True
 
-    # print('is_dataset_scaled | checking if %s is less than 2 (proxy for not scaled)' % str(len(cfg.project_data['data']['scales'])))
-    # print('is_dataset_scaled | Returning %s' % isScaled)
+    # logger.info('is_dataset_scaled | checking if %s is less than 2 (proxy for not scaled)' % str(len(cfg.project_data['data']['scales'])))
+    # logger.info('is_dataset_scaled | Returning %s' % isScaled)
     return isScaled
 
 
@@ -698,16 +737,16 @@ def is_cur_scale_aligned() -> bool:
         project_dir = cfg.project_data['data']['destination_path']
         bias_dir = os.path.join(project_dir, get_cur_scale_key(), 'bias_data')
         afm_1_file = os.path.join(bias_dir, 'afm_1.dat')
-        # print('afm_1_file = ', afm_1_file)
-        # print('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
+        # logger.info('afm_1_file = ', afm_1_file)
+        # logger.info('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
         if os.path.exists(afm_1_file):
-            # print('is_cur_scale_aligned | Returning True')
+            # logger.info('is_cur_scale_aligned | Returning True')
             return True
         else:
-            # print('is_cur_scale_aligned | Returning False')
+            # logger.info('is_cur_scale_aligned | Returning False')
             return False
     except:
-        print('is_cur_scale_aligned | EXCEPTION | Unexpected function behavior - Returning False')
+        logger.warning('Unexpected function behavior - Returning False')
         return False
 
 
@@ -715,12 +754,12 @@ def get_num_aligned() -> int:
     '''Returns the count aligned and generated images for the current scale.'''
 
     path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(), 'img_aligned')
-    # print('get_num_aligned | path=', path)
+    # logger.info('get_num_aligned | path=', path)
     try:
         n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
     except:
         return 0
-    # print('get_num_aligned() | returning:', n_aligned)
+    # logger.info('get_num_aligned() | returning:', n_aligned)
     return n_aligned
 
 
@@ -735,22 +774,22 @@ def is_any_scale_aligned_and_generated() -> bool:
 
 def is_scale_aligned(scale: str) -> bool:
     '''Returns boolean based on whether arg scale is aligned '''
-    # print('is_scale_aligned | called by ', inspect.stack()[1].function)
+    # logger.info('called by ', inspect.stack()[1].function)
     try:
         afm_1_file = os.path.join(cfg.project_data['data']['destination_path'], scale, 'bias_data', 'afm_1.dat')
         if os.path.exists(afm_1_file):
             if os.path.getsize(afm_1_file) > 1:
                 # check if file is large than 1 byte
-                # print('is_scale_aligned | Returning True')
+                # logger.info('is_scale_aligned | Returning True')
                 return True
             else:
                 return False
-                # print('is_scale_aligned | Returning False (afm_1.dat exists but contains no data)')
+                # logger.info('is_scale_aligned | Returning False (afm_1.dat exists but contains no data)')
         else:
-            # print('is_scale_aligned | Returning False (afm_1.dat does not exist)')
+            # logger.info('is_scale_aligned | Returning False (afm_1.dat does not exist)')
             return False
     except:
-        print('is_scale_aligned | EXCEPTION | Unexpected function behavior - Returning False')
+        logger.warning('Unexpected function behavior - Returning False')
         return False
 
 
@@ -767,47 +806,46 @@ def is_scale_aligned(scale: str) -> bool:
 #     try:
 #         destination_path = os.path.join(cfg.project_data['data']['destination_path'])
 #     except:
-#         print('isAlignmentOfCurrentScale | WARNING | There is no project open - Returning False')
+#         logger.info('isAlignmentOfCurrentScale | WARNING | There is no project open - Returning False')
 #         return False
 #
 #     try:
 #         is_dataset_scaled()
 #     except:
-#         print('isAlignmentOfCurrentScale | WARNING | This project has not been scaled yet - returning False')
+#         logger.info('isAlignmentOfCurrentScale | WARNING | This project has not been scaled yet - returning False')
 #         return False
 #
 #     try:
 #         bias_path = destination_path + '/' + get_cur_scale_key() + '/bias_data'
-#         print('isAlignmentOfCurrentScale | bias path =', bias_path)
+#         logger.info('isAlignmentOfCurrentScale | bias path =', bias_path)
 #         bias_dir_byte_size=0
 #         for path, dirs, files in os.walk(bias_path):
 #             for f in files:
 #                 fp = os.path.join(path, f)
 #                 bias_dir_byte_size += os.path.getsize(fp)
 #     except:
-#         print('isAlignmentOfCurrentScale | WARNING | Unable to get size of the bias directory - Returning False')
+#         logger.info('isAlignmentOfCurrentScale | WARNING | Unable to get size of the bias directory - Returning False')
 #
 #
-#     print('isAlignmentOfCurrentScale | size of bias dir=', bias_dir_byte_size)
+#     logger.info('isAlignmentOfCurrentScale | size of bias dir=', bias_dir_byte_size)
 #
 #     if bias_dir_byte_size < 20:
-#         print('isAlignmentOfCurrentScale | Returning False')
+#         logger.info('isAlignmentOfCurrentScale | Returning False')
 #         return False
 #     else:
-#         print('isAlignmentOfCurrentScale | Returning True')
+#         logger.info('isAlignmentOfCurrentScale | Returning True')
 #         return True
 
 def are_aligned_images_generated():
     '''Returns True or False dependent on whether aligned images have been generated for the current scale.'''
     path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(), 'img_aligned')
-    # logging.info("cfg.project_data['data']['destination_path'] = ", cfg.project_data['data']['destination_path'])
+    # logger.info("cfg.project_data['data']['destination_path'] = %s" % cfg.project_data['data']['destination_path'])
     files = glob(path + '/*.tif')
     if len(files) < 1:
-        logging.info('are_aligned_images_generated | Zero aligned TIFs were found at this scale - Returning False')
+        logger.warning('Zero aligned TIFs were found at this scale - Returning False')
         return False
     else:
-        logging.info(
-            'are_aligned_images_generated | One or more aligned TIFs were found at this scale - Returning True')
+        logger.info('One or more aligned TIFs were found at this scale - Returning True')
         return True
 
 
@@ -817,11 +855,11 @@ def return_aligned_imgs() -> list:
     try:
         files = glob(cfg.project_data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
     except:
-        print('returnAlignedImg | WARNING | Something went wrong. Check project dictionary - Returning None')
+        logger.warning('Something went wrong. Check project dictionary - Returning None')
         return []
 
-    # print('returnAlignedImg | # aligned images found: ', len(files))
-    # print('returnAlignedImg | List of aligned imgs: ', files)
+    # logger.info('# aligned images found: %d' % len(files))
+    # logger.info('List of aligned imgs: %s' % str(files))
     return files
 
 
@@ -835,24 +873,24 @@ def is_cur_scale_exported() -> bool:
     '''Checks if there exists an exported alignment'''
     path = os.path.join(cfg.project_data['data']['destination_path'], 'project.zarr', 'aligned_' + get_cur_scale_key())
     answer = os.path.isdir(path)
-    # print("is_cur_scale_exported | path = " + path)
-    # print("is_cur_scale_exported | answer = " + str(answer))
+    # logger.info("is_cur_scale_exported | path = " + path)
+    # logger.info("is_cur_scale_exported | answer = " + str(answer))
     return answer
 
 
 def get_cur_snr() -> str:
     if not cfg.project_data['data']['current_scale']:
-        print("Canceling get_cur_snr() because no current scale is set...")
+        logger.info("Canceling get_cur_snr() because no current scale is set...")
         return ''  # 0711
 
     try:
         s = cfg.project_data['data']['current_scale']
         l = cfg.project_data['data']['current_layer']
 
-        # print("  len(cfg.project_data['data']['scales']) = ", len(cfg.project_data['data']['scales']))
+        # logger.info("  len(cfg.project_data['data']['scales']) = %d" % len(cfg.project_data['data']['scales']))
 
         if len(cfg.project_data['data']['scales']) > 0:
-            # print("len(cfg.project_data['data']['scales']) =", len(cfg.project_data['data']['scales'][s]))
+            # logger.info("len(cfg.project_data['data']['scales']) = %d" % len(cfg.project_data['data']['scales'][s]))
             scale = cfg.project_data['data']['scales'][s]
             if len(scale['alignment_stack']) > 0:
                 layer = scale['alignment_stack'][l]
@@ -862,16 +900,16 @@ def get_cur_snr() -> str:
                         if 'snr_report' in method_results:
                             if method_results['snr_report'] != None:
                                 curr_snr = method_results['snr_report']
-                                # print("  returning the current snr:", str(curr_snr))
+                                # logger.info("  returning the current snr: %s" % str(curr_snr))
                                 return str(curr_snr)
     except:
-        print('get_cur_snr | EXCEPTION')
         print_exception()
+        logger.warning('There was a problem getting current SNR')
 
 
 def get_snr_list():
     snr_list = []
-    print('get_snr_list | len(layer list) = ', len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack']))
+    # logger.info('len(layer list) = %d' % len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack']))
     for layer in cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack']:
         try:
             snr_vals = layer['align_to_ref_method']['method_results']['snr']
@@ -882,15 +920,20 @@ def get_snr_list():
     return snr_list
 
 def print_snr_list() -> None:
-    snr_list = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][get_cur_layer()][
-        'align_to_ref_method']['method_results']['snr']
-    print('snr_list:\n  %s' % str(snr_list))
-    mean_snr = sum(snr_list) / len(snr_list)
-    print('mean(snr_list):\n  %s' % mean_snr)
-    snr_report = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][get_cur_layer()][
-        'align_to_ref_method']['method_results']['snr_report']
-    print('snr_report:\n  %s' % str(snr_report))
-    print('All Mean SNRs for current scale:\n  %s' % str(get_snr_list()))
+    
+    try:
+        snr_list = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][get_cur_layer()][
+            'align_to_ref_method']['method_results']['snr']
+        logger.info('snr_list:  %s' % str(snr_list))
+        mean_snr = sum(snr_list) / len(snr_list)
+        logger.info('mean(snr_list):  %s' % mean_snr)
+        snr_report = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][get_cur_layer()][
+            'align_to_ref_method']['method_results']['snr_report']
+        logger.info('snr_report:  %s' % str(snr_report))
+        logger.info('All Mean SNRs for current scale:  %s' % str(get_snr_list()))
+    except:
+        print_exception()
+        logger.warning('Getting SNR Data Triggered An Exception')
 
 
 
@@ -899,29 +942,34 @@ def print_snr_list() -> None:
 #     '''Simple request confirmation dialog.'''
 #
 #     button = QMessageBox.question(None, title, text)
-#     print('requestConfirmation | button=',str(button))
-#     print('requestConfirmation | type(button)=', type(button))
-#     print("requestConfirmation | Returning " + str(button == QMessageBox.StandardButton.Yes))
+#     logger.info('requestConfirmation | button=',str(button))
+#     logger.info('requestConfirmation | type(button)=', type(button))
+#     logger.info("requestConfirmation | Returning " + str(button == QMessageBox.StandardButton.Yes))
 #     return (button == QMessageBox.StandardButton.Yes)
 
 def print_exception():
     exi = sys.exc_info()
-    print("  Exception type = " + str(exi[0]))
-    print("  Exception value = " + str(exi[1]))
-    print("  Exception trace = " + str(exi[2]))
-    print("  Exception traceback:")
-    traceback.print_tb(exi[2])
-    print('\n--------------------------------')
-    now = datetime.now()
-    current_time = now.strftime("%H:%M:%S")
-    with open('/Users/joelyancey/Logs/traceback.log', "a") as f:
-        print('\n--------------------------------\nCurrent Time = %s\n' % current_time, file=f)
-        frame, filename, line_number, function_name, lines, index = inspect.stack()[1]
-        print(frame, filename, line_number, function_name, lines, index, file=f)
-        f.write(traceback.format_exc())
-
-    with open('/Users/joelyancey/Logs/scratch.log', "a") as f:
-        f.write('Current Time = %s\n' % current_time)
+    logger.error("  Exception type = " + str(exi[0]))
+    logger.error("  Exception value = " + str(exi[1]))
+    logger.error("  Exception trace = " + str(exi[2]))
+    logger.error("  Exception traceback:")
+    logger.error(traceback.format_exc())
+    
+    # exc_type, exc_value, exc_tb = sys.exc_info()
+    # tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
+    # logger.error(''.join(tb.format_exception_only()))
+    
+    # logger.error('pdb.post_mortem() = ')
+    # logger.error(pdb.post_mortem())
+    
+    # logger.error(traceback.print_tb(exi[2]))
+    # now = datetime.now()
+    # current_time = now.strftime("%H:%M:%S")
+    # with open('~/Logs/traceback.log', "a") as f:
+    #     logger.info('--------------------------------Current Time = %s' % current_time, file=f)
+    #     frame, filename, line_number, function_name, lines, index = inspect.stack()[1]
+    #     logger.info(frame, filename, line_number, function_name, lines, index, file=f)
+    #     f.write(traceback.format_exc())
 
 
 def print_scratch(msg):
@@ -971,21 +1019,39 @@ def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
     debug_level = 50
     if level <= debug_level:
         if p1 == None:
-            sys.stderr.write("" + '\n')
+            sys.stderr.write("" + '')
         elif p2 == None:
-            sys.stderr.write(str(p1) + '\n')
+            sys.stderr.write(str(p1) + '')
         elif p3 == None:
-            sys.stderr.write(str(p1) + str(p2) + '\n')
+            sys.stderr.write(str(p1) + str(p2) + '')
         elif p4 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + '\n')
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + '')
         elif p5 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '\n')
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '')
         else:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '\n')
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '')
+        
+        try:  # find code_context
+            # First try to use currentframe() (maybe not available in all implementations)
+            frame = inspect.currentframe()
+            if frame:
+                # Found a frame, so get the info, and strip space from the code_context
+                code_context = inspect.getframeinfo(frame.f_back).code_context[0].strip()
+            else:
+        
+                # No frame, so use stack one level above us, and strip space around
+                # the 4th element, code_context
+                code_context = inspect.stack()[1][4][0].strip()
+
+        finally:
+            # Deterministic free references to the frame, to be on the safe side
+            del frame
+        print('Code context : {}'.format(code_context))
+        # print('Value of args: {}\n'.format(args))
 
 
 def clear_all_skips():
-    print('Clearing all skips | clear_all_skips...')
+    logger.info('Clearing all skips | clear_all_skips...')
     image_scale_keys = [s for s in sorted(cfg.project_data['data']['scales'].keys())]
     for scale in image_scale_keys:
         scale_key = str(scale)
@@ -997,7 +1063,7 @@ def clear_all_skips():
 
 
 def copy_skips_to_all_scales():
-    print('Copying skips to all scales | copy_skips_to_all_scales...')
+    logger.info('Copying skips to all scales | copy_skips_to_all_scales...')
     source_scale_key = cfg.project_data['data']['current_scale']
     if not 'scale_' in str(source_scale_key):
         source_scale_key = 'scale_' + str(source_scale_key)
@@ -1017,7 +1083,7 @@ def copy_skips_to_all_scales():
 
 # skip
 def update_skip_annotations():
-    print('\nupdate_skip_annotations:\n')
+    logger.info('update_skip_annotations:')
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
     remove_list = []
     add_list = []
@@ -1053,24 +1119,24 @@ def update_skip_annotations():
 
 # NOTE: this is called right after importing base images
 # def update_linking_callback():
-#     print('Updating linking callback | update_linking_callback...')
+#     logger.info('Updating linking callback | update_linking_callback...')
 #     link_all_stacks()
-#     print('Exiting update_linking_callback()')
+#     logger.info('Exiting update_linking_callback()')
 #
 #
 # def update_skips_callback(new_state):
-#     print('Updating skips callback | update_skips_callback...')
+#     logger.info('Updating skips callback | update_skips_callback...')
 #
 #     # Update all of the annotations based on the skip values
 #     copy_skips_to_all_scales()
 #     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into app.py
-#     print("Exiting update_skips_callback(new_state)")
+#     logger.info("Exiting update_skips_callback(new_state)")
 
 
 # def mouse_down_callback(role, screen_coords, image_coords, button):
 #     # global match_pt_mode
 #     # if match_pt_mode.get_value():
-#     # print("mouse_down_callback was called but there is nothing to do.")
+#     # logger.info("mouse_down_callback was called but there is nothing to do.")
 #     return  # monkeypatch
 #
 #
@@ -1079,14 +1145,14 @@ def update_skip_annotations():
 #     # if match_pt_mode.get_value():
 #     return #monkeypatch #jy
 #
-#     # # print("view_match_crop.get_value() = ", view_match_crop.get_value())
+#     # # logger.info("view_match_crop.get_value() = ", view_match_crop.get_value())
 #     # if view_match_crop.get_value() == 'Match':
 #     #     return (True)  # Lets the framework know that the move has been handled
 #     # else:
 #     #     return (False)  # Lets the framework know that the move has not been handled
 
 # def notyet():
-#     print('notyet() was called')
+#     logger.info('notyet() was called')
 #     # interface.print_debug(0, "Function not implemented yet. Skip = " + str(skip.value)) #skip
 #     # interface.print_debug(0, "Function not implemented yet. Skip = " + main_window.toggle_skip.isChecked())
 

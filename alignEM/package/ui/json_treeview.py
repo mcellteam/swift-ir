@@ -5,10 +5,12 @@ https://doc.qt.io/qtforpython/examples/example_widgets_itemviews_jsonmodel.html
 
 import json
 import sys
-from typing import Any, Iterable, List, Dict, Union
+from typing import Any, List, Dict, Union
 
 from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
+
+import package.config as cfg
 
 
 class TreeItem:
@@ -189,11 +191,13 @@ class JsonModel(QAbstractItemModel):
             if index.column() == 1:
                 item = index.internalPointer()
                 item.value = str(value)
-
-                if __binding__ in ("PySide", "PyQt4"):
-                    self.dataChanged.emit(index, index)
-                else:
-                    self.dataChanged.emit(index, index, [Qt.EditRole])
+                try:
+                    if __binding__ in ("PySide", "PyQt4"):
+                        self.dataChanged.emit(index, index)
+                    else:
+                        self.dataChanged.emit(index, index, [Qt.EditRole])
+                except:
+                    pass
 
                 return True
 
@@ -274,18 +278,18 @@ class JsonModel(QAbstractItemModel):
         Return column number. For the model, it always return 2 columns
         """
         return 2
+    if cfg.USES_QT6:
+        def flags(self, index: QModelIndex) -> Qt.ItemFlags:
+            """Override from QAbstractItemModel
 
-    def flags(self, index: QModelIndex) -> Qt.ItemFlags:
-        """Override from QAbstractItemModel
+            Return flags of index
+            """
+            flags = super(JsonModel, self).flags(index)
 
-        Return flags of index
-        """
-        flags = super(JsonModel, self).flags(index)
-
-        if index.column() == 1:
-            return Qt.ItemIsEditable | flags
-        else:
-            return flags
+            if index.column() == 1:
+                return Qt.ItemIsEditable | flags
+            else:
+                return flags
 
     def to_json(self, item=None):
 

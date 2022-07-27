@@ -381,7 +381,7 @@ def extractTransformedWindow(img, xy=None, tfm=None, siz=512):
 
 def affineImage(afm, img, rect=None, grayBorder=False ):
     '''AFFINEIMAGE - Apply an affine transformation to an image
-    res = AFFINEIMAGE(afm, img) returns an image the same size of IMG
+    res = AFFINEIMAGE(afm, img) returns an image the same size of IMGimage_funcs
     looking up pixels in the original using affine transformation.
     res = AFFINEIMAGE(afm, img, rect), where rect is an (x0,y0,w,h)-tuple
     as from MODELBOUNDS, returns the given rectangle of model space.

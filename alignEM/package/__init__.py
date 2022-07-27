@@ -5,13 +5,21 @@ from .ui import *
 __all__.extend(ui.__all__)
 __all__.append('ui')
 
-# from . import swiftir
-# from .swiftir import *
-# __all__.extend(swiftir.__all__)
-#
-# from . import em_utils
-# from .em_utils import *
-# __all__.extend(em_utils.__all__)
+from . import swiftir
+from .swiftir import *
+__all__.extend(swiftir.__all__)
+
+from . import em_utils
+from .em_utils import *
+__all__.extend(em_utils.__all__)
+
+from . import image_utils
+from .image_utils import *
+__all__.extend(image_utils.__all__)
+
+from . import config
+from .config import *
+__all__.extend(config.__all__)
 
 # from . import align_swiftir
 # from package.align_swiftir import *

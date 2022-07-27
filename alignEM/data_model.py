@@ -196,3 +196,28 @@ new_image_template = \
 class DataModel:
     """ Encapsulate data model dictionary and wrap with methods for convenience """
     pass
+
+# # layer_dict as defined in run_project_json.py:
+# layer_dict = {
+#     "images": {
+#         "base": {
+#             "metadata": {
+#                 "match_points": match_points[0]
+#             }
+#         },
+#         "ref": {
+#             "metadata": {
+#                 "match_points": match_points[1]
+#             }
+#         }
+#     },
+#     "align_to_ref_method": {
+#         "selected_method": "Match Point Align",
+#         "method_options": [
+#             "Auto Swim Align",
+#             "Match Point Align"
+#         ],
+#         "method_data": {},
+#         "method_results": {}
+#     }
+# }
