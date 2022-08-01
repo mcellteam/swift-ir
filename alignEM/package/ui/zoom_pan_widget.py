@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import sys
 import logging
 import inspect
 from qtpy.QtGui import QPainter, QPen, QColor
@@ -9,7 +10,6 @@ from qtpy.QtCore import Qt, QPointF, QRectF
 from qtpy.QtWidgets import QSizePolicy
 
 import package.config as cfg
-from ..utils.print_debug import print_debug
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
 from ..em_utils import get_cur_scale_key
@@ -588,3 +588,38 @@ class ZoomPanWidget(QWidget):
             except:
                 logger.warning('Something Went Wrong During Paint Event')
                 pass
+
+
+def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
+    debug_level = 50
+    if level <= debug_level:
+        if p1 == None:
+            sys.stderr.write("" + '')
+        elif p2 == None:
+            sys.stderr.write(str(p1) + '')
+        elif p3 == None:
+            sys.stderr.write(str(p1) + str(p2) + '')
+        elif p4 == None:
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + '')
+        elif p5 == None:
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '')
+        else:
+            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '')
+
+        try:  # find code_context
+            # First try to use currentframe() (maybe not available in all implementations)
+            frame = inspect.currentframe()
+            if frame:
+                # Found a frame, so get the info, and strip space from the code_context
+                code_context = inspect.getframeinfo(frame.f_back).code_context[0].strip()
+            else:
+
+                # No frame, so use stack one level above us, and strip space around
+                # the 4th element, code_context
+                code_context = inspect.stack()[1][4][0].strip()
+
+        finally:
+            # Deterministic free references to the frame, to be on the safe side
+            del frame
+        print('Code context : {}'.format(code_context))
+        # print('Value of args: {}\n'.format(args))

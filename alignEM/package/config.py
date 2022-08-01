@@ -9,7 +9,7 @@ __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
 
 import logging
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = logging.DEBUG
 
 DEFAULT_SWIM_WINDOW   = float(0.8125)
 DEFAULT_WHITENING     = float(-0.68)

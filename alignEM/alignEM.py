@@ -117,6 +117,8 @@ if 'tifffile' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','tifffile'])
 if 'tqdm' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','tqdm'])
+if 'tqdm' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','jupyter'])
 
 
 # logger = logging.getLogger('AlignEMLogger')
@@ -147,6 +149,7 @@ if __name__ == "__main__":
     sys.stdout.write('===================================================================================\n\n')
     sys.stdout.flush()
     logger.info("Running " + __file__ + ".__main__()")
+    logger.info('PID=%d' % os.getpid())
     options = argparse.ArgumentParser()
     options.add_argument("-d", "--debug", type=int, required=False, default=10,help="Print more information with larger DEBUG (0 to 100)")
     options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
@@ -186,9 +189,12 @@ if __name__ == "__main__":
     logger.info('Window Size is %dx%d pixels' % (cfg.WIDTH, cfg.HEIGHT))
     logger.info('Showing AlignEM-SWiFT')
     cfg.main_window.show()
+
+    app.aboutToQuit.connect(cfg.main_window.shutdown_kernel)
     try:
         sys.exit(app.exec())
     except:
         sys.exit(app.exec_())
+
 
 

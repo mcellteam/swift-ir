@@ -58,7 +58,7 @@ pip install git+https://github.com/funkelab/daisy.git#egg=daisy
 git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
 git checkout joel-dev-alignem
-pip install psutils PySide6 scikit-image dask neuroglancer zarr matplotlib opencv-python imagecodecs
+pip install psutils PySide6 scikit-image dask neuroglancer zarr matplotlib opencv-python
 and lastly compile c code!git
 
 MacOS Tips:

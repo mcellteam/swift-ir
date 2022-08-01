@@ -2,7 +2,8 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
-import os, sys, copy, json, inspect, collections, multiprocessing, logging, textwrap
+import os, sys, copy, json, inspect, collections, multiprocessing, logging, textwrap, psutil, operator, platform, \
+    code, readline
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, \
@@ -20,9 +21,7 @@ import neuroglancer as ng
 from glob import glob
 from PIL import Image
 import numpy as np
-import psutil
-import operator
-import platform
+
 import package.config as cfg
 # from package.em_utils import get_cur_scale_key, is_destination_set, is_dataset_scaled, \
 #     is_cur_scale_aligned, get_num_aligned, get_skips_list, are_aligned_images_generated,
@@ -38,7 +37,7 @@ from package.scale_pyramid import add_layer
 from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
 from package.image_utils import get_image_size
 from package.compute_affines import compute_affines
-from package.generate_aligned import generate_aligned_images
+from package.generate_aligned import generate_aligned
 from package.generate_scales import generate_scales
 from .heads_up_display import HeadsUpDisplay
 from .image_library import ImageLibrary
@@ -47,28 +46,75 @@ from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
 from .json_treeview import JsonModel
 
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtconsole.inprocess import QtInProcessKernelManager
+from qtconsole.manager import QtKernelManager
+
 __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
-# logging.basicConfig(
-#         level=logginglogger.info,
-#         format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-#         datefmt='%H:%M:%S',
-#         handlers=[ logging.StreamHandler() ]
-# )
 
-# logger = logging.getLogger('AlignEMLogger')
-# logger = logging.getLogger()
-# logging.basicConfig(
-#         level=logginglogger.info,
-#         format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-#         datefmt='%H:%M:%S',
-#         handlers=[ logging.StreamHandler() ]
-# )
 
-# from caveclient import CAVEclient
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtconsole.inprocess import QtInProcessKernelManager
 
-# cfg.project_data = None #jy turning back on #0404 #<-- #0618 this could be the problem
+class ConsoleWidget(RichJupyterWidget):
+
+
+    def __init__(self, namespace={}, customBanner=None, *args, **kwargs):
+        super(ConsoleWidget, self).__init__(*args, **kwargs)
+
+        if customBanner is not None:
+            self.banner = customBanner
+
+        self.font_size = 6
+        self.kernel_manager = kernel_manager = QtInProcessKernelManager()
+        kernel_manager.start_kernel(show_banner=False)
+        kernel_manager.kernel.gui = 'qt'
+        self.kernel_client = kernel_client = self._kernel_manager.client()
+        kernel_client.start_channels()
+
+        self.push_vars(namespace)
+
+        def stop():
+            kernel_client.stop_channels()
+            kernel_manager.shutdown_kernel()
+            # guisupport.get_app_qt().exit()
+
+        self.exit_requested.connect(stop)
+
+    def push_vars(self, variableDict):
+        """
+        Given a dictionary containing name / value pairs, push those variables
+        to the Jupyter console widget
+        """
+        self.kernel_manager.kernel.shell.push(variableDict)
+
+    def clear(self):
+        """
+        Clears the terminal
+        """
+        self._control.clear()
+
+        # self.kernel_manager
+
+    def print_text(self, text):
+        """
+        Prints some plain text to the console
+        """
+        self._append_plain_text(text)
+
+    def execute_command(self, command):
+        """
+        Execute a command in the frame of the console widget
+        """
+        self._execute(command, False)
+
+
+
+
+
+
 app = None
 use_c_version = True
 use_file_io = cfg.USE_FILE_IO
@@ -389,11 +435,16 @@ class CollapsibleBox(QWidget):
 # mainwindow
 class MainWindow(QMainWindow):
     def __init__(self, fname=None, panel_roles=None, title="AlignEM-SWiFT"):
+
         app = QApplication.instance()
+
         if app is None:
             logger.info("Warning | 'app' was None. Creating new instance.")
             app = QApplication([])
-        
+
+        self.python_jupyter_console = self.make_jupyter_widget_with_kernel()
+        # self.python_jupyter_console = InProcessJupyterConsole()
+
         logger.info('app.__str__() = ' + app.__str__())
         self.pyside_path = os.path.dirname(os.path.realpath(__file__))
         
@@ -406,11 +457,14 @@ class MainWindow(QMainWindow):
         self.mouse_down_callback = None
         self.mouse_move_callback = None
         self.init_dir = os.getcwd()
+
+
         
         logger.info("Initializing Thread Pool")
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
         QThread.currentThread().setObjectName('MainThread')
         self.hud = HeadsUpDisplay(app)
+        self.hud.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # logging.getLogger('hud').setLevel(logger.DEBUG)  # <- critical instruction else  will break.
         self.hud.post('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.')
         
@@ -1061,7 +1115,7 @@ class MainWindow(QMainWindow):
         
         self.plot_snr_button = QPushButton("Plot SNR")
         self.plot_snr_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.plot_snr_button.clicked.connect(self.plot_snr)
+        self.plot_snr_button.clicked.connect(self.show_snr_plot)
         self.plot_snr_button.setFixedSize(square_button_size)
         # self.plot_snr_button.setStyleSheet("font-size: 9px;")
         
@@ -1182,35 +1236,31 @@ class MainWindow(QMainWindow):
         
         # Whitening LineEdit
         self.whitening_label = QLabel("Whitening:")
-        # self.whitening_label.setFont(QFont('Terminus', 12, QFont.Bold))
-        tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
-        wrapped = "\n".join(textwrap.wrap(tip, width=35))
-        self.whitening_label.setToolTip(wrapped)
         self.whitening_input = QLineEdit(self)
         self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.whitening_input.setText("-0.68")
         self.whitening_input.setFixedWidth(std_input_size)
         self.whitening_input.setFixedHeight(std_height)
         self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
+        tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
+        self.whitening_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        self.whitening_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        self.whitening_grid = QGridLayout()
+        self.whitening_grid.setContentsMargins(0, 0, 0, 0)
+        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
         
         # Swim Window LineEdit
         self.swim_label = QLabel("SWIM Window:")
-        # self.swim_label.setFont(QFont('Terminus', 12, QFont.Bold))
-        tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
-        wrapped = "\n".join(textwrap.wrap(tip, width=35))
-        self.swim_label.setToolTip(wrapped)
         self.swim_input = QLineEdit(self)
         self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.swim_input.setText("0.8125")
         self.swim_input.setFixedWidth(std_input_size)
         self.swim_input.setFixedHeight(std_height)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
-        
-        self.whitening_grid = QGridLayout()
-        self.whitening_grid.setContentsMargins(0, 0, 0, 0)
-        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
-        
+        tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
+        self.swim_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        self.swim_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
         self.swim_grid = QGridLayout()
         self.swim_grid.setContentsMargins(0, 0, 0, 0)
         self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -1616,8 +1666,8 @@ class MainWindow(QMainWindow):
         self.plot_widget_clear_button.setFixedSize(square_button_size)
         # self.plot_widget_back_button.setIcon(qta.icon("mdi.back", color=cfg.ICON_COLOR))
 
-        self.plot_widget_back_button = QPushButton('Back To\nTerminal')
-        self.plot_widget_back_button.setStyleSheet("font-size: 10px;")
+        self.plot_widget_back_button = QPushButton('Back')
+        # self.plot_widget_back_button.setStyleSheet("font-size: 10px;")
         self.plot_widget_back_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plot_widget_back_button.clicked.connect(self.back_callback)
         self.plot_widget_back_button.setFixedSize(square_button_size)
@@ -1638,15 +1688,75 @@ class MainWindow(QMainWindow):
         self.plot_widget_container = QWidget()
         self.plot_widget_container.setLayout(self.plot_widget_layout)
 
+        self.python_console_back_button = QPushButton('Back')
+        # self.python_console_back_button.setStyleSheet("font-size: 10px;")
+        self.python_console_back_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.python_console_back_button.clicked.connect(self.back_callback)
+        self.python_console_back_button.setFixedSize(square_button_size)
+        self.python_console_back_button.setAutoDefault(True)
+
+        # self.python_console_controls_layout = QVBoxLayout()
+        # self.python_console_controls_layout.addWidget(self.python_console_back_button)
+        # self.python_console_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
+        self.python_console_layout = QHBoxLayout()
+        self.python_console_layout.addWidget(self.python_jupyter_console)
+        # self.python_console_layout.addLayout(self.python_console_controls_layout)
+
+        self.python_console_widget_container = QWidget()
+        self.python_console_widget_container.setLayout(self.python_console_layout)
         
         self.bottom_panel_stacked_widget.addWidget(self.plot_widget_container)
+        self.bottom_panel_stacked_widget.addWidget(self.python_console_widget_container)
         self.bottom_panel_stacked_widget.setCurrentIndex(0)
+
+        '''MAIN SECONDARY CONTROL PANEL'''
+        self.show_hud_button = QPushButton("Head-up\nDisplay")
+        self.show_hud_button.setStyleSheet("font-size: 10px;")
+        self.show_hud_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_hud_button.clicked.connect(self.show_hud)
+        self.show_hud_button.setFixedSize(square_button_size)
+        self.show_hud_button.setIcon(qta.icon("mdi.monitor", color=cfg.ICON_COLOR))
+
+        self.show_python_console_button = QPushButton("Python\nConsole")
+        self.show_python_console_button.setStyleSheet("font-size: 10px;")
+        self.show_python_console_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_python_console_button.clicked.connect(self.show_python_console)
+        self.show_python_console_button.setFixedSize(square_button_size)
+        self.show_python_console_button.setIcon(qta.icon("fa.terminal", color=cfg.ICON_COLOR))
+
+        self.show_snr_plot_button = QPushButton("SNR\nPlot")
+        self.show_snr_plot_button.setStyleSheet("font-size: 10px;")
+        self.show_snr_plot_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_snr_plot_button.clicked.connect(self.show_snr_plot)
+        self.show_snr_plot_button.setFixedSize(square_button_size)
+        self.show_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color=cfg.ICON_COLOR))
+
+        self.main_secondary_controls_layout = QVBoxLayout()
+        self.main_secondary_controls_layout.setContentsMargins(0,8,0,0)
+        self.main_secondary_controls_layout.addWidget(self.show_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_secondary_controls_layout.addWidget(self.show_python_console_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_secondary_controls_layout.addWidget(self.show_snr_plot_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.spacer_item_main_secondary = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.main_secondary_controls_layout.addSpacerItem(self.spacer_item_main_secondary)
+
+
+        self.bottom_display_area_hlayout = QHBoxLayout()
+        self.bottom_display_area_hlayout.setContentsMargins(0,0,0,0)
+        self.bottom_display_area_hlayout.addWidget(self.bottom_panel_stacked_widget)
+        self.bottom_display_area_hlayout.addLayout(self.main_secondary_controls_layout)
+        self.bottom_display_area_widget = QWidget()
+        self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
         
         self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.setContentsMargins(0,0,0,0)
         self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.lower_panel_groups)
         # self.splitter.addWidget(self.hud)
-        self.splitter.addWidget(self.bottom_panel_stacked_widget)
+        self.splitter.addWidget(self.bottom_display_area_widget)
+
+        self.hud.setContentsMargins(0,0,0,0)
+
         
         # self.splitter.addWidget(self.progress_bar)
         # self.progress_bar.setGeometry(200, 80, 250, 20)
@@ -1824,12 +1934,13 @@ class MainWindow(QMainWindow):
         self.status = self.statusBar()
         self.set_idle()
         
-        # menu bar
+        #menubar
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
-        
-        ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
+
+
+            ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
         ml = [
             ['&File',
              [
@@ -1846,7 +1957,7 @@ class MainWindow(QMainWindow):
              ],
             ['&Tools',
              [
-                 ['Plot SNRs', None, self.plot_snr, None, None, None],
+                 ['Plot SNRs', None, self.show_snr_plot, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
                  ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
                  ['Apply Project Defaults', None, set_default_settings, None, None, None],
@@ -1867,14 +1978,16 @@ class MainWindow(QMainWindow):
                       ['Style #11 - Screamin Green', None, self.apply_stylesheet_11, None, None, None],
                       ['Style #12 - Dark12', None, self.apply_stylesheet_12, None, None, None],
                       ['Minimal', None, self.minimal_stylesheet, None, None, None],
-                
+
                   ]
                   ],
-            
+
              ]
              ],
             ['&Debug',
              [
+                 ['Python Console', None, self.show_python_console, None, None, None],
+                 # ['Launch Debugger', None, self.launch_debugger, None, None, None],
                  ['Auto Set User Progress', None, self.auto_set_user_progress, None, None, None],
                  ['Set User Progress Stage 3', None, self.set_progress_stage_3, None, None, None],
                  ['Update Win Self (Update MainWindow)', None, self.update_win_self, None, None, None],
@@ -1941,7 +2054,62 @@ class MainWindow(QMainWindow):
                         self.action_groups[item[4]].addAction(action)
                     
                     parent.addAction(action)
-    
+
+
+
+    def make_jupyter_widget_with_kernel(self):
+        """Start a kernel, connect to it, and create a RichJupyterWidget to use it
+        Doc:
+        https://qtconsole.readthedocs.io/en/stable/
+        """
+        # kernel_manager = QtKernelManager(kernel_name='python3')
+        # kernel_manager.start_kernel()
+        #
+        # kernel_client = kernel_manager.client()
+        # kernel_client.start_channels()
+        #
+        # jupyter_widget = RichJupyterWidget()
+        # jupyter_widget.set_default_style(colors='linux')
+        # jupyter_widget.prompt_to_top()
+        # jupyter_widget.kernel_manager = kernel_manager
+        # jupyter_widget.kernel_client = kernel_client
+        # return jupyter_widget
+
+        import asyncio
+
+        global ipython_widget  # Prevent from being garbage collected
+
+        # Create an in-process kernel
+        self.kernel_manager = QtInProcessKernelManager()
+        self.kernel_manager.start_kernel(show_banner=False)
+        self.kernel = self.kernel_manager.kernel
+        self.kernel.gui = 'qt'
+        myvar = 'test'
+        # kernel.shell.push({'x': 0, 'y': 1, 'z': 2})
+        # project_data = cfg.project_data #notr sure why this dictionary does not push
+        # self.kernel.shell.push(project_data)
+        # self.kernel.shell.
+
+        self.kernel_client = self.kernel_manager.client()
+        self.kernel_client.start_channels()
+
+        self.jupyter_widget = RichJupyterWidget()
+        self.jupyter_widget.banner = ''
+        self.jupyter_widget.set_default_style(colors='linux')
+        self.jupyter_widget.prompt_to_top()
+        self.jupyter_widget.kernel_manager = self.kernel_manager
+        self.jupyter_widget.kernel_client = self.kernel_client
+        return self.jupyter_widget
+
+
+
+
+    def shutdown_kernel(self):
+        logger.info('Shutting down kernel...')
+        self.jupyter_widget.kernel_client.stop_channels()
+        self.jupyter_widget.kernel_manager.shutdown_kernel()
+
+
     def update_panels(self):
         '''Repaint the viewing port.'''
         logger.info("MainWindow.update_panels:")
@@ -2073,7 +2241,7 @@ class MainWindow(QMainWindow):
         if self.always_generate_images:
             self.set_busy()
             try:
-                generate_aligned_images(
+                generate_aligned(
                     use_scale=get_cur_scale_key(),
                     start_layer=0,
                     num_layers=-1
@@ -2089,7 +2257,7 @@ class MainWindow(QMainWindow):
                 self.center_all_images()
 
                 if self.bottom_panel_stacked_widget.currentIndex() ==1:
-                   self.plot_snr()
+                   self.show_snr_plot()
                 
                 self.hud.post('Image Generation Complete')
                 logger.info('\n\nImage Generation Complete\n')
@@ -2111,7 +2279,7 @@ class MainWindow(QMainWindow):
             return
         self.status.showMessage('Busy...')
         try:
-            generate_aligned_images(
+            generate_aligned(
                 use_scale=get_cur_scale_key(),
                 start_layer=0,
                 num_layers=-1
@@ -2165,11 +2333,11 @@ class MainWindow(QMainWindow):
         logger.info('  export_zarr() | aligned_path_cur_scale =', self.aligned_path)
         
         destination_path = os.path.abspath(cfg.project_data['data']['destination_path'])
-        logger.info('  export_zarr() | path of aligned images              :', self.aligned_path)
-        logger.info('  export_zarr() | path of Zarr export                 :', destination_path)
-        logger.info('  export_zarr() | dataset name                        :', self.ds_name)
+        logger.info('  export_zarr() | path of aligned images              :%s', self.aligned_path)
+        logger.info('  export_zarr() | path of Zarr export                 :%s', destination_path)
+        logger.info('  export_zarr() | dataset name                        :%s', self.ds_name)
         os.chdir(self.pyside_path)
-        logger.info('  export_zarr() | working directory                   :', os.getcwd())
+        logger.info('  export_zarr() | working directory                   :%s' % os.getcwd())
         
         self.clevel = str(self.clevel_input.text())
         self.cname = str(self.cname_combobox.currentText())
@@ -2376,7 +2544,7 @@ class MainWindow(QMainWindow):
                 cfg.main_window.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
             if self.bottom_panel_stacked_widget.currentIndex() == 1:
                 self.plot_widget.clear()
-                self.plot_snr()
+                self.show_snr_plot()
         except:
             print_exception()
         finally:
@@ -2419,15 +2587,19 @@ class MainWindow(QMainWindow):
                 cfg.main_window.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
             if self.bottom_panel_stacked_widget.currentIndex() == 1:
                 self.plot_widget.clear()
-                self.plot_snr()
+                self.show_snr_plot()
         except:
             print_exception()
         finally:
             self.scales_combobox_switch = 0
 
+
+    @Slot()
+    def show_hud(self):
+        self.bottom_panel_stacked_widget.setCurrentIndex(0)
     
     @Slot()
-    def plot_snr(self):
+    def show_snr_plot(self):
         if not is_cur_scale_aligned():
             cfg.main_window.hud.post('Dataset Must Be Scaled and Aligned To View SNR Plot')
             return
@@ -2451,7 +2623,11 @@ class MainWindow(QMainWindow):
         # self.plot_widget.setXRange(0,len(snr_list))
         # x_ax = self.plot_widget.getAxis("bottom")
         self.bottom_panel_stacked_widget.setCurrentIndex(1)
-    
+
+    @Slot()
+    def show_python_console(self):
+        self.bottom_panel_stacked_widget.setCurrentIndex(2)
+
     @Slot()
     def back_callback(self):
         logger.info("Returning Home...")

@@ -213,7 +213,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         task_queue.stop()
         del task_queue
         
-        print('updated_model (Example Layer):')
+        print('\n____compute_affines____\nupdated_model (Example Layer):')
         try:
             al_layer = updated_model['data']['scales'][use_scale]['alignment_stack'][-1]
             logger.info(json.dumps(al_layer, indent=2))
