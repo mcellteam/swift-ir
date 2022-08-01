@@ -13,12 +13,12 @@ from .em_utils import get_scale_key, get_cur_scale_key, are_aligned_images_gener
 from .mp_queue import TaskQueue
 from .image_utils import SetStackCafm, BoundingRect, remove_aligned
 
-__all__ = ['generate_aligned_images']
+__all__ = ['generate_aligned']
 
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned_images(use_scale, start_layer=0, num_layers=-1):
+def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     '''
     This function is currently called by two MainWindow methods:
     - app.run_alignment
@@ -26,7 +26,7 @@ def generate_aligned_images(use_scale, start_layer=0, num_layers=-1):
     For now, start_layer is always passed the value 0, and
     num_layers is always passed the value -1.
     '''
-    print('_____________Generate Aligned Images Begin_____________')
+    print('_____________Generate Aligned Begin_____________')
     
     '''NEED AN IMMEDIATE CHECK RIGHT HERE TO SEE IF ALIGNMENT DATA EVEN EXISTS AND LOOKS CORRECT'''
     
@@ -74,7 +74,7 @@ def generate_aligned_images(use_scale, start_layer=0, num_layers=-1):
         ref_name = layer['images']['ref']['filename']
         al_path, fn = os.path.split(base_name)
         if i == 1:
-            print('\nSecond Layer (Example Paths):')
+            print('\n____generate_aligned____\nSecond Layer (Example Paths):')
             print('basename=%s\nref_name=%s\nal_path=%s\nfn=%s' % (base_name, ref_name, al_path, fn))
         al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
         layer['images']['aligned'] = {}
@@ -88,7 +88,7 @@ def generate_aligned_images(use_scale, start_layer=0, num_layers=-1):
             args = [sys.executable, apply_affine_job, '-gray', '-afm', str(cafm[0][0]), str(cafm[0][1]),
                     str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
         if i == 1:
-            print('\nSecond Layer (Example Arguments):')
+            print('\n_____generate_aligned____\nSecond Layer (Example Arguments):')
             print(*args, sep="\n")
             
             ofn = os.path.join(cfg.project_data['data']['destination_path'], scale_key, 'bias_data', 'apply_affine.dat')
@@ -114,7 +114,7 @@ def generate_aligned_images(use_scale, start_layer=0, num_layers=-1):
     logger.info('Stopping TaskQueue...')
     task_queue.stop()
     del task_queue
-    print('_____________Generate Aligned Images End_____________')
+    print('_____________Generate Aligned End_____________')
 
 
 def create_align_directories(scale_key):

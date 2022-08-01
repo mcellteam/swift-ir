@@ -59,6 +59,10 @@ def generate_scales(progress_callback=None):
         print_exception()
         cfg.main_window.hud.post("There was a problem creating the directory structure", logging.WARNING)
         return
+
+    if str(image_scales_to_run) == '[1]':
+        logger.info('Only one scale is requested... not calling task_queue')
+        return
     
     scale_q.start(cpus)
     
@@ -91,20 +95,19 @@ def generate_scales(progress_callback=None):
             else:
                 '''All Scales Other Than 1'''
                 try:
-                    print('os.path.split(os.path.split(os.path.split(fn)[0])[0])[1] = ',
-                          str(os.path.split(os.path.split(os.path.split(fn)[0])[0])[1]))
                     if os.path.split(os.path.split(os.path.split(fn)[0])[0])[1].startswith('scale_'):
                         '''This is run only when re-scaling'''
-                        print('fn (before) = ', fn)
                         # Convert the source from whatever scale is currently processed to scale_1
                         p, f = os.path.split(fn)
                         p, r = os.path.split(p)
                         p, s = os.path.split(p)
                         fn = os.path.join(p, 'scale_1', r, f)
-                        print('fn (after) = ', fn)
-                        print('p = ', p)
-                        print('p = ', r)
-                        print('p = ', s)
+                        if i == 1:
+                            print('\nfn = ', fn)
+                            print('p = ', p)
+                            print('r = ', r)
+                            print('s = ', s)
+                            print(fn)
                     
                     if cfg.CODE_MODE == 'python':
                         scale_q.add_task(cmd=sys.executable,
@@ -115,10 +118,9 @@ def generate_scales(progress_callback=None):
                         infile_arg = '%s' % (fn)
                         # scale_q.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
                         scale_q.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
-                        # if i == 1:
-                        logger.info('\nscale_q Parameters (Example):')
-                        logger.info('1: %s\n2: %s\n3: %s\n4: %s\n' %
-                                                 (iscale2_c, scale_arg, outfile_arg, infile_arg))
+                        if i == 1:
+                            print('\n____generate_scales____\nscale_q Parameters (Example):')
+                            print('1: %s\n2: %s\n3: %s\n4: %s\n' % (iscale2_c, scale_arg, outfile_arg, infile_arg))
                         '''
                         ____scale_q Parameters (Example)____
                         (1) : iscale2_c : /Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/lib/bin_darwin/iscale2

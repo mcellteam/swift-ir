@@ -56,7 +56,7 @@ __all__.extend(config.__all__)
 # from .mp_queue import TaskQueue
 # # from .run_json_project import run_json_project
 # from .compute_affines import compute_affines
-# from .generate_aligned_images import generate_aligned_images
+# from .generate_aligned import generate_aligned
 # from .generate_scales import generate_scales
 # from .get_image_size import get_image_size
 #
