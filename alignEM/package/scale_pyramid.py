@@ -13,8 +13,12 @@ import skimage
 import numpy as np
 import logging
 import operator
-from package.tiffs2zarr import tiffs2zarr
 from PIL import Image
+try:
+    from package.tiffs2zarr import tiffs2zarr
+except:
+    from tiffs2zarr import tiffs2zarr
+
 
 DAISY_VERSION = 1
 logger = logging.getLogger(__name__)

@@ -25,7 +25,8 @@ def generate_scales(progress_callback=None):
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     proj_path = cfg.project_data['data']['destination_path']
-    scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() + 1))
+    # scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() + 1)) #0802
+    scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales()))
     cpus = min(psutil.cpu_count(logical=False), 48)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     my_system = platform.system()
@@ -38,7 +39,8 @@ def generate_scales(progress_callback=None):
     elif my_system == 'Linux':
         bindir = 'bin_tacc' if '.tacc.utexas.edu' in my_node else 'bin_linux'
     else:
-        logger.error("System Could Not Be Resolved - Exiting"); return
+        logger.error("System Could Not Be Resolved - Exiting")
+        return
     iscale2_c = os.path.join(my_path, 'lib', bindir, 'iscale2')
     try:
         logger.info('Checking if iscale_2 (%s) is a file...' % iscale2_c)
@@ -60,9 +62,10 @@ def generate_scales(progress_callback=None):
         cfg.main_window.hud.post("There was a problem creating the directory structure", logging.WARNING)
         return
 
-    if str(image_scales_to_run) == '[1]':
-        logger.info('Only one scale is requested... not calling task_queue')
-        return
+    #0804+
+    # if str(image_scales_to_run) == '[1]':
+    #     logger.info('Only one scale is requested... not calling task_queue')
+    #     return
     
     scale_q.start(cpus)
     
@@ -73,9 +76,12 @@ def generate_scales(progress_callback=None):
         for i, layer in enumerate(cfg.project_data['data']['scales'][scale_key]['alignment_stack']):
             fn = os.path.abspath(layer['images']['base']['filename'])
             ofn = os.path.join(proj_path, scale_key, 'img_src', os.path.split(fn)[1])
-            print('fn = ', fn)
-            print('ofn = ', ofn)
+
+            layer['align_to_ref_method']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
+            layer['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
+
             if scale == 1:
+
                 '''Scale 1 Only'''
                 if get_best_path(fn) != get_best_path(ofn):
                     # The paths are different so make the link
@@ -94,6 +100,7 @@ def generate_scales(progress_callback=None):
                             logger.warning("Unable to link or copy from " + fn + " to " + ofn)
             else:
                 '''All Scales Other Than 1'''
+
                 try:
                     if os.path.split(os.path.split(os.path.split(fn)[0])[0])[1].startswith('scale_'):
                         '''This is run only when re-scaling'''

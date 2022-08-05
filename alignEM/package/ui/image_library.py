@@ -112,7 +112,7 @@ class ImageLibrary:
         return image_ref
 
     def remove_image_reference(self, file_path):
-        logger.info("  ImageLayer is removing image reference (called by " + inspect.stack()[1].function + ")...")
+        # logger.info("  ImageLayer is removing image reference (called by " + inspect.stack()[1].function + ")...")
         image_ref = None
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)

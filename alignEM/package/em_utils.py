@@ -176,10 +176,8 @@ def set_default_settings() -> None:
             cfg.project_data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
         for layer_index in range(len(scale['alignment_stack'])):
             layer = scale['alignment_stack'][layer_index]
-            atrm = layer['align_to_ref_method']
-            mdata = atrm['method_data']
-            mdata['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
-            mdata['whitening_factor'] = cfg.DEFAULT_WHITENING
+            layer['align_to_ref_method']['method_data']['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
+            layer['align_to_ref_method']['method_data']['whitening_factor'] = cfg.DEFAULT_WHITENING
             if scale_key == coarsest_scale:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
             else:
@@ -191,21 +189,28 @@ def ensure_proper_data_structure():
     logger.info('ensure_proper_data_structure >>>>')
     ''' Try to ensure that the data model is usable. '''
     scales_dict = cfg.project_data['data']['scales']
-    coarsest_scale = list(scales_dict.keys())[-1]
+    coarsest = list(scales_dict.keys())[-1]
     for scale_key in scales_dict.keys():
         scale = scales_dict[scale_key]
-        if not 'use_bounding_rect' in scale: scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
-        if not 'null_cafm_trends' in scale:  scale['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
-        if not 'poly_order' in scale:        scale['poly_order'] = cfg.DEFAULT_POLY_ORDER
+        scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
+        scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
+        scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
+        # if not 'use_bounding_rect' in scale: scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
+        # if not 'null_cafm_trends' in scale:  scale['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
+        # if not 'poly_order' in scale:        scale['poly_order'] = cfg.DEFAULT_POLY_ORDER
         for layer_index in range(len(scale['alignment_stack'])):
             layer = scale['alignment_stack'][layer_index]
-            atrm = layer['align_to_ref_method']
-            mdata = atrm['method_data']
-            if not 'align_to_ref_method' in layer: layer['align_to_ref_method'] = {}
-            if not 'method_data' in atrm: atrm['method_data'] = {}
-            if not 'win_scale_factor' in mdata: mdata['win_scale_factor'] = float(cfg.main_window.get_swim_input())
-            if not 'whitening_factor' in mdata: mdata['whitening_factor'] = float(cfg.main_window.get_whitening_input())
-            if scale_key == coarsest_scale:
+            # atrm = layer['align_to_ref_method']
+            # mdata = atrm['method_data']
+            layer.setdefault('align_to_ref_method', {})
+            layer['align_to_ref_method'].setdefault('method_data', {})
+            layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+            layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+            # if not 'align_to_ref_method' in layer: layer['align_to_ref_method'] = {}
+            # if not 'method_data' in atrm: atrm['method_data'] = {}
+            # if not 'win_scale_factor' in mdata: mdata['win_scale_factor'] = float(cfg.main_window.get_swim_input())
+            # if not 'whitening_factor' in mdata: mdata['whitening_factor'] = float(cfg.main_window.get_whitening_input())
+            if scale_key == coarsest:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
             else:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
@@ -710,14 +715,21 @@ def is_dataset_scaled() -> bool:
 
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a project that does not need scales.'''
-    if len(cfg.project_data['data']['scales']) < 2:
-        isScaled = False
-    else:
-        isScaled = True
+    # if len(cfg.project_data['data']['scales']) < 2:
+    #     isScaled = False
+    # else:
+    #     isScaled = True
 
-    # logger.info('is_dataset_scaled | checking if %s is less than 2 (proxy for not scaled)' % str(len(cfg.project_data['data']['scales'])))
-    # logger.info('is_dataset_scaled | Returning %s' % isScaled)
-    return isScaled
+    #0804
+    try:
+        if any(d.startswith('scale_') for d in os.listdir(cfg.project_data['data']['destination_path'])):
+            return True
+        else:
+            return False
+    except:
+        pass
+
+
 
 
 def get_cur_layer() -> int:

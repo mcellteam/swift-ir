@@ -83,11 +83,20 @@ To do:
 [] for new project, there could be an issue with set_default_settings() func
 [] bug where when project is saved on first base image in the stack (which has no ref) -> reopening the project and changing layer will require a re-center
 [] fix SNR image hover tooltips
-[] extend support for with rectangular images
 [x] fix makefile.linux
 [] make a better README.txt, add list of packages
 [] test everything on Ubuntu
 [] add check for c binaries at startup -> else quit application
+
+Important:
+[] scaling with iscale, for neuroglancer/zarr
+[] extend support for with rectangular images
+[] match-point functionality
+[] cropping functionality
+[] project directory validator
+[] ZOOM
+[] SWIM randomly misfires
+
 
 Things project_data should include:
 * is project scaled (bool)
