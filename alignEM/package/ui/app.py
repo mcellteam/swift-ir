@@ -35,7 +35,7 @@ import package.config as cfg
 #     get_scales_list
 from package.em_utils import *
 from package.scale_pyramid import add_layer
-from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model
+from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model, DataModel
 from package.image_utils import get_image_size
 from package.compute_affines import compute_affines
 from package.generate_aligned import generate_aligned
@@ -46,7 +46,7 @@ from .runnable_server import RunnableServer
 from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
 from .json_treeview import JsonModel
-from.project_form import ProjectForm
+from .project_form import ProjectForm
 
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
@@ -117,7 +117,7 @@ def link_stack():
     
     for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
         base_layer = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]
-        
+
         if layer_index == 0:
             # No ref for layer 0
             if 'ref' not in base_layer['images'].keys():
@@ -430,7 +430,9 @@ class MainWindow(QMainWindow):
         self.hud.post('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.')
         
         logger.info("Copying new project template")
-        cfg.project_data = copy.deepcopy(new_project_template)  # <-- TODO: get rid of this
+        # cfg.project_data = copy.deepcopy(new_project_template)  # <-- TODO: get rid of this
+
+        cfg.project_data = DataModel()
         
         cfg.image_library = ImageLibrary()
         # cfg.image_library = SmartImageLibrary()
@@ -1527,12 +1529,7 @@ class MainWindow(QMainWindow):
             try:
                 use_bounding_rect = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']][
                     'use_bounding_rect']
-
-                logger.info('str(use_bounding_rect) = %s' % str(use_bounding_rect))
-                logger.info('type(use_bounding_rect) = %s' % type(use_bounding_rect))
-                logger.info('[BEFORE] self.toggle_bounding_rect.isChecked() = %s' % str(self.toggle_bounding_rect.isChecked()))
                 self.toggle_bounding_rect.setChecked(bool(use_bounding_rect))
-                logger.info('[AFTER] self.toggle_bounding_rect.isChecked() = %s' % str(self.toggle_bounding_rect.isChecked()))
 
             except:
                 logger.error('Bounding Rect UI element failed to update its state')
@@ -2073,10 +2070,8 @@ class MainWindow(QMainWindow):
                 else:
                     # This means that there are no unused slots for this role. Add a new layer
                     # logger.info("add_image_to_role | Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role))
-                    cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(
-                        copy.deepcopy(new_layer_template))
-                    layer_index_for_new_role = len(
-                        cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
+                    cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(copy.deepcopy(new_layer_template))
+                    layer_index_for_new_role = len(cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
                 image_dict = \
                     cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role][
                         'images']

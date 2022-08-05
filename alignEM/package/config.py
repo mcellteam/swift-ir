@@ -29,6 +29,8 @@ project_data = None
 main_window = None
 image_library = None
 
+data_model = None
+
 PRELOAD_RANGE = 3
 
 USE_FILE_IO = 0
