@@ -12,14 +12,14 @@ import numpy as np
 import subprocess as sp
 import multiprocessing as mp
 
-try: import package.config as cfg
-except: import config as cfg
+try:     import package.config as cfg
+except:  import config as cfg
 
-try:  import package.swiftir as swiftir
+try:     import package.swiftir as swiftir
 except:  import swiftir
 
-try:  from image_utils import get_image_size
-except:  from package.image_utils import get_image_size
+try:     from package.image_utils import get_image_size
+except:  from image_utils import get_image_size
 
 __all__ = ['run_json_project', 'alignment_process']
 
@@ -344,10 +344,11 @@ class alignment_process:
                 },
                 "align_to_ref_method": {
                     "selected_method": "Auto Swim Align",
-                    "method_options": [
-                        "Auto Swim Align",
-                        "Match Point Align"
-                    ],
+                    # "method_options": [
+                    #     "Auto Swim Align",
+                    #     "Match Point Align"
+                    # ],
+                    "method_options": {},
                     "method_data": {},
                     "method_results": {}
                 }

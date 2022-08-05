@@ -77,8 +77,10 @@ def generate_scales(progress_callback=None):
             fn = os.path.abspath(layer['images']['base']['filename'])
             ofn = os.path.join(proj_path, scale_key, 'img_src', os.path.split(fn)[1])
 
-            layer['align_to_ref_method']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
-            layer['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
+            layer['align_to_ref_method']['method_options'] = {
+                'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION,
+                'initial_scale': cfg.DEFAULT_INITIAL_SCALE
+            }
 
             if scale == 1:
 

@@ -144,7 +144,7 @@ class ProjectForm(QDialog):
         self.initial_rotation_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         '''Initial Scale Field'''
-        self.initial_scale_label = QLabel("Initial Rotation:")
+        self.initial_scale_label = QLabel("Initial Scale:")
         self.initial_scale_input = QLineEdit(self)
         self.initial_scale_input.setText(str(cfg.DEFAULT_INITIAL_SCALE))
         self.initial_scale_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
