@@ -42,7 +42,8 @@ alignEM/package/ui/daisy_logs
 alignEM/package/ui/daisy_logs/*
 alignEM/sandbox
 alignEM/sandbox/*
-
+alignEM/package/out.zarr
+alignEM/package/out.zarr/*
 
 
 <<<<<<< Updated upstream
