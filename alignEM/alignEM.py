@@ -184,7 +184,8 @@ if __name__ == "__main__":
     logger.info('app.__str__() = %s' % app.__str__())
     logger.info('Instantiating MainWindow...')
     cfg.main_window = MainWindow(title="AlignEM-SWiFT")
-    cfg.main_window.resize(cfg.WIDTH, cfg.HEIGHT)
+    # cfg.main_window.resize(cfg.WIDTH, cfg.HEIGHT)
+    cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
     cfg.main_window.define_roles(['ref', 'base', 'aligned'])
     logger.info('Window Size is %dx%d pixels' % (cfg.WIDTH, cfg.HEIGHT))
     logger.info('Showing AlignEM-SWiFT')
@@ -195,6 +196,3 @@ if __name__ == "__main__":
         sys.exit(app.exec())
     except:
         sys.exit(app.exec_())
-
-
-

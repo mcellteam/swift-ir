@@ -11,11 +11,11 @@ import json
 from qtpy.QtCore import QThread
 
 import package.config as cfg
-from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_dat_files
-from .image_utils import remove_aligned
 from .mp_queue import TaskQueue
+from .image_utils import remove_aligned
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
+from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_dat_files
 
 
 __all__ = ['compute_affines']
@@ -116,7 +116,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
                 if i == 0:
                     example = [str(p) for p in task_args]
                     # logger.info("Starting mp_queue with args (First Layer Only, Example):\n\n%s\n" % "\n".join(example))
-                    cfg.main_window.hud.post("Starting mp_queue with args (First Layer Only, Example):\n%s\n" % "\n".join(example))
+                    logger.critical("Starting mp_queue with args (First Layer Only, Example):\n%s\n" % "\n".join(example))
 
 
                 task_queue.add_task(task_args)

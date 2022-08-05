@@ -4,6 +4,10 @@ from . import app
 from .app import *
 __all__.extend(app.__all__)
 
+from . import project_form
+from .project_form import *
+__all__.extend(project_form.__all__)
+
 # from . import heads_up_display
 # from .heads_up_display import *
 # __all__.extend(heads_up_display.__all__)

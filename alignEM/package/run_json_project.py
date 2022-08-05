@@ -12,6 +12,9 @@ import numpy as np
 import subprocess as sp
 import multiprocessing as mp
 
+try: import package.config as cfg
+except: import config as cfg
+
 try:  import package.swiftir as swiftir
 except:  import swiftir
 
@@ -21,13 +24,13 @@ except:  from package.image_utils import get_image_size
 __all__ = ['run_json_project', 'alignment_process']
 
 
-ROTATION = 0
+
 global_swiftir_mode = 'c'  # Either 'python' or 'c'
 
 
-# logger = logging.getLogger(__name__)
-logger = mp.log_to_stderr()
-logger.setLevel(logging.INFO)
+logger = logging.getLogger(__name__)
+# logger = mp.log_to_stderr()
+# logger.setLevel(logging.INFO)
 
 
 def run_json_project(project,
@@ -50,10 +53,10 @@ def run_json_project(project,
   
     '''
     logger.info('\n\nrun_json_project >>>>\n\n')
-    logger.info("alignment_option = ", alignment_option)
-    logger.info("use_scale = ", use_scale)
-    logger.info("code_mode = ", swiftir_code_mode)
-    logger.info("alone = ", str(alone))
+    logger.info("alignment_option = %s" % str(alignment_option))
+    logger.info("use_scale = %s" % str(use_scale))
+    logger.info("code_mode = %s" % str(swiftir_code_mode))
+    logger.info("alone = %s" % str(alone))
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
 
     # Evaluate Status of Project and set appropriate flags here:
@@ -89,14 +92,14 @@ def run_json_project(project,
     if scale_tbd:
         if use_scale:
             logger.info("Performing %s at predetermined scale: %d" % (alignment_option, scale_tbd))
-            logger.info("Finest scale completed: ", finest_scale_done)
-            logger.info("Next coarsest scale completed: ", next_scale)
-            logger.info("Upscale factor: ", upscale)
+            logger.info("Finest scale completed: %s" % str(finest_scale_done))
+            logger.info("Next coarsest scale completed: %s" % str(next_scale))
+            logger.info("Upscale factor: %s" % str(upscale))
         else:
             logger.info("Performing %s at automatically determined scale: %d" % (alignment_option, scale_tbd))
-            logger.info("Finest scale completed: ", finest_scale_done)
-            logger.info("Next coarsest scale completed: ", next_scale)
-            logger.info("Upscale factor: ", upscale)
+            logger.info("Finest scale completed: %s" % str(finest_scale_done))
+            logger.info("Next coarsest scale completed: %s" % str(next_scale))
+            logger.info("Upscale factor: %s" % str(upscale))
 
         scale_tbd_dir = os.path.join(project['data']['destination_path'], 'scale_' + str(scale_tbd))
         ident = swiftir.identityAffine()
@@ -143,8 +146,8 @@ def run_json_project(project,
             md = atrm['method_data']
 
             # Initialize method_results for skipped or missing method_results
-            logger.info("s_tbd[i]['skip'] = ", s_tbd[i]['skip'])
-            logger.info("atrm['method_results'] == {} = ", mr == {})
+            logger.info("s_tbd[i]['skip'] = %s" % str(s_tbd[i]['skip']))
+            logger.info("atrm['method_results'] == {} = %s" % str(mr == {}))
             if s_tbd[i]['skip'] or mr == {}:
                 mr['affine_matrix'] = ident.tolist()
                 mr['cumulative_afm'] = ident.tolist()
@@ -205,15 +208,16 @@ def run_json_project(project,
                 #        im_mov_fn = s_tbd[i]['images']['base']['filename']
                 logger.info('Calling align_alignment_process >>>>')
                 # from alignment_process import alignment_process
+                '''refine_affine or apply_affine'''
                 if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
                     atrm = s_tbd[i]['align_to_ref_method']
 
                     logger.info('about to enter align_alignment_process...')
                     # Align Forward Change:
-                    align_proc = alignment_process(align_dir=align_dir, layer_dict=s_tbd[i],
-                                                   init_affine_matrix=afm_scaled[i])
+                    align_proc = alignment_process(align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
                 #          align_proc = alignment_process(im_sta_fn, im_mov_fn, align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=afm_scaled[i])
                 else:
+                    '''init_affine'''
                     # Align Forward Change:
                     align_proc = alignment_process(align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
                 #          align_proc = alignment_process(im_sta_fn, im_mov_fn, align_dir=align_dir, layer_dict=s_tbd[i], init_affine_matrix=ident)
@@ -243,7 +247,7 @@ def run_json_project(project,
 
         # Calculate AFM for each align_item (i.e for each ref-base pair of images)
         for item in align_list:
-            logger.info('item = ', str(item))
+            logger.info('item = %s' % str(item))
 
             if item['do']:
                 align_item = item['proc']
@@ -322,8 +326,7 @@ def prefix_lines(i, s):
 
 class alignment_process:
 
-    def __init__(self, im_sta_fn=None, im_mov_fn=None, align_dir='./', layer_dict=None, init_affine_matrix=None,
-                 cumulative_afm=None):
+    def __init__(self, im_sta_fn=None, im_mov_fn=None, align_dir='./', layer_dict=None, init_affine_matrix=None, cumulative_afm=None):
         self.recipe = None
         self.im_sta_fn = im_sta_fn
         self.im_mov_fn = im_mov_fn
@@ -380,7 +383,18 @@ class alignment_process:
         siz = get_image_size(self.im_sta_fn)
         atrm = self.layer_dict['align_to_ref_method']
         wsf = atrm['method_data']['win_scale_factor']  # window size scale factor
-        dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
+        # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
+        init_rot = self.layer_dict['align_to_ref_method']['method_options']['initial_rotation']
+        deg2rad = 2*np.pi/360.
+        sin_rot = np.sin(deg2rad*init_rot)
+        dither_afm = np.array([[1., sin_rot, 0.], [-sin_rot, 1., 0.]])
+        # dither_afm = np.array([[DITHER_SCALE, DITHER_ROT, 0.], [-DITHER_ROT, DITHER_SCALE, 0.]])
+        # sin_rot -> try 0.5, DITHER_SCALE -> try 1.05 #0804
+        # logger.info('dither_afm: %s' % str(dither_afm))
+        print('dither_afm: %s' % str(dither_afm))
+        print('init_rot: %g' % init_rot)
+        print('sin_rot: %g' % sin_rot)
+        # init_rot
         #    Previously hard-coded values for wsf chosen by trial-and-error
         #    wsf = 0.80  # Most common good value for wsf
         #    wsf = 0.75  # Also a good value for most projects
@@ -456,6 +470,7 @@ class alignment_process:
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
 
                 ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm)  # 0721
+                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 0721-
                 ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht)
                 ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht)
                 self.recipe.add_ingredient(ingredient_1)
@@ -692,7 +707,6 @@ class align_ingredient:
 
         afm_arg = '%.6f %.6f %.6f %.6f' % (self.afm[0, 0], self.afm[0, 1], self.afm[1, 0], self.afm[1, 1])
         logger.critical('afm_arg =  %s' % afm_arg)
-        print('afm_arg =  %s' % afm_arg)
 
         karg = ''
         # if keep != None:

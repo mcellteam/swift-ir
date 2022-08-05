@@ -172,8 +172,11 @@ new_layer_template = \
         "align_to_ref_method": {
             "method_data": {
             },
+            # "method_options": [
+            #     "None"
+            # ],
             "method_options": [
-                "None"
+                {}
             ],
             "selected_method": "None",
             "method_results": {

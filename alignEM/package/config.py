@@ -9,13 +9,15 @@ __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
 
 import logging
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
-DEFAULT_SWIM_WINDOW   = float(0.8125)
-DEFAULT_WHITENING     = float(-0.68)
-DEFAULT_POLY_ORDER    = int(0)
-DEFAULT_NULL_BIAS     = False
-DEFAULT_BOUNDING_BOX  = True
+DEFAULT_SWIM_WINDOW       = float(0.8125)
+DEFAULT_WHITENING         = float(-0.6800)
+DEFAULT_POLY_ORDER        = int(0)
+DEFAULT_NULL_BIAS         = bool(False)
+DEFAULT_BOUNDING_BOX      = bool(True)
+DEFAULT_INITIAL_ROTATION  = 0.0000
+DEFAULT_INITIAL_SCALE  = 0.0000
 
 QT_API = None
 USES_PYSIDE = None
@@ -33,6 +35,16 @@ USE_FILE_IO = 0
 PARALLEL_MODE = True
 CODE_MODE = 'c'
 # CODE_MODE = 'python'
+
+
+# defaults = {}
+# defaults['whitening_factor']     = float(-0.6800)
+# defaults['swim_window']          = float(0.8125)
+# defaults['initial_rotation']     = float(0.0000)
+# defaults['bounding_rectangle']   = bool(True)
+# defaults['poly_order']           = int(0)
+# defaults['null_bias']            = bool(False)
+defaults = ["-0.6800", "0.8125", "0.0000", True]
 
 # cfg.ICON_COLOR = "#d3dae3" #orig
 # cfg.ICON_COLOR = '#7c7c7c'

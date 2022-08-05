@@ -6,9 +6,10 @@ import os, sys, copy, json, inspect, collections, multiprocessing, logging, text
     code, readline
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
-    QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, \
-    QRadioButton, QFrame, QTreeView, QHeaderView, QDockWidget
-from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont
+    QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
+    QDockWidget, QSplashScreen
+from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
+    QGuiApplication
 from qtpy.QtCore import Qt, QSize, QUrl, QAbstractAnimation, QPropertyAnimation, \
     QParallelAnimationGroup, QThreadPool, QThread, Slot, QRect
 from qtpy.QtWidgets import QAction, QActionGroup
@@ -45,6 +46,7 @@ from .runnable_server import RunnableServer
 from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
 from .json_treeview import JsonModel
+from.project_form import ProjectForm
 
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
@@ -57,63 +59,6 @@ logger = logging.getLogger(__name__)
 
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
-
-class ConsoleWidget(RichJupyterWidget):
-
-
-    def __init__(self, namespace={}, customBanner=None, *args, **kwargs):
-        super(ConsoleWidget, self).__init__(*args, **kwargs)
-
-        if customBanner is not None:
-            self.banner = customBanner
-
-        self.font_size = 6
-        self.kernel_manager = kernel_manager = QtInProcessKernelManager()
-        kernel_manager.start_kernel(show_banner=False)
-        kernel_manager.kernel.gui = 'qt'
-        self.kernel_client = kernel_client = self._kernel_manager.client()
-        kernel_client.start_channels()
-
-        self.push_vars(namespace)
-
-        def stop():
-            kernel_client.stop_channels()
-            kernel_manager.shutdown_kernel()
-            # guisupport.get_app_qt().exit()
-
-        self.exit_requested.connect(stop)
-
-    def push_vars(self, variableDict):
-        """
-        Given a dictionary containing name / value pairs, push those variables
-        to the Jupyter console widget
-        """
-        self.kernel_manager.kernel.shell.push(variableDict)
-
-    def clear(self):
-        """
-        Clears the terminal
-        """
-        self._control.clear()
-
-        # self.kernel_manager
-
-    def print_text(self, text):
-        """
-        Prints some plain text to the console
-        """
-        self._append_plain_text(text)
-
-    def execute_command(self, command):
-        """
-        Execute a command in the frame of the console widget
-        """
-        self._execute(command, False)
-
-
-
-
-
 
 app = None
 use_c_version = True
@@ -212,8 +157,16 @@ def link_all_stacks():
     '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
     logger.info('link_all_stacks >>>>')
     # global cfg.project_data #0619 this was NOT in 0613 commit
-    ensure_proper_data_structure()  # 0712
+    path = os.path.abspath(cfg.project_data['data']['destination_path'])
+    # pathtest1 = path + '/project_data_snapshot_pathtest1_BEFORE.json'
+    # pathtest2 = path + '/project_data_snapshot_pathtest2_AFTER.json'
+    # with open(pathtest1, 'w') as f:
+    #     json.dump(cfg.project_data, f)
+    ensure_proper_data_structure()  #0712 #0802
+    # with open(pathtest2, 'w') as f:
+    #     json.dump(cfg.project_data, f)
     for scale_key in cfg.project_data['data']['scales'].keys():
+        logger.critical('linking scale %s ' % scale_key)
         skip_list = []
         for layer_index in range(len(cfg.project_data['data']['scales'][scale_key]['alignment_stack'])):
             if cfg.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
@@ -273,18 +226,21 @@ def bounding_rect_changed_callback(state):
     
     caller = inspect.stack()[1].function
     # logger.info('bounding_rect_changed_callback | called by %s ' % caller)
-    if cfg.main_window.toggle_bounding_rect_switch == 1:
-        if state:
-            cfg.main_window.hud.post(
-                'Bounding box will be used. Warning: x and y dimensions may grow larger than the source images.')
-            cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = True
-        else:
-            cfg.main_window.hud.post(
-                'Bounding box will not be used (faster). x and y dimensions of generated images will equal the source images.')
-            cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = False
-        # logger.info('  Bounding Rect project_file value saved as:',cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
+    # if cfg.main_window.toggle_bounding_rect_switch == 1:
+    if state:
+        cfg.main_window.hud.post(
+            'Bounding box will be used. Warning: x and y dimensions may grow larger than the source images.')
+        cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = True
     else:
-        pass
+        cfg.main_window.hud.post(
+            'Bounding box will not be used (faster). x and y dimensions of generated images will equal the source images.')
+        cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = False
+        # logger.info('  Bounding Rect project_file value saved as:',cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
+    # else:
+    #     pass
+
+def print_bounding_rect():
+    print(cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
 
 
 def skip_changed_callback(state):  # 'state' is connected to skip toggle
@@ -432,7 +388,7 @@ class CollapsibleBox(QWidget):
         content_animation.setEndValue(content_height)
 
 
-# mainwindow
+#mainwindow
 class MainWindow(QMainWindow):
     def __init__(self, fname=None, panel_roles=None, title="AlignEM-SWiFT"):
 
@@ -458,7 +414,12 @@ class MainWindow(QMainWindow):
         self.mouse_move_callback = None
         self.init_dir = os.getcwd()
 
-
+        fg = self.frameGeometry()
+        cp = QGuiApplication.primaryScreen().availableGeometry().center()
+        fg.moveCenter(cp)
+        self.move(fg.topLeft())
+        logger.info('Center Point of primary monitor: %s' % str(cp))
+        logger.info('Frame Geometry: %s' % str(fg))
         
         logger.info("Initializing Thread Pool")
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
@@ -519,15 +480,15 @@ class MainWindow(QMainWindow):
         
         self.always_generate_images = True
         
-        # std_height = int(22)
-        std_height = 24
-        std_width = int(96)
-        std_button_size = QSize(std_width, std_height)
-        square_button_height = int(30)
-        square_button_width = int(72)
-        square_button_size = QSize(square_button_width, square_button_height)
-        std_input_size = int(56)
-        std_input_size_small = int(36)
+        # self.std_height = int(22)
+        self.std_height = 24
+        self.std_width = int(96)
+        self.std_button_size = QSize(self.std_width, self.std_height)
+        self.square_button_height = int(30)
+        self.square_button_width = int(72)
+        self.square_button_size = QSize(self.square_button_width, self.square_button_height)
+        self.std_input_size = int(56)
+        self.std_input_size_small = int(36)
         
         # titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
@@ -552,19 +513,7 @@ class MainWindow(QMainWindow):
         if cfg.USES_QT6:
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         
-        # logger.info('---------------------\n')
-        
-        def closeEvent(self, event):
-            
-            quit_msg = "Are you sure you want to exit the program?"
-            reply = QMessageBox.question(self, 'Message',
-                                         quit_msg, QMessageBox.Yes, QMessageBox.No)
-            
-            if reply == QMessageBox.Yes:
-                event.accept()
-            else:
-                event.ignore()
-        
+
         # !!!
         # def changeEvent(self, event):
         #     if event.type() == event.WindowStateChange:
@@ -585,379 +534,8 @@ class MainWindow(QMainWindow):
             worker = RunnableServer()
             self.threadpool.start(worker)
         
-        # self.browser.setPage(CustomWebEnginePage(self)) # This is necessary. Clicked links will never open new window.
-        # self.browser.setPage(CustomWebEnginePage(self))
-        
-        # homepage #browserview #webview
-        # self.browser.load(QUrl("https://neuroglancer-demo.appspot.com/#!%7B%22dimensions%22:%7B%22x%22:%5B8e-9%2C%22m%22%5D%2C%22y%22:%5B8e-9%2C%22m%22%5D%2C%22z%22:%5B8e-9%2C%22m%22%5D%7D%2C%22position%22:%5B2914.500732421875%2C3088.243408203125%2C4045%5D%2C%22crossSectionScale%22:3.762185354999915%2C%22projectionOrientation%22:%5B0.31435418128967285%2C0.8142172694206238%2C0.4843378961086273%2C-0.06040274351835251%5D%2C%22projectionScale%22:4593.980956070108%2C%22layers%22:%5B%7B%22type%22:%22image%22%2C%22source%22:%22precomputed://gs://neuroglancer-public-data/flyem_fib-25/image%22%2C%22tab%22:%22source%22%2C%22name%22:%22image%22%7D%2C%7B%22type%22:%22segmentation%22%2C%22source%22:%22precomputed://gs://neuroglancer-public-data/flyem_fib-25/ground_truth%22%2C%22tab%22:%22source%22%2C%22segments%22:%5B%22158571%22%2C%2221894%22%2C%2222060%22%2C%2224436%22%2C%222515%22%5D%2C%22name%22:%22ground-truth%22%7D%5D%2C%22showSlices%22:false%2C%22layout%22:%224panel%22%7D"))
-        # self.browser.load(QUrl("https://github.com/google/neuroglancer"))
-        # self.browser.load(QUrl("https://neuroglancer-demo.appspot.com/#!{'layers':{'original-image':{'type':'image'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/image'_'visible':false}_'corrected-image':{'type':'image'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/image_color_corrected'}_'ground_truth':{'type':'segmentation'_'source':'precomputed://gs://neuroglancer-public-data/kasthuri2011/ground_truth'_'selectedAlpha':0.63_'notSelectedAlpha':0.14_'segments':['3208'_'4901'_'13'_'4965'_'4651'_'2282'_'3189'_'3758'_'15'_'4027'_'3228'_'444'_'3207'_'3224'_'3710']}}_'navigation':{'pose':{'position':{'voxelSize':[6_6_30]_'voxelCoordinates':[5523.99072265625_8538.9384765625_1198.0423583984375]}}_'zoomFactor':22.573112129999547}_'perspectiveOrientation':[-0.004047565162181854_-0.9566211104393005_-0.2268827110528946_-0.1827099621295929]_'perspectiveZoom':340.35867907175077}"))
-        # self.browser.setUrl(QUrl()) # empty/blank URL (white screen)
-        # self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-        # self.browser.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development/docs/user/README.md'))
-        
-        def documentation_view():  # documentationview
-            logger.info("Launching documentation view | MainWindow.documentation_view...")
-            self.stacked_widget.setCurrentIndex(2)
-            self.hud.post("Switching to AlignEM_SWiFT Documentation")
-            # don't force the reload, add home button instead
-            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
-        
-        def documentation_view_home():
-            logger.info("Launching documentation view home | MainWindow.documentation_view_home...")
-            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
-            # self.set_status("AlignEM_SWiFT Documentation")
-        
-        def remote_view():
-            logger.info("Launching remote viewer | MainWindow.remote_view...")
-            self.stacked_widget.setCurrentIndex(4)
-            self.hud.post("Switching to Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
-            self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-        
-        # webgl2
-        def microns_view():
-            logger.info("Launching microns viewer | MainWindow.microns_view...")
-            self.stacked_widget.setCurrentIndex(5)
-            self.browser_microns.setUrl(QUrl(
-                'https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
-            # self.set_status("MICrONS (http://layer23.microns-explorer.org)")
-            # self.browser_microns.setUrl(QUrl('https://get.webgl.org/webgl2/'))
-            # self.set_status("Checking WebGL2.0 support.")
-        
-        def reload_ng():
-            logger.info("Reloading Neuroglancer...")
-            ng_view()
-        
-        def reload_remote():
-            logger.info("Reloading remote viewer...")
-            remote_view()
-        
-        def exit_ng():
-            logger.info("Exiting Neuroglancer...")
-            self.stacked_widget.setCurrentIndex(0)
-            self.set_idle()
-        
-        def exit_docs():
-            logger.info("Exiting docs...")
-            self.stacked_widget.setCurrentIndex(0)
-            self.set_idle()
-        
-        def exit_remote():
-            logger.info("Exiting remote viewer...")
-            self.stacked_widget.setCurrentIndex(0)
-            self.set_idle()
-        
-        def exit_demos():
-            logger.info("Exiting demos...")
-            self.stacked_widget.setCurrentIndex(0)
-            self.set_idle()
-        
-        def print_state_ng():
-            # viewer_state = json.loads(str(self.viewer.state))
-            logger.info(self.viewer.state)
-            
-            # logger.info("Viewer.url : ", self.viewer.get_viewer_url)
-            # logger.info("Viewer.screenshot : ", self.viewer.screenshot)
-            # logger.info("Viewer.txn : ", self.viewer.txn)
-            # logger.info("Viewer.actions : ", self.viewer.actions)
-            # time.sleep(1)
-            # self.set_status("Viewing aligned images in Neuroglancer.")
-        
-        def print_url_ng():
-            print(ng.to_url(self.viewer.state))
-            # logger.info("\nURL : " + self.viewer.get_viewer_url() + "\n")
-            
-            # logger.info("Viewer.url : ", self.viewer.get_viewer_url)
-            # logger.info("Viewer.screenshot : ", self.viewer.screenshot)
-            # logger.info("Viewer.txn : ", self.viewer.txn)
-            # logger.info("Viewer.actions : ", self.viewer.actions)
-            # time.sleep(1)
-            # self.set_status("Viewing aligned images in Neuroglancer.")
-        
-        # def screenshot_ng():
-        #     self.set_status("Taking screenshot...")
-        #     ScreenshotSaver.capture(self)
-        
-        def blend_ng():
-            logger.info("blend_ng():")
-            # self.set_status("Making blended image...")
-        
-        def ng_view_2():
-            logger.info()
-        
-        # ngview
-        def ng_view():  # ng_view #ngview #neuroglancer
-            logger.info("ng_view() >>>>>>>>")
-            logger.info("# of aligned images                  : ", get_num_aligned())
-            if not are_aligned_images_generated():
-                self.hud.post('This scale must be aligned and exported before viewing in Neuroglancer')
-                
-                show_warning("No Alignment Found",
-                             "This scale must be aligned and exported before viewing in Neuroglancer.\n\n"
-                             "Typical workflow:\n"
-                             "(1) Open a project or import images and save.\n"
-                             "(2) Generate a set of scaled images and save.\n"
-                             "--> (3) Align each scale starting with the coarsest.\n"
-                             "--> (4) Export alignment to Zarr format.\n"
-                             "(5) View data in Neuroglancer client")
-                logger.info(
-                    "Warning | This scale must be aligned and exported before viewing in Neuroglancer - Returning")
-                self.set_idle()
-                return
-            else:
-                logger.info('Alignment at this scale exists - Continuing')
-            
-            if not is_cur_scale_exported():
-                self.hud.post('Alignment must be exported before it can be viewed in Neuroglancer')
-                
-                show_warning("No Export Found",
-                             "Alignment must be exported before it can be viewed in Neuroglancer.\n\n"
-                             "Typical workflow:\n"
-                             "(1) Open a project or import images and save.\n"
-                             "(2) Generate a set of scaled images and save.\n"
-                             "(3) Align each scale starting with the coarsest.\n"
-                             "--> (4) Export alignment to Zarr format.\n"
-                             "(5) View data in Neuroglancer client")
-                logger.info(
-                    "WARNING | Alignment must be exported before it can be viewed in Neuroglancer - Returning")
-                self.set_idle()
-                return
-            else:
-                logger.info('Exported alignment at this scale exists - Continuing')
-            
-            ds_name = "aligned_" + get_cur_scale_key()
-            destination_path = os.path.abspath(cfg.project_data['data']['destination_path'])
-            zarr_project_path = os.path.join(destination_path, "project.zarr")
-            zarr_ds_path = os.path.join(destination_path, "project.zarr", ds_name)
-            
-            logger.info('zarr_project_path                    :', zarr_project_path)
-            logger.info('zarr_ds_path                         :', zarr_ds_path)
-            logger.info('zarr_ds_path exists?                 :', bool(os.path.isdir(zarr_ds_path)))
-            
-            self.hud.post('Loading Neuroglancer viewer...')
-            self.hud.post("  source: '%s'" % zarr_ds_path)
-            
-            if 'server' in locals():
-                logger.info('server is already running')
-            else:
-                # self.browser.setUrl(QUrl()) #empty page
-                logger.info('no server found in local namespace -> starting RunnableServer() worker')
-                worker = RunnableServer()
-                self.threadpool.start(worker)
-            
-            os.chdir(zarr_project_path)  # refactor
-            
-            Image.MAX_IMAGE_PIXELS = None
-            view = 'single'
-            bind = '127.0.0.1'
-            port = 9000
-            res_x = 2
-            res_y = 2
-            res_z = 50
-            
-            src = zarr_project_path
-            
-            # LOAD METADATA - .zarray
-            logger.info('loading metadata from .zarray (array details) file')
-            zarray_path = os.path.join(src, ds_name, "s0", ".zarray")
-            logger.info("zarray_path : ", zarray_path)
-            with open(zarray_path) as f:
-                zarray_keys = json.load(f)
-            chunks = zarray_keys["chunks"]
-            
-            # cname = zarray_keys["compressor"]["cname"] #jy
-            # clevel = zarray_keys["compressor"]["clevel"] #jy
-            shape = zarray_keys["shape"]
-            logger.info("shape : ", shape)
-            
-            # LOAD META DATA - .zattrs
-            logger.info('loading metadata from .zattrs (attributes) file')
-            zattrs_path = os.path.join(src, ds_name, "s0", ".zattrs")
-            with open(zattrs_path) as f:
-                zattrs_keys = json.load(f)
-            logger.info("zattrs_path : ", zattrs_path)
-            resolution = zattrs_keys["resolution"]
-            # scales = zattrs_keys["scales"]  #0405 #0406 #remove
-            # logger.info("scales : ", scales)  #0405 #0406 #remove
-            
-            ds_ref = "img_ref_zarr"
-            ds_base = "img_base_zarr"
-            ds_aligned = ds_name
-            ds_blended = "img_blended_zarr"
-            
-            logger.info('initializing neuroglancer.Viewer()')
-            # viewer = ng.Viewer()
-            self.viewer = ng.Viewer()
-            
-            logger.info('looking for aligned data')
-            data_aligned = []
-            aligned_scale_paths = glob(os.path.join(src, ds_aligned) + "/s*")
-            for s in aligned_scale_paths:
-                scale = os.path.join(ds_aligned, os.path.basename(s))
-                logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
-                data_aligned.append(open_ds(src, scale))
-            
-            if view == 'row':
-                logger.info("Looking for REF scale directories...")
-                data_ref = []
-                ref_scale_paths = glob(os.path.join(src, ds_ref) + "/s*")
-                for s in ref_scale_paths:
-                    scale = os.path.join(ds_ref, os.path.basename(s))
-                    logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
-                    data_ref.append(open_ds(src, scale))
-                
-                logger.info('Looking for BASE scale directories...')
-                data_base = []
-                base_scale_paths = glob(os.path.join(src, ds_base) + "/s*")
-                for s in base_scale_paths:
-                    scale = os.path.join(ds_base, os.path.basename(s))
-                    logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
-                    data_base.append(open_ds(src, scale))
-            
-            logger.info('defining Neuroglancer coordinate space')
-            dimensions = ng.CoordinateSpace(
-                names=['x', 'y', 'z'],
-                units='nm',
-                scales=[res_x, res_y, res_z],
-            )
-            
-            # https://github.com/google/neuroglancer/blob/master/src/neuroglancer/viewer.ts
-            logger.info('updating viewer.txn()')
-            with self.viewer.txn() as s:
-                
-                # s.cross_section_background_color = "#ffffff"
-                s.cross_section_background_color = "#000000"
-                s.dimensions = dimensions
-                # s.perspective_zoom = 300
-                # s.position = [0.24, 0.095, 0.14]
-                # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
-                
-                # temp = np.zeros_like(data_ref)
-                # layer = ng.Layer(temp)
-                
-                # logger.info("type(data_aligned) = ", type(data_aligned))  # <class 'list'>
-                # logger.info("type(data_aligned[0]) = ", type(data_aligned[0]))  # <class 'daisy.array.Array'>
-                # logger.info("len(data_aligned) = ", len(data_aligned))  # 2
-                
-                array = np.asarray(data_aligned)
-                # logger.info("type(array) = ", type(array))                       # <class 'numpy.ndarray'>
-                # logger.info("array.shape = ", array.shape)                       # (2,)
-                # logger.info("array.size = ", array.size)                         # 2
-                # logger.info("array.ndim = ", array.ndim)                         # 1
-                
-                logger.info('type(np.asarray(data_aligned))       :', type(np.asarray(data_aligned)))
-                logger.info('np.asarray(data_aligned).shape       :', np.asarray(data_aligned).shape)
-                logger.info('np.asarray(data_aligned).size        :', np.asarray(data_aligned).size)
-                logger.info('np.asarray(data_aligned).ndim        :', np.asarray(data_aligned).ndim)
-                
-                logger.info("'view' is set to                     :", view)
-                # only for 3 pane view
-                if view == 'row':
-                    add_layer(s, data_ref, 'ref')
-                    add_layer(s, data_base, 'base')
-                
-                add_layer(s, data_aligned, 'aligned')
-                
-                ###data_panel_layout_types: frozenset(['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'])
-                
-                # s.selectedLayer.visible = False
-                # s.layers['focus'].visible = False
-                
-                # view = "single"
-                if view == "row":
-                    logger.info("view is 'row'")
-                    
-                    s.layers['focus'].visible = True
-                    
-                    # [
-                    #     ng.LayerGroupViewer(layers=["focus"], layout='xy'),
-                    
-                    # temp = np.zeros_like(data_ref)
-                    # #layer = ng.Layer()
-                    # #layer = ng.ManagedLayer
-                    # s.layers['focus'] = ng.LocalVolume(temp)
-                    # s.layers['focus'] = ng.ManagedLayer(source="zarr://http://localhost:9000/img_blended_zarr",voxel_size=[i * .00000001 for i in resolution])
-                    s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
-                    s.layout = ng.column_layout(
-                        [
-                            ng.row_layout(
-                                [
-                                    ng.LayerGroupViewer(layers=["focus"], layout='xy'),
-                                ]
-                            ),
-                            
-                            ng.row_layout(
-                                [
-                                    ng.LayerGroupViewer(layers=['ref'], layout='xy'),
-                                    ng.LayerGroupViewer(layers=['base'], layout='xy'),
-                                    ng.LayerGroupViewer(layers=['aligned'], layout='xy'),
-                                ]
-                            ),
-                        ]
-                    )
-                    
-                    # s.layout = ng.column_layout(
-                    #
-                    #     [
-                    #         ng.LayerGroupViewer(layers=["focus"], layout='xy'),
-                    #
-                    # s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
-                    #
-                    # ng.row_layout(
-                    #     [
-                    #         ng.LayerGroupViewer(layers=["ref"], layout='xy'),
-                    #         ng.LayerGroupViewer(layers=["base"], layout='xy'),
-                    #         ng.LayerGroupViewer(layers=["aligned"], layout='xy'),
-                    #     ]
-                    # )
-                    #
-                    #
-                    #
-                    #
-                    #     ]
-                    #
-                    # ]
-                    # # )
-                
-                # single image view
-                if view == "single":
-                    s.layout = ng.column_layout(
-                        [
-                            ng.LayerGroupViewer(
-                                layout='xy',
-                                layers=["aligned"]),
-                        ]
-                    )
-            
-            logger.info('loading Neuroglancer callbacks       :', self.viewer.config_state)
-            self.viewer.actions.add('get_mouse_coords_', get_mouse_coords)
-            # self.viewer.actions.add('unchunk_', unchunk)
-            # self.viewer.actions.add('blend_', blend)
-            with self.viewer.config_state.txn() as s:
-                s.input_event_bindings.viewer['keyt'] = 'get_mouse_coords_'
-                # s.input_event_bindings.viewer['keyu'] = 'unchunk_'
-                # s.input_event_bindings.viewer['keyb'] = 'blend_'
-                # s.status_messages['message'] = 'Welcome to AlignEM_SWiFT!'
-                
-                s.show_ui_controls = True
-                s.show_panel_borders = True
-                s.viewer_size = None
-            
-            viewer_url = str(self.viewer)
-            # viewer_url = self.viewer
-            self.browser.setUrl(QUrl(viewer_url))
-            self.stacked_widget.setCurrentIndex(1)
-            
-            # To modify the state, use the viewer.txn() function, or viewer.set_state
-            logger.info('Viewer.config_state                  :', self.viewer.config_state)
-            # logger.info('viewer URL                           :', self.viewer.get_viewer_url())
-            # logger.info('Neuroglancer view (remote viewer)                :', ng.to_url(viewer.state))
-            
-            cur_scale = get_cur_scale_key()
-            self.hud.post('Viewing aligned images at scale ' + cur_scale[-1] + ' in Neuroglancer.')
-            
-            logger.info("<<<<<<<<<<<<<<<< EXITING ng_view()")
-        
+        # self.browser.setPage(CustomWebEnginePage(self)) # necessary. Clicked links will never open new window.
+
         if panel_roles != None:
             cfg.project_data['data']['panel_roles'] = panel_roles
         
@@ -1027,909 +605,11 @@ class MainWindow(QMainWindow):
         self.inspector_cpu.setContentLayout(lay)
         
         dock_vlayout.addStretch()
-        
-        '''------------------------------------------
-        PANEL 1: PROJECT #projectpanel
-        ------------------------------------------'''
-        
-        self.new_project_button = QPushButton(" New")
-        self.new_project_button.clicked.connect(self.new_project)
-        self.new_project_button.setFixedSize(square_button_size)
-        # self.new_project_button.setIcon(qta.icon("ei.stackoverflow", color=cfg.ICON_COLOR))
-        # self.new_project_button.setIcon(qta.icon("ph.stack-fill", color=cfg.ICON_COLOR))
-        self.new_project_button.setIcon(qta.icon("msc.add", color=cfg.ICON_COLOR))
-        # self.new_project_button.setIconSize(QSize(20, 20))
-        
-        self.open_project_button = QPushButton(" Open")
-        self.open_project_button.clicked.connect(self.open_project)
-        self.open_project_button.setFixedSize(square_button_size)
-        self.open_project_button.setIcon(qta.icon("fa.folder-open", color=cfg.ICON_COLOR))
-        
-        self.save_project_button = QPushButton(" Save")
-        self.save_project_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.save_project_button.clicked.connect(self.save_project)
-        self.save_project_button.setFixedSize(square_button_size)
-        self.save_project_button.setIcon(qta.icon("mdi.content-save", color=cfg.ICON_COLOR))
-        
-        # self.documentation_button = QPushButton("Docs")
-        self.documentation_button = QPushButton(" Help")
-        self.documentation_button.clicked.connect(documentation_view)
-        self.documentation_button.setFixedSize(square_button_size)
-        # self.documentation_button.setIcon(qta.icon("fa.github", color=cfg.ICON_COLOR))
-        self.documentation_button.setIcon(qta.icon("mdi.help", color=cfg.ICON_COLOR))
-        
-        self.exit_app_button = QPushButton(" Exit")
-        self.exit_app_button.clicked.connect(self.exit_app)
-        self.exit_app_button.setFixedSize(square_button_size)
-        # self.exit_app_button.setIcon(qta.icon("mdi.exit-to-app", color=cfg.ICON_COLOR))
-        self.exit_app_button.setIcon(qta.icon("mdi6.close", color=cfg.ICON_COLOR))
-        
-        self.remote_viewer_button = QPushButton("Neuroglancer\nServer")
-        self.remote_viewer_button.clicked.connect(remote_view)
-        self.remote_viewer_button.setFixedSize(square_button_size)
-        self.remote_viewer_button.setStyleSheet("font-size: 9px;")
-        
-        self.project_functions_layout = QGridLayout()
-        self.project_functions_layout.setContentsMargins(10, 25, 10, 5)
-        # self.project_functions_layout.setSpacing(10)  # ***
-        self.project_functions_layout.addWidget(self.new_project_button, 0, 0, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.project_functions_layout.addWidget(self.open_project_button, 0, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.project_functions_layout.addWidget(self.save_project_button, 0, 2, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.project_functions_layout.addWidget(self.exit_app_button, 1, 0, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.project_functions_layout.addWidget(self.documentation_button, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.project_functions_layout.addWidget(self.remote_viewer_button, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        '''------------------------------------------
-        PANEL 2: DATA SELECTION & SCALING
-        ------------------------------------------'''
-        # datapanel #scalingpanel #importpanel
-        
-        self.import_images_button = QPushButton(" Import\n Images")
-        self.import_images_button.setToolTip('Import TIFF images.')
-        self.import_images_button.clicked.connect(self.import_images)
-        self.import_images_button.setFixedSize(square_button_size)
-        # self.import_images_button.setIcon(qta.icon("ph.stack-fill", color=cfg.ICON_COLOR))
-        self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=cfg.ICON_COLOR))
-        self.import_images_button.setStyleSheet("font-size: 10px;")
-        # self.import_images_button.setFixedSize(square_button_width, std_height)
-        
-        self.center_button = QPushButton('Center')
-        self.center_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.center_button.setToolTip('Center all images.')
-        self.center_button.clicked.connect(self.center_all_images)
-        self.center_button.setFixedSize(square_button_width, std_height)
-        self.center_button.setStyleSheet("font-size: 10px;")
-        
-        self.project_view_button = QPushButton('Inspect\nJSON')
-        self.project_view_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.project_view_button.setToolTip('Inspect the project dictionary in memory.')
-        self.project_view_button.clicked.connect(self.project_view_callback)
-        self.project_view_button.setFixedSize(square_button_size)
-        self.project_view_button.setStyleSheet("font-size: 10px;")
-        
-        self.print_sanity_check_button = QPushButton("Print\nSanity Check")
-        self.print_sanity_check_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.print_sanity_check_button.clicked.connect(print_sanity_check)
-        self.print_sanity_check_button.setFixedSize(square_button_size)
-        self.print_sanity_check_button.setStyleSheet("font-size: 9px;")
-        
-        self.plot_snr_button = QPushButton("Plot SNR")
-        self.plot_snr_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.plot_snr_button.clicked.connect(self.show_snr_plot)
-        self.plot_snr_button.setFixedSize(square_button_size)
-        # self.plot_snr_button.setStyleSheet("font-size: 9px;")
-        
-        self.actual_size_button = QPushButton('Actual Size')
-        self.actual_size_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.actual_size_button.setToolTip('Actual-size all images.')
-        self.actual_size_button.clicked.connect(self.actual_size_callback)
-        self.actual_size_button.setFixedSize(square_button_width, std_height)
-        self.actual_size_button.setStyleSheet("font-size: 10px;")
-        
-        self.size_buttons_vlayout = QVBoxLayout()
-        self.size_buttons_vlayout.addWidget(self.center_button)
-        self.size_buttons_vlayout.addWidget(self.actual_size_button)
-        
-        self.generate_scales_button = QPushButton('Generate\nScales')
-        self.generate_scales_button.setToolTip('Generate scale pyramid with chosen # of levels.')
-        # self.generate_scales_button.clicked.connect(generate_scales_queue)
-        self.generate_scales_button.clicked.connect(self.run_scaling)
-        # self.generate_scales_button.clicked.connect(self.startProgressBar)
-        
-        # popupprogressbar
-        
-        self.generate_scales_button.setFixedSize(square_button_size)
-        self.generate_scales_button.setStyleSheet("font-size: 10px;")
-        self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color=cfg.ICON_COLOR))
-        self.generate_scales_button.setEnabled(False)
-        
-        # self.clear_all_skips_button = QPushButton('Reset')
-        self.clear_all_skips_button = QPushButton()
-        self.clear_all_skips_button.setToolTip('Reset skips (keep all)')
-        self.clear_all_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.clear_all_skips_button.clicked.connect(self.clear_all_skips_callback)
-        self.clear_all_skips_button.setFixedSize(std_height, std_height)
-        self.clear_all_skips_button.setIcon(qta.icon("mdi.undo", color=cfg.ICON_COLOR))
-        
-        self.toggle_skip = ToggleSwitch()
-        self.skip_label = QLabel("Include:")
-        # self.skip_label.setPointSize(9)
-        # self.skip_label.setFixedSize(80, 30)
-        
-        self.skip_layout = QHBoxLayout()
-        self.skip_layout.setAlignment(Qt.AlignCenter)
-        self.skip_layout.addStretch()
-        self.skip_layout.addWidget(self.skip_label)
-        self.skip_layout.addWidget(self.toggle_skip)
-        self.skip_layout.addStretch(4)
-        self.toggle_skip.setToolTip('Skip current image (do not align)')
-        self.skip_label.setToolTip('Skip current image (do not align)')
-        # self.toggle_skip.setChecked(True)
-        self.toggle_skip.setChecked(False)
-        # self.toggle_skip.setH_scale(.9)
-        # self.toggle_skip.setV_scale(1.0)
-        self.toggle_skip.toggled.connect(skip_changed_callback)
-        
-        self.jump_label = QLabel("Go to:")
-        self.jump_input = QLineEdit(self)
-        self.jump_input.setToolTip('Jump to image #')
-        self.jump_input.setAlignment(Qt.AlignmentFlag.AlignHCenter)
-        # self.jump_input.setText("--")
-        self.jump_input.setFixedSize(std_input_size, std_height)
-        self.jump_validator = QIntValidator()
-        self.jump_input.setValidator(self.jump_validator)
-        # self.jump_input.returnPressed.connect(self.jump_to_layer())
-        self.jump_input.returnPressed.connect(lambda: self.jump_to_layer())  # must be lambda for some reason
-        # self.jump_input.editingFinished.connect(self.jump_to_layer())
-        # self.jump_hlayout = QHBoxLayout()
-        # self.jump_hlayout.addWidget(jump_label, alignment=alignEM.AlignmentFlag.AlignLeft)
-        # self.jump_hlayout.addWidget(self.jump_input, alignment=alignEM.AlignmentFlag.AlignRight)
-        
-        self.images_and_scaling_layout = QGridLayout()
-        self.images_and_scaling_layout.setContentsMargins(10, 25, 10, 5)  # tag23
-        # self.images_and_scaling_layout.setSpacing(10) # ***
-        self.images_and_scaling_layout.addWidget(self.import_images_button, 0, 0,
-                                                 alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.images_and_scaling_layout.addWidget(self.center_button, 0, 1, alignment=alignEM.AlignmentFlag.AlignHCenter)
-        self.images_and_scaling_layout.addLayout(self.size_buttons_vlayout, 0, 1,
-                                                 alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.images_and_scaling_layout.addWidget(self.generate_scales_button, 0, 2,
-                                                 alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.toggle_reset_hlayout = QHBoxLayout()
-        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button)
-        # self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=alignEM.AlignmentFlag.AlignLeft)
-        # self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=alignEM.AlignmentFlag.AlignLeft)
-        self.toggle_reset_hlayout.addLayout(self.skip_layout)
-        self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignmentFlag.AlignRight)
-        self.toggle_reset_hlayout.addWidget(self.jump_input, alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.toggle_reset_hlayout.addLayout(self.jump_hlayout, alignment=alignEM.AlignmentFlag.AlignHCenter)
-        # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=alignEM.AlignmentFlag.AlignHCenter)
-        # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignHCenter)
-        self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3)
-        self.images_and_scaling_layout.addWidget(self.project_view_button, 2, 0)
-        self.images_and_scaling_layout.addWidget(self.plot_snr_button, 2, 1)
-        self.images_and_scaling_layout.addWidget(self.print_sanity_check_button, 2, 2)
-        # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=alignEM.AlignmentFlag.AlignRight)
-        
-        '''------------------------------------------
-        PANEL 3: ALIGNMENT
-        ------------------------------------------'''
-        # alignmentpanel
-        
-        self.scales_combobox = QComboBox(self)
-        # self.scales_combobox.addItems([skip_list])
-        # self.scales_combobox.addItems(['--'])
-        self.scales_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.scales_combobox.setFixedSize(std_button_size)
-        self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
-        
-        self.affine_combobox = QComboBox(self)
-        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
-        self.affine_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.affine_combobox.setFixedSize(std_button_size)
-        
-        # ^^ this should perhaps be connected to a function that updates python_swiftir in project file (immediately).. not sure yet
-        # on second thought, the selected option here ONLY matters at alignment time
-        # in the meantime, best temporary functionality is to just make sure that whatever item is selected when the
-        #   alignment button is pressed will always be the python_swiftir used for alignment
-        # saving python_swiftir data to project file might ultimately be needed, but this is good for now.
-        
-        # Whitening LineEdit
-        self.whitening_label = QLabel("Whitening:")
-        self.whitening_input = QLineEdit(self)
-        self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.whitening_input.setText("-0.68")
-        self.whitening_input.setFixedWidth(std_input_size)
-        self.whitening_input.setFixedHeight(std_height)
-        self.whitening_input.setValidator(QDoubleValidator(-5.0, 5.0, 2, self))
-        tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
-        self.whitening_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        self.whitening_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        self.whitening_grid = QGridLayout()
-        self.whitening_grid.setContentsMargins(0, 0, 0, 0)
-        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        # Swim Window LineEdit
-        self.swim_label = QLabel("SWIM Window:")
-        self.swim_input = QLineEdit(self)
-        self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.swim_input.setText("0.8125")
-        self.swim_input.setFixedWidth(std_input_size)
-        self.swim_input.setFixedHeight(std_height)
-        self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
-        tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
-        self.swim_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        self.swim_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        self.swim_grid = QGridLayout()
-        self.swim_grid.setContentsMargins(0, 0, 0, 0)
-        self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        # Apply All Button
-        # self.apply_all_label = QLabel("Apply Settings All:")
-        self.apply_all_label = QLabel("Apply All:")
-        # self.apply_all_label.setFont(QFont('Terminus', 12, QFont.Bold))
-        # self.apply_all_button = QPushButton('Apply To All')
-        self.apply_all_button = QPushButton()
-        self.apply_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.apply_all_button.setToolTip('Apply these settings to the entire project.')
-        self.apply_all_button.clicked.connect(self.apply_all_callback)
-        # self.apply_all_button.setFixedSize(std_button_size)
-        self.apply_all_button.setFixedSize(std_height, std_height)
-        # self.apply_all_button.setIcon(qta.icon("fa.mail-forward", color=cfg.ICON_COLOR))
-        self.apply_all_button.setIcon(qta.icon("mdi6.transfer", color=cfg.ICON_COLOR))
-        
-        self.apply_all_layout = QGridLayout()
-        self.apply_all_layout.setContentsMargins(0, 0, 0, 0)
-        self.apply_all_layout.addWidget(self.apply_all_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.apply_all_layout.addWidget(self.apply_all_button, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        # Next Scale Button
-        self.next_scale_button = QPushButton('Next Scale ')
-        self.next_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.next_scale_button.setToolTip('Go forward to the next scale.')
-        self.next_scale_button.clicked.connect(self.next_scale_button_callback)
-        self.next_scale_button.setFixedSize(std_button_size)
-        self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.next_scale_button.setIcon(qta.icon("ri.arrow-right-line", color=cfg.ICON_COLOR))
-        # self.next_scale_button.setStyleSheet("font-size: 10px;")
-        
-        # Previous Scale Button
-        self.prev_scale_button = QPushButton(' Prev Scale')
-        self.prev_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.prev_scale_button.setToolTip('Go back to the previous scale.')
-        self.prev_scale_button.clicked.connect(self.prev_scale_button_callback)
-        self.prev_scale_button.setFixedSize(std_button_size)
-        # self.prev_scale_button.setFixedSize(square_button_width, std_height)
-        self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color=cfg.ICON_COLOR))
-        # self.prev_scale_button.setStyleSheet("font-size: 10px;")
-        
-        # Align All Button
-        self.align_all_button = QPushButton('Align Stack')
-        self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.align_all_button.setToolTip('Align This Scale')
-        # self.align_all_button.clicked.connect(align_all_or_some) #orig
-        # self.align_all_button.clicked.connect(self.run_alignment)
-        self.align_all_button.clicked.connect(self.run_alignment)
-        # self.align_all_button.clicked.connect(self.startProgressBar)
-        
-        # self.align_all_button.setFixedSize(square_button_width, std_height)
-        self.align_all_button.setFixedSize(std_button_size)
-        # self.align_all_button.setIcon(qta.icon("mdi.format-align-middle", color=cfg.ICON_COLOR))
-        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color=cfg.ICON_COLOR))
-        # self.align_all_button.setStyleSheet("font-size: 10px;")
-        
-        # pixmap = getattr(QStyle, 'SP_MediaPlay')
-        # icon = self.style().standardIcon(pixmap)
-        # self.align_all_button.setIcon(icon)
-        # self.align_all_button.setLayoutDirection(alignEM.RightToLeft)
-        
-        
-        self.alignment_status_label = QLabel()
-        self.alignment_status_label.setText("Is Aligned: ")
-        self.alignment_status_label.setStyleSheet("""color: #F3F6FB;""")
 
-        self.align_label_resolution = QLabel()
-        self.align_label_resolution.setText('[img size]')
-        self.align_label_resolution.setStyleSheet("""color: #F3F6FB;""")
-
-        self.align_label_affine = QLabel()
-        self.align_label_affine.setText('Initialize Affine')
-        self.align_label_affine.setStyleSheet("""color: #F3F6FB;""")
-
-        self.align_label_scales_remaining = QLabel()
-        self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
-        self.align_label_scales_remaining.setStyleSheet("""color: #F3F6FB;""")
-        self.alignment_status_label.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_resolution.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_affine.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_scales_remaining.setFont(QFont('Terminus', 12, QFont.Bold))
-        # self.alignment_status_label.hide()
-        # self.align_label_resolution.hide()
-        # self.align_label_affine.hide()
-        # self.align_label_scales_remaining.hide()
-        
-        self.alignment_status_label.setToolTip('Alignment status')
-        self.alignment_status_checkbox = QRadioButton()
-        self.alignment_status_checkbox.setEnabled(False)
-        self.alignment_status_checkbox.setToolTip('Alignment status')
-        # self.alignment_status_checkbox.hide()
-        
-        self.alignment_status_layout = QHBoxLayout()
-        self.alignment_status_layout.addWidget(self.alignment_status_label)
-        self.alignment_status_layout.addWidget(self.alignment_status_checkbox)
-        
-        self.align_details_layout = QGridLayout()
-        self.align_details_layout.addWidget(self.align_label_resolution, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.align_details_layout.addWidget(self.align_label_affine, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.align_details_layout.addLayout(self.alignment_status_layout, 0, 1, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.align_details_layout.addWidget(self.align_label_scales_remaining, 1, 1,
-                                            alignment=Qt.AlignmentFlag.AlignLeft)
-        self.align_details_layout.setContentsMargins(5, 5, 15, 5)
-        
-        # Auto-generate Toggle
-        # Current implementation is not data-driven.
-        self.auto_generate_label = QLabel("Auto-generate Images:")
-        self.auto_generate_label.setToolTip('Automatically generate aligned images.')
-        self.toggle_auto_generate = ToggleSwitch()  # toggleboundingrect
-        self.toggle_auto_generate.setToolTip('Automatically generate aligned images.')
-        self.toggle_auto_generate.setChecked(True)
-        # self.toggle_auto_generate.setV_scale(.6)
-        # self.toggle_auto_generate.setH_scale(.8)
-        self.toggle_auto_generate.toggled.connect(self.toggle_auto_generate_callback)
-        self.toggle_auto_generate_hlayout = QHBoxLayout()
-        self.toggle_auto_generate_hlayout.addWidget(self.auto_generate_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.toggle_auto_generate_hlayout.addWidget(self.toggle_auto_generate, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        # self.scale_tabs = QTabWidget()
-        self.alignment_layout = QGridLayout()
-        self.alignment_layout.setContentsMargins(10, 25, 10, 0)  # tag23
-        self.alignment_layout.addLayout(self.swim_grid, 0, 0, 1, 2)
-        self.alignment_layout.addLayout(self.whitening_grid, 1, 0, 1, 2)
-        self.alignment_layout.addWidget(self.prev_scale_button, 0, 2)
-        self.alignment_layout.addWidget(self.next_scale_button, 1, 2)
-        self.alignment_layout.addLayout(self.apply_all_layout, 2, 0, 1, 2)
-        self.alignment_layout.addWidget(self.align_all_button, 2, 2)
-        # self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 3, 0)
-        self.align_details_layout_tweak = QVBoxLayout()
-        self.align_details_layout_tweak.setAlignment(Qt.AlignCenter)
-        # layout.addStretch()
-        self.align_line = QFrame()
-        self.align_line.setGeometry(QRect(60, 110, 751, 20))
-        self.align_line.setFrameShape(QFrame.HLine)
-        self.align_line.setFrameShadow(QFrame.Sunken)
-        self.align_line.setStyleSheet("""background-color: #455364;""")
-        # self.align_line.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
-        # self.align_line.setLineWidth(3)
-        # self.align_details_gb = QGroupBox()
-        # self.align_details_gb.setLayout(self.align_details_layout_tweak)
-        
-        self.align_details_layout_tweak.addWidget(self.align_line)
-        self.align_details_layout_tweak.addLayout(self.align_details_layout)
-        self.align_details_layout_tweak.setContentsMargins(0, 10, 0, 0)
-        # self.alignment_layout.addLayout(self.align_details_layout_tweak, 3, 0, 1, 3)
-        self.alignment_layout.addLayout(self.align_details_layout_tweak, 3, 0, 1, 3)
-        
-        '''------------------------------------------
-        PANEL 3.5: Post-alignment
-        ------------------------------------------'''
-        # postalignmentpanel
-        
-        # Null Bias combobox
-        self.null_bias_label = QLabel("Bias:")
-        tip = 'Polynomial bias (default=None). Note: This affects the alignment and the pixel dimensions of the generated images.'
-        wrapped = "\n".join(textwrap.wrap(tip, width=35))
-        self.null_bias_label.setToolTip(wrapped)
-        self.null_bias_combobox = QComboBox(self)
-        self.null_bias_combobox.setToolTip(wrapped)
-        self.null_bias_combobox.setToolTip('Polynomial bias (default=None)')
-        self.null_bias_combobox.addItems(['None', '0', '1', '2', '3', '4'])
-        self.null_bias_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.null_bias_combobox.setFixedSize(std_button_size)
-        self.null_bias_combobox.setFixedSize(72, std_height)
-        
-        self.poly_order_hlayout = QHBoxLayout()
-        self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.poly_order_hlayout.addWidget(self.null_bias_combobox, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        # Bounding Box toggle
-        self.bounding_label = QLabel("Bounding Box:")
-        tip = 'Bounding rectangle (default=ON). Caution: Turning this OFF will result in images that are the same size as the source images but may have missing data, while turning this ON will result in no missing data but may significantly increase the size of the generated images.'
-        wrapped = "\n".join(textwrap.wrap(tip, width=35))
-        self.bounding_label.setToolTip(wrapped)
-        self.toggle_bounding_rect_switch = 1
-        self.toggle_bounding_rect = ToggleSwitch()
-        self.toggle_bounding_rect.setToolTip(wrapped)
-        # self.toggle_bounding_rect.setChecked(True)
-        # self.toggle_bounding_rect.setV_scale(.6)
-        # self.toggle_bounding_rect.setH_scale(.8)
-        self.toggle_bounding_rect.toggled.connect(bounding_rect_changed_callback)
-        self.toggle_bounding_hlayout = QHBoxLayout()
-        self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        # Regenerate Button
-        # mdi6.reload
-        self.regenerate_label = QLabel('(Re)generate:')
-        self.regenerate_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.regenerate_label.setToolTip('Regenerate aligned with adjusted settings')
-        # self.regenerate_button = QPushButton('(Re-)Generate')
-        self.regenerate_button = QPushButton()
-        self.regenerate_button.setToolTip('Regenerate aligned with adjusted settings')
-        # self.regenerate_button.setIcon(qta.icon("fa.refresh", color=cfg.ICON_COLOR))
-        self.regenerate_button.setIcon(qta.icon("ri.refresh-line", color=cfg.ICON_COLOR))
-        # self.regenerate_load_image_workerbutton.clicked.connect(regenerate_aligns)
-        self.regenerate_button.clicked.connect(self.run_regenerate_alignment)
-        self.regenerate_button.setFixedSize(std_height, std_height)
-        
-        self.regenerate_hlayout = QHBoxLayout()
-        self.regenerate_hlayout.addWidget(self.regenerate_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.regenerate_hlayout.addWidget(self.regenerate_button, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        # pixmap = getattr(QStyle, 'SP_BrowserReload')
-        # icon = self.style().standardIcon(pixmap)
-        # self.regenerate_button.setIcon(icon)
-        # # self.regenerate_button.setLayoutDirection(alignEM.RightToLeft)
-        self.postalignment_note = QLabel("Note: These settings adjust,\nbut do not alter the initial\nalignment.")
-        self.postalignment_note.setFont(QFont('Arial', 11, QFont.Light))
-        self.postalignment_note.setContentsMargins(0, 0, 0, 0)
-        self.postalignment_layout = QGridLayout()
-        self.postalignment_layout.setContentsMargins(10, 25, 10, 5)
-        
-        self.postalignment_layout.addLayout(self.poly_order_hlayout, 0, 0, alignment=Qt.AlignmentFlag.AlignVCenter)
-        self.postalignment_layout.addLayout(self.toggle_bounding_hlayout, 1, 0, alignment=Qt.AlignmentFlag.AlignVCenter)
-        # self.postalignment_layout.addWidget(self.regenerate_button, 2, 0, alignment=alignEM.AlignmentFlag.AlignCenter)
-        self.postalignment_layout.addLayout(self.regenerate_hlayout, 2, 0, alignment=Qt.AlignmentFlag.AlignVCenter)
-        self.postalignment_layout.addWidget(self.postalignment_note, 23, 0, alignment=Qt.AlignmentFlag.AlignBottom)
-        
-        '''------------------------------------------
-        PANEL 4: EXPORT & VIEW
-        ------------------------------------------'''
-        n_scales_label = QLabel("# of scales:")
-        n_scales_label.setToolTip("Number of scale pyramid layers (default=4)")
-        self.n_scales_input = QLineEdit(self)
-        self.n_scales_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.n_scales_input.setText("4")
-        self.n_scales_input.setFixedWidth(std_input_size_small)
-        self.n_scales_input.setFixedHeight(std_height)
-        self.n_scales_valid = QIntValidator(1, 20, self)
-        self.n_scales_input.setValidator(self.n_scales_valid)
-        
-        clevel_label = QLabel("clevel (1-9):")
-        clevel_label.setToolTip("Zarr Compression Level (default=5)")
-        self.clevel_input = QLineEdit(self)
-        self.clevel_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.clevel_input.setText("5")
-        self.clevel_input.setFixedWidth(std_input_size_small)
-        self.clevel_input.setFixedHeight(std_height)
-        self.clevel_valid = QIntValidator(1, 9, self)
-        self.clevel_input.setValidator(self.clevel_valid)
-        cname_label = QLabel("cname:")
-        cname_label.setToolTip("Zarr Compression Type (default=zstd) ")
-        self.cname_combobox = QComboBox(self)
-        self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
-        self.cname_combobox.setFixedSize(72, std_height)
-        self.export_and_view_hbox = QHBoxLayout()
-        self.export_zarr_button = QPushButton(" Export\n Zarr")
-        tip = "To view data in Neuroglancer, it is necessary to export to a compatible " \
-              "format such as Zarr. This function exports all aligned .TIF images for " \
-              "current scale to the chunked and compressed Zarr (.zarr) format with " \
-              "scale pyramid. Uses parallel processing."
-        wrapped = "\n".join(textwrap.wrap(tip, width=35))
-        self.export_zarr_button.setToolTip(wrapped)
-        self.export_zarr_button.clicked.connect(self.export_zarr)
-        self.export_zarr_button.setFixedSize(square_button_size)
-        self.export_zarr_button.setStyleSheet("font-size: 10px;")
-        # self.export_zarr_button.setIcon(qta.icon("fa5s.file-export", color=cfg.ICON_COLOR))
-        self.export_zarr_button.setIcon(qta.icon("fa5s.cubes", color=cfg.ICON_COLOR))
-        
-        # self.ng_button = QPushButton("View In\nNeuroglancer")
-        self.ng_button = QPushButton("3DEM")
-        self.ng_button.setToolTip('View Zarr export in Neuroglancer.')
-        self.ng_button.clicked.connect(ng_view)  # parenthesis were causing the member function to be evaluated early
-        self.ng_button.setFixedSize(square_button_size)
-        self.ng_button.setIcon(qta.icon("ph.cube-light", color=cfg.ICON_COLOR))
-        # self.ng_button.setStyleSheet("font-size: 9px;")
-        
-        self.export_and_view_hlayout = QVBoxLayout()
-        self.export_and_view_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.export_and_view_hlayout.addWidget(self.ng_button, alignment=Qt.AlignmentFlag.AlignCenter)
-        
-        self.n_scales_layout = QHBoxLayout()
-        self.n_scales_layout.setContentsMargins(0, 0, 0, 0)
-        self.n_scales_layout.addWidget(n_scales_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.n_scales_layout.addWidget(self.n_scales_input, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        self.clevel_layout = QHBoxLayout()
-        self.clevel_layout.setContentsMargins(0, 0, 0, 0)
-        self.clevel_layout.addWidget(clevel_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        self.cname_layout = QHBoxLayout()
-        # self.cname_layout.setContentsMargins(0,0,0,0)
-        self.cname_layout.addWidget(cname_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignmentFlag.AlignRight)
-        
-        self.export_settings_grid_layout = QGridLayout()
-        self.export_settings_grid_layout.addLayout(self.clevel_layout, 1, 0)
-        self.export_settings_grid_layout.addLayout(self.cname_layout, 0, 0)
-        self.export_settings_grid_layout.addLayout(self.n_scales_layout, 2, 0)
-        self.export_settings_grid_layout.addLayout(self.export_and_view_hlayout, 0, 1, 3, 1)
-        # self.export_settings_grid_layout.addWidget(self.export_zarr_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignRight)
-        # self.export_settings_grid_layout.addWidget(self.ng_button, 2, 1, alignment=alignEM.AlignmentFlag.AlignRight)
-        self.export_settings_grid_layout.setContentsMargins(10, 25, 10, 5)  # tag23
-        
-        '''------------------------------------------
-        INTEGRATED CONTROL PANEL
-        ------------------------------------------'''
-        # controlpanel
-        cpanel_height = 200
-        cpanel_1_width = 260
-        cpanel_2_width = 260
-        cpanel_3_width = 320
-        cpanel_4_width = 170
-        cpanel_5_width = 240
-        
-        # PROJECT CONTROLS
-        self.project_functions_groupbox = QGroupBox("Project")
-        self.project_functions_groupbox_ = QGroupBox("Project")
-        self.project_functions_groupbox.setLayout(self.project_functions_layout)
-        self.project_functions_stack = QStackedWidget()
-        self.project_functions_stack.setFixedSize(cpanel_1_width, cpanel_height)
-        self.project_functions_stack.addWidget(self.project_functions_groupbox_)
-        self.project_functions_stack.addWidget(self.project_functions_groupbox)
-        self.project_functions_stack.setCurrentIndex(1)
-        
-        # SCALING & DATA SELECTION CONTROLS
-        self.images_and_scaling_groupbox = QGroupBox("Data Selection && Scaling")
-        self.images_and_scaling_groupbox_ = QGroupBox("Scaling && Data Selection")
-        self.images_and_scaling_groupbox.setLayout(self.images_and_scaling_layout)
-        self.images_and_scaling_stack = QStackedWidget()
-        self.images_and_scaling_stack.setFixedSize(cpanel_2_width, cpanel_height)
-        self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox_)
-        self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox)
-        self.images_and_scaling_stack.setCurrentIndex(0)
-        
-        # ALIGNMENT CONTROLS
-        self.alignment_groupbox = QGroupBox("Alignment")
-        self.alignment_groupbox_ = QGroupBox("Alignment")
-        self.alignment_groupbox.setTitle('Alignment')
-        self.alignment_groupbox_.setTitle('Alignment')
-        self.alignment_groupbox.setLayout(self.alignment_layout)
-        self.alignment_stack = QStackedWidget()
-        self.alignment_stack.setFixedSize(cpanel_3_width, cpanel_height)
-        self.alignment_stack.addWidget(self.alignment_groupbox_)
-        self.alignment_stack.addWidget(self.alignment_groupbox)
-        self.alignment_stack.setCurrentIndex(0)
-        
-        # POST-ALIGNMENT CONTROLS
-        self.postalignment_groupbox = QGroupBox("Adjust Output")
-        self.postalignment_groupbox_ = QGroupBox("Adjust Output")
-        self.postalignment_groupbox.setLayout(self.postalignment_layout)
-        self.postalignment_stack = QStackedWidget()
-        self.postalignment_stack.setFixedSize(cpanel_4_width, cpanel_height)
-        self.postalignment_stack.addWidget(self.postalignment_groupbox_)
-        self.postalignment_stack.addWidget(self.postalignment_groupbox)
-        self.postalignment_stack.setCurrentIndex(0)
-        
-        # EXPORT & VIEW CONTROLS
-        self.export_and_view_groupbox = QGroupBox("Export && View")
-        self.export_and_view_groupbox_ = QGroupBox("Export && View")
-        self.export_and_view_groupbox.setLayout(self.export_settings_grid_layout)
-        self.export_and_view_stack = QStackedWidget()
-        self.export_and_view_stack.setFixedSize(cpanel_5_width, cpanel_height)
-        self.export_and_view_stack.addWidget(self.export_and_view_groupbox_)
-        self.export_and_view_stack.addWidget(self.export_and_view_groupbox)
-        self.export_and_view_stack.setCurrentIndex(0)
-        
-        self.images_and_scaling_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        self.alignment_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        self.postalignment_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
-        
-        self.lower_panel_groups_ = QGridLayout()
-        self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.setHorizontalSpacing(15)
-        self.lower_panel_groups = QWidget()
-        self.lower_panel_groups.setLayout(self.lower_panel_groups_)
-        # self.lower_panel_groups.setFixedHeight(cpanel_height + 10)
-        # self.main_panel_layout.addLayout(self.lower_panel_groups) #**
-        # self.main_panel_layout.setAlignment(alignEM.AlignmentFlag.AlignHCenter)
-        
-        '''------------------------------------------
-        MAIN LAYOUT
-        ------------------------------------------'''
-        
-        self.image_panel = MultiImagePanel()
-        self.image_panel.setFocusPolicy(Qt.StrongFocus)
-        self.image_panel.setFocus()
-        self.image_panel.draw_annotations = self.draw_annotations
-        # self.image_panel.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding) #0610
-        self.image_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.image_panel.setMinimumHeight(400)
-        
-        self.bottom_panel_stacked_widget = QStackedWidget()
-        self.bottom_panel_stacked_widget.addWidget(self.hud)
-        
-
-        self.plot_widget = pg.PlotWidget()
-        # self.snr_plt = pg.plot()
-
-        self.plot_widget_clear_button = QPushButton('Clear Plot')
-        self.plot_widget_clear_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.plot_widget_clear_button.clicked.connect(self.plot_widget.clear)
-        self.plot_widget_clear_button.setFixedSize(square_button_size)
-        # self.plot_widget_back_button.setIcon(qta.icon("mdi.back", color=cfg.ICON_COLOR))
-
-        self.plot_widget_back_button = QPushButton('Back')
-        # self.plot_widget_back_button.setStyleSheet("font-size: 10px;")
-        self.plot_widget_back_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.plot_widget_back_button.clicked.connect(self.back_callback)
-        self.plot_widget_back_button.setFixedSize(square_button_size)
-        self.plot_widget_back_button.setAutoDefault(True)
-        
-        # self.plot_widget_back_button.setIcon(qta.icon("mdi.back", color=cfg.ICON_COLOR))
-
-        self.plot_controls_layout = QVBoxLayout()
-        self.plot_controls_layout.addWidget(self.plot_widget_clear_button)
-        self.plot_controls_layout.addWidget(self.plot_widget_back_button)
-        self.plot_controls_layout.addSpacerItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
-
-        self.plot_widget_layout = QHBoxLayout()
-        self.plot_widget_layout.addWidget(self.plot_widget)
-        self.plot_widget_layout.addLayout(self.plot_controls_layout)
-
-        self.plot_widget_container = QWidget()
-        self.plot_widget_container.setLayout(self.plot_widget_layout)
-
-        self.python_console_back_button = QPushButton('Back')
-        # self.python_console_back_button.setStyleSheet("font-size: 10px;")
-        self.python_console_back_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.python_console_back_button.clicked.connect(self.back_callback)
-        self.python_console_back_button.setFixedSize(square_button_size)
-        self.python_console_back_button.setAutoDefault(True)
-
-        # self.python_console_controls_layout = QVBoxLayout()
-        # self.python_console_controls_layout.addWidget(self.python_console_back_button)
-        # self.python_console_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
-
-        self.python_console_layout = QHBoxLayout()
-        self.python_console_layout.addWidget(self.python_jupyter_console)
-        # self.python_console_layout.addLayout(self.python_console_controls_layout)
-
-        self.python_console_widget_container = QWidget()
-        self.python_console_widget_container.setLayout(self.python_console_layout)
-        
-        self.bottom_panel_stacked_widget.addWidget(self.plot_widget_container)
-        self.bottom_panel_stacked_widget.addWidget(self.python_console_widget_container)
-        self.bottom_panel_stacked_widget.setCurrentIndex(0)
-
-        '''MAIN SECONDARY CONTROL PANEL'''
-        self.show_hud_button = QPushButton("Head-up\nDisplay")
-        self.show_hud_button.setStyleSheet("font-size: 10px;")
-        self.show_hud_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_hud_button.clicked.connect(self.show_hud)
-        self.show_hud_button.setFixedSize(square_button_size)
-        self.show_hud_button.setIcon(qta.icon("mdi.monitor", color=cfg.ICON_COLOR))
-
-        self.show_python_console_button = QPushButton("Python\nConsole")
-        self.show_python_console_button.setStyleSheet("font-size: 10px;")
-        self.show_python_console_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_python_console_button.clicked.connect(self.show_python_console)
-        self.show_python_console_button.setFixedSize(square_button_size)
-        self.show_python_console_button.setIcon(qta.icon("fa.terminal", color=cfg.ICON_COLOR))
-
-        self.show_snr_plot_button = QPushButton("SNR\nPlot")
-        self.show_snr_plot_button.setStyleSheet("font-size: 10px;")
-        self.show_snr_plot_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_snr_plot_button.clicked.connect(self.show_snr_plot)
-        self.show_snr_plot_button.setFixedSize(square_button_size)
-        self.show_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color=cfg.ICON_COLOR))
-
-        self.main_secondary_controls_layout = QVBoxLayout()
-        self.main_secondary_controls_layout.setContentsMargins(0,8,0,0)
-        self.main_secondary_controls_layout.addWidget(self.show_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_secondary_controls_layout.addWidget(self.show_python_console_button, alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_secondary_controls_layout.addWidget(self.show_snr_plot_button, alignment=Qt.AlignmentFlag.AlignTop)
-        self.spacer_item_main_secondary = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        self.main_secondary_controls_layout.addSpacerItem(self.spacer_item_main_secondary)
+        # '''INITIALIZE THE UI'''
+        self.initUI()
 
 
-        self.bottom_display_area_hlayout = QHBoxLayout()
-        self.bottom_display_area_hlayout.setContentsMargins(0,0,0,0)
-        self.bottom_display_area_hlayout.addWidget(self.bottom_panel_stacked_widget)
-        self.bottom_display_area_hlayout.addLayout(self.main_secondary_controls_layout)
-        self.bottom_display_area_widget = QWidget()
-        self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
-        
-        self.splitter = QSplitter(Qt.Orientation.Vertical)
-        self.splitter.setContentsMargins(0,0,0,0)
-        self.splitter.addWidget(self.image_panel)
-        self.splitter.addWidget(self.lower_panel_groups)
-        # self.splitter.addWidget(self.hud)
-        self.splitter.addWidget(self.bottom_display_area_widget)
-
-        self.hud.setContentsMargins(0,0,0,0)
-
-        
-        # self.splitter.addWidget(self.progress_bar)
-        # self.progress_bar.setGeometry(200, 80, 250, 20)
-        # https://stackoverflow.com/questions/14397653/qsplitter-with-one-fixed-size-widget-and-one-variable-size-widget
-        self.splitter.setStretchFactor(0, 1)
-        self.splitter.setStretchFactor(1, 0)
-        self.splitter.setStretchFactor(2, 1)
-        self.splitter.setCollapsible(0, False)
-        self.splitter.setCollapsible(1, False)
-        self.splitter.setCollapsible(2, True)
-        
-        self.main_panel = QWidget()
-        # self.main_panel_layout = QVBoxLayout()
-        self.main_panel_layout = QGridLayout()
-        self.main_panel_layout.setSpacing(4)  # this will inherit downward
-        
-        self.main_panel_layout.addWidget(self.splitter, 1, 0)
-        self.main_panel.setLayout(self.main_panel_layout)
-        
-        '''------------------------------------------
-        AUXILIARY PANELS
-        ------------------------------------------'''
-        # PROJECT VIEW PANEL
-        self.project_view = QTreeView()
-        self.project_model = JsonModel()
-        self.project_view.setModel(self.project_model)
-        self.project_view.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.project_view.setAlternatingRowColors(True)
-        self.exit_project_view_button = QPushButton("Back")
-        self.exit_project_view_button.setFixedSize(std_button_size)
-        self.exit_project_view_button.clicked.connect(self.back_callback)
-        self.refresh_project_view_button = QPushButton("Refresh")
-        self.refresh_project_view_button.setFixedSize(std_button_size)
-        self.refresh_project_view_button.clicked.connect(self.project_view_callback)
-        self.save_project_project_view_button = QPushButton("Save")
-        self.save_project_project_view_button.setFixedSize(std_button_size)
-        self.save_project_project_view_button.clicked.connect(self.save_project)
-        
-        self.project_view_panel = QWidget()
-        self.project_view_panel_layout = QVBoxLayout()
-        self.project_view_panel_layout.addWidget(self.project_view)
-        self.project_view_panel_controls_layout = QHBoxLayout()
-        self.project_view_panel_controls_layout.addWidget(self.exit_project_view_button,
-                                                          alignment=Qt.AlignmentFlag.AlignLeft)
-        self.project_view_panel_controls_layout.addWidget(self.refresh_project_view_button,
-                                                          alignment=Qt.AlignmentFlag.AlignLeft)
-        self.project_view_panel_controls_layout.addWidget(self.save_project_project_view_button,
-                                                          alignment=Qt.AlignmentFlag.AlignLeft)
-        self.project_view_panel_controls_layout.addSpacerItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-        self.project_view_panel_layout.addLayout(self.project_view_panel_controls_layout)
-        self.project_view_panel.setLayout(self.project_view_panel_layout)
-        
-        # DOCUMENTATION PANEL
-        self.browser = QWebEngineView()
-        self.browser_docs = QWebEngineView()
-        self.exit_docs_button = QPushButton("Back")
-        self.exit_docs_button.setFixedSize(std_button_size)
-        self.exit_docs_button.clicked.connect(exit_docs)
-        self.readme_button = QPushButton("README.md")
-        self.readme_button.setFixedSize(std_button_size)
-        self.readme_button.clicked.connect(documentation_view_home)
-        self.docs_panel = QWidget()
-        self.docs_panel_layout = QVBoxLayout()
-        self.docs_panel_layout.addWidget(self.browser_docs)
-        self.docs_panel_controls_layout = QHBoxLayout()
-        self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.docs_panel_controls_layout.addWidget(self.readme_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
-        self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        self.docs_panel_controls_layout.addSpacerItem(self.spacer_item_docs)
-        self.docs_panel_layout.addLayout(self.docs_panel_controls_layout)
-        self.docs_panel.setLayout(self.docs_panel_layout)
-        
-        # REMOTE VIEWER PANEL
-        self.browser_remote = QWebEngineView()
-        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))  # tacctacc
-        # self.browser_remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
-        self.exit_remote_button = QPushButton("Back")
-        self.exit_remote_button.setFixedSize(std_button_size)
-        self.exit_remote_button.clicked.connect(exit_remote)
-        self.reload_remote_button = QPushButton("Reload")
-        self.reload_remote_button.setFixedSize(std_button_size)
-        self.reload_remote_button.clicked.connect(reload_remote)
-        self.remote_viewer_panel = QWidget()
-        self.remote_viewer_panel_layout = QVBoxLayout()
-        self.remote_viewer_panel_layout.addWidget(self.browser_remote)
-        self.remote_viewer_panel_controls_layout = QHBoxLayout()
-        self.remote_viewer_panel_controls_layout.addWidget(self.exit_remote_button,
-                                                           alignment=Qt.AlignmentFlag.AlignLeft)
-        self.remote_viewer_panel_controls_layout.addWidget(self.reload_remote_button,
-                                                           alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
-        self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        self.remote_viewer_panel_controls_layout.addSpacerItem(self.spacer_item_remote_panel)
-        self.remote_viewer_panel_layout.addLayout(self.remote_viewer_panel_controls_layout)
-        self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)
-        
-        # DEMOS PANEL
-        self.exit_demos_button = QPushButton("Back")
-        self.exit_demos_button.setFixedSize(std_button_size)
-        self.exit_demos_button.clicked.connect(exit_demos)
-        self.demos_panel = QWidget()  # create QWidget()
-        self.demos_panel_layout = QVBoxLayout()  # create QVBoxLayout()
-        self.demos_panel_controls_layout = QHBoxLayout()
-        self.demos_panel_controls_layout.addWidget(self.exit_demos_button)  # go back button
-        self.demos_panel_layout.addLayout(self.demos_panel_controls_layout)  # add horizontal layout
-        self.demos_panel.setLayout(self.demos_panel_layout)  # set layout
-        # self.demos_panel_layout.addWidget(self.browser)            # add widgets
-        
-        # NEUROGLANCER CONTROLS PANEL
-        self.exit_ng_button = QPushButton("Back")
-        self.exit_ng_button.setFixedSize(std_button_size)
-        self.exit_ng_button.clicked.connect(exit_ng)
-        self.reload_ng_button = QPushButton("Reload")
-        self.reload_ng_button.setFixedSize(std_button_size)
-        self.reload_ng_button.clicked.connect(reload_ng)
-        self.print_state_ng_button = QPushButton("Print State")
-        self.print_state_ng_button.setFixedSize(std_button_size)
-        self.print_state_ng_button.clicked.connect(print_state_ng)
-        self.print_url_ng_button = QPushButton("Print URL")
-        self.print_url_ng_button.setFixedSize(std_button_size)
-        self.print_url_ng_button.clicked.connect(print_url_ng)
-        # self.screenshot_ng_button = QPushButton("Screenshot")
-        # self.screenshot_ng_button.setFixedSize(QSize(100, 28))
-        # self.screenshot_ng_button.clicked.connect(screenshot_ng)
-        # self.blend_ng_button = QPushButton("Blend (b)")
-        # self.blend_ng_button.setFixedSize(QSize(100, 28))
-        # self.blend_ng_button.clicked.connect(blend_ng)
-        self.ng_panel = QWidget()  # create QWidget()
-        self.ng_panel_layout = QVBoxLayout()  # create QVBoxLayout()
-        self.ng_panel_layout.addWidget(self.browser)  # add widgets
-        self.ng_panel_controls_layout = QHBoxLayout()
-        self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.ng_panel_controls_layout.addWidget(self.reload_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.ng_panel_controls_layout.addWidget(self.print_state_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.ng_panel_controls_layout.addWidget(self.print_url_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        # self.ng_panel_controls_layout.addWidget(self.screenshot_ng_button, alignment=alignEM.AlignmentFlag.AlignLeft)
-        # self.ng_panel_controls_layout.addWidget(self.blend_ng_button, alignment=alignEM.AlignmentFlag.AlignLeft)
-        # self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
-        self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-        self.ng_panel_controls_layout.addSpacerItem(self.spacer_item_ng_panel)
-        self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)  # add horizontal layout
-        self.ng_panel.setLayout(self.ng_panel_layout)  # set layout
-        
-        # self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) # not working
-        
-        # stack of windows views
-        self.stacked_widget = QStackedWidget(self)
-        self.stacked_widget.addWidget(self.main_panel)  # (0) main_panel
-        self.stacked_widget.addWidget(self.ng_panel)  # (1) ng_panel
-        self.stacked_widget.addWidget(self.docs_panel)  # (2) docs_panel
-        self.stacked_widget.addWidget(self.demos_panel)  # (3) demos_panel
-        self.stacked_widget.addWidget(self.remote_viewer_panel)  # (4) remote_viewer_panel
-        # self.stacked_widget.addWidget(self.project_view)  # (5) self.project_view
-        self.stacked_widget.addWidget(self.project_view_panel)  # (5) self.project_view
-        self.stacked_widget.setCurrentIndex(0)
-        
-        # This can be invisible, will still use to organize QStackedWidget
-        self.pageComboBox = QComboBox()
-        self.pageComboBox.addItem("Main")
-        self.pageComboBox.addItem("Neuroglancer Local")
-        self.pageComboBox.addItem("Documentation")
-        self.pageComboBox.addItem("Demos")
-        self.pageComboBox.addItem("Remote Viewer")
-        self.pageComboBox.addItem("Project View")
-        self.pageComboBox.activated[int].connect(self.stacked_widget.setCurrentIndex)
-        # self.pageComboBox.activated.connect(self.stackedLayout.s_etCurrentIndex)
-        
-        self.stacked_layout = QVBoxLayout()
-        self.stacked_layout.addWidget(self.stacked_widget)
-        self.setCentralWidget(self.stacked_widget)  # setCentralWidget to QStackedWidget
-        
         # status bar
         self.status = self.statusBar()
         self.set_idle()
@@ -1938,7 +618,6 @@ class MainWindow(QMainWindow):
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
-
 
             ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
         ml = [
@@ -1952,6 +631,11 @@ class MainWindow(QMainWindow):
                  ['Show/Hide Project Inspector', None, self.show_hide_project_inspector, None, None, None],
                  ['Go Back', None, self.back_callback, None, None, None],
                  ['Show Console', None, self.back_callback, None, None, None],
+                 ['Remote Neuroglancer Server', None, self.remote_view, None, None, None],
+                 ['initUI', None, self.initUI, None, None, None],
+                 ['Show Splash', None, self.show_splash, None, None, None],
+                 ['&Help', None, self.documentation_view, None, None, None],
+                 ['&Home', None, self.set_main_view, None, None, None],
                  ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
              ]
              ],
@@ -2009,6 +693,7 @@ class MainWindow(QMainWindow):
                  ['Print SNR List', None, print_snr_list, None, None, None],
                  ['Print .dat Files', None, print_dat_files, None, None, None],
                  ['Print Working Directory', None, print_path, None, None, None],
+                 ['Print Bounding Rect', None, print_bounding_rect, None, None, None],
              ]
              ],
         ]
@@ -2055,27 +740,11 @@ class MainWindow(QMainWindow):
                     
                     parent.addAction(action)
 
-
-
     def make_jupyter_widget_with_kernel(self):
         """Start a kernel, connect to it, and create a RichJupyterWidget to use it
         Doc:
         https://qtconsole.readthedocs.io/en/stable/
         """
-        # kernel_manager = QtKernelManager(kernel_name='python3')
-        # kernel_manager.start_kernel()
-        #
-        # kernel_client = kernel_manager.client()
-        # kernel_client.start_channels()
-        #
-        # jupyter_widget = RichJupyterWidget()
-        # jupyter_widget.set_default_style(colors='linux')
-        # jupyter_widget.prompt_to_top()
-        # jupyter_widget.kernel_manager = kernel_manager
-        # jupyter_widget.kernel_client = kernel_client
-        # return jupyter_widget
-
-        import asyncio
 
         global ipython_widget  # Prevent from being garbage collected
 
@@ -2138,6 +807,10 @@ class MainWindow(QMainWindow):
         logger.info("run_scaling >>>>")
         self.set_status("Scaling...")
         self.hud.post('Requesting scale factors from user')
+
+
+        self.save_project() #0804+
+
         default_scales = []
         if is_dataset_scaled():
             default_scales = [str(v) for v in
@@ -2173,19 +846,7 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             self.hud.post('Generating Scales Triggered an Exception - Returning', logging.ERROR)
-            return
-        
-        # if is_dataset_scaled() or input_val == '1':
-        #     try:
-        #         path_of_img_src = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(),'img_src')
-        #         logger.info('path_of_img_aligned = ' % path_of_img_src)
-        #         path_of_first_image = os.listdir(path_of_img_src)[:1]
-        #         logger.info('path_of_first_image = ' % path_of_first_image)
-        #         imghdr_type = verify_image_file(path_of_first_image)
-        #         logger.info('imghdr_type = %s' % imghdr_type)
-        #         self.hud.post('Output Format: %s' % imghdr_type)
-        #     except:
-        #         self.hud.post('(Unable to verify image type for generated images.)')
+            # return #0804-
 
         link_all_stacks()
         set_default_settings()
@@ -2330,12 +991,12 @@ class MainWindow(QMainWindow):
         self.aligned_path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(),
                                          'img_aligned')
         self.ds_name = 'aligned_' + get_cur_scale_key()
-        logger.info('  export_zarr() | aligned_path_cur_scale =', self.aligned_path)
+        logger.info('  export_zarr() | aligned_path_cur_scale =%s' % self.aligned_path)
         
         destination_path = os.path.abspath(cfg.project_data['data']['destination_path'])
-        logger.info('  export_zarr() | path of aligned images              :%s', self.aligned_path)
-        logger.info('  export_zarr() | path of Zarr export                 :%s', destination_path)
-        logger.info('  export_zarr() | dataset name                        :%s', self.ds_name)
+        logger.info('  export_zarr() | path of aligned images              :%s' % self.aligned_path)
+        logger.info('  export_zarr() | path of Zarr export                 :%s' % destination_path)
+        logger.info('  export_zarr() | dataset name                        :%s' % self.ds_name)
         os.chdir(self.pyside_path)
         logger.info('  export_zarr() | working directory                   :%s' % os.getcwd())
         
@@ -2370,7 +1031,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Export of scale %s to Zarr complete' % get_cur_scale_key()[-1])
         
         else:
-            # logger.info('\n\n---------ATTEMPTING BACKGROUND ZARR-----------\n\n')
+            # Attempting Background Zarr
             # worker = RunnableWorker(self.make_zarr_multithreaded, self.aligned_path, self.n_scales, self.cname, self.clevel, self.dest_path, self.ds_name) # Any other args, kwargs are passed to the run function
             # self.threadpool.start(worker)
             
@@ -2866,7 +1527,13 @@ class MainWindow(QMainWindow):
             try:
                 use_bounding_rect = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']][
                     'use_bounding_rect']
+
+                logger.info('str(use_bounding_rect) = %s' % str(use_bounding_rect))
+                logger.info('type(use_bounding_rect) = %s' % type(use_bounding_rect))
+                logger.info('[BEFORE] self.toggle_bounding_rect.isChecked() = %s' % str(self.toggle_bounding_rect.isChecked()))
                 self.toggle_bounding_rect.setChecked(bool(use_bounding_rect))
+                logger.info('[AFTER] self.toggle_bounding_rect.isChecked() = %s' % str(self.toggle_bounding_rect.isChecked()))
+
             except:
                 logger.error('Bounding Rect UI element failed to update its state')
             
@@ -3117,6 +1784,11 @@ class MainWindow(QMainWindow):
                 self.hud.post('New project was canceled')
                 self.set_idle()
                 return
+            if reply == QMessageBox.Cancel:
+                logger.info("Response was 'Cancel'")
+                self.hud.post('New project was canceled')
+                self.set_idle()
+                return
         # self.scales_combobox_switch = 0 #0718-
         self.set_progress_stage_0()
         filename = self.new_project_save_as_dialog()
@@ -3124,17 +1796,28 @@ class MainWindow(QMainWindow):
             self.hud.post("You did not enter a valid name for the project file.")
             self.set_idle()
             return
+
         logger.info("Overwriting project data in memory with project template")
         cfg.project_data = copy.deepcopy(new_project_template)
         logger.info("Creating new project %s" % filename)
         self.project_filename = filename
         self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
-        self.set_def_proj_dest()
+        p, e = os.path.splitext(self.project_filename)
+        cfg.project_data['data']['destination_path'] = p
+        makedirs_exist_ok(cfg.project_data['data']['destination_path'], exist_ok=True)
         self.save_project_to_file()
         self.set_progress_stage_1()
         self.scales_combobox.clear()  # why? #0528
+
+        # defaults_file = cfg.project_data['data']['destination_path'] + '/defaults.json'
+        # with open(defaults_file, "w") as f:
+        #     data = json.dump(cfg.defaults, f)
+
+        self.project_form = ProjectForm(parent=self)
+        print('str(self.project_form) = %s' % str(self.project_form))
+
         self.set_idle()
-    
+
     def import_into_role(self):
         logger.info("import_into_role:")
         import_role_name = str(self.sender().text())
@@ -3248,7 +1931,19 @@ class MainWindow(QMainWindow):
             
             cfg.project_data = copy.deepcopy(proj_copy)  # Replace the current version with the copy
             logger.info('Ensuring proper data structure...')
+
+
+            path = os.path.abspath(cfg.project_data['data']['destination_path'])
+            pathtest3 = path + '/project_data_snapshot_pathtest3_BEFORE.json'
+            pathtest4 = path + '/project_data_snapshot_pathtest4_AFTER.json'
+            with open(pathtest3, 'w') as f:
+                json.dump(cfg.project_data, f)
             ensure_proper_data_structure()
+            with open(pathtest4, 'w') as f:
+                json.dump(cfg.project_data, f)
+
+
+
             link_all_stacks()
             self.read_project_data_update_gui()
             self.reload_scales_combobox()
@@ -3294,29 +1989,30 @@ class MainWindow(QMainWindow):
     def save_project_to_file(self):
         # self.hud.post('Saving project')
         # Save to current file and make known file paths relative to the project file name
-        if is_destination_set():
+        # if is_destination_set(): #0801-
+        if self.get_user_progress() > 1: #0801+
             self.read_gui_update_project_data()
-            if not self.project_filename.endswith('.json'):
-                self.project_filename += ".json"
-            proj_copy = copy.deepcopy(cfg.project_data)
-            if cfg.project_data['data']['destination_path'] != None:
-                if len(proj_copy['data']['destination_path']) > 0:
-                    proj_copy['data']['destination_path'] = make_relative(
-                        proj_copy['data']['destination_path'], self.project_filename)
-            for scale_key in proj_copy['data']['scales'].keys():
-                scale_dict = proj_copy['data']['scales'][scale_key]
-                for layer in scale_dict['alignment_stack']:
-                    for role in layer['images'].keys():
-                        if layer['images'][role]['filename'] != None:
-                            if len(layer['images'][role]['filename']) > 0:
-                                layer['images'][role]['filename'] = make_relative(
-                                    layer['images'][role]['filename'], self.project_filename)
-            logger.info("Writing cfg.project_data to '%s'" % self.project_filename)
-            logger.info('------- WRITING TO PROJECT FILE -------')
-            jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
-            proj_json = jde.encode(proj_copy)
-            with open(self.project_filename, 'w') as f:
-                f.write(proj_json)
+        if not self.project_filename.endswith('.json'):
+            self.project_filename += ".json"
+        proj_copy = copy.deepcopy(cfg.project_data)
+        if cfg.project_data['data']['destination_path'] != None:
+            if len(proj_copy['data']['destination_path']) > 0:
+                proj_copy['data']['destination_path'] = make_relative(
+                    proj_copy['data']['destination_path'], self.project_filename)
+        for scale_key in proj_copy['data']['scales'].keys():
+            scale_dict = proj_copy['data']['scales'][scale_key]
+            for layer in scale_dict['alignment_stack']:
+                for role in layer['images'].keys():
+                    if layer['images'][role]['filename'] != None:
+                        if len(layer['images'][role]['filename']) > 0:
+                            layer['images'][role]['filename'] = make_relative(
+                                layer['images'][role]['filename'], self.project_filename)
+        logger.info("Writing cfg.project_data to '%s'" % self.project_filename)
+        logger.info('------- WRITING TO PROJECT FILE -------')
+        jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
+        proj_json = jde.encode(proj_copy)
+        with open(self.project_filename, 'w') as f:
+            f.write(proj_json)
     
     @Slot()
     def actual_size(self):
@@ -3426,7 +2122,7 @@ class MainWindow(QMainWindow):
                 # print_debug(40, "Selected Files: " + str(file_name_list))
                 for f in file_name_list:
                     # Find next layer with an empty role matching the requested role_to_import
-                    print_debug(50, "Role " + str(role_to_import) + ", Importing file: " + str(f))
+                    logger.debug("Role " + str(role_to_import) + ", Importing file: " + str(f))
                     if f is None:
                         self.add_empty_to_role(role_to_import)
                     else:
@@ -3452,29 +2148,7 @@ class MainWindow(QMainWindow):
             self.hud.post('No Images Were Imported', logging.WARNING)
         
         self.set_idle()
-    
-    @Slot()
-    def set_def_proj_dest(self):
-        '''TODO Refactor this into trash funcs'''
-        logger.info("MainWindow is setting default project destination (MainWindow.set_def_proj_dest was called by " +
-                    inspect.stack()[1].function + ")...")
-        if self.project_filename == None:
-            # self.set_status("Unable to set a project destination without a project file.\nPlease save the project file first.")
-            pass
-        elif len(self.project_filename) == 0:
-            # self.set_status("Unable to set a project destination without a project file.\nPlease save the project file first.")
-            pass
-        else:
-            p, e = os.path.splitext(self.project_filename)
-            cfg.project_data['data']['destination_path'] = p
-            # os.makedirs(cfg.project_data['data']['destination_path'])
-            makedirs_exist_ok(cfg.project_data['data']['destination_path'], exist_ok=True)
-            logger.info("Destination path is : " + str(cfg.project_data['data']['destination_path']))
-            
-            proj_path = self.project_filename
-            dest_path = str(cfg.project_data['data']['destination_path'])
-            # self.set_status("Project File: " + proj_path)
-    
+
     # 0527
     def load_images_in_role(self, role, file_names):
         logger.info('MainWindow.load_images_in_role:')
@@ -3692,3 +2366,1308 @@ class MainWindow(QMainWindow):
             self.threadpool.waitForDone(msecs=200)
             QApplication.quit()
             sys.exit()
+
+    def documentation_view(self):  # documentationview
+        logger.info("Launching documentation view | MainWindow.documentation_view...")
+        self.stacked_widget.setCurrentIndex(2)
+        self.hud.post("Switching to AlignEM_SWiFT Documentation")
+        # don't force the reload, add home button instead
+        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
+
+    def documentation_view_home(self):
+        logger.info("Launching documentation view home | MainWindow.documentation_view_home...")
+        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
+        # self.set_status("AlignEM_SWiFT Documentation")
+
+    def remote_view(self):
+        logger.info("Launching remote viewer | MainWindow.remote_view...")
+        self.stacked_widget.setCurrentIndex(4)
+        self.hud.post("Switching to Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
+        self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+
+    def reload_ng(self):
+        logger.info("Reloading Neuroglancer...")
+        self.ng_view()
+
+    def reload_remote(self):
+        logger.info("Reloading remote viewer...")
+        self.remote_view()
+
+    def exit_ng(self):
+        logger.info("Exiting Neuroglancer...")
+        self.stacked_widget.setCurrentIndex(0)
+        self.set_idle()
+
+    def exit_docs(self):
+        logger.info("Exiting docs...")
+        self.stacked_widget.setCurrentIndex(0)
+        self.set_idle()
+
+    def exit_remote(self):
+        logger.info("Exiting remote viewer...")
+        self.stacked_widget.setCurrentIndex(0)
+        self.set_idle()
+
+    # webgl2
+    def microns_view(self):
+        logger.info("Launching microns viewer | MainWindow.microns_view...")
+        self.stacked_widget.setCurrentIndex(5)
+        self.browser_microns.setUrl(QUrl(
+            'https://neuromancer-seung-import.appspot.com/#!%7B%22layers%22:%5B%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v0/son_of_alignment_v15_rechunked%22%2C%22type%22:%22image%22%2C%22blend%22:%22default%22%2C%22shaderControls%22:%7B%7D%2C%22name%22:%22EM%22%7D%2C%7B%22source%22:%22precomputed://gs://microns_public_datasets/pinky100_v185/seg%22%2C%22type%22:%22segmentation%22%2C%22selectedAlpha%22:0.51%2C%22segments%22:%5B%22648518346349538235%22%2C%22648518346349539462%22%2C%22648518346349539853%22%5D%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22cell_segmentation_v185%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-clefts/mip1_d2_1175k%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22synapses%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-mito/seg_191220%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22mitochondria%22%7D%2C%7B%22source%22:%22precomputed://matrix://sseung-archive/pinky100-nuclei/seg%22%2C%22type%22:%22segmentation%22%2C%22skeletonRendering%22:%7B%22mode2d%22:%22lines_and_points%22%2C%22mode3d%22:%22lines%22%7D%2C%22name%22:%22nuclei%22%7D%5D%2C%22navigation%22:%7B%22pose%22:%7B%22position%22:%7B%22voxelSize%22:%5B4%2C4%2C40%5D%2C%22voxelCoordinates%22:%5B83222.921875%2C52981.34765625%2C834.9962768554688%5D%7D%7D%2C%22zoomFactor%22:383.0066650796121%7D%2C%22perspectiveOrientation%22:%5B-0.00825042650103569%2C0.06130112707614899%2C-0.0012821174459531903%2C0.9980843663215637%5D%2C%22perspectiveZoom%22:3618.7659948513424%2C%22showSlices%22:false%2C%22selectedLayer%22:%7B%22layer%22:%22cell_segmentation_v185%22%7D%2C%22layout%22:%7B%22type%22:%22xy-3d%22%2C%22orthographicProjection%22:true%7D%7D'))
+        # self.set_status("MICrONS (http://layer23.microns-explorer.org)")
+        # self.browser_microns.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        # self.set_status("Checking WebGL2.0 support.")
+
+    def exit_demos(self):
+        logger.info("Exiting demos...")
+        self.stacked_widget.setCurrentIndex(0)
+        self.set_idle()
+
+    def print_state_ng(self):
+        # viewer_state = json.loads(str(self.viewer.state))
+        logger.info(self.viewer.state)
+
+        # logger.info("Viewer.url : ", self.viewer.get_viewer_url)
+        # logger.info("Viewer.screenshot : ", self.viewer.screenshot)
+        # logger.info("Viewer.txn : ", self.viewer.txn)
+        # logger.info("Viewer.actions : ", self.viewer.actions)
+        # time.sleep(1)
+        # self.set_status("Viewing aligned images in Neuroglancer.")
+
+    def print_url_ng(self):
+        print(ng.to_url(self.viewer.state))
+        # logger.info("\nURL : " + self.viewer.get_viewer_url() + "\n")
+
+        # logger.info("Viewer.url : ", self.viewer.get_viewer_url)
+        # logger.info("Viewer.screenshot : ", self.viewer.screenshot)
+        # logger.info("Viewer.txn : ", self.viewer.txn)
+        # logger.info("Viewer.actions : ", self.viewer.actions)
+        # time.sleep(1)
+        # self.set_status("Viewing aligned images in Neuroglancer.")
+
+    # def screenshot_ng():
+    #     self.set_status("Taking screenshot...")
+    #     ScreenshotSaver.capture(self)
+
+    def blend_ng(self):
+        logger.info("blend_ng():")
+        # self.set_status("Making blended image...")
+
+    # ngview
+    def ng_view(self):  # ng_view #ngview #neuroglancer
+        logger.info("ng_view() >>>>")
+        logger.info("# of aligned images                  : ", get_num_aligned())
+        if not are_aligned_images_generated():
+            self.hud.post('This scale must be aligned and exported before viewing in Neuroglancer')
+
+            show_warning("No Alignment Found",
+                         "This scale must be aligned and exported before viewing in Neuroglancer.\n\n"
+                         "Typical workflow:\n"
+                         "(1) Open a project or import images and save.\n"
+                         "(2) Generate a set of scaled images and save.\n"
+                         "--> (3) Align each scale starting with the coarsest.\n"
+                         "--> (4) Export alignment to Zarr format.\n"
+                         "(5) View data in Neuroglancer client")
+            logger.info(
+                "Warning | This scale must be aligned and exported before viewing in Neuroglancer - Returning")
+            self.set_idle()
+            return
+        else:
+            logger.info('Alignment at this scale exists - Continuing')
+
+        if not is_cur_scale_exported():
+            self.hud.post('Alignment must be exported before it can be viewed in Neuroglancer')
+
+            show_warning("No Export Found",
+                         "Alignment must be exported before it can be viewed in Neuroglancer.\n\n"
+                         "Typical workflow:\n"
+                         "(1) Open a project or import images and save.\n"
+                         "(2) Generate a set of scaled images and save.\n"
+                         "(3) Align each scale starting with the coarsest.\n"
+                         "--> (4) Export alignment to Zarr format.\n"
+                         "(5) View data in Neuroglancer client")
+            logger.info(
+                "WARNING | Alignment must be exported before it can be viewed in Neuroglancer - Returning")
+            self.set_idle()
+            return
+        else:
+            logger.info('Exported alignment at this scale exists - Continuing')
+
+        ds_name = "aligned_" + get_cur_scale_key()
+        destination_path = os.path.abspath(cfg.project_data['data']['destination_path'])
+        zarr_project_path = os.path.join(destination_path, "project.zarr")
+        zarr_ds_path = os.path.join(destination_path, "project.zarr", ds_name)
+
+        logger.info('zarr_project_path                    :', zarr_project_path)
+        logger.info('zarr_ds_path                         :', zarr_ds_path)
+        logger.info('zarr_ds_path exists?                 :', bool(os.path.isdir(zarr_ds_path)))
+
+        self.hud.post('Loading Neuroglancer viewer...')
+        self.hud.post("  source: '%s'" % zarr_ds_path)
+
+        if 'server' in locals():
+            logger.info('server is already running')
+        else:
+            # self.browser.setUrl(QUrl()) #empty page
+            logger.info('no server found in local namespace -> starting RunnableServer() worker')
+            worker = RunnableServer()
+            self.threadpool.start(worker)
+
+        os.chdir(zarr_project_path)  # refactor
+
+        Image.MAX_IMAGE_PIXELS = None
+        view = 'single'
+        bind = '127.0.0.1'
+        port = 9000
+        res_x = 2
+        res_y = 2
+        res_z = 50
+
+        src = zarr_project_path
+
+        # LOAD METADATA - .zarray
+        logger.info('loading metadata from .zarray (array details) file')
+        zarray_path = os.path.join(src, ds_name, "s0", ".zarray")
+        logger.info("zarray_path : ", zarray_path)
+        with open(zarray_path) as f:
+            zarray_keys = json.load(f)
+        chunks = zarray_keys["chunks"]
+
+        # cname = zarray_keys["compressor"]["cname"] #jy
+        # clevel = zarray_keys["compressor"]["clevel"] #jy
+        shape = zarray_keys["shape"]
+        logger.info("shape : ", shape)
+
+        # LOAD META DATA - .zattrs
+        logger.info('loading metadata from .zattrs (attributes) file')
+        zattrs_path = os.path.join(src, ds_name, "s0", ".zattrs")
+        with open(zattrs_path) as f:
+            zattrs_keys = json.load(f)
+        logger.info("zattrs_path : ", zattrs_path)
+        resolution = zattrs_keys["resolution"]
+        # scales = zattrs_keys["scales"]  #0405 #0406 #remove
+        # logger.info("scales : ", scales)  #0405 #0406 #remove
+
+        ds_ref = "img_ref_zarr"
+        ds_base = "img_base_zarr"
+        ds_aligned = ds_name
+        ds_blended = "img_blended_zarr"
+
+        logger.info('initializing neuroglancer.Viewer()')
+        # viewer = ng.Viewer()
+        self.viewer = ng.Viewer()
+
+        logger.info('looking for aligned data')
+        data_aligned = []
+        aligned_scale_paths = glob(os.path.join(src, ds_aligned) + "/s*")
+        for s in aligned_scale_paths:
+            scale = os.path.join(ds_aligned, os.path.basename(s))
+            logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
+            data_aligned.append(open_ds(src, scale))
+
+        if view == 'row':
+            logger.info("Looking for REF scale directories...")
+            data_ref = []
+            ref_scale_paths = glob(os.path.join(src, ds_ref) + "/s*")
+            for s in ref_scale_paths:
+                scale = os.path.join(ds_ref, os.path.basename(s))
+                logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
+                data_ref.append(open_ds(src, scale))
+
+            logger.info('Looking for BASE scale directories...')
+            data_base = []
+            base_scale_paths = glob(os.path.join(src, ds_base) + "/s*")
+            for s in base_scale_paths:
+                scale = os.path.join(ds_base, os.path.basename(s))
+                logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
+                data_base.append(open_ds(src, scale))
+
+        logger.info('defining Neuroglancer coordinate space')
+        dimensions = ng.CoordinateSpace(
+            names=['x', 'y', 'z'],
+            units='nm',
+            scales=[res_x, res_y, res_z],
+        )
+
+        # https://github.com/google/neuroglancer/blob/master/src/neuroglancer/viewer.ts
+        logger.info('updating viewer.txn()')
+        with self.viewer.txn() as s:
+
+            # s.cross_section_background_color = "#ffffff"
+            s.cross_section_background_color = "#000000"
+            s.dimensions = dimensions
+            # s.perspective_zoom = 300
+            # s.position = [0.24, 0.095, 0.14]
+            # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
+
+            # temp = np.zeros_like(data_ref)
+            # layer = ng.Layer(temp)
+
+            # logger.info("type(data_aligned) = ", type(data_aligned))  # <class 'list'>
+            # logger.info("type(data_aligned[0]) = ", type(data_aligned[0]))  # <class 'daisy.array.Array'>
+            # logger.info("len(data_aligned) = ", len(data_aligned))  # 2
+
+            array = np.asarray(data_aligned)
+            # logger.info("type(array) = ", type(array))                       # <class 'numpy.ndarray'>
+            # logger.info("array.shape = ", array.shape)                       # (2,)
+            # logger.info("array.size = ", array.size)                         # 2
+            # logger.info("array.ndim = ", array.ndim)                         # 1
+
+            logger.info('type(np.asarray(data_aligned))       :', type(np.asarray(data_aligned)))
+            logger.info('np.asarray(data_aligned).shape       :', np.asarray(data_aligned).shape)
+            logger.info('np.asarray(data_aligned).size        :', np.asarray(data_aligned).size)
+            logger.info('np.asarray(data_aligned).ndim        :', np.asarray(data_aligned).ndim)
+
+            logger.info("'view' is set to                     :", view)
+            # only for 3 pane view
+            if view == 'row':
+                add_layer(s, data_ref, 'ref')
+                add_layer(s, data_base, 'base')
+
+            add_layer(s, data_aligned, 'aligned')
+
+            ###data_panel_layout_types: frozenset(['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'])
+
+            # s.selectedLayer.visible = False
+            # s.layers['focus'].visible = False
+
+            # view = "single"
+            if view == "row":
+                logger.info("view is 'row'")
+
+                s.layers['focus'].visible = True
+
+                # [
+                #     ng.LayerGroupViewer(layers=["focus"], layout='xy'),
+
+                # temp = np.zeros_like(data_ref)
+                # #layer = ng.Layer()
+                # #layer = ng.ManagedLayer
+                # s.layers['focus'] = ng.LocalVolume(temp)
+                # s.layers['focus'] = ng.ManagedLayer(source="zarr://http://localhost:9000/img_blended_zarr",voxel_size=[i * .00000001 for i in resolution])
+                s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
+                s.layout = ng.column_layout(
+                    [
+                        ng.row_layout(
+                            [
+                                ng.LayerGroupViewer(layers=["focus"], layout='xy'),
+                            ]
+                        ),
+
+                        ng.row_layout(
+                            [
+                                ng.LayerGroupViewer(layers=['ref'], layout='xy'),
+                                ng.LayerGroupViewer(layers=['base'], layout='xy'),
+                                ng.LayerGroupViewer(layers=['aligned'], layout='xy'),
+                            ]
+                        ),
+                    ]
+                )
+
+                # s.layout = ng.column_layout(
+                #     [
+                #         ng.LayerGroupViewer(layers=["focus"], layout='xy'),
+                # s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
+                # ng.row_layout(
+                #     [
+                #         ng.LayerGroupViewer(layers=["ref"], layout='xy'),
+                #         ng.LayerGroupViewer(layers=["base"], layout='xy'),
+                #         ng.LayerGroupViewer(layers=["aligned"], layout='xy'),
+                #     ]
+                # )
+                #     ]
+                # ]
+                # # )
+
+            # single image view
+            if view == "single":
+                s.layout = ng.column_layout(
+                    [
+                        ng.LayerGroupViewer(
+                            layout='xy',
+                            layers=["aligned"]),
+                    ]
+                )
+
+        logger.info('loading Neuroglancer callbacks       :', self.viewer.config_state)
+        self.viewer.actions.add('get_mouse_coords_', get_mouse_coords)
+        # self.viewer.actions.add('unchunk_', unchunk)
+        # self.viewer.actions.add('blend_', blend)
+        with self.viewer.config_state.txn() as s:
+            s.input_event_bindings.viewer['keyt'] = 'get_mouse_coords_'
+            # s.input_event_bindings.viewer['keyu'] = 'unchunk_'
+            # s.input_event_bindings.viewer['keyb'] = 'blend_'
+            # s.status_messages['message'] = 'Welcome to AlignEM_SWiFT!'
+
+            s.show_ui_controls = True
+            s.show_panel_borders = True
+            s.viewer_size = None
+
+        viewer_url = str(self.viewer)
+        # viewer_url = self.viewer
+        self.browser.setUrl(QUrl(viewer_url))
+        self.stacked_widget.setCurrentIndex(1)
+
+        # To modify the state, use the viewer.txn() function, or viewer.set_state
+        logger.info('Viewer.config_state                  :', self.viewer.config_state)
+        # logger.info('viewer URL                           :', self.viewer.get_viewer_url())
+        # logger.info('Neuroglancer view (remote viewer)                :', ng.to_url(viewer.state))
+
+        cur_scale = get_cur_scale_key()
+        self.hud.post('Viewing aligned images at scale ' + cur_scale[-1] + ' in Neuroglancer.')
+
+        logger.info("<<<< EXITING ng_view()")
+
+
+    def initUI(self):
+
+        # --------------------------------------------------------
+        # PROPOSED START
+        # --------------------------------------------------------
+
+        '''------------------------------------------
+        PANEL 1: PROJECT #projectpanel
+        ------------------------------------------'''
+
+        self.new_project_button = QPushButton(" New")
+        self.new_project_button.clicked.connect(self.new_project)
+        self.new_project_button.setFixedSize(self.square_button_size)
+        # self.new_project_button.setIcon(qta.icon("ei.stackoverflow", color=cfg.ICON_COLOR))
+        # self.new_project_button.setIcon(qta.icon("ph.stack-fill", color=cfg.ICON_COLOR))
+        self.new_project_button.setIcon(qta.icon("msc.add", color=cfg.ICON_COLOR))
+        # self.new_project_button.setIconSize(QSize(20, 20))
+
+        self.open_project_button = QPushButton(" Open")
+        self.open_project_button.clicked.connect(self.open_project)
+        self.open_project_button.setFixedSize(self.square_button_size)
+        self.open_project_button.setIcon(qta.icon("fa.folder-open", color=cfg.ICON_COLOR))
+
+        self.save_project_button = QPushButton(" Save")
+        self.save_project_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.save_project_button.clicked.connect(self.save_project)
+        self.save_project_button.setFixedSize(self.square_button_size)
+        self.save_project_button.setIcon(qta.icon("mdi.content-save", color=cfg.ICON_COLOR))
+
+        # self.documentation_button = QPushButton("Docs")
+        self.documentation_button = QPushButton(" Help")
+        self.documentation_button.clicked.connect(self.documentation_view)
+        self.documentation_button.setFixedSize(self.square_button_size)
+        # self.documentation_button.setIcon(qta.icon("fa.github", color=cfg.ICON_COLOR))
+        self.documentation_button.setIcon(qta.icon("mdi.help", color=cfg.ICON_COLOR))
+
+        self.exit_app_button = QPushButton(" Exit")
+        self.exit_app_button.clicked.connect(self.exit_app)
+        self.exit_app_button.setFixedSize(self.square_button_size)
+        # self.exit_app_button.setIcon(qta.icon("mdi.exit-to-app", color=cfg.ICON_COLOR))
+        self.exit_app_button.setIcon(qta.icon("mdi6.close", color=cfg.ICON_COLOR))
+
+        self.remote_viewer_button = QPushButton("Neuroglancer\nServer")
+        self.remote_viewer_button.clicked.connect(self.remote_view)
+        self.remote_viewer_button.setFixedSize(self.square_button_size)
+        self.remote_viewer_button.setStyleSheet("font-size: 9px;")
+
+        self.project_functions_layout = QGridLayout()
+        self.project_functions_layout.setContentsMargins(10, 25, 10, 5)
+        # self.project_functions_layout.setSpacing(10)  # ***
+        self.project_functions_layout.addWidget(self.new_project_button, 0, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.open_project_button, 0, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.save_project_button, 0, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.exit_app_button, 1, 0, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.documentation_button, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.project_functions_layout.addWidget(self.remote_viewer_button, 1, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        '''------------------------------------------
+        PANEL 2: DATA SELECTION & SCALING
+        ------------------------------------------'''
+        # datapanel #scalingpanel #importpanel
+
+        self.import_images_button = QPushButton(" Import\n Images")
+        self.import_images_button.setToolTip('Import TIFF images.')
+        self.import_images_button.clicked.connect(self.import_images)
+        self.import_images_button.setFixedSize(self.square_button_size)
+        # self.import_images_button.setIcon(qta.icon("ph.stack-fill", color=cfg.ICON_COLOR))
+        self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=cfg.ICON_COLOR))
+        self.import_images_button.setStyleSheet("font-size: 10px;")
+        # self.import_images_button.setFixedSize(self.square_button_width, self.std_height)
+
+        self.center_button = QPushButton('Center')
+        self.center_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.center_button.setToolTip('Center all images.')
+        self.center_button.clicked.connect(self.center_all_images)
+        self.center_button.setFixedSize(self.square_button_width, self.std_height)
+        self.center_button.setStyleSheet("font-size: 10px;")
+
+        self.project_view_button = QPushButton('Inspect\nJSON')
+        self.project_view_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.project_view_button.setToolTip('Inspect the project dictionary in memory.')
+        self.project_view_button.clicked.connect(self.project_view_callback)
+        self.project_view_button.setFixedSize(self.square_button_size)
+        self.project_view_button.setStyleSheet("font-size: 10px;")
+
+        self.print_sanity_check_button = QPushButton("Print\nSanity Check")
+        self.print_sanity_check_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.print_sanity_check_button.clicked.connect(print_sanity_check)
+        self.print_sanity_check_button.setFixedSize(self.square_button_size)
+        self.print_sanity_check_button.setStyleSheet("font-size: 9px;")
+
+        self.plot_snr_button = QPushButton("Plot SNR")
+        self.plot_snr_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.plot_snr_button.clicked.connect(self.show_snr_plot)
+        self.plot_snr_button.setFixedSize(self.square_button_size)
+        # self.plot_snr_button.setStyleSheet("font-size: 9px;")
+
+        self.actual_size_button = QPushButton('Actual Size')
+        self.actual_size_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.actual_size_button.setToolTip('Actual-size all images.')
+        self.actual_size_button.clicked.connect(self.actual_size_callback)
+        self.actual_size_button.setFixedSize(self.square_button_width, self.std_height)
+        self.actual_size_button.setStyleSheet("font-size: 10px;")
+
+        self.size_buttons_vlayout = QVBoxLayout()
+        self.size_buttons_vlayout.addWidget(self.center_button)
+        self.size_buttons_vlayout.addWidget(self.actual_size_button)
+
+        self.generate_scales_button = QPushButton('Generate\nScales')
+        self.generate_scales_button.setToolTip('Generate scale pyramid with chosen # of levels.')
+        # self.generate_scales_button.clicked.connect(generate_scales_queue)
+        self.generate_scales_button.clicked.connect(self.run_scaling)
+        # self.generate_scales_button.clicked.connect(self.startProgressBar)
+
+        # popupprogressbar
+
+        self.generate_scales_button.setFixedSize(self.square_button_size)
+        self.generate_scales_button.setStyleSheet("font-size: 10px;")
+        self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color=cfg.ICON_COLOR))
+        self.generate_scales_button.setEnabled(False)
+
+        # self.clear_all_skips_button = QPushButton('Reset')
+        self.clear_all_skips_button = QPushButton()
+        self.clear_all_skips_button.setToolTip('Reset skips (keep all)')
+        self.clear_all_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.clear_all_skips_button.clicked.connect(self.clear_all_skips_callback)
+        self.clear_all_skips_button.setFixedSize(self.std_height, self.std_height)
+        self.clear_all_skips_button.setIcon(qta.icon("mdi.undo", color=cfg.ICON_COLOR))
+
+        self.toggle_skip = ToggleSwitch()
+        self.skip_label = QLabel("Include:")
+        # self.skip_label.setPointSize(9)
+        # self.skip_label.setFixedSize(80, 30)
+
+        self.skip_layout = QHBoxLayout()
+        self.skip_layout.setAlignment(Qt.AlignCenter)
+        self.skip_layout.addStretch()
+        self.skip_layout.addWidget(self.skip_label)
+        self.skip_layout.addWidget(self.toggle_skip)
+        self.skip_layout.addStretch(4)
+        self.toggle_skip.setToolTip('Skip current image (do not align)')
+        self.skip_label.setToolTip('Skip current image (do not align)')
+        # self.toggle_skip.setChecked(True)
+        self.toggle_skip.setChecked(False)
+        # self.toggle_skip.setH_scale(.9)
+        # self.toggle_skip.setV_scale(1.0)
+        self.toggle_skip.toggled.connect(skip_changed_callback)
+
+        self.jump_label = QLabel("Go to:")
+        self.jump_input = QLineEdit(self)
+        self.jump_input.setToolTip('Jump to image #')
+        self.jump_input.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        # self.jump_input.setText("--")
+        self.jump_input.setFixedSize(self.std_input_size, self.std_height)
+        self.jump_validator = QIntValidator()
+        self.jump_input.setValidator(self.jump_validator)
+        # self.jump_input.returnPressed.connect(self.jump_to_layer())
+        self.jump_input.returnPressed.connect(lambda: self.jump_to_layer())  # must be lambda for some reason
+        # self.jump_input.editingFinished.connect(self.jump_to_layer())
+        # self.jump_hlayout = QHBoxLayout()
+        # self.jump_hlayout.addWidget(jump_label, alignment=alignEM.AlignmentFlag.AlignLeft)
+        # self.jump_hlayout.addWidget(self.jump_input, alignment=alignEM.AlignmentFlag.AlignRight)
+
+        self.images_and_scaling_layout = QGridLayout()
+        self.images_and_scaling_layout.setContentsMargins(10, 25, 10, 5)  # tag23
+        # self.images_and_scaling_layout.setSpacing(10) # ***
+        self.images_and_scaling_layout.addWidget(self.import_images_button, 0, 0,
+                                                 alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.images_and_scaling_layout.addWidget(self.center_button, 0, 1, alignment=alignEM.AlignmentFlag.AlignHCenter)
+        self.images_and_scaling_layout.addLayout(self.size_buttons_vlayout, 0, 1,
+                                                 alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.images_and_scaling_layout.addWidget(self.generate_scales_button, 0, 2,
+                                                 alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.toggle_reset_hlayout = QHBoxLayout()
+        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button)
+        # self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=alignEM.AlignmentFlag.AlignLeft)
+        # self.toggle_reset_hlayout.addWidget(self.toggle_skip, alignment=alignEM.AlignmentFlag.AlignLeft)
+        self.toggle_reset_hlayout.addLayout(self.skip_layout)
+        self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignmentFlag.AlignRight)
+        self.toggle_reset_hlayout.addWidget(self.jump_input, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.toggle_reset_hlayout.addLayout(self.jump_hlayout, alignment=alignEM.AlignmentFlag.AlignHCenter)
+        # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=alignEM.AlignmentFlag.AlignHCenter)
+        # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignHCenter)
+        self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3)
+        self.images_and_scaling_layout.addWidget(self.project_view_button, 2, 0)
+        self.images_and_scaling_layout.addWidget(self.plot_snr_button, 2, 1)
+        self.images_and_scaling_layout.addWidget(self.print_sanity_check_button, 2, 2)
+        # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=alignEM.AlignmentFlag.AlignRight)
+
+        '''------------------------------------------
+        PANEL 3: ALIGNMENT
+        ------------------------------------------'''
+        # alignmentpanel
+
+        self.scales_combobox = QComboBox(self)
+        # self.scales_combobox.addItems([skip_list])
+        # self.scales_combobox.addItems(['--'])
+        self.scales_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.scales_combobox.setFixedSize(self.std_button_size)
+        self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
+
+        self.affine_combobox = QComboBox(self)
+        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
+        self.affine_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.affine_combobox.setFixedSize(self.std_button_size)
+
+        # ^^ this should perhaps be connected to a function that updates python_swiftir in project file (immediately).. not sure yet
+        # on second thought, the selected option here ONLY matters at alignment time
+        # in the meantime, best temporary functionality is to just make sure that whatever item is selected when the
+        #   alignment button is pressed will always be the python_swiftir used for alignment
+        # saving python_swiftir data to project file might ultimately be needed, but this is good for now.
+
+        # Whitening LineEdit
+        self.whitening_label = QLabel("Whitening:")
+        self.whitening_input = QLineEdit(self)
+        self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.whitening_input.setText("-0.68")
+        self.whitening_input.setFixedWidth(self.std_input_size)
+        self.whitening_input.setFixedHeight(self.std_height)
+        self.whitening_input.setValidator(QDoubleValidator(-5.0000, 5.0000, 4, self))
+        tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
+        self.whitening_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        self.whitening_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        self.whitening_grid = QGridLayout()
+        self.whitening_grid.setContentsMargins(0, 0, 0, 0)
+        self.whitening_grid.addWidget(self.whitening_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.whitening_grid.addWidget(self.whitening_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # Swim Window LineEdit
+        self.swim_label = QLabel("SWIM Window:")
+        self.swim_input = QLineEdit(self)
+        self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.swim_input.setText("0.8125")
+        self.swim_input.setFixedWidth(self.std_input_size)
+        self.swim_input.setFixedHeight(self.std_height)
+        self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
+        tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
+        self.swim_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        self.swim_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        self.swim_grid = QGridLayout()
+        self.swim_grid.setContentsMargins(0, 0, 0, 0)
+        self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # Apply All Button
+        # self.apply_all_label = QLabel("Apply Settings All:")
+        self.apply_all_label = QLabel("Apply All:")
+        # self.apply_all_label.setFont(QFont('Terminus', 12, QFont.Bold))
+        # self.apply_all_button = QPushButton('Apply To All')
+        self.apply_all_button = QPushButton()
+        self.apply_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.apply_all_button.setToolTip('Apply these settings to the entire project.')
+        self.apply_all_button.clicked.connect(self.apply_all_callback)
+        # self.apply_all_button.setFixedSize(self.std_button_size)
+        self.apply_all_button.setFixedSize(self.std_height, self.std_height)
+        # self.apply_all_button.setIcon(qta.icon("fa.mail-forward", color=cfg.ICON_COLOR))
+        self.apply_all_button.setIcon(qta.icon("mdi6.transfer", color=cfg.ICON_COLOR))
+
+        self.apply_all_layout = QGridLayout()
+        self.apply_all_layout.setContentsMargins(0, 0, 0, 0)
+        self.apply_all_layout.addWidget(self.apply_all_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.apply_all_layout.addWidget(self.apply_all_button, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # Next Scale Button
+        self.next_scale_button = QPushButton('Next Scale ')
+        self.next_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.next_scale_button.setToolTip('Go forward to the next scale.')
+        self.next_scale_button.clicked.connect(self.next_scale_button_callback)
+        self.next_scale_button.setFixedSize(self.std_button_size)
+        self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
+        self.next_scale_button.setIcon(qta.icon("ri.arrow-right-line", color=cfg.ICON_COLOR))
+        # self.next_scale_button.setStyleSheet("font-size: 10px;")
+
+        # Previous Scale Button
+        self.prev_scale_button = QPushButton(' Prev Scale')
+        self.prev_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.prev_scale_button.setToolTip('Go back to the previous scale.')
+        self.prev_scale_button.clicked.connect(self.prev_scale_button_callback)
+        self.prev_scale_button.setFixedSize(self.std_button_size)
+        # self.prev_scale_button.setFixedSize(self.square_button_width, self.std_height)
+        self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color=cfg.ICON_COLOR))
+        # self.prev_scale_button.setStyleSheet("font-size: 10px;")
+
+        # Align All Button
+        self.align_all_button = QPushButton('Align Stack')
+        self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.align_all_button.setToolTip('Align This Scale')
+        # self.align_all_button.clicked.connect(align_all_or_some) #orig
+        # self.align_all_button.clicked.connect(self.run_alignment)
+        self.align_all_button.clicked.connect(self.run_alignment)
+        # self.align_all_button.clicked.connect(self.startProgressBar)
+
+        # self.align_all_button.setFixedSize(self.square_button_width, self.std_height)
+        self.align_all_button.setFixedSize(self.std_button_size)
+        # self.align_all_button.setIcon(qta.icon("mdi.format-align-middle", color=cfg.ICON_COLOR))
+        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color=cfg.ICON_COLOR))
+        # self.align_all_button.setStyleSheet("font-size: 10px;")
+
+        # pixmap = getattr(QStyle, 'SP_MediaPlay')
+        # icon = self.style().standardIcon(pixmap)
+        # self.align_all_button.setIcon(icon)
+        # self.align_all_button.setLayoutDirection(alignEM.RightToLeft)
+
+        self.alignment_status_label = QLabel()
+        self.alignment_status_label.setText("Is Aligned: ")
+        self.alignment_status_label.setStyleSheet("""color: #F3F6FB;""")
+
+        self.align_label_resolution = QLabel()
+        self.align_label_resolution.setText('[img size]')
+        self.align_label_resolution.setStyleSheet("""color: #F3F6FB;""")
+
+        self.align_label_affine = QLabel()
+        self.align_label_affine.setText('Initialize Affine')
+        self.align_label_affine.setStyleSheet("""color: #F3F6FB;""")
+
+        self.align_label_scales_remaining = QLabel()
+        self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
+        self.align_label_scales_remaining.setStyleSheet("""color: #F3F6FB;""")
+        self.alignment_status_label.setFont(QFont('Terminus', 12, QFont.Bold))
+        self.align_label_resolution.setFont(QFont('Terminus', 12, QFont.Bold))
+        self.align_label_affine.setFont(QFont('Terminus', 12, QFont.Bold))
+        self.align_label_scales_remaining.setFont(QFont('Terminus', 12, QFont.Bold))
+        # self.alignment_status_label.hide()
+        # self.align_label_resolution.hide()
+        # self.align_label_affine.hide()
+        # self.align_label_scales_remaining.hide()
+
+        self.alignment_status_label.setToolTip('Alignment status')
+        self.alignment_status_checkbox = QRadioButton()
+        self.alignment_status_checkbox.setEnabled(False)
+        self.alignment_status_checkbox.setToolTip('Alignment status')
+        # self.alignment_status_checkbox.hide()
+
+        self.alignment_status_layout = QHBoxLayout()
+        self.alignment_status_layout.addWidget(self.alignment_status_label)
+        self.alignment_status_layout.addWidget(self.alignment_status_checkbox)
+
+        self.align_details_layout = QGridLayout()
+        self.align_details_layout.addWidget(self.align_label_resolution, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.align_details_layout.addWidget(self.align_label_affine, 1, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.align_details_layout.addLayout(self.alignment_status_layout, 0, 1, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.align_details_layout.addWidget(self.align_label_scales_remaining, 1, 1,
+                                            alignment=Qt.AlignmentFlag.AlignLeft)
+        self.align_details_layout.setContentsMargins(5, 5, 15, 5)
+
+        # Auto-generate Toggle
+        # Current implementation is not data-driven.
+        self.auto_generate_label = QLabel("Auto-generate Images:")
+        self.auto_generate_label.setToolTip('Automatically generate aligned images.')
+        self.toggle_auto_generate = ToggleSwitch()  # toggleboundingrect
+        self.toggle_auto_generate.setToolTip('Automatically generate aligned images.')
+        self.toggle_auto_generate.setChecked(True)
+        # self.toggle_auto_generate.setV_scale(.6)
+        # self.toggle_auto_generate.setH_scale(.8)
+        self.toggle_auto_generate.toggled.connect(self.toggle_auto_generate_callback)
+        self.toggle_auto_generate_hlayout = QHBoxLayout()
+        self.toggle_auto_generate_hlayout.addWidget(self.auto_generate_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.toggle_auto_generate_hlayout.addWidget(self.toggle_auto_generate, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # self.scale_tabs = QTabWidget()
+        self.alignment_layout = QGridLayout()
+        self.alignment_layout.setContentsMargins(10, 25, 10, 0)  # tag23
+        self.alignment_layout.addLayout(self.swim_grid, 0, 0, 1, 2)
+        self.alignment_layout.addLayout(self.whitening_grid, 1, 0, 1, 2)
+        self.alignment_layout.addWidget(self.prev_scale_button, 0, 2)
+        self.alignment_layout.addWidget(self.next_scale_button, 1, 2)
+        self.alignment_layout.addLayout(self.apply_all_layout, 2, 0, 1, 2)
+        self.alignment_layout.addWidget(self.align_all_button, 2, 2)
+        # self.alignment_layout.addLayout(self.toggle_auto_generate_hlayout, 3, 0)
+        self.align_details_layout_tweak = QVBoxLayout()
+        self.align_details_layout_tweak.setAlignment(Qt.AlignCenter)
+        # layout.addStretch()
+        self.align_line = QFrame()
+        self.align_line.setGeometry(QRect(60, 110, 751, 20))
+        self.align_line.setFrameShape(QFrame.HLine)
+        self.align_line.setFrameShadow(QFrame.Sunken)
+        self.align_line.setStyleSheet("""background-color: #455364;""")
+        # self.align_line.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Expanding)
+        # self.align_line.setLineWidth(3)
+        # self.align_details_gb = QGroupBox()
+        # self.align_details_gb.setLayout(self.align_details_layout_tweak)
+
+        self.align_details_layout_tweak.addWidget(self.align_line)
+        self.align_details_layout_tweak.addLayout(self.align_details_layout)
+        self.align_details_layout_tweak.setContentsMargins(0, 10, 0, 0)
+        # self.alignment_layout.addLayout(self.align_details_layout_tweak, 3, 0, 1, 3)
+        self.alignment_layout.addLayout(self.align_details_layout_tweak, 3, 0, 1, 3)
+
+        '''------------------------------------------
+        PANEL 3.5: Post-alignment
+        ------------------------------------------'''
+        # postalignmentpanel
+
+        # Null Bias combobox
+        self.null_bias_label = QLabel("Bias:")
+        tip = 'Polynomial bias (default=None). Note: This affects the alignment and the pixel dimensions of the generated images.'
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.null_bias_label.setToolTip(wrapped)
+        self.null_bias_combobox = QComboBox(self)
+        self.null_bias_combobox.setToolTip(wrapped)
+        self.null_bias_combobox.setToolTip('Polynomial bias (default=None)')
+        self.null_bias_combobox.addItems(['None', '0', '1', '2', '3', '4'])
+        self.null_bias_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.null_bias_combobox.setFixedSize(self.std_button_size)
+        self.null_bias_combobox.setFixedSize(72, self.std_height)
+
+        self.poly_order_hlayout = QHBoxLayout()
+        self.poly_order_hlayout.addWidget(self.null_bias_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.poly_order_hlayout.addWidget(self.null_bias_combobox, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # Bounding Box toggle
+        self.bounding_label = QLabel("Bounding Box:")
+        tip = 'Bounding rectangle (default=ON). Caution: Turning this OFF will result in images that are the same size as the source images but may have missing data, while turning this ON will result in no missing data but may significantly increase the size of the generated images.'
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.bounding_label.setToolTip(wrapped)
+        # self.toggle_bounding_rect_switch = 1
+        self.toggle_bounding_rect = ToggleSwitch()
+        self.toggle_bounding_rect.setToolTip(wrapped)
+        # self.toggle_bounding_rect.setChecked(True)
+        # self.toggle_bounding_rect.setV_scale(.6)
+        # self.toggle_bounding_rect.setH_scale(.8)
+        self.toggle_bounding_rect.toggled.connect(bounding_rect_changed_callback)
+        self.toggle_bounding_hlayout = QHBoxLayout()
+        self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # Regenerate Button
+        # mdi6.reload
+        self.regenerate_label = QLabel('(Re)generate:')
+        self.regenerate_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.regenerate_label.setToolTip('Regenerate aligned with adjusted settings')
+        # self.regenerate_button = QPushButton('(Re-)Generate')
+        self.regenerate_button = QPushButton()
+        self.regenerate_button.setToolTip('Regenerate aligned with adjusted settings')
+        # self.regenerate_button.setIcon(qta.icon("fa.refresh", color=cfg.ICON_COLOR))
+        self.regenerate_button.setIcon(qta.icon("ri.refresh-line", color=cfg.ICON_COLOR))
+        # self.regenerate_load_image_workerbutton.clicked.connect(regenerate_aligns)
+        self.regenerate_button.clicked.connect(self.run_regenerate_alignment)
+        self.regenerate_button.setFixedSize(self.std_height, self.std_height)
+
+        self.regenerate_hlayout = QHBoxLayout()
+        self.regenerate_hlayout.addWidget(self.regenerate_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.regenerate_hlayout.addWidget(self.regenerate_button, alignment=Qt.AlignmentFlag.AlignRight)
+
+        # pixmap = getattr(QStyle, 'SP_BrowserReload')
+        # icon = self.style().standardIcon(pixmap)
+        # self.regenerate_button.setIcon(icon)
+        # # self.regenerate_button.setLayoutDirection(alignEM.RightToLeft)
+        self.postalignment_note = QLabel("Note: These settings adjust,\nbut do not alter the initial\nalignment.")
+        self.postalignment_note.setFont(QFont('Arial', 11, QFont.Light))
+        self.postalignment_note.setContentsMargins(0, 0, 0, 0)
+        self.postalignment_layout = QGridLayout()
+        self.postalignment_layout.setContentsMargins(10, 25, 10, 5)
+
+        self.postalignment_layout.addLayout(self.poly_order_hlayout, 0, 0, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.postalignment_layout.addLayout(self.toggle_bounding_hlayout, 1, 0, alignment=Qt.AlignmentFlag.AlignVCenter)
+        # self.postalignment_layout.addWidget(self.regenerate_button, 2, 0, alignment=alignEM.AlignmentFlag.AlignCenter)
+        self.postalignment_layout.addLayout(self.regenerate_hlayout, 2, 0, alignment=Qt.AlignmentFlag.AlignVCenter)
+        self.postalignment_layout.addWidget(self.postalignment_note, 23, 0, alignment=Qt.AlignmentFlag.AlignBottom)
+
+        '''------------------------------------------
+        PANEL 4: EXPORT & VIEW
+        ------------------------------------------'''
+        n_scales_label = QLabel("# of scales:")
+        n_scales_label.setToolTip("Number of scale pyramid layers (default=4)")
+        self.n_scales_input = QLineEdit(self)
+        self.n_scales_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.n_scales_input.setText("4")
+        self.n_scales_input.setFixedWidth(self.std_input_size_small)
+        self.n_scales_input.setFixedHeight(self.std_height)
+        self.n_scales_valid = QIntValidator(1, 20, self)
+        self.n_scales_input.setValidator(self.n_scales_valid)
+
+        clevel_label = QLabel("clevel (1-9):")
+        clevel_label.setToolTip("Zarr Compression Level (default=5)")
+        self.clevel_input = QLineEdit(self)
+        self.clevel_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.clevel_input.setText("5")
+        self.clevel_input.setFixedWidth(self.std_input_size_small)
+        self.clevel_input.setFixedHeight(self.std_height)
+        self.clevel_valid = QIntValidator(1, 9, self)
+        self.clevel_input.setValidator(self.clevel_valid)
+        cname_label = QLabel("cname:")
+        cname_label.setToolTip("Zarr Compression Type (default=zstd) ")
+        self.cname_combobox = QComboBox(self)
+        self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
+        self.cname_combobox.setFixedSize(72, self.std_height)
+        self.export_and_view_hbox = QHBoxLayout()
+        self.export_zarr_button = QPushButton(" Export\n Zarr")
+        tip = "To view data in Neuroglancer, it is necessary to export to a compatible " \
+              "format such as Zarr. This function exports all aligned .TIF images for " \
+              "current scale to the chunked and compressed Zarr (.zarr) format with " \
+              "scale pyramid. Uses parallel processing."
+        wrapped = "\n".join(textwrap.wrap(tip, width=35))
+        self.export_zarr_button.setToolTip(wrapped)
+        self.export_zarr_button.clicked.connect(self.export_zarr)
+        self.export_zarr_button.setFixedSize(self.square_button_size)
+        self.export_zarr_button.setStyleSheet("font-size: 10px;")
+        # self.export_zarr_button.setIcon(qta.icon("fa5s.file-export", color=cfg.ICON_COLOR))
+        self.export_zarr_button.setIcon(qta.icon("fa5s.cubes", color=cfg.ICON_COLOR))
+
+        # self.ng_button = QPushButton("View In\nNeuroglancer")
+        self.ng_button = QPushButton("3DEM")
+        self.ng_button.setToolTip('View Zarr export in Neuroglancer.')
+        self.ng_button.clicked.connect(
+            self.ng_view)  # parenthesis were causing the member function to be evaluated early
+        self.ng_button.setFixedSize(self.square_button_size)
+        self.ng_button.setIcon(qta.icon("ph.cube-light", color=cfg.ICON_COLOR))
+        # self.ng_button.setStyleSheet("font-size: 9px;")
+
+        self.export_and_view_hlayout = QVBoxLayout()
+        self.export_and_view_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        self.export_and_view_hlayout.addWidget(self.ng_button, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        self.n_scales_layout = QHBoxLayout()
+        self.n_scales_layout.setContentsMargins(0, 0, 0, 0)
+        self.n_scales_layout.addWidget(n_scales_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.n_scales_layout.addWidget(self.n_scales_input, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.clevel_layout = QHBoxLayout()
+        self.clevel_layout.setContentsMargins(0, 0, 0, 0)
+        self.clevel_layout.addWidget(clevel_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.cname_layout = QHBoxLayout()
+        # self.cname_layout.setContentsMargins(0,0,0,0)
+        self.cname_layout.addWidget(cname_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.export_settings_grid_layout = QGridLayout()
+        self.export_settings_grid_layout.addLayout(self.clevel_layout, 1, 0)
+        self.export_settings_grid_layout.addLayout(self.cname_layout, 0, 0)
+        self.export_settings_grid_layout.addLayout(self.n_scales_layout, 2, 0)
+        self.export_settings_grid_layout.addLayout(self.export_and_view_hlayout, 0, 1, 3, 1)
+        # self.export_settings_grid_layout.addWidget(self.export_zarr_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignRight)
+        # self.export_settings_grid_layout.addWidget(self.ng_button, 2, 1, alignment=alignEM.AlignmentFlag.AlignRight)
+        self.export_settings_grid_layout.setContentsMargins(10, 25, 10, 5)  # tag23
+
+        '''------------------------------------------
+        INTEGRATED CONTROL PANEL
+        ------------------------------------------'''
+        # controlpanel
+        cpanel_height = 200
+        cpanel_1_width = 260
+        cpanel_2_width = 260
+        cpanel_3_width = 320
+        cpanel_4_width = 170
+        cpanel_5_width = 240
+
+        # PROJECT CONTROLS
+        self.project_functions_groupbox = QGroupBox("Project")
+        self.project_functions_groupbox_ = QGroupBox("Project")
+        self.project_functions_groupbox.setLayout(self.project_functions_layout)
+        self.project_functions_stack = QStackedWidget()
+        self.project_functions_stack.setFixedSize(cpanel_1_width, cpanel_height)
+        self.project_functions_stack.addWidget(self.project_functions_groupbox_)
+        self.project_functions_stack.addWidget(self.project_functions_groupbox)
+        self.project_functions_stack.setCurrentIndex(1)
+
+        # SCALING & DATA SELECTION CONTROLS
+        self.images_and_scaling_groupbox = QGroupBox("Data Selection && Scaling")
+        self.images_and_scaling_groupbox_ = QGroupBox("Scaling && Data Selection")
+        self.images_and_scaling_groupbox.setLayout(self.images_and_scaling_layout)
+        self.images_and_scaling_stack = QStackedWidget()
+        self.images_and_scaling_stack.setFixedSize(cpanel_2_width, cpanel_height)
+        self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox_)
+        self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox)
+        self.images_and_scaling_stack.setCurrentIndex(0)
+
+        # ALIGNMENT CONTROLS
+        self.alignment_groupbox = QGroupBox("Alignment")
+        self.alignment_groupbox_ = QGroupBox("Alignment")
+        self.alignment_groupbox.setTitle('Alignment')
+        self.alignment_groupbox_.setTitle('Alignment')
+        self.alignment_groupbox.setLayout(self.alignment_layout)
+        self.alignment_stack = QStackedWidget()
+        self.alignment_stack.setFixedSize(cpanel_3_width, cpanel_height)
+        self.alignment_stack.addWidget(self.alignment_groupbox_)
+        self.alignment_stack.addWidget(self.alignment_groupbox)
+        self.alignment_stack.setCurrentIndex(0)
+
+        # POST-ALIGNMENT CONTROLS
+        self.postalignment_groupbox = QGroupBox("Adjust Output")
+        self.postalignment_groupbox_ = QGroupBox("Adjust Output")
+        self.postalignment_groupbox.setLayout(self.postalignment_layout)
+        self.postalignment_stack = QStackedWidget()
+        self.postalignment_stack.setFixedSize(cpanel_4_width, cpanel_height)
+        self.postalignment_stack.addWidget(self.postalignment_groupbox_)
+        self.postalignment_stack.addWidget(self.postalignment_groupbox)
+        self.postalignment_stack.setCurrentIndex(0)
+
+        # EXPORT & VIEW CONTROLS
+        self.export_and_view_groupbox = QGroupBox("Export && View")
+        self.export_and_view_groupbox_ = QGroupBox("Export && View")
+        self.export_and_view_groupbox.setLayout(self.export_settings_grid_layout)
+        self.export_and_view_stack = QStackedWidget()
+        self.export_and_view_stack.setFixedSize(cpanel_5_width, cpanel_height)
+        self.export_and_view_stack.addWidget(self.export_and_view_groupbox_)
+        self.export_and_view_stack.addWidget(self.export_and_view_groupbox)
+        self.export_and_view_stack.setCurrentIndex(0)
+
+        self.images_and_scaling_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
+        self.alignment_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
+        self.postalignment_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
+        self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
+
+        self.lower_panel_groups_ = QGridLayout()
+        self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.setHorizontalSpacing(15)
+        self.lower_panel_groups = QWidget()
+        self.lower_panel_groups.setLayout(self.lower_panel_groups_)
+        # self.lower_panel_groups.setFixedHeight(cpanel_height + 10)
+        # self.main_panel_layout.addLayout(self.lower_panel_groups) #**
+        # self.main_panel_layout.setAlignment(alignEM.AlignmentFlag.AlignHCenter)
+
+        '''------------------------------------------
+        MAIN LAYOUT
+        ------------------------------------------'''
+
+        self.image_panel = MultiImagePanel()
+        self.image_panel.setFocusPolicy(Qt.StrongFocus)
+        self.image_panel.setFocus()
+        self.image_panel.draw_annotations = self.draw_annotations
+        # self.image_panel.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding) #0610
+        self.image_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self.image_panel.setMinimumHeight(400)
+
+        self.bottom_panel_stacked_widget = QStackedWidget()
+        self.bottom_panel_stacked_widget.addWidget(self.hud)
+
+        self.plot_widget = pg.PlotWidget()
+        # self.snr_plt = pg.plot()
+
+        self.plot_widget_clear_button = QPushButton('Clear Plot')
+        self.plot_widget_clear_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.plot_widget_clear_button.clicked.connect(self.plot_widget.clear)
+        self.plot_widget_clear_button.setFixedSize(self.square_button_size)
+        # self.plot_widget_back_button.setIcon(qta.icon("mdi.back", color=cfg.ICON_COLOR))
+
+        self.plot_widget_back_button = QPushButton('Back')
+        # self.plot_widget_back_button.setStyleSheet("font-size: 10px;")
+        self.plot_widget_back_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.plot_widget_back_button.clicked.connect(self.back_callback)
+        self.plot_widget_back_button.setFixedSize(self.square_button_size)
+        self.plot_widget_back_button.setAutoDefault(True)
+
+        # self.plot_widget_back_button.setIcon(qta.icon("mdi.back", color=cfg.ICON_COLOR))
+
+        self.plot_controls_layout = QVBoxLayout()
+        self.plot_controls_layout.addWidget(self.plot_widget_clear_button)
+        self.plot_controls_layout.addWidget(self.plot_widget_back_button)
+        self.plot_controls_layout.addSpacerItem(
+            QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
+        self.plot_widget_layout = QHBoxLayout()
+        self.plot_widget_layout.addWidget(self.plot_widget)
+        self.plot_widget_layout.addLayout(self.plot_controls_layout)
+
+        self.plot_widget_container = QWidget()
+        self.plot_widget_container.setLayout(self.plot_widget_layout)
+
+        self.python_console_back_button = QPushButton('Back')
+        # self.python_console_back_button.setStyleSheet("font-size: 10px;")
+        self.python_console_back_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.python_console_back_button.clicked.connect(self.back_callback)
+        self.python_console_back_button.setFixedSize(self.square_button_size)
+        self.python_console_back_button.setAutoDefault(True)
+
+        # self.python_console_controls_layout = QVBoxLayout()
+        # self.python_console_controls_layout.addWidget(self.python_console_back_button)
+        # self.python_console_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
+        self.python_console_layout = QHBoxLayout()
+        self.python_console_layout.addWidget(self.python_jupyter_console)
+        # self.python_console_layout.addLayout(self.python_console_controls_layout)
+
+        self.python_console_widget_container = QWidget()
+        self.python_console_widget_container.setLayout(self.python_console_layout)
+
+        self.bottom_panel_stacked_widget.addWidget(self.plot_widget_container)
+        self.bottom_panel_stacked_widget.addWidget(self.python_console_widget_container)
+        self.bottom_panel_stacked_widget.setCurrentIndex(0)
+
+        '''MAIN SECONDARY CONTROL PANEL'''
+        self.show_hud_button = QPushButton("Head-up\nDisplay")
+        self.show_hud_button.setStyleSheet("font-size: 10px;")
+        self.show_hud_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_hud_button.clicked.connect(self.show_hud)
+        self.show_hud_button.setFixedSize(self.square_button_size)
+        self.show_hud_button.setIcon(qta.icon("mdi.monitor", color=cfg.ICON_COLOR))
+
+        self.show_python_console_button = QPushButton("Python\nConsole")
+        self.show_python_console_button.setStyleSheet("font-size: 10px;")
+        self.show_python_console_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_python_console_button.clicked.connect(self.show_python_console)
+        self.show_python_console_button.setFixedSize(self.square_button_size)
+        self.show_python_console_button.setIcon(qta.icon("fa.terminal", color=cfg.ICON_COLOR))
+
+        self.show_snr_plot_button = QPushButton("SNR\nPlot")
+        self.show_snr_plot_button.setStyleSheet("font-size: 10px;")
+        self.show_snr_plot_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_snr_plot_button.clicked.connect(self.show_snr_plot)
+        self.show_snr_plot_button.setFixedSize(self.square_button_size)
+        self.show_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color=cfg.ICON_COLOR))
+
+        self.main_secondary_controls_layout = QVBoxLayout()
+        self.main_secondary_controls_layout.setContentsMargins(0, 8, 0, 0)
+        self.main_secondary_controls_layout.addWidget(self.show_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_secondary_controls_layout.addWidget(self.show_python_console_button,
+                                                      alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_secondary_controls_layout.addWidget(self.show_snr_plot_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.spacer_item_main_secondary = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+        self.main_secondary_controls_layout.addSpacerItem(self.spacer_item_main_secondary)
+
+        self.bottom_display_area_hlayout = QHBoxLayout()
+        self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
+        self.bottom_display_area_hlayout.addWidget(self.bottom_panel_stacked_widget)
+        self.bottom_display_area_hlayout.addLayout(self.main_secondary_controls_layout)
+        self.bottom_display_area_widget = QWidget()
+        self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
+
+        self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.setContentsMargins(0, 0, 0, 0)
+        self.splitter.addWidget(self.image_panel)
+        self.splitter.addWidget(self.lower_panel_groups)
+        # self.splitter.addWidget(self.hud)
+        self.splitter.addWidget(self.bottom_display_area_widget)
+
+        self.hud.setContentsMargins(0, 0, 0, 0)
+
+        # self.splitter.addWidget(self.progress_bar)
+        # self.progress_bar.setGeometry(200, 80, 250, 20)
+        # https://stackoverflow.com/questions/14397653/qsplitter-with-one-fixed-size-widget-and-one-variable-size-widget
+        self.splitter.setStretchFactor(0, 1)
+        self.splitter.setStretchFactor(1, 0)
+        self.splitter.setStretchFactor(2, 1)
+        self.splitter.setCollapsible(0, False)
+        self.splitter.setCollapsible(1, False)
+        self.splitter.setCollapsible(2, True)
+
+        self.main_panel = QWidget()
+        # self.main_panel_layout = QVBoxLayout()
+        self.main_panel_layout = QGridLayout()
+        self.main_panel_layout.setSpacing(4)  # this will inherit downward
+
+        self.main_panel_layout.addWidget(self.splitter, 1, 0)
+        self.main_panel.setLayout(self.main_panel_layout)
+
+        '''------------------------------------------
+        AUXILIARY PANELS
+        ------------------------------------------'''
+        # PROJECT VIEW PANEL
+        self.project_view = QTreeView()
+        self.project_model = JsonModel()
+        self.project_view.setModel(self.project_model)
+        self.project_view.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.project_view.setAlternatingRowColors(True)
+        self.exit_project_view_button = QPushButton("Back")
+        self.exit_project_view_button.setFixedSize(self.std_button_size)
+        self.exit_project_view_button.clicked.connect(self.back_callback)
+        self.refresh_project_view_button = QPushButton("Refresh")
+        self.refresh_project_view_button.setFixedSize(self.std_button_size)
+        self.refresh_project_view_button.clicked.connect(self.project_view_callback)
+        self.save_project_project_view_button = QPushButton("Save")
+        self.save_project_project_view_button.setFixedSize(self.std_button_size)
+        self.save_project_project_view_button.clicked.connect(self.save_project)
+
+        self.project_view_panel = QWidget()
+        self.project_view_panel_layout = QVBoxLayout()
+        self.project_view_panel_layout.addWidget(self.project_view)
+        self.project_view_panel_controls_layout = QHBoxLayout()
+        self.project_view_panel_controls_layout.addWidget(self.exit_project_view_button,
+                                                          alignment=Qt.AlignmentFlag.AlignLeft)
+        self.project_view_panel_controls_layout.addWidget(self.refresh_project_view_button,
+                                                          alignment=Qt.AlignmentFlag.AlignLeft)
+        self.project_view_panel_controls_layout.addWidget(self.save_project_project_view_button,
+                                                          alignment=Qt.AlignmentFlag.AlignLeft)
+        self.project_view_panel_controls_layout.addSpacerItem(
+            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.project_view_panel_layout.addLayout(self.project_view_panel_controls_layout)
+        self.project_view_panel.setLayout(self.project_view_panel_layout)
+
+        # DOCUMENTATION PANEL
+        self.browser = QWebEngineView()
+        self.browser_docs = QWebEngineView()
+        self.exit_docs_button = QPushButton("Back")
+        self.exit_docs_button.setFixedSize(self.std_button_size)
+        self.exit_docs_button.clicked.connect(self.exit_docs)
+        self.readme_button = QPushButton("README.md")
+        self.readme_button.setFixedSize(self.std_button_size)
+        self.readme_button.clicked.connect(self.documentation_view_home)
+        self.docs_panel = QWidget()
+        self.docs_panel_layout = QVBoxLayout()
+        self.docs_panel_layout.addWidget(self.browser_docs)
+        self.docs_panel_controls_layout = QHBoxLayout()
+        self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.docs_panel_controls_layout.addWidget(self.readme_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
+        self.spacer_item_docs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.docs_panel_controls_layout.addSpacerItem(self.spacer_item_docs)
+        self.docs_panel_layout.addLayout(self.docs_panel_controls_layout)
+        self.docs_panel.setLayout(self.docs_panel_layout)
+
+        # FUNKY PANEL
+
+
+        self.splash()
+
+        # REMOTE VIEWER PANEL
+        self.browser_remote = QWebEngineView()
+        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))  # tacctacc
+        # self.browser_remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        self.exit_remote_button = QPushButton("Back")
+        self.exit_remote_button.setFixedSize(self.std_button_size)
+        self.exit_remote_button.clicked.connect(self.exit_remote)
+        self.reload_remote_button = QPushButton("Reload")
+        self.reload_remote_button.setFixedSize(self.std_button_size)
+        self.reload_remote_button.clicked.connect(self.reload_remote)
+        self.remote_viewer_panel = QWidget()
+        self.remote_viewer_panel_layout = QVBoxLayout()
+        self.remote_viewer_panel_layout.addWidget(self.browser_remote)
+        self.remote_viewer_panel_controls_layout = QHBoxLayout()
+        self.remote_viewer_panel_controls_layout.addWidget(self.exit_remote_button,
+                                                           alignment=Qt.AlignmentFlag.AlignLeft)
+        self.remote_viewer_panel_controls_layout.addWidget(self.reload_remote_button,
+                                                           alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
+        self.spacer_item_remote_panel = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.remote_viewer_panel_controls_layout.addSpacerItem(self.spacer_item_remote_panel)
+        self.remote_viewer_panel_layout.addLayout(self.remote_viewer_panel_controls_layout)
+        self.remote_viewer_panel.setLayout(self.remote_viewer_panel_layout)
+
+        # DEMOS PANEL
+        self.exit_demos_button = QPushButton("Back")
+        self.exit_demos_button.setFixedSize(self.std_button_size)
+        self.exit_demos_button.clicked.connect(self.exit_demos)
+        self.demos_panel = QWidget()  # create QWidget()
+        self.demos_panel_layout = QVBoxLayout()  # create QVBoxLayout()
+        self.demos_panel_controls_layout = QHBoxLayout()
+        self.demos_panel_controls_layout.addWidget(self.exit_demos_button)  # go back button
+        self.demos_panel_layout.addLayout(self.demos_panel_controls_layout)  # add horizontal layout
+        self.demos_panel.setLayout(self.demos_panel_layout)  # set layout
+        # self.demos_panel_layout.addWidget(self.browser)            # add widgets
+
+        # NEUROGLANCER CONTROLS PANEL
+        self.exit_ng_button = QPushButton("Back")
+        self.exit_ng_button.setFixedSize(self.std_button_size)
+        self.exit_ng_button.clicked.connect(self.exit_ng)
+        self.reload_ng_button = QPushButton("Reload")
+        self.reload_ng_button.setFixedSize(self.std_button_size)
+        self.reload_ng_button.clicked.connect(self.reload_ng)
+        self.print_state_ng_button = QPushButton("Print State")
+        self.print_state_ng_button.setFixedSize(self.std_button_size)
+        self.print_state_ng_button.clicked.connect(self.print_state_ng)
+        self.print_url_ng_button = QPushButton("Print URL")
+        self.print_url_ng_button.setFixedSize(self.std_button_size)
+        self.print_url_ng_button.clicked.connect(self.print_url_ng)
+        # self.screenshot_ng_button = QPushButton("Screenshot")
+        # self.screenshot_ng_button.setFixedSize(QSize(100, 28))
+        # self.screenshot_ng_button.clicked.connect(screenshot_ng)
+        # self.blend_ng_button = QPushButton("Blend (b)")
+        # self.blend_ng_button.setFixedSize(QSize(100, 28))
+        # self.blend_ng_button.clicked.connect(blend_ng)
+        self.ng_panel = QWidget()  # create QWidget()
+        self.ng_panel_layout = QVBoxLayout()  # create QVBoxLayout()
+        self.ng_panel_layout.addWidget(self.browser)  # add widgets
+        self.ng_panel_controls_layout = QHBoxLayout()
+        self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.ng_panel_controls_layout.addWidget(self.reload_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.ng_panel_controls_layout.addWidget(self.print_state_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.ng_panel_controls_layout.addWidget(self.print_url_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.ng_panel_controls_layout.addWidget(self.screenshot_ng_button, alignment=alignEM.AlignmentFlag.AlignLeft)
+        # self.ng_panel_controls_layout.addWidget(self.blend_ng_button, alignment=alignEM.AlignmentFlag.AlignLeft)
+        # self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) #0610
+        self.spacer_item_ng_panel = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.ng_panel_controls_layout.addSpacerItem(self.spacer_item_ng_panel)
+        self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)  # add horizontal layout
+        self.ng_panel.setLayout(self.ng_panel_layout)  # set layout
+
+        # self.spacerItem = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum) # not working
+
+        # stack of windows views
+        self.stacked_widget = QStackedWidget(self)
+        self.stacked_widget.addWidget(self.main_panel)  # (0) main_panel
+        self.stacked_widget.addWidget(self.ng_panel)  # (1) ng_panel
+        self.stacked_widget.addWidget(self.docs_panel)  # (2) docs_panel
+        self.stacked_widget.addWidget(self.demos_panel)  # (3) demos_panel
+        self.stacked_widget.addWidget(self.remote_viewer_panel)  # (4) remote_viewer_panel
+        # self.stacked_widget.addWidget(self.project_view)  # (5) self.project_view
+        self.stacked_widget.addWidget(self.project_view_panel)  # (5) self.project_view
+        self.stacked_widget.addWidget(self.funky_panel)  # (d) self.funky_panel
+        self.stacked_widget.setCurrentIndex(0)
+
+        # This can be invisible, will still use to organize QStackedWidget
+        self.pageComboBox = QComboBox()
+        self.pageComboBox.addItem("Main")
+        self.pageComboBox.addItem("Neuroglancer Local")
+        self.pageComboBox.addItem("Documentation")
+        self.pageComboBox.addItem("Demos")
+        self.pageComboBox.addItem("Remote Viewer")
+        self.pageComboBox.addItem("Project View")
+        self.pageComboBox.addItem("Funky")
+        self.pageComboBox.activated[int].connect(self.stacked_widget.setCurrentIndex)
+        # self.pageComboBox.activated.connect(self.stackedLayout.s_etCurrentIndex)
+
+        self.stacked_layout = QVBoxLayout()
+        self.stacked_layout.addWidget(self.stacked_widget)
+        self.setCentralWidget(self.stacked_widget)  # setCentralWidget to QStackedWidget
+
+        # ------------------------------------------------------------------------------------------------
+        # PROPOSED BOUNDARY LINE
+        # ------------------------------------------------------------------------------------------------
+
+    def set_main_view(self):
+        self.stacked_widget.setCurrentIndex(0)
+
+
+    def show_splash(self):
+        print('Initializing funky UI...')
+        #
+        # # self.stacked_widget.setCurrentIndex(6)
+        #
+        # pixmap = QPixmap('fusiform-alignem-guy.png')
+        # # splash = QSplashScreen(pixmap)
+        # splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
+        # splash.setMask(splash_pix.mask())
+        # splash.show()
+        # # app.processEvents()
+
+        # splash_pix = QPixmap('fusiform-alignem-guy.png')
+        splash_pix = QPixmap('em_guy.png')
+        splash = QSplashScreen(self, splash_pix, Qt.WindowStaysOnTopHint)
+        splash.setMask(splash_pix.mask())
+        splash.show()
+
+    def splash(self):
+        self.funky_panel = QWidget()
+        self.funky_layout = QVBoxLayout()
+        pixmap = QPixmap('fusiform-alignem-guy.png')
+        label = QLabel(self)
+        label.setPixmap(pixmap)
+        # self.resize(pixmap.width(), pixmap.height())
+        self.funky_layout.addWidget(label)
+        self.funky_panel.setLayout(self.funky_layout)
+
+
+
+
