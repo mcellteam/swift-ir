@@ -9,6 +9,7 @@ class DataModel:
     """ Encapsulate data model dictionary and wrap with methods for convenience """
 
     def __init__(self):
+        self._current_version = 0.31
         self._project_data = \
             {
                 "version": 0.31,
@@ -79,9 +80,9 @@ class DataModel:
 
 
 
-    def upgrade_data_model(data_model):
+    def upgrade_data_model(self, data_model):
         # Upgrade the "Data Model"
-        if data_model['version'] != new_project_template['version']:
+        if data_model['version'] != self._current_version:
 
             # Begin the upgrade process:
 
@@ -203,10 +204,10 @@ class DataModel:
                 # data_model ['version'] = 0.32
 
             # Make the final test
-            if data_model['version'] != new_project_template['version']:
+            if data_model['version'] != self._current_version:
                 # The data model could not be upgraded, so return a string with the error
                 data_model = 'Version mismatch. Expected "' + str(
-                    new_project_template['version']) + '" but found ' + str(
+                    self._current_version) + '" but found ' + str(
                     data_model['version'])
 
         return data_model
