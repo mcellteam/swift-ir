@@ -73,8 +73,10 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
-    project = copy.deepcopy(cfg.project_data)
-    alstack = project['data']['scales'][use_scale]['alignment_stack']
+    # project = copy.deepcopy(cfg.project_data)
+    # alstack = project['data']['scales'][use_scale]['alignment_stack']
+    alstack = copy.deepcopy(cfg.project_data['data']['scales'][use_scale]['alignment_stack'])
+
 
     if cfg.PARALLEL_MODE:
         logger.info('cfg.PARALLEL_MODE was True...')
@@ -82,9 +84,10 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         # Write the entire project as a single JSON file with a unique stable name for this run
         logger.info("Copying project file to 'project_runner_job_file.json'")
 
-        run_project_name = os.path.join(project['data']['destination_path'], "project_runner_job_file.json")
+        run_project_name = os.path.join(cfg.project_data.destination(), "project_runner_job_file.json")
         with open(run_project_name, 'w') as f:
-            f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(project))
+            # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.project_data.to_json()))
+            f.write(cfg.project_data.to_json())
 
         # task_queue = TaskQueue(n_tasks=len(alstack))
         task_queue = TaskQueue(n_tasks=len(alstack))
@@ -231,7 +234,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         '''Run the project directly in Serial mode. Does not generate aligned images.'''
         logger.info('Calling run_json_project (cfg.PARALLEL_MODE was False)...')
         updated_model, need_to_write_json = run_json_project(
-                project=project,
+                project=copy.deepcopy(cfg.project_data.to_dict()),
                 alignment_option=alignment_option,
                 use_scale=use_scale,
                 swiftir_code_mode=cfg.CODE_MODE,
