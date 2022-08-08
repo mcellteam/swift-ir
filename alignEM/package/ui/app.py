@@ -36,7 +36,7 @@ import package.config as cfg
 from package.em_utils import *
 from package.scale_pyramid import add_layer
 # from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model, DataModel
-from data_model import DataModel
+from package.data_model import DataModel
 from package.image_utils import get_image_size
 from package.compute_affines import compute_affines
 from package.generate_aligned import generate_aligned
@@ -3609,7 +3609,7 @@ class MainWindow(QMainWindow):
         # # app.processEvents()
 
         # splash_pix = QPixmap('fusiform-alignem-guy.png')
-        splash_pix = QPixmap('em_guy.png')
+        splash_pix = QPixmap('./resources/em_guy.png')
         splash = QSplashScreen(self, splash_pix, Qt.WindowStaysOnTopHint)
         splash.setMask(splash_pix.mask())
         splash.show()
@@ -3617,7 +3617,7 @@ class MainWindow(QMainWindow):
     def splash(self):
         self.funky_panel = QWidget()
         self.funky_layout = QVBoxLayout()
-        pixmap = QPixmap('fusiform-alignem-guy.png')
+        pixmap = QPixmap('./resources/fusiform-alignem-guy.png')
         label = QLabel(self)
         label.setPixmap(pixmap)
         # self.resize(pixmap.width(), pixmap.height())
