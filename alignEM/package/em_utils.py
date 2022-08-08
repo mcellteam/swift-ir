@@ -28,9 +28,9 @@ __all__ = ['get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'set_scales_from_string', 'makedirs_exist_ok', 'set_default_settings',
            'clear_all_skips', 'verify_image_file', 'print_debug',
            'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project',
-           'ensure_proper_data_structure', 'is_cur_scale_ready_for_alignment',
-           'get_aligned_scales_list', 'get_not_aligned_scales_list', 'get_scales_list',
-           'get_next_coarsest_scale_key','get_snr_list', 'print_snr_list', 'print_project_tree']
+           'is_cur_scale_ready_for_alignment', 'get_aligned_scales_list', 'get_not_aligned_scales_list',
+           'get_scales_list', 'get_next_coarsest_scale_key','get_snr_list', 'print_snr_list', 'print_project_tree',
+           'get_coarsest_scale_key']
 
 logger = logging.getLogger(__name__)
 # logging.basicConfig(
@@ -183,39 +183,6 @@ def set_default_settings() -> None:
             else:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
-
-def ensure_proper_data_structure():
-    '''Called by link_all_stacks'''
-    logger.info('ensure_proper_data_structure >>>>')
-    ''' Try to ensure that the data model is usable. '''
-    scales_dict = cfg.project_data['data']['scales']
-    coarsest = list(scales_dict.keys())[-1]
-    for scale_key in scales_dict.keys():
-        scale = scales_dict[scale_key]
-        scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
-        scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
-        scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
-        # if not 'use_bounding_rect' in scale: scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
-        # if not 'null_cafm_trends' in scale:  scale['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
-        # if not 'poly_order' in scale:        scale['poly_order'] = cfg.DEFAULT_POLY_ORDER
-        for layer_index in range(len(scale['alignment_stack'])):
-            layer = scale['alignment_stack'][layer_index]
-            # atrm = layer['align_to_ref_method']
-            # mdata = atrm['method_data']
-            layer.setdefault('align_to_ref_method', {})
-            layer['align_to_ref_method'].setdefault('method_data', {})
-            layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
-            layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
-            # if not 'align_to_ref_method' in layer: layer['align_to_ref_method'] = {}
-            # if not 'method_data' in atrm: atrm['method_data'] = {}
-            # if not 'win_scale_factor' in mdata: mdata['win_scale_factor'] = float(cfg.main_window.get_swim_input())
-            # if not 'whitening_factor' in mdata: mdata['whitening_factor'] = float(cfg.main_window.get_whitening_input())
-            if scale_key == coarsest:
-                layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
-            else:
-                layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
-
-    logger.info("<<<< ensure_proper_data_structure")
 
 
 def set_scales_from_string(scale_string: str):
@@ -709,6 +676,8 @@ def getScaleKeys() -> list[str]:
         print_exception()
         logger.warning('Unable to return dictionary keys for scales')
 
+def get_coarsest_scale_key() -> None:
+    return list(cfg.project_data['data']['scales'].keys())[-1]
 
 def is_dataset_scaled() -> bool:
     '''Checks if there exists any stacks of scaled images

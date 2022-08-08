@@ -3,43 +3,60 @@
 AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
+import os
 import json
+import logging
+from copy import deepcopy
+
+import package.config as cfg
+
+__all__ = ['DataModel']
+
+logger = logging.getLogger(__name__)
 
 class DataModel:
     """ Encapsulate data model dictionary and wrap with methods for convenience """
 
-    def __init__(self):
+    def __init__(self, data=None):
+
         self._current_version = 0.31
-        self._project_data = \
-            {
-                "version": 0.31,
-                "method": "None",
-                "user_settings": {
-                    "max_image_file_size": 100000000,
-                    "use_c_version": True
-                },
-                "data": {
-                    "source_path": "",
-                    "destination_path": "",
-                    "current_layer": 0,
-                    "current_scale": "scale_1",
-                    "panel_roles": [
-                        "ref",
-                        "base",
-                        "aligned"
-                    ],
-                    "scales": {
-                        "scale_1": {
-                            "method_data": {
-                                "alignment_option": "init_affine"
-                            },
-                            "null_cafm_trends": False,
-                            "use_bounding_rect": True,
-                            "alignment_stack": []
+
+
+        if data != None:
+            self._project_data = data
+        else:
+            self._project_data = \
+                {
+                    "version": 0.31,
+                    "method": "None",
+                    "user_settings": {
+                        "max_image_file_size": 100000000,
+                        "use_c_version": True
+                    },
+                    "data": {
+                        "source_path": "",
+                        "destination_path": "",
+                        "current_layer": 0,
+                        "current_scale": "scale_1",
+                        "panel_roles": [
+                            "ref",
+                            "base",
+                            "aligned"
+                        ],
+                        "scales": {
+                            "scale_1": {
+                                "method_data": {
+                                    "alignment_option": "init_affine"
+                                },
+                                "null_cafm_trends": False,
+                                "use_bounding_rect": True,
+                                "alignment_stack": []
+                            }
                         }
                     }
                 }
-            }
+        if self._project_data['version'] != self._current_version:
+            self.upgrade_data_model()
 
     def __setitem__(self, key, item):
         self._project_data[key] = item
@@ -47,9 +64,34 @@ class DataModel:
     def __getitem__(self, key):
         return self._project_data[key]
 
-    def __str__(self):
+    # def __str__(self):
+    #     return json.dumps(self._project_data)
+
+    def to_json(self):
         return json.dumps(self._project_data)
 
+    def to_dict(self):
+        return self._project_data
+
+    def __repr__(self):
+        return self.to_json()
+
+    def __copy__(self):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        result.__dict__.update(self.__dict__)
+        return result
+
+    def __deepcopy__(self, memo):
+        cls = self.__class__
+        result = cls.__new__(cls)
+        memo[id(self)] = result
+        for k, v in self.__dict__.items():
+            setattr(result, k, deepcopy(v, memo))
+        return result
+
+    def destination(self):
+        return self._project_data['data']['destination_path']
 
     def append_layer(self, scale_key):
         self._project_data['data']['scales'][scale_key]['alignment_stack'].append(
@@ -68,7 +110,7 @@ class DataModel:
             })
         pass
 
-    def append_image(self, scale_key, layer_index, role, filename=''):
+    def add_img(self, scale_key, layer_index, role, filename=''):
         self._project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
             {
                 "filename": filename,
@@ -78,7 +120,68 @@ class DataModel:
                 }
             }
 
+    def ensure_proper_data_structure(self):
+        '''Ensure that the data model is usable.'''
+        logger.info('ensure_proper_data_structure >>>>')
+        '''  '''
+        scales_dict = self._project_data['data']['scales']
+        coarsest = list(scales_dict.keys())[-1]
+        for scale_key in scales_dict.keys():
+            scale = scales_dict[scale_key]
+            scale.setdefault('use_bounding_rect', cfg.DEFAULT_BOUNDING_BOX)
+            scale.setdefault('null_cafm_trends', cfg.DEFAULT_NULL_BIAS)
+            scale.setdefault('poly_order', cfg.DEFAULT_POLY_ORDER)
+            for layer_index in range(len(scale['alignment_stack'])):
+                layer = scale['alignment_stack'][layer_index]
+                layer.setdefault('align_to_ref_method', {})
+                layer['align_to_ref_method'].setdefault('method_data', {})
+                layer['align_to_ref_method']['method_data'].setdefault('win_scale_factor', cfg.DEFAULT_SWIM_WINDOW)
+                layer['align_to_ref_method']['method_data'].setdefault('whitening_factor', cfg.DEFAULT_WHITENING)
+                if scale_key == coarsest:
+                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+                else:
+                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+        logger.info("<<<< ensure_proper_data_structure")
 
+    def link_all_stacks(self):
+        '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
+        logger.debug('link_all_stacks >>>>')
+        self.ensure_proper_data_structure()  # 0712 #0802 #original
+        for scale_key in self._project_data['data']['scales'].keys():
+            skip_list = []
+            for layer_index in range(len(self._project_data['data']['scales'][scale_key]['alignment_stack'])):
+                if self._project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
+                    skip_list.append(layer_index)
+                base_layer = self._project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
+                if layer_index == 0:
+                    if 'ref' not in base_layer['images'].keys():
+                        self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename='')
+                elif layer_index in skip_list:
+                    # No ref for skipped layer
+                    if 'ref' not in base_layer['images'].keys():
+                        self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename='')
+
+                else:
+                    # Find nearest previous non-skipped layer
+                    j = layer_index - 1
+                    while (j in skip_list) and (j >= 0):
+                        j -= 1
+
+                    # Use the nearest previous non-skipped layer as ref for this layer
+                    if (j not in skip_list) and (j >= 0):
+                        ref_layer = self._project_data['data']['scales'][scale_key]['alignment_stack'][j]
+                        ref_fn = ''
+                        if 'base' in ref_layer['images'].keys():
+                            ref_fn = ref_layer['images']['base']['filename']
+                        if 'ref' not in base_layer['images'].keys():
+                            self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename=ref_fn)
+                        else:
+                            base_layer['images']['ref']['filename'] = ref_fn
+
+        # cfg.main_window.update_win_self()
+        # cfg.main_window.center_all_images()  # 0702 necessary call
+        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
+        logger.debug('<<<< link_all_stacks')
 
     def upgrade_data_model(self, data_model):
         # Upgrade the "Data Model"
@@ -207,7 +310,7 @@ class DataModel:
             if data_model['version'] != self._current_version:
                 # The data model could not be upgraded, so return a string with the error
                 data_model = 'Version mismatch. Expected "' + str(
-                    self._current_version) + '" but found ' + str(
+                    self._current_versionZ) + '" but found ' + str(
                     data_model['version'])
 
         return data_model

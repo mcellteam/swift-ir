@@ -35,7 +35,8 @@ import package.config as cfg
 #     get_scales_list
 from package.em_utils import *
 from package.scale_pyramid import add_layer
-from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model, DataModel
+# from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model, DataModel
+from data_model import DataModel
 from package.image_utils import get_image_size
 from package.compute_affines import compute_affines
 from package.generate_aligned import generate_aligned
@@ -121,13 +122,17 @@ def link_stack():
         if layer_index == 0:
             # No ref for layer 0
             if 'ref' not in base_layer['images'].keys():
-                base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-            base_layer['images']['ref']['filename'] = ''
+                cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
+                                              filename='')
+            #     base_layer['images']['ref'] = copy.deepcopy(new_image_template)
+            # base_layer['images']['ref']['filename'] = ''
         elif layer_index in skip_list:
             # No ref for skipped layer
             if 'ref' not in base_layer['images'].keys():
-                base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-            base_layer['images']['ref']['filename'] = ''
+                cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
+                                              filename='')
+            #     base_layer['images']['ref'] = copy.deepcopy(new_image_template)
+            # base_layer['images']['ref']['filename'] = ''
         else:
             # Find nearest previous non-skipped layer
             j = layer_index - 1
@@ -141,8 +146,10 @@ def link_stack():
                 if 'base' in ref_layer['images'].keys():
                     ref_fn = ref_layer['images']['base']['filename']
                 if 'ref' not in base_layer['images'].keys():
-                    base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-                base_layer['images']['ref']['filename'] = ref_fn
+                    cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
+                                                  filename='')
+                #     base_layer['images']['ref'] = copy.deepcopy(new_image_template)
+                # base_layer['images']['ref']['filename'] = ref_fn
     
     # main_win.update_panels() #0526
     cfg.main_window.update_win_self()
@@ -151,61 +158,6 @@ def link_stack():
     logger.info('Exiting link_stack')
     cfg.main_window.hud.post('Complete')
 
-
-# NOTE: this is called right after importing base images (through update_linking_callback)
-def link_all_stacks():
-    '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
-    logger.info('link_all_stacks >>>>')
-    # global cfg.project_data #0619 this was NOT in 0613 commit
-    path = os.path.abspath(cfg.project_data['data']['destination_path'])
-    # pathtest1 = path + '/project_data_snapshot_pathtest1_BEFORE.json'
-    # pathtest2 = path + '/project_data_snapshot_pathtest2_AFTER.json'
-    # with open(pathtest1, 'w') as f:
-    #     json.dump(cfg.project_data, f)
-    ensure_proper_data_structure()  #0712 #0802
-    # with open(pathtest2, 'w') as f:
-    #     json.dump(cfg.project_data, f)
-    for scale_key in cfg.project_data['data']['scales'].keys():
-        logger.critical('linking scale %s ' % scale_key)
-        skip_list = []
-        for layer_index in range(len(cfg.project_data['data']['scales'][scale_key]['alignment_stack'])):
-            if cfg.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
-                logger.info('  appending layer ' + str(layer_index) + ' to skip_list')  # 0714 <-- issue w/ scope
-                skip_list.append(layer_index)  # skip
-        
-        for layer_index in range(len(cfg.project_data['data']['scales'][scale_key]['alignment_stack'])):
-            base_layer = cfg.project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]
-            
-            if layer_index == 0:
-                # No ref for layer 0 # <-- ******
-                if 'ref' not in base_layer['images'].keys():
-                    base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-                base_layer['images']['ref']['filename'] = ''
-            elif layer_index in skip_list:
-                # No ref for skipped layer
-                if 'ref' not in base_layer['images'].keys():
-                    base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-                base_layer['images']['ref']['filename'] = ''
-            else:
-                # Find nearest previous non-skipped layer
-                j = layer_index - 1
-                while (j in skip_list) and (j >= 0):
-                    j -= 1
-                
-                # Use the nearest previous non-skipped layer as ref for this layer
-                if (j not in skip_list) and (j >= 0):
-                    ref_layer = cfg.project_data['data']['scales'][scale_key]['alignment_stack'][j]
-                    ref_fn = ''
-                    if 'base' in ref_layer['images'].keys():
-                        ref_fn = ref_layer['images']['base']['filename']
-                    if 'ref' not in base_layer['images'].keys():
-                        base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-                    base_layer['images']['ref']['filename'] = ref_fn
-    
-    cfg.main_window.update_win_self()
-    cfg.main_window.center_all_images()  # 0702 necessary call
-    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    logger.info('<<<< link_all_stacks')
 
 
 def null_bias_changed_callback(state):
@@ -680,7 +632,7 @@ class MainWindow(QMainWindow):
                  ['Refresh All Images (Repaint+Update Panels)', None, self.refresh_all_images, None, None, None],
                  ['Read project_data Update GUI', None, self.read_project_data_update_gui, None, None, None],
                  ['Read GUI Update project_data', None, self.read_gui_update_project_data, None, None, None],
-                 ['Link Images Stacks', None, link_all_stacks, None, None, None],
+                 ['Link Images Stacks', None, cfg.project_data.link_all_stacks, None, None, None],
                  ['Reload Scales Combobox', None, self.reload_scales_combobox, None, None, None],
                  ['Update Project Inspector', None, self.update_project_inspector, None, None, None],
                  ['Update Alignment Details', None, self.update_alignment_details, None, None, None],
@@ -799,7 +751,7 @@ class MainWindow(QMainWindow):
         # with open(json_path) as f:
         #     document = json.load(f)
         #     self.project_model.load(document)
-        self.project_model.load(cfg.project_data)
+        self.project_model.load(cfg.project_data.to_dict())
         self.project_view.show()
         self.stacked_widget.setCurrentIndex(5)
         # 0718
@@ -850,7 +802,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Generating Scales Triggered an Exception - Returning', logging.ERROR)
             # return #0804-
 
-        link_all_stacks()
+        cfg.project_data.link_all_stacks()
         set_default_settings()
         cfg.project_data['data']['current_scale'] = get_scales_list()[-1]
         self.read_project_data_update_gui()
@@ -1795,7 +1747,8 @@ class MainWindow(QMainWindow):
             return
 
         logger.info("Overwriting project data in memory with project template")
-        cfg.project_data = copy.deepcopy(new_project_template)
+        # cfg.project_data = copy.deepcopy(new_project_template)
+        cfg.project_data = DataModel()
         logger.info("Creating new project %s" % filename)
         self.project_filename = filename
         self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
@@ -1899,7 +1852,8 @@ class MainWindow(QMainWindow):
         if filename != '':
             with open(filename, 'r') as f:
                 proj_copy = json.load(f)
-            proj_copy = upgrade_data_model(proj_copy)  # Upgrade the "Data Model"
+            # proj_copy = upgrade_data_model(proj_copy)  # Upgrade the "Data Model"
+            proj_copy = DataModel(proj_copy)  # Upgrade the "Data Model"
             if type(proj_copy) == type('abc'):  # abc = abstract base class
                 # There was a known error loading the data model
                 self.hud.post('There was a problem loading the project file.', logging.ERROR)
@@ -1935,13 +1889,13 @@ class MainWindow(QMainWindow):
             pathtest4 = path + '/project_data_snapshot_pathtest4_AFTER.json'
             with open(pathtest3, 'w') as f:
                 json.dump(cfg.project_data, f)
-            ensure_proper_data_structure()
+            cfg.project_data.ensure_proper_data_structure()
             with open(pathtest4, 'w') as f:
                 json.dump(cfg.project_data, f)
 
 
 
-            link_all_stacks()
+            cfg.project_data.link_all_stacks()
             self.read_project_data_update_gui()
             self.reload_scales_combobox()
             self.auto_set_user_progress()
@@ -1991,7 +1945,7 @@ class MainWindow(QMainWindow):
             self.read_gui_update_project_data()
         if not self.project_filename.endswith('.json'):
             self.project_filename += ".json"
-        proj_copy = copy.deepcopy(cfg.project_data)
+        proj_copy = copy.deepcopy(cfg.project_data.to_dict())
         if cfg.project_data['data']['destination_path'] != None:
             if len(proj_copy['data']['destination_path']) > 0:
                 proj_copy['data']['destination_path'] = make_relative(
@@ -2002,8 +1956,7 @@ class MainWindow(QMainWindow):
                 for role in layer['images'].keys():
                     if layer['images'][role]['filename'] != None:
                         if len(layer['images'][role]['filename']) > 0:
-                            layer['images'][role]['filename'] = make_relative(
-                                layer['images'][role]['filename'], self.project_filename)
+                            layer['images'][role]['filename'] = make_relative(layer['images'][role]['filename'], self.project_filename)
         logger.info("Writing cfg.project_data to '%s'" % self.project_filename)
         logger.info('------- WRITING TO PROJECT FILE -------')
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
@@ -2051,7 +2004,9 @@ class MainWindow(QMainWindow):
         print_debug(50, "  Action: " + str(option_action))
     
     def add_image_to_role(self, image_file_name, role_name):
-        # logger.info('add_image_to_role:')
+        logger.info('add_image_to_role:')
+        logger.info('  image_file_name = %s' % image_file_name)
+        logger.info('  role_name = %s' % role_name)
         
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
         local_cur_scale = get_cur_scale_key()
@@ -2070,13 +2025,15 @@ class MainWindow(QMainWindow):
                 else:
                     # This means that there are no unused slots for this role. Add a new layer
                     # logger.info("add_image_to_role | Making a new layer for file " + str(image_file_name) + " in role " + str(role_name) + " at layer " + str(layer_index_for_new_role))
-                    cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(copy.deepcopy(new_layer_template))
+                    # cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(copy.deepcopy(new_layer_template))
+                    cfg.project_data.append_layer(scale_key=local_cur_scale)
                     layer_index_for_new_role = len(cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
-                image_dict = \
-                    cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role][
-                        'images']
-                image_dict[role_name] = copy.deepcopy(new_image_template)
-                image_dict[role_name]['filename'] = image_file_name
+                # image_dict = cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'][
+                #     layer_index_for_new_role]['images']
+                # image_dict[role_name] = copy.deepcopy(new_image_template)
+                # image_dict[role_name]['filename'] = image_file_name
+                cfg.project_data.add_img(scale_key=local_cur_scale, layer_index=layer_index_for_new_role,
+                                              role=role_name, filename=image_file_name)
     
     def add_empty_to_role(self, role_name):
         logger.info('MainWindow.add_empty_to_role:')
@@ -2091,13 +2048,15 @@ class MainWindow(QMainWindow):
             # There are no unused slots for this role. Add a new layer
             logger.info(
                 "Making a new layer for empty in role " + str(role_name) + " at layer " + str(layer_index_for_new_role))
-            cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(
-                copy.deepcopy(new_layer_template))
+            # cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(
+            #     copy.deepcopy(new_layer_template))
+            cfg.project_data.append_layer(scale_key=local_cur_scale)
             layer_index_for_new_role = len(cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
-        image_dict = cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role][
-            'images']
-        image_dict[role_name] = copy.deepcopy(new_image_template)
-        image_dict[role_name]['filename'] = None
+        # image_dict = cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role][
+        #     'images']
+        # image_dict[role_name] = copy.deepcopy(new_image_template)
+        # image_dict[role_name]['filename'] = None
+        cfg.project_data.add_img(scale_key=local_cur_scale, layer_index=layer_index_for_new_role,role=role_name, filename=None)
     
     def import_images(self, clear_role=False):
         ''' Import images into project '''
@@ -2131,12 +2090,11 @@ class MainWindow(QMainWindow):
             self.generate_scales_button.setEnabled(True)
             # img_size = get_image_size(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0]['images']['base']['filename'])
             img_size = get_image_size(
-                cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0]['images'][
-                    str(role_to_import)]['filename'])
+                cfg.project_data['data']['scales']['scale_1']['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
             n_images = get_num_imported_images()
             self.hud.post('%d Images Were Imported' % n_images)
             self.hud.post('Image dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
-            link_all_stacks()  # 0714+
+            cfg.project_data.link_all_stacks()  # 0714+
             self.center_all_images()
             self.update_panels()
         else:
@@ -2214,12 +2172,15 @@ class MainWindow(QMainWindow):
         else:
             # This means that there are no unused slots for this role. Add a new layer
             # logger.info("Making a new layer for <empty> in role " + str(role_to_import) + " at layer " + str(layer_index_for_new_role))
-            cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(
-                copy.deepcopy(new_layer_template))
+            # cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(
+            #     copy.deepcopy(new_layer_template))
+            cfg.project_data.append_layer(scale_key=local_cur_scale)
             layer_index_for_new_role = len(cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack']) - 1
-        image_dict = cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role][
-            'images']
-        image_dict[role_to_import] = copy.deepcopy(new_image_template)
+        # image_dict = cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'][layer_index_for_new_role][
+        #     'images']
+        # image_dict[role_to_import] = copy.deepcopy(new_image_template)
+        cfg.project_data.add_img(scale_key=local_cur_scale, layer_index=layer_index_for_new_role,
+                                      role=role_to_import, filename='')
         # Draw the panels ("windows")
         for p in self.panel_list:
             p.force_center = True
