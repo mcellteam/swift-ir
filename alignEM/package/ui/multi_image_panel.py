@@ -20,6 +20,9 @@ class MultiImagePanel(QWidget):
     def __init__(self):
         super(MultiImagePanel, self).__init__()
 
+        self.actual_children = []
+        self.zpw = []
+
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor('black'))
         self.setPalette(p)
@@ -28,7 +31,7 @@ class MultiImagePanel(QWidget):
 
         self.hb_layout = QHBoxLayout()
         self.setLayout(self.hb_layout)
-        self.actual_children = []
+
         self.hb_layout.setContentsMargins(0, 0, 0, 0)
         self.hb_layout.setSpacing(0)
         self.draw_border = False
@@ -41,6 +44,8 @@ class MultiImagePanel(QWidget):
         # To have scrolling keys associated with this (multi-panel) widget, set a "StrongFocus"
         # self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  #tag #add #0526 uncommenting, because not certain it does anything and have zoom issue
         self.arrow_direction = 1
+
+        self.set_roles(cfg.roles_list) #0809+
 
     #keypress
     def keyPressEvent(self, event):
@@ -71,6 +76,9 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
 
+    def get_children(self):
+        return [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
+
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -95,7 +103,7 @@ class MultiImagePanel(QWidget):
                 p.repaint()
 
     def refresh_all_images(self):
-        logger.info('Refreshing all images, called by %s' % str(inspect.stack()[1].function))
+        logger.debug('Refreshing all images, called by %s' % str(inspect.stack()[1].function))
         if self.actual_children != None:
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in panels_to_update:
@@ -121,20 +129,29 @@ class MultiImagePanel(QWidget):
 
             cfg.project_data['data']['panel_roles'] = roles_list
             # Remove all the image panels (to be replaced)
-            try:
-                self.remove_all_panels()
-            except:
-                logger.warning("MultiImagePanel.set_roles was unable to 'self.remove_all_panels()'")
-                pass
+            # try:
+            #     self.remove_all_panels()
+            # except:
+            #     logger.warning("MultiImagePanel.set_roles was unable to 'self.remove_all_panels()'")
+            #     pass
             # Create the new panels
-            for role in roles_list:
-                zpw = ZoomPanWidget(role=role, parent=self)  # focus #zoompanwidget
+            for i, role in enumerate(roles_list):
+
+                # zpw = ZoomPanWidget(role=role, parent=self)  # focus #zoompanwidget
+                # # Restore the settings from the previous zpw
+                # if role in role_settings:
+                #     zpw.set_settings(role_settings[role])
+                # # zpw.draw_border = self.draw_border #border #0520
+                # zpw.draw_annotations = self.draw_annotations
+                # self.add_panel(zpw)
+
+                self.zpw.append(ZoomPanWidget(role=role, parent=self))  # focus #zoompanwidget
                 # Restore the settings from the previous zpw
                 if role in role_settings:
-                    zpw.set_settings(role_settings[role])
+                    self.zpw[i].set_settings(role_settings[role])
                 # zpw.draw_border = self.draw_border #border #0520
-                zpw.draw_annotations = self.draw_annotations
-                self.add_panel(zpw)
+                self.zpw[i].draw_annotations = self.draw_annotations
+                self.add_panel(self.zpw[i])
 
 
 

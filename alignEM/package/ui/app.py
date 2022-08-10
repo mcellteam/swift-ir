@@ -42,7 +42,7 @@ from package.compute_affines import compute_affines
 from package.generate_aligned import generate_aligned
 from package.generate_scales import generate_scales
 from .head_up_display import HeadsUpDisplay
-from .image_library import ImageLibrary
+from .image_library import ImageLibrary, SmartImageLibrary
 from .runnable_server import RunnableServer
 from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
@@ -179,6 +179,7 @@ def bounding_rect_changed_callback(state):
     # logger.info('  Bounding Rect project_file value was:', cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
     
     caller = inspect.stack()[1].function
+    logger.info('Called By %s' % caller)
     # logger.info('bounding_rect_changed_callback | called by %s ' % caller)
     # if cfg.main_window.toggle_bounding_rect_switch == 1:
     if state:
@@ -764,7 +765,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def run_scaling(self) -> None:
-        logger.info("run_scaling >>>>")
+        logger.info("run_scaling:")
         self.set_status("Scaling...")
         self.hud.post('Requesting scale factors from user')
 
@@ -837,7 +838,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def run_alignment(self) -> None:
-        logger.info('run_alignment >>>>>>>>')
+        logger.info('run_alignment:')
         self.read_gui_update_project_data()
         # This should be impossible to trigger due to disabling/enabling of buttons.
         if not is_cur_scale_ready_for_alignment():
@@ -894,7 +895,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def run_regenerate_alignment(self) -> None:
-        logger.info('run_regenerate_alignment >>>>>>>>')
+        logger.info('run_regenerate_alignment:')
         self.read_gui_update_project_data()
         if not is_cur_scale_aligned():
             self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
@@ -914,10 +915,27 @@ class MainWindow(QMainWindow):
             return
         
         if are_aligned_images_generated():
+            logger.info('are_aligned_images_generated() returned True. Setting user progress to stage 3...')
             self.set_progress_stage_3()
+            cfg.main_window.image_panel.zpw[2].setFocus()
+            self.image_panel.center_all_images()
+            # self.next_scale_button_callback()
+            # self.prev_scale_button_callback()
+
+            # cur_layer = get_cur_layer()
+            # self.jump_to_layer(-1)
+            # self.jump_to_layer(cur_layer)
+
+            # self.center_all_images()
+            # self.read_project_data_update_gui()
+            # self.update_win_self()
+            self.image_panel.all_images_actual_size()
+            self.image_panel.center_all_images()
+            self.update_panels()  # 0721+
             self.center_all_images()
+
             self.hud.post("Regenerate Complete")
-            logger.info('\nRegenerate Complete\n')
+            logger.info('\n\nRegenerate Complete\n')
         else:
             self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning First.', logging.ERROR)
         self.update_win_self()
@@ -1030,7 +1048,7 @@ class MainWindow(QMainWindow):
         self.set_idle()
     
     def update_win_self(self):
-        logger.info("update_win_self (called by %s):" % inspect.stack()[1].function)
+        logger.debug("update_win_self (called by %s):" % inspect.stack()[1].function)
         # self.center_all_images()  # uncommenting causes centering issues to re-emerge
         self.update()  # repaint
     
@@ -1968,8 +1986,8 @@ class MainWindow(QMainWindow):
                     if layer['images'][role]['filename'] != None:
                         if len(layer['images'][role]['filename']) > 0:
                             layer['images'][role]['filename'] = make_relative(layer['images'][role]['filename'], self.project_filename)
-        logger.info("Writing cfg.project_data to '%s'" % self.project_filename)
-        logger.info('------- WRITING TO PROJECT FILE -------')
+        logger.info("Writing data to '%s'" % self.project_filename)
+        logger.critical('---- WRITING DATA TO PROJECT FILE ----')
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         proj_json = jde.encode(proj_copy)
         with open(self.project_filename, 'w') as f:
@@ -2129,6 +2147,7 @@ class MainWindow(QMainWindow):
     
     def define_roles(self, roles_list):
         logger.info("MainWindow.define_roles:")
+        logger.info('Roles List: %s' % str(roles_list))
         
         # Set the image panels according to the roles
         self.image_panel.set_roles(roles_list)
@@ -2265,7 +2284,9 @@ class MainWindow(QMainWindow):
             self.image_panel.remove_all_panels()
         else:
             print_debug(30, "image_panel does not exit!!")
-        self.define_roles([])  # 0601
+        # self.define_roles([])  # 0601  #0809-
+        # self.image_panel.set_roles(cfg.roles_list) #0809+
+
         self.update_win_self()
     
     @Slot()
@@ -2282,6 +2303,7 @@ class MainWindow(QMainWindow):
         self.image_panel is a MultiImagePanel object'''
         logger.info("Called by " + inspect.stack()[1].function)
         self.image_panel.center_all_images(all_images_in_stack=all_images_in_stack)
+        self.image_panel.update_multi_self()
     
     @Slot()
     def all_images_actual_size(self):
@@ -3011,10 +3033,12 @@ class MainWindow(QMainWindow):
         self.align_label_scales_remaining = QLabel()
         self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
         self.align_label_scales_remaining.setStyleSheet("""color: #F3F6FB;""")
-        self.alignment_status_label.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_resolution.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_affine.setFont(QFont('Terminus', 12, QFont.Bold))
-        self.align_label_scales_remaining.setFont(QFont('Terminus', 12, QFont.Bold))
+        # self.alignment_status_label.setFont(QFont('Terminus', 12, QFont.Bold))
+        # self.align_label_resolution.setFont(QFont('Terminus', 12, QFont.Bold))
+        # self.align_label_affine.setFont(QFont('Terminus', 12, QFont.Bold))
+        # self.align_label_scales_remaining.setFont(QFont('Terminus', 12, QFont.Bold))
+
+
         # self.alignment_status_label.hide()
         # self.align_label_resolution.hide()
         # self.align_label_affine.hide()

@@ -313,7 +313,7 @@ def update_datamodel(updated_model):
 
 def makedirs_exist_ok(path_to_build, exist_ok=False):
     # Needed for old python which doesn't have the exist_ok option!!!
-    logger.info("makedirs_exist_ok | Making directories for path %s" % path_to_build)
+    logger.debug("Making directories for path %s" % path_to_build)
     parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
     full = ""
     if len(parts[0]) == 0:
@@ -434,9 +434,8 @@ def print_dat_files() -> None:
     '''Prints the .dat files for the current scale, if they exist .'''
     bias_data_path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(), 'bias_data')
     if are_images_imported():
-        cfg.main_window.hud.post('Printing .dat Files')
+        logger.info('Printing .dat Files')
         try:
-            logger.info()
             logger.info("_____________________BIAS DATA_____________________")
             logger.info("Scale %s____________________________________________" % get_cur_scale_key()[-1])
             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
@@ -476,14 +475,13 @@ def print_dat_files() -> None:
 
 def print_sanity_check():
     # logging.debug('print_sanity_check | logger is logging')
-    print("___________________SANITY CHECK____________________")
-    print("Project____________________________________________")
+    logger.info("___________________SANITY CHECK____________________")
+    logger.info("Project____________________________________________")
     # try:
     #     print_project_tree()
     # except:
     #     logger.info('Unable to print project tree at this time')
     
-    cfg.main_window.hud.post('Printing Sanity Check')
     if cfg.project_data['data']['source_path']:
         print("  Source path                                      :", cfg.project_data['data']['source_path'])
     else:
@@ -863,10 +861,10 @@ def are_aligned_images_generated():
     # logger.info("cfg.project_data['data']['destination_path'] = %s" % cfg.project_data['data']['destination_path'])
     files = glob(path + '/*.tif')
     if len(files) < 1:
-        logger.warning('Zero aligned TIFs were found at this scale - Returning False')
+        logger.debug('Zero aligned TIFs were found at this scale - Returning False')
         return False
     else:
-        logger.info('One or more aligned TIFs were found at this scale - Returning True')
+        logger.debug('One or more aligned TIFs were found at this scale - Returning True')
         return True
 
 
@@ -879,8 +877,8 @@ def return_aligned_imgs() -> list:
         logger.warning('Something went wrong. Check project dictionary - Returning None')
         return []
 
-    # logger.info('# aligned images found: %d' % len(files))
-    # logger.info('List of aligned imgs: %s' % str(files))
+    logger.debug('# aligned images found: %d' % len(files))
+    logger.debug('List of aligned imgs: %s' % str(files))
     return files
 
 
@@ -894,8 +892,8 @@ def is_cur_scale_exported() -> bool:
     '''Checks if there exists an exported alignment'''
     path = os.path.join(cfg.project_data['data']['destination_path'], 'project.zarr', 'aligned_' + get_cur_scale_key())
     answer = os.path.isdir(path)
-    # logger.info("is_cur_scale_exported | path = " + path)
-    # logger.info("is_cur_scale_exported | answer = " + str(answer))
+    logger.debug("is_cur_scale_exported | path = " + path)
+    logger.debug("is_cur_scale_exported | answer = " + str(answer))
     return answer
 
 
@@ -903,15 +901,10 @@ def get_cur_snr() -> str:
     if not cfg.project_data['data']['current_scale']:
         logger.info("Canceling get_cur_snr() because no current scale is set...")
         return ''  # 0711
-
     try:
         s = cfg.project_data['data']['current_scale']
         l = cfg.project_data['data']['current_layer']
-
-        # logger.info("  len(cfg.project_data['data']['scales']) = %d" % len(cfg.project_data['data']['scales']))
-
         if len(cfg.project_data['data']['scales']) > 0:
-            # logger.info("len(cfg.project_data['data']['scales']) = %d" % len(cfg.project_data['data']['scales'][s]))
             scale = cfg.project_data['data']['scales'][s]
             if len(scale['alignment_stack']) > 0:
                 layer = scale['alignment_stack'][l]
@@ -921,7 +914,7 @@ def get_cur_snr() -> str:
                         if 'snr_report' in method_results:
                             if method_results['snr_report'] != None:
                                 curr_snr = method_results['snr_report']
-                                # logger.info("  returning the current snr: %s" % str(curr_snr))
+                                logger.debug("  returning the current snr: %s" % str(curr_snr))
                                 return str(curr_snr)
     except:
         print_exception()
@@ -953,8 +946,7 @@ def print_snr_list() -> None:
         logger.info('snr_report:  %s' % str(snr_report))
         logger.debug('All Mean SNRs for current scale:  %s' % str(get_snr_list()))
     except:
-        print_exception()
-        logger.warning('Getting SNR Data Triggered An Exception')
+        logger.info('Getting SNR Data Triggered An Exception')
 
 
 

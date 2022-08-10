@@ -20,13 +20,13 @@ logger = logging.getLogger(__name__)
 
 def generate_scales(progress_callback=None):
     QThread.currentThread().setObjectName('ScaleImages')
-    print('_____________Generate Scales Begin_____________')
+    logger.critical('_____________Generate Scales Begin_____________')
     
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     proj_path = cfg.project_data['data']['destination_path']
     # scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() + 1)) #0802
-    scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales()))
+    scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() - 1))
     cpus = min(psutil.cpu_count(logical=False), 48)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     my_system = platform.system()
@@ -130,7 +130,7 @@ def generate_scales(progress_callback=None):
                         # scale_q.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
                         scale_q.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
                         if i == 1:
-                            logger.info('\n____generate_scales____\nscale_q Parameters (Example):')
+                            logger.info('\n\nscale_q Parameters (Example):')
                             logger.info('1: %s\n2: %s\n3: %s\n4: %s\n' % (iscale2_c, scale_arg, outfile_arg, infile_arg))
                         '''
                         ____scale_q Parameters (Example)____

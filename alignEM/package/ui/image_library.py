@@ -10,7 +10,7 @@ from qtpy.QtGui import QPixmap
 import package.config as cfg
 from ..em_utils import get_scale_val
 
-__all__ = ['ImageLibrary','SmartImageLibrary']
+__all__ = ['ImageLibrary', 'SmartImageLibrary']
 
 logger = logging.getLogger(__name__)
 
@@ -174,6 +174,7 @@ class ImageLibrary:
         self._images = {}
 
     def update(self):
+        logger.info('ImageLibrary wants to update but does not know how!')
         pass
 
 

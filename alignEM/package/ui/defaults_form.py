@@ -106,7 +106,7 @@ class DefaultsForm(QDialog):
 
 
     def update_project_dict(self):
-        logger.critical('Running update_init_scale...')
+        logger.info('Running update_init_scale...')
         cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
         cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
         cfg.DEFAULT_BOUNDING_BOX = float(self.bounding_rectangle_checkbox.isChecked())
