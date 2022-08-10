@@ -12,11 +12,6 @@ __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
 import os
 import logging
 
-
-
-
-
-
 LOG_LEVEL = logging.DEBUG
 
 DEFAULT_SWIM_WINDOW       = float(0.8125)
@@ -63,6 +58,8 @@ ICON_COLOR = '#455364' # off blue-ish color
 
 WIDTH = 1320
 HEIGHT = 850
+
+roles_list = ['ref', 'base', 'aligned']
 
 
 

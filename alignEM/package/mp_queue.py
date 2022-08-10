@@ -226,7 +226,7 @@ class TaskQueue:
         logger.info('# tasks pending: %d' % n_pending)
         retries_tot = 0
         while (retries_tot < self.retries + 1) and n_pending:
-            print('# Tasks Pending: %d' % n_pending)
+            logger.info('# Tasks Pending: %d' % n_pending)
             self.end_tasks()
             self.work_queue.join()
             self.stop()
@@ -235,7 +235,7 @@ class TaskQueue:
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.debug('Collected results from Task_ID %d' % (task_id))
                 logger.debug('Task ID (outs): %d\n%s' % (task_id,outs)) #TODO make this a switch
-                logger.warning('\n%d%s' % (task_id,errs)) #TODO make this a switch
+                logger.warning('%d%s' % (task_id,errs)) #TODO make this a switch
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc

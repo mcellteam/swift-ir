@@ -34,7 +34,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     For now, start_layer is always passed the value 0, and
     num_layers is always passed the value -1.
     '''
-    print('_____________Generate Aligned Begin_____________')
+    logger.critical('_____________Generate Aligned Begin_____________')
     
     '''NEED AN IMMEDIATE CHECK RIGHT HERE TO SEE IF ALIGNMENT DATA EVEN EXISTS AND LOOKS CORRECT'''
 
@@ -65,7 +65,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     print('____________ print_snr_list() -tag7 (BELOW here SNR is removed) ____________')
     print_snr_list()
     if are_aligned_images_generated():
-        cfg.main_window.hud.post('Removing previously generated images for Scale %s...' % scale_key[-1])
+        cfg.main_window.hud.post('Removing Aligned Images for Scale Level %s...' % scale_key[-1])
         remove_aligned(use_scale=scale_key, start_layer=start_layer)
     print('____________ print_snr_list() -tag8 (ABOVE here SNR is removed) ____________')
     print_snr_list()
@@ -101,14 +101,14 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     else:
         end_layer = start_layer + num_layers
     logger.info(
-        'Running (Example): python job_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name')
+        '\nRunning (Example): python job_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name')
     for i, layer in enumerate(alstack[start_layer:end_layer + 1]):
         base_name = layer['images']['base']['filename']
         ref_name = layer['images']['ref']['filename']
         al_path, fn = os.path.split(base_name)
         if i == 1 or i == 5:
-            logger.info('\nSecond Layer (Example Paths):')
-            logger.info('basename=%s\nref_name=%s\nal_path=%s\nfn=%s' % (base_name, ref_name, al_path, fn))
+            logger.info('\nSecond Layer (Example Paths):\nbasename=%s\nref_name=%s\nal_path=%s\nfn=%s'
+                        % (base_name, ref_name, al_path, fn))
         al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
         layer['images']['aligned'] = {}
         layer['images']['aligned']['filename'] = al_name
@@ -121,7 +121,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             args = [sys.executable, apply_affine_job, '-gray', '-afm', str(cafm[0][0]), str(cafm[0][1]),
                     str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
         if i == 1:
-            logger.critical('\nSecond Layer (Example Arguments):')
+            logger.info('\nSecond Layer (Example Arguments):')
             print(*args, sep="\n")
             
             ofn = os.path.join(cfg.project_data['data']['destination_path'], scale_key, 'bias_data', 'apply_affine.dat')
@@ -132,7 +132,6 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
                 f.writelines("%s\n" % line for line in args)
         task_queue.add_task(args)
 
-    print('____________ print_snr_list() -tag9 ____________')
     print_snr_list()
     logger.info('Running Apply Affine Tasks (task_queue.collect_results())...')
     cfg.main_window.hud.post('Running Apply Affine Tasks...')
@@ -148,9 +147,6 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     logger.info('Stopping TaskQueue...')
     task_queue.stop()
     del task_queue
-
-    print('____________ print_snr_list() -tag10 ____________')
-    print_snr_list()
 
     print('_____________Generate Aligned End_____________')
 

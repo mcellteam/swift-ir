@@ -10,7 +10,6 @@ import platform
 import traceback
 import numpy as np
 import subprocess as sp
-import multiprocessing as mp
 
 try:     import package.config as cfg
 except:  import config as cfg
@@ -24,8 +23,6 @@ except:  from image_utils import get_image_size
 __all__ = ['run_json_project', 'alignment_process']
 
 logger = logging.getLogger(__name__)
-# logger = mp.log_to_stderr()
-# logger.setLevel(logging.INFO)
 
 
 def run_json_project(project,
@@ -635,7 +632,7 @@ class align_ingredient:
     #        supplied afm matrix but do not refine the afm matrix
     #  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
     # def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None):
-    def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None):
+    def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None, align_dir=None):
         logger.info('\nalign_align_ingredient >>>>\n')
 
         self.swim_drift = 0.5
@@ -651,6 +648,7 @@ class align_ingredient:
         self.snr = None
         self.snr_report = None
         self.threshold = (3.5, 200, 200)
+        self.align_dir=align_dir
 
         # Configure platform-specific path to executables for C SWiFT-IR
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
@@ -735,6 +733,10 @@ class align_ingredient:
         #  swim WindowSize [Options] ImageName1 tarx tary ImageName2 patx paty afm0 afm1 afm2 afm3
         # 0721 ^^ use this form to add initial rotation
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
+
+        proj_path = cfg.project_data['data']['destination_path']
+        spot_img_path = proj_path + 'correlation_spot_image'
+
         for i in range(len(self.psta[0])):
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
             offy = int(self.psta[1][i] - (wwy_f / 2.0))
@@ -744,6 +746,7 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
+                              ' -k  ' + spot_img_path + \
                               ' ' + karg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
@@ -758,7 +761,7 @@ class align_ingredient:
             multi_swim_arg_string += swim_arg_string + "\n"
             logger.info('\nSWIM argument string: %s\n' % multi_swim_arg_string)
 
-        o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string)
+        o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
 
         swim_out_lines = o['out'].strip().split('\n')
         swim_err_lines = o['err'].strip().split('\n')
@@ -951,6 +954,7 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
         logger.warning(traceback.format_exc())
 
     return global_afm, recipe
+
 
 
 if __name__ == '__main__':

@@ -15,7 +15,7 @@ from .mp_queue import TaskQueue
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
 from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_dat_files, \
-    get_scales_list, print_sanity_check, print_snr_list, remove_aligned, update_datamodel
+    print_sanity_check, print_snr_list, remove_aligned, update_datamodel, are_aligned_images_generated
 
 
 __all__ = ['compute_affines','rename_layers','remove_aligned']
@@ -29,10 +29,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
     QThread.currentThread().setObjectName('ComputeAffines')
 
-    logger.info('_____________Compute Affines Begin_____________')
-
-    logger.info('SNR Report:')
-    print_snr_list()
+    logger.critical('_____________Compute Affines Begin_____________')
 
     if are_images_imported():
         pass
@@ -57,7 +54,8 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
 
     cfg.main_window.alignment_status_checkbox.setChecked(False)
-    cfg.main_window.hud.post('Removing previously generated images for Scale %s...' % use_scale[-1])
+    if are_aligned_images_generated():
+        cfg.main_window.hud.post('Removing Aligned Images for Scale Level %s...' % use_scale[-1])
     remove_aligned(use_scale=use_scale, start_layer=start_layer)
     logger.info('Clearing method_results data...')
     cfg.project_data.clear_method_results(scale_key=use_scale)
@@ -90,11 +88,8 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     #     for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
     #
 
-    print('____________ print_snr_list() -tag4 (writing SNR to project dict happens BELOW here) ____________')
-    print_snr_list()
-
     if cfg.PARALLEL_MODE:
-        logger.info('cfg.PARALLEL_MODE was True...')
+        logger.debug('cfg.PARALLEL_MODE was True...')
         '''Run the project as a series of jobs'''
         # Write the entire project as a single JSON file with a unique stable name for this run
         logger.info("Copying project file to 'project_runner_job_file.json'")
@@ -116,8 +111,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         cfg.main_window.hud.post("Starting Project Runner Task Queue with %d CPUs (TaskQueue.start)" % cpus)
         task_queue.start(cpus)
         align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
-
-        print_sanity_check()
 
         for i,layer in enumerate(alstack):
             lnum = alstack.index(layer)
@@ -147,8 +140,9 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
                 task_queue.add_task(task_args)
 
-        # task_queue.work_q.join()
+        QThread.currentThread().setObjectName('ComputeAffines')
 
+        # task_queue.work_q.join()
         t0 = time.time()
         cfg.main_window.hud.post('Waiting for Alignment Tasks to Complete...')
         # **********************************
@@ -256,7 +250,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
         
         print_alignment_layer()
-        print_dat_files()
+        # print_dat_files()
         
     else:
         '''Run the project directly in Serial mode. Does not generate aligned images.'''
