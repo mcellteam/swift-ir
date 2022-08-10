@@ -104,7 +104,7 @@ class ZoomPanWidget(QWidget):
         self.parent.update_multi_self(exclude=[self])
 
     def update_zpa_self(self):
-        # logger.info('Updating zpa self | Caller: ' + inspect.stack()[1].function + ' |  ZoomPanWidget.update_zpa_self...')
+        logger.debug('Updating zpa self | Caller: ' + inspect.stack()[1].function + ' |  ZoomPanWidget.update_zpa_self...')
         # Call the super "update" function for this panel's QWidget (this "self")
         if self.parent != None:
             # self.draw_border = self.parent.draw_border #border #0520
@@ -119,7 +119,7 @@ class ZoomPanWidget(QWidget):
         #     self.setToolTip('%s\n%s\n%s' % ( get_cur_scale_key(), self.role, str(get_cur_snr() ) ))
 
     def show_actual_size(self):
-        # logger.info("Showing actual size | ZoomPanWidget.show_actual_size...")
+        logger.debug("ZoomPanWidget.show_actual_size:")
         self.zoom_scale = 1.0
         self.ldx = 0
         self.ldy = 0
@@ -129,8 +129,7 @@ class ZoomPanWidget(QWidget):
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
-        # logger.info("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
-        # logger.info("  ZoomPanWidget is centering image for " + str(self.role))
+        logger.debug("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
         try:
             if cfg.project_data != None:
                 # s = get_cur_scale_key()

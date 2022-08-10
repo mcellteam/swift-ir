@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 if __name__ == '__main__':
 
     if len(sys.argv) != 8:
-        # logger.info ( "Error: " + sys.argv[0] + " requires 7 arguments (only got " + str(len(sys.argv)) + ")" )
+        logger.critical ( "Error: " + sys.argv[0] + " requires 7 arguments (got " + str(len(sys.argv)) + ")" )
         pass
     else:
         this_file = sys.argv[0]

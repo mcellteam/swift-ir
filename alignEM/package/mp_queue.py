@@ -18,6 +18,7 @@ from qtpy.QtCore import QThread
 __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.WARNING)
 
 class TqdmToLogger(io.StringIO):
     """
@@ -103,13 +104,13 @@ class TaskQueue:
         self.pbar_q = self.ctx.Queue()
 
         mpl = mp.log_to_stderr()
-        mpl.setLevel(logging.INFO)
+        mpl.setLevel(logging.CRITICAL)
 
-        logger.info('TaskQueue Initialization')
-        logger.info('self.start_method = %s' % self.start_method)
-        logger.info('self.close_worker = %s' % str(self.close_worker))
-        logger.info('self.n_tasks = %d' % self.n_tasks)
-        logger.info('sys.version_info = %s' % str(sys.version_info))
+        logger.debug('TaskQueue Initialization')
+        logger.debug('self.start_method = %s' % self.start_method)
+        logger.debug('self.close_worker = %s' % str(self.close_worker))
+        logger.debug('self.n_tasks = %d' % self.n_tasks)
+        logger.debug('sys.version_info = %s' % str(sys.version_info))
 
         QThread.currentThread().setObjectName('TaskQueue')
 
@@ -139,7 +140,7 @@ class TaskQueue:
         self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
         # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
-        cfg.main_window.hud.post('Running RunnableWorker Threads...')
+        logger.info('Running RunnableWorker Threads...')
         for i in range(self.n_workers):
             sys.stderr.write('Restarting RunnableWorker %d >>>>>>>>' % i)
             p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
@@ -233,7 +234,8 @@ class TaskQueue:
             for j in range(n_pending):
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.debug('Collected results from Task_ID %d' % (task_id))
-                # logger.info('Task ID: %d\n%s' % (task_id,outs))
+                logger.debug('Task ID (outs): %d\n%s' % (task_id,outs)) #TODO make this a switch
+                logger.warning('\n%d%s' % (task_id,errs)) #TODO make this a switch
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc

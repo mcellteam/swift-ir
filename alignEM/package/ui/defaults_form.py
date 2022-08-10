@@ -10,7 +10,9 @@ from qtpy.QtGui import QDoubleValidator, QFont
 
 import package.config as cfg
 
-__all__ = ['ProjectForm']
+from package.em_utils import get_scale_key, get_scale_val, get_cur_scale_key, get_scales_list
+
+__all__ = ['DefaultsForm','DefaultsModel']
 
 logger = logging.getLogger(__name__)
 
@@ -22,19 +24,19 @@ https://doc.qt.io/qtforpython/overviews/modelview.html#using-adapters-between-fo
 ***QAbstractListModel*** <-- May need to subclass 
 '''
 
-class ProjectForm(QDialog):
+class DefaultsForm(QDialog):
 
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         self.parent = parent
-        super(ProjectForm, self).__init__()
+        super(DefaultsForm, self).__init__()
         self.setWindowTitle("ToolButton")
         self.setGeometry(400,400,300,260)
         g = self.geometry()
         g.moveCenter(self.parent.geometry().center())
         self.setGeometry(g)
-        self.defaults_file = cfg.project_data['data']['destination_path'] + '/defaults.json'
-        print('self.defaults_file = ', str(self.defaults_file))
-        self.defaults = None
+        # self.defaults_file = cfg.project_data['data']['destination_path'] + '/defaults.json'
+        # print('self.defaults_file = ', str(self.defaults_file))
+        # self.defaults = None
 
         self.createFormGroupBox()
 
@@ -42,12 +44,12 @@ class ProjectForm(QDialog):
         self.button_cancel.clicked.connect(self.on_cancel)
         self.button_cancel.setAutoDefault(False)
 
-        self.button_create_project = QPushButton("Create Project")
-        self.button_create_project.clicked.connect(self.on_create_button_clicked)
-        self.button_create_project.setAutoDefault(True)
+        self.button_apply_settings = QPushButton("Apply Settings")
+        self.button_apply_settings.clicked.connect(self.on_create_button_clicked)
+        self.button_apply_settings.setAutoDefault(True)
         button_layout = QHBoxLayout()
         button_layout.addWidget(self.button_cancel)
-        button_layout.addWidget(self.button_create_project)
+        button_layout.addWidget(self.button_apply_settings)
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.formGroupBox)
@@ -73,25 +75,23 @@ class ProjectForm(QDialog):
         # self.defaults_model.dataChanged.connect(lambda value: print(value.row(), value.data()))
         # self.defaults_model.dataChanged.connect(self.save)
 
-        self.show()
-
-
-    @Slot()
-    def load(self):
-        try:
-            with open(self.defaults_file, "r") as f:
-                self.defaults = list(json.load(f))
-                print("self.defaults=", self.defaults)
-                # self.defaults = f.read()
-        except Exception:
-            pass
-
-    @Slot()
-    def save(self):
-        print('ProjectForm.save was called')
-        with open(self.defaults_file, "w") as f:
-            data = json.dump(self.defaults, f)
-            # f.write(self.defaults)
+    #
+    # @Slot()
+    # def load(self):
+    #     try:
+    #         with open(self.defaults_file, "r") as f:
+    #             self.defaults = list(json.load(f))
+    #             print("self.defaults=", self.defaults)
+    #             # self.defaults = f.read()
+    #     except Exception:
+    #         pass
+    #
+    # @Slot()
+    # def save(self):
+    #     print('DefaultsForm.save was called')
+    #     with open(self.defaults_file, "w") as f:
+    #         data = json.dump(self.defaults, f)
+    #         # f.write(self.defaults)
 
 
 
@@ -100,18 +100,27 @@ class ProjectForm(QDialog):
 
     def on_create_button_clicked(self):
         # emit custom signal and pass some parameters back in self.config
-        self.write_config()
+        self.update_project_dict()
         # self.emit(Signal("dialog closed"), self.config)
         self.close()
 
-    def write_config(self):
-        logger.debug('Writing config defaults...')
-        cfg.DEFAULT_SWIM_WINDOW = float(self.swim_input.text())
-        cfg.DEFAULT_WHITENING = float(self.whitening_input.text())
+
+    def update_project_dict(self):
+        logger.critical('Running update_init_scale...')
         cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
-        cfg.DEFAULT_INITIAL_SCALE = float(self.initial_rotation_input.text())
-        cfg.DEFAULT_BOUNDING_BOX = bool(self.bounding_rectangle_checkbox.isChecked())
-        pass
+        cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
+        cfg.DEFAULT_BOUNDING_BOX = float(self.bounding_rectangle_checkbox.isChecked())
+        for scale_key in get_scales_list():
+            cfg.project_data['data']['scales'][scale_key]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
+            for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
+                # layer['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
+                layer['align_to_ref_method']['method_options'].update(
+                    {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}) # ('initial_scale', cfg.DEFAULT_INITIAL_SCALE)
+                layer['align_to_ref_method']['method_options'].update(
+                    {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
+        logger.debug('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
+        logger.debug('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
+        logger.debug('cfg.DEFAULT_BOUNDING_BOX = %f' % cfg.DEFAULT_BOUNDING_BOX)
 
     def createFormGroupBox(self):
 
