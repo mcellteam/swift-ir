@@ -2,12 +2,14 @@
 
 import os
 import sys
+import json
 import argparse
 import time
 import logging
 import tifffile
 import dask.array as da
 import imagecodecs
+from pathlib import Path
 from numcodecs import Blosc
 # from image_utils import loadImage, saveImage
 from swiftir import loadImage, saveImage
@@ -30,15 +32,6 @@ def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
             # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
             # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
 
-no_compression = 0
-filenames = ['filename1', 'filename2', 'filename3']
-zarr_ds_path = 'path/path/path'
-
-cname = 'zstd'
-clevel=5
-chunk_shape_tuple = (64,64,64)
-zarr_ds_path = 'path/path/path'
-overwrite = True
 
 # CALL 'tiffs2zarr'
 logger.info("(script) convert_zarr.py | converting original scale images to Zarr...")
@@ -61,17 +54,54 @@ t_to_zarr = time.time() - t
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("path_in", type=str, help="Input directory containing .tif/.tiff images.")
-    parser.add_argument("path_out", type=str, help="Output filename for the converted Zarr file")
-    parser.add_argument("outfile", help="file name of the scaled image")
-    arg_space = parser.parse_args()
+    parser.add_argument("img", required=True, type=str, help="Input image name. Required.")
+    parser.add_argument("dir_out", required=True, type=str, help="Output directory name. Required.")
+    parser.add_argument("cname", default='zstd', type=str, help="Compression type name. Default: 'zstd'")
+    parser.add_argument("clevel", default=5, type=int, help="Compression level, 0-9. Default: 5")
+    parser.add_argument("chunkshape", default=(64,64,64), type=tuple, help="Chunk shape. Default: (64,64,64)")
+    parser.add_argument("overwrite", default=True, type=bool, help="Overwrite boolean. Default: True")
+    args = parser.parse_args()
 
-    logger.info("SCALE: " + str(arg_space.scale) + " " + arg_space.infile + " " + arg_space.outfile)
 
-    # img = align_swiftir.swiftir.scaleImage(align_swiftir.swiftir.loadImage(arg_space.infile), fac=arg_space.scale)
-    # align_swiftir.swiftir.saveImage(img, arg_space.outfile)
-    img = scaleImage(loadImage(arg_space.infile), fac=arg_space.scale)
-    saveImage(img, arg_space.outfile)
+    Path(args.dir_out).mkdir(parents=True, exist_ok=True)
+
+
+
+    tiffs2zarr(args.fin, args.dir_out, args.chunkshape, args.cname, args.overwrite)
+    #
+    # print('writing .zarray...')
+    # zarray = {}
+    # zarray['chunks'] = [64,64,64]
+    # zarray['compressor'] = {}
+    # zarray['compressor']['id'] = 'zstd'
+    # zarray['compressor']['level'] = 1
+    # zarray['dtype'] = '|u1'
+    # zarray['fill_value'] = 0
+    # zarray['filters'] = None
+    # zarray['order'] = 'C'
+    # zarray['zarr_format'] = 2
+    # with open(os.path.join(of,'img_aligned_zarr','s0','.zarray'), "w") as f:
+    #     zarray['shape'] = [3, 4096, 4096]
+    #     json.dump(zarray, f)
+    #
+    # with open(os.path.join(of,'img_aligned_zarr','s1','.zarray'), "w") as f:
+    #     zarray['shape'] = [3, 2048, 2048]
+    #     json.dump(zarray, f)
+    #
+    # with open(os.path.join(of,'img_aligned_zarr','s2','.zarray'), "w") as f:
+    #     zarray['shape'] = [3, 1024, 1024]
+    #     json.dump(zarray, f)
+    # print('writing .zattrs...')
+    # zattrs = {}
+    # zattrs['offset'] = [0,0,0]
+    # zattrs['resolution'] = [50,4,4]
+    # with open(os.path.join(of,'img_aligned_zarr','s0','.zattrs'), "w") as f:
+    #     json.dump(zattrs, f)
+    # with open(os.path.join(of,'img_aligned_zarr','s1','.zattrs'), "w") as f:
+    #     json.dump(zattrs, f)
+    # with open(os.path.join(of,'img_aligned_zarr','s2','.zattrs'), "w") as f:
+    #     json.dump(zattrs, f)
+
 
     sys.stdout.close()
     sys.stderr.close()
