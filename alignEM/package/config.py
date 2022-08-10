@@ -5,19 +5,27 @@ It is imported by other package files and lives outside of the 'package' directo
 
 __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
            'project_data','main_window','image_library','USE_FILE_IO',
-           'PARALLEL_MODE','CODE_MODE','ICON_COLOR','WIDTH','HEIGHT']
+           'PARALLEL_MODE','CODE_MODE','ICON_COLOR','WIDTH','HEIGHT','DEFAULT_INITIAL_ROTATION',
+           'DEFAULT_INITIAL_SCALE', 'DEFAULT_BOUNDING_BOX','DEFAULT_NULL_BIAS',
+           'DEFAULT_POLY_ORDER','DEFAULT_WHITENING','DEFAULT_SWIM_WINDOW']
 
+import os
 import logging
 
-LOG_LEVEL = logging.INFO
+
+
+
+
+
+LOG_LEVEL = logging.DEBUG
 
 DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
 DEFAULT_POLY_ORDER        = int(0)
 DEFAULT_NULL_BIAS         = bool(False)
 DEFAULT_BOUNDING_BOX      = bool(True)
-DEFAULT_INITIAL_ROTATION  = 0.0000
-DEFAULT_INITIAL_SCALE  = 0.0000
+DEFAULT_INITIAL_ROTATION  = float(0.0000)
+DEFAULT_INITIAL_SCALE     = float(1.0000)
 
 QT_API = None
 USES_PYSIDE = None
@@ -30,6 +38,7 @@ main_window = None
 image_library = None
 
 data_model = None
+defaults_form = None
 
 PRELOAD_RANGE = 3
 
@@ -54,4 +63,8 @@ ICON_COLOR = '#455364' # off blue-ish color
 
 WIDTH = 1320
 HEIGHT = 850
+
+
+
+
 

@@ -23,11 +23,6 @@ except:  from image_utils import get_image_size
 
 __all__ = ['run_json_project', 'alignment_process']
 
-
-
-global_swiftir_mode = 'c'  # Either 'python' or 'c'
-
-
 logger = logging.getLogger(__name__)
 # logger = mp.log_to_stderr()
 # logger.setLevel(logging.INFO)
@@ -386,15 +381,22 @@ class alignment_process:
         wsf = atrm['method_data']['win_scale_factor']  # window size scale factor
         # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
         init_rot = self.layer_dict['align_to_ref_method']['method_options']['initial_rotation']
+        init_scale = self.layer_dict['align_to_ref_method']['method_options']['initial_scale']
         deg2rad = 2*np.pi/360.
         sin_rot = np.sin(deg2rad*init_rot)
-        dither_afm = np.array([[1., sin_rot, 0.], [-sin_rot, 1., 0.]])
+        assert isinstance(init_rot, float)
+        assert isinstance(init_scale, float)
+        dither_afm = np.array([[init_scale, sin_rot, 0.], [-sin_rot, init_scale, 0.]])
         # dither_afm = np.array([[DITHER_SCALE, DITHER_ROT, 0.], [-DITHER_ROT, DITHER_SCALE, 0.]])
         # sin_rot -> try 0.5, DITHER_SCALE -> try 1.05 #0804
-        # logger.info('dither_afm: %s' % str(dither_afm))
+
+        # logger.critical('init_rot = %f' % init_rot)
+        # logger.critical('init_scale = %f' % init_scale)
+        # logger.critical('dither_afm: %s' % str(dither_afm))
+        print('init_rot = %f' % init_rot)
+        print('init_scale = %f' % init_scale)
         print('dither_afm: %s' % str(dither_afm))
-        print('init_rot: %g' % init_rot)
-        print('sin_rot: %g' % sin_rot)
+
         # init_rot
         #    Previously hard-coded values for wsf chosen by trial-and-error
         #    wsf = 0.80  # Most common good value for wsf
@@ -470,7 +472,7 @@ class alignment_process:
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
 
-                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm)  # 0721
+                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm)  # 0721 only this one has dither (1x1)
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 0721-
                 ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht)
                 ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht)
@@ -571,7 +573,7 @@ class align_recipe:
         self.im_sta_fn = im_sta_fn
         self.im_mov_fn = im_mov_fn
         self.afm = swiftir.identityAffine()
-        self.swiftir_mode = global_swiftir_mode
+        self.swiftir_mode = cfg.CODE_MODE
         self.siz = get_image_size(self.im_sta_fn)
 
         logger.info('<<<< align_recipe (constructor)')
@@ -987,7 +989,7 @@ if __name__ == '__main__':
         logger.info("Current args: " + str(args))
         if args[0] == '-c':
             logger.info("Running in 'c' mode")
-            global_swiftir_mode = 'c'
+            global_swiftir_mode = cfg.CODE_MODE
             args = args[1:]
         elif args[0] == '-xb':
             args = args[1:]
@@ -1057,7 +1059,7 @@ if __name__ == '__main__':
                                    layer_dict=layer_dict,
                                    cumulative_afm=cumulative_afm)
 
-    if global_swiftir_mode == 'c':
+    if cfg.CODE_MODE == 'c':
         logger.debug("Loading the images")
         if not (align_proc.recipe is None):
             if not (align_proc.recipe.ingredients is None):

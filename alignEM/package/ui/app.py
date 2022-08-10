@@ -41,17 +41,19 @@ from package.image_utils import get_image_size
 from package.compute_affines import compute_affines
 from package.generate_aligned import generate_aligned
 from package.generate_scales import generate_scales
-from .heads_up_display import HeadsUpDisplay
+from .head_up_display import HeadsUpDisplay
 from .image_library import ImageLibrary
 from .runnable_server import RunnableServer
 from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
 from .json_treeview import JsonModel
-from .project_form import ProjectForm
+from .defaults_form import DefaultsForm
 
-from qtconsole.rich_jupyter_widget import RichJupyterWidget
-from qtconsole.inprocess import QtInProcessKernelManager
-from qtconsole.manager import QtKernelManager
+# from .project_form import ProjectForm
+
+# from qtconsole.rich_jupyter_widget import RichJupyterWidget
+# from qtconsole.inprocess import QtInProcessKernelManager
+# from qtconsole.manager import QtKernelManager
 
 __all__ = ['MainWindow']
 
@@ -220,7 +222,7 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
         layer['skip'] = new_skip  # skip # this is where skip list is appended to
         copy_skips_to_all_scales()
         
-        link_all_stacks()  # 0525
+        cfg.project_data.link_all_stacks()  # 0525
         # cfg.main_window.update_panels() #0701 removed
         # cfg.main_window.refresh_all_images() #0701 removed
         # update_linking_callback()
@@ -379,7 +381,7 @@ class MainWindow(QMainWindow):
         self.hud = HeadsUpDisplay(app)
         self.hud.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # logging.getLogger('hud').setLevel(logger.DEBUG)  # <- critical instruction else  will break.
-        self.hud.post('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.')
+        self.hud.post('You are now aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu :)', logging.CRITICAL)
         
         logger.info("Copying new project template")
         # cfg.project_data = copy.deepcopy(new_project_template)  # <-- TODO: get rid of this
@@ -419,6 +421,8 @@ class MainWindow(QMainWindow):
         
         self.context = QOpenGLContext(self)
         self.context.setFormat(QSurfaceFormat())
+
+        cfg.defaults_form = DefaultsForm(parent=self)
         
         logger.info("Setting multiprocessing.set_start_method('fork', force=True)...")
         multiprocessing.set_start_method('fork', force=True)
@@ -580,6 +584,7 @@ class MainWindow(QMainWindow):
                  ['&New Project', 'Ctrl+N', self.new_project, None, None, None],
                  ['&Open Project', 'Ctrl+O', self.open_project, None, None, None],
                  ['&Save Project', 'Ctrl+S', self.save_project, None, None, None],
+                 ['&Configure Project Defaults', 'Ctrl+C', self.settings, None, None, None],
                  ['Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None],
                  ['View Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
                  ['Show/Hide Project Inspector', None, self.show_hide_project_inspector, None, None, None],
@@ -735,7 +740,7 @@ class MainWindow(QMainWindow):
 
     def update_panels(self):
         '''Repaint the viewing port.'''
-        logger.info("MainWindow.update_panels:")
+        logger.debug("MainWindow.update_panels:")
         for p in self.panel_list:
             p.update_zpa_self()
         self.update_win_self()
@@ -747,6 +752,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def project_view_callback(self):
+        logger.critical("project_view_callback called by " + inspect.stack()[1].function + "...")
         # json_path = QFileInfo(__file__).absoluteDir().filePath(self.project_filename)
         # with open(json_path) as f:
         #     document = json.load(f)
@@ -794,7 +800,7 @@ class MainWindow(QMainWindow):
         set_scales_from_string(input_val)
         self.hud.post('Scale image hierarchy will have these scale levels: %s' % input_val)
         # worker = RunnableWorker(self.execute_this_fn) # Any other args, kwargs are passed to the run function
-        
+        self.show_hud()
         try:
             generate_scales()  # <-- CALL TO generate_scales
         except:
@@ -822,6 +828,7 @@ class MainWindow(QMainWindow):
         print('Project Structure:')
         print_project_tree()
         self.hud.post('Scaling Complete.')
+        self.set_idle()
         logger.info('\nScaling Complete.\n')
         # else:
         #     self.hud.post('Scaling Was Not Successful.', logging.ERROR)
@@ -840,6 +847,7 @@ class MainWindow(QMainWindow):
             # error_dialog.showMessage(error_msg)
             return
         self.status.showMessage('Aligning...')
+        self.show_hud()
         try:
             compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
         except:
@@ -871,7 +879,7 @@ class MainWindow(QMainWindow):
                 self.set_progress_stage_3()
                 self.center_all_images()
 
-                if self.bottom_panel_stacked_widget.currentIndex() ==1:
+                if self.bottom_panel_stacked_widget.currentIndex() == 1:
                    self.show_snr_plot()
                 
                 self.hud.post('Image Generation Complete')
@@ -924,10 +932,10 @@ class MainWindow(QMainWindow):
         
         # if get_num_aligned() < 1:
         if is_any_scale_aligned_and_generated():
-            logger.info('  export_zarr() | there is an alignment stack at this scale - continuing.')
+            logger.debug('  export_zarr() | there is an alignment stack at this scale - continuing.')
             pass
         else:
-            logger.info(
+            logger.debug(
                 '  export_zarr() | (!) There is no alignment at this scale to export. Returning from export_zarr().')
             show_warning('No Alignment', 'There is no alignment to export.\n\n'
                                          'Typical workflow:\n'
@@ -945,20 +953,20 @@ class MainWindow(QMainWindow):
         self.aligned_path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(),
                                          'img_aligned')
         self.ds_name = 'aligned_' + get_cur_scale_key()
-        logger.info('  export_zarr() | aligned_path_cur_scale =%s' % self.aligned_path)
+        logger.info('aligned_path_cur_scale =%s' % self.aligned_path)
         
         destination_path = os.path.abspath(cfg.project_data['data']['destination_path'])
-        logger.info('  export_zarr() | path of aligned images              :%s' % self.aligned_path)
-        logger.info('  export_zarr() | path of Zarr export                 :%s' % destination_path)
-        logger.info('  export_zarr() | dataset name                        :%s' % self.ds_name)
+        logger.info('path of aligned images              :%s' % self.aligned_path)
+        logger.info('path of Zarr export                 :%s' % destination_path)
+        logger.info('dataset name                        :%s' % self.ds_name)
         os.chdir(self.pyside_path)
-        logger.info('  export_zarr() | working directory                   :%s' % os.getcwd())
+        logger.info('working directory                   :%s' % os.getcwd())
         
         self.clevel = str(self.clevel_input.text())
         self.cname = str(self.cname_combobox.currentText())
         self.n_scales = str(self.n_scales_input.text())
         logger.info(
-            "  export_zarr() | export options                      : clevel='%s'  cname='%s'  n_scales='%s'".format(
+            "export options                      : clevel='%s'  cname='%s'  n_scales='%s'".format(
                 self.clevel, self.cname, self.n_scales))
         
         # if self.cname == "none":
@@ -1763,8 +1771,12 @@ class MainWindow(QMainWindow):
         # with open(defaults_file, "w") as f:
         #     data = json.dump(cfg.defaults, f)
 
-        self.project_form = ProjectForm(parent=self)
-        print('str(self.project_form) = %s' % str(self.project_form))
+        # self.project_form = ProjectForm(parent=self)
+        # print('str(self.project_form) = %s' % str(self.project_form))
+        # cfg.project_data.set_defaults()
+        # set_default_settings()
+
+        cfg.project_data.settings()
 
         self.set_idle()
 
@@ -1883,17 +1895,16 @@ class MainWindow(QMainWindow):
             cfg.project_data = copy.deepcopy(proj_copy)  # Replace the current version with the copy
             logger.info('Ensuring proper data structure...')
 
-
-            path = os.path.abspath(cfg.project_data['data']['destination_path'])
-            pathtest3 = path + '/project_data_snapshot_pathtest3_BEFORE.json'
-            pathtest4 = path + '/project_data_snapshot_pathtest4_AFTER.json'
-            with open(pathtest3, 'w') as f:
-                json.dump(cfg.project_data, f)
+            #
+            # path = os.path.abspath(cfg.project_data['data']['destination_path'])
+            # pathtest3 = path + '/project_data_snapshot_pathtest3_BEFORE.json'
+            # pathtest4 = path + '/project_data_snapshot_pathtest4_AFTER.json'
+            # with open(pathtest3, 'w') as f:
+            #     # json.dump(cfg.project_data, f)
+            #     f.write(cfg.project_data.to_json())
             cfg.project_data.ensure_proper_data_structure()
-            with open(pathtest4, 'w') as f:
-                json.dump(cfg.project_data, f)
-
-
+            # with open(pathtest4, 'w') as f:
+            #     json.dump(cfg.project_data, f)
 
             cfg.project_data.link_all_stacks()
             self.read_project_data_update_gui()
@@ -2004,9 +2015,8 @@ class MainWindow(QMainWindow):
         print_debug(50, "  Action: " + str(option_action))
     
     def add_image_to_role(self, image_file_name, role_name):
-        logger.info('add_image_to_role:')
-        logger.info('  image_file_name = %s' % image_file_name)
-        logger.info('  role_name = %s' % role_name)
+        logger.debug('adding image %s' % image_file_name)
+        logger.debug('  to role %s' % role_name)
         
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
         local_cur_scale = get_cur_scale_key()
@@ -2074,19 +2084,23 @@ class MainWindow(QMainWindow):
         if file_name_list != None:
             if len(file_name_list) > 0:
                 # print_debug(40, "Selected Files: " + str(file_name_list))
-                for f in file_name_list:
+                for i, f in enumerate(file_name_list):
+                    if i == 0:
+                        self.center_all_images() # Center first imported image for better user experience
                     # Find next layer with an empty role matching the requested role_to_import
                     logger.debug("Role " + str(role_to_import) + ", Importing file: " + str(f))
                     if f is None:
                         self.add_empty_to_role(role_to_import)
                     else:
                         self.add_image_to_role(f, role_to_import)
-                # Draw the panel's ("windows")
-                for p in self.panel_list:
-                    p.force_center = True
-                    p.update_zpa_self()
-        
+
+                # Draw the panel's ("windows") #0808-
+                # for p in self.panel_list:
+                #     p.force_center = True
+                #     p.update_zpa_self()
+
         if are_images_imported():
+
             self.generate_scales_button.setEnabled(True)
             # img_size = get_image_size(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0]['images']['base']['filename'])
             img_size = get_image_size(
@@ -2094,8 +2108,12 @@ class MainWindow(QMainWindow):
             n_images = get_num_imported_images()
             self.hud.post('%d Images Were Imported' % n_images)
             self.hud.post('Image dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
-            cfg.project_data.link_all_stacks()  # 0714+
+            cfg.project_data.link_all_stacks()
             self.center_all_images()
+            # for p in self.panel_list:
+            #     p.force_center = True
+            #     p.update_zpa_self()
+
             self.update_panels()
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
@@ -3623,6 +3641,9 @@ class MainWindow(QMainWindow):
         # self.resize(pixmap.width(), pixmap.height())
         self.funky_layout.addWidget(label)
         self.funky_panel.setLayout(self.funky_layout)
+
+    def settings(self):
+        cfg.defaults_form.show()
 
 
 

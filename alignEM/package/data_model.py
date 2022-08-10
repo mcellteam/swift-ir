@@ -9,6 +9,7 @@ import logging
 from copy import deepcopy
 
 import package.config as cfg
+from package.ui.defaults_form import DefaultsForm
 
 __all__ = ['DataModel']
 
@@ -90,6 +91,9 @@ class DataModel:
             setattr(result, k, deepcopy(v, memo))
         return result
 
+    def settings(self):
+        cfg.defaults_form.show()
+
     def destination(self):
         return self._project_data['data']['destination_path']
 
@@ -110,6 +114,7 @@ class DataModel:
             })
         pass
 
+
     def add_img(self, scale_key, layer_index, role, filename=''):
         self._project_data['data']['scales'][scale_key]['alignment_stack'][layer_index]['images'][role] = \
             {
@@ -119,6 +124,7 @@ class DataModel:
                     "match_points": []
                 }
             }
+
 
     def ensure_proper_data_structure(self):
         '''Ensure that the data model is usable.'''
@@ -310,10 +316,51 @@ class DataModel:
             if data_model['version'] != self._current_version:
                 # The data model could not be upgraded, so return a string with the error
                 data_model = 'Version mismatch. Expected "' + str(
-                    self._current_versionZ) + '" but found ' + str(
+                    self._current_version) + '" but found ' + str(
                     data_model['version'])
 
         return data_model
+
+    # def update_init_rot(self):
+    #     image_scales_to_run = [self.get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
+    #     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
+    #         scale_key = self.get_scale_key(scale)
+    #         for i, layer in enumerate(cfg.project_data['data']['scales'][scale_key]['alignment_stack']):
+    #             layer['align_to_ref_method']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
+    #     logger.critical('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
+    #
+    # def update_init_scale(self):
+    #     image_scales_to_run = [self.get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
+    #     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
+    #         scale_key = self.get_scale_key(scale)
+    #         for i, layer in enumerate(cfg.project_data['data']['scales'][scale_key]['alignment_stack']):
+    #             layer['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
+    #     logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
+
+    def get_scale_key(self, scale_val):
+        # Create a key like "scale_#" from either an integer or a string
+        s = str(scale_val)
+        while s.startswith('scale_'):
+            s = s[len('scale_'):]
+        return 'scale_' + s
+
+    def get_scale_val(self, scale_of_any_type):
+        '''Converts scale key to integer (i.e. 'scale_1' as string -> 1 as int)
+        This should return an integer value from any reasonable input (string or int)'''
+        scale = scale_of_any_type
+        if type(scale) == type(1):
+            # It's already an integer, so return it
+            return scale
+        else:  # elif type(scale) in [ str, unicode ]:
+            # It's a string, so remove any optional "scale_" prefix(es) and return as int
+            while scale.startswith('scale_'):
+                scale = scale[len('scale_'):]
+            return int(scale)
+
+    def clear_method_results(self, scale_key, start_layer=0):
+        for layer in self._project_data['data']['scales'][scale_key]['alignment_stack'][start_layer:]:
+            layer['align_to_ref_method']['method_results'] = {}
+
 
 # # layer_dict as defined in run_project_json.py:
 # layer_dict = {

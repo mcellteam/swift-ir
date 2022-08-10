@@ -112,12 +112,11 @@ class ImageLibrary:
         return image_ref
 
     def remove_image_reference(self, file_path):
-        # logger.info("  ImageLayer is removing image reference (called by " + inspect.stack()[1].function + ")...")
+        logger.debug("  ImageLayer is removing image reference (called by " + inspect.stack()[1].function + ")...")
         image_ref = None
         if not (file_path is None):
             real_norm_path = self.pathkey(file_path)
             if real_norm_path in self._images:
-                # print_debug ( 4, "ImageLibrary > remove_image_reference... Unloading image: \"" + real_norm_path + "\"" )
                 image_ref = self._images.pop(real_norm_path)['image']
         # This returned value may not be valid when multi-threading is implemented
         return image_ref

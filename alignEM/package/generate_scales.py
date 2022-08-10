@@ -62,9 +62,9 @@ def generate_scales(progress_callback=None):
         cfg.main_window.hud.post("There was a problem creating the directory structure", logging.WARNING)
         return
 
-    #0804+
+    # #0804+
     # if str(image_scales_to_run) == '[1]':
-    #     logger.info('Only one scale is requested... not calling task_queue')
+    #     logger.info('Only one scale is requested, so not calling mp_queue - Returning')
     #     return
     
     scale_q.start(cpus)
@@ -77,10 +77,12 @@ def generate_scales(progress_callback=None):
             fn = os.path.abspath(layer['images']['base']['filename'])
             ofn = os.path.join(proj_path, scale_key, 'img_src', os.path.split(fn)[1])
 
-            layer['align_to_ref_method']['method_options'] = {
-                'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION,
-                'initial_scale': cfg.DEFAULT_INITIAL_SCALE
-            }
+            # layer['align_to_ref_method']['method_options'] = {
+            #     'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION,
+            #     'initial_scale': cfg.DEFAULT_INITIAL_SCALE
+            # }
+            layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
+            layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
 
             if scale == 1:
 
@@ -105,18 +107,18 @@ def generate_scales(progress_callback=None):
 
                 try:
                     if os.path.split(os.path.split(os.path.split(fn)[0])[0])[1].startswith('scale_'):
-                        '''This is run only when re-scaling'''
+                        '''This may be only run when re-scaling. Needs verification'''
                         # Convert the source from whatever scale is currently processed to scale_1
                         p, f = os.path.split(fn)
                         p, r = os.path.split(p)
                         p, s = os.path.split(p)
                         fn = os.path.join(p, 'scale_1', r, f)
                         if i == 1:
-                            print('\nfn = ', fn)
-                            print('p = ', p)
-                            print('r = ', r)
-                            print('s = ', s)
-                            print(fn)
+                            logger.info('\nfn = ', fn)
+                            logger.info('p = ', p)
+                            logger.info('r = ', r)
+                            logger.info('s = ', s)
+                            logger.info(fn)
                     
                     if cfg.CODE_MODE == 'python':
                         scale_q.add_task(cmd=sys.executable,
@@ -128,8 +130,8 @@ def generate_scales(progress_callback=None):
                         # scale_q.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
                         scale_q.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
                         if i == 1:
-                            print('\n____generate_scales____\nscale_q Parameters (Example):')
-                            print('1: %s\n2: %s\n3: %s\n4: %s\n' % (iscale2_c, scale_arg, outfile_arg, infile_arg))
+                            logger.info('\n____generate_scales____\nscale_q Parameters (Example):')
+                            logger.info('1: %s\n2: %s\n3: %s\n4: %s\n' % (iscale2_c, scale_arg, outfile_arg, infile_arg))
                         '''
                         ____scale_q Parameters (Example)____
                         (1) : iscale2_c : /Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/lib/bin_darwin/iscale2

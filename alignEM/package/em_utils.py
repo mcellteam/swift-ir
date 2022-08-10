@@ -18,7 +18,7 @@ except:
 
 from package.utils.treeview import Treeview
 
-__all__ = ['get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
+__all__ = ['remove_aligned', 'get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'is_dataset_scaled', 'is_cur_scale_aligned', 'get_num_aligned',
            'get_skips_list', 'are_aligned_images_generated', 'is_any_scale_aligned_and_generated',
            'print_path', 'print_alignment_layer', 'print_dat_files', 'print_sanity_check',
@@ -39,6 +39,42 @@ logger = logging.getLogger(__name__)
 #         datefmt='%H:%M:%S',
 #         handlers=[logging.StreamHandler()]
 # )
+
+def remove_aligned(use_scale, start_layer=0):
+    '''
+    Removes previously generated aligned images for the current scale, starting at layer 'start_layer'.
+
+    :param use_scale: The scale to remove aligned images from.
+    :type use_scale: str
+
+    :param project_dict: The project dictionary.
+    :type project_dict: dict
+
+    :param image_library: The image library.
+    :type image_library: ImageLibrary
+
+    :param start_layer: The starting layer index from which to remove all aligned images, defaults to 0.
+    :type start_layer: int
+    '''
+
+    logger.info('image_utils.remove_aligned >>>>')
+    for layer in cfg.project_data['data']['scales'][use_scale]['alignment_stack'][start_layer:]:
+        ifn = layer['images'].get('filename', None)
+        layer['images'].pop('aligned', None)
+        if ifn != None:
+            try:
+                os.remove(ifn)
+            except:
+                print_exception()
+                logger.warning("os.remove(%s) Triggered An Exception" % ifn)
+
+            try:
+                cfg.image_library.remove_image_reference(ifn)
+            except:
+                print_exception()
+                logger.warning("image_library.remove_image_reference(%s) Triggered An Exception" % ifn)
+
+    logger.info('<<<< image_utils.remove_aligned')
 
 
 def get_scales_list() -> list[str]:
@@ -129,6 +165,8 @@ def is_cur_scale_ready_for_alignment() -> bool:
 
 
 def get_next_coarsest_scale_key() -> str:
+    if get_num_scales() == 1:
+        return get_cur_scale_key()
     scales_dict = cfg.project_data['data']['scales']
     cur_scale_key = get_cur_scale_key()
     coarsest_scale = list(scales_dict.keys())[-1]
@@ -484,7 +522,7 @@ def print_sanity_check():
     print("  Which scales?                                    :", get_scales_list())
 
     print("Alignment__________________________________________")
-    print("  Is any scale aligned?                            :", is_any_scale_aligned_and_generated())
+    print("  Is any scale aligned+generated?                  :", is_any_scale_aligned_and_generated())
     print("  Is this scale aligned?                           :", is_cur_scale_aligned())
     print("  Is this scale ready to be aligned?               :", is_cur_scale_ready_for_alignment())
     try:
@@ -644,17 +682,19 @@ def get_scale_val(scale_of_any_type):
             while scale.startswith('scale_'):
                 scale = scale[len('scale_'):]
             return int(scale)
+    except:
+        print_exception()
         # else:
         #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
         #    traceback.print_stack()
-    except:
-        logger.warning("Error converting " + str(scale_of_any_type) + " to a value.")
-        exi = sys.exc_info()
-        logger.warning("  Exception type = " + str(exi[0]))
-        logger.warning("  Exception value = " + str(exi[1]))
-        logger.warning("  Exception traceback:")
-        traceback.print_tb(exi[2])
-        return -1
+    # except:
+    #     logger.warning("Error converting " + str(scale_of_any_type) + " to a value.")
+    #     exi = sys.exc_info()
+    #     logger.warning("  Exception type = " + str(exi[0]))
+    #     logger.warning("  Exception value = " + str(exi[1]))
+    #     logger.warning("  Exception traceback:")
+    #     traceback.print_tb(exi[2])
+    #     return -1
 
 
 def get_num_scales() -> int:
@@ -721,10 +761,10 @@ def is_cur_scale_aligned() -> bool:
         # logger.info('afm_1_file = ', afm_1_file)
         # logger.info('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
         if os.path.exists(afm_1_file):
-            # logger.info('is_cur_scale_aligned | Returning True')
+            logger.info('is_cur_scale_aligned | Returning True')
             return True
         else:
-            # logger.info('is_cur_scale_aligned | Returning False')
+            logger.info('is_cur_scale_aligned | Returning False')
             return False
     except:
         logger.warning('Unexpected function behavior - Returning False')
@@ -905,13 +945,13 @@ def print_snr_list() -> None:
     try:
         snr_list = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][get_cur_layer()][
             'align_to_ref_method']['method_results']['snr']
-        logger.info('snr_list:  %s' % str(snr_list))
+        logger.debug('snr_list:  %s' % str(snr_list))
         mean_snr = sum(snr_list) / len(snr_list)
-        logger.info('mean(snr_list):  %s' % mean_snr)
+        logger.debug('mean(snr_list):  %s' % mean_snr)
         snr_report = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][get_cur_layer()][
             'align_to_ref_method']['method_results']['snr_report']
         logger.info('snr_report:  %s' % str(snr_report))
-        logger.info('All Mean SNRs for current scale:  %s' % str(get_snr_list()))
+        logger.debug('All Mean SNRs for current scale:  %s' % str(get_snr_list()))
     except:
         print_exception()
         logger.warning('Getting SNR Data Triggered An Exception')

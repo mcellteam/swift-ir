@@ -233,7 +233,7 @@ if __name__ == '__main__':
     ds.attrs['_ARRAY_DIMENSIONS'] = ['z', 'y', 'x']
 
     logger.info("--------original scale Zarr info (pre-scaling)--------")
-    logger.info(ds.info)
+    logger.debug(ds.info)
 
     # COMPUTE SCALE PYRAMID
     logger.info('Generating scales...')
