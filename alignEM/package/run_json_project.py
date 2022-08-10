@@ -458,21 +458,21 @@ class alignment_process:
             alignment_option = atrm['method_data'].get('alignment_option')
             if alignment_option == 'refine_affine':
                 '''refine_affine'''
-                ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht)
+                ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_4x4)
             elif alignment_option == 'apply_affine':
                 '''apply_affine'''
-                ingredient_apply_affine = align_ingredient(afm=self.init_affine_matrix, align_mode='apply_affine_align')
+                ingredient_apply_affine = align_ingredient(afm=self.init_affine_matrix, align_mode='apply_affine_align', ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_apply_affine)
             else:
                 '''init_affine'''
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
 
-                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm)  # 0721 only this one has dither (1x1)
-                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 0721-
-                ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht)
-                ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht)
+                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
+                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir)  # 0721-
+                ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
+                ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_4x4)
@@ -481,9 +481,9 @@ class alignment_process:
             mp_base = np.array(self.layer_dict['images']['base']['metadata']['match_points']).transpose()
             mp_ref = np.array(self.layer_dict['images']['ref']['metadata']['match_points']).transpose()
             # First ingredient is to calculate the Affine matrix from match points alone
-            ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht)
+            ingredient_1_mp = align_ingredient(psta=mp_ref, pmov=mp_base, align_mode='match_point_align', wht=wht, ad=self.align_dir)
             # Second ingredient is to refine the Affine matrix by swimming at each match point
-            ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht)
+            ingredient_2_mp = align_ingredient(ww=s_mp, psta=mp_ref, pmov=mp_base, wht=wht, ad=self.align_dir)
             self.recipe.add_ingredient(ingredient_1_mp)  # This one will set the Affine matrix
             self.recipe.add_ingredient(ingredient_2_mp)  # This one will use the previous Affine and refine it
 
@@ -632,7 +632,7 @@ class align_ingredient:
     #        supplied afm matrix but do not refine the afm matrix
     #  def __init__(self, im_sta=None, im_mov=None, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', im_sta_fn=None, im_mov_fn=None):
     # def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None):
-    def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None, align_dir=None):
+    def __init__(self, ww=None, psta=None, pmov=None, afm=None, wht=-0.68, iters=2, align_mode='swim_align', rota=None, ad=None):
         logger.info('\nalign_align_ingredient >>>>\n')
 
         self.swim_drift = 0.5
@@ -648,7 +648,7 @@ class align_ingredient:
         self.snr = None
         self.snr_report = None
         self.threshold = (3.5, 200, 200)
-        self.align_dir=align_dir
+        self.ad=ad
 
         # Configure platform-specific path to executables for C SWiFT-IR
         my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
@@ -734,8 +734,9 @@ class align_ingredient:
         # 0721 ^^ use this form to add initial rotation
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
 
-        proj_path = cfg.project_data['data']['destination_path']
-        spot_img_path = proj_path + 'correlation_spot_image'
+        kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img.tif')
+
+        logger.critical('kip = ' + kip)
 
         for i in range(len(self.psta[0])):
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
@@ -746,7 +747,7 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' -k  ' + spot_img_path + \
+                              ' -k  ' + kip + \
                               ' ' + karg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \

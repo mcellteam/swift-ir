@@ -471,6 +471,8 @@ class MainWindow(QMainWindow):
         # logger.info('---------------------\n')
         if cfg.USES_QT6:
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+
+        self.up = 0
         
 
         # !!!
@@ -596,6 +598,7 @@ class MainWindow(QMainWindow):
                  ['Show Splash', None, self.show_splash, None, None, None],
                  ['&Help', None, self.documentation_view, None, None, None],
                  ['&Home', None, self.set_main_view, None, None, None],
+                 ['&View K Image', 'Ctrl+K', self.view_k_img, None, None, None],
                  ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
              ]
              ],
@@ -611,6 +614,7 @@ class MainWindow(QMainWindow):
                       ['1', None, self.set_progress_stage_1, None, None, None],
                       ['2', None, self.set_progress_stage_2, None, None, None],
                       ['3', None, self.set_progress_stage_3, None, None, None],
+                      ['++1', 'Ctrl+]', self.cycle_user_progress, None, None, None],
                   ]
                   ],
                  ['&Stylesheets',
@@ -2312,21 +2316,55 @@ class MainWindow(QMainWindow):
     
     # inspect.stack()[1].function
     
+    # def closeEvent(self, event):
+    #     self.set_status('Exiting...')
+    #     self.hud.post('Confirm exit AlignEM-SWiFT?')
+    #     quit_msg = "Are you sure you want to exit the program?"
+    #     reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
+    #
+    #     if reply == QMessageBox.Yes:
+    #         event.accept()
+    #         self.threadpool.waitForDone(msecs=200)
+    #         QApplication.quit()
+    #         sys.exit()
+    #     else:
+    #         self.hud.post('Canceling Exit Application')
+    #         self.set_idle()
+    #         event.ignore()
+
     def closeEvent(self, event):
+        logger.info("MainWindow.closeEvent:")
         self.set_status('Exiting...')
-        self.hud.post('Confirm exit AlignEM-SWiFT?')
-        quit_msg = "Are you sure you want to exit the program?"
-        reply = QMessageBox.question(self, 'Message', quit_msg, QMessageBox.Yes, QMessageBox.No)
-        
-        if reply == QMessageBox.Yes:
-            event.accept()
+        app = QApplication.instance()
+        if not are_images_imported():
             self.threadpool.waitForDone(msecs=200)
             QApplication.quit()
             sys.exit()
-        else:
-            self.hud.post('Canceling Exit Application')
+        self.hud.post('Confirm Exit AlignEM-SWiFT')
+        message = "Save before exiting?"
+        msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
+        msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+        msg.setDefaultButton(QMessageBox.Save)
+        msg.setIcon(QMessageBox.Question)
+        reply = msg.exec_()
+        if reply == QMessageBox.Cancel:
+            logger.info('reply=Cancel. Returning control to the app.')
+            self.hud.post('Canceling exit application')
             self.set_idle()
-            event.ignore()
+            return
+        if reply == QMessageBox.Save:
+            logger.info('reply=Save')
+            self.save_project()
+            self.set_status('Wrapping up...')
+            logger.info('Project saved. Exiting')
+            self.threadpool.waitForDone(msecs=200)
+            QApplication.quit()
+            sys.exit()
+        if reply == QMessageBox.Discard:
+            logger.info('reply=Discard Exiting without saving')
+            self.threadpool.waitForDone(msecs=200)
+            QApplication.quit()
+            sys.exit()
     
     @Slot()
     def exit_app(self):
@@ -2812,6 +2850,20 @@ class MainWindow(QMainWindow):
         self.plot_snr_button.setFixedSize(self.square_button_size)
         # self.plot_snr_button.setStyleSheet("font-size: 9px;")
 
+        self.set_defaults_button = QPushButton("Set Defaults")
+        self.set_defaults_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.set_defaults_button.clicked.connect(self.settings)
+        self.set_defaults_button.setFixedSize(self.square_button_size)
+        self.set_defaults_button.setStyleSheet("font-size: 10px;")
+
+        # self.k_img_button = QPushButton("K Image")
+        # self.k_img_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        # self.k_img_button.clicked.connect(self.view_k_img)
+        # self.k_img_button.setFixedSize(self.square_button_size)
+        # # self.plot_snr_button.setStyleSheet("font-size: 9px;")
+
+
+
         self.actual_size_button = QPushButton('Actual Size')
         self.actual_size_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.actual_size_button.setToolTip('Actual-size all images.')
@@ -2899,8 +2951,10 @@ class MainWindow(QMainWindow):
         # self.images_and_scaling_layout.addWidget(self.toggle_skip, 1, 0, alignment=alignEM.AlignmentFlag.AlignHCenter)
         # self.images_and_scaling_layout.addWidget(self.clear_all_skips_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignHCenter)
         self.images_and_scaling_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3)
-        self.images_and_scaling_layout.addWidget(self.project_view_button, 2, 0)
-        self.images_and_scaling_layout.addWidget(self.plot_snr_button, 2, 1)
+        # self.images_and_scaling_layout.addWidget(self.plot_snr_button, 2, 1)
+        # self.images_and_scaling_layout.addWidget(self.k_img_button, 2, 1)
+        self.images_and_scaling_layout.addWidget(self.set_defaults_button, 2, 0)
+        self.images_and_scaling_layout.addWidget(self.project_view_button, 2, 1)
         self.images_and_scaling_layout.addWidget(self.print_sanity_check_button, 2, 2)
         # self.images_and_scaling_layout.addLayout(self.jump_hlayout, 1, 1, 1, 2, alignment=alignEM.AlignmentFlag.AlignRight)
 
@@ -3666,9 +3720,51 @@ class MainWindow(QMainWindow):
         self.funky_layout.addWidget(label)
         self.funky_panel.setLayout(self.funky_layout)
 
+    def cycle_user_progress(self):
+        print('self.up = ' + str(self.up))
+        self.up += 1
+        up_ = self.up % 4
+        print('up_ = ' + str(up_))
+        if up_ == 0:    self.set_progress_stage_1()
+        elif up_ == 1:  self.set_progress_stage_2()
+        elif up_ == 2:  self.set_progress_stage_3()
+        elif up_ == 3:  self.set_progress_stage_0()
+
+
+
     def settings(self):
         cfg.defaults_form.show()
 
+    def view_k_img(self):
+        logger.info('view_k_img:')
+        self.w = KImageWindow(parent=self)
+        self.w.show()
 
 
+
+class KImageWindow(QWidget):
+    """
+    This "window" is a QWidget. If it has no parent, it
+    will appear as a free-floating window as we want.
+    """
+    def __init__(self, parent=None):
+        super().__init__()
+
+        self.parent = parent
+
+        proj_dir = os.path.abspath(cfg.project_data['data']['destination_path'])
+        path = os.path.join(proj_dir, get_cur_scale_key(), 'k_img.tif')
+
+        self.lb = QLabel(self)
+        self.pixmap = QPixmap(path)
+        # lb.resize(self.width(), 100)
+        # lb.setPixmap(pixmap.scaled(lb.size(), Qt.IgnoreAspectRatio))
+        self.lb.setPixmap(self.pixmap)
+
+        self.lb.resize(self.pixmap.width(), self.pixmap.height())
+
+        layout = QVBoxLayout()
+        self.label = QLabel()
+        layout.addWidget(self.label)
+        self.setLayout(layout)
 

@@ -4,8 +4,10 @@
 Takes .tifs and turns them into .zarr (a chunked file format). Uses dask to parallelize reading/writing.
 '''
 import os
+import sys
 import json
 import shutil
+import argparse
 from pathlib import Path
 import tifffile
 import dask.array as da
@@ -35,9 +37,18 @@ def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
 
 
 if __name__ == '__main__':
-    # os.makedirs(os.path.dirname('out.zarr'), exist_ok=True)
-    # os.makedirs(os.path.dirname('img_aligned_zarr'), exist_ok=True)
-    Path('./out.zarr/img_aligned_zarr').mkdir(parents=True, exist_ok=True)
+    # parser = argparse.ArgumentParser()
+    # parser.add_argument("img", type=str, help="Input image")
+    # parser.add_argument("dir_out", type=str, help="Output directory")
+    # parser.add_argument("cname", type=str, help="Compression type name")
+    # parser.add_argument("clevel", type=int, help="Compression level (0-9)")
+    # args = parser.parse_args()
+    #
+    #
+    #
+    # # os.makedirs(os.path.dirname('out.zarr'), exist_ok=True)
+    # # os.makedirs(os.path.dirname('img_aligned_zarr'), exist_ok=True)
+    # Path(args.dir_out).mkdir(parents=True, exist_ok=True)
 
     of = 'out.zarr'
     shutil.rmtree(of)
@@ -87,4 +98,7 @@ if __name__ == '__main__':
     with open(os.path.join(of,'img_aligned_zarr','s2','.zattrs'), "w") as f:
         json.dump(zattrs, f)
 
+
+    sys.stdout.close()
+    sys.stderr.close()
 
