@@ -1436,11 +1436,6 @@ class MainWindow(QMainWindow):
             p.update_zpa_self()
     
     @Slot()
-    def toggle_arrow_direction(self, checked):
-        logger.info('MainWindow.toggle_arrow_direction:')
-        self.image_panel.arrow_direction = -self.image_panel.arrow_direction
-    
-    @Slot()
     def toggle_threaded_loading(self, checked):
         logger.info('MainWindow.toggle_threaded_loading:')
         cfg.image_library.threaded_loading_enabled = checked
@@ -1533,11 +1528,10 @@ class MainWindow(QMainWindow):
                         self.add_empty_to_role(role_to_import)
                     else:
                         self.add_image_to_role(f, role_to_import)
-
-                # Draw the panel's ("windows") #0808-
-                # for p in self.panel_list:
-                #     p.force_center = True
-                #     p.update_zpa_self()
+                # Draw the panel's ("windows") #0808- #0816+s
+                for p in self.panel_list:
+                    p.force_center = True
+                    p.update_zpa_self()
 
         if are_images_imported():
             self.generate_scales_button.setEnabled(True)
