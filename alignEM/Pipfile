@@ -13,7 +13,6 @@ imagecodecs = "*"
 scikit-image = "*"
 zarr = "*"
 tifffile = "*"
-dask = "*"
 neuroglancer = "*"
 "funlib.geometry" = {git = "https://github.com/funkelab/funlib.geometry.git"}
 "funlib.math" = {git = "https://github.com/funkelab/funlib.math.git"}
@@ -26,12 +25,12 @@ qtawesome = "*"
 pyqt5 = "*"
 pyqtwebengine-qt5 = "*"
 pyqtwebengine = "*"
-pyqtconsole = "*"
 tqdm = "*"
 dill = "*"
 blosc = "*"
 pyside6 = "*"
 pyqtgraph = "*"
+jupyter-client = "==6.1.12"
 
 [dev-packages]
 

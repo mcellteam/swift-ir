@@ -3,7 +3,7 @@
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
 import os, sys, copy, json, inspect, collections, multiprocessing, logging, textwrap, psutil, operator, platform, \
-    code, readline
+    code, readline, webbrowser
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
@@ -15,35 +15,26 @@ from qtpy.QtCore import Qt, QSize, QUrl, QAbstractAnimation, QPropertyAnimation,
 from qtpy.QtWidgets import QAction, QActionGroup
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWebEngineCore import *
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtconsole.inprocess import QtInProcessKernelManager
 import qtawesome as qta
 import pyqtgraph as pg
-import daisy
 import neuroglancer as ng
 from glob import glob
 from PIL import Image
 import numpy as np
 
 import package.config as cfg
-# from package.em_utils import get_cur_scale_key, is_destination_set, is_dataset_scaled, \
-#     is_cur_scale_aligned, get_num_aligned, get_skips_list, are_aligned_images_generated,
-#     is_any_scale_aligned_and_generated, get_num_scales, print_path, copy_skips_to_all_scales, are_images_imported, \
-#     print_sanity_check, debug_project, is_cur_scale_exported, get_num_imported_images, print_exception, get_scale_val, \
-#     set_scales_from_string, makedirs_exist_ok, make_relative, make_absolute, is_scale_aligned, \
-#     clear_all_skips, verify_image_file, get_cur_layer, get_cur_scale_key, is_dataset_scaled, print_debug, \
-#     get_aligned_scales_list, is_cur_scale_ready_for_alignment, get_next_coarsest_scale_key, \
-#     ensure_proper_data_structure, set_default_settings, is_cur_scale_ready_for_alignment, get_aligned_scales_list, \
-#     get_scales_list
 from package.em_utils import *
-from package.scale_pyramid import add_layer
-# from data_model import new_project_template, new_layer_template, new_image_template, upgrade_data_model, DataModel
 from package.data_model import DataModel
 from package.image_utils import get_image_size
 from package.compute_affines import compute_affines
-from package.generate_aligned import generate_aligned
+from package.apply_affines import generate_aligned
 from package.generate_scales import generate_scales
+from package.generate_zarr import generate_zarr
+from package.view_3dem import View3DEM
 from .head_up_display import HeadsUpDisplay
 from .image_library import ImageLibrary, SmartImageLibrary
-from .runnable_server import RunnableServer
 from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
 from .json_treeview import JsonModel
@@ -60,8 +51,7 @@ __all__ = ['MainWindow']
 logger = logging.getLogger(__name__)
 
 
-from qtconsole.rich_jupyter_widget import RichJupyterWidget
-from qtconsole.inprocess import QtInProcessKernelManager
+
 
 app = None
 use_c_version = True
@@ -70,21 +60,6 @@ show_skipped_images = True
 
 code_mode = 'c'
 global_parallel_mode = True
-
-
-# global_use_file_io = True #0629
-# global_use_file_io = False #0629
-
-
-def open_ds(path, ds_name):
-    """ wrapper for daisy.open_ds """
-    logger.info("Running daisy.open_ds with path:" + path + ", ds_name:" + ds_name)
-    try:
-        return daisy.open_ds(path, ds_name)
-    except KeyError:
-        logger.warning("ERROR: dataset " + ds_name + " could not be loaded. Must be Daisy-like array.")
-        return None
-
 
 def decode_json(x):
     return json.loads(x, object_pairs_hook=collections.OrderedDict)
@@ -378,7 +353,7 @@ class MainWindow(QMainWindow):
         
         logger.info("Initializing Thread Pool")
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
-        QThread.currentThread().setObjectName('MainThread')
+
         self.hud = HeadsUpDisplay(app)
         self.hud.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # logging.getLogger('hud').setLevel(logger.DEBUG)  # <- critical instruction else  will break.
@@ -391,6 +366,8 @@ class MainWindow(QMainWindow):
         
         cfg.image_library = ImageLibrary()
         # cfg.image_library = SmartImageLibrary()
+
+
         
         logger.info('cfg.USES_PYSIDE=%s' % str(cfg.USES_PYSIDE))
         
@@ -490,10 +467,12 @@ class MainWindow(QMainWindow):
         # app.setStyleSheet(stream.readAll())
         
         # create RunnableServer class to start background CORS web server
-        def start_server():
-            logger.info("creating RunnableServer() instance and setting up thread pool")
-            worker = RunnableServer()
-            self.threadpool.start(worker)
+        # def start_server():
+        #     logger.info("creating RunnableServer() instance and setting up thread pool")
+        #     worker = RunnableServer()
+        #     self.threadpool.start(worker)
+
+
         
         # self.browser.setPage(CustomWebEnginePage(self)) # necessary. Clicked links will never open new window.
 
@@ -804,7 +783,6 @@ class MainWindow(QMainWindow):
         cfg.main_window.hud.post('Generating Scale Image Hierarchy...')
         set_scales_from_string(input_val)
         self.hud.post('Scale image hierarchy will have these scale levels: %s' % input_val)
-        # worker = RunnableWorker(self.execute_this_fn) # Any other args, kwargs are passed to the run function
         self.show_hud()
         try:
             generate_scales()  # <-- CALL TO generate_scales
@@ -944,15 +922,11 @@ class MainWindow(QMainWindow):
             self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning First.', logging.ERROR)
         self.update_win_self()
         self.set_idle()
-    
-    def make_zarr_multithreaded(self, aligned_path, n_scales, cname, clevel, destination_path, ds_name):
-        os.system("python3 ../convert_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (
-            aligned_path, str(n_scales), str(cname), str(clevel), destination_path, ds_name))
+
     
     def export_zarr(self):
         logger.info('Exporting to Zarr format...')
         
-        # if get_num_aligned() < 1:
         if is_any_scale_aligned_and_generated():
             logger.debug('  export_zarr() | there is an alignment stack at this scale - continuing.')
             pass
@@ -969,71 +943,18 @@ class MainWindow(QMainWindow):
             return
         
         self.set_status('Exporting...')
-        self.hud.post('Exporting scale %s to Neuroglancer-ready Zarr format...' % get_cur_scale_key()[-1])
-        
-        # allow any scale export...
-        self.aligned_path = os.path.join(cfg.project_data['data']['destination_path'], get_cur_scale_key(),
-                                         'img_aligned')
-        self.ds_name = 'aligned_' + get_cur_scale_key()
-        logger.info('aligned_path_cur_scale =%s' % self.aligned_path)
-        
-        destination_path = os.path.abspath(cfg.project_data['data']['destination_path'])
-        logger.info('path of aligned images              :%s' % self.aligned_path)
-        logger.info('path of Zarr export                 :%s' % destination_path)
-        logger.info('dataset name                        :%s' % self.ds_name)
-        os.chdir(self.pyside_path)
-        logger.info('working directory                   :%s' % os.getcwd())
-        
+        src = os.path.abspath(cfg.project_data['data']['destination_path'])
+        out = os.path.join(src, '3dem.zarr')
+        generate_zarr(src=src, out=out)
+
         self.clevel = str(self.clevel_input.text())
         self.cname = str(self.cname_combobox.currentText())
         self.n_scales = str(self.n_scales_input.text())
-        logger.info(
-            "export options                      : clevel='%s'  cname='%s'  n_scales='%s'".format(
-                self.clevel, self.cname, self.n_scales))
-        
-        # if self.cname == "none":
-        #     os.system(
-        #         "python3 convert_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(
-        #             self.n_scales) + " -nC 1 -d " + destination_path)
-        # else:
-        #     # os.system("./convert_zarr.py volume_josef_small --chunks '1,5332,5332' --no_compression True")
-        #     os.system(
-        #         "python3 convert_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(self.n_scales) + " -cN " + str(
-        #             self.cname) + " -cL " + str(self.clevel) + " -d " + destination_path)
-        
-        # zarr
-        # https://stackoverflow.com/questions/6783194/background-thread-with-qthread-in-pyqt
-        # https://stackoverflow.com/questions/47560399/run-function-in-the-background-and-update-ui
-        # https://stackoverflow.com/questions/58327821/how-to-pass-parameters-to-pyqt-qthreadpool-running-function
-        self.dest_path = destination_path
-        if self.cname == "none":
-            # os.system("python3 convert_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -nC 1 -d " + destination_path + " -n " + ds_name)
-            os.system("python3 ../convert_zarr.py %s -c '64,64,64' -nS %s -nC 1 -d %s -n %s" % (
-                self.aligned_path, self.n_scales, self.dest_path, self.ds_name))
-            # self.set_status('Idle')
-            self.set_idle()
-            self.hud.post('Export of scale %s to Zarr complete' % get_cur_scale_key()[-1])
-        
-        else:
-            # Attempting Background Zarr
-            # worker = RunnableWorker(self.make_zarr_multithreaded, self.aligned_path, self.n_scales, self.cname, self.clevel, self.dest_path, self.ds_name) # Any other args, kwargs are passed to the run function
-            # self.threadpool.start(worker)
-            
-            # worker.signals.result.connect(self.print_output)
-            # worker.signals.finished.connect(self.thread_complete)
-            # worker.signals.progress.connect(self.progress_fn)
-            
-            # make_zarr_multithreaded(aligned_path, n_scales, cname, clevel, destination_path, ds_name) # THIS WORKS
-            
-            os.system("python3 ../convert_zarr.py %s -c '64,64,64' -nS %s -cN %s -cL %s -d %s -n %s" % (
-                self.aligned_path, str(self.n_scales), str(self.cname), str(self.clevel), destination_path,
-                self.ds_name))
-            # os.system("python3 convert_zarr.py " + aligned_path + " -c '64,64,64' -nS " + str(n_scales) + " -cN " + str(cname) + " -cL " + str(clevel) + " -d " + destination_path + " -n " + ds_name)
-            # self.set_status('Idle')
-            self.set_idle()
-            # self.hud.post('Export of scale %s to Zarr complete' % get_cur_scale_key()[-1])
-            self.hud.post('Complete')
-    
+        logger.info("clevel='%s'  cname='%s'  n_scales='%s'" % (self.clevel, self.cname, self.n_scales))
+
+        self.set_idle()
+        self.hud.post('Export of Scale %s to Zarr Complete' % get_cur_scale_key()[-1])
+
     @Slot()
     def clear_all_skips_callback(self):
         self.set_busy()
@@ -1127,7 +1048,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def update_alignment_details(self) -> None:
         '''Update alignment details in the Alignment control panel group box.'''
-        logger.info('update_alignment_details >>>>')
+        logger.debug('update_alignment_details >>>>')
         al_stack = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack']
         self.alignment_status_checkbox.setChecked(is_cur_scale_aligned())
         # if is_cur_scale_aligned():
@@ -1531,8 +1452,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def set_idle(self) -> None:
         self.status.showMessage('Idle')
-        QThread.currentThread().setObjectName('MainThread')
-    
+
     @Slot()
     def set_busy(self) -> None:
         self.status.showMessage('Busy...')
@@ -1715,21 +1635,21 @@ class MainWindow(QMainWindow):
     
     def print_structures(self):
         # global DEBUG_LEVEL #0613
-        logger.info(":::DATA STRUCTURES:::")
-        print_debug(2, "  cfg.project_data['version'] = " + str(cfg.project_data['version']))
-        print_debug(2, "  cfg.project_data.keys() = " + str(cfg.project_data.keys()))
-        print_debug(2, "  cfg.project_data['data'].keys() = " + str(cfg.project_data['data'].keys()))
-        print_debug(2, "  cfg.project_data['data']['panel_roles'] = " + str(cfg.project_data['data']['panel_roles']))
+        print(":::DATA STRUCTURES:::")
+        print("  cfg.project_data['version'] = " + str(cfg.project_data['version']))
+        print("  cfg.project_data.keys() = " + str(cfg.project_data.keys()))
+        print("  cfg.project_data['data'].keys() = " + str(cfg.project_data['data'].keys()))
+        print("  cfg.project_data['data']['panel_roles'] = " + str(cfg.project_data['data']['panel_roles']))
         scale_keys = list(cfg.project_data['data']['scales'].keys())
-        print_debug(2, "  list(cfg.project_data['data']['scales'].keys()) = " + str(scale_keys))
-        print_debug(2, "Scales, Layers, and Images:")
+        print("  list(cfg.project_data['data']['scales'].keys()) = " + str(scale_keys))
+        print("Scales, Layers, and Images:")
         for k in sorted(scale_keys):
-            print_debug(2, "  Scale key: " + str(k) +
+            print("  Scale key: " + str(k) +
                         ", NullBias: " + str(cfg.project_data['data']['scales'][k]['null_cafm_trends']) +
                         ", Bounding Rect: " + str(cfg.project_data['data']['scales'][k]['use_bounding_rect']))
             scale = cfg.project_data['data']['scales'][k]
             for layer in scale['alignment_stack']:
-                print_debug(2, "    Layer: " + str([k for k in layer['images'].keys()]))
+                print("    Layer: " + str([k for k in layer['images'].keys()]))
                 for role in layer['images'].keys():
                     im = layer['images'][role]
                     print_debug(2, "      " + str(role) + ": " + str(layer['images'][role]['filename']))
@@ -1739,7 +1659,7 @@ class MainWindow(QMainWindow):
         logger.info(str(cfg.image_library))
     
     def new_project(self):
-        logger.info('new_project:')
+        logger.debug('new_project:')
         self.hud.post('Creating new project...')
         self.set_status("Project...")
         if is_destination_set():
@@ -1803,7 +1723,7 @@ class MainWindow(QMainWindow):
         self.set_idle()
 
     def import_into_role(self):
-        logger.info("import_into_role:")
+        logger.debug("import_into_role:")
         import_role_name = str(self.sender().text())
         self.import_images_dialog(import_role_name)
     
@@ -1879,7 +1799,7 @@ class MainWindow(QMainWindow):
         return response[0]
     
     def open_project(self):
-        logger.info('open_project >>>>')
+        logger.debug('open_project >>>>')
         self.set_status("Project...")
         # self.scales_combobox_switch = 0 #0718-
         filename = self.open_project_dialog()
@@ -1891,13 +1811,13 @@ class MainWindow(QMainWindow):
             if type(proj_copy) == type('abc'):  # abc = abstract base class
                 # There was a known error loading the data model
                 self.hud.post('There was a problem loading the project file.', logging.ERROR)
-                logger.info("type=abc | Project %s has abstract base class" % proj_copy)
+                logger.warning("type=abc | Project %s has abstract base class" % proj_copy)
                 self.set_idle()
                 return
             self.hud.post("Loading project '%s'" % filename)
             self.project_filename = filename
             self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
-            logger.info('Modifying the copy to use absolute paths internally')
+            logger.debug('Modifying the copy to use absolute paths internally')
             
             # Modify the copy to use absolute paths internally
             if 'destination_path' in proj_copy['data']:
@@ -1916,18 +1836,7 @@ class MainWindow(QMainWindow):
             
             cfg.project_data = copy.deepcopy(proj_copy)  # Replace the current version with the copy
             logger.info('Ensuring proper data structure...')
-
-            #
-            # path = os.path.abspath(cfg.project_data['data']['destination_path'])
-            # pathtest3 = path + '/project_data_snapshot_pathtest3_BEFORE.json'
-            # pathtest4 = path + '/project_data_snapshot_pathtest4_AFTER.json'
-            # with open(pathtest3, 'w') as f:
-            #     # json.dump(cfg.project_data, f)
-            #     f.write(cfg.project_data.to_json())
             cfg.project_data.ensure_proper_data_structure()
-            # with open(pathtest4, 'w') as f:
-            #     json.dump(cfg.project_data, f)
-
             cfg.project_data.link_all_stacks()
             self.read_project_data_update_gui()
             self.reload_scales_combobox()
@@ -1941,7 +1850,7 @@ class MainWindow(QMainWindow):
             self.hud.post("No project file (.json) was selected")
         self.image_panel.setFocus()
         self.set_idle()
-        logger.info('<<<< open_project')
+        logger.debug('<<<< open_project')
     
     def save_project(self):
         logger.info('save_project:')
@@ -2037,9 +1946,8 @@ class MainWindow(QMainWindow):
         print_debug(50, "  Action: " + str(option_action))
     
     def add_image_to_role(self, image_file_name, role_name):
-        logger.debug('adding image %s' % image_file_name)
-        logger.debug('  to role %s' % role_name)
-        
+        logger.debug('adding image %s to role %s' % (image_file_name, role_name))
+
         #### NOTE: TODO: This function is now much closer to empty_into_role and should be merged
         local_cur_scale = get_cur_scale_key()
         
@@ -2068,7 +1976,7 @@ class MainWindow(QMainWindow):
                                               role=role_name, filename=image_file_name)
     
     def add_empty_to_role(self, role_name):
-        logger.info('MainWindow.add_empty_to_role:')
+        logger.debug('MainWindow.add_empty_to_role:')
         local_cur_scale = get_cur_scale_key()
         used_for_this_role = [role_name in l['images'].keys() for l in
                               cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack']]
@@ -2078,7 +1986,7 @@ class MainWindow(QMainWindow):
             layer_index_for_new_role = used_for_this_role.index(False)
         else:
             # There are no unused slots for this role. Add a new layer
-            logger.info(
+            logger.debug(
                 "Making a new layer for empty in role " + str(role_name) + " at layer " + str(layer_index_for_new_role))
             # cfg.project_data['data']['scales'][local_cur_scale]['alignment_stack'].append(
             #     copy.deepcopy(new_layer_template))
@@ -2122,9 +2030,7 @@ class MainWindow(QMainWindow):
                 #     p.update_zpa_self()
 
         if are_images_imported():
-
             self.generate_scales_button.setEnabled(True)
-            # img_size = get_image_size(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][0]['images']['base']['filename'])
             img_size = get_image_size(
                 cfg.project_data['data']['scales']['scale_1']['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
             n_images = get_num_imported_images()
@@ -2132,10 +2038,6 @@ class MainWindow(QMainWindow):
             self.hud.post('Image dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
             cfg.project_data.link_all_stacks()
             self.center_all_images()
-            # for p in self.panel_list:
-            #     p.force_center = True
-            #     p.update_zpa_self()
-
             self.update_panels()
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
@@ -2150,53 +2052,52 @@ class MainWindow(QMainWindow):
         self.center_all_images()
     
     def define_roles(self, roles_list):
-        logger.info("MainWindow.define_roles:")
-        logger.info('Roles List: %s' % str(roles_list))
+        logger.info('MainWindow.define_roles: Roles List: %s' % str(roles_list))
         
-        # Set the image panels according to the roles
-        self.image_panel.set_roles(roles_list)
-        
-        # Set the Roles menu from this roles_list
-        mb = self.menuBar()
-        if not (mb is None):
-            for m in mb.children():
-                if type(m) == QMenu:
-                    text_label = ''.join(m.title().split('&'))
-                    if 'Images' in text_label:
-                        print_debug(30, "Found Images Menu")
-                        for mm in m.children():
-                            if type(mm) == QMenu:
-                                text_label = ''.join(mm.title().split('&'))
-                                if 'Import into' in text_label:
-                                    print_debug(30, "Found Import Into Menu")
-                                    # Remove all the old actions:
-                                    while len(mm.actions()) > 0:
-                                        mm.removeAction(mm.actions()[-1])
-                                    # Add the new actions
-                                    for role in roles_list:
-                                        item = QAction(role, self)
-                                        item.triggered.connect(self.import_into_role)
-                                        mm.addAction(item)
-                                if 'Empty into' in text_label:
-                                    print_debug(30, "Found Empty Into Menu")
-                                    # Remove all the old actions:
-                                    while len(mm.actions()) > 0:
-                                        mm.removeAction(mm.actions()[-1])
-                                    # Add the new actions
-                                    for role in roles_list:
-                                        item = QAction(role, self)
-                                        item.triggered.connect(self.empty_into_role)
-                                        mm.addAction(item)
-                                if 'Clear Role' in text_label:
-                                    print_debug(30, "Found Clear Role Menu")
-                                    # Remove all the old actions:
-                                    while len(mm.actions()) > 0:
-                                        mm.removeAction(mm.actions()[-1])
-                                    # Add the new actions
-                                    for role in roles_list:
-                                        item = QAction(role, self)
-                                        item.triggered.connect(self.remove_all_from_role)
-                                        mm.addAction(item)
+
+        self.image_panel.set_roles(roles_list)  # Set the image panels according to the roles
+        #
+        # # Set the Roles menu from this roles_list
+        # mb = self.menuBar()
+        # if not (mb is None):
+        #     for m in mb.children():
+        #         if type(m) == QMenu:
+        #             text_label = ''.join(m.title().split('&'))
+        #             if 'Images' in text_label:
+        #                 print_debug(30, "Found Images Menu")
+        #                 for mm in m.children():
+        #                     if type(mm) == QMenu:
+        #                         text_label = ''.join(mm.title().split('&'))
+        #                         if 'Import into' in text_label:
+        #                             print_debug(30, "Found Import Into Menu")
+        #                             # Remove all the old actions:
+        #                             while len(mm.actions()) > 0:
+        #                                 mm.removeAction(mm.actions()[-1])
+        #                             # Add the new actions
+        #                             for role in roles_list:
+        #                                 item = QAction(role, self)
+        #                                 item.triggered.connect(self.import_into_role)
+        #                                 mm.addAction(item)
+        #                         if 'Empty into' in text_label:
+        #                             print_debug(30, "Found Empty Into Menu")
+        #                             # Remove all the old actions:
+        #                             while len(mm.actions()) > 0:
+        #                                 mm.removeAction(mm.actions()[-1])
+        #                             # Add the new actions
+        #                             for role in roles_list:
+        #                                 item = QAction(role, self)
+        #                                 item.triggered.connect(self.empty_into_role)
+        #                                 mm.addAction(item)
+        #                         if 'Clear Role' in text_label:
+        #                             print_debug(30, "Found Clear Role Menu")
+        #                             # Remove all the old actions:
+        #                             while len(mm.actions()) > 0:
+        #                                 mm.removeAction(mm.actions()[-1])
+        #                             # Add the new actions
+        #                             for role in roles_list:
+        #                                 item = QAction(role, self)
+        #                                 item.triggered.connect(self.remove_all_from_role)
+        #                                 mm.addAction(item)
     
     @Slot()
     def empty_into_role(self, checked):
@@ -2421,7 +2322,7 @@ class MainWindow(QMainWindow):
 
     def reload_ng(self):
         logger.info("Reloading Neuroglancer...")
-        self.ng_view()
+        self.view_neuroglancer()
 
     def reload_remote(self):
         logger.info("Reloading remote viewer...")
@@ -2458,24 +2359,24 @@ class MainWindow(QMainWindow):
         self.set_idle()
 
     def print_state_ng(self):
-        # viewer_state = json.loads(str(self.viewer.state))
-        logger.info(self.viewer.state)
+        # viewer_state = json.loads(str(self.ng_viewer.state))
+        logger.info(self.ng_viewer.state)
 
-        # logger.info("Viewer.url : ", self.viewer.get_viewer_url)
-        # logger.info("Viewer.screenshot : ", self.viewer.screenshot)
-        # logger.info("Viewer.txn : ", self.viewer.txn)
-        # logger.info("Viewer.actions : ", self.viewer.actions)
+        # logger.info("Viewer.url : ", self.ng_viewer.get_viewer_url)
+        # logger.info("Viewer.screenshot : ", self.ng_viewer.screenshot)
+        # logger.info("Viewer.txn : ", self.ng_viewer.txn)
+        # logger.info("Viewer.actions : ", self.ng_viewer.actions)
         # time.sleep(1)
         # self.set_status("Viewing aligned images in Neuroglancer.")
 
     def print_url_ng(self):
-        print(ng.to_url(self.viewer.state))
-        # logger.info("\nURL : " + self.viewer.get_viewer_url() + "\n")
+        print(ng.to_url(self.ng_viewer.state))
+        # logger.info("\nURL : " + self.ng_viewer.get_viewer_url() + "\n")
 
-        # logger.info("Viewer.url : ", self.viewer.get_viewer_url)
-        # logger.info("Viewer.screenshot : ", self.viewer.screenshot)
-        # logger.info("Viewer.txn : ", self.viewer.txn)
-        # logger.info("Viewer.actions : ", self.viewer.actions)
+        # logger.info("Viewer.url : ", self.ng_viewer.get_viewer_url)
+        # logger.info("Viewer.screenshot : ", self.ng_viewer.screenshot)
+        # logger.info("Viewer.txn : ", self.ng_viewer.txn)
+        # logger.info("Viewer.actions : ", self.ng_viewer.actions)
         # time.sleep(1)
         # self.set_status("Viewing aligned images in Neuroglancer.")
 
@@ -2488,9 +2389,9 @@ class MainWindow(QMainWindow):
         # self.set_status("Making blended image...")
 
     # ngview
-    def ng_view(self):  # ng_view #ngview #neuroglancer
-        logger.info("ng_view() >>>>")
-        logger.info("# of aligned images                  : ", get_num_aligned())
+    def view_neuroglancer(self):  #view_3dem #ngview #neuroglancer
+        logger.info("view_neuroglancer >>>>")
+        logger.info("# of aligned images                  : %d" % get_num_aligned())
         if not are_aligned_images_generated():
             self.hud.post('This scale must be aligned and exported before viewing in Neuroglancer')
 
@@ -2527,230 +2428,169 @@ class MainWindow(QMainWindow):
         else:
             logger.info('Exported alignment at this scale exists - Continuing')
 
-        ds_name = "aligned_" + get_cur_scale_key()
-        destination_path = os.path.abspath(cfg.project_data['data']['destination_path'])
-        zarr_project_path = os.path.join(destination_path, "project.zarr")
-        zarr_ds_path = os.path.join(destination_path, "project.zarr", ds_name)
-
-        logger.info('zarr_project_path                    :', zarr_project_path)
-        logger.info('zarr_ds_path                         :', zarr_ds_path)
-        logger.info('zarr_ds_path exists?                 :', bool(os.path.isdir(zarr_ds_path)))
-
-        self.hud.post('Loading Neuroglancer viewer...')
-        self.hud.post("  source: '%s'" % zarr_ds_path)
+        proj_path = os.path.abspath(cfg.project_data['data']['destination_path'])
+        zarr_path = os.path.join(proj_path, '3dem.zarr')
 
         if 'server' in locals():
             logger.info('server is already running')
         else:
             # self.browser.setUrl(QUrl()) #empty page
             logger.info('no server found in local namespace -> starting RunnableServer() worker')
-            worker = RunnableServer()
-            self.threadpool.start(worker)
 
-        os.chdir(zarr_project_path)  # refactor
+            ng_worker = View3DEM(source=zarr_path)
+            self.threadpool.start(ng_worker)
+
+        '''Need to add image layers'''
+
+        # with open(os.path.join(zarr_path, '0', '.zattrs')) as f:
+        #     self.lay0_zattrs = json.load(f)
+        # with open(os.path.join(zarr_path, '0', '.zgroup')) as f:
+        #     self.lay0_zgroup = json.load(f)
+        # logger.info('_ARRAY_DIMENSIONS: %s' % str(self.lay0_zattrs["_ARRAY_DIMENSIONS"]))
+
+        logger.info('Initializing Neuroglancer viewer...')
+        logger.info("  Source: '%s'" % zarr_path)
 
         Image.MAX_IMAGE_PIXELS = None
-        view = 'single'
-        bind = '127.0.0.1'
-        port = 9000
-        res_x = 2
-        res_y = 2
-        res_z = 50
-
-        src = zarr_project_path
-
-        # LOAD METADATA - .zarray
-        logger.info('loading metadata from .zarray (array details) file')
-        zarray_path = os.path.join(src, ds_name, "s0", ".zarray")
-        logger.info("zarray_path : ", zarray_path)
-        with open(zarray_path) as f:
-            zarray_keys = json.load(f)
-        chunks = zarray_keys["chunks"]
-
-        # cname = zarray_keys["compressor"]["cname"] #jy
-        # clevel = zarray_keys["compressor"]["clevel"] #jy
-        shape = zarray_keys["shape"]
-        logger.info("shape : ", shape)
-
-        # LOAD META DATA - .zattrs
-        logger.info('loading metadata from .zattrs (attributes) file')
-        zattrs_path = os.path.join(src, ds_name, "s0", ".zattrs")
-        with open(zattrs_path) as f:
-            zattrs_keys = json.load(f)
-        logger.info("zattrs_path : ", zattrs_path)
-        resolution = zattrs_keys["resolution"]
-        # scales = zattrs_keys["scales"]  #0405 #0406 #remove
-        # logger.info("scales : ", scales)  #0405 #0406 #remove
-
-        ds_ref = "img_ref_zarr"
-        ds_base = "img_base_zarr"
-        ds_aligned = ds_name
-        ds_blended = "img_blended_zarr"
-
-        logger.info('initializing neuroglancer.Viewer()')
-        # viewer = ng.Viewer()
-        self.viewer = ng.Viewer()
-
-        logger.info('looking for aligned data')
-        data_aligned = []
-        aligned_scale_paths = glob(os.path.join(src, ds_aligned) + "/s*")
-        for s in aligned_scale_paths:
-            scale = os.path.join(ds_aligned, os.path.basename(s))
-            logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
-            data_aligned.append(open_ds(src, scale))
-
-        if view == 'row':
-            logger.info("Looking for REF scale directories...")
-            data_ref = []
-            ref_scale_paths = glob(os.path.join(src, ds_ref) + "/s*")
-            for s in ref_scale_paths:
-                scale = os.path.join(ds_ref, os.path.basename(s))
-                logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
-                data_ref.append(open_ds(src, scale))
-
-            logger.info('Looking for BASE scale directories...')
-            data_base = []
-            base_scale_paths = glob(os.path.join(src, ds_base) + "/s*")
-            for s in base_scale_paths:
-                scale = os.path.join(ds_base, os.path.basename(s))
-                logger.info("'daisy' is opening scale '%s' and appending aligned data" % s)
-                data_base.append(open_ds(src, scale))
+        res_x, res_y, res_z = 2, 2, 50
 
         logger.info('defining Neuroglancer coordinate space')
-        dimensions = ng.CoordinateSpace(
-            names=['x', 'y', 'z'],
-            units='nm',
-            scales=[res_x, res_y, res_z],
-        )
+        # dimensions = ng.CoordinateSpace(
+        #     names=['x', 'y', 'z'],
+        #     units='nm',
+        #     scales=[res_x, res_y, res_z]
+        #     # names=['x', 'y'],
+        #     # units=['nm','nm'],
+        #     # scales=[res_x, res_y]
+        # )
 
+        # def add_example_layers(state, image, offset):
+        #     a[0, :, :, :] = np.abs(np.sin(4 * (ix + iy))) * 255
+        #     a[1, :, :, :] = np.abs(np.sin(4 * (iy + iz))) * 255
+        #     a[2, :, :, :] = np.abs(np.sin(4 * (ix + iz))) * 255
+        #
+        #     dimensions = ng.CoordinateSpace(names=['x', 'y', 'z'],
+        #                                               units='nm',
+        #                                               scales=[2, 2, 50])
+        #
+        #     state.dimensions = dimensions
+        #     state.layers.append(
+        #         name=image,
+        #         layer=ng.LocalVolume(
+        #             data='a',
+        #             dimensions=ng.CoordinateSpace(
+        #                 names=['x', 'y', 'z'],
+        #                 units=['nm', 'nm', 'nm'],
+        #                 scales=[2, 2, 50],
+        #                 coordinate_arrays=[
+        #                     ng.CoordinateArray(labels=['red', 'green', 'blue']), None, None, None
+        #                 ]),
+        #             voxel_offset=(0, 0, offset),
+        #         ),
+        #     return a, b
+
+
+        '''From OME-ZARR Specification'''
+        # datasets = []
+        # for named in multiscales:
+        #     if named["name"] == "3D":
+        #         datasets = [x["path"] for x in named["datasets"]]
+        #         break
+        # if not datasets:
+        #     # Use the first by default. Or perhaps choose based on chunk size.
+        #     datasets = [x["path"] for x in multiscales[0]["datasets"]]
+
+
+        # viewer = ng.Viewer()
+        self.ng_viewer = ng.Viewer()
         # https://github.com/google/neuroglancer/blob/master/src/neuroglancer/viewer.ts
-        logger.info('updating viewer.txn()')
-        with self.viewer.txn() as s:
+        logger.info('Adding Neuroglancer Image Layers...')
+        with self.ng_viewer.txn() as s:
+            s.cross_section_background_color = "#ffffff"
+            # s.cross_section_background_color = "#000000"
 
-            # s.cross_section_background_color = "#ffffff"
-            s.cross_section_background_color = "#000000"
-            s.dimensions = dimensions
+            '''Set Dimensions'''
+            # s.dimensions = dimensions
+
+            # s.dimensions = ng.CoordinateSpace(
+            #     names=["z", "y", "x"],
+            #     units=["nm", "nm", "nm"],
+            #     scales=[res_z, res_y, res_x]
+            # )
+
+
+            layers = ['layer_' + str(x) for x in range(get_num_aligned())]
+
+            # s.layers.append(
+            #     name='layer_' + str(i),
+            #     layer=ng.ImageLayer(source='zarr://http://localhost:9000/0'),
+            # )
+            # s.layers.append(
+            #     name='layer_1',
+            #     layer=ng.ImageLayer(source='zarr://http://localhost:9000/1'),
+            # )
+            # s.layers.append(
+            #     name='layer_2',
+            #     layer=ng.ImageLayer(source='zarr://http://localhost:9000/2'),
+            # )
+
+            for i, layer in enumerate(layers):
+                s.layers[layer] = ng.ImageLayer(source="zarr://http://localhost:9000/" + str(i))
+
+            # s.layers['layer_0'] = ng.ImageLayer(source="zarr://http://localhost:9000/0")
+            # s.layers['layer_1'] = ng.ImageLayer(source="zarr://http://localhost:9000/1")
+            # s.layers['layer_2'] = ng.ImageLayer(source="zarr://http://localhost:9000/2")
+
+            # s.layers.append(
+            #     name="one_layer",
+            #     ...
+            # )
+
+            # s.layers['layer_0'].visible = True
+            # s.layers['layer_1'].visible = True
+            # s.layers['layer_2'].visible = True
             # s.perspective_zoom = 300
-            # s.position = [0.24, 0.095, 0.14]
+            # s.position = [0, 0, 0]
+
             # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
+            '''layout types: frozenset(['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'])'''
+            s.layout = ng.column_layout(
+                [
+                    ng.LayerGroupViewer(
+                        # layout='xy',
+                        layout='4panel',
+                        # layers=['layer_0','layer_1','layer_2']),
+                        layers=layers),
+                        # layers=['layer_0']),
+                ]
+            )
 
-            # temp = np.zeros_like(data_ref)
-            # layer = ng.Layer(temp)
 
-            # logger.info("type(data_aligned) = ", type(data_aligned))  # <class 'list'>
-            # logger.info("type(data_aligned[0]) = ", type(data_aligned[0]))  # <class 'daisy.array.Array'>
-            # logger.info("len(data_aligned) = ", len(data_aligned))  # 2
-
-            array = np.asarray(data_aligned)
-            # logger.info("type(array) = ", type(array))                       # <class 'numpy.ndarray'>
-            # logger.info("array.shape = ", array.shape)                       # (2,)
-            # logger.info("array.size = ", array.size)                         # 2
-            # logger.info("array.ndim = ", array.ndim)                         # 1
-
-            logger.info('type(np.asarray(data_aligned))       :', type(np.asarray(data_aligned)))
-            logger.info('np.asarray(data_aligned).shape       :', np.asarray(data_aligned).shape)
-            logger.info('np.asarray(data_aligned).size        :', np.asarray(data_aligned).size)
-            logger.info('np.asarray(data_aligned).ndim        :', np.asarray(data_aligned).ndim)
-
-            logger.info("'view' is set to                     :", view)
-            # only for 3 pane view
-            if view == 'row':
-                add_layer(s, data_ref, 'ref')
-                add_layer(s, data_base, 'base')
-
-            add_layer(s, data_aligned, 'aligned')
-
-            ###data_panel_layout_types: frozenset(['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'])
-
-            # s.selectedLayer.visible = False
-            # s.layers['focus'].visible = False
-
-            # view = "single"
-            if view == "row":
-                logger.info("view is 'row'")
-
-                s.layers['focus'].visible = True
-
-                # [
-                #     ng.LayerGroupViewer(layers=["focus"], layout='xy'),
-
-                # temp = np.zeros_like(data_ref)
-                # #layer = ng.Layer()
-                # #layer = ng.ManagedLayer
-                # s.layers['focus'] = ng.LocalVolume(temp)
-                # s.layers['focus'] = ng.ManagedLayer(source="zarr://http://localhost:9000/img_blended_zarr",voxel_size=[i * .00000001 for i in resolution])
-                s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
-                s.layout = ng.column_layout(
-                    [
-                        ng.row_layout(
-                            [
-                                ng.LayerGroupViewer(layers=["focus"], layout='xy'),
-                            ]
-                        ),
-
-                        ng.row_layout(
-                            [
-                                ng.LayerGroupViewer(layers=['ref'], layout='xy'),
-                                ng.LayerGroupViewer(layers=['base'], layout='xy'),
-                                ng.LayerGroupViewer(layers=['aligned'], layout='xy'),
-                            ]
-                        ),
-                    ]
-                )
-
-                # s.layout = ng.column_layout(
-                #     [
-                #         ng.LayerGroupViewer(layers=["focus"], layout='xy'),
-                # s.layers['focus'] = ng.ImageLayer(source="zarr://http://localhost:9000/img_blended_zarr/")
-                # ng.row_layout(
-                #     [
-                #         ng.LayerGroupViewer(layers=["ref"], layout='xy'),
-                #         ng.LayerGroupViewer(layers=["base"], layout='xy'),
-                #         ng.LayerGroupViewer(layers=["aligned"], layout='xy'),
-                #     ]
-                # )
-                #     ]
-                # ]
-                # # )
-
-            # single image view
-            if view == "single":
-                s.layout = ng.column_layout(
-                    [
-                        ng.LayerGroupViewer(
-                            layout='xy',
-                            layers=["aligned"]),
-                    ]
-                )
-
-        logger.info('loading Neuroglancer callbacks       :', self.viewer.config_state)
-        self.viewer.actions.add('get_mouse_coords_', get_mouse_coords)
-        # self.viewer.actions.add('unchunk_', unchunk)
-        # self.viewer.actions.add('blend_', blend)
-        with self.viewer.config_state.txn() as s:
+        # logger.info('Loading Neuroglancer Callbacks...')
+        # self.ng_viewer.actions.add('get_mouse_coords_', get_mouse_coords)
+        # # self.ng_viewer.actions.add('unchunk_', unchunk)
+        # # self.ng_viewer.actions.add('blend_', blend)
+        with self.ng_viewer.config_state.txn() as s:
             s.input_event_bindings.viewer['keyt'] = 'get_mouse_coords_'
             # s.input_event_bindings.viewer['keyu'] = 'unchunk_'
             # s.input_event_bindings.viewer['keyb'] = 'blend_'
             # s.status_messages['message'] = 'Welcome to AlignEM_SWiFT!'
-
-            s.show_ui_controls = True
+            s.show_ui_controls = False
             s.show_panel_borders = True
             s.viewer_size = None
 
-        viewer_url = str(self.viewer)
-        # viewer_url = self.viewer
-        self.browser.setUrl(QUrl(viewer_url))
+        viewer_url = str(self.ng_viewer)
+        logger.info('viewer_url: %s' % viewer_url)
+        self.ng_url = QUrl(viewer_url)
+        self.browser.setUrl(self.ng_url)
         self.stacked_widget.setCurrentIndex(1)
 
         # To modify the state, use the viewer.txn() function, or viewer.set_state
-        logger.info('Viewer.config_state                  :', self.viewer.config_state)
-        # logger.info('viewer URL                           :', self.viewer.get_viewer_url())
+        logger.info('Viewer.config_state                  : %s' % str(self.ng_viewer.config_state))
+        # logger.info('viewer URL                           :', self.ng_viewer.get_viewer_url())
         # logger.info('Neuroglancer view (remote viewer)                :', ng.to_url(viewer.state))
-
-        cur_scale = get_cur_scale_key()
-        self.hud.post('Viewing aligned images at scale ' + cur_scale[-1] + ' in Neuroglancer.')
-
-        logger.info("<<<< EXITING ng_view()")
+        self.hud.post('Viewing Aligned Images In Neuroglancer')
+        logger.info("<<<< view_neuroglancer")
 
 
     def initUI(self):
@@ -3272,14 +3112,11 @@ class MainWindow(QMainWindow):
         # self.export_zarr_button.setIcon(qta.icon("fa5s.file-export", color=cfg.ICON_COLOR))
         self.export_zarr_button.setIcon(qta.icon("fa5s.cubes", color=cfg.ICON_COLOR))
 
-        # self.ng_button = QPushButton("View In\nNeuroglancer")
         self.ng_button = QPushButton("3DEM")
         self.ng_button.setToolTip('View Zarr export in Neuroglancer.')
-        self.ng_button.clicked.connect(
-            self.ng_view)  # parenthesis were causing the member function to be evaluated early
+        self.ng_button.clicked.connect(self.view_neuroglancer)
         self.ng_button.setFixedSize(self.square_button_size)
         self.ng_button.setIcon(qta.icon("ph.cube-light", color=cfg.ICON_COLOR))
-        # self.ng_button.setStyleSheet("font-size: 9px;")
 
         self.export_and_view_hlayout = QVBoxLayout()
         self.export_and_view_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -3305,8 +3142,6 @@ class MainWindow(QMainWindow):
         self.export_settings_grid_layout.addLayout(self.cname_layout, 0, 0)
         self.export_settings_grid_layout.addLayout(self.n_scales_layout, 2, 0)
         self.export_settings_grid_layout.addLayout(self.export_and_view_hlayout, 0, 1, 3, 1)
-        # self.export_settings_grid_layout.addWidget(self.export_zarr_button, 1, 1, alignment=alignEM.AlignmentFlag.AlignRight)
-        # self.export_settings_grid_layout.addWidget(self.ng_button, 2, 1, alignment=alignEM.AlignmentFlag.AlignRight)
         self.export_settings_grid_layout.setContentsMargins(10, 25, 10, 5)  # tag23
 
         '''------------------------------------------
@@ -3443,9 +3278,6 @@ class MainWindow(QMainWindow):
         self.python_console_back_button.setFixedSize(self.square_button_size)
         self.python_console_back_button.setAutoDefault(True)
 
-        # self.python_console_controls_layout = QVBoxLayout()
-        # self.python_console_controls_layout.addWidget(self.python_console_back_button)
-        # self.python_console_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
         self.python_console_layout = QHBoxLayout()
         self.python_console_layout.addWidget(self.python_jupyter_console)
@@ -3500,7 +3332,6 @@ class MainWindow(QMainWindow):
         self.splitter.setContentsMargins(0, 0, 0, 0)
         self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.lower_panel_groups)
-        # self.splitter.addWidget(self.hud)
         self.splitter.addWidget(self.bottom_display_area_widget)
 
         self.hud.setContentsMargins(0, 0, 0, 0)
@@ -3516,10 +3347,8 @@ class MainWindow(QMainWindow):
         self.splitter.setCollapsible(2, True)
 
         self.main_panel = QWidget()
-        # self.main_panel_layout = QVBoxLayout()
         self.main_panel_layout = QGridLayout()
         self.main_panel_layout.setSpacing(4)  # this will inherit downward
-
         self.main_panel_layout.addWidget(self.splitter, 1, 0)
         self.main_panel.setLayout(self.main_panel_layout)
 

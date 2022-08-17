@@ -1,9 +1,7 @@
 numpy~=1.22.4
 matplotlib~=3.5.2
 psutil~=5.9.1
-daisy~=1.0
 scikit-image~=0.19.3
-dask~=2022.6.0
 neuroglancer~=2.27
 QtAwesome~=1.1.1
 qtpy~=2.1.0

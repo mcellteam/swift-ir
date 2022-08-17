@@ -2,34 +2,28 @@
 
 import os
 import sys
-import shutil
-import logging
 import time
-import psutil
 import copy
 import json
-from qtpy.QtCore import QThread
-
+import shutil
+import psutil
+import logging
 import package.config as cfg
 from .mp_queue import TaskQueue
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
-from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_dat_files, \
-    print_sanity_check, print_snr_list, remove_aligned, update_datamodel, are_aligned_images_generated
+from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_snr_list, \
+    remove_aligned, update_datamodel, are_aligned_images_generated
 
 
 __all__ = ['compute_affines','rename_layers','remove_aligned']
 
 logger = logging.getLogger(__name__)
 
-debug_level = 0
-
 # def compute_affines():
 def compute_affines(use_scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
-    QThread.currentThread().setObjectName('ComputeAffines')
-
-    logger.critical('_____________Compute Affines Begin_____________')
+    logger.critical('\n____________Compute Affines Start____________')
 
     if are_images_imported():
         pass
@@ -43,15 +37,8 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     scale_dict = cfg.project_data['data']['scales'][use_scale]
     alignment_dict = cfg.project_data['data']['scales'][use_scale]['alignment_stack']
     alignment_option = scale_dict['method_data']['alignment_option']
-    logger.info('Computing Affine Transformations with:')
-    logger.info('use_scale          = %s' % use_scale)
-    logger.info('cfg.CODE_MODE      = %s' % cfg.CODE_MODE)
-    logger.info('cfg.PARALLEL_MODE  = %s' % cfg.PARALLEL_MODE)
-    logger.info('cfg.USE_FILE_IO    = %d' % cfg.USE_FILE_IO)
-    logger.info('start_layer        = %d' % start_layer)
-    logger.info('num_layers         = %d' % num_layers)
-
-
+    logger.debug('Use Scale: %s\nCode Mode: %s\nUse File IO: %d' % (use_scale, cfg.CODE_MODE, cfg.USE_FILE_IO))
+    logger.debug('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
 
     cfg.main_window.alignment_status_checkbox.setChecked(False)
     if are_aligned_images_generated():
@@ -62,9 +49,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     cfg.main_window.hud.post("Using SWiFT-IR to Compute Affine Transformations (Affine: %s, Scale: %s)..."
                              % (alignment_option, use_scale[-1]))
 
-
     print_snr_list()
-
     # ensure_proper_data_structure() #0709
 
     if rename_switch:
@@ -84,10 +69,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     # alstack = project['data']['scales'][use_scale]['alignment_stack']
     alstack = copy.deepcopy(cfg.project_data['data']['scales'][use_scale]['alignment_stack'])
 
-    # for scale_key in get_scales_list():
-    #     for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
-    #
-
     if cfg.PARALLEL_MODE:
         logger.debug('cfg.PARALLEL_MODE was True...')
         '''Run the project as a series of jobs'''
@@ -99,7 +80,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
             # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.project_data.to_json()))
             f.write(cfg.project_data.to_json())
 
-        # import time
         # foo = os.path.join(cfg.project_data.destination(), str(time.time()) + '.json')
         # with open(foo, 'w') as f:
         #     # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.project_data.to_json()))
@@ -123,14 +103,14 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
                 logger.debug('Skipping layer %s' % str(lnum))
             else:
                 task_args = [sys.executable,
-                             align_job,  # Python program to run (single_alignment_job)
-                             str(run_project_name),  # Project file name
-                             str(alignment_option),  # Init, Refine, or Apply
-                             str(get_scale_val(use_scale)),  # Scale to use or 0
-                             str(cfg.CODE_MODE),  # Python or C mode
-                             str(lnum),  # First layer number to run from Project file
-                             str(1),  # Number of layers to run
-                             str(cfg.USE_FILE_IO)  # Flag (0 or 1) for pipe/file I/O. 0=Pipe, 1=File
+                             align_job,                          # Python program to run (single_alignment_job)
+                             str(run_project_name),              # Project file name
+                             str(alignment_option),              # Init, Refine, or Apply
+                             str(get_scale_val(use_scale)),      # Scale to use or 0
+                             str(cfg.CODE_MODE),                 # Python or C mode
+                             str(lnum),                          # First layer number to run from Project file
+                             str(1),                             # Number of layers to run
+                             str(cfg.USE_FILE_IO)                # Use File IO instead of Pipe
                              ]
                 if i == 0:
                     example = [str(p) for p in task_args]
@@ -139,8 +119,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
 
                 task_queue.add_task(task_args)
-
-        QThread.currentThread().setObjectName('ComputeAffines')
 
         # task_queue.work_q.join()
         t0 = time.time()
@@ -233,12 +211,10 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
                     al_stack_old[lnum]['skip'] = True
                 need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
         
-        
-        logger.info('Stopping task queue...')
         task_queue.stop()
         del task_queue
         
-        print('\n____compute_affines____\nupdated_model (Example Layer):')
+        logger.info('\nExample Layer from Alignment Stack:')
         try:
             al_layer = updated_model['data']['scales'][use_scale]['alignment_stack'][-1]
             logger.info(json.dumps(al_layer, indent=2))
@@ -250,8 +226,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         save_bias_analysis(cfg.project_data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
         
         print_alignment_layer()
-        # print_dat_files()
-        
+
     else:
         '''Run the project directly in Serial mode. Does not generate aligned images.'''
         logger.info('Calling run_json_project (cfg.PARALLEL_MODE was False)...')
@@ -262,14 +237,14 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
                 swiftir_code_mode=cfg.CODE_MODE,
                 start_layer=start_layer,
                 num_layers=num_layers)
-        logger.critical('need_to_write_json = %s' % str(need_to_write_json))
+        logger.info('need_to_write_json = %s' % str(need_to_write_json))
         if need_to_write_json:
             cfg.project_data = updated_model
         else:
             update_datamodel(updated_model)
 
 
-    print('_____________Compute Affines End_____________')
+    logger.critical('\n____________Compute Affines End____________')
 
 def rename_layers(use_scale, alignment_dict):
     source_dir = os.path.join(cfg.project_data['data']['destination_path'], use_scale, "img_src")

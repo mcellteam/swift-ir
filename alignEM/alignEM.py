@@ -62,6 +62,11 @@ class CustomFormatter(logging.Formatter):
     # blue = "\x1b[1;34m"
     reset = "\x1b[0m"
     format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
+    # format = '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s'
+    # format = '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s'
+    # format = '[%(asctime)s] %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] | %(message)s')
+    # format = '%(asctime)s - %(name)s - %(process)d - %(threadName)s - %(levelname)s - %(message)s'
+    # format = '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s'
 
     FORMATS = {
         logging.DEBUG: grey + format + reset,
@@ -86,23 +91,6 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
 
-# fileConfig('logger.ini')
-
-# logging.basicConfig(
-#         level=logging.DEBUG,
-#         format='%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] | %(message)s',
-#         datefmt='%H:%M:%S',
-#         handlers=[ logging.StreamHandler() ]
-# )
-
-# create logger with 'spam_application'
-
-# logger.setLevel(logging.DEBUG)
-# ch = logging.StreamHandler()
-# ch.setLevel(logging.DEBUG)
-# formatter = logging.Formatter('[%(asctime)s] %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] | %(message)s')
-# ch.setFormatter(formatter)
-# logger.addHandler(ch)
 
 reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
 installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
@@ -110,6 +98,8 @@ if 'QtAwesome' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','QtAwesome'])
 if 'QtPy' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','QtPy'])
+if 'qtconsole' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','qtconsole'])
 if 'imagecodecs' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','imagecodecs'])
 if 'zarr' not in installed_packages:
@@ -122,32 +112,22 @@ if 'tqdm' not in installed_packages:
     subprocess.check_call([sys.executable, '-m', 'pip', 'install','jupyter'])
 
 
-# logger = logging.getLogger('AlignEMLogger')
-# logger.setLevel(logging.DEBUG)  # <- critical instruction else logger will break.
-# logging.basicConfig(
-#         format="[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-#         datefmt='%H:%M:%S',
-#         handlers=[logger.StreamHandler()]
-# )
-# formatter = logging.Formatter('%(asctime)s - %(name)s - %(process)d - %(threadName)s - %(levelname)s - %(message)s')
-# formatter = logging.Formatter("[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s")
-# formatter = "[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
-# handler.setFormatter(formatter)
-# logger.addHandler(handler)
-
-
-
 if __name__ == "__main__":
 
-    # logger.debug("debug message")
-    # logger.info("info message")
-    # logger.warning("warning message")
-    # logger.error("error message")
-    # logger.critical("critical message")
+    # sys.stdout.write('\n===================================================================================\n')
+    # sys.stdout.write('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.\n')
+    # sys.stdout.write('===================================================================================\n\n')
 
-    sys.stdout.write('\n===================================================================================\n')
-    sys.stdout.write('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.\n')
-    sys.stdout.write('===================================================================================\n\n')
+    # CSI = "\x1B["
+    # print('\n' + '\x1b[6;30;42m' + '0m' * 45)
+    # print('Welcome to AlignEM-SWiFT (joel-dev-alignem branch). Please report bugs to joel@salk.edu :)\n' + '0m' * 45)
+    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
+    # print('\x1b[6;30;42m' + 'You are now aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
+    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
+
+    print(
+        '\x1b[6;30;42m' + 'You are now aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
+
     sys.stdout.flush()
     logger.info("Running " + __file__ + ".__main__()")
     logger.info('PID=%d' % os.getpid())

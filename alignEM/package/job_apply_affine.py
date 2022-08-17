@@ -53,13 +53,10 @@ def print_command_line_syntax(args):
 
 
 if (__name__ == '__main__'):
-    logger.info('job_apply_affine.main >>>>')
-    print('len(sys.argv) = %s' % str(len(sys.argv)))
-
+    # len(sys.argv) = 16
     if (len(sys.argv) < 4):
         print_command_line_syntax(sys.argv)
         exit(1)
-
     in_fn = sys.argv[-2]
     out_fn = sys.argv[-1]
     rect = None

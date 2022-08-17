@@ -21,10 +21,8 @@ curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
 -------- Install Python Dependencies --------
 To install the required Python packages using pip:
 python3 -m pip install --upgrade pips
-python3 -m pip install neuroglancer numpy psutil opencv-python-headless scikit-image zarr tifffile dask imagecodecs tqdm PySide6
-python3 -m pip install git+https://github.com/funkelab/funlib.math.git#egg=funlib.math
-python3 -m pip install git+https://github.com/funkelab/funlib.geometry.git#egg=funlib.geometry
-python3 -m pip install git+https://github.com/funkelab/daisy.git#egg=daisy
+python3 -m pip install neuroglancer numpy psutil opencv-python-headless scikit-image zarr tifffile imagecodecs tqdm
+python3 -m pip install PySide6   # or PySide2, PyQt5, PyQt6
 
 -------- Clone Repo & Switch Branch --------
 git clone https://github.com/mcellteam/swift-ir.git
@@ -52,13 +50,10 @@ sudo apt-get install libjpeg-dev libtiff-dev libpng-dev libfftw3-dev
 conda create -n swift_env -c conda-forge python=3.9
 conda activate swift_env
 sudo pip install --upgrade pip
-pip install git+https://github.com/funkelab/funlib.math.git#egg=funlib.math
-pip install git+https://github.com/funkelab/funlib.geometry.git#egg=funlib.geometry
-pip install git+https://github.com/funkelab/daisy.git#egg=daisy
 git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
 git checkout joel-dev-alignem
-pip install psutils PySide6 scikit-image dask neuroglancer zarr matplotlib opencv-python
+pip install psutils PySide6 scikit-image neuroglancer zarr matplotlib opencv-python
 and lastly compile c code!git
 
 MacOS Tips:
@@ -66,9 +61,6 @@ MacOS Tips:
 conda env create -f environment.yml
 conda activate swiftir-env
 python3 -m pip install --upgrade pip
-pip install git+https://github.com/funkelab/funlib.math.git#egg=funlib.math
-pip install git+https://github.com/funkelab/funlib.geometry.git#egg=funlib.geometry
-pip install git+https://github.com/funkelab/daisy.git#egg=daisy
 pip install neuroglancer
 pip install imagecodecs
 git clone https://github.com/mcellteam/swift-ir.git

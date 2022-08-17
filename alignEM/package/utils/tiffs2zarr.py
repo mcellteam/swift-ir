@@ -7,10 +7,10 @@ import os
 import sys
 import json
 import shutil
+# import dask as da
 import argparse
 from pathlib import Path
 import tifffile
-import dask.array as da
 import imagecodecs
 
 
@@ -53,10 +53,11 @@ if __name__ == '__main__':
     of = 'out.zarr'
     shutil.rmtree(of)
 
+
     chunk_shape_tuple = tuple([64, 64, 64])
-    files_1024 = sorted(list(Path('./test_data').glob(r'*1024.tif')))
-    files_2048 = sorted(list(Path('./test_data').glob(r'*2048.tif')))
-    files_4096 = sorted(list(Path('./test_data').glob(r'*4096.tif')))
+    files_1024 = sorted(list(Path('package/test_data').glob(r'*1024.tif')))
+    files_2048 = sorted(list(Path('package/test_data').glob(r'*2048.tif')))
+    files_4096 = sorted(list(Path('package/test_data').glob(r'*4096.tif')))
     # print(filenames)
     print('tiffs2zarr is scaling size 1024...')
     tiffs2zarr(files_1024, os.path.join(of, 'img_aligned_zarr', 's2'), chunk_shape_tuple, compression='zstd',overwrite=True)

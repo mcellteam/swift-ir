@@ -30,16 +30,10 @@ libraries
 *.pyc
 *.json
 swift-ir/.DS_Store
-*/daisy_logs/*
-swift-ir/alignEM/daisy_logs/
-swift-ir/alignEM/package/ui/daisy_logs/
-swift-ir/alignEM/package/ui/daisy_logs/*
 swift-ir/alignEM/joel_notes.txt
 swift-ir/alignEM/_stylesheet.qss
 swift-ir/deprecated.txt
 **/.DS_Store
-alignEM/package/ui/daisy_logs
-alignEM/package/ui/daisy_logs/*
 alignEM/sandbox
 alignEM/sandbox/*
 alignEM/package/out.zarr
@@ -114,8 +108,6 @@ venv.bak/
 # mkdocs documentation
 /site
 =======
-swift-ir/daisy_logs
-swift-ir/daisy_logs/*
-swift-ir/daisy_logs/**
+
 
 >>>>>>> Stashed changes
