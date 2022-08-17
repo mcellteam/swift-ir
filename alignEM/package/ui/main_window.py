@@ -2,7 +2,7 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
-import os, sys, copy, json, inspect, collections, multiprocessing, logging, textwrap, psutil, operator, platform
+import os, sys, copy, json, inspect, multiprocessing, logging, textwrap, psutil, operator, platform
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, fname=None, panel_roles=None, title="AlignEM-SWiFT"):
+    def __init__(self, title="AlignEM-SWiFT"):
 
         app = QApplication.instance()
         self.app = QApplication.instance()
@@ -62,9 +62,9 @@ class MainWindow(QMainWindow):
         # self.python_jupyter_console = InProcessJupyterConsole()
         logger.info('app.__str__() = ' + app.__str__())
         self.pyside_path = os.path.dirname(os.path.realpath(__file__))
-        
         logger.info('initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
+        cfg.defaults_form = DefaultsForm(parent=self)
 
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
@@ -83,12 +83,6 @@ class MainWindow(QMainWindow):
         cfg.project_data = DataModel()
         cfg.image_library = ImageLibrary()
         # cfg.image_library = SmartImageLibrary()
-
-        '''objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
-        called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
-        on objc_initializeAfterForkError to debug.
-        https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr'''
-        # logger.info('alignem_swift.py | Setting OBJC_DISABLE_INITIALIZE_FORK_SAFETY=yes')
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
         
         # if cfg.QT_API == 'pyside6':
@@ -96,20 +90,15 @@ class MainWindow(QMainWindow):
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
         
-        # stylesheet must be after QMainWindow.__init__(self)
+
         self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet1.qss')
-        self.setStyleSheet(open(self.main_stylesheet).read())
+        self.setStyleSheet(open(self.main_stylesheet).read()) # must be after QMainWindow.__init__(self)
         
         self.context = QOpenGLContext(self)
         self.context.setFormat(QSurfaceFormat())
-
-        cfg.defaults_form = DefaultsForm(parent=self)
-        
-        logger.info("Setting multiprocessing.set_start_method('fork', force=True)...")
         multiprocessing.set_start_method('fork', force=True)
         
         self.project_progress = 0
-        # self.project_scales = [] #0702
         self.project_aligned_scales = []
         self.scales_combobox_switch = 0
         self.jump_to_worst_ticker = 1  # begin iter at 1 to skip first image (has no ref)
@@ -133,7 +122,7 @@ class MainWindow(QMainWindow):
         # self.web_settings = QWebEngineSettings.defaultSettings()
         # self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         
-        # pyside6
+        # pyside6 ONLY
         logger.info("instantiating QWebEngineView()")
         if cfg.USES_PYSIDE:
             self.view = QWebEngineView()
@@ -145,7 +134,6 @@ class MainWindow(QMainWindow):
         # self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         logger.info("Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True")
-        # logger.info('---------------------\n')
         if cfg.USES_QT6:
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
@@ -154,20 +142,10 @@ class MainWindow(QMainWindow):
         # def changeEvent(self, event):
         #     if event.type() == event.WindowStateChange:
         #         self.titleBar.windowStateChanged(self.windowState())
-        #
         # def resizeEvent(self, event):
         #     self.titleBar.resize(self.width(), self.titleBar.height())
-        
-        # # set stylesheet
-        # file = QFile(":/dark/stylesheet.qss")
-        # file.open(QFile.ReadOnly | QFile.Text)
-        # stream = QTextStream(file)
-        # app.setStyleSheet(stream.readAll())
-        
-        # self.browser.setPage(CustomWebEnginePage(self)) # Or else clicked links will never open new window.
 
-        if panel_roles != None:
-            cfg.project_data['data']['panel_roles'] = panel_roles
+        # self.browser.setPage(CustomWebEnginePage(self)) # Or else clicked links will never open new window.
         
         self.draw_border = False
         self.draw_annotations = True
@@ -190,20 +168,12 @@ class MainWindow(QMainWindow):
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
         dock_vlayout = QVBoxLayout(content)
-
         self.inspector_scales = CollapsibleBox('Skip List')
-        
         dock_vlayout.addWidget(self.inspector_scales)
         lay = QVBoxLayout()
-        
-        self.inspector_label_skips.setStyleSheet(
-            "color: #d3dae3;"
-            "border-radius: 12px;"
-        )
+        self.inspector_label_skips.setStyleSheet("color: #d3dae3; border-radius: 12px;")
         lay.addWidget(self.inspector_label_skips, alignment=Qt.AlignTop)
         self.inspector_scales.setContentLayout(lay)
-        
-        # CPU Specs
         self.inspector_cpu = CollapsibleBox('CPU Specs')
         dock_vlayout.addWidget(self.inspector_cpu)
         lay = QVBoxLayout()
@@ -211,7 +181,6 @@ class MainWindow(QMainWindow):
         label.setStyleSheet("color: #d3dae3; border-radius: 12px;")
         lay.addWidget(label, alignment=Qt.AlignTop)
         self.inspector_cpu.setContentLayout(lay)
-        
         dock_vlayout.addStretch()
 
         '''Initialize UI'''
