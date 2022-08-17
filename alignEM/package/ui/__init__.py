@@ -1,7 +1,7 @@
 __all__ = []
 
-from . import app
-from .app import *
+from . import main_window
+from .main_window import *
 __all__.extend(app.__all__)
 
 from . import defaults_form
