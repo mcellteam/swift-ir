@@ -122,11 +122,11 @@ if __name__ == "__main__":
     # print('\n' + '\x1b[6;30;42m' + '0m' * 45)
     # print('Welcome to AlignEM-SWiFT (joel-dev-alignem branch). Please report bugs to joel@salk.edu :)\n' + '0m' * 45)
     # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
-    # print('\x1b[6;30;42m' + 'You are now aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
+    # print('\x1b[6;30;42m' + 'You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
     # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
 
     print(
-        '\x1b[6;30;42m' + 'You are now aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
+        '\x1b[6;30;42m' + 'You are aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
 
     sys.stdout.flush()
     logger.info("Running " + __file__ + ".__main__()")
