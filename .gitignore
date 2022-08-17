@@ -38,6 +38,9 @@ alignEM/sandbox
 alignEM/sandbox/*
 alignEM/package/out.zarr
 alignEM/package/out.zarr/*
+alignEM/keep.JPG
+alignEM/best.JPG
+alignEM/newtarg.JPG
 
 ### Python ###
 # Byte-compiled / optimized / DLL files

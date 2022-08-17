@@ -2264,7 +2264,6 @@ class MainWindow(QMainWindow):
         self.align_txt_layout.addWidget(self.align_label_scales_remaining, 1, 1, alignment=Qt.AlignmentFlag.AlignLeft)
         self.align_txt_layout.setContentsMargins(5, 5, 15, 5)
 
-
         self.auto_generate_label = QLabel("Auto-generate Images:")
         self.auto_generate_label.setToolTip('Automatically generate aligned images.')
         self.toggle_auto_generate = ToggleSwitch()  # toggleboundingrect
