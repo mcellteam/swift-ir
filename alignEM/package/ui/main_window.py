@@ -22,7 +22,6 @@ import qtawesome as qta
 import pyqtgraph as pg
 import neuroglancer as ng
 from PIL import Image
-
 import package.config as cfg
 from package.em_utils import *
 from package.data_model import DataModel
@@ -89,7 +88,6 @@ class MainWindow(QMainWindow):
         #     logger.info("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
-        
 
         self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet1.qss')
         self.setStyleSheet(open(self.main_stylesheet).read()) # must be after QMainWindow.__init__(self)
@@ -327,23 +325,18 @@ class MainWindow(QMainWindow):
         """Start a kernel, connect to it, and create a RichJupyterWidget to use it. Doc:
         https://qtconsole.readthedocs.io/en/stable/
         """
-
         global ipython_widget  # Prevent from being garbage collected
-
         # Create an in-process kernel
         self.kernel_manager = QtInProcessKernelManager()
         self.kernel_manager.start_kernel(show_banner=False)
         self.kernel = self.kernel_manager.kernel
         self.kernel.gui = 'qt'
-        myvar = 'test'
         # kernel.shell.push({'x': 0, 'y': 1, 'z': 2})
         # project_data = cfg.project_data #notr sure why this dictionary does not push
         # self.kernel.shell.push(project_data)
         # self.kernel.shell.
-
         self.kernel_client = self.kernel_manager.client()
         self.kernel_client.start_channels()
-
         self.jupyter_widget = RichJupyterWidget()
         self.jupyter_widget.banner = ''
         self.jupyter_widget.set_default_style(colors='linux')
@@ -366,16 +359,12 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def refresh_all_images(self):
-        # logger.info("  MainWindow is refreshing all images (called by " + inspect.stack()[1].function + ")...")
+        logger.info("MainWindow is refreshing all images (called by " + inspect.stack()[1].function + ")...")
         self.image_panel.refresh_all_images()
     
     @Slot()
     def project_view_callback(self):
         logger.critical("project_view_callback called by " + inspect.stack()[1].function + "...")
-        # json_path = QFileInfo(__file__).absoluteDir().filePath(self.project_filename)
-        # with open(json_path) as f:
-        #     document = json.load(f)
-        #     self.project_model.load(document)
         self.project_model.load(cfg.project_data.to_dict())
         self.project_view.show()
         self.main_widget.setCurrentIndex(5)
@@ -424,7 +413,6 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             self.hud.post('Generating Scales Triggered an Exception - Returning', logging.ERROR)
-            # return #0804-
 
         cfg.project_data.link_all_stacks()
         set_default_settings()
@@ -453,12 +441,9 @@ class MainWindow(QMainWindow):
     def run_alignment(self) -> None:
         logger.info('run_alignment:')
         self.read_gui_update_project_data()
-        # This should be impossible to trigger due to disabling/enabling of buttons.
         if not is_cur_scale_ready_for_alignment():
             error_msg = "Scale %s must be aligned first!" % get_next_coarsest_scale_key()[-1]
             cfg.main_window.hud.post(error_msg, logging.WARNING)
-            # error_dialog = QErrorMessage()
-            # error_dialog.showMessage(error_msg)
             return
         self.status.showMessage('Aligning...')
         self.show_hud()
@@ -810,11 +795,7 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             logger.warning('Failed to update skips list')
-    
-    @Slot()
-    def set_status(self, msg: str) -> None:
-        self.status.showMessage(msg)
-    
+
     @Slot()  # 0503 #skiptoggle #toggleskip #skipswitch forgot to define this
     def update_skip_toggle(self):
         logger.info('update_skip_toggle:')
@@ -822,6 +803,10 @@ class MainWindow(QMainWindow):
         logger.info("scale['alignment_stack'][cfg.project_data['data']['current_layer']]['skip'] = ",
                     scale['alignment_stack'][cfg.project_data['data']['current_layer']]['skip'])
         self.toggle_skip.setChecked(not scale['alignment_stack'][cfg.project_data['data']['current_layer']]['skip'])
+
+    @Slot()
+    def set_status(self, msg: str) -> None:
+        self.status.showMessage(msg)
     
     # stylesheet
     def minimal_stylesheet(self):
@@ -867,17 +852,16 @@ class MainWindow(QMainWindow):
         self.reset_groupbox_styles()
     
     def reset_groupbox_styles(self):
-        logger.info('Resetting groupbox styles')
+        logger.info('reset_groupbox_styles:')
         self.project_functions_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.images_and_scaling_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.alignment_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.postalignment_stack.setStyleSheet(open(self.main_stylesheet).read())
         self.export_and_view_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.auto_set_user_progress() #0713-
-    
+
     def auto_set_user_progress(self):
         '''Set user progress (0 to 3). This is only called when user opens a project.'''
-        logger.info("auto_set_user_progress:")
+        logger.info('auto_set_user_progress:')
         if is_any_scale_aligned_and_generated():
             self.set_progress_stage_3()
         elif is_dataset_scaled():
@@ -888,6 +872,7 @@ class MainWindow(QMainWindow):
             self.set_progress_stage_0()
     
     def set_user_progress(self, gb1: bool, gb2: bool, gb3: bool, gb4: bool) -> None:
+        logger.info('set_user_progress:')
         self.images_and_scaling_stack.setCurrentIndex((0, 1)[gb1])
         self.images_and_scaling_stack.setStyleSheet(
             ("""QGroupBox {border: 2px dotted #455364;}""", open(self.main_stylesheet).read())[gb1])
@@ -905,7 +890,6 @@ class MainWindow(QMainWindow):
     def set_progress_stage_0(self):
         if self.get_user_progress() != 0: self.hud.post('Reverting user progress to Project')
         self.set_user_progress(False, False, False, False)
-        # self.scales_combobox_switch = 0 #0718-
         self.project_progress = 0
     
     @Slot()
@@ -915,7 +899,6 @@ class MainWindow(QMainWindow):
         elif self.get_user_progress() < 1:
             self.hud.post('Setting user progress to Data Selection & Scaling')
         self.set_user_progress(True, False, False, False)
-        # self.scales_combobox_switch = 0 #0718-
         self.project_progress = 1
     
     def set_progress_stage_2(self):
@@ -924,13 +907,11 @@ class MainWindow(QMainWindow):
         elif self.get_user_progress() < 2:
             self.hud.post('Setting user progress to Alignment')
         self.set_user_progress(True, True, True, False)
-        # self.scales_combobox_switch = 1 #0718-
         self.project_progress = 2
     
     def set_progress_stage_3(self):
         if self.get_user_progress() < 2: self.hud.post('Setting user progress to Export & View')
         self.set_user_progress(True, True, True, True)
-        # self.scales_combobox_switch = 1 #0718-
         self.project_progress = 3
     
     def get_user_progress(self) -> int:
