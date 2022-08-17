@@ -1583,47 +1583,6 @@ class MainWindow(QMainWindow):
         self.update_win_self()
     
     @Slot()
-    def remove_all_from_role(self, checked):
-        logger.info("MainWindow.remove_all_from_role:")
-        role_to_remove = str(self.sender().text())
-        logger.debug("Remove role: " + str(role_to_remove))
-        self.remove_from_role(role_to_remove)
-    
-    def remove_from_role(self, role, starting_layer=0, prompt=True):
-        logger.info("MainWindow.remove_from_role:")
-        logger.debug("Removing " + role + " from scale " + str(get_cur_scale_key()) + " forward from layer " + str(
-            starting_layer) + "  (remove_from_role)")
-        actually_remove = True
-        if prompt:
-            actually_remove = self.request_confirmation("Note", "Do you want to remove all " + role + " images?")
-        if actually_remove:
-            logger.debug("Removing " + role + " images ...")
-            delete_list = []
-            layer_index = 0
-            for layer in cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack']:
-                if layer_index >= starting_layer:
-                    logger.debug("Removing " + role + " from Layer " + str(layer_index))
-                    if role in layer['images'].keys():
-                        delete_list.append(layer['images'][role]['filename'])
-                        logger.debug("  Removing " + str(layer['images'][role]['filename']))
-                        layer['images'].pop(role)
-                        # Remove the method results since they are no longer applicable
-                        if role == 'aligned':
-                            if 'align_to_ref_method' in layer.keys():
-                                if 'method_results' in layer['align_to_ref_method']:
-                                    # Set the "method_results" to an empty dictionary to signify no results:
-                                    layer['align_to_ref_method']['method_results'] = {}
-                layer_index += 1
-            # cfg.image_library.remove_all_images()
-            for fname in delete_list:
-                if fname != None:
-                    if os.path.exists(fname):
-                        os.remove(fname)
-                        cfg.image_library.remove_image_reference(fname)
-            self.update_panels()  # 0503
-            self.refresh_all()  # 0503
-    
-    @Slot()
     def remove_all_layers(self):
         logger.info("MainWindow.remove_all_layers:")
         # global cfg.project_data
