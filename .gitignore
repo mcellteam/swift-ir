@@ -29,19 +29,15 @@ libraries
 *.png
 *.pyc
 *.json
-swift-ir/.DS_Store
-swift-ir/alignEM/joel_notes.txt
-swift-ir/alignEM/_stylesheet.qss
-swift-ir/deprecated.txt
+alignEM/.DS_Store
+alignEM/joel_notes.txt
+alignEM/alignEM/_stylesheet.qss
+alignEM/deprecated.txt
 **/.DS_Store
 alignEM/sandbox
 alignEM/sandbox/*
 alignEM/package/out.zarr
 alignEM/package/out.zarr/*
-
-
-<<<<<<< Updated upstream
-
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -109,5 +105,3 @@ venv.bak/
 /site
 =======
 
-
->>>>>>> Stashed changes
