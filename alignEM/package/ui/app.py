@@ -953,7 +953,7 @@ class MainWindow(QMainWindow):
         logger.info("clevel='%s'  cname='%s'  n_scales='%s'" % (self.clevel, self.cname, self.n_scales))
 
         self.set_idle()
-        self.hud.post('Export of Scale %s to Zarr Complete' % get_cur_scale_key()[-1])
+        self.hud.post('Export to Zarr Complete')
 
     @Slot()
     def clear_all_skips_callback(self):

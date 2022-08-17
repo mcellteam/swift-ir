@@ -22,16 +22,10 @@ zarr://http://127.0.0.1:9000
 """
 import os
 import sys
-import inspect
 import logging
 import argparse
-from http.server import HTTPServer
-from http.server import SimpleHTTPRequestHandler
-import socketserver
-from qtpy.QtCore import QRunnable
-from qtpy.QtCore import Slot
-import package.config as cfg
-from package.em_utils import print_exception
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+from qtpy.QtCore import Slot, QRunnable
 
 __all__ = ['View3DEM']
 
@@ -52,10 +46,7 @@ class View3DEM(QRunnable):
     #    def __init__(self, fn, *args, **kwargs):
     def __init__(self, source=None, bind='127.0.0.1', port=9000):
         super(View3DEM, self).__init__()
-        if source is None:
-            self.source = os.path.join(cfg.project_data['data']['destination_path'], '3dem.zarr')
-        else:
-            self.source = source
+        self.source = source
         self.bind = bind
         self.port = port
         """
@@ -72,15 +63,11 @@ class View3DEM(QRunnable):
     @Slot()
     def run(self):
         # time.sleep(1)
-
-        # self.source += '/0'
-
         logger.info('Entering view_3dem.run...')
         logger.info('self.source  : %s' % self.source)
         logger.info('bind         : %s' % self.bind)
         logger.info('port         : %d' % self.port)
         logger.info('Starting HTTP Server...')
-
 
         import neuroglancer as ng
         viewer = ng.Viewer()
@@ -93,7 +80,7 @@ class View3DEM(QRunnable):
         try:
             self.ng_server = Server((self.bind, self.port))
         except:
-            print_exception()
+            logger.warning('Unable to create new HTTP server process - Continuing Anyway...')
 
         sa = self.ng_server.socket.getsockname()
         logger.info("Serving Data at http://%s:%d" % (sa[0], sa[1]))
@@ -103,13 +90,6 @@ class View3DEM(QRunnable):
         logger.info("Server name                     :%s" % str(self.ng_server.server_name))
         logger.info("Server type                     :%s" % str(self.ng_server.socket_type))
         # print("allow reuse address= ", server.allow_reuse_address)
-
-        # if 'self.ng_server' in locals():
-        #     logger.info('Neuroglancer Server Is Already Running - Continuing')
-        # else:
-        #     # self.browser.setUrl(QUrl()) #empty page
-        #     logger.info('No Neuroglancer Server Found in Local Namespace - Starting Server...')
-        #     cfg.main_window.threadpool.start(cfg.main_window.ng_worker)
 
         MAX_RETRIES = 10
         attempt = 0
