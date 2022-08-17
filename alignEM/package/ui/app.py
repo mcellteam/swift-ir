@@ -2,27 +2,26 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
-import os, sys, copy, json, inspect, collections, multiprocessing, logging, textwrap, psutil, operator, platform, \
-    code, readline, webbrowser
+import os, sys, copy, json, inspect, collections, multiprocessing, logging, textwrap, psutil, operator, platform
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
     QDockWidget, QSplashScreen
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication
-from qtpy.QtCore import Qt, QSize, QUrl, QAbstractAnimation, QPropertyAnimation, \
-    QParallelAnimationGroup, QThreadPool, QThread, Slot, QRect
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, QRect
 from qtpy.QtWidgets import QAction, QActionGroup
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWebEngineCore import *
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
+# from qtconsole.rich_jupyter_widget import RichJupyterWidget
+# from qtconsole.inprocess import QtInProcessKernelManager
+# from qtconsole.manager import QtKernelManager
 import qtawesome as qta
 import pyqtgraph as pg
 import neuroglancer as ng
-from glob import glob
 from PIL import Image
-import numpy as np
 
 import package.config as cfg
 from package.em_utils import *
@@ -39,30 +38,14 @@ from .multi_image_panel import MultiImagePanel
 from .toggle_switch import ToggleSwitch
 from .json_treeview import JsonModel
 from .defaults_form import DefaultsForm
-
-# from qtconsole.rich_jupyter_widget import RichJupyterWidget
-# from qtconsole.inprocess import QtInProcessKernelManager
-# from qtconsole.manager import QtKernelManager
+from .collapsible_box import CollapsibleBox
+from .screenshot_saver import ScreenshotSaver
 
 __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
 
-app = None
-use_c_version = True
-use_file_io = cfg.USE_FILE_IO
-show_skipped_images = True
-
-code_mode = 'c'
-global_parallel_mode = True
-
-def decode_json(x):
-    return json.loads(x, object_pairs_hook=collections.OrderedDict)
-
-def get_json(path):
-    with open(path) as f:
-        return json.load(f)
-        # example: keys = get_json("project.zarr/img_aligned_zarr/s0/.zarray")
+# app = None #0816-
 
 def show_warning(title, text):
     QMessageBox.warning(None, title, text)
@@ -75,38 +58,29 @@ def request_confirmation(title, text):
 
 def link_stack():
     cfg.main_window.hud.post('Linking the image stack...')
-    
     skip_list = []
     for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
         if cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index][
             'skip'] == True:
             skip_list.append(layer_index)
-    
-    logger.debug('\nlink_stack(): Skip List = \n' + str(skip_list) + '\n')
-    
+    logger.debug('Skip List:\n %s' % str(skip_list))
     for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
         base_layer = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]
-
         if layer_index == 0:
             # No ref for layer 0
             if 'ref' not in base_layer['images'].keys():
                 cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
                                               filename='')
-            #     base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-            # base_layer['images']['ref']['filename'] = ''
         elif layer_index in skip_list:
             # No ref for skipped layer
             if 'ref' not in base_layer['images'].keys():
                 cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
                                               filename='')
-            #     base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-            # base_layer['images']['ref']['filename'] = ''
         else:
             # Find nearest previous non-skipped layer
             j = layer_index - 1
             while (j in skip_list) and (j >= 0):
                 j -= 1
-            
             # Use the nearest previous non-skipped layer as ref for this layer
             if (j not in skip_list) and (j >= 0):
                 ref_layer = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][j]
@@ -116,38 +90,14 @@ def link_stack():
                 if 'ref' not in base_layer['images'].keys():
                     cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
                                                   filename='')
-                #     base_layer['images']['ref'] = copy.deepcopy(new_image_template)
-                # base_layer['images']['ref']['filename'] = ref_fn
-    
-    # main_win.update_panels() #0526
     cfg.main_window.update_win_self()
-    # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-    # logger.info('skip_list =', str(skip_list))
     logger.info('Exiting link_stack')
     cfg.main_window.hud.post('Complete')
 
-
-
-def null_bias_changed_callback(state):
-    logger.info('null_bias_changed_callback(state):' % str(state))
-    logger.info('  Null Bias project_file value was:',
-                cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['null_cafm_trends'])
-    if state:
-        cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['null_cafm_trends'] = True
-    else:
-        cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['null_cafm_trends'] = False
-    logger.info('  Null Bias project_file value saved as: ',
-                cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['null_cafm_trends'])
-
-
-# 0606
 def bounding_rect_changed_callback(state):
     # logger.info('  Bounding Rect project_file value was:', cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
-    
     caller = inspect.stack()[1].function
     logger.info('Called By %s' % caller)
-    # logger.info('bounding_rect_changed_callback | called by %s ' % caller)
-    # if cfg.main_window.toggle_bounding_rect_switch == 1:
     if state:
         cfg.main_window.hud.post(
             'Bounding box will be used. Warning: x and y dimensions may grow larger than the source images.')
@@ -160,17 +110,11 @@ def bounding_rect_changed_callback(state):
     # else:
     #     pass
 
-def print_bounding_rect():
-    print(cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
-
-
 def skip_changed_callback(state):  # 'state' is connected to skip toggle
     logger.info("skip_changed_callback(state=%s):" % str(state))
     '''Toggle callback for skip image function. Note: a signal is emitted regardless of whether a user or another part
     of the program flips the toggle state. Caller is 'run_app' when a user flips the switch. Caller is change_layer
     or other user-defined function when the program flips the switch'''
-    # !!!
-    # global ignore_changes #0528
     # called by:  change_layer <-- when ZoomPanWidget.change_layer toggles
     # called by:  run_app <-- when user toggles
     # skip_list = []
@@ -188,128 +132,10 @@ def skip_changed_callback(state):  # 'state' is connected to skip toggle
         layer = scale['alignment_stack'][cfg.project_data['data']['current_layer']]
         layer['skip'] = new_skip  # skip # this is where skip list is appended to
         copy_skips_to_all_scales()
-        
-        cfg.project_data.link_all_stacks()  # 0525
-        # cfg.main_window.update_panels() #0701 removed
-        # cfg.main_window.refresh_all_images() #0701 removed
-        # update_linking_callback()
-        # 0503 possible non-centering bug that occurs when runtime skips change is followed by scale change
+        cfg.project_data.link_all_stacks()  #0525
         cfg.main_window.center_all_images()
 
 
-class ScreenshotSaver(object):
-    def __init__(self, viewer, directory):
-        self.viewer = viewer
-        self.directory = directory
-        
-        if not os.path.exists(directory):
-            os.makedirs(directory)
-        
-        self.index = 0
-    
-    def get_path(self, index):
-        return os.path.join(self.directory, '%07d.png' % index)
-    
-    def get_next_path(self, index=None):
-        if index is None:
-            index = self.index
-        return index, self.get_path(index)
-    
-    def capture(self, index=None):
-        s = self.viewer.screenshot()
-        increment_index = index is None
-        index, path = self.get_next_path(index)
-        with open(path, 'wb') as f:
-            f.write(s.screenshot.image)
-        if increment_index:
-            self.index += 1
-        return index, path
-
-
-# example keypress callback
-def get_mouse_coords(s):
-    logger.info('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
-    logger.info('  Layer selected values: %s' % (s.selected_values,))
-
-
-class CollapsibleBox(QWidget):
-    '''Forms a part of the project inspector class. Adapted from:
-    https://github.com/fzls/djc_helper/blob/master/qt_collapsible_box.py'''
-    
-    def __init__(self, title="", title_backgroup_color="", tool_tip="Project Inspector :)",
-                 animation_duration_millseconds=250, parent=None):
-        super(CollapsibleBox, self).__init__(parent)
-        
-        self.title = title
-        self.setToolTip(tool_tip)
-        self.animation_duration_millseconds = animation_duration_millseconds
-        self.collapsed_height = 19
-        self.toggle_button = QToolButton(self)
-        self.toggle_button.setText(title)
-        
-        # sizePolicy = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed) #0610
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        self.toggle_button.setSizePolicy(sizePolicy)
-        
-        self.toggle_button.setCheckable(True)
-        self.toggle_button.setChecked(False)
-        self.toggle_button.setStyleSheet(
-            f"QToolButton {{ border: none; font-weight: bold; background-color: #7c7c7c; }}")
-        # self.toggle_button.setToolButtonStyle(alignEM.ToolButtonTextBesideIcon) #0610
-        # self.toggle_button.setArrowType(alignEM.RightArrow) #0610
-        self.toggle_button.pressed.connect(self.on_pressed)
-        
-        self.toggle_animation = QParallelAnimationGroup(self)
-        
-        self.content_area = QScrollArea(self)
-        self.content_area.setMaximumHeight(0)
-        self.content_area.setMinimumHeight(0)
-        # self.content_area.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        self.content_area.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        # self.content_area.setFrameShape(QFrame.NoFrame) #0610 AttributeError: type object 'QFrame' has no attribute 'NoFrame'
-        
-        lay = QVBoxLayout(self)
-        lay.setSpacing(0)
-        lay.setContentsMargins(0, 0, 0, 0)
-        lay.addWidget(self.toggle_button)
-        lay.addWidget(self.content_area)
-        
-        self.toggle_animation.addAnimation(QPropertyAnimation(self, b"minimumHeight"))
-        self.toggle_animation.addAnimation(QPropertyAnimation(self, b"maximumHeight"))
-        self.toggle_animation.addAnimation(QPropertyAnimation(self.content_area, b"maximumHeight"))
-    
-    @Slot()
-    def on_pressed(self):
-        checked = self.toggle_button.isChecked()
-        self.toggle_button.setArrowType(Qt.DownArrow if not checked else Qt.RightArrow)
-        self.toggle_animation.setDirection(
-            QAbstractAnimation.Forward
-            if not checked
-            else QAbstractAnimation.Backward
-        )
-        self.toggle_animation.start()
-    
-    def setContentLayout(self, layout):
-        lay = self.content_area.layout()
-        del lay
-        self.content_area.setLayout(layout)
-        collapsed_height = (self.sizeHint().height() - self.content_area.maximumHeight())
-        content_height = layout.sizeHint().height()
-        for i in range(self.toggle_animation.animationCount()):
-            animation = self.toggle_animation.animationAt(i)
-            # animation.setDuration(500)
-            animation.setStartValue(collapsed_height)
-            animation.setEndValue(collapsed_height + content_height)
-        
-        content_animation = self.toggle_animation.animationAt(self.toggle_animation.animationCount() - 1)
-        # content_animation.setDuration(500)
-        content_animation.setStartValue(0)
-        content_animation.setEndValue(content_height)
-
-
-#mainwindow
 class MainWindow(QMainWindow):
     def __init__(self, fname=None, panel_roles=None, title="AlignEM-SWiFT"):
 
@@ -327,40 +153,28 @@ class MainWindow(QMainWindow):
         
         logger.info('initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
-        
+
+        self.app = QApplication.instance()
+
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
         self.project_filename = None
         self.mouse_down_callback = None
         self.mouse_move_callback = None
         self.init_dir = os.getcwd()
-
         fg = self.frameGeometry()
         cp = QGuiApplication.primaryScreen().availableGeometry().center()
         fg.moveCenter(cp)
         self.move(fg.topLeft())
         logger.info('Center Point of primary monitor: %s' % str(cp))
         logger.info('Frame Geometry: %s' % str(fg))
-        
-        logger.info("Initializing Thread Pool")
+        logger.info("Initializing Thread Pool..")
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
-        
-        logger.info("Copying new project template")
-        # cfg.project_data = copy.deepcopy(new_project_template)  # <-- TODO: get rid of this
-
         cfg.project_data = DataModel()
-        
         cfg.image_library = ImageLibrary()
         # cfg.image_library = SmartImageLibrary()
 
-
-        
-        logger.info('cfg.USES_PYSIDE=%s' % str(cfg.USES_PYSIDE))
-        
-        '''This will require moving the image_panel = ImageLibrary() to MainWindow constructor where it should be anyway'''
-        # self.define_roles(['ref', 'base', 'aligned'])
-        '''
-        objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
+        '''objc[53148]: +[__NSCFConstantString initialize] may have been in progress in another thread when fork() was
         called. We cannot safely call it or ignore it in the fork() child process. Crashing instead. Set a breakpoint
         on objc_initializeAfterForkError to debug.
         https://stackoverflow.com/questions/50168647/multiprocessing-causes-python-to-crash-and-gives-an-error-may-have-been-in-progr'''
@@ -368,19 +182,16 @@ class MainWindow(QMainWindow):
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
         
         # if cfg.QT_API == 'pyside6':
-        #     logger.info("alignem_swift.py | QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
+        #     logger.info("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
-        #     logger.info("alignem_swift.py | New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
+        #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
         
         # self.setWindowFlags(self.windowFlags() | alignEM.FramelessWindowHint)
         # self.setWindowFlag(alignEM.FramelessWindowHint)
         
         # stylesheet must be after QMainWindow.__init__(self)
-        # self.setStyleSheet(open('stylesheet.qss').read())
         logger.info("applying stylesheet")
-        # self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet1.qss')
         self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet1.qss')
-        # self.main_stylesheet = os.path.join(self.pyside_path, 'styles/stylesheet4.qss')
         self.setStyleSheet(open(self.main_stylesheet).read())
         
         self.context = QOpenGLContext(self)
@@ -394,12 +205,9 @@ class MainWindow(QMainWindow):
         self.project_progress = 0
         # self.project_scales = [] #0702
         self.project_aligned_scales = []
-        
         self.scales_combobox_switch = 0
-        
         self.jump_to_worst_ticker = 1  # begin iter at 1 to skip first image (has no ref)
         self.jump_to_best_ticker = 0
-        
         self.always_generate_images = True
         
         # self.std_height = int(22)
@@ -415,7 +223,7 @@ class MainWindow(QMainWindow):
         # titlebar resource
         # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
         
-        # pyside6 port needed to replace deprecated the 'defaultSettings()' attribute of QWebEngineSettings. These two lines were uncommented.
+        # pyside6 port needed to replace deprecated the 'defaultSettings()' attribute of QWebEngineSettings
         # self.web_settings = QWebEngineSettings.defaultSettings()
         # self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         
@@ -436,9 +244,7 @@ class MainWindow(QMainWindow):
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.up = 0
-        
 
-        # !!!
         # def changeEvent(self, event):
         #     if event.type() == event.WindowStateChange:
         #         self.titleBar.windowStateChanged(self.windowState())
@@ -452,15 +258,7 @@ class MainWindow(QMainWindow):
         # stream = QTextStream(file)
         # app.setStyleSheet(stream.readAll())
         
-        # create RunnableServer class to start background CORS web server
-        # def start_server():
-        #     logger.info("creating RunnableServer() instance and setting up thread pool")
-        #     worker = RunnableServer()
-        #     self.threadpool.start(worker)
-
-
-        
-        # self.browser.setPage(CustomWebEnginePage(self)) # necessary. Clicked links will never open new window.
+        # self.browser.setPage(CustomWebEnginePage(self)) # Or else clicked links will never open new window.
 
         if panel_roles != None:
             cfg.project_data['data']['panel_roles'] = panel_roles
@@ -468,22 +266,7 @@ class MainWindow(QMainWindow):
         self.draw_border = False
         self.draw_annotations = True
         self.panel_list = []
-        
-        def pretty(d, indent=0):
-            for key, value in d.items():
-                logger.info('\t' * indent + str(key))
-                if isinstance(value, dict):
-                    pretty(value, indent + 1)
-                else:
-                    logger.info('\t' * (indent + 1) + str(value))
-        
-        def show_memory_usage():
-            os.system('python3 memoryusage.py')
-        
-        '''------------------------------------------
-        PROJECT INSPECTOR #projectinspector
-        ------------------------------------------'''
-        # self.inspector_label_skips = QLabel('')
+
         self.inspector_label_skips = QLabel()
         
         self.project_inspector = QDockWidget("Project Inspector")
@@ -501,10 +284,7 @@ class MainWindow(QMainWindow):
         scroll.setWidget(content)
         scroll.setWidgetResizable(True)
         dock_vlayout = QVBoxLayout(content)
-        
-        # Project Status
-        
-        # Skips List
+
         self.inspector_scales = CollapsibleBox('Skip List')
         
         dock_vlayout.addWidget(self.inspector_scales)
@@ -522,30 +302,30 @@ class MainWindow(QMainWindow):
         dock_vlayout.addWidget(self.inspector_cpu)
         lay = QVBoxLayout()
         label = QLabel("CPU #: %s\nSystem : %s" % (psutil.cpu_count(logical=False), platform.system()))
-        label.setStyleSheet(
-            "color: #d3dae3;"
-            "border-radius: 12px;"
-        )
-        # lay.addWidget(label, alignment=alignEM.AlignTop)    #0610
+        label.setStyleSheet("color: #d3dae3; border-radius: 12px;")
         lay.addWidget(label, alignment=Qt.AlignTop)
         self.inspector_cpu.setContentLayout(lay)
         
         dock_vlayout.addStretch()
 
-        # '''INITIALIZE THE UI'''
+        '''Initialize UI'''
         self.initUI()
 
-
-        # status bar
+        '''Initialize Status Bar'''
         self.status = self.statusBar()
         self.set_idle()
         
-        #menubar
+        '''Initialize Menu'''
         self.action_groups = {}
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
 
-            ####   0:MenuName, 1:Shortcut-or-None, 2:Action-Function, 3:Checkbox (None,False,True), 4:Checkbox-Group-Name (None,string), 5:User-Data
+        #   0:MenuName
+        #   1:Shortcut-or-None
+        #   2:Action-Function
+        #   3:Checkbox (None,False,True)
+        #   4:Checkbox-Group-Name (None,string),
+        #   5:User-Data
         ml = [
             ['&File',
              [
@@ -621,7 +401,6 @@ class MainWindow(QMainWindow):
                  ['Print SNR List', None, print_snr_list, None, None, None],
                  ['Print .dat Files', None, print_dat_files, None, None, None],
                  ['Print Working Directory', None, print_path, None, None, None],
-                 ['Print Bounding Rect', None, print_bounding_rect, None, None, None],
                  ['Test Web GL2.0', None, self.webgl2_test, None, None, None],
              ]
              ],
@@ -1091,8 +870,6 @@ class MainWindow(QMainWindow):
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index + 1
-            cur_scale_key = self.scales_combobox.itemText(cur_index)
-            requested_scale_key = self.scales_combobox.itemText(requested_index)
             self.scales_combobox.setCurrentIndex(requested_index)  # commence the scale change
             self.read_project_data_update_gui()
             self.update_scale_controls()
@@ -1777,7 +1554,7 @@ class MainWindow(QMainWindow):
                         if len(layer['images'][role]['filename']) > 0:
                             layer['images'][role]['filename'] = make_relative(layer['images'][role]['filename'], self.project_filename)
         logger.info("Writing data to '%s'" % self.project_filename)
-        logger.critical('---- WRITING DATA TO PROJECT FILE ----')
+        logger.info('---- WRITING DATA TO PROJECT FILE ----')
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         proj_json = jde.encode(proj_copy)
         with open(self.project_filename, 'w') as f:
@@ -2067,7 +1844,7 @@ class MainWindow(QMainWindow):
     def exit_app(self):
         logger.info("MainWindow.exit_app:")
         self.set_status('Exiting...')
-        app = QApplication.instance()
+        c
         if not are_images_imported():
             self.threadpool.waitForDone(msecs=200)
             QApplication.quit()
@@ -2286,13 +2063,10 @@ class MainWindow(QMainWindow):
                 ]
             )
 
-
         # logger.info('Loading Neuroglancer Callbacks...')
-        # self.ng_viewer.actions.add('get_mouse_coords_', get_mouse_coords)
         # # self.ng_viewer.actions.add('unchunk_', unchunk)
         # # self.ng_viewer.actions.add('blend_', blend)
         with self.ng_viewer.config_state.txn() as s:
-            s.input_event_bindings.viewer['keyt'] = 'get_mouse_coords_'
             # s.input_event_bindings.viewer['keyu'] = 'unchunk_'
             # s.input_event_bindings.viewer['keyb'] = 'blend_'
             # s.status_messages['message'] = 'Welcome to AlignEM_SWiFT'
@@ -2362,7 +2136,7 @@ class MainWindow(QMainWindow):
 
         '''-------- PANEL 1: PROJECT --------'''
 
-        self.hud = HeadUpDisplay(app)
+        self.hud = HeadUpDisplay(self.app)
         self.hud.setContentsMargins(0, 0, 0, 0)
         self.hud.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.hud.post('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu :)',
@@ -3121,8 +2895,6 @@ class MainWindow(QMainWindow):
         self.pageComboBox.activated[int].connect(self.main_widget.setCurrentIndex)
 
         self.setCentralWidget(self.main_widget)
-
-
 
 class KImageWindow(QWidget):
     """
