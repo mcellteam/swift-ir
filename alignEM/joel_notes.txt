@@ -12,7 +12,6 @@ To do:
 [x] jump to functionality
 [x] re-generate aligned
 [] project class
-[x] upgrade 'daisy' from v0.2 to v1.0
 [x] widgets for controls become hidden or visible as user progresses through project
 [x] make menu bar attached on macOS
 [x] after selecting 'skip', it should not be necessary to re-focus on images widget

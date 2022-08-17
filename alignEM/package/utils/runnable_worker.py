@@ -7,7 +7,7 @@ from qtpy.QtCore import Signal
 from qtpy.QtCore import QObject
 from qtpy.QtCore import QRunnable
 
-__all__ = ['RunnableWorker', 'WorkerSignals']
+__all__ = ['RunnableWorker']
 
 class WorkerSignals(QObject):
     '''

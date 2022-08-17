@@ -7,7 +7,6 @@ import platform
 import psutil
 import time
 import logging
-from qtpy.QtCore import QThread
 import package.config as cfg
 from package.em_utils import print_exception, get_num_imported_images, get_num_scales, get_scale_val, get_scale_key, \
     create_project_structure_directories, get_best_path, get_scales_list
@@ -19,8 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_scales(progress_callback=None):
-    QThread.currentThread().setObjectName('ScaleImages')
-    logger.critical('_____________Generate Scales Begin_____________')
+    logger.critical('\n____________Generate Scales Start____________')
     
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
@@ -70,17 +68,12 @@ def generate_scales(progress_callback=None):
     scale_q.start(cpus)
     
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
-        print('Loop: scale = ', scale)
+        logger.debug('Looping, Scale ', scale)
         cfg.main_window.hud.post("Preparing to generate images for scale " + str(scale))
         scale_key = get_scale_key(scale)
         for i, layer in enumerate(cfg.project_data['data']['scales'][scale_key]['alignment_stack']):
             fn = os.path.abspath(layer['images']['base']['filename'])
             ofn = os.path.join(proj_path, scale_key, 'img_src', os.path.split(fn)[1])
-
-            # layer['align_to_ref_method']['method_options'] = {
-            #     'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION,
-            #     'initial_scale': cfg.DEFAULT_INITIAL_SCALE
-            # }
             layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
             layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
 
@@ -89,19 +82,15 @@ def generate_scales(progress_callback=None):
                 '''Scale 1 Only'''
                 if get_best_path(fn) != get_best_path(ofn):
                     # The paths are different so make the link
-                    try:
-                        os.unlink(ofn)
-                    except:
-                        pass
-                    try:
-                        os.symlink(fn, ofn)
+                    try:     os.unlink(ofn)
+                    except:  pass
+
+                    try:  os.symlink(fn, ofn)
                     except:
                         # Not all operating systems allow linking for all users (Windows 10 requires admin rights)
                         logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
-                        try:
-                            shutil.copy(fn, ofn)
-                        except:
-                            logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+                        try:     shutil.copy(fn, ofn)
+                        except:  logger.warning("Unable to link or copy from " + fn + " to " + ofn)
             else:
                 '''All Scales Other Than 1'''
 
@@ -114,7 +103,7 @@ def generate_scales(progress_callback=None):
                         p, s = os.path.split(p)
                         fn = os.path.join(p, 'scale_1', r, f)
                         if i == 1:
-                            logger.info('\nfn = ', fn)
+                            logger.info('fn = ', fn)
                             logger.info('p = ', p)
                             logger.info('r = ', r)
                             logger.info('s = ', s)
@@ -130,32 +119,15 @@ def generate_scales(progress_callback=None):
                         # scale_q.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
                         scale_q.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
                         if i == 1:
-                            logger.info('\n\nscale_q Parameters (Example):')
-                            logger.info('1: %s\n2: %s\n3: %s\n4: %s\n' % (iscale2_c, scale_arg, outfile_arg, infile_arg))
-                        '''
-                        ____scale_q Parameters (Example)____
-                        (1) : iscale2_c : /Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/lib/bin_darwin/iscale2
-                        (2) : scale_arg : +2
-                        (3) : outfile_arg : of=/Users/joelyancey/glanceEM_SWiFT/test_projects/test993/scale_2/img_src/R34CA1-BS12.104.tif
-                        (4) : infile_arg : /Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.104.tif
-            
-                        '''
-                    
-                    # generate the scales directly rather than through the queue
-                    # img = align_swiftir.swiftir.scaleImage ( align_swiftir.swiftir.loadImage(fn), fac=scale )
-                    # align_swiftir.swiftir.saveImage ( img, ofn )
-                    
-                    # Change the base image for this scale to the new file
-                    layer['images']['base']['filename'] = ofn
+                            logger.info('\nscale_q Parameters (Example):')
+                            logger.info('1: %s\n2: %s\n3: %s\n4: %s' % (iscale2_c, scale_arg, outfile_arg, infile_arg))
+
                 except:
                     cfg.main_window.hud.post("Error adding tasks to the task queue - Canceling", logging.ERROR)
                     print_exception()
                     return
             
             layer['images']['base']['filename'] = ofn  # Update Data Model
-            '''Example:
-            Original File Name: /Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.106.tif
-            Updated  File Name: /Users/joelyancey/glanceEM_SWiFT/test_projects/test991/scale_1/img_src/R34CA1-BS12.106.tif'''
     
     ### Join the queue here to ensure that all have been generated before returning
     # scale_q.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
@@ -167,4 +139,17 @@ def generate_scales(progress_callback=None):
     dt = time.time() - t0
     cfg.main_window.hud.post("Scaling completed in %.2f seconds" % dt)
     
-    print('_____________Generate Scales End_____________')
+    logger.critical('\n____________Generate Scales End____________')
+
+
+
+
+    '''
+    ____scale_q Parameters (Example)____
+    (1) : iscale2_c : /Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/lib/bin_darwin/iscale2
+    (2) : scale_arg : +2
+    (3) : outfile_arg : of=/Users/joelyancey/glanceEM_SWiFT/test_projects/test993/scale_2/img_src/R34CA1-BS12.104.tif
+    (4) : infile_arg : /Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.104.tif
+
+    '''
+

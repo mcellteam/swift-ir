@@ -4,6 +4,24 @@ from qtconsole.inprocess import QtInProcessKernelManager
 from IPython.lib import guisupport
 
 
+
+'''
+jupyter-console==6.4.4
+pyqtconsole==1.2.2 # <-- Uninstalled
+qtconsole==5.3.1
+
+jupyter-console==6.4.4
+qtconsole==5.3.1
+
+Attempting:
+pipenv uninstall jupyter-client
+pipenv install jupyter-client==6.1.12
+# I noticed that no jupyter-console at this point was in my pipfile.lock
+pipenv lock
+'''
+
+
+
 class ConsoleWidget(RichJupyterWidget):
 
     def __init__(self, customBanner=None, *args, **kwargs):
@@ -12,7 +30,8 @@ class ConsoleWidget(RichJupyterWidget):
         if customBanner is not None:
             self.banner = customBanner
 
-        self.font_size = 6
+        # self.font_size = 6
+        self.font_size = 5
         self.kernel_manager = kernel_manager = QtInProcessKernelManager()
         kernel_manager.start_kernel(show_banner=False)
         kernel_manager.kernel.gui = 'qt'

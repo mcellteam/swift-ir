@@ -61,7 +61,9 @@ class HeadsUpDisplay(QWidget):
         # logging.WARNING: 'orange',
         logging.WARNING: 'yellow',
         logging.ERROR: '#FD001B',
-        logging.CRITICAL: 'purple',
+        # logging.CRITICAL: 'purple',
+        # logging.CRITICAL: '#daf0ff',
+        logging.CRITICAL: '#decfbe',
     }
 
     def __init__(self, app):

@@ -12,7 +12,7 @@ __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
 import os
 import logging
 
-LOG_LEVEL = logging.DEBUG
+LOG_LEVEL = logging.INFO
 
 DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
@@ -42,14 +42,6 @@ PARALLEL_MODE = True
 CODE_MODE = 'c'
 # CODE_MODE = 'python'
 
-
-# defaults = {}
-# defaults['whitening_factor']     = float(-0.6800)
-# defaults['swim_window']          = float(0.8125)
-# defaults['initial_rotation']     = float(0.0000)
-# defaults['bounding_rectangle']   = bool(True)
-# defaults['poly_order']           = int(0)
-# defaults['null_bias']            = bool(False)
 defaults = ["-0.6800", "0.8125", "0.0000", True]
 
 # cfg.ICON_COLOR = "#d3dae3" #orig
@@ -62,6 +54,23 @@ HEIGHT = 850
 roles_list = ['ref', 'base', 'aligned']
 
 
+
+# class bcolors:
+#     HEADER = '\033[95m'
+#     OKBLUE = '\033[94m'
+#     OKCYAN = '\033[96m'
+#     OKGREEN = '\033[92m'
+#     WARNING = '\033[93m'
+#     FAIL = '\033[91m'
+#     ENDC = '\033[0m'
+#     BOLD = '\033[1m'
+#     UNDERLINE = '\033[4m'
+
+
+# CSI = "\x1B["
+# print(CSI+"31;40m" + u"\u2588"*20 + CSI + "0m")
+#
+# print('\x1b[6;30;42m' + 'Success!' + '\x1b[0m')
 
 
 

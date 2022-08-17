@@ -1,4 +1,19 @@
 #!/usr/bin/env python3
+'''
+
+
+afm = affine forward matrix
+aim = affine inverse matrix
+
+o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
+^ multi_swim_arg_string: an optional
+
+
+swim_results: stdout/err get appended to this, one line for each SWIM in a multi-SWIM
+
+
+'''
+
 
 import os
 import sys
@@ -734,7 +749,8 @@ class align_ingredient:
         # 0721 ^^ use this form to add initial rotation
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
 
-        kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img.tif')
+        # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img')
+        kip = 'keep.JPG'
 
         logger.critical('kip = ' + kip)
 
@@ -758,9 +774,9 @@ class align_ingredient:
                               ' ' + rota_arg + \
                               ' ' + afm_arg
 
-            logger.info('\nSWIM argument string: %s\n' % swim_arg_string)
+            print('\nSWIM argument string: %s\n' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
-            logger.info('\nSWIM argument string: %s\n' % multi_swim_arg_string)
+            print('\nSWIM argument string: %s\n' % multi_swim_arg_string)
 
         o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
 
@@ -770,6 +786,7 @@ class align_ingredient:
         mir_script = ""
         snr_list = []
         dx = dy = 0.0
+        # loop over SWIM output to build the MIR script:
         for l in swim_out_lines:
             if len(swim_out_lines) == 1:
                 logger.info("SWIM OUT: " + str(l))
@@ -788,6 +805,8 @@ class align_ingredient:
                 logger.info("SNR: " + str(toks[0]))
                 snr_list.append(float(toks[0][0:-1]))
         mir_script += 'R\n'
+
+        # Do MIR step:
         o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
         mir_out_lines = o['out'].strip().split('\n')
         mir_err_lines = o['err'].strip().split('\n')
@@ -799,8 +818,14 @@ class align_ingredient:
         aim = np.eye(2, 3, dtype=np.float32)
 
         if len(swim_out_lines) == 1:
-            aim[0, 2] = dx + 0.5
-            aim[1, 2] = dy + 0.5
+            # aim[0, 2] = dx + 0.5 #0809
+            # aim[1, 2] = dy + 0.5
+            aim = copy.deepcopy(self.afm)
+            aim[0, 2] += dx # "what swim said how far we're going to move it"
+            aim[1, 2] += dy
+
+            '''#TODO: may be better to add the offset to the input afm #0810'''
+
         else:
             for line in mir_out_lines:
                 logger.info("Line: " + str(line))

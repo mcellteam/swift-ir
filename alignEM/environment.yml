@@ -18,7 +18,6 @@ dependencies:
   - cloudpickle=2.0.0=pyhd8ed1ab_0
   - cycler=0.11.0=pyhd8ed1ab_0
   - cytoolz=0.11.2=py39h63b48b0_2
-  - dask-core=2022.5.0=pyhd8ed1ab_0
   - fonttools=4.33.3=py39h701faf5_0
   - freetype=2.10.4=h4cff582_1
   - fsspec=2022.3.0=pyhd8ed1ab_0

@@ -21,6 +21,10 @@ from . import config
 from .config import *
 __all__.extend(config.__all__)
 
+from . import generate_zarr
+from .generate_zarr import *
+# __all__.extend(generate_zarr.__all__)
+
 # from . import align_swiftir
 # from package.align_swiftir import *
 # __all__.extend(align_swiftir.__all__)

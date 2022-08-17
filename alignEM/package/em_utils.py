@@ -10,13 +10,15 @@ import inspect
 import traceback
 from glob import glob
 from pathlib import Path
-import package.config as cfg
+try: import package.config as cfg
+except: import config as cfg
 try:
     import builtins
 except:
     pass
 
-from package.utils.treeview import Treeview
+try: from package.utils.treeview import Treeview
+except: from utils.treeview import Treeview
 
 __all__ = ['remove_aligned', 'get_cur_scale_key', 'get_cur_layer', 'is_destination_set',
            'is_dataset_scaled', 'is_cur_scale_aligned', 'get_num_aligned',
@@ -759,10 +761,10 @@ def is_cur_scale_aligned() -> bool:
         # logger.info('afm_1_file = ', afm_1_file)
         # logger.info('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
         if os.path.exists(afm_1_file):
-            logger.info('is_cur_scale_aligned | Returning True')
+            logger.debug('is_cur_scale_aligned | Returning True')
             return True
         else:
-            logger.info('is_cur_scale_aligned | Returning False')
+            logger.debug('is_cur_scale_aligned | Returning False')
             return False
     except:
         logger.warning('Unexpected function behavior - Returning False')
@@ -890,10 +892,10 @@ def is_any_alignment_exported() -> bool:
 
 def is_cur_scale_exported() -> bool:
     '''Checks if there exists an exported alignment'''
-    path = os.path.join(cfg.project_data['data']['destination_path'], 'project.zarr', 'aligned_' + get_cur_scale_key())
+    path = os.path.join(cfg.project_data['data']['destination_path'], '3dem.zarr')
     answer = os.path.isdir(path)
-    logger.debug("is_cur_scale_exported | path = " + path)
-    logger.debug("is_cur_scale_exported | answer = " + str(answer))
+    logger.debug("path: %s" % path)
+    logger.debug("response: %s" % str(answer))
     return answer
 
 
@@ -917,8 +919,7 @@ def get_cur_snr() -> str:
                                 logger.debug("  returning the current snr: %s" % str(curr_snr))
                                 return str(curr_snr)
     except:
-        print_exception()
-        logger.warning('There was a problem getting current SNR')
+        logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
 
 def get_snr_list():
@@ -934,7 +935,6 @@ def get_snr_list():
     return snr_list
 
 def print_snr_list() -> None:
-    
     try:
         snr_list = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][get_cur_layer()][
             'align_to_ref_method']['method_results']['snr']
@@ -946,7 +946,7 @@ def print_snr_list() -> None:
         logger.info('snr_report:  %s' % str(snr_report))
         logger.debug('All Mean SNRs for current scale:  %s' % str(get_snr_list()))
     except:
-        logger.info('Getting SNR Data Triggered An Exception')
+        logger.info('An Exception Was Raised trying to Print the SNR List')
 
 
 

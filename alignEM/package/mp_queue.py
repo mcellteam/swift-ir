@@ -3,22 +3,17 @@
 import io
 import sys
 import time
-# import dill
-# import pickle
-import inspect
 import psutil
 import logging
 from tqdm import tqdm
 import subprocess as sp
 import multiprocessing as mp
-import package.config as cfg
-import package.em_utils as em
-from qtpy.QtCore import QThread
 
 __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.WARNING)
+mpl = mp.log_to_stderr()
+mpl.setLevel(logging.CRITICAL)
 
 class TqdmToLogger(io.StringIO):
     """
@@ -41,22 +36,13 @@ class TqdmToLogger(io.StringIO):
 SENTINEL = 1
 def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     '''Function run by worker processes'''
-    logger.debug('worker >>>>>>>>')
-    time.sleep(.2)
-    t_start = time.time()
+    time.sleep(.1)
     pbar_q.put(SENTINEL)
 
-    for task_id, task in  iter(task_q.get, 'END_TASKS'):
+    for task_id, task in iter(task_q.get, 'END_TASKS'):
 
         logger.debug('worker_id %d    task_id %d    n_tasks %d    n_workers %d :' % (worker_id, task_id, n_tasks, n_workers))
-        logger.debug('task =\n', task)
-        '''THIS IS THE FUNCTION CALL IN job_apply_affine.py (main):
-        image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)'''
-
-        perc_complete = em.percentage(task_id, n_tasks)
-        # sys.stderr.write('RunnableWorker %d:  Running Task %d\n' % (worker_id, task_id))
-        # sys.stderr.write("Total complete: %s\n" % perc_complete)
-
+        logger.debug('task: %s' % str(task))
         t0 = time.time()
         outs = ''
         errs = ''
@@ -67,13 +53,12 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
             outs = '' if outs == None else outs.decode('utf-8')
             errs = '' if errs == None else errs.decode('utf-8')
             rc = task_proc.returncode
-            logger.debug('RunnableWorker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
+            logger.debug('Worker %d:  Task %d Completed with RC %d\n' % (worker_id, task_id, rc))
         except:
             outs = ''
-            errs = 'TaskQueue worker %d : task exception: %s' % (worker_id, str(sys.exc_info()[0]))
+            errs = 'Worker %d : task exception: %s' % (worker_id, str(sys.exc_info()[0]))
             print(errs)
             rc = 1
-            em.print_exception()
 
         pbar_q.put(SENTINEL)
         dt = time.time() - t0
@@ -84,7 +69,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     task_q.task_done()
     # task_q.close() #jy
     # time.sleep(1)
-    logger.debug('<<<<  RunnableWorker %d Finished' % (worker_id))
+    logger.debug('<<<< Worker %d Finished' % (worker_id))
 
 
 class TaskQueue:
@@ -103,16 +88,11 @@ class TaskQueue:
         self.result_queue = self.ctx.Queue()
         self.pbar_q = self.ctx.Queue()
 
-        mpl = mp.log_to_stderr()
-        mpl.setLevel(logging.CRITICAL)
-
         logger.debug('TaskQueue Initialization')
         logger.debug('self.start_method = %s' % self.start_method)
         logger.debug('self.close_worker = %s' % str(self.close_worker))
         logger.debug('self.n_tasks = %d' % self.n_tasks)
         logger.debug('sys.version_info = %s' % str(sys.version_info))
-
-        QThread.currentThread().setObjectName('TaskQueue')
 
     def pbar_listener(self, pbar_q, n_tasks:int):
         '''self.progress_callback has an identical location in memory'''
@@ -121,7 +101,7 @@ class TaskQueue:
             pbar.update()
         pbar.close()
 
-    def start(self, n_workers, retries=0) -> None:
+    def start(self, n_workers, retries=2) -> None:
 
         '''type(task_q)= <class 'multiprocessing.queues.JoinableQueue'>
            type(result_q)= <class 'multiprocessing.queues.Queue'>'''
@@ -134,17 +114,14 @@ class TaskQueue:
         self.retries = retries
         self.task_dict = {}
 
-        cfg.main_window.hud.post('Using %d workers in parallel to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
+        logger.info('Using %d workers in parallel to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
         # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
         print('mp_queue.start | self.n_tasks = ', self.n_tasks)
         self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
-        # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
-        logger.info('Running RunnableWorker Threads...')
         for i in range(self.n_workers):
-            sys.stderr.write('Restarting RunnableWorker %d >>>>>>>>' % i)
+            sys.stderr.write('Starting Worker %d >>>>>>>>' % i)
             p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-            # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
             # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
             self.workers.append(p)
             self.workers[i].start()
@@ -152,18 +129,16 @@ class TaskQueue:
 
     def restart(self) -> None:
         logger.debug('TaskQueue.restart >>>>')
-        cfg.main_window.hud.post('Restarting the Task Queue...')
+        logger.critical('Restarting the Task Queue...')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.pbar_q = self.ctx.Queue()
         self.workers = []
         self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
-        # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
         self.pbar_proc.start()
         for i in range(self.n_workers):
-            sys.stderr.write('Restarting RunnableWorker %d >>>>' % i)
+            sys.stderr.write('Restarting Worker %d >>>>' % i)
             p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-            # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
             self.workers.append(p)
             self.workers[i].start()
         logger.debug('<<<<  TaskQueue.restart')
@@ -277,7 +252,6 @@ class TaskQueue:
 
 
 if __name__ == '__main__':
-    print('mp_queue.__main__ >>>>>>>>')
     print("Running " + __file__ + ".__main__()")
 
     # mp.freeze_support()
@@ -309,34 +283,8 @@ if __name__ == '__main__':
 
         print('\n%s\n' % (tq.task_dict[task_id]['stdout']))
 
-    print('<<<<<<<< mp_queue.__main__')
-
-    '''
-    tq.start(cpus)
-
-    print('\n>>>>>> Submitting Tasks Again: <<<<<<\n')
-    for task in tasks:
-      tq.add_task(task)
-
-    print('\n>>>>>> Collecting Results Again: <<<<<<\n')
-    tq.collect_results()
-
-    print('\n>>>>>> More Task Results: <<<<<<\n')
-    for task_id in tq.task_dict:
-        print( '[task %s]: %s %s %s %s %s' % 
-               (str(task_id),
-               str(tq.task_dict[task_id]['cmd']),
-               str(tq.task_dict[task_id]['args']),
-               str(tq.task_dict[task_id]['rc']),
-               str(tq.task_dict[task_id]['status']),
-               str(tq.task_dict[task_id]['dt']) ))
-
-        print('\n%s\n' % (tq.task_dict[task_id]['stdout']))
-    '''
-########################################################################################################################
 
 '''
-
 Pickling issues:
 https://stackoverflow.com/questions/32856206/pickling-issue-with-python-pathos?newreg=11b52c7f24714b76b4fa3ad8462dc658
 
@@ -406,12 +354,7 @@ INFO:interface:   ARGS:   ['/Users/joelyancey/glanceem_swift/swift-ir/source/ali
 INFO:interface:   STDERR: /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3: can't open file '/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/package/job_single_alignment.py': [Errno 2] No such file or directory
 
 
-
-
-
-
-
-WHAT A *GOOD* single_alignment_job run looks like:
+What a good single_alignment_job run looks like:
 project_runner.do_alignment | Starting mp_queue with args:
   /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
   /Users/joelyancey/Downloads/swift-ir-joel-dev-pyside6/source/alignEM/package/job_single_alignment.py
@@ -510,4 +453,14 @@ import pickle
 
 p = Process()
 pickle.dumps(p._config['authkey'])
+'''
+
+
+
+'''
+
+SWIM argument string: ww_3328x3328 -i 2 -w -0.68 -x 0 -y 0 -k  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/k_img  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.101.tif 2048 2048 /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.102.tif 2048.000000 2048.000000  1.000000 0.000000 -0.000000 1.000000
+
+
+
 '''
