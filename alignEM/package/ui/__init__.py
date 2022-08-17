@@ -2,7 +2,7 @@ __all__ = []
 
 from . import main_window
 from .main_window import *
-__all__.extend(app.__all__)
+__all__.extend(main_window.__all__)
 
 from . import defaults_form
 from .defaults_form import *
