@@ -1142,7 +1142,7 @@ def update_skip_annotations():
 #
 #     # Update all of the annotations based on the skip values
 #     copy_skips_to_all_scales()
-#     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into app.py
+#     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into main_window.py
 #     logger.info("Exiting update_skips_callback(new_state)")
 
 

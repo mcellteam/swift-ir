@@ -40,6 +40,7 @@ from .json_treeview import JsonModel
 from .defaults_form import DefaultsForm
 from .collapsible_box import CollapsibleBox
 from .screenshot_saver import ScreenshotSaver
+from .kimage_window import KImageWindow
 
 __all__ = ['MainWindow']
 
@@ -47,99 +48,12 @@ logger = logging.getLogger(__name__)
 
 # app = None #0816-
 
-def show_warning(title, text):
-    QMessageBox.warning(None, title, text)
-
-def request_confirmation(title, text):
-    button = QMessageBox.question(None, title, text)
-    logger.debug("You clicked " + str(button))
-    logger.debug("Returning " + str(button == QMessageBox.StandardButton.Yes))
-    return (button == QMessageBox.StandardButton.Yes)
-
-def link_stack():
-    cfg.main_window.hud.post('Linking the image stack...')
-    skip_list = []
-    for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
-        if cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index][
-            'skip'] == True:
-            skip_list.append(layer_index)
-    logger.debug('Skip List:\n %s' % str(skip_list))
-    for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
-        base_layer = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]
-        if layer_index == 0:
-            # No ref for layer 0
-            if 'ref' not in base_layer['images'].keys():
-                cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
-                                              filename='')
-        elif layer_index in skip_list:
-            # No ref for skipped layer
-            if 'ref' not in base_layer['images'].keys():
-                cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
-                                              filename='')
-        else:
-            # Find nearest previous non-skipped layer
-            j = layer_index - 1
-            while (j in skip_list) and (j >= 0):
-                j -= 1
-            # Use the nearest previous non-skipped layer as ref for this layer
-            if (j not in skip_list) and (j >= 0):
-                ref_layer = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][j]
-                ref_fn = ''
-                if 'base' in ref_layer['images'].keys():
-                    ref_fn = ref_layer['images']['base']['filename']
-                if 'ref' not in base_layer['images'].keys():
-                    cfg.project_data.add_img(scale_key=get_cur_scale_key(), layer_index=layer_index, role='ref',
-                                                  filename='')
-    cfg.main_window.update_win_self()
-    logger.info('Exiting link_stack')
-    cfg.main_window.hud.post('Complete')
-
-def bounding_rect_changed_callback(state):
-    # logger.info('  Bounding Rect project_file value was:', cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
-    caller = inspect.stack()[1].function
-    logger.info('Called By %s' % caller)
-    if state:
-        cfg.main_window.hud.post(
-            'Bounding box will be used. Warning: x and y dimensions may grow larger than the source images.')
-        cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = True
-    else:
-        cfg.main_window.hud.post(
-            'Bounding box will not be used (faster). x and y dimensions of generated images will equal the source images.')
-        cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = False
-        # logger.info('  Bounding Rect project_file value saved as:',cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
-    # else:
-    #     pass
-
-def skip_changed_callback(state):  # 'state' is connected to skip toggle
-    logger.info("skip_changed_callback(state=%s):" % str(state))
-    '''Toggle callback for skip image function. Note: a signal is emitted regardless of whether a user or another part
-    of the program flips the toggle state. Caller is 'run_app' when a user flips the switch. Caller is change_layer
-    or other user-defined function when the program flips the switch'''
-    # called by:  change_layer <-- when ZoomPanWidget.change_layer toggles
-    # called by:  run_app <-- when user toggles
-    # skip_list = []
-    # for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
-    #     if cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]['skip'] == True:
-    #         skip_list.append(layer_index)
-    if are_images_imported():
-        skip_list = get_skips_list()
-        # if inspect.stack()[1].function == 'run_app':
-        toggle_state = state
-        new_skip = not state
-        logger.info('toggle_state: ' + str(toggle_state) + '  skip_list: ' + str(
-            skip_list) + 'new_skip: ' + str(new_skip))
-        scale = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]
-        layer = scale['alignment_stack'][cfg.project_data['data']['current_layer']]
-        layer['skip'] = new_skip  # skip # this is where skip list is appended to
-        copy_skips_to_all_scales()
-        cfg.project_data.link_all_stacks()  #0525
-        cfg.main_window.center_all_images()
-
 
 class MainWindow(QMainWindow):
     def __init__(self, fname=None, panel_roles=None, title="AlignEM-SWiFT"):
 
         app = QApplication.instance()
+        self.app = QApplication.instance()
 
         if app is None:
             logger.info("Warning | 'app' was None. Creating new instance.")
@@ -154,7 +68,7 @@ class MainWindow(QMainWindow):
         logger.info('initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
 
-        self.app = QApplication.instance()
+
 
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
@@ -686,7 +600,7 @@ class MainWindow(QMainWindow):
         else:
             logger.debug(
                 '  export_zarr() | (!) There is no alignment at this scale to export. Returning from export_zarr().')
-            show_warning('No Alignment', 'There is no alignment to export.\n\n'
+            self.show_warning('No Alignment', 'There is no alignment to export.\n\n'
                                          'Typical workflow:\n'
                                          '(1) Open a project or import images and save.\n'
                                          '(2) Generate a set of scaled images and save.\n'
@@ -1453,6 +1367,15 @@ class MainWindow(QMainWindow):
             options=options
         )
         return response[0]
+
+    def show_warning(self, title, text):
+        QMessageBox.warning(None, title, text)
+
+    def request_confirmation(self, title, text):
+        button = QMessageBox.question(None, title, text)
+        logger.debug("You clicked " + str(button))
+        logger.debug("Returning " + str(button == QMessageBox.StandardButton.Yes))
+        return (button == QMessageBox.StandardButton.Yes)
     
     def open_project(self):
         logger.debug('open_project >>>>')
@@ -1736,7 +1659,7 @@ class MainWindow(QMainWindow):
             starting_layer) + "  (remove_from_role)")
         actually_remove = True
         if prompt:
-            actually_remove = request_confirmation("Note", "Do you want to remove all " + role + " images?")
+            actually_remove = self.request_confirmation("Note", "Do you want to remove all " + role + " images?")
         if actually_remove:
             logger.debug("Removing " + role + " images ...")
             delete_list = []
@@ -1844,7 +1767,7 @@ class MainWindow(QMainWindow):
     def exit_app(self):
         logger.info("MainWindow.exit_app:")
         self.set_status('Exiting...')
-        c
+        app = QApplication.instance()
         if not are_images_imported():
             self.threadpool.waitForDone(msecs=200)
             QApplication.quit()
@@ -1957,7 +1880,7 @@ class MainWindow(QMainWindow):
         if not are_aligned_images_generated():
             self.hud.post('This scale must be aligned and exported before viewing in Neuroglancer')
 
-            show_warning("No Alignment Found",
+            self.show_warning("No Alignment Found",
                          "This scale must be aligned and exported before viewing in Neuroglancer.\n\n"
                          "Typical workflow:\n"
                          "(1) Open a project or import images and save.\n"
@@ -1975,7 +1898,7 @@ class MainWindow(QMainWindow):
         if not is_cur_scale_exported():
             self.hud.post('Alignment must be exported before it can be viewed in Neuroglancer')
 
-            show_warning("No Export Found",
+            self.show_warning("No Export Found",
                          "Alignment must be exported before it can be viewed in Neuroglancer.\n\n"
                          "Typical workflow:\n"
                          "(1) Open a project or import images and save.\n"
@@ -2132,6 +2055,47 @@ class MainWindow(QMainWindow):
         self.w = KImageWindow(parent=self)
         self.w.show()
 
+    def bounding_rect_changed_callback(self, state):
+        # logger.info('  Bounding Rect project_file value was:', cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
+        caller = inspect.stack()[1].function
+        logger.info('Called By %s' % caller)
+        if state:
+            cfg.main_window.hud.post(
+                'Bounding box will be used. Warning: x and y dimensions may grow larger than the source images.')
+            cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = True
+        else:
+            cfg.main_window.hud.post(
+                'Bounding box will not be used (faster). x and y dimensions of generated images will equal the source images.')
+            cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = False
+            # logger.info('  Bounding Rect project_file value saved as:',cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
+        # else:
+        #     pass
+
+    def skip_changed_callback(self, state):  # 'state' is connected to skip toggle
+        logger.info("skip_changed_callback(state=%s):" % str(state))
+        '''Toggle callback for skip image function. Note: a signal is emitted regardless of whether a user or another part
+        of the program flips the toggle state. Caller is 'run_app' when a user flips the switch. Caller is change_layer
+        or other user-defined function when the program flips the switch'''
+        # called by:  change_layer <-- when ZoomPanWidget.change_layer toggles
+        # called by:  run_app <-- when user toggles
+        # skip_list = []
+        # for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
+        #     if cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]['skip'] == True:
+        #         skip_list.append(layer_index)
+        if are_images_imported():
+            skip_list = get_skips_list()
+            # if inspect.stack()[1].function == 'run_app':
+            toggle_state = state
+            new_skip = not state
+            logger.info('toggle_state: ' + str(toggle_state) + '  skip_list: ' + str(
+                skip_list) + 'new_skip: ' + str(new_skip))
+            scale = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]
+            layer = scale['alignment_stack'][cfg.project_data['data']['current_layer']]
+            layer['skip'] = new_skip  # skip # this is where skip list is appended to
+            copy_skips_to_all_scales()
+            cfg.project_data.link_all_stacks()  # 0525
+            cfg.main_window.center_all_images()
+
     def initUI(self):
 
         '''-------- PANEL 1: PROJECT --------'''
@@ -2259,7 +2223,7 @@ class MainWindow(QMainWindow):
         self.toggle_skip = ToggleSwitch()
         self.toggle_skip.setToolTip('Skip current image (do not align)')
         self.toggle_skip.setChecked(False)  # 0816 #observed #sus
-        self.toggle_skip.toggled.connect(skip_changed_callback)
+        self.toggle_skip.toggled.connect(self.skip_changed_callback)
         self.skip_label = QLabel("Include:")
         self.skip_label.setToolTip('Skip current image (do not align)')
         self.skip_layout = QHBoxLayout()
@@ -2462,7 +2426,7 @@ class MainWindow(QMainWindow):
         self.bounding_label.setToolTip(wrapped)
         self.toggle_bounding_rect = ToggleSwitch()
         self.toggle_bounding_rect.setToolTip(wrapped)
-        self.toggle_bounding_rect.toggled.connect(bounding_rect_changed_callback)
+        self.toggle_bounding_rect.toggled.connect(self.bounding_rect_changed_callback)
         self.toggle_bounding_hlayout = QHBoxLayout()
         self.toggle_bounding_hlayout.addWidget(self.bounding_label, alignment=Qt.AlignmentFlag.AlignLeft)
         self.toggle_bounding_hlayout.addWidget(self.toggle_bounding_rect, alignment=Qt.AlignmentFlag.AlignRight)
@@ -2896,24 +2860,5 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(self.main_widget)
 
-class KImageWindow(QWidget):
-    """
-    This "window" is a QWidget. If it has no parent, it
-    will appear as a free-floating window as we want.
-    """
-    def __init__(self, parent=None):
-        super().__init__()
-        self.parent = parent
-        proj_dir = os.path.abspath(cfg.project_data['data']['destination_path'])
-        path = os.path.join(proj_dir, get_cur_scale_key(), 'k_img.tif')
-        self.lb = QLabel(self)
-        self.pixmap = QPixmap(path)
-        # lb.resize(self.width(), 100)
-        # lb.setPixmap(pixmap.scaled(lb.size(), Qt.IgnoreAspectRatio))
-        self.lb.setPixmap(self.pixmap)
-        self.lb.resize(self.pixmap.width(), self.pixmap.height())
-        layout = QVBoxLayout()
-        self.label = QLabel()
-        layout.addWidget(self.label)
-        self.setLayout(layout)
+
 
