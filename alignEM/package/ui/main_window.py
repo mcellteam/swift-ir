@@ -54,21 +54,17 @@ class MainWindow(QMainWindow):
 
         app = QApplication.instance()
         self.app = QApplication.instance()
-
         if app is None:
             logger.info("Warning | 'app' was None. Creating new instance.")
             app = QApplication([])
 
         self.python_jupyter_console = self.make_jupyter_widget_with_kernel()
         # self.python_jupyter_console = InProcessJupyterConsole()
-
         logger.info('app.__str__() = ' + app.__str__())
         self.pyside_path = os.path.dirname(os.path.realpath(__file__))
         
         logger.info('initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
-
-
 
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
@@ -100,11 +96,7 @@ class MainWindow(QMainWindow):
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
         
-        # self.setWindowFlags(self.windowFlags() | alignEM.FramelessWindowHint)
-        # self.setWindowFlag(alignEM.FramelessWindowHint)
-        
         # stylesheet must be after QMainWindow.__init__(self)
-        logger.info("applying stylesheet")
         self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet1.qss')
         self.setStyleSheet(open(self.main_stylesheet).read())
         
@@ -125,7 +117,7 @@ class MainWindow(QMainWindow):
         self.always_generate_images = True
         
         # self.std_height = int(22)
-        self.std_height = 24
+        self.std_height = int(24)
         self.std_width = int(96)
         self.std_button_size = QSize(self.std_width, self.std_height)
         self.square_button_height = int(30)
