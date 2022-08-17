@@ -14,13 +14,10 @@ from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
 from package.ui.TqdmToLogger import TqdmToLogger
 
-__all__ = ['HeadsUpDisplay', 'HudWorker']
+__all__ = ['HeadUpDisplay', 'HudWorker']
 
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger("hud")
-
-# print('HeadsUpDisplay | str(logger) = %s' % str(logger))
-
 
 class Signaller(QObject):
     signal = Signal(str, logging.LogRecord)
@@ -50,8 +47,7 @@ class HudWorker(QObject):
             logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
             i += 1
 
-
-class HeadsUpDisplay(QWidget):
+class HeadUpDisplay(QWidget):
 
     COLORS = {
         logging.DEBUG: 'black',
@@ -67,7 +63,7 @@ class HeadsUpDisplay(QWidget):
     }
 
     def __init__(self, app):
-        super(HeadsUpDisplay, self).__init__()
+        super(HeadUpDisplay, self).__init__()
         self.app = app
         self.textedit = te = QPlainTextEdit(self)
         # Set whatever the default monospace font is for the platform
@@ -95,8 +91,11 @@ class HeadsUpDisplay(QWidget):
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
         h.setFormatter(formatter)
         logger.addHandler(h)
+
         # Set up to terminate the QThread when we exit
-        app.aboutToQuit.connect(self.force_quit)
+        # app.aboutToQuit.connect(self.force_quit) #0816- (!) This caused error after refactor:
+        # AttributeError: 'NoneType' object has no attribute 'aboutToQuit'
+
         layout = QVBoxLayout(self)
         layout.addWidget(te)
         self.start_thread()
