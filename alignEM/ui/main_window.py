@@ -256,15 +256,14 @@ class MainWindow(QMainWindow):
 
                   ]
                 ],
+                 ['&Python Console', 'Ctrl+P', self.show_python_console, None, None, None],
 
              ]
              ],
             ['&Debug',
              [
-                 ['Python Console', None, self.show_python_console, None, None, None],
                  # ['Launch Debugger', None, self.launch_debugger, None, None, None],
                  ['Auto Set User Progress', None, self.auto_set_user_progress, None, None, None],
-                 ['Set User Progress Stage 3', None, self.set_progress_stage_3, None, None, None],
                  ['Update Win Self (Update MainWindow)', None, self.update_win_self, None, None, None],
                  ['Refresh All Images (Repaint+Update Panels)', None, self.refresh_all_images, None, None, None],
                  ['Read project_data Update GUI', None, self.read_project_data_update_gui, None, None, None],
@@ -277,7 +276,6 @@ class MainWindow(QMainWindow):
                  ['Print Sanity Check', None, print_sanity_check, None, None, None],
                  ['Print Project Tree', None, print_project_tree, None, None, None],
                  ['Print Image Library', None, self.print_image_library, None, None, None],
-                 ['Print Affine Grep', None, debug_project, None, None, None],
                  ['Print Aligned Scales List', None, get_aligned_scales_list, None, None, None],
                  ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
                  ['Print SNR List', None, print_snr_list, None, None, None],
