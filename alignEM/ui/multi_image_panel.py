@@ -5,9 +5,9 @@ import logging
 from qtpy.QtWidgets import QWidget, QHBoxLayout
 from qtpy.QtCore import Qt, QRectF
 from qtpy.QtGui import QPainter, QPen, QColor
-import package.config as cfg
+import alignEM.config as cfg
 from .zoom_pan_widget import ZoomPanWidget
-from package.em_utils import are_images_imported, is_dataset_scaled
+from alignEM.em_utils import are_images_imported, is_dataset_scaled
 
 __all__ = ['MultiImagePanel']
 

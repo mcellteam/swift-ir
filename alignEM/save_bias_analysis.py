@@ -4,7 +4,7 @@ import os
 import logging
 import inspect
 import numpy as np
-from package.em_utils import print_exception, print_alignment_layer
+from alignEM.em_utils import print_exception, print_alignment_layer
 
 __all__ = ['save_bias_analysis']
 

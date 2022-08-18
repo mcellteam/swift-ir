@@ -8,7 +8,7 @@ import json
 import shutil
 import psutil
 import logging
-import package.config as cfg
+import alignEM.config as cfg
 from .mp_queue import TaskQueue
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
@@ -75,12 +75,12 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         # Write the entire project as a single JSON file with a unique stable name for this run
         logger.info("Copying project file to 'project_runner_job_file.json'")
 
-        run_project_name = os.path.join(cfg.project_data.destination(), "project_runner_job_file.json")
+        run_project_name = os.path.join(cfg.project_data.name(), "project_runner_job_file.json")
         with open(run_project_name, 'w') as f:
             # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.project_data.to_json()))
             f.write(cfg.project_data.to_json())
 
-        # foo = os.path.join(cfg.project_data.destination(), str(time.time()) + '.json')
+        # foo = os.path.join(cfg.project_data.name(), str(time.time()) + '.json')
         # with open(foo, 'w') as f:
         #     # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.project_data.to_json()))
         #     f.write(cfg.project_data.to_json())

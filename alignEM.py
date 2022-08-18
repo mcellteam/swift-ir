@@ -49,8 +49,8 @@ import subprocess
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
 # from ui.interface import MainWindow
-from package.ui.main_window import MainWindow
-import package.config as cfg
+from alignEM.ui.main_window import MainWindow
+import alignEM.config as cfg
 
 
 class CustomFormatter(logging.Formatter):

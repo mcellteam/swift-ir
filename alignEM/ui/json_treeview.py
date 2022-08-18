@@ -10,7 +10,7 @@ from typing import Any, List, Dict, Union
 from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
 
-import package.config as cfg
+import alignEM.config as cfg
 
 
 class TreeItem:

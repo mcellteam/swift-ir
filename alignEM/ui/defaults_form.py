@@ -8,9 +8,9 @@ from qtpy.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, Q
 from qtpy.QtCore import Qt, Signal, Slot, QAbstractTableModel, QAbstractListModel, QModelIndex
 from qtpy.QtGui import QDoubleValidator, QFont
 
-import package.config as cfg
+import alignEM.config as cfg
 
-from package.em_utils import get_scale_key, get_scale_val, get_cur_scale_key, get_scales_list
+from alignEM.em_utils import get_scale_key, get_scale_val, get_cur_scale_key, get_scales_list
 
 __all__ = ['DefaultsForm','DefaultsModel']
 

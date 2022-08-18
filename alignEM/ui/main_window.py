@@ -22,16 +22,16 @@ import qtawesome as qta
 import pyqtgraph as pg
 import neuroglancer as ng
 from PIL import Image
-import package.config as cfg
-from package.em_utils import *
-from package.data_model import DataModel
-from package.image_utils import get_image_size
-from package.compute_affines import compute_affines
-from package.apply_affines import generate_aligned
-from package.generate_scales import generate_scales
-from package.generate_zarr import generate_zarr
-from package.generate_zarr_contig import generate_zarr_contig
-from package.view_3dem import View3DEM
+import alignEM.config as cfg
+from alignEM.em_utils import *
+from alignEM.data_model import DataModel
+from alignEM.image_utils import get_image_size
+from alignEM.compute_affines import compute_affines
+from alignEM.apply_affines import generate_aligned
+from alignEM.generate_scales import generate_scales
+from alignEM.generate_zarr import generate_zarr
+from alignEM.generate_zarr_contig import generate_zarr_contig
+from alignEM.view_3dem import View3DEM
 from .head_up_display import HeadUpDisplay
 from .image_library import ImageLibrary, SmartImageLibrary
 from .multi_image_panel import MultiImagePanel
@@ -58,13 +58,11 @@ class MainWindow(QMainWindow):
             logger.info("Warning | 'app' was None. Creating new instance.")
             app = QApplication([])
 
-        self.python_jupyter_console = self.make_jupyter_widget_with_kernel()
-        # self.python_jupyter_console = InProcessJupyterConsole()
-        logger.info('app.__str__() = ' + app.__str__())
-        self.pyside_path = os.path.dirname(os.path.realpath(__file__))
         logger.info('initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
         cfg.defaults_form = DefaultsForm(parent=self)
+
+        self.python_jupyter_console = self.make_jupyter_widget_with_kernel()
 
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
@@ -90,7 +88,8 @@ class MainWindow(QMainWindow):
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
 
-        self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet1.qss')
+        print(os.getcwd())
+        self.main_stylesheet = 'alignEM/styles/stylesheet1.qss'
         self.setStyleSheet(open(self.main_stylesheet).read()) # must be after QMainWindow.__init__(self)
         
         self.context = QOpenGLContext(self)
@@ -816,7 +815,7 @@ class MainWindow(QMainWindow):
         logger.info('Changing stylesheet to minimal')
     
     def apply_stylesheet_1(self):
-        self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet1.qss')
+        self.main_stylesheet = 'alignEM/styles/stylesheet1.qss'
         self.hud.post('Applying stylesheet 1')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
@@ -824,7 +823,7 @@ class MainWindow(QMainWindow):
     
     def apply_stylesheet_3(self):
         '''Light stylesheet'''
-        self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet3.qss')
+        self.main_stylesheet = 'alignEM/styles/stylesheet3.qss'
         self.hud.post('Applying stylesheet 3')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
@@ -832,7 +831,7 @@ class MainWindow(QMainWindow):
     
     def apply_stylesheet_4(self):
         '''Grey stylesheet'''
-        self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet4.qss')
+        self.main_stylesheet = 'alignEM/styles/stylesheet4.qss'
         self.hud.post('Applying stylesheet 4')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
@@ -840,14 +839,14 @@ class MainWindow(QMainWindow):
     
     def apply_stylesheet_11(self):
         '''Screamin' Green stylesheet'''
-        self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet11.qss')
+        self.main_stylesheet = 'alignEM/styles/stylesheet11.qss'
         self.hud.post('Applying stylesheet 11')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.reset_groupbox_styles()
     
     def apply_stylesheet_12(self):
-        self.main_stylesheet = os.path.join(self.pyside_path, '../styles/stylesheet12.qss')
+        self.main_stylesheet = 'alignEM/styles/stylesheet12.qss'
         self.hud.post('Applying stylesheet 12')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
@@ -1936,7 +1935,7 @@ class MainWindow(QMainWindow):
         # splash.setMask(splash_pix.mask())
         # splash.show()
         # # app.processEvents()
-        splash_pix = QPixmap('./resources/em_guy.png')
+        splash_pix = QPixmap('resources/em_guy.png')
         splash = QSplashScreen(self, splash_pix, Qt.WindowStaysOnTopHint)
         splash.setMask(splash_pix.mask())
         splash.show()
@@ -1944,7 +1943,7 @@ class MainWindow(QMainWindow):
     def splash(self):
         self.funky_panel = QWidget()
         self.funky_layout = QVBoxLayout()
-        pixmap = QPixmap('./resources/fusiform-alignem-guy.png')
+        pixmap = QPixmap('resources/fusiform-alignem-guy.png')
         label = QLabel(self)
         label.setPixmap(pixmap)
         # self.resize(pixmap.width(), pixmap.height())

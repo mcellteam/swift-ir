@@ -13,7 +13,7 @@ swift-ir/*.txt
 swift-ir/*.json
 swift-ir/*.sh
 versions/*
-tests/*
+tests/FWNGV
 data/*
 *.tar
 *.class
