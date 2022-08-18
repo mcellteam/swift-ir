@@ -67,7 +67,7 @@ def generate_zarr_contig(src, out):
         print('Image dimensions at Scale %s: %dpx x %dpx' % (scale[-1], width, height))
         scale_val = get_scale_val(scale)
         name = 's' + str(scale_val)
-        logger.info('Creating a Zarr dataset named %s' % name)Re
+        logger.info('Creating a Zarr dataset named %s' % name)
         opt_cname = cfg.main_window.cname_combobox.currentText()
         opt_clevel = int(cfg.main_window.clevel_input.text())
         if opt_cname in ('zstd', 'zlib', 'gzip'):
