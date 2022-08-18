@@ -667,7 +667,7 @@ def get_cur_scale_key() -> str:
     return cfg.project_data['data']['current_scale']
 
 
-def get_scale_val(scale_of_any_type):
+def get_scale_val(scale_of_any_type) -> int:
     '''Converts scale key to integer (i.e. 'scale_1' as string -> 1 as int)
     TODO: move this to glanceem_utils'''
 
