@@ -11,17 +11,19 @@ import zarr
 from zarr.util import human_readable_size
 import numpy as np
 from PIL import Image
-from package.image_utils import get_image_size
-from package.mp_queue import TaskQueue
-from package.em_utils import get_scale_key, get_scale_val, get_scales_list, get_num_scales, get_aligned_scales_list
-import package.config as cfg
+from alignEM.image_utils import get_image_size
+from alignEM.mp_queue import TaskQueue
+from alignEM.em_utils import get_scale_key, get_scale_val, get_scales_list, get_num_scales, get_aligned_scales_list
+import alignEM.config as cfg
 from contextlib import contextmanager
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need
 from numcodecs import Blosc
 # blosc.set_nthreads(8)
 
+__all__ = ['generate_zarr_contig']
 
+logger = logging.getLogger(__name__)
 
 class TimeoutException(Exception): pass
 
@@ -35,12 +37,6 @@ def time_limit(seconds):
         yield
     finally:
         signal.alarm(0)
-
-
-
-__all__ = ['generate_zarr_contig']
-
-logger = logging.getLogger(__name__)
 
 def generate_zarr_contig(src, out):
     scales_list = get_scales_list()
@@ -79,18 +75,6 @@ def generate_zarr_contig(src, out):
 
         opt_cname = cfg.main_window.cname_combobox.currentText()
         opt_clevel = int(cfg.main_window.clevel_input.text())
-
-
-        '''
-                tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compressor=None, overwrite=overwrite) # might pass in 'None'
-    else:
-        if cname in ('zstd', 'zlib'):
-            tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compressor=Blosc(cname=cname, clevel=clevel), overwrite=overwrite)  # NOTE 'compressor='
-            # tiffs2zarr(filenames, zarr_path + "/" + ds_name, tuple(chunks), compressor=zarr.get_codec({'id': cname, 'level': clevel}))
-        else:
-            tiffs2zarr(filenames, zarr_ds_path, chunk_shape_tuple, compression=cname, overwrite=overwrite)  # NOTE 'compression='
-        
-        '''
         if opt_cname in ('zstd', 'zlib', 'gzip'):
             root.zeros(name, shape=(n_imgs, height, width), chunks=(1, 64, 64), dtype='uint8',
                        compressor=Blosc(cname=opt_cname, clevel=opt_clevel))
@@ -100,10 +84,7 @@ def generate_zarr_contig(src, out):
         else:
             root.zeros(name, shape=(n_imgs, height, width), chunks=(1, 64, 64), dtype='uint8',
                        compressor=None)
-
-
         #, synchronizer=zarr.ThreadSynchronizer()
-
         datasets.append(
             {
                 "path": name,
@@ -147,7 +128,7 @@ def generate_zarr_contig(src, out):
     scale_q.start(cpus)
     for task in tasks:
         task_args = [sys.executable,
-                     'package/job_convert_zarr_contig.py',
+                     'alignEM/job_convert_zarr_contig.py',
                      str(task[0]),          # ID
                      str(task[1]),          # img
                      str(task[2]),          # src

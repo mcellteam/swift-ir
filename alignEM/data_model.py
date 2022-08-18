@@ -8,8 +8,8 @@ import json
 import logging
 from copy import deepcopy
 
-import package.config as cfg
-from package.ui.defaults_form import DefaultsForm
+import alignEM.config as cfg
+from alignEM.ui.defaults_form import DefaultsForm
 
 __all__ = ['DataModel']
 
@@ -95,6 +95,9 @@ class DataModel:
         cfg.defaults_form.show()
 
     def destination(self):
+        return self._project_data['data']['destination_path']
+
+    def name(self):
         return self._project_data['data']['destination_path']
 
     def append_layer(self, scale_key):

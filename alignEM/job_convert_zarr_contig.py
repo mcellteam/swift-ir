@@ -7,8 +7,6 @@ https://ngff.openmicroscopy.org/latest/
 
 import os
 import sys
-
-import numpy as np
 import zarr
 import tifffile
 
@@ -26,7 +24,6 @@ if __name__ == '__main__':
     height       = int(sys.argv[9])
     scale_val    = int(sys.argv[10])
 
-
     scale_img = os.path.join(src, scale_str, 'img_aligned', img)
     im = tifffile.imread(scale_img) # im.dtype =  uint8
     # im = np.atleast_3d(im)
@@ -36,8 +33,6 @@ if __name__ == '__main__':
     store = zarr.open(out)
     store[ID,:,:] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-
-
 
     # array.attrs['axes'] = {
     #     "labels": ["z", "y", "x"],

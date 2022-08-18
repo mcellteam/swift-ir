@@ -26,13 +26,13 @@ import traceback
 import numpy as np
 import subprocess as sp
 
-try:     import package.config as cfg
+try:     import alignEM.config as cfg
 except:  import config as cfg
 
-try:     import package.swiftir as swiftir
+try:     import alignEM.swiftir as swiftir
 except:  import swiftir
 
-try:     from package.image_utils import get_image_size
+try:     from alignEM.image_utils import get_image_size
 except:  from image_utils import get_image_size
 
 __all__ = ['run_json_project', 'alignment_process']
@@ -992,7 +992,7 @@ if __name__ == '__main__':
     # These are the defaults
     f1 = "vj_097_shift_rot_skew_crop_1.jpg"
     f2 = "vj_097_shift_rot_skew_crop_2.jpg"
-    out = os.path.join("../../../../../../..", "aligned")
+    out = os.path.join("../../../../..", "aligned")
 
     # Process and remove the fixed positional arguments
     args = sys.argv

@@ -323,7 +323,7 @@ print('mp_queue.TaskQueue.start | mp.get_start_method() = ', mp.get_start_method
 
 image_apply_affine task (example)
 task= ['/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3', 
-       '/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/package/job_apply_affine.py', 
+       '/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/job_apply_affine.py', 
        '-gray', 
        '-afm', 
        '1.040024184796598', 
@@ -336,7 +336,7 @@ task= ['/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_aligned/R34CA1-BS12.105.tif']
 
 generate_scales task (example)
-task = ['/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/package//lib/bin_darwin/iscale2', 
+task = ['/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM//lib/bin_darwin/iscale2', 
         '+4', 
         'of=/Users/joelyancey/glanceem_swift/test_projects/test16/scale_4/img_src/R34CA1-BS12.117.tif', 
         '/Users/joelyancey/glanceem_swift/test_projects/test16/scale_1/img_src/R34CA1-BS12.117.tif']
@@ -350,14 +350,14 @@ PROBLEMATIC
 INFO:interface:
 Task Error:
 INFO:interface:   CMD:    /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
-INFO:interface:   ARGS:   ['/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/package/job_single_alignment.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/full_volume_josef_2/project_runner_job_file.json', 'init_affine', '4', 'c', '127', '1', '1']
-INFO:interface:   STDERR: /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3: can't open file '/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/package/job_single_alignment.py': [Errno 2] No such file or directory
+INFO:interface:   ARGS:   ['/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/job_single_alignment.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/full_volume_josef_2/project_runner_job_file.json', 'init_affine', '4', 'c', '127', '1', '1']
+INFO:interface:   STDERR: /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3: can't open file '/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/job_single_alignment.py': [Errno 2] No such file or directory
 
 
 What a good single_alignment_job run looks like:
 project_runner.do_alignment | Starting mp_queue with args:
   /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
-  /Users/joelyancey/Downloads/swift-ir-joel-dev-pyside6/source/alignEM/package/job_single_alignment.py
+  /Users/joelyancey/Downloads/swift-ir-joel-dev-pyside6/source/alignEM/alignEM/job_single_alignment.py
   /Users/joelyancey/glanceem_swift/test_projects/test_last_push/project_runner_job_file.json
   init_affine
   4
@@ -369,7 +369,7 @@ project_runner.do_alignment | Starting mp_queue with args:
 HOW IS ^^ THAT DIFFERENT FROM THIS:
 Starting mp_queue with args:
   /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
-  /Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/package/src/job_single_alignment.py
+  /Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/src/job_single_alignment.py
   /Users/joelyancey/glanceEM_SWiFT/test_projects/test94/project_runner_job_file.json
   init_affine
   4

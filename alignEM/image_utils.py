@@ -9,7 +9,7 @@ import numpy as np
 import tifffile
 
 try:
-    from package.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
+    from alignEM.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 except:
     from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 

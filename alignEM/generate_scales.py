@@ -7,8 +7,8 @@ import platform
 import psutil
 import time
 import logging
-import package.config as cfg
-from package.em_utils import print_exception, get_num_imported_images, get_num_scales, get_scale_val, get_scale_key, \
+import alignEM.config as cfg
+from alignEM.em_utils import print_exception, get_num_imported_images, get_num_scales, get_scale_val, get_scale_key, \
     create_project_structure_directories, get_best_path, get_scales_list
 from .mp_queue import TaskQueue
 
@@ -146,7 +146,7 @@ def generate_scales(progress_callback=None):
 
     '''
     ____scale_q Parameters (Example)____
-    (1) : iscale2_c : /Users/joelyancey/glanceem_swift/swift-ir/alignEM/package/lib/bin_darwin/iscale2
+    (1) : iscale2_c : /Users/joelyancey/glanceem_swift/swift-ir/alignEM/alignEM/lib/bin_darwin/iscale2
     (2) : scale_arg : +2
     (3) : outfile_arg : of=/Users/joelyancey/glanceEM_SWiFT/test_projects/test993/scale_2/img_src/R34CA1-BS12.104.tif
     (4) : infile_arg : /Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.104.tif

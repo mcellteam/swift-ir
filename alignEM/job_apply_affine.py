@@ -14,7 +14,7 @@ from swiftir import affineImage, saveImage, loadImage
 
 
 # try:
-#     from package.image_utils import loadImage, saveImage, affineImage
+#     from alignEM.image_utils import loadImage, saveImage, affineImage
 # except:
 #     from image_utils import loadImage, saveImage, affineImage
 

@@ -10,14 +10,14 @@ import inspect
 import traceback
 from glob import glob
 from pathlib import Path
-try: import package.config as cfg
+try: import alignEM.config as cfg
 except: import config as cfg
 try:
     import builtins
 except:
     pass
 
-try: from package.utils.treeview import Treeview
+try: from alignEM.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
 __all__ = ['remove_aligned', 'get_cur_scale_key', 'get_cur_layer', 'is_destination_set',

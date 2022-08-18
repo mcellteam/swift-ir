@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QWidget, QRubberBand
 from qtpy.QtCore import Qt, QPointF, QRectF
 from qtpy.QtWidgets import QSizePolicy
 
-import package.config as cfg
+import alignEM.config as cfg
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
 from ..em_utils import get_cur_scale_key

@@ -8,9 +8,9 @@ import argparse
 import zarr
 import numpy as np
 from PIL import Image
-from package.image_utils import get_image_size
-from package.mp_queue import TaskQueue
-from package.em_utils import get_scale_key, get_scale_val, get_scales_list
+from alignEM.image_utils import get_image_size
+from alignEM.mp_queue import TaskQueue
+from alignEM.em_utils import get_scale_key, get_scale_val, get_scales_list
 
 __all__ = ['generate_zarr']
 
@@ -51,7 +51,7 @@ def generate_zarr(src, out):
 
     for task in tasks:
         task_args = [sys.executable,
-                     os.path.abspath('package/job_convert_zarr.py'),
+                     os.path.abspath('job_convert_zarr.py'),
                      str(task[0]),          # ID
                      str(task[1]),          # img
                      str(task[2]),          # src

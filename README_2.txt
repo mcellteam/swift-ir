@@ -16,7 +16,8 @@ Version 3.9+ (recommended)
 Version 3.7+ (minimum)
 
 -------- Install Pipenv --------
-curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python
+curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python  # obtain pipenv
+pipenv install  # run this command from the 'swift-ir' directory
 
 -------- Install Python Dependencies --------
 To install the required Python packages using pip:
@@ -42,7 +43,6 @@ Linux: Compilation requires a software called FFTW. Try:
 python3 alignEM.py
 
 -----------------------------------
------------------------------------
 
 Ubuntu Instructions (courtesy of Vijay):
 
@@ -61,8 +61,7 @@ MacOS Tips:
 conda env create -f environment.yml
 conda activate swiftir-env
 python3 -m pip install --upgrade pip
-pip install neuroglancer
-pip install imagecodecs
+pip install neuroglancer zarr imagecodecs
 git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
 git checkout joel-dev-alignem
