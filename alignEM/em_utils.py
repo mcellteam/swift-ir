@@ -32,7 +32,7 @@ __all__ = ['remove_aligned', 'get_cur_scale_key', 'get_cur_layer', 'is_destinati
            'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project',
            'is_cur_scale_ready_for_alignment', 'get_aligned_scales_list', 'get_not_aligned_scales_list',
            'get_scales_list', 'get_next_coarsest_scale_key','get_snr_list', 'print_snr_list', 'print_project_tree',
-           'get_coarsest_scale_key']
+           'get_coarsest_scale_key', 'get_images_list_directly']
 
 logger = logging.getLogger(__name__)
 # logging.basicConfig(
@@ -41,6 +41,20 @@ logger = logging.getLogger(__name__)
 #         datefmt='%H:%M:%S',
 #         handlers=[logging.StreamHandler()]
 # )
+
+
+def get_images_list_directly(path) -> list[str]:
+    imgs = [x for x in os.listdir(path) if os.path.splitext(x)[1] in (
+        '.tif',
+        '.tiff',
+        '.bmp',
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.eps'
+    )]
+    return imgs
+
 
 def remove_aligned(use_scale, start_layer=0):
     '''
