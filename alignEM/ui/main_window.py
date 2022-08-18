@@ -193,6 +193,8 @@ class MainWindow(QMainWindow):
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
 
+
+
         #menu
         #   0:MenuName
         #   1:Shortcut-or-None
@@ -222,7 +224,6 @@ class MainWindow(QMainWindow):
              ],
             ['&Tools',
              [
-                 ['Toggle Match Point Align', None, self.toggle_match_point_align, None, None, None],
                  ['&Match Point Align Mode',
                   [
                       ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
@@ -545,11 +546,8 @@ class MainWindow(QMainWindow):
     
     def export_zarr(self):
         logger.info('Exporting to Zarr format...')
-        
-        if is_any_scale_aligned_and_generated():
-            logger.debug('  export_zarr() | there is an alignment stack at this scale - continuing.')
-            pass
-        else:
+        if not are_aligned_images_generated():
+            self.hud.post('Current Scale Must be Aligned Before It Can be Exported', logging.WARNING)
             logger.debug(
                 '  export_zarr() | (!) There is no alignment at this scale to export. Returning from export_zarr().')
             self.show_warning('No Alignment', 'There is no alignment to export.\n\n'
@@ -559,6 +557,7 @@ class MainWindow(QMainWindow):
                                          '--> (3) Align each scale starting with the coarsest.\n'
                                          '(4) Export alignment to Zarr format.\n'
                                          '(5) View data in Neuroglancer client')
+            self.set_idle()
             return
         
         self.set_status('Exporting...')
@@ -2021,13 +2020,14 @@ class MainWindow(QMainWindow):
     def toggle_match_point_align(self):
         self.match_point_mode = not self.match_point_mode
         if self.match_point_mode:
-            logger.info('Match Point Mode is now ON')
+            self.hud.post('Match Point Mode is now ON (Ctrl+M or ⌘+M to Toggle Match Point Mode)')
         else:
-            logger.info('Match Point Mode is now OFF')
+            self.hud.post('Match Point Mode is now OFF (Ctrl+M or ⌘+M to Toggle Match Point Mode)')
 
     def clear_match_points(self):
         logger.info('Clearing Match Points...')
         cfg.project_data.clear_match_points()
+
 
 
     def initUI(self):
@@ -2264,7 +2264,7 @@ class MainWindow(QMainWindow):
         self.prev_scale_button.setFixedSize(self.std_button_size)
         self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color=cfg.ICON_COLOR))
 
-        self.align_all_button = QPushButton('Align Stack')
+        self.align_all_button = QPushButton('Align')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
         self.align_all_button.clicked.connect(self.run_alignment)

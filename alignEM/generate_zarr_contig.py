@@ -13,7 +13,8 @@ import numpy as np
 from PIL import Image
 from alignEM.image_utils import get_image_size
 from alignEM.mp_queue import TaskQueue
-from alignEM.em_utils import get_scale_key, get_scale_val, get_scales_list, get_num_scales, get_aligned_scales_list
+from alignEM.em_utils import get_cur_scale_key, get_scale_key, get_scale_val, get_scales_list, get_num_scales, \
+    get_aligned_scales_list, get_images_list_directly
 import alignEM.config as cfg
 from contextlib import contextmanager
 # import numcodecs
@@ -39,40 +40,34 @@ def time_limit(seconds):
         signal.alarm(0)
 
 def generate_zarr_contig(src, out):
+    logger.debug('generate_zarr_contig:')
     scales_list = get_scales_list()
-    scales_str = ",".join([str(s) for s in scales_list])
     chunks = '64'
-    scale_1 = os.path.join(src, 'scale_1', 'img_aligned')
-    imgs = sorted(os.listdir(scale_1))
-    n_imgs = len(imgs)
-    n_scales = get_num_scales()
-    n_tasks = n_imgs * n_scales
-    print('out: %s' % out)
     if os.path.isdir(out):
-
         try:
             with time_limit(15):
                 logger.info('Removing %s...' % out)
                 shutil.rmtree(out, ignore_errors=True)
         except TimeoutException as e:
             print("Timed out!")
-
         logger.info('Finished Removing Files')
-    # store = zarr.NestedDirectoryStore(out, dimension_separator='/')
     store = zarr.DirectoryStore(out, dimension_separator='/')
     root = zarr.group(store=store, overwrite=True)
-    logger.info('\n%s' % root.info)
-    datasets = []
+
+    n_imgs = len(get_images_list_directly(os.path.join(src, get_cur_scale_key())))
     al_scales_list = get_aligned_scales_list()
-    logger.info('Aligned Scales List: %s' % al_scales_list)
+    print(al_scales_list)
+    n_scales = len(al_scales_list)
+    estimated_n_tasks = n_imgs * n_scales #TECHNICALLY THIS SHOULD TAKE INTO ACCOUNT SKIPS
+    datasets = []
     for scale in al_scales_list:
+        imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_aligned')))
+        n_imgs = len(imgs)
         width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+        print('Image dimensions at Scale %s: %dpx x %dpx' % (scale[-1], width, height))
         scale_val = get_scale_val(scale)
         name = 's' + str(scale_val)
-        logger.info('Creating a Zarr dataset named %s' % name)
-        # from Docs:
-        # z = zarr.zeros(1000000, compressor=Blosc(cname='zstd', clevel=1, shuffle=Blosc.SHUFFLE))
-
+        logger.info('Creating a Zarr dataset named %s' % name)Re
         opt_cname = cfg.main_window.cname_combobox.currentText()
         opt_clevel = int(cfg.main_window.clevel_input.text())
         if opt_cname in ('zstd', 'zlib', 'gzip'):
@@ -117,14 +112,15 @@ def generate_zarr_contig(src, out):
 
     tasks = []
     for ID, img in enumerate(imgs):
-        for scale in scales_list:
+        for scale in al_scales_list:
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))
             width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
-            tasks.append([ID, img, src, path_out, scale, chunks, n_tasks, width, height, scale_val])
+            tasks.append([ID, img, src, path_out, scale, chunks, estimated_n_tasks, width, height, scale_val])
+    n_tasks = len(tasks)
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48)
-    scale_q = TaskQueue(n_tasks=len(tasks))
+    scale_q = TaskQueue(n_tasks=n_tasks)
     scale_q.start(cpus)
     for task in tasks:
         task_args = [sys.executable,
