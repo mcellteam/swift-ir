@@ -1,0 +1,1491 @@
+{
+  "data": {
+    "current_layer": 14,
+    "current_scale": "scale_4",
+    "destination_path": "test2",
+    "panel_roles": [
+      "ref",
+      "base",
+      "aligned"
+    ],
+    "scales": {
+      "scale_1": {
+        "alignment_stack": [
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.101.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.102.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.101.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.103.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.102.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.104.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.103.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.105.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.104.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.106.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.105.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.107.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.106.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.108.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.107.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.109.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.108.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.110.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.109.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.111.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.110.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.112.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.111.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.113.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.112.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.114.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.113.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.115.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_1/img_src/R34CA1-BS12.114.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          }
+        ],
+        "method_data": {
+          "alignment_option": "refine_affine"
+        },
+        "null_cafm_trends": false,
+        "poly_order": 0,
+        "use_bounding_rect": true
+      },
+      "scale_2": {
+        "alignment_stack": [
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.101.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.102.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.101.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.103.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.102.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.104.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.103.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.105.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.104.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.106.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.105.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.107.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.106.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.108.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.107.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.109.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.108.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.110.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.109.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.111.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.110.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.112.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.111.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.113.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.112.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.114.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.113.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "refine_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.115.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_2/img_src/R34CA1-BS12.114.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          }
+        ],
+        "method_data": {
+          "alignment_option": "refine_affine"
+        },
+        "null_cafm_trends": false,
+        "poly_order": 0,
+        "use_bounding_rect": true
+      },
+      "scale_4": {
+        "alignment_stack": [
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.101.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.102.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.101.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.103.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.102.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.104.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.103.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.105.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.104.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.106.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.105.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.107.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.106.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.108.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.107.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.109.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.108.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.110.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.109.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.111.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.110.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.112.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.111.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.113.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.112.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.114.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.113.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          },
+          {
+            "align_to_ref_method": {
+              "method_data": {
+                "alignment_option": "init_affine",
+                "whitening_factor": -0.68,
+                "win_scale_factor": 0.8125
+              },
+              "method_options": {
+                "initial_rotation": 0.0,
+                "initial_scale": 1.0
+              },
+              "method_results": {},
+              "selected_method": "None"
+            },
+            "images": {
+              "base": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.115.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              },
+              "ref": {
+                "filename": "test2/scale_4/img_src/R34CA1-BS12.114.tif",
+                "metadata": {
+                  "annotations": [],
+                  "match_points": []
+                }
+              }
+            },
+            "skip": false
+          }
+        ],
+        "method_data": {
+          "alignment_option": "init_affine"
+        },
+        "null_cafm_trends": false,
+        "poly_order": 0,
+        "use_bounding_rect": true
+      }
+    },
+    "source_path": ""
+  },
+  "method": "None",
+  "user_settings": {
+    "max_image_file_size": 100000000,
+    "use_c_version": true
+  },
+  "version": 0.31
+}

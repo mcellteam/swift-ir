@@ -64,7 +64,7 @@ def generate_zarr_contig(src, out):
     logger.info('\n%s' % root.info)
     datasets = []
     al_scales_list = get_aligned_scales_list()
-
+    logger.info('Aligned Scales List: %s' % al_scales_list)
     for scale in al_scales_list:
         width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
         scale_val = get_scale_val(scale)

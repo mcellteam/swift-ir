@@ -5,6 +5,7 @@ using any number of technologies.
 """
 import os
 import json
+import inspect
 import logging
 from copy import deepcopy
 
@@ -18,10 +19,9 @@ logger = logging.getLogger(__name__)
 class DataModel:
     """ Encapsulate data model dictionary and wrap with methods for convenience """
 
-    def __init__(self, data=None):
+    def __init__(self, data=None, name=''):
 
         self._current_version = 0.31
-
 
         if data != None:
             self._project_data = data
@@ -36,7 +36,7 @@ class DataModel:
                     },
                     "data": {
                         "source_path": "",
-                        "destination_path": "",
+                        "destination_path": name,
                         "current_layer": 0,
                         "current_scale": "scale_1",
                         "panel_roles": [
@@ -131,7 +131,7 @@ class DataModel:
 
     def ensure_proper_data_structure(self):
         '''Ensure that the data model is usable.'''
-        logger.info('ensure_proper_data_structure >>>>')
+        logger.info('ensure_proper_data_structure (Called By %s)' % inspect.stack()[1].function)
         '''  '''
         scales_dict = self._project_data['data']['scales']
         coarsest = list(scales_dict.keys())[-1]
@@ -154,7 +154,7 @@ class DataModel:
 
     def link_all_stacks(self):
         '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
-        logger.debug('link_all_stacks >>>>')
+        logger.info('link_all_stacks >>>>')
         self.ensure_proper_data_structure()  # 0712 #0802 #original
         for scale_key in self._project_data['data']['scales'].keys():
             skip_list = []
@@ -186,11 +186,7 @@ class DataModel:
                             self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename=ref_fn)
                         else:
                             base_layer['images']['ref']['filename'] = ref_fn
-
-        # cfg.main_window.update_win_self()
-        # cfg.main_window.center_all_images()  # 0702 necessary call
-        # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
-        logger.debug('<<<< link_all_stacks')
+        logger.info('<<<< link_all_stacks')
 
     def upgrade_data_model(self, data_model):
         # Upgrade the "Data Model"
@@ -363,6 +359,20 @@ class DataModel:
     def clear_method_results(self, scale_key, start_layer=0):
         for layer in self._project_data['data']['scales'][scale_key]['alignment_stack'][start_layer:]:
             layer['align_to_ref_method']['method_results'] = {}
+
+    def clear_match_points(self):
+        logger.info("Deleting all match points for this layer")
+        scale_key = cfg.project_data['data']['current_scale']
+        layer_num = cfg.project_data['data']['current_layer']
+        stack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
+        layer = stack[layer_num]
+        for role in layer['images'].keys():
+            if 'metadata' in layer['images'][role]:
+                layer['images'][role]['metadata']['match_points'] = []
+                layer['images'][role]['metadata']['annotations'] = []
+        self.update_panels()
+        self.refresh_all_images()
+        self.match_point_mode = False
 
 
 # # layer_dict as defined in run_project_json.py:
