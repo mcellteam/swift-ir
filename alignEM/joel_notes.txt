@@ -95,6 +95,7 @@ Important:
 [] project directory validator
 [] ZOOM
 [] SWIM randomly misfires
+[] hide skipped images
 
 
 Things project_data should include:

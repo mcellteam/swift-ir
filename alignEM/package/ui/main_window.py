@@ -30,6 +30,7 @@ from package.compute_affines import compute_affines
 from package.apply_affines import generate_aligned
 from package.generate_scales import generate_scales
 from package.generate_zarr import generate_zarr
+from package.generate_zarr_contig import generate_zarr_contig
 from package.view_3dem import View3DEM
 from .head_up_display import HeadUpDisplay
 from .image_library import ImageLibrary, SmartImageLibrary
@@ -557,8 +558,9 @@ class MainWindow(QMainWindow):
         
         self.set_status('Exporting...')
         src = os.path.abspath(cfg.project_data['data']['destination_path'])
-        out = os.path.join(src, '3dem.zarr')
-        generate_zarr(src=src, out=out)
+        out = os.path.abspath(os.path.join(src, '3dem.zarr'))
+        # generate_zarr(src=src, out=out)
+        generate_zarr_contig(src=src, out=out)
 
         self.clevel = str(self.clevel_input.text())
         self.cname = str(self.cname_combobox.currentText())
@@ -1859,15 +1861,30 @@ class MainWindow(QMainWindow):
             # s.position = [0, 0, 0]
 
             '''Set Dimensions'''
-            # s.dimensions = ng.CoordinateSpace(
-            #     names=["z", "y", "x"],
-            #     units=["nm", "nm", "nm"],
-            #     scales=[res_z, res_y, res_x]
-            # )
+            s.dimensions = ng.CoordinateSpace(
+                names=["z", "y", "x"],
+                units=["nm", "nm", "nm"],
+                scales=[res_z, res_y, res_x]
+            )
 
-            layers = ['layer_' + str(x) for x in range(get_num_aligned())]
-            for i, layer in enumerate(layers):
-                s.layers[layer] = ng.ImageLayer(source="zarr://http://localhost:9000/" + str(i))
+            '''generate_zarr_contig.py ONLY'''
+            # layers = []
+            # for scale in get_scales_list():
+            #     scale_val = get_scale_val(scale)
+            #     layer_name = 's' + str(scale_val)
+            #     layers.append(layer_name)
+            #     # s.layers[scale] = ng.ImageLayer(source="zarr://http://localhost:9000/" + str(scale_val))
+            #     s.layers[layer_name] = ng.ImageLayer(source="zarr://http://localhost:9000/")
+            #     # s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:9000/")
+            s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:9000/")
+            # s.layers['s1'] = ng.ImageLayer(source="zarr://http://localhost:9000/s1")
+            # s.layers['s2'] = ng.ImageLayer(source="zarr://http://localhost:9000/s2")
+            # s.layers['s4'] = ng.ImageLayer(source="zarr://http://localhost:9000/s4")
+
+            '''generate_zarr.py ONLY'''
+            # layers = ['layer_' + str(x) for x in range(get_num_aligned())]
+            # for i, layer in enumerate(layers):
+            #     s.layers[layer] = ng.ImageLayer(source="zarr://http://localhost:9000/" + str(i))
 
             # s.layers.append( name="one_layer", ...)
             # s.layers['layer_0'].visible = True
@@ -1876,7 +1893,9 @@ class MainWindow(QMainWindow):
                 [
                     ng.LayerGroupViewer(
                         layout='4panel',
-                        layers=layers
+                        # layers=layers
+                        # layers=['s1','s2','s4']
+                        layers=['multiscale_img']
                     )
                 ]
             )
@@ -1888,7 +1907,7 @@ class MainWindow(QMainWindow):
             # s.input_event_bindings.viewer['keyu'] = 'unchunk_'
             # s.input_event_bindings.viewer['keyb'] = 'blend_'
             # s.status_messages['message'] = 'Welcome to AlignEM_SWiFT'
-            s.show_ui_controls = False
+            s.show_ui_controls = True
             s.show_panel_borders = True
             s.viewer_size = None
 
