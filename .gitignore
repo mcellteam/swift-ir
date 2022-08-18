@@ -1,29 +1,13 @@
-Cross_Platform/*
-.idea
-.idea/*
-Image_Libs/*
-swift-ir/*.jpg
-swift-ir/*.JPG
-swift-ir/*.tif
-swift-ir/*.tiff
-swift-ir/*.png
-swift-ir/*.xcf
-swift-ir/*.mir
-swift-ir/*.txt
-swift-ir/*.json
-swift-ir/*.sh
+**/.DS_Store
+**/.idea
+**/*.jpg
+**/*.tif
+**/*.tiff
 versions/*
 tests/FWNGV
 data/*
 *.tar
 *.class
-remod_old
-fftw
-jpeg
-png
-tiff
-gbm
-libraries
 *.jpg
 *.jpeg
 *.png
@@ -31,20 +15,17 @@ libraries
 *.json
 alignEM/.DS_Store
 alignEM/joel_notes.txt
-alignEM/alignEM/_stylesheet.qss
-alignEM/deprecated.txt
-**/.DS_Store
-alignEM/sandbox
-alignEM/sandbox/*
-alignEM/package/out.zarr
-alignEM/package/out.zarr/*
-alignEM/keep.JPG
-alignEM/best.JPG
-alignEM/newtarg.JPG
+sandbox/
+sandbox/*
+package/out.zarr
+package/out.zarr/*
+keep.JPG
+best.JPG
+newtarg.JPG
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
-__pycache__/
+**/__pycache__
 *.py[cod]
 *$py.class
 
@@ -69,12 +50,6 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
-
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
 
 # Installer logs
 pip-log.txt
@@ -106,4 +81,3 @@ venv.bak/
 
 # mkdocs documentation
 /site
-
