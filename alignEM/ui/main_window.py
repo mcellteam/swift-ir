@@ -66,9 +66,6 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
-        self.project_filename = None
-        self.mouse_down_callback = None
-        self.mouse_move_callback = None
         self.init_dir = os.getcwd()
         fg = self.frameGeometry()
         cp = QGuiApplication.primaryScreen().availableGeometry().center()
@@ -147,6 +144,7 @@ class MainWindow(QMainWindow):
         
         self.draw_border = False
         self.draw_annotations = True
+
         self.panel_list = []
 
         self.inspector_label_skips = QLabel()
@@ -181,6 +179,8 @@ class MainWindow(QMainWindow):
         self.inspector_cpu.setContentLayout(lay)
         dock_vlayout.addStretch()
 
+        self.match_point_mode = False
+
         '''Initialize UI'''
         self.initUI()
 
@@ -193,6 +193,7 @@ class MainWindow(QMainWindow):
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
 
+        #menu
         #   0:MenuName
         #   1:Shortcut-or-None
         #   2:Action-Function
@@ -221,6 +222,14 @@ class MainWindow(QMainWindow):
              ],
             ['&Tools',
              [
+                 ['Toggle Match Point Align', None, self.toggle_match_point_align, None, None, None],
+                 ['&Match Point Align Mode',
+                  [
+                      ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
+                      ['Clear Match Points', None, self.clear_match_points, None, None, None],
+
+                  ]
+                  ],
                  ['Plot SNRs', None, self.show_snr_plot, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
                  ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
@@ -234,8 +243,8 @@ class MainWindow(QMainWindow):
                       ['++1', 'Ctrl+]', self.cycle_user_progress, None, None, None],
                   ]
                   ],
-                 ['&View K Image', 'Ctrl+K', self.view_k_img, None, None, None],
-                 ['&Stylesheets',
+                 ['View &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
+                 ['Stylesheets',
                   [
                       ['Style #1 - Joel Style', None, self.apply_stylesheet_1, None, None, None],
                       # ['Style #2 - Light2', None, self.apply_stylesheet_2, None, None, None],
@@ -246,7 +255,7 @@ class MainWindow(QMainWindow):
                       ['Minimal', None, self.minimal_stylesheet, None, None, None],
 
                   ]
-                  ],
+                ],
 
              ]
              ],
@@ -296,14 +305,13 @@ class MainWindow(QMainWindow):
         
         for item in menu_list:
             if type(item[1]) == type([]):
-                # This is a submenu
+                '''This is a sub-menu'''
                 sub = parent.addMenu(item[0])
                 self.build_menu_from_list(sub, item[1])
             else:
-                # This is a menu item (action) or a separator
+                '''This is a menu item (action) or a separator'''
                 if item[0] == '-':
-                    # This is a separator
-                    parent.addSeparator()
+                    parent.addSeparator() # This is a separator
                 else:
                     # This is a menu item (action) with name, accel, callback
                     action = QAction(item[0], self)
@@ -1222,14 +1230,17 @@ class MainWindow(QMainWindow):
             return
 
         logger.info("Overwriting project data in memory with project template")
-        cfg.project_data = DataModel()
+        '''Create new DataModel object'''
+
+
+        if not filename.endswith('.json'):
+            filename += ".json"
         logger.info("Creating new project %s" % filename)
-        self.project_filename = filename
-        self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
-        p, e = os.path.splitext(self.project_filename)
-        cfg.project_data['data']['destination_path'] = p
+        path, extension = os.path.splitext(filename)
+        cfg.project_data = DataModel(name=path)
         makedirs_exist_ok(cfg.project_data['data']['destination_path'], exist_ok=True)
-        self.save_project_to_file()
+        self.setWindowTitle("Project: " + os.path.split(cfg.project_data.name())[-1])
+        self.save_project()
         self.set_progress_stage_1()
         self.scales_combobox.clear()  # why? #0528
         cfg.project_data.settings()
@@ -1321,40 +1332,34 @@ class MainWindow(QMainWindow):
         return (button == QMessageBox.StandardButton.Yes)
     
     def open_project(self):
-        logger.debug('open_project >>>>')
+        logger.info('Opening Project...')
         self.set_status("Project...")
-        # self.scales_combobox_switch = 0 #0718-
         filename = self.open_project_dialog()
         if filename != '':
             with open(filename, 'r') as f:
                 proj_copy = json.load(f)
             # proj_copy = upgrade_data_model(proj_copy)  # Upgrade the "Data Model"
             proj_copy = DataModel(proj_copy)  # Upgrade the "Data Model"
-            if type(proj_copy) == type('abc'):  # abc = abstract base class
-                # There was a known error loading the data model
-                self.hud.post('There was a problem loading the project file.', logging.ERROR)
-                logger.warning("type=abc | Project %s has abstract base class" % proj_copy)
+            if type(proj_copy) == type('abc'):
+                self.hud.post('There Was a Problem Loading the Project File', logging.ERROR)
+                logger.warning("Project Type is Abstract Base Class - Unable to Load!")
                 self.set_idle()
                 return
             self.hud.post("Loading project '%s'" % filename)
-            self.project_filename = filename
-            self.setWindowTitle("Project: " + os.path.split(self.project_filename)[-1])
+            self.setWindowTitle("Project: %s" % os.path.basename(cfg.project_data.name()))
             logger.debug('Modifying the copy to use absolute paths internally')
-            
+
             # Modify the copy to use absolute paths internally
-            if 'destination_path' in proj_copy['data']:
-                if proj_copy['data']['destination_path'] != None:
-                    if len(proj_copy['data']['destination_path']) > 0:
-                        proj_copy['data']['destination_path'] = make_absolute(
-                            proj_copy['data']['destination_path'], self.project_filename)
+            # make_absolute(file_path, proj_path)
+            logger.info("proj_copy['data']['destination_path'] was: %s" % proj_copy['data']['destination_path'])
+            proj_copy['data']['destination_path'] = make_absolute(proj_copy['data']['destination_path'], filename)
+            logger.info('make_absolute is returning: %s' % proj_copy['data']['destination_path'])
+
             for scale_key in proj_copy['data']['scales'].keys():
                 scale_dict = proj_copy['data']['scales'][scale_key]
                 for layer in scale_dict['alignment_stack']:
                     for role in layer['images'].keys():
-                        if layer['images'][role]['filename'] != None:
-                            if len(layer['images'][role]['filename']) > 0:
-                                layer['images'][role]['filename'] = make_absolute(
-                                    layer['images'][role]['filename'], self.project_filename)
+                        layer['images'][role]['filename'] = make_absolute(layer['images'][role]['filename'], filename)
             
             cfg.project_data = copy.deepcopy(proj_copy)  # Replace the current version with the copy
             logger.info('Ensuring proper data structure...')
@@ -1364,13 +1369,13 @@ class MainWindow(QMainWindow):
             self.reload_scales_combobox()
             self.auto_set_user_progress()
             self.update_scale_controls()
+            self.image_panel.setFocus()
             if are_images_imported():
                 self.generate_scales_button.setEnabled(True)
             self.center_all_images()
-            self.hud.post("Project '%s'" % self.project_filename)
+            self.hud.post("Project '%s'" % cfg.project_data.name())
         else:
             self.hud.post("No project file (.json) was selected")
-        self.image_panel.setFocus()
         self.set_idle()
         logger.debug('<<<< open_project')
     
@@ -1379,7 +1384,7 @@ class MainWindow(QMainWindow):
         self.set_status("Saving...")
         try:
             self.save_project_to_file()
-            self.hud.post("Project saved as '%s'" % self.project_filename)
+            self.hud.post("Project saved as '%s'" % cfg.project_data.name())
         except:
             print_exception()
             self.hud.post('Save Project Failed', logging.ERROR)
@@ -1393,37 +1398,40 @@ class MainWindow(QMainWindow):
         if filename != '':
             try:
                 self.save_project_to_file()
-                self.hud.post("Project saved as '%s'" % self.project_filename)
+                self.hud.post("Project saved as '%s'" % cfg.project_data.name())
             except:
                 print_exception()
                 self.hud.post('Save Project Failed', logging.ERROR)
                 self.set_idle()
-        
         self.set_idle()
     
     def save_project_to_file(self):
         logger.debug('Saving project...')
         if self.get_user_progress() > 1: #0801+
             self.read_gui_update_project_data()
-        if not self.project_filename.endswith('.json'):
-            self.project_filename += ".json"
+        # if not cfg.project_data['data']['destination_path'].endswith('.json'): #0818-
+        #     cfg.project_data['data']['destination_path'] += ".json"
         proj_copy = copy.deepcopy(cfg.project_data.to_dict())
         if cfg.project_data['data']['destination_path'] != None:
             if len(proj_copy['data']['destination_path']) > 0:
                 proj_copy['data']['destination_path'] = make_relative(
-                    proj_copy['data']['destination_path'], self.project_filename)
+                    proj_copy['data']['destination_path'], cfg.project_data['data']['destination_path'])
         for scale_key in proj_copy['data']['scales'].keys():
             scale_dict = proj_copy['data']['scales'][scale_key]
             for layer in scale_dict['alignment_stack']:
                 for role in layer['images'].keys():
                     if layer['images'][role]['filename'] != None:
                         if len(layer['images'][role]['filename']) > 0:
-                            layer['images'][role]['filename'] = make_relative(layer['images'][role]['filename'], self.project_filename)
-        logger.info("Writing data to '%s'" % self.project_filename)
+                            layer['images'][role]['filename'] = make_relative(layer['images'][role]['filename'], cfg.project_data.name())
+        logger.info("Writing data to '%s'" % cfg.project_data.name())
         logger.info('---- WRITING DATA TO PROJECT FILE ----')
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         proj_json = jde.encode(proj_copy)
-        with open(self.project_filename, 'w') as f:
+
+        name = cfg.project_data.name()
+        if not name.endswith('.json'): #0818-
+            name += ".json"
+        with open(name, 'w') as f:
             f.write(proj_json)
     
     @Slot()
@@ -1460,10 +1468,9 @@ class MainWindow(QMainWindow):
         logger.debug("  Action: " + str(option_action))
     
     def add_image_to_role(self, image_file_name, role_name):
-        logger.debug('adding image %s to role %s' % (image_file_name, role_name))
+        logger.debug("Adding Image %s to Role '%s'" % (image_file_name, role_name))
         #### prexisting note: This function is now much closer to empty_into_role and should be merged
         scale = get_cur_scale_key()
-        logger.debug("add_image_to_role | Placing file " + str(image_file_name) + " in role " + str(role_name))
         if image_file_name != None:
             if len(image_file_name) > 0:
                 used_for_this_role = [role_name in l['images'].keys() for l in
@@ -1544,6 +1551,7 @@ class MainWindow(QMainWindow):
             cfg.project_data.link_all_stacks()
             self.center_all_images()
             self.update_panels()
+            self.save_project()
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
         
@@ -1984,6 +1992,8 @@ class MainWindow(QMainWindow):
         # else:
         #     pass
 
+
+
     def skip_changed_callback(self, state):  # 'state' is connected to skip toggle
         logger.info("skip_changed_callback(state=%s):" % str(state))
         '''Toggle callback for skip image function. Note: a signal is emitted regardless of whether a user or another part
@@ -2008,6 +2018,19 @@ class MainWindow(QMainWindow):
             copy_skips_to_all_scales()
             cfg.project_data.link_all_stacks()  # 0525
             cfg.main_window.center_all_images()
+
+
+    def toggle_match_point_align(self):
+        self.match_point_mode = not self.match_point_mode
+        if self.match_point_mode:
+            logger.info('Match Point Mode is now ON')
+        else:
+            logger.info('Match Point Mode is now OFF')
+
+    def clear_match_points(self):
+        logger.info('Clearing Match Points...')
+        cfg.project_data.clear_match_points()
+
 
     def initUI(self):
 

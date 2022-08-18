@@ -271,9 +271,65 @@ class ZoomPanWidget(QWidget):
     #     # return QSize(180, 180) #0719-
     #     # return
 
+    def mouse_down_callback(self, role, screen_coords, image_coords, button):
+        # global match_pt_mode
+        # if match_pt_mode.get_value():
+        if cfg.main_window.match_point_mode == True:
+            logger.info("Adding a match point for role \"" + str(role) + "\" at " + str(
+                screen_coords) + " == " + str(image_coords))
+            scale_key = cfg.project_data['data']['current_scale']
+            layer_num = cfg.project_data['data']['current_layer']
+            stack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
+            layer = stack[layer_num]
+
+            if not 'metadata' in layer['images'][role]:
+                layer['images'][role]['metadata'] = {}
+
+            metadata = layer['images'][role]['metadata']
+
+            if not 'match_points' in metadata:
+                metadata['match_points'] = []
+            match_point_data = [c for c in image_coords]
+            metadata['match_points'].append(match_point_data)
+
+            if not 'annotations' in metadata:
+                metadata['annotations'] = []
+            '''
+            # Use default colors when commented, so there are no colors in the JSON
+            if not 'colors' in metadata:
+                metadata['colors'] = [ [ 255, 0, 0 ], [ 0, 255, 0 ], [ 0, 0, 255 ], [ 255, 255, 0 ], [ 255, 0, 255 ], [ 0, 255, 255 ] ]
+            '''
+
+            match_point_data = [m for m in match_point_data]
+
+            color_index = len(metadata['annotations'])
+            match_point_data.append(color_index)
+
+            metadata['annotations'].append("circle(%f,%f,10,%d)" % tuple(match_point_data))
+            for ann in metadata['annotations']:
+                logger.info("   Annotation: " + str(ann))
+            return (True)  # Lets the framework know that the click has been handled
+        else:
+            logger.info("Do Normal Processing")
+            return (False)  # Lets the framework know that the click has not been handled
+
 
     def mousePressEvent(self, event):
+        print('mousePressEvent:')
         self.update_zpa_self()
+        ex = event.x()
+        ey = event.y()
+
+        print('self.role            : %s' % self.role)
+        print('(ex, ey)             : %s' % str((ex, ey)))
+        print('self.image_x(ex)     : %s' % str(self.image_x(ex)))
+        print('self.image_y(ey)     : %s' % str(self.image_y(ey)))
+        print('int(event.button())  : %s' % str(int(event.button())))
+
+        event_handled = self.mouse_down_callback(
+            self.role,
+            (ex, ey),
+            (self.image_x(ex), self.image_y(ey)), int(event.button()))
 
 
     def mouseMoveEvent(self, event):
