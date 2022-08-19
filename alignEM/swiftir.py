@@ -879,21 +879,21 @@ def copyTriangle(dst, src, tria, afm):
 if __name__=='__main__':
     print("Running " + __file__ + ".__main__()")
 
-    import time
-    import matplotlib.pyplot as plt
     import sys
+    import time
+    # import matplotlib.pyplot as plt
 
     def simpleTest(img, im2):
         cut1 = extractStraightWindow(img)
         cut2 = extractStraightWindow(im2)
         apo1 = apodize(cut1)
         ff1 = fft(apo1)
-        plt.figure(1)
-        plt.imshow(apo1)
-        plt.figure(2)
-        plt.imshow(cut2)
-        plt.figure(3)
-        plt.imshow(alignmentImage(apo1, cut2))
+        # plt.figure(1)
+        # plt.imshow(apo1)
+        # plt.figure(2)
+        # plt.imshow(cut2)
+        # plt.figure(3)
+        # plt.imshow(alignmentImage(apo1, cut2))
         dxy = swim(ff1, cut2)
         print('Point in center:', dxy)
 
