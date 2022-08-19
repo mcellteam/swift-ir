@@ -30,7 +30,6 @@ from alignEM.compute_affines import compute_affines
 from alignEM.apply_affines import generate_aligned
 from alignEM.generate_scales import generate_scales
 from alignEM.generate_zarr import generate_zarr
-from alignEM.generate_zarr_contig import generate_zarr_contig
 from alignEM.view_3dem import View3DEM
 from .head_up_display import HeadUpDisplay
 from .image_library import ImageLibrary, SmartImageLibrary
@@ -564,7 +563,7 @@ class MainWindow(QMainWindow):
         src = os.path.abspath(cfg.project_data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, '3dem.zarr'))
         # generate_zarr(src=src, out=out)
-        generate_zarr_contig(src=src, out=out)
+        generate_zarr(src=src, out=out)
 
         self.clevel = str(self.clevel_input.text())
         self.cname = str(self.cname_combobox.currentText())
@@ -758,14 +757,17 @@ class MainWindow(QMainWindow):
         x_axis = [x for x in range(0, len(snr_list))]
         # pen = pg.mkPen(color=(255, 0, 0), width=5, style=Qt.SolidLine)
         pen = pg.mkPen(color=(0, 0, 0), width=5, style=Qt.SolidLine)
+        self.plot_widget = pg.PlotWidget()
         styles = {'color': '#000000', 'font-size': '13px'}
         # self.plot_widget.setXRange(0, get_num_imported_images())
         # self.plot_widget.setBackground(QColor(100, 50, 254, 25))
         self.plot_widget.plot(x_axis, snr_list, name="SNR", pen=pen, symbol='+')
+        self.plot_widget.showGrid(x=True,y=True)
         self.plot_widget.setLabel('left', 'SNR', **styles)
         self.plot_widget.setLabel('bottom', 'Layer', **styles)
-        # self.plot_widget.setXRange(0,len(snr_list))
-        # x_ax = self.plot_widget.getAxis("bottom")
+        styles = {'color': 'r', 'font-size': '20px'}
+        self.graphWidget.setLabel('left', 'SNR', **styles)
+        self.graphWidget.setLabel('bottom', 'Image #', **styles)
         self.main_panel_bottom_widget.setCurrentIndex(1)
 
     @Slot()
