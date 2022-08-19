@@ -111,6 +111,8 @@ class TaskQueue:
         logger.debug('TaskQueue.start | sys.getsizeof(self.task_dict) = ', sys.getsizeof(self.task_dict))
         self.task_id = 0
         self.n_workers = n_workers
+
+        logger.info('Number of Workers: %d' % self.n_workers)
         self.retries = retries
         self.task_dict = {}
 
