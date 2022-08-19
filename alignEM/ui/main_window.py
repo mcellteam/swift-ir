@@ -1343,9 +1343,6 @@ class MainWindow(QMainWindow):
                 self.set_idle()
                 return
             self.hud.post("Loading project '%s'" % filename)
-            self.setWindowTitle("Project: %s" % os.path.basename(cfg.project_data.name()))
-            logger.debug('Modifying the copy to use absolute paths internally')
-
             # Modify the copy to use absolute paths internally
             # make_absolute(file_path, proj_path)
             logger.info("proj_copy['data']['destination_path'] was: %s" % proj_copy['data']['destination_path'])
@@ -1370,6 +1367,7 @@ class MainWindow(QMainWindow):
             if are_images_imported():
                 self.generate_scales_button.setEnabled(True)
             self.center_all_images()
+            self.setWindowTitle("Project: %s" % os.path.basename(cfg.project_data.name()))
             self.hud.post("Project '%s'" % cfg.project_data.name())
         else:
             self.hud.post("No project file (.json) was selected")
