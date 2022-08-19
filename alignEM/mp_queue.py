@@ -117,16 +117,23 @@ class TaskQueue:
         logger.info('Using %d workers in parallel to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
         # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
         print('mp_queue.start | self.n_tasks = ', self.n_tasks)
-        # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
-        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
-        self.pbar_proc.start()
+        try:
+            self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
+            # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
+            self.pbar_proc.start()
+        except:
+            logger.warning('There Was a Problem Launching the Progress Bar Process')
+
         for i in range(self.n_workers):
             sys.stderr.write('Starting Worker %d >>>>>>>>' % i)
-            # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-            p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-            # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
-            self.workers.append(p)
-            self.workers[i].start()
+            try:
+                p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
+                # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
+                # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
+                self.workers.append(p)
+                self.workers[i].start()
+            except:
+                logger.warning('Launching Worker # %d Triggered An Exception' % i)
         logger.debug('<<<< Exiting TaskQueue.start')
 
     def restart(self) -> None:
@@ -136,15 +143,23 @@ class TaskQueue:
         self.result_queue = self.ctx.Queue()
         self.pbar_q = self.ctx.Queue()
         self.workers = []
-        # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
-        self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
-        self.pbar_proc.start()
+        try:
+            self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks,))
+            # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
+            self.pbar_proc.start()
+        except:
+            logger.warning('There Was a Problem Launching the Progress Bar Process')
         for i in range(self.n_workers):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
-            # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-            p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-            self.workers.append(p)
-            self.workers[i].start()
+            try:
+                p = self.ctx.Process(target=worker, daemon=True, args=(
+                i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q,))
+                # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
+                # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
+                self.workers.append(p)
+                self.workers[i].start()
+            except:
+                logger.warning('Restarting Worker # %d Triggered An Exception' % i)
         logger.debug('<<<<  TaskQueue.restart')
 
     def end_tasks(self) -> None:
