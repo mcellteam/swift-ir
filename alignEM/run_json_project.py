@@ -750,7 +750,8 @@ class align_ingredient:
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
 
         # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img')
-        kip = 'keep.JPG'
+        # kip = 'keep.JPG'
+        # ' -k  ' + kip + \
 
         logger.critical('kip = ' + kip)
 
@@ -763,7 +764,6 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' -k  ' + kip + \
                               ' ' + karg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
