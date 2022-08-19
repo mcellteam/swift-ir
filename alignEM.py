@@ -48,7 +48,6 @@ import argparse
 import subprocess
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
-# from ui.interface import MainWindow
 from alignEM.ui.main_window import MainWindow
 import alignEM.config as cfg
 
@@ -114,9 +113,9 @@ if 'tqdm' not in installed_packages:
 
 if __name__ == "__main__":
 
-    # sys.stdout.write('\n===================================================================================\n')
-    # sys.stdout.write('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.\n')
-    # sys.stdout.write('===================================================================================\n\n')
+    sys.stdout.write('\n===================================================================================\n')
+    sys.stdout.write('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.\n')
+    sys.stdout.write('===================================================================================\n\n')
 
     # CSI = "\x1B["
     # print('\n' + '\x1b[6;30;42m' + '0m' * 45)
@@ -125,8 +124,8 @@ if __name__ == "__main__":
     # print('\x1b[6;30;42m' + 'You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
     # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
 
-    print(
-        '\x1b[6;30;42m' + 'You are aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
+    # print(
+    #     '\x1b[6;30;42m' + 'You are aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
 
     sys.stdout.flush()
     logger.info("Running " + __file__ + ".__main__()")
