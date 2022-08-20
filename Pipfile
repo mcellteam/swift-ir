@@ -15,7 +15,6 @@ tifffile = "*"
 neuroglancer = "*"
 "funlib.geometry" = {git = "https://github.com/funkelab/funlib.geometry.git"}
 "funlib.math" = {git = "https://github.com/funkelab/funlib.math.git"}
-daisy = {git = "https://github.com/funkelab/daisy.git"}
 pyqt6 = "*"
 pyqt6-webengine = "*"
 pyside2 = "*"
