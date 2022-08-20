@@ -1786,7 +1786,6 @@ class MainWindow(QMainWindow):
         self.hud.post("Switching to AlignEM_SWiFT Documentation")
         # don't force the reload, add home button instead
         self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
-        time.sleep(1)
         self.main_widget.setCurrentIndex(2)
 
     def documentation_view_home(self):
@@ -1830,7 +1829,7 @@ class MainWindow(QMainWindow):
 
     def webgl2_test(self):
         logger.info("Running WebGL 2.0 Test In Web Browser...")
-        self.browser__remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        self.browser_docs.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.main_widget.setCurrentIndex(2)
 
 
