@@ -1836,17 +1836,17 @@ class MainWindow(QMainWindow):
 
     def google(self):
         logger.info("Running Google in Web Browser...")
-        self.browser_remote.setUrl(QUrl('https://www.google.com'))
+        self.browser_docs.setUrl(QUrl('https://www.google.com'))
         self.main_widget.setCurrentIndex(2)
 
     def about_config(self):
         logger.info("Running about:config in Web Browser...")
-        self.browser_remote.setUrl(QUrl('about:config'))
+        self.browser_docs.setUrl(QUrl('about:config'))
         self.main_widget.setCurrentIndex(2)
 
     def gpu_config(self):
         logger.info("Running chrome://gpu in Web Browser...")
-        self.browser_remote.setUrl(QUrl('chrome://gpu'))
+        self.browser_docs.setUrl(QUrl('chrome://gpu'))
         self.main_widget.setCurrentIndex(2)
 
 
