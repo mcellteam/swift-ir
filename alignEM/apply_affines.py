@@ -33,7 +33,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     For now, start_layer is always passed the value 0, and
     num_layers is always passed the value -1.
     '''
-    logger.critical('\n____________Generate Aligned Start____________')
+    logger.critical('>>>>>>>> Generate Aligned Start <<<<<<<<')
     
     '''NEED AN IMMEDIATE CHECK RIGHT HERE TO SEE IF ALIGNMENT DATA EVEN EXISTS AND LOOKS CORRECT'''
 
@@ -137,7 +137,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     task_queue.stop()
     del task_queue
 
-    logger.critical('\n____________Generate Aligned End____________')
+    logger.critical('>>>>>>>> Generate Aligned End <<<<<<<<')
 
 
 def create_align_directories(scale_key):

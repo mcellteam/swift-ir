@@ -74,7 +74,8 @@ class HeadUpDisplay(QWidget):
         te.setStyleSheet("""
             /*background-color: #d3dae3;*/
             /*background-color:  #f5ffff;*/
-            background-color:  #151a1e;
+            /*background-color:  #151a1e;*/
+            background-color:  #000000;
             /*border-style: solid;*/
             border-style: inset;
             /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */

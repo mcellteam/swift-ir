@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_scales(progress_callback=None):
-    logger.critical('\n____________Generate Scales Start____________')
+    logger.critical('>>>>>>>> Generate Scales Start <<<<<<<<')
     
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
@@ -139,7 +139,7 @@ def generate_scales(progress_callback=None):
     dt = time.time() - t0
     cfg.main_window.hud.post("Scaling completed in %.2f seconds" % dt)
     
-    logger.critical('\n____________Generate Scales End____________')
+    logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')
 
 
 

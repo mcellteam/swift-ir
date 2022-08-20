@@ -752,8 +752,7 @@ class align_ingredient:
         # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img')
         # kip = 'keep.JPG'
         # ' -k  ' + kip + \
-
-        logger.critical('kip = ' + kip)
+        # logger.critical('kip = ' + kip)
 
         for i in range(len(self.psta[0])):
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
