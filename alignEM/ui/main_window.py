@@ -284,6 +284,7 @@ class MainWindow(QMainWindow):
                  ['Print SNR List', None, print_snr_list, None, None, None],
                  ['Print .dat Files', None, print_dat_files, None, None, None],
                  ['Print Working Directory', None, print_path, None, None, None],
+                 ['Google', None, self.google, None, None, None],
                  ['Test Web GL2.0', None, self.webgl2_test, None, None, None],
              ]
              ],
@@ -1827,6 +1828,11 @@ class MainWindow(QMainWindow):
         logger.info("Running WebGL 2.0 Test In Browser...")
         self.main_widget.setCurrentIndex(1)
         self.browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+
+    def google(self):
+        logger.info("Running WebGL 2.0 Test In Browser...")
+        self.main_widget.setCurrentIndex(1)
+        self.browser.setUrl(QUrl('https://www.google.com'))
 
     def print_state_ng(self):
         # viewer_state = json.loads(str(self.ng_viewer.state))
