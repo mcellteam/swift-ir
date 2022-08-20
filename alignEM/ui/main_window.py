@@ -285,6 +285,8 @@ class MainWindow(QMainWindow):
                  ['Print .dat Files', None, print_dat_files, None, None, None],
                  ['Print Working Directory', None, print_path, None, None, None],
                  ['Google', None, self.google, None, None, None],
+                 ['about:config', None, self.about_config, None, None, None],
+                 ['chrome://gpu', None, self.gpu_config, None, None, None],
                  ['Test Web GL2.0', None, self.webgl2_test, None, None, None],
              ]
              ],
@@ -1780,10 +1782,12 @@ class MainWindow(QMainWindow):
 
     def documentation_view(self):  # documentationview
         logger.info("Launching documentation view | MainWindow.documentation_view...")
-        self.main_widget.setCurrentIndex(2)
+
         self.hud.post("Switching to AlignEM_SWiFT Documentation")
         # don't force the reload, add home button instead
         self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
+        time.sleep(1)
+        self.main_widget.setCurrentIndex(2)
 
     def documentation_view_home(self):
         logger.info("Launching documentation view home | MainWindow.documentation_view_home...")
@@ -1792,9 +1796,9 @@ class MainWindow(QMainWindow):
 
     def remote_view(self):
         logger.info("Launching remote viewer | MainWindow.remote_view...")
-        self.main_widget.setCurrentIndex(4)
         self.hud.post("Switching to Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
         self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+        self.main_widget.setCurrentIndex(4)
 
     def reload_ng(self):
         logger.info("Reloading Neuroglancer...")
@@ -1825,14 +1829,26 @@ class MainWindow(QMainWindow):
         self.set_idle()
 
     def webgl2_test(self):
-        logger.info("Running WebGL 2.0 Test In Browser...")
-        self.main_widget.setCurrentIndex(1)
-        self.browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        logger.info("Running WebGL 2.0 Test In Web Browser...")
+        self.browser__remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        self.main_widget.setCurrentIndex(2)
+
 
     def google(self):
-        logger.info("Running WebGL 2.0 Test In Browser...")
-        self.main_widget.setCurrentIndex(1)
-        self.browser.setUrl(QUrl('https://www.google.com'))
+        logger.info("Running Google in Web Browser...")
+        self.browser_remote.setUrl(QUrl('https://www.google.com'))
+        self.main_widget.setCurrentIndex(2)
+
+    def about_config(self):
+        logger.info("Running about:config in Web Browser...")
+        self.browser_remote.setUrl(QUrl('about:config'))
+        self.main_widget.setCurrentIndex(2)
+
+    def gpu_config(self):
+        logger.info("Running chrome://gpu in Web Browser...")
+        self.browser_remote.setUrl(QUrl('chrome://gpu'))
+        self.main_widget.setCurrentIndex(2)
+
 
     def print_state_ng(self):
         # viewer_state = json.loads(str(self.ng_viewer.state))
