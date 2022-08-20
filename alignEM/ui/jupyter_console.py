@@ -20,27 +20,28 @@ pipenv install jupyter-client==6.1.12
 pipenv lock
 '''
 
-
-
-class ConsoleWidget(RichJupyterWidget):
+class JupyterConsole(RichJupyterWidget):
 
     def __init__(self, customBanner=None, *args, **kwargs):
-        super(ConsoleWidget, self).__init__(*args, **kwargs)
+        super(JupyterConsole, self).__init__(*args, **kwargs)
+
+        self.set_default_style(colors='linux')
+        self.prompt_to_top()
 
         if customBanner is not None:
             self.banner = customBanner
 
         # self.font_size = 6
-        self.font_size = 5
-        self.kernel_manager = kernel_manager = QtInProcessKernelManager()
-        kernel_manager.start_kernel(show_banner=False)
-        kernel_manager.kernel.gui = 'qt'
-        self.kernel_client = kernel_client = self._kernel_manager.client()
-        kernel_client.start_channels()
+        self.font_size = 4
+        self.kernel_manager = QtInProcessKernelManager()
+        self.kernel_manager.start_kernel(show_banner=False)
+        self.kernel_manager.kernel.gui = 'qt'
+        self.kernel_client = self._kernel_manager.client()
+        self.kernel_client.start_channels()
 
         def stop():
-            kernel_client.stop_channels()
-            kernel_manager.shutdown_kernel()
+            self.kernel_client.stop_channels()
+            self.kernel_manager.shutdown_kernel()
             guisupport.get_app_qt().exit()
 
         self.exit_requested.connect(stop)
@@ -73,8 +74,9 @@ class ConsoleWidget(RichJupyterWidget):
         self._execute(command, False)
 
 
+
 if __name__ == '__main__':
     app = QtGui.QApplication([])
-    widget = ConsoleWidget()
+    widget = JupyterConsole()
     widget.show()
     app.exec_()

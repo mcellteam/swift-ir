@@ -40,6 +40,8 @@ from .defaults_form import DefaultsForm
 from .collapsible_box import CollapsibleBox
 from .screenshot_saver import ScreenshotSaver
 from .kimage_window import KImageWindow
+from .snr_plot import SnrPlot
+from .jupyter_console import JupyterConsole
 
 __all__ = ['MainWindow']
 
@@ -60,8 +62,8 @@ class MainWindow(QMainWindow):
         logger.info('initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
         cfg.defaults_form = DefaultsForm(parent=self)
-
-        self.python_jupyter_console = self.make_jupyter_widget_with_kernel()
+        self.jupyter_console = JupyterConsole()
+        app.aboutToQuit.connect(self.shutdown_jupyter_kernel)
 
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
@@ -78,6 +80,7 @@ class MainWindow(QMainWindow):
         cfg.image_library = ImageLibrary()
         # cfg.image_library = SmartImageLibrary()
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+
         
         # if cfg.QT_API == 'pyside6':
         #     logger.info("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
@@ -211,7 +214,7 @@ class MainWindow(QMainWindow):
                  ['Save Project &As...', 'Ctrl+A', self.save_project_as, None, None, None],
                  ['View Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
                  ['Show/Hide Project Inspector', None, self.show_hide_project_inspector, None, None, None],
-                 ['Show Console', None, self.back_callback, None, None, None],
+                 ['Show Console', None, self.show_jupyter_console, None, None, None],
                  ['Remote Neuroglancer Server', None, self.remote_view, None, None, None],
                  ['initUI', None, self.initUI, None, None, None],
                  ['Show Splash', None, self.show_splash, None, None, None],
@@ -256,7 +259,7 @@ class MainWindow(QMainWindow):
 
                   ]
                 ],
-                 ['&Python Console', 'Ctrl+P', self.show_python_console, None, None, None],
+                 ['&Python Console', 'Ctrl+P', self.show_jupyter_console, None, None, None],
 
              ]
              ],
@@ -327,34 +330,31 @@ class MainWindow(QMainWindow):
                     
                     parent.addAction(action)
 
-    def make_jupyter_widget_with_kernel(self):
-        """Start a kernel, connect to it, and create a RichJupyterWidget to use it. Doc:
-        https://qtconsole.readthedocs.io/en/stable/
-        """
-        global ipython_widget  # Prevent from being garbage collected
-        # Create an in-process kernel
-        self.kernel_manager = QtInProcessKernelManager()
-        self.kernel_manager.start_kernel(show_banner=False)
-        self.kernel = self.kernel_manager.kernel
-        self.kernel.gui = 'qt'
-        # kernel.shell.push({'x': 0, 'y': 1, 'z': 2})
-        # project_data = cfg.project_data #notr sure why this dictionary does not push
-        # self.kernel.shell.push(project_data)
-        # self.kernel.shell.
-        self.kernel_client = self.kernel_manager.client()
-        self.kernel_client.start_channels()
-        self.jupyter_widget = RichJupyterWidget()
-        self.jupyter_widget.banner = ''
-        self.jupyter_widget.set_default_style(colors='linux')
-        self.jupyter_widget.prompt_to_top()
-        self.jupyter_widget.kernel_manager = self.kernel_manager
-        self.jupyter_widget.kernel_client = self.kernel_client
-        return self.jupyter_widget
 
-    def shutdown_kernel(self):
-        logger.info('Shutting down kernel...')
-        self.jupyter_widget.kernel_client.stop_channels()
-        self.jupyter_widget.kernel_manager.shutdown_kernel()
+    # def make_jupyter_widget_with_kernel(self):
+    #     """Start a kernel, connect to it, and create a RichJupyterWidget to use it. Doc:
+    #     https://qtconsole.readthedocs.io/en/stable/
+    #     """
+    #     # Create an in-process kernel
+    #     # self.kernel_manager = QtInProcessKernelManager()
+    #     # self.kernel_manager.start_kernel(show_banner=False)
+    #     # self.kernel = self.kernel_manager.kernel
+    #     # self.kernel.gui = 'qt'
+    #     # kernel.shell.push({'x': 0, 'y': 1, 'z': 2})
+    #     # project_data = cfg.project_data #notr sure why this dictionary does not push
+    #     # self.kernel.shell.push(project_data)
+    #     # self.kernel.shell.
+    #     # self.kernel_client = self.kernel_manager.client()
+    #     # self.kernel_client.start_channels()
+    #     # self.jupyter_widget = RichJupyterWidget()
+    #
+    #     # self.jupyter_widget.execute_command('ls')
+    #     # self.jupyter_widget.banner = ''
+    #     # self.jupyter_widget.set_default_style(colors='linux')
+    #     # self.jupyter_widget.prompt_to_top()
+    #     # self.jupyter_widget.kernel_manager = self.kernel_manager
+    #     # self.jupyter_widget.kernel_client = self.kernel_client
+    #     return self.jupyter_widget
 
     def update_panels(self):
         '''Repaint the viewing port.'''
@@ -571,7 +571,7 @@ class MainWindow(QMainWindow):
         logger.info("clevel='%s'  cname='%s'  n_scales='%s'" % (self.clevel, self.cname, self.n_scales))
 
         self.set_idle()
-        self.hud.post('Export to Zarr Complete')
+        self.hud.post('Zarr Export Complete')
 
     @Slot()
     def clear_all_skips_callback(self):
@@ -750,33 +750,107 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def show_snr_plot(self):
+        if not are_images_imported():
+            self.hud.post('No SNRs To View. Images Have Not Even Been Imported Yet.', logging.WARNING)
+            self.back_callback()
+            return
         if not is_cur_scale_aligned():
-            cfg.main_window.hud.post('Current Scale Is Not Aligned Yet', logging.WARNING)
+            self.hud.post('No SNRs To View. Current Scale Is Not Aligned Yet.', logging.WARNING)
+            self.back_callback()
             return
         snr_list = get_snr_list()
+        max_snr = max(snr_list)
         x_axis = [x for x in range(0, len(snr_list))]
+
         # pen = pg.mkPen(color=(255, 0, 0), width=5, style=Qt.SolidLine)
         pen = pg.mkPen(color=(0, 0, 0), width=5, style=Qt.SolidLine)
-        self.plot_widget = pg.PlotWidget()
-        styles = {'color': '#000000', 'font-size': '13px'}
+        styles = {'color': '#ffffff', 'font-size': '13px'}
         # self.plot_widget.setXRange(0, get_num_imported_images())
         # self.plot_widget.setBackground(QColor(100, 50, 254, 25))
-        self.plot_widget.plot(x_axis, snr_list, name="SNR", pen=pen, symbol='+')
-        self.plot_widget.showGrid(x=True,y=True)
-        self.plot_widget.setLabel('left', 'SNR', **styles)
-        self.plot_widget.setLabel('bottom', 'Layer', **styles)
-        styles = {'color': 'r', 'font-size': '20px'}
-        self.graphWidget.setLabel('left', 'SNR', **styles)
-        self.graphWidget.setLabel('bottom', 'Image #', **styles)
+        # self.snr_points = pg.ScatterPlotItem(size=10, brush=pg.mkBrush(30, 255, 35, 255), hoverSize=14)
+        self.snr_points = pg.ScatterPlotItem(
+            size=9,
+            pen=pg.mkPen(None),
+            brush=pg.mkBrush(30, 255, 35, 255),
+            # hoverable=True,
+            # hoverSymbol='s',
+            hoverSize=12,
+            # hoverPen=pg.mkPen('r', width=2),
+            hoverBrush=pg.mkBrush('g'),
+        )
+        self.snr_points.sigClicked.connect(self.onSnrClick)
+        self.snr_points.addPoints(x_axis[1:], snr_list[1:])
+
+        self.last_snr_click = []
+
+        font = QFont()
+        font.setPixelSize(12)
+        self.snr_plot.getAxis("bottom").setStyle(tickFont=font)
+        self.snr_plot.getAxis("bottom").setHeight(26)
+        self.snr_plot.getAxis("left").setStyle(tickFont=font)
+        self.snr_plot.getAxis("left").setWidth(34)
+
+        # self.scatter_widget.setData(x_axis, snr_list)
+        self.snr_plot.addItem(self.snr_points)
+        # self.plot_widget.plot(x_axis, snr_list, name="SNR", pen=pen, symbol='+')
+        self.snr_plot.showGrid(x=True,y=True, alpha = 200) # alpha: 0-255
+        # styles = {'color': 'r', 'font-size': '16px'}
+        style = {'color': '#ffffff', 'font-size': '14px'}
+        self.snr_plot.setLabel('left', 'SNR', **style)
+        self.snr_plot.setLabel('bottom', 'Layer', **style)
+        self.snr_plot.getPlotItem().enableAutoRange()
         self.main_panel_bottom_widget.setCurrentIndex(1)
 
-    @Slot()
+    def clear_snr_plot(self):
+        self.snr_plot.getPlotItem().enableAutoRange()
+        self.snr_plot.clear()
+
+
+
+
+    def onSnrClick(self, plot, points):
+        '''
+        type(obj): <class 'pyqtgraph.graphicsItems.ScatterPlotItem.ScatterPlotItem'>
+        type(points): <class 'numpy.ndarray'>
+        '''
+        index = int(points[0].pos()[0])
+        snr = float(points[0].pos()[1])
+        print('SNR of Selected Layer: %.3f' % snr)
+        clickedPen = pg.mkPen('b', width=2)
+        for p in self.last_snr_click:
+            p.resetPen()
+        # print("clicked points", points)
+        for p in points:
+            p.setPen(clickedPen)
+        self.last_snr_click = points
+        self.jump_to(index)
+
+    def shutdown_jupyter_kernel(self):
+        logger.info('Shutting Down Jupyter Kernel...')
+        try:
+            self.jupyter_widget.kernel_client.stop_channels()
+            self.jupyter_widget.kernel_manager.shutdown_kernel()
+        except:
+            logger.warning('Unable to Shutdown Jupyter Console Kernel')
+
+    def show_jupyter_console(self):
+        # self.jupyter_console.execute_command('import IPython; IPython.get_ipython().execution_count = 0')
+
+        self.jupyter_console.execute_command('from IPython.display import Image, display')
+        self.jupyter_console.execute_command('from alignEM.config import *')
+        self.jupyter_console.execute_command('from alignEM.em_utils import *')
+        self.jupyter_console.execute_command('clear')
+        self.main_panel_bottom_widget.setCurrentIndex(2)
+
+    def show_img(self, path):
+        self.jupyter_console.execute_command(display(Image(filename=path)))
+        self.main_panel_bottom_widget.setCurrentIndex(2)
+
+
+
     def show_hud(self):
         self.main_panel_bottom_widget.setCurrentIndex(0)
 
-    @Slot()
-    def show_python_console(self):
-        self.main_panel_bottom_widget.setCurrentIndex(2)
 
     @Slot()
     def back_callback(self):
@@ -1048,6 +1122,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def get_null_bias_value(self) -> str:
         return str(self.null_bias_combobox.currentText())
+
+    @Slot()
+    def jump_to(self, layer) -> None:
+        cfg.project_data['data']['current_layer'] = int(layer)
+        self.read_project_data_update_gui()
+        self.image_panel.update_multi_self()
     
     @Slot()
     def jump_to_layer(self) -> None:
@@ -1127,11 +1207,9 @@ class MainWindow(QMainWindow):
             snr = sorted_pairs[self.jump_to_best_ticker]
             rank = self.jump_to_best_ticker
             self.hud.post("Jumping to layer %d (Goodness Rank = %d, SNR = %.2f)" % (next_layer, rank, snr[1]))
-            
             cfg.project_data['data']['current_layer'] = next_layer
             self.read_project_data_update_gui()
             self.image_panel.update_multi_self()
-            
             self.jump_to_best_ticker += 1
         
         except:
@@ -2038,7 +2116,7 @@ class MainWindow(QMainWindow):
         self.hud.setContentsMargins(0, 0, 0, 0)
         self.hud.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.hud.post('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu :)',
-                      logging.CRITICAL)
+                      logging.INFO)
 
         self.new_project_button = QPushButton(" New")
         self.new_project_button.clicked.connect(self.new_project)
@@ -2390,16 +2468,6 @@ class MainWindow(QMainWindow):
 
         '''-------- PANEL 4: EXPORT & VIEW --------'''
 
-        n_scales_label = QLabel("# of scales:")
-        n_scales_label.setToolTip("Number of scale pyramid layers (default=4)")
-        self.n_scales_input = QLineEdit(self)
-        self.n_scales_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.n_scales_input.setText("4")
-        self.n_scales_input.setFixedWidth(self.std_input_size_small)
-        self.n_scales_input.setFixedHeight(self.std_height)
-        self.n_scales_valid = QIntValidator(1, 20, self)
-        self.n_scales_input.setValidator(self.n_scales_valid)
-
         clevel_label = QLabel("clevel (1-9):")
         clevel_label.setToolTip("Zarr Compression Level (default=5)")
         self.clevel_input = QLineEdit(self)
@@ -2437,11 +2505,6 @@ class MainWindow(QMainWindow):
         self.export_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.export_hlayout.addWidget(self.ng_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.n_scales_layout = QHBoxLayout()
-        self.n_scales_layout.setContentsMargins(0, 0, 0, 0)
-        self.n_scales_layout.addWidget(n_scales_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.n_scales_layout.addWidget(self.n_scales_input, alignment=Qt.AlignmentFlag.AlignRight)
-
         self.clevel_layout = QHBoxLayout()
         self.clevel_layout.setContentsMargins(0, 0, 0, 0)
         self.clevel_layout.addWidget(clevel_label, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2454,8 +2517,7 @@ class MainWindow(QMainWindow):
         self.export_settings_layout = QGridLayout()
         self.export_settings_layout.addLayout(self.clevel_layout, 1, 0)
         self.export_settings_layout.addLayout(self.cname_layout, 0, 0)
-        self.export_settings_layout.addLayout(self.n_scales_layout, 2, 0)
-        self.export_settings_layout.addLayout(self.export_hlayout, 0, 1, 3, 1)
+        self.export_settings_layout.addLayout(self.export_hlayout, 0, 1, 2, 1)
         self.export_settings_layout.setContentsMargins(10, 25, 10, 5)  # tag23
 
         '''-------- INTEGRATED CONTROL PANEL --------'''
@@ -2548,11 +2610,13 @@ class MainWindow(QMainWindow):
         self.main_panel_bottom_widget = QStackedWidget()
         self.main_panel_bottom_widget.addWidget(self.hud)
 
-        self.plot_widget = pg.PlotWidget()
+        self.snr_plot = SnrPlot()
+        # self.scatter_widget = pg.ScatterPlotWidget()
+        # self.snr_plot = pg.plot()
 
         self.plot_widget_clear_button = QPushButton('Clear Plot')
         self.plot_widget_clear_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.plot_widget_clear_button.clicked.connect(self.plot_widget.clear)
+        self.plot_widget_clear_button.clicked.connect(self.clear_snr_plot)
         self.plot_widget_clear_button.setFixedSize(self.square_button_size)
 
         self.plot_widget_back_button = QPushButton('Back')
@@ -2568,7 +2632,8 @@ class MainWindow(QMainWindow):
             QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
         self.plot_widget_layout = QHBoxLayout()
-        self.plot_widget_layout.addWidget(self.plot_widget)
+        # self.plot_widget_layout.addWidget(self.plot_widget)
+        self.plot_widget_layout.addWidget(self.snr_plot)
         self.plot_widget_layout.addLayout(self.plot_controls_layout)
         self.plot_widget_container = QWidget()
         self.plot_widget_container.setLayout(self.plot_widget_layout)
@@ -2580,7 +2645,7 @@ class MainWindow(QMainWindow):
         self.python_console_back_button.setAutoDefault(True)
 
         self.python_console_layout = QHBoxLayout()
-        self.python_console_layout.addWidget(self.python_jupyter_console)
+        self.python_console_layout.addWidget(self.jupyter_console)
 
         self.python_console_widget_container = QWidget()
         self.python_console_widget_container.setLayout(self.python_console_layout)
@@ -2597,12 +2662,12 @@ class MainWindow(QMainWindow):
         self.show_hud_button.setFixedSize(self.square_button_size)
         self.show_hud_button.setIcon(qta.icon("mdi.monitor", color=cfg.ICON_COLOR))
 
-        self.show_python_console_button = QPushButton("Python\nConsole")
-        self.show_python_console_button.setStyleSheet("font-size: 10px;")
-        self.show_python_console_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_python_console_button.clicked.connect(self.show_python_console)
-        self.show_python_console_button.setFixedSize(self.square_button_size)
-        self.show_python_console_button.setIcon(qta.icon("fa.terminal", color=cfg.ICON_COLOR))
+        self.show_jupyter_console_button = QPushButton("Python\nConsole")
+        self.show_jupyter_console_button.setStyleSheet("font-size: 10px;")
+        self.show_jupyter_console_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_jupyter_console_button.clicked.connect(self.show_jupyter_console)
+        self.show_jupyter_console_button.setFixedSize(self.square_button_size)
+        self.show_jupyter_console_button.setIcon(qta.icon("fa.terminal", color=cfg.ICON_COLOR))
 
         self.show_snr_plot_button = QPushButton("SNR\nPlot")
         self.show_snr_plot_button.setStyleSheet("font-size: 10px;")
@@ -2614,7 +2679,7 @@ class MainWindow(QMainWindow):
         self.main_secondary_controls_layout = QVBoxLayout()
         self.main_secondary_controls_layout.setContentsMargins(0, 8, 0, 0)
         self.main_secondary_controls_layout.addWidget(self.show_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_secondary_controls_layout.addWidget(self.show_python_console_button,
+        self.main_secondary_controls_layout.addWidget(self.show_jupyter_console_button,
                                                       alignment=Qt.AlignmentFlag.AlignTop)
         self.main_secondary_controls_layout.addWidget(self.show_snr_plot_button, alignment=Qt.AlignmentFlag.AlignTop)
         self.spacer_item_main_secondary = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)

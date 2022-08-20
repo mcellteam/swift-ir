@@ -113,10 +113,6 @@ if 'tqdm' not in installed_packages:
 
 if __name__ == "__main__":
 
-    sys.stdout.write('\n===================================================================================\n')
-    sys.stdout.write('Welcome to AlignEM-SWiFT (Development Branch). Please report bugs to joel@salk.edu.\n')
-    sys.stdout.write('===================================================================================\n\n')
-
     # CSI = "\x1B["
     # print('\n' + '\x1b[6;30;42m' + '0m' * 45)
     # print('Welcome to AlignEM-SWiFT (joel-dev-alignem branch). Please report bugs to joel@salk.edu :)\n' + '0m' * 45)
@@ -160,6 +156,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
+
     logger.info('QApplication() created')
     logger.info('app.__str__() = %s' % app.__str__())
     logger.info('Instantiating MainWindow...')
@@ -167,11 +164,11 @@ if __name__ == "__main__":
     # cfg.main_window.resize(cfg.WIDTH, cfg.HEIGHT)
     cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
     cfg.main_window.define_roles(['ref', 'base', 'aligned'])
+    app.aboutToQuit.connect(cfg.main_window.shutdown_jupyter_kernel)
     logger.info('Window Size is %dx%d pixels' % (cfg.WIDTH, cfg.HEIGHT))
     logger.info('Showing AlignEM-SWiFT')
     cfg.main_window.show()
 
-    app.aboutToQuit.connect(cfg.main_window.shutdown_kernel)
     try:
         sys.exit(app.exec())
     except:

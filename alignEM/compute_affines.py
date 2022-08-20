@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 # def compute_affines():
 def compute_affines(use_scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
-    logger.critical('\n____________Compute Affines Start____________')
+    logger.critical('>>>>>>>> Compute Affines Start <<<<<<<<')
 
     if are_images_imported():
         pass
@@ -244,7 +244,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
             update_datamodel(updated_model)
 
 
-    logger.critical('\n____________Compute Affines End____________')
+    logger.critical('>>>>>>>> Compute Affines End <<<<<<<<')
 
 def rename_layers(use_scale, alignment_dict):
     source_dir = os.path.join(cfg.project_data['data']['destination_path'], use_scale, "img_src")

@@ -29,11 +29,17 @@ class DefaultsForm(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         self.parent = parent
         super(DefaultsForm, self).__init__()
-        self.setWindowTitle("ToolButton")
-        self.setGeometry(400,400,300,260)
-        g = self.geometry()
-        g.moveCenter(self.parent.geometry().center())
-        self.setGeometry(g)
+        # self.setGeometry(400,400,300,260)
+        # g = self.geometry()
+        # g.moveCenter(self.parent.geometry().center())
+        # self.setGeometry(g)
+
+        self.setWindowFlags(
+            Qt.CustomizeWindowHint |
+            Qt.FramelessWindowHint)
+
+
+
         # self.defaults_file = cfg.project_data['data']['destination_path'] + '/defaults.json'
         # print('self.defaults_file = ', str(self.defaults_file))
         # self.defaults = None
@@ -92,7 +98,6 @@ class DefaultsForm(QDialog):
     #     with open(self.defaults_file, "w") as f:
     #         data = json.dump(self.defaults, f)
     #         # f.write(self.defaults)
-
 
 
     def on_cancel(self):

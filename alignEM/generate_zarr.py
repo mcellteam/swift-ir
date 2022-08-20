@@ -40,7 +40,8 @@ def time_limit(seconds):
         signal.alarm(0)
 
 def generate_zarr(src, out):
-    logger.debug('generate_zarr:')
+    logger.critical('>>>>>>>> Generate Zarr Start <<<<<<<<')
+
     scales_list = get_scales_list()
     chunks = '64'
     if os.path.isdir(out):
@@ -124,7 +125,7 @@ def generate_zarr(src, out):
     scale_q.start(cpus)
     for task in tasks:
         task_args = [sys.executable,
-                     'alignEM/job_convert_zarr_contig.py',
+                     'alignEM/job_convert_zarr.py',
                      str(task[0]),          # ID
                      str(task[1]),          # img
                      str(task[2]),          # src
@@ -140,6 +141,10 @@ def generate_zarr(src, out):
     scale_q.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
     scale_q.stop()
     del scale_q
+
+    logger.critical('>>>>>>>> Generate Zarr End <<<<<<<<')
+
+
 
 
 if __name__ == '__main__':
