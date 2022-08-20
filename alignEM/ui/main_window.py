@@ -1825,7 +1825,7 @@ class MainWindow(QMainWindow):
 
     def webgl2_test(self):
         logger.info("Running WebGL 2.0 Test In Browser...")
-        self.main_widget.setCurrentIndex(2)
+        self.main_widget.setCurrentIndex(1)
         self.browser.setUrl(QUrl('https://get.webgl.org/webgl2/'))
 
     def print_state_ng(self):
