@@ -1828,6 +1828,7 @@ class MainWindow(QMainWindow):
         self.set_idle()
 
     def webgl2_test(self):
+        '''https://www.khronos.org/files/webgl20-reference-guide.pdf'''
         logger.info("Running WebGL 2.0 Test In Web Browser...")
         self.browser_docs.setUrl(QUrl('https://get.webgl.org/webgl2/'))
         self.main_widget.setCurrentIndex(2)
