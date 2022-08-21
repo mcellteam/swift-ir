@@ -11,6 +11,7 @@ sandbox/*
 keep.JPG
 best.JPG
 newtarg.JPG
+**/source_tracker.py
 
 # Environments
 .env
