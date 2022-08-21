@@ -1,61 +1,16 @@
+**/__pycache__
 **/.DS_Store
 **/.idea
 **/*.jpg
 **/*.tif
 **/*.tiff
-alignEM/.DS_Store
-alignEM/joel_notes.txt
+.DS_Store
+joel_notes.txt
 sandbox/
 sandbox/*
-package/out.zarr
-package/out.zarr/*
 keep.JPG
 best.JPG
 newtarg.JPG
-
-### Python ###
-# Byte-compiled / optimized / DLL files
-**/__pycache__
-*.py[cod]
-*$py.class
-
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
-
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
-cover/
 
 # Environments
 .env
@@ -65,6 +20,3 @@ venv/
 ENV/
 env.bak/
 venv.bak/
-
-# mkdocs documentation
-/site
