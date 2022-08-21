@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "66c023d5e3da2b55b7a6e2340367590ec50a670df73db6c3a7257665dcc72151"
+            "sha256": "83e2dbfa2cc731efe3373aae32e555a564538026181b140a4231f1f284b496f2"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -549,7 +549,7 @@
                 "sha256:2b020ecf7d21b687f219b71ecad3631f644a47f01403fa1d1036b0c6416d70fb",
                 "sha256:5026bae9a10eeaefb61dab2f09052b9f4307d44aee4eda64b309723d8d206bbc"
             ],
-            "markers": "python_version >= '3.1'",
+            "markers": "python_full_version >= '3.6.8'",
             "version": "==3.0.9"
         },
         "pyqt5": {
@@ -594,6 +594,14 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==12.11.0"
+        },
+        "pyqtgraph": {
+            "hashes": [
+                "sha256:c2c8f2b7e1d7f97a710f370acff6368d686c9d6cdc560f2d83dcf59185dfa19d",
+                "sha256:d98c6e26e9eda6d1d1bba92d6df381ef77fca18b701f9e136759ce31a17c6217"
+            ],
+            "index": "pypi",
+            "version": "==0.12.4"
         },
         "pyqtwebengine": {
             "hashes": [
@@ -702,6 +710,14 @@
             "markers": "python_version >= '3.6'",
             "version": "==23.2.1"
         },
+        "qtawesome": {
+            "hashes": [
+                "sha256:27d2e2bcb34cb5c9a7f61c29f34b24bf89ef50c79ffff7a76effe59bf781fcee",
+                "sha256:ec02e200231fa68a146a93845890aa0432a7edcba14bf811ff6975cf9acdab5d"
+            ],
+            "index": "pypi",
+            "version": "==1.1.1"
+        },
         "qtconsole": {
             "hashes": [
                 "sha256:b73723fac43938b684dcb237a88510dc7721c43a726cea8ade179a2927c0a2f3",
@@ -715,7 +731,7 @@
                 "sha256:d283cfba378b0dbe36a55b68aea8ee2f86cd6ccf06c023af25bbe705ffbb29e5",
                 "sha256:d85f1b121f24a41ad26c55c446e66abdb7c528839f8c4f11f156ec4541903914"
             ],
-            "markers": "python_version >= '3.7'",
+            "index": "pypi",
             "version": "==2.2.0"
         },
         "requests": {
@@ -781,6 +797,14 @@
             ],
             "markers": "python_version >= '3.7'",
             "version": "==6.2"
+        },
+        "tqdm": {
+            "hashes": [
+                "sha256:40be55d30e200777a307a7585aee69e4eabb46b4ec6a4b4a5f2d9f11e7d5408d",
+                "sha256:74a2cdefe14d11442cedf3ba4e21a3b84ff9a2dbdc6cfae2c34addb2a14a5ea6"
+            ],
+            "index": "pypi",
+            "version": "==4.64.0"
         },
         "traitlets": {
             "hashes": [

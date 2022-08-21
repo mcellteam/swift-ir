@@ -15,6 +15,10 @@ neuroglancer = "*"
 qtconsole = "*"
 pyqt5 = "*"
 pyqtwebengine = "*"
+qtpy = "*"
+qtawesome = "*"
+pyqtgraph = "*"
+tqdm = "*"
 
 [dev-packages]
 
