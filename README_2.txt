@@ -16,7 +16,7 @@ Version 3.7+ (minimum)
 1) Get AlignEM-SWiFT
     git clone https://github.com/mcellteam/swift-ir.git
     cd swift-ir
-    git checkout joel-dev-alignem  # Switch Branch. Important!
+    git checkout joel-dev-alignem  # Switch Branch!
 
 2) Compile C Binaries (Linux Only):
     # Compiling the C Binaries requires FFTW:
