@@ -119,7 +119,8 @@ if __name__ == "__main__":
     # os.environ["FORCE_QT_API"] = 'True'
     os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --ignore-gpu-blacklist'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
     os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     logger.info('QT_API: %s' % os.environ.get('QT_API'))
 
