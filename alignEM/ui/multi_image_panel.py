@@ -22,6 +22,7 @@ class MultiImagePanel(QWidget):
 
         self.actual_children = []
         self.zpw = []
+        self.roles = ['ref', 'base', 'aligned']
 
         p = self.palette()
         p.setColor(self.backgroundRole(), QColor('black'))
@@ -45,7 +46,7 @@ class MultiImagePanel(QWidget):
         # self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)  #tag #add #0526 uncommenting, because not certain it does anything and have zoom issue
         self.arrow_direction = 1
 
-        self.set_roles(cfg.roles_list) #0809+
+        self.set_roles(self.roles) #0809+
 
     #keypress
     def keyPressEvent(self, event):
