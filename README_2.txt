@@ -29,7 +29,8 @@ Version 3.7+ (minimum)
     pipenv run python alignEM.py
 
     # Or, Install Dependencies Directly In Base Environment:
-    python -m pip install numpy psutil opencv-python-headless pillow zarr tifffile imagecodecs neuroglancer qtconsole
+    python -m pip install numpy psutil opencv-python-headless pillow zarr tifffile imagecodecs neuroglancer
+    python -m pip install qtpy qtconsole qtawesome pyqtgraph tqdm
     python -m pip install PyQt5 PyQtWebEngine        # Compatible Python-QT5 APIs: PySide2, PyQt5
     python -m pip install PyQt6 PyQt6-WebEngine-Qt6  # Compatible Python-QT5 APIs: PySide6, PyQt6
     python alignEm.py
