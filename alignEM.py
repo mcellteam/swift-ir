@@ -44,23 +44,8 @@ import sys
 import signal
 import logging
 import argparse
-import subprocess
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
-
-reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
-installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
-if 'QtPy' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','qtpy'])
-if 'QtAwesome' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','qtawesome'])
-if 'pyqtgraph' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','pyqtgraph'])
-if 'tqdm' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','tqdm'])
-if 'tqdm' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','imagecodecs'])
-
 from alignEM.em_utils import print_exception
 from alignEM.ui.main_window import MainWindow
 import alignEM.config as cfg
