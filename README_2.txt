@@ -4,47 +4,45 @@ have a better packaged version using setuptools. Eventually we will publish to P
 
 Below are some notes I took on installation, they are not correct. They are not complete, exact, or anything more than
 suggestions, and is probably not up to date. You can use any of the following Python-Qt APIs (PySide6, PySide2,
-PyQt5, or PyQt6) by passing in the option --api at the command line when you run the program like this:
-
-{# alignEM.py is the script to run to launch the program.}
-{python3 alignEM.py --api pyqt6}
+PyQt5, or PyQt6) by passing in the option --api at the command line when you run the program. Verbosity can be set
+using the options -v, -vv, or -vvv.
 
 Contact: joel@salk.edu. This branch may not be stable.
 
--------- Install Python --------
+Supported Python Version:
 Version 3.9+ (recommended)
 Version 3.7+ (minimum)
 
--------- Install Pipenv --------
-curl https://raw.githubusercontent.com/pypa/pipenv/master/get-pipenv.py | python  # obtain pipenv
-pipenv install  # run this command from the 'swift-ir' directory
+1) Get AlignEM-SWiFT
+    git clone https://github.com/mcellteam/swift-ir.git
+    cd swift-ir
+    git checkout joel-dev-alignem  # Switch Branch. Important!
 
--------- Install Python Dependencies --------
-To install the required Python packages using pip:
-python3 -m pip install --upgrade pips
-python3 -m pip install neuroglancer numpy psutil opencv-python-headless scikit-image zarr tifffile imagecodecs tqdm
-python3 -m pip install PySide6   # or PySide2, PyQt5, PyQt6
+2) Compile C Binaries (Linux Only):
+    # Compiling the C Binaries requires FFTW:
+    sudo apt-get install libjpeg-dev libtiff-dev libpng-dev libfftw3-dev
+    make -f makefile.linux  # from swift-ir/alignEM/lib
 
--------- Clone Repo & Switch Branch --------
-git clone https://github.com/mcellteam/swift-ir.git
-cd swift-ir
-git checkout joel-dev-alignem
+3) Install Dependencies & Run:
+    # Using Pipenv:
+    pipenv install
+    pipenv run python alignEM.py
 
--------- Compile C Binaries --------
-MacOS: Precompiled binaries for MacOS are bundled, xand will be used automatically
-Linux: Compilation requires a software called FFTW. Try:
+    # Or, Install Dependencies Directly In Base Environment:
+    python -m pip install numpy psutil opencv-python-headless pillow zarr tifffile imagecodecs neuroglancer qtconsole
+    python -m pip install PyQt5 PyQtWebEngine        # Compatible Python-QT5 APIs: PySide2, PyQt5
+    python -m pip install PyQt6 PyQt6-WebEngine-Qt6  # Compatible Python-QT5 APIs: PySide6, PyQt6
+    python alignEm.py
 
-       sudo apt-get install libjpeg-dev libtiff-dev libpng-dev libfftw3-dev
-       # change directories to swift-ir/source/c
-       make -f makefile.linux
+Run (Options):
+    python alignEM.py
+    python alignEM.py --api pyqt5    # Run with 'pyqt5' Python-Qt API (Qt5)
+    python alignEM.py --api pyside2  # Run with 'pyside2' Python-Qt API (Qt5)
+    python alignEM.py --api pyqt6    # Run with 'pyqt6' Python-Qt API (Qt6)
+    python alignEM.py --api pyside6  # Run with 'pyside6' Python-Qt API (Qt6)
+    python alignEM.py -v             # Verbosity -v, -vv, -vvv
 
--------- Run alignEM-SWiFT --------
-# navigate to /swift-ir/alignEM
-python3 alignEM.py
-
------------------------------------
-
-Ubuntu Instructions (courtesy of Vijay):
+Ubuntu Instructions (Courtesy of Vijay):
 
 sudo apt-get install libjpeg-dev libtiff-dev libpng-dev libfftw3-dev
 conda create -n swift_env -c conda-forge python=3.9
@@ -53,20 +51,12 @@ sudo pip install --upgrade pip
 git clone https://github.com/mcellteam/swift-ir.git
 cd swift-ir
 git checkout joel-dev-alignem
-pip install psutils PySide6 scikit-image neuroglancer zarr matplotlib opencv-python
-and lastly compile c code!git
-
-MacOS Tips:
-
-conda env create -f environment.yml
-conda activate swiftir-env
-python3 -m pip install --upgrade pip
-pip install neuroglancer zarr imagecodecs
-git clone https://github.com/mcellteam/swift-ir.git
-cd swift-ir
-git checkout joel-dev-alignem
-cd alignEM
-python3 alignEM # <-- Command to Run AlignEM-SWiFT
+pip install PySide2 neuroglancer zarr opencv-python-headless psutils tifffile
+# Compile C code! Example Compilation for MacOS:
+#   cd swift-ir/lib
+#   rm -r bin_linux
+#   mkdir bin_linux
+#   make -f makefile.linux
 
 CentOS 7 Tips:
 

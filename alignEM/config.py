@@ -12,7 +12,7 @@ __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
 import os
 import logging
 
-LOG_LEVEL = logging.INFO
+LOG_LEVEL = None
 
 DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
@@ -31,16 +31,14 @@ USES_QT6 = None
 project_data = None
 main_window = None
 image_library = None
-
 data_model = None
 defaults_form = None
 
-PRELOAD_RANGE = 3
-
+PRELOAD_RANGE = None
 USE_FILE_IO = 0
 PARALLEL_MODE = True
 CODE_MODE = 'c'
-# CODE_MODE = 'python'
+HTTP_PORT = 9000
 
 defaults = ["-0.6800", "0.8125", "0.0000", True]
 
@@ -50,10 +48,6 @@ ICON_COLOR = '#455364' # off blue-ish color
 
 WIDTH = 1320
 HEIGHT = 850
-
-roles_list = ['ref', 'base', 'aligned']
-
-
 
 # class bcolors:
 #     HEADER = '\033[95m'

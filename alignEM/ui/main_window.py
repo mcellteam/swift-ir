@@ -61,13 +61,12 @@ class MainWindow(QMainWindow):
 
         logger.info('initializing QMainWindow.__init__(self)')
         QMainWindow.__init__(self)
-        cfg.defaults_form = DefaultsForm(parent=self)
-        self.jupyter_console = JupyterConsole()
-        app.aboutToQuit.connect(self.shutdown_jupyter_kernel)
-
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
         self.init_dir = os.getcwd()
+        self.jupyter_console = JupyterConsole()
+        cfg.defaults_form = DefaultsForm(parent=self)
+        app.aboutToQuit.connect(self.shutdown_jupyter_kernel)
         fg = self.frameGeometry()
         cp = QGuiApplication.primaryScreen().availableGeometry().center()
         fg.moveCenter(cp)
@@ -81,7 +80,6 @@ class MainWindow(QMainWindow):
         # cfg.image_library = SmartImageLibrary()
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
-        
         # if cfg.QT_API == 'pyside6':
         #     logger.info("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
@@ -548,6 +546,7 @@ class MainWindow(QMainWindow):
     
     def export_zarr(self):
         logger.info('Exporting to Zarr format...')
+        self.hud.post('Exporting...')
         if not are_aligned_images_generated():
             self.hud.post('Current Scale Must be Aligned Before It Can be Exported', logging.WARNING)
             logger.debug(
@@ -565,16 +564,17 @@ class MainWindow(QMainWindow):
         self.set_status('Exporting...')
         src = os.path.abspath(cfg.project_data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, '3dem.zarr'))
-        # generate_zarr(src=src, out=out)
-        generate_zarr(src=src, out=out)
-
-        self.clevel = str(self.clevel_input.text())
-        self.cname = str(self.cname_combobox.currentText())
-        self.n_scales = str(self.n_scales_input.text())
-        logger.info("clevel='%s'  cname='%s'  n_scales='%s'" % (self.clevel, self.cname, self.n_scales))
-
-        self.set_idle()
+        self.hud.post('Compression Level: %s' %  self.clevel_input.text())
+        self.hud.post('Compression Type: %s' %  self.cname_combobox.currentText())
+        try:
+            generate_zarr(src=src, out=out)
+        except:
+            print_exception()
+            logger.error('Zarr Export Failed')
+            self.set_idle()
+            return
         self.hud.post('Zarr Export Complete')
+        self.set_idle()
 
     @Slot()
     def clear_all_skips_callback(self):
@@ -1641,10 +1641,6 @@ class MainWindow(QMainWindow):
         '''Not clear if this has any effect. Needs refactoring.'''
         self.import_images(role, file_names, clear_role=True)
         self.center_all_images()
-    
-    def define_roles(self, roles_list):
-        logger.info('MainWindow.define_roles: Roles List: %s' % str(roles_list))
-        self.image_panel.set_roles(roles_list)  # Set the image panels according to the roles
 
     @Slot()
     def empty_into_role(self, checked):
@@ -1876,6 +1872,7 @@ class MainWindow(QMainWindow):
         logger.info("blend_ng():")
 
     def view_neuroglancer(self):  #view_3dem #ngview #neuroglancer
+        self.set_status('Busy...')
         logger.info("view_neuroglancer >>>>")
         logger.info("# of aligned images                  : %d" % get_num_aligned())
         if not are_aligned_images_generated():
@@ -1916,117 +1913,15 @@ class MainWindow(QMainWindow):
 
         proj_path = os.path.abspath(cfg.project_data['data']['destination_path'])
         zarr_path = os.path.join(proj_path, '3dem.zarr')
-
-        if 'server' in locals():
-            logger.info('server is already running')
-        else:
-            # self.browser.setUrl(QUrl()) #empty page
-            logger.info('no server found in local namespace -> starting RunnableServer() worker')
-
-            ng_worker = View3DEM(source=zarr_path)
-            self.threadpool.start(ng_worker)
-
-        logger.info('Initializing Neuroglancer viewer...')
-        logger.info("  Source: '%s'" % zarr_path)
-
-        Image.MAX_IMAGE_PIXELS = None
-        res_x, res_y, res_z = 2, 2, 50
-
-        logger.info('defining Neuroglancer coordinate space')
-
-        # def add_example_layers(state, image, offset):
-        #     a[0, :, :, :] = np.abs(np.sin(4 * (ix + iy))) * 255
-        #     a[1, :, :, :] = np.abs(np.sin(4 * (iy + iz))) * 255
-        #     a[2, :, :, :] = np.abs(np.sin(4 * (ix + iz))) * 255
-        #     dimensions = ng.CoordinateSpace(names=['x', 'y', 'z'], units='nm', scales=[2, 2, 50])
-        #     state.dimensions = dimensions
-        #     state.layers.append(
-        #         name=image,
-        #         layer=ng.LocalVolume(
-        #             data='a',
-        #             dimensions=ng.CoordinateSpace(
-        #                 names=['x', 'y', 'z'],
-        #                 units=['nm', 'nm', 'nm'],
-        #                 scales=[2, 2, 50],
-        #                 coordinate_arrays=[
-        #                     ng.CoordinateArray(labels=['red', 'green', 'blue']), None, None, None
-        #                 ]),
-        #             voxel_offset=(0, 0, offset),
-        #         ),
-        #     return a, b
-
-        self.ng_viewer = ng.Viewer()
-        logger.info('Adding Neuroglancer Image Layers...')
-        with self.ng_viewer.txn() as s:
-            s.cross_section_background_color = "#ffffff"
-            # s.cross_section_background_color = "#000000"
-            # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
-            # s.perspective_zoom = 300
-            # s.position = [0, 0, 0]
-
-            '''Set Dimensions'''
-            s.dimensions = ng.CoordinateSpace(
-                names=["z", "y", "x"],
-                units=["nm", "nm", "nm"],
-                scales=[res_z, res_y, res_x]
-            )
-
-            '''generate_zarr_contig.py ONLY'''
-            # layers = []
-            # for scale in get_scales_list():
-            #     scale_val = get_scale_val(scale)
-            #     layer_name = 's' + str(scale_val)
-            #     layers.append(layer_name)
-            #     # s.layers[scale] = ng.ImageLayer(source="zarr://http://localhost:9000/" + str(scale_val))
-            #     s.layers[layer_name] = ng.ImageLayer(source="zarr://http://localhost:9000/")
-            #     # s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:9000/")
-            s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:9000/")
-            # s.layers['s1'] = ng.ImageLayer(source="zarr://http://localhost:9000/s1")
-            # s.layers['s2'] = ng.ImageLayer(source="zarr://http://localhost:9000/s2")
-            # s.layers['s4'] = ng.ImageLayer(source="zarr://http://localhost:9000/s4")
-
-            '''generate_zarr.py ONLY'''
-            # layers = ['layer_' + str(x) for x in range(get_num_aligned())]
-            # for i, layer in enumerate(layers):
-            #     s.layers[layer] = ng.ImageLayer(source="zarr://http://localhost:9000/" + str(i))
-
-            # s.layers.append( name="one_layer", ...)
-            # s.layers['layer_0'].visible = True
-            # layout types: frozenset(['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'])
-            s.layout = ng.column_layout(
-                [
-                    ng.LayerGroupViewer(
-                        layout='4panel',
-                        # layers=layers
-                        # layers=['s1','s2','s4']
-                        layers=['multiscale_img']
-                    )
-                ]
-            )
-
-        # logger.info('Loading Neuroglancer Callbacks...')
-        # # self.ng_viewer.actions.add('unchunk_', unchunk)
-        # # self.ng_viewer.actions.add('blend_', blend)
-        with self.ng_viewer.config_state.txn() as s:
-            # s.input_event_bindings.viewer['keyu'] = 'unchunk_'
-            # s.input_event_bindings.viewer['keyb'] = 'blend_'
-            # s.status_messages['message'] = 'Welcome to AlignEM_SWiFT'
-            s.show_ui_controls = True
-            s.show_panel_borders = True
-            s.viewer_size = None
-
-        viewer_url = str(self.ng_viewer)
+        self.hud.post("Starting Neuroglancer Viewer with Zarr '%s'" % zarr_path)
+        ng_worker = View3DEM(source=zarr_path)
+        self.threadpool.start(ng_worker)
+        viewer_url = ng_worker.url()
         logger.info('viewer_url: %s' % viewer_url)
-        self.ng_url = QUrl(viewer_url)
-        self.browser.setUrl(self.ng_url)
+        self.browser.setUrl(QUrl(viewer_url))
         self.main_widget.setCurrentIndex(1)
-
-        # To modify the state, use the viewer.txn() function, or viewer.set_state
-        logger.info('Viewer.config_state                  : %s' % str(self.ng_viewer.config_state))
-        # logger.info('viewer URL                           :', self.ng_viewer.get_viewer_url())
-        # logger.info('Neuroglancer view (remote viewer)                :', ng.to_url(viewer.state))
-        self.hud.post('Viewing Aligned Images In Neuroglancer')
-        logger.info("<<<< view_neuroglancer")
+        self.hud.post('Displaying Alignment In Neuroglancer')
+        self.set_idle()
 
     def set_main_view(self):
         self.main_widget.setCurrentIndex(0)

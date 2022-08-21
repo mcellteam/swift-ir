@@ -11,8 +11,8 @@ import multiprocessing as mp
 
 __all__ = ['TaskQueue']
 
-# logger = logging.getLogger(__name__)
-logger = logging.getLogger("hud")
+logger = logging.getLogger(__name__)
+# logger = logging.getLogger("hud")
 mpl = mp.log_to_stderr()
 mpl.setLevel(logging.CRITICAL)
 

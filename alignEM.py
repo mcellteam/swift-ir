@@ -39,7 +39,6 @@ To output a string of Mypy CLI args that will reflect the currently selected ali
 $ qtpy mypy-args
 
 """
-
 import os
 import sys
 import signal
@@ -48,9 +47,23 @@ import argparse
 import subprocess
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
+
+reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
+installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
+if 'QtPy' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','qtpy'])
+if 'QtAwesome' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','qtawesome'])
+if 'pyqtgraph' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','pyqtgraph'])
+if 'tqdm' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','tqdm'])
+if 'tqdm' not in installed_packages:
+    subprocess.check_call([sys.executable, '-m', 'pip', 'install','imagecodecs'])
+
+from alignEM.em_utils import print_exception
 from alignEM.ui.main_window import MainWindow
 import alignEM.config as cfg
-
 
 class CustomFormatter(logging.Formatter):
 
@@ -61,12 +74,6 @@ class CustomFormatter(logging.Formatter):
     # blue = "\x1b[1;34m"
     reset = "\x1b[0m"
     format = '%(asctime)s %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] %(message)s'
-    # format = '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s'
-    # format = '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s'
-    # format = '[%(asctime)s] %(levelname)s [%(module)s.%(funcName)s:%(lineno)d] | %(message)s')
-    # format = '%(asctime)s - %(name)s - %(process)d - %(threadName)s - %(levelname)s - %(message)s'
-    # format = '[%(asctime)s] %(levelname)s [%(name)s.%(funcName)s:%(lineno)d] %(message)s'
-
     FORMATS = {
         logging.DEBUG: grey + format + reset,
         logging.INFO: grey + format + reset,
@@ -74,102 +81,74 @@ class CustomFormatter(logging.Formatter):
         logging.ERROR: red + format + reset,
         logging.CRITICAL: bold_red + format + reset
     }
-
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
         formatter = logging.Formatter(log_fmt, datefmt='%H:%M:%S')
         return formatter.format(record)
 
-logger = logging.getLogger() # <-- use this logger initialization in main, to apply formatting to root logger
-if (logger.hasHandlers()):
-    logger.handlers.clear()
-
-logger.setLevel(cfg.LOG_LEVEL)
+logger = logging.getLogger()
+if logger.hasHandlers():  logger.handlers.clear()
 ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
 
 
-reqs = subprocess.check_output([sys.executable, '-m', 'pip', 'freeze'])
-installed_packages = [r.decode().split('==')[0] for r in reqs.split()]
-if 'QtAwesome' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','QtAwesome'])
-if 'QtPy' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','QtPy'])
-if 'qtconsole' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','qtconsole'])
-if 'imagecodecs' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','imagecodecs'])
-if 'zarr' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','zarr'])
-if 'tifffile' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','tifffile'])
-if 'tqdm' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','tqdm'])
-if 'tqdm' not in installed_packages:
-    subprocess.check_call([sys.executable, '-m', 'pip', 'install','jupyter'])
-
-
 if __name__ == "__main__":
 
-    # CSI = "\x1B["
-    # print('\n' + '\x1b[6;30;42m' + '0m' * 45)
-    # print('Welcome to AlignEM-SWiFT (joel-dev-alignem branch). Please report bugs to joel@salk.edu :)\n' + '0m' * 45)
-    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
-    # print('\x1b[6;30;42m' + 'You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
-    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
-
-    # print(
-    #     '\x1b[6;30;42m' + 'You are aligning with AlignEM-SWiFT. Please report any newlybugs to joel@salk.edu.' + '\x1b[0m')
-
-    sys.stdout.flush()
-    logger.info("Running " + __file__ + ".__main__()")
-    logger.info('PID=%d' % os.getpid())
-    options = argparse.ArgumentParser()
-    options.add_argument("-d", "--debug", type=int, required=False, default=10,help="Print more information with larger DEBUG (0 to 100)")
-    options.add_argument("-p", "--parallel", type=int, required=False, default=1, help="Run in parallel")
-    options.add_argument("-l", "--preload", type=int, required=False, default=3,help="Preload +/-, total to preload = 2n-1")
-    options.add_argument("-c", "--use_c_version", type=int, required=False, default=1,help="Run the C versions of SWiFT tools")
-    options.add_argument("-f", "--use_file_io", type=int, required=False, default=0,help="Use files to gather output from tasks")
-    options.add_argument("-a", "--api", type=str, required=False, default='pyqt6',help="Select Python API from: pyqt6, pyqt5, pyside6, pyside2")
-    options.add_argument("-i", "--interactive", required=False, default=False, action='store_true', help="Run with interactive python console in separate window")
-    args = options.parse_args()
-    cfg.PARALLEL_MODE = args.parallel
-    cfg.USE_FILE_IO = args.use_file_io
+    logger.info('Running ' + __file__ + '.__main__()')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-a', '--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug Mode')
+    parser.add_argument('-l', '--loglevel', type=int, default=1, help='Logging Level (1-5, default: 2)')
+    parser.add_argument('-p', '--preload', type=int, default=3, help='# Images +/- to Preload')
+    args = parser.parse_args()
+    LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+    else:
+        logger.setLevel(LOGLEVELS[args.loglevel])
+    cfg.LOG_LEVEL = logger.level
     cfg.QT_API = args.api
+    cfg.PRELOAD_RANGE = args.preload
+    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
+    logger.critical('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.')
+    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
+    sys.stdout.flush()
+    os.environ['QT_API'] = cfg.QT_API
+    # os.environ["FORCE_QT_API"] = 'True'
+    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --ignore-gpu-blacklist'
+    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    logger.info('QT_API: %s' % os.environ.get('QT_API'))
 
     if cfg.QT_API in ('pyside2', 'pyside6'): cfg.USES_PYSIDE, cfg.USES_PYQT = True, False
     if cfg.QT_API in ('pyqt5', 'pyqt6'):     cfg.USES_PYQT, cfg.USES_PYSIDE = True, False
     if cfg.QT_API in ('pyside2', 'pyqt5'):   cfg.USES_QT5, cfg.USES_QT6 = True, False
     if cfg.QT_API in ('pyside6', 'pyqt6'):   cfg.USES_QT6, cfg.USES_QT5 = True, False
 
-    # os.environ["FORCE_QT_API"] = 'True'
-    os.environ['QT_API'] = cfg.QT_API
-    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security --ignore-gpu-blacklist --enable-gpu-rasterization'
-    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-    logger.info('QT_API=%s' % os.environ.get('QT_API'))
-    logger.info('MESA_GL_VERSION_OVERRID=%s' % os.environ.get('MESA_GL_VERSION_OVERRIDE'))
-    logger.info('OBJC_DISABLE_INITIALIZE_FORK_SAFETY=%s' % os.environ.get('OBJC_DISABLE_INITIALIZE_FORK_SAFETY'))
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
-    logger.info('Attribute alignEM::AA_ShareOpenGLContext set')
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
-    app = QApplication(sys.argv)
-    app.setStyle('Fusion')
 
-    logger.info('QApplication() created')
-    logger.info('app.__str__() = %s' % app.__str__())
-    logger.info('Instantiating MainWindow...')
-    cfg.main_window = MainWindow(title="AlignEM-SWiFT")
-    # cfg.main_window.resize(cfg.WIDTH, cfg.HEIGHT)
-    cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
-    cfg.main_window.define_roles(['ref', 'base', 'aligned'])
-    app.aboutToQuit.connect(cfg.main_window.shutdown_jupyter_kernel)
-    logger.info('Window Size is %dx%d pixels' % (cfg.WIDTH, cfg.HEIGHT))
-    logger.info('Showing AlignEM-SWiFT')
-    cfg.main_window.show()
+    try:
+        app = QApplication(sys.argv)
+        app.setStyle('Fusion')
+        logger.info('QApplication Instance Created')
+    except:
+        logger.error('Unable to Instantiate QApplication')
+        print_exception()
+
+    try:
+        cfg.main_window = MainWindow(title="AlignEM-SWiFT")
+        cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
+        # cfg.main_window.define_roles(['ref', 'base', 'aligned'])
+        app.aboutToQuit.connect(cfg.main_window.shutdown_jupyter_kernel)
+        cfg.main_window.show()
+        logger.info('Showing AlignEM-SWiFT')
+    except:
+        logger.error('Unable to Instantiate MainWindow')
+        print_exception()
 
     try:
         sys.exit(app.exec())

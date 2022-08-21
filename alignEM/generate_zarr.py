@@ -42,6 +42,7 @@ def time_limit(seconds):
 def generate_zarr(src, out):
     logger.critical('>>>>>>>> Generate Zarr Start <<<<<<<<')
 
+
     scales_list = get_scales_list()
     chunks = '64'
     if os.path.isdir(out):
