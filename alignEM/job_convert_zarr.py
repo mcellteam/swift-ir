@@ -18,11 +18,13 @@ if __name__ == '__main__':
     src          = sys.argv[3]
     out          = sys.argv[4]
     scale_str    = sys.argv[5]
-    chunks       = (1, int(sys.argv[6]), int(sys.argv[6]))
+    chunks       = sys.argv[6]
     n_imgs       = int(sys.argv[7])
     width        = int(sys.argv[8])
     height       = int(sys.argv[9])
     scale_val    = int(sys.argv[10])
+
+    # chunks_zyx = chunks.split(',')
 
     scale_img = os.path.join(src, scale_str, 'img_aligned', img)
     im = tifffile.imread(scale_img) # im.dtype =  uint8

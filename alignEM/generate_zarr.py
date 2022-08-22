@@ -14,7 +14,7 @@ from PIL import Image
 from alignEM.image_utils import get_image_size
 from alignEM.mp_queue import TaskQueue
 from alignEM.em_utils import get_cur_scale_key, get_scale_key, get_scale_val, get_scales_list, get_num_scales, \
-    get_aligned_scales_list, get_images_list_directly
+    get_aligned_scales_list, get_images_list_directly, get_num_imported_images
 import alignEM.config as cfg
 from contextlib import contextmanager
 # import numcodecs
@@ -41,9 +41,13 @@ def time_limit(seconds):
 
 def generate_zarr(src, out):
     logger.critical('>>>>>>>> Generate Zarr Start <<<<<<<<')
+    logger.info('Input 1: src = %s' % src)
+    logger.info('Input 2: out = %s' % out)
 
     scales_list = get_scales_list()
-    chunks = '64'
+    chunks = '4,64,64'
+    CHUNK_Z_DIM = 4
+
     if os.path.isdir(out):
         try:
             with time_limit(15):
@@ -55,30 +59,33 @@ def generate_zarr(src, out):
     store = zarr.DirectoryStore(out, dimension_separator='/')
     root = zarr.group(store=store, overwrite=True)
 
-    n_imgs = len(get_images_list_directly(os.path.join(src, get_cur_scale_key())))
+    # n_imgs = len(get_images_list_directly(os.path.join(src, get_cur_scale_key()))) # bug
+    n_imgs = get_num_imported_images()
     al_scales_list = get_aligned_scales_list()
     print(al_scales_list)
     n_scales = len(al_scales_list)
+    print('n_scales = %d' % n_scales)
+    print('n_imgs = %d' % n_imgs)
     estimated_n_tasks = n_imgs * n_scales #TECHNICALLY THIS SHOULD TAKE INTO ACCOUNT SKIPS
     datasets = []
     for scale in al_scales_list:
         imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_aligned')))
         n_imgs = len(imgs)
         width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
-        print('Image dimensions at Scale %s: %dpx x %dpx' % (scale[-1], width, height))
+        cfg.main_window.hud.post('Image dimensions at Scale %s: %dpx x %dpx' % (scale[-1], width, height))
         scale_val = get_scale_val(scale)
         name = 's' + str(scale_val)
-        logger.info('Creating a Zarr dataset named %s' % name)
+        cfg.main_window.hud.post('Creating a Zarr dataset named %s' % name)
         opt_cname = cfg.main_window.cname_combobox.currentText()
         opt_clevel = int(cfg.main_window.clevel_input.text())
         if opt_cname in ('zstd', 'zlib', 'gzip'):
-            root.zeros(name, shape=(n_imgs, height, width), chunks=(1, 64, 64), dtype='uint8',
+            root.zeros(name, shape=(n_imgs, height, width), chunks=(CHUNK_Z_DIM, 64, 64), dtype='uint8',
                        compressor=Blosc(cname=opt_cname, clevel=opt_clevel))
         # elif opt_cname in ('gzip'):
         #     root.zeros(name, shape=(n_imgs, height, width), chunks=(1, 64, 64), dtype='uint8',
         #                compressor=opt_cname, synchronizer=zarr.ThreadSynchronizer())
         else:
-            root.zeros(name, shape=(n_imgs, height, width), chunks=(1, 64, 64), dtype='uint8',
+            root.zeros(name, shape=(n_imgs, height, width), chunks=(CHUNK_Z_DIM, 64, 64), dtype='uint8',
                        compressor=None)
         #, synchronizer=zarr.ThreadSynchronizer()
         datasets.append(
@@ -111,13 +118,23 @@ def generate_zarr(src, out):
         }
     ]
 
-    tasks = []
+    tasks_ = []
     for ID, img in enumerate(imgs):
         for scale in al_scales_list:
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))
             width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
-            tasks.append([ID, img, src, path_out, scale, chunks, estimated_n_tasks, width, height, scale_val])
+            tasks_.append([ID, img, src, path_out, scale, chunks, estimated_n_tasks, width, height, scale_val])
+    logger.critical("Estimated # of tasks: %d" % estimated_n_tasks)
+    logger.critical('# of tasks: %d' % len(tasks_))
+    tasks=[]
+    for x in range(0,CHUNK_Z_DIM): #chunk z_dim
+        append_list = tasks_[x::CHUNK_Z_DIM]
+        for t in append_list:
+            tasks.append(t)
+
+    logger.critical('# of shuffled tasks: %d' % len(tasks))
+
     n_tasks = len(tasks)
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48)

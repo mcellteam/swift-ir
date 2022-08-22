@@ -106,7 +106,7 @@ class TaskQueue:
         '''type(task_q)= <class 'multiprocessing.queues.JoinableQueue'>
            type(result_q)= <class 'multiprocessing.queues.Queue'>'''
         logger.debug('TaskQueue.start:')
-        logger.info('Size of Task Dict: ', sys.getsizeof(self.task_dict))
+        logger.info('Size of Task Dict: %d' % len(self.task_dict))
         self.task_id = 0
         self.n_workers = n_workers
 
