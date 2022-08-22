@@ -346,8 +346,7 @@ class MainWindow(QMainWindow):
         self.project_model.load(cfg.project_data.to_dict())
         self.project_view.show()
         self.main_widget.setCurrentIndex(5)
-        # 0718
-    
+
     @Slot()
     def run_scaling(self) -> None:
         logger.info("run_scaling:")
@@ -363,47 +362,47 @@ class MainWindow(QMainWindow):
                                          QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
             if reply == QMessageBox.Yes:
                 self.hud.post('Continuing With Rescaling...')
-
+                #
+                # # for scale in get_scales_list():
+                # #     scale_path = os.path.join(proj_path, scale, 'img')
+                # #     try:
+                # #         shutil.rmtree()
+                #
+                # self.hud.post('Removing Previously Generated Images...')
+                # proj_path = cfg.project_data['data']['destination_path']
                 # for scale in get_scales_list():
-                #     scale_path = os.path.join(proj_path, scale, 'img')
+                #     if scale != 'scale_1':
+                #         logger.info('Removing directory %s...' % scale)
+                #         rm_dir = os.path.join(proj_path, scale)
+                #         try:
+                #             shutil.rmtree(rm_dir)
+                #         except Exception as e:
+                #             logger.warning('Failed to delete %s. Reason: %s' % (rm_dir, e))
+                #
+                #     elif scale == 1:
+                #         clear_dir = os.path.join(proj_path, scale, 'img_aligned')
+                #         logger.info('Clearing directory %s...' % clear_dir)
+                #         for filename in os.listdir(clear_dir):
+                #             file_path = os.path.join(clear_dir, filename)
+                #             try:
+                #                 if os.path.isfile(file_path) or os.path.islink(file_path):
+                #                     os.unlink(file_path)
+                #                 elif os.path.isdir(file_path):
+                #                     shutil.rmtree(file_path)
+                #             except Exception as e:
+                #                 logger.warning('Failed to delete %s. Reason: %s' % (file_path, e))
+                #
+                # zarr_path = os.path.join(proj_path, '3dem.zarr')
+                # if os.path.exists(zarr_path):
+                #     logger.info('Removing directory %s...' % zarr_path)
                 #     try:
-                #         shutil.rmtree()
-
-                self.hud.post('Removing Previously Generated Images...')
-                proj_path = cfg.project_data['data']['destination_path']
-                for scale in get_scales_list():
-                    if scale != 'scale_1':
-                        logger.info('Removing directory %s...' % scale)
-                        rm_dir = os.path.join(proj_path, scale)
-                        try:
-                            shutil.rmtree(rm_dir)
-                        except Exception as e:
-                            logger.warning('Failed to delete %s. Reason: %s' % (rm_dir, e))
-
-                    elif scale == 1:
-                        clear_dir = os.path.join(proj_path, scale, 'img_aligned')
-                        logger.info('Clearing directory %s...' % clear_dir)
-                        for filename in os.listdir(clear_dir):
-                            file_path = os.path.join(clear_dir, filename)
-                            try:
-                                if os.path.isfile(file_path) or os.path.islink(file_path):
-                                    os.unlink(file_path)
-                                elif os.path.isdir(file_path):
-                                    shutil.rmtree(file_path)
-                            except Exception as e:
-                                logger.warning('Failed to delete %s. Reason: %s' % (file_path, e))
-
-                zarr_path = os.path.join(proj_path, '3dem.zarr')
-                if os.path.exists(zarr_path):
-                    logger.info('Removing directory %s...' % zarr_path)
-                    try:
-                        shutil.rmtree(zarr_path)
-                    except Exception as e:
-                        logger.warning('Failed to delete %s. Reason: %s' % (zarr_path, e))
-
-                self.update_panels()
-                self.update_win_self()
-                self.hud.post('Done')
+                #         shutil.rmtree(zarr_path)
+                #     except Exception as e:
+                #         logger.warning('Failed to delete %s. Reason: %s' % (zarr_path, e))
+                #
+                # self.update_panels() #!!
+                # self.update_win_self()
+                # self.hud.post('Done')
 
             else:
                 self.hud.post('Rescaling canceled.')
@@ -427,10 +426,8 @@ class MainWindow(QMainWindow):
                                                text=' '.join(default_scales))
         
         if not ok:
-            logger.info("User did not select OK - Canceling")
-            self.hud.post('User did not select OK - Canceling')
+            self.hud.post('User did not select Okay - Canceling')
             self.set_idle()
-            logger.info('<<<< run_scaling')
             return
         
         if input_val == '':
@@ -455,7 +452,7 @@ class MainWindow(QMainWindow):
         self.set_progress_stage_2()
         self.reload_scales_combobox()  # 0529 #0713+
 
-        # TODO: Get rid of this as soon as possible !
+        #TODO: Get rid of this as soon as possible
         logger.info("Current scales combobox index: %s" % str(self.scales_combobox.currentIndex()))
         self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
         logger.info("New current scales combobox index: %s" % str(self.scales_combobox.currentIndex()))
@@ -476,10 +473,10 @@ class MainWindow(QMainWindow):
         logger.info('run_alignment:')
         self.read_gui_update_project_data()
         if not is_cur_scale_ready_for_alignment():
-            error_msg = "Scale %s must be aligned first!" % get_next_coarsest_scale_key()[-1]
-            self.hud.post(error_msg, logging.WARNING)
+            warning_msg = "Scale %s must be aligned first!" % get_next_coarsest_scale_key()[-1]
+            self.hud.post(warning_msg, logging.WARNING)
             return
-        self.status.showMessage('Aligning...')
+        self.set_status('Aligning...')
         self.show_hud()
         try:
             compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
@@ -504,22 +501,19 @@ class MainWindow(QMainWindow):
                 )
             except:
                 print_exception()
-                self.hud.post('Something Went Wrong During Image Generation.', logging.ERROR)
+                self.hud.post('Alignment Succeeded but Applying the Affine Failed.'
+                              ' Try Re-generating images.',logging.ERROR)
                 self.set_idle()
                 return
             
-            if are_aligned_images_generated():
-                self.set_progress_stage_3()
-                self.center_all_images()
+            # if are_aligned_images_generated():
 
-                if self.main_panel_bottom_widget.currentIndex() == 1:
-                   self.show_snr_plot()
-                
-                self.hud.post('Image Generation Complete')
-                logger.info('\n\nImage Generation Complete\n')
-            else:
-                self.hud.post('Alignment Succeeded, but Image Generation Failed. Try Re-generating the Images.',
-                              logging.ERROR)
+            self.set_progress_stage_3()
+            self.center_all_images()
+            if self.main_panel_bottom_widget.currentIndex() == 1:
+               self.show_snr_plot()
+            self.hud.post('Image Generation Complete')
+
             self.update_win_self()
             self.refresh_all_images()
             self.update_panels()  # 0721+
@@ -682,8 +676,6 @@ class MainWindow(QMainWindow):
                 except:
                     logger.warning('Something went wrong enabling/disabling align all button')
                 
-                
-                
             try:
                 self.jump_validator = QIntValidator(0, get_num_imported_images())
             except:
@@ -699,29 +691,18 @@ class MainWindow(QMainWindow):
         logger.debug('update_alignment_details >>>>')
         al_stack = cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack']
         self.alignment_status_checkbox.setChecked(is_cur_scale_aligned())
-        # if is_cur_scale_aligned():
         self.alignment_status_checkbox.show()
         self.alignment_status_label.show()
         self.align_label_resolution.show()
         self.align_label_affine.show()
         self.align_label_scales_remaining.show()
-        dm_name_to_combo_name = {'init_affine'  : 'Initialize Affine',
-                                 'refine_affine': 'Refine Affine',
-                                 'apply_affine' : 'Apply Affine'}
+        dict = {'init_affine':'Initialize Affine','refine_affine':'Refine Affine','apply_affine':'Apply Affine'}
         img_size = get_image_size(al_stack[0]['images']['base']['filename'])
-        alignment_method_string = dm_name_to_combo_name[cfg.project_data['data']['scales'][get_cur_scale_key()][
-            'method_data']['alignment_option']]
-        
-        self.alignment_status_label.setText("Is Aligned: ")
+        str = dict[cfg.project_data['data']['scales'][get_cur_scale_key()]['method_data']['alignment_option']]
+        self.alignment_status_label.setText("Is Aligned? ")
         self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
-        self.align_label_affine.setText(alignment_method_string)
+        self.align_label_affine.setText(str)
         self.align_label_scales_remaining.setText('# Scales Unaligned: %d' % len(get_not_aligned_scales_list()))
-        # else:
-        #     # self.alignment_status_label.hide()
-        #     # self.align_label_resolution.hide()
-        #     # self.align_label_affine.hide()
-        #     # self.align_label_scales_remaining.hide()
-        #     logger.info('update_alignment_details | WARNING | Function was called but current scale is not aligned')
     
     @Slot()
     def get_auto_generate_state(self) -> bool:
@@ -765,7 +746,7 @@ class MainWindow(QMainWindow):
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index + 1
-            self.scales_combobox.setCurrentIndex(requested_index)  # commence the scale change
+            self.scales_combobox.setCurrentIndex(requested_index)  # changes scale
             self.read_project_data_update_gui()
             self.update_scale_controls()
             if not is_cur_scale_ready_for_alignment():
@@ -810,9 +791,7 @@ class MainWindow(QMainWindow):
         )
         self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
-
         self.last_snr_click = []
-
         font = QFont()
         font.setPixelSize(12)
         self.snr_plot.getAxis("bottom").setStyle(tickFont=font)
@@ -821,10 +800,9 @@ class MainWindow(QMainWindow):
         self.snr_plot.getAxis("left").setWidth(34)
 
         # self.scatter_widget.setData(x_axis, snr_list)
-        self.snr_plot.addItem(self.snr_points)
         # self.plot_widget.plot(x_axis, snr_list, name="SNR", pen=pen, symbol='+')
+        self.snr_plot.addItem(self.snr_points)
         self.snr_plot.showGrid(x=True,y=True, alpha = 200) # alpha: 0-255
-        # styles = {'color': 'r', 'font-size': '16px'}
         style = {'color': '#ffffff', 'font-size': '14px'}
         self.snr_plot.setLabel('left', 'SNR', **style)
         self.snr_plot.setLabel('bottom', 'Layer', **style)
@@ -852,6 +830,9 @@ class MainWindow(QMainWindow):
         self.last_snr_click = points
         self.jump_to(index)
 
+    def show_hud(self):
+        self.main_panel_bottom_widget.setCurrentIndex(0)
+
     def shutdown_jupyter_kernel(self):
         logger.info('Shutting Down Jupyter Kernel...')
         try:
@@ -872,12 +853,6 @@ class MainWindow(QMainWindow):
     def show_img(self, path):
         self.jupyter_console.execute_command(display(Image(filename=path)))
         self.main_panel_bottom_widget.setCurrentIndex(2)
-
-
-
-    def show_hud(self):
-        self.main_panel_bottom_widget.setCurrentIndex(0)
-
 
     @Slot()
     def back_callback(self):
@@ -905,7 +880,7 @@ class MainWindow(QMainWindow):
             print_exception()
             logger.warning('Failed to update skips list')
 
-    @Slot()  # 0503 #skiptoggle #toggleskip #skipswitch forgot to define this
+    @Slot()
     def update_skip_toggle(self):
         logger.info('update_skip_toggle:')
         scale = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]
@@ -917,7 +892,6 @@ class MainWindow(QMainWindow):
     def set_status(self, msg: str) -> None:
         self.status.showMessage(msg)
     
-    # stylesheet
     def minimal_stylesheet(self):
         self.setStyleSheet('')
         logger.info('Changing stylesheet to minimal')
@@ -994,14 +968,22 @@ class MainWindow(QMainWindow):
         self.export_and_view_stack.setCurrentIndex((0, 1)[gb4])
         self.export_and_view_stack.setStyleSheet(
             ("""QGroupBox {border: 2px dotted #455364;}""", open(self.main_stylesheet).read())[gb4])
+
+    def cycle_user_progress(self):
+        print('self.up = ' + str(self.up))
+        self.up += 1
+        up_ = self.up % 4
+        print('up_ = ' + str(up_))
+        if up_ == 0:    self.set_progress_stage_1()
+        elif up_ == 1:  self.set_progress_stage_2()
+        elif up_ == 2:  self.set_progress_stage_3()
+        elif up_ == 3:  self.set_progress_stage_0()
     
-    @Slot()
     def set_progress_stage_0(self):
         if self.get_user_progress() != 0: self.hud.post('Reverting user progress to Project')
         self.set_user_progress(False, False, False, False)
         self.project_progress = 0
     
-    @Slot()
     def set_progress_stage_1(self):
         if self.get_user_progress() > 1:
             self.hud.post('Reverting user progress to Data Selection & Scaling')
@@ -1846,14 +1828,11 @@ class MainWindow(QMainWindow):
 
 
     def print_state_ng(self):
-        # viewer_state = json.loads(str(self.ng_viewer.state))
         logger.info(self.ng_viewer.state)
         # logger.info("Viewer.url : ", self.ng_viewer.get_viewer_url)
         # logger.info("Viewer.screenshot : ", self.ng_viewer.screenshot)
         # logger.info("Viewer.txn : ", self.ng_viewer.txn)
         # logger.info("Viewer.actions : ", self.ng_viewer.actions)
-        # time.sleep(1)
-        # self.set_status("Viewing aligned images in Neuroglancer.")
 
     def print_url_ng(self):
         print(ng.to_url(self.ng_viewer.state))
@@ -1927,13 +1906,6 @@ class MainWindow(QMainWindow):
 
     def show_splash(self):
         print('Initializing funky UI...')
-        # # self.main_widget.setCurrentIndex(6)
-        # pixmap = QPixmap('fusiform-alignem-guy.png')
-        # # splash = QSplashScreen(pixmap)
-        # splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
-        # splash.setMask(splash_pix.mask())
-        # splash.show()
-        # # app.processEvents()
         splash_pix = QPixmap('resources/em_guy.png')
         splash = QSplashScreen(self, splash_pix, Qt.WindowStaysOnTopHint)
         splash.setMask(splash_pix.mask())
@@ -1948,16 +1920,6 @@ class MainWindow(QMainWindow):
         # self.resize(pixmap.width(), pixmap.height())
         self.funky_layout.addWidget(label)
         self.funky_panel.setLayout(self.funky_layout)
-
-    def cycle_user_progress(self):
-        print('self.up = ' + str(self.up))
-        self.up += 1
-        up_ = self.up % 4
-        print('up_ = ' + str(up_))
-        if up_ == 0:    self.set_progress_stage_1()
-        elif up_ == 1:  self.set_progress_stage_2()
-        elif up_ == 2:  self.set_progress_stage_3()
-        elif up_ == 3:  self.set_progress_stage_0()
 
     def settings(self):
         cfg.defaults_form.show()
@@ -1979,10 +1941,7 @@ class MainWindow(QMainWindow):
             self.hud.post(
                 'Bounding box will not be used (faster). x and y dimensions of generated images will equal the source images.')
             cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = False
-            # logger.info('  Bounding Rect project_file value saved as:',cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
-        # else:
-        #     pass
-
+            logger.debug('  Bounding Rect project_file value saved as:',cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
 
 
     def skip_changed_callback(self, state):  # 'state' is connected to skip toggle
@@ -2195,11 +2154,6 @@ class MainWindow(QMainWindow):
         self.scales_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.scales_combobox.setFixedSize(self.std_button_size)
         self.scales_combobox.currentTextChanged.connect(self.fn_scales_combobox)
-
-        self.affine_combobox = QComboBox(self)
-        self.affine_combobox.addItems(['Init Affine', 'Refine Affine', 'Apply Affine'])
-        self.affine_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.affine_combobox.setFixedSize(self.std_button_size)
 
         self.whitening_label = QLabel("Whitening:")
         self.whitening_input = QLineEdit(self)
@@ -2506,11 +2460,6 @@ class MainWindow(QMainWindow):
         self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
 
         self.lower_panel_groups_ = QGridLayout()
-        # self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-        # self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0)
         self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1)
         self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2)
@@ -2555,7 +2504,6 @@ class MainWindow(QMainWindow):
             QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
         self.plot_widget_layout = QHBoxLayout()
-        # self.plot_widget_layout.addWidget(self.plot_widget)
         self.plot_widget_layout.addWidget(self.snr_plot)
         self.plot_widget_layout.addLayout(self.plot_controls_layout)
         self.plot_widget_container = QWidget()
@@ -2742,9 +2690,9 @@ class MainWindow(QMainWindow):
         # self.blend_ng_button = QPushButton("Blend (b)")
         # self.blend_ng_button.setFixedSize(QSize(100, 28))
         # self.blend_ng_button.clicked.connect(blend_ng)
-        self.ng_panel = QWidget()  # create QWidget()
-        self.ng_panel_layout = QVBoxLayout()  # create QVBoxLayout()
-        self.ng_panel_layout.addWidget(self.browser)  # add widgets
+        self.ng_panel = QWidget()
+        self.ng_panel_layout = QVBoxLayout()
+        self.ng_panel_layout.addWidget(self.browser)
         self.ng_panel_controls_layout = QHBoxLayout()
         self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
         self.ng_panel_controls_layout.addWidget(self.reload_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2755,7 +2703,7 @@ class MainWindow(QMainWindow):
         self.ng_panel_layout.addLayout(self.ng_panel_controls_layout)
         self.ng_panel.setLayout(self.ng_panel_layout)
 
-        self.splash() #0816 Refactor!
+        self.splash() #0816 refactor
 
         self.main_widget = QStackedWidget(self)
         self.main_widget.addWidget(self.main_panel)                 # (0) main_panel
