@@ -502,11 +502,10 @@ class MainWindow(QMainWindow):
             self.center_all_images()
             if self.main_panel_bottom_widget.currentIndex() == 1:
                self.show_snr_plot()
-            self.hud.post('Image Generation Complete')
-
             self.update_win_self()
             self.refresh_all_images()
             self.update_panels()  # 0721+
+            self.hud.post('Image Generation Complete')
             self.set_idle()
     
     @Slot()
@@ -584,7 +583,7 @@ class MainWindow(QMainWindow):
             logger.error('Zarr Export Failed')
             self.set_idle()
             return
-        self.hud.post('Zarr Export Complete')
+        self.hud.post('Process Finished')
         self.set_idle()
 
     @Slot()

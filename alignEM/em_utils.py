@@ -46,6 +46,8 @@ def print_exception():
 
 
 def get_images_list_directly(path) -> list[str]:
+    logger.debug('get_images_list_directly:')
+    logger.debug('Searching in Path: %s ' % path)
     imgs = [x for x in os.listdir(path) if os.path.splitext(x)[1] in (
         '.tif',
         '.tiff',
@@ -55,6 +57,7 @@ def get_images_list_directly(path) -> list[str]:
         '.png',
         '.eps'
     )]
+    logger.debug('Returning: %s' % str(imgs))
     return imgs
 
 
