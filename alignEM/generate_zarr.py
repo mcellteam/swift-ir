@@ -46,7 +46,7 @@ def generate_zarr(src, out):
 
     scales_list = get_scales_list()
     chunks = '4,64,64'
-    CHUNK_Z_DIM = 4
+    Z_STRIDE = 4
 
     if os.path.isdir(out):
         try:
@@ -79,13 +79,13 @@ def generate_zarr(src, out):
         opt_cname = cfg.main_window.cname_combobox.currentText()
         opt_clevel = int(cfg.main_window.clevel_input.text())
         if opt_cname in ('zstd', 'zlib', 'gzip'):
-            root.zeros(name, shape=(n_imgs, height, width), chunks=(CHUNK_Z_DIM, 64, 64), dtype='uint8',
+            root.zeros(name, shape=(n_imgs, height, width), chunks=(Z_STRIDE, 64, 64), dtype='uint8',
                        compressor=Blosc(cname=opt_cname, clevel=opt_clevel))
         # elif opt_cname in ('gzip'):
         #     root.zeros(name, shape=(n_imgs, height, width), chunks=(1, 64, 64), dtype='uint8',
         #                compressor=opt_cname, synchronizer=zarr.ThreadSynchronizer())
         else:
-            root.zeros(name, shape=(n_imgs, height, width), chunks=(CHUNK_Z_DIM, 64, 64), dtype='uint8',
+            root.zeros(name, shape=(n_imgs, height, width), chunks=(Z_STRIDE, 64, 64), dtype='uint8',
                        compressor=None)
         #, synchronizer=zarr.ThreadSynchronizer()
         datasets.append(
@@ -128,8 +128,8 @@ def generate_zarr(src, out):
     logger.critical("Estimated # of tasks: %d" % estimated_n_tasks)
     logger.critical('# of tasks: %d' % len(tasks_))
     tasks=[]
-    for x in range(0,CHUNK_Z_DIM): #chunk z_dim
-        append_list = tasks_[x::CHUNK_Z_DIM]
+    for x in range(0,Z_STRIDE): #chunk z_dim
+        append_list = tasks_[x::Z_STRIDE]
         for t in append_list:
             tasks.append(t)
 
@@ -139,6 +139,7 @@ def generate_zarr(src, out):
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48)
     scale_q = TaskQueue(n_tasks=n_tasks)
+    scale_q.tqdm_desc = 'Exporting Zarr'
     scale_q.start(cpus)
     for task in tasks:
         task_args = [sys.executable,

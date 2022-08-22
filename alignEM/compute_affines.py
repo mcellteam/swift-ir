@@ -87,6 +87,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
         # task_queue = TaskQueue(n_tasks=len(alstack))
         task_queue = TaskQueue(n_tasks=len(alstack))
+        task_queue.tqdm_desc = 'Computing Affines'
         cpus = min(psutil.cpu_count(logical=False), 48)
         cfg.main_window.hud.post("Task Queue is using %d CPUs" % cpus)
         task_queue.start(cpus)

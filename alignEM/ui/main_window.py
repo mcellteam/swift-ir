@@ -79,7 +79,7 @@ class MainWindow(QMainWindow):
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
 
-        print(os.getcwd())
+        logger.critical('os.cwd():')
         self.main_stylesheet = 'alignEM/styles/stylesheet1.qss'
         self.setStyleSheet(open(self.main_stylesheet).read()) # must be after QMainWindow.__init__(self)
         
@@ -2451,12 +2451,18 @@ class MainWindow(QMainWindow):
         self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
 
         self.lower_panel_groups_ = QGridLayout()
+        self.lower_panel_groups_.setContentsMargins(8,8,8,8)
+        # self.project_functions_stack.setContentsMargins(0, 0, 0, 0)
+        # self.images_and_scaling_stack.setContentsMargins(0, 0, 0, 0)
+        # self.alignment_stack.setContentsMargins(0, 0, 0, 0)
+        # self.postalignment_stack.setContentsMargins(0, 0, 0, 0)
+        # self.export_and_view_stack.setContentsMargins(0, 0, 0, 0)
         self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0)
         self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1)
         self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2)
         self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3)
         self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4)
-        self.lower_panel_groups_.setHorizontalSpacing(15)
+        self.lower_panel_groups_.setHorizontalSpacing(10)
         self.lower_panel_groups = QWidget()
         self.lower_panel_groups.setLayout(self.lower_panel_groups_)
 
@@ -2469,9 +2475,6 @@ class MainWindow(QMainWindow):
         # self.image_panel.setSizePolicy(QSizePolicy.Expanding,QSizePolicy.Expanding) #0610
         self.image_panel.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.image_panel.setMinimumHeight(400)
-
-        self.main_panel_bottom_widget = QStackedWidget()
-        self.main_panel_bottom_widget.addWidget(self.hud)
 
         self.snr_plot = SnrPlot()
         # self.scatter_widget = pg.ScatterPlotWidget()
@@ -2512,6 +2515,9 @@ class MainWindow(QMainWindow):
         self.python_console_widget_container = QWidget()
         self.python_console_widget_container.setLayout(self.python_console_layout)
 
+        self.main_panel_bottom_widget = QStackedWidget()
+        self.main_panel_bottom_widget.setContentsMargins(0, 0, 0, 0)
+        self.main_panel_bottom_widget.addWidget(self.hud)
         self.main_panel_bottom_widget.addWidget(self.plot_widget_container)
         self.main_panel_bottom_widget.addWidget(self.python_console_widget_container)
         self.main_panel_bottom_widget.setCurrentIndex(0)
@@ -2539,13 +2545,17 @@ class MainWindow(QMainWindow):
         self.show_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color=ICON_COLOR))
 
         self.main_secondary_controls_layout = QVBoxLayout()
-        self.main_secondary_controls_layout.setContentsMargins(0, 8, 0, 0)
-        self.main_secondary_controls_layout.addWidget(self.show_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_secondary_controls_layout.setContentsMargins(0, 8, 4, 0)
+        self.main_secondary_controls_layout.addWidget(self.show_hud_button,
+                                                      alignment=Qt.AlignmentFlag.AlignTop)
         self.main_secondary_controls_layout.addWidget(self.show_jupyter_console_button,
                                                       alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_secondary_controls_layout.addWidget(self.show_snr_plot_button, alignment=Qt.AlignmentFlag.AlignTop)
-        self.spacer_item_main_secondary = QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
-        self.main_secondary_controls_layout.addSpacerItem(self.spacer_item_main_secondary)
+        self.main_secondary_controls_layout.addWidget(self.show_snr_plot_button,
+                                                      alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_secondary_controls_layout.addSpacerItem(QSpacerItem(0, 0,
+                                                                      QSizePolicy.Policy.Minimum,
+                                                                      QSizePolicy.Policy.Expanding))
+
 
         self.bottom_display_area_hlayout = QHBoxLayout()
         self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
@@ -2555,6 +2565,8 @@ class MainWindow(QMainWindow):
         self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
 
         self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.setHandleWidth(8)
+        # main_window.splitter.setHandleWidth(4)
         self.splitter.setContentsMargins(0, 0, 0, 0)
         self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.lower_panel_groups)
@@ -2564,12 +2576,14 @@ class MainWindow(QMainWindow):
         self.splitter.setStretchFactor(1, 0)
         self.splitter.setStretchFactor(2, 1)
         self.splitter.setCollapsible(0, False)
-        self.splitter.setCollapsible(1, False)
+        # self.splitter.setCollapsible(1, False)
+        self.splitter.setCollapsible(1, True)
         self.splitter.setCollapsible(2, True)
 
         self.main_panel = QWidget()
         self.main_panel_layout = QGridLayout()
-        self.main_panel_layout.setSpacing(2) # this inherits downward
+        # self.main_panel_layout.setSpacing(2) # this inherits downward
+        # main_window.main_panel_layout.setSpacing(10) # this inherits downward
         self.main_panel_layout.addWidget(self.splitter, 1, 0)
         self.main_panel.setLayout(self.main_panel_layout)
 
@@ -2628,8 +2642,7 @@ class MainWindow(QMainWindow):
 
         # REMOTE VIEWER PANEL
         self.browser_remote = QWebEngineView()
-        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))  # tacctacc
-        # self.browser_remote.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.exit_remote_button = QPushButton("Back")
         self.exit_remote_button.setFixedSize(self.std_button_size)
         self.exit_remote_button.clicked.connect(self.exit_remote)

@@ -12,7 +12,7 @@ import logging
 from qtpy.QtCore import QObject, Signal, Slot, QThread
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
-from alignEM.ui.TqdmToLogger import TqdmToLogger
+# from alignEM.TqdmToLogger import TqdmToLogger
 
 __all__ = ['HeadUpDisplay', 'HudWorker']
 
@@ -80,8 +80,8 @@ class HeadUpDisplay(QWidget):
             border-style: inset;
             /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
             border-color: #d3dae3;     /* light off-white */
-            border-width: 2px;
-            border-radius: 3px;            
+            border-width: 0px;
+            border-radius: 2px;            
         """)
         self.handler = h = QtHandler(self.update_status)
         # fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'

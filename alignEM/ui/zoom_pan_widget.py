@@ -8,12 +8,16 @@ from qtpy.QtGui import QPainter, QPen, QColor
 from qtpy.QtWidgets import QWidget, QRubberBand
 from qtpy.QtCore import Qt, QPointF, QRectF
 from qtpy.QtWidgets import QSizePolicy
+
+from qtpy.QtGui import QNativeGestureEvent
+
 import alignEM.config as cfg
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
 from ..em_utils import get_cur_scale_key
 from ..em_utils import print_exception
 from ..em_utils import is_dataset_scaled
+from ..em_utils import get_cur_snr
 
 
 __all__ = ['ZoomPanWidget']
@@ -36,6 +40,8 @@ class ZoomPanWidget(QWidget):
         self.zoom_scale = 1.0
         self.last_button = Qt.MouseButton.NoButton
 
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+
         self.mdx = 0  # Mouse Down x (screen x of mouse down at start of drag)
         self.mdy = 0  # Mouse Down y (screen y of mouse down at start of drag)
         self.ldx = 0  # Last dx (fixed while dragging)
@@ -54,6 +60,13 @@ class ZoomPanWidget(QWidget):
         # self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0719
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self) #0610 removed  #0701 activated
         self.need_to_center = 0
+
+        self.setStyleSheet("""QToolTip { 
+                                        background-color: #8ad4ff;
+                                        /*color: white;*/
+                                        color: #000000;
+                                        border: #8ad4ff solid 1px;
+                                        }""")
 
         # self.setToolTip('GlanceEM_SWiFT')  # tooltip #settooltip
         # tooltip.setTargetWidget(btn)
@@ -104,11 +117,16 @@ class ZoomPanWidget(QWidget):
         super(ZoomPanWidget, self).update()
 
         #04-04 #maybe better at the end of change_layer?
-        # TODO FIX
-        # if get_cur_snr() is None:
-        #     self.setToolTip('%s\n%s\n%s' % ( get_cur_scale_key(), self.role, 'Unaligned' ))
-        # else:
-        #     self.setToolTip('%s\n%s\n%s' % ( get_cur_scale_key(), self.role, str(get_cur_snr() ) ))
+        scale_dict = {'scale_'}
+        role_dict = {'ref': 'Reference Image', 'base': 'Work Image', 'aligned': 'Aligned Image'}
+        if get_cur_snr() is None:
+            self.setToolTip('%s\n%s\n%s' % (role_dict[self.role],
+                                            str('Scale '+get_cur_scale_key()[-1]),
+                                            'Unaligned' ))
+        else:
+            self.setToolTip('%s\n%s\n%s' % (str(role_dict[self.role]),
+                                            'Scale '+get_cur_scale_key()[-1],
+                                            str(get_cur_snr())))
 
     def show_actual_size(self):
         logger.debug("ZoomPanWidget.show_actual_size:")
@@ -116,8 +134,10 @@ class ZoomPanWidget(QWidget):
         self.ldx = 0
         self.ldy = 0
         self.wheel_index = 0
-        # self.zoom_to_wheel_at ( 0, 0 ) #pyside2 #0613 removed
-        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
+        if cfg.USES_QT5:
+            self.zoom_to_wheel_at ( 0, 0 ) #pyside2 #0613 removed
+        else:
+            self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
@@ -137,6 +157,7 @@ class ZoomPanWidget(QWidget):
                         if self.role in image_dict.keys():
                             # logger.info("current role: ", self.role)
                             ann_image = image_dict[self.role] # <class 'dict'>
+                            '''CALL TO cfg.image_library'''
                             pixmap = cfg.image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
                             img_text = ann_image['filename']
 
@@ -305,6 +326,23 @@ class ZoomPanWidget(QWidget):
             logger.info("Do Normal Processing")
             return (False)  # Lets the framework know that the click has not been handled
 
+    #0821
+    # def event(self, e):
+    #     if isinstance(e, QNativeGestureEvent):
+    #         print(e.gestureType(), e.pos(), e.value())
+    #         if event.delta() > 0:
+    #             factor = 1.25
+    #             self._zoom += 1
+    #         else:
+    #             factor = 0.8
+    #             self._zoom -= 1
+    #         if self._zoom > 0:
+    #             self.scale(factor, factor)
+    #         elif self._zoom == 0:
+    #             self.fitInView()
+    #         else:
+    #             self._zoom = 0
+
 
     def mousePressEvent(self, event):
         print('mousePressEvent:')
@@ -336,17 +374,19 @@ class ZoomPanWidget(QWidget):
         self.update_zpa_self()
 
 
-    # def zoom_to_wheel_at ( self, mouse_win_x, mouse_win_y ): #pyside2
-    def zoom_to_wheel_at(self, position):  # pyside6, position has type PySide6.QtCore.QPoint
+
+    def zoom_to_wheel_at (self, position):
         old_scale = self.zoom_scale
         new_scale = self.zoom_scale = pow(self.scroll_factor, self.wheel_index)
+        if cfg.USES_QT5:
+            # self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
+            # self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
+            self.ldx = self.ldx + (position.x() /new_scale) - (position.x()/old_scale)
+            self.ldy = self.ldy + (position.y()/new_scale) - (position.y()/old_scale)
+        else:
+            self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
+            self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
 
-        # if cfg.USES_QT5:
-        #     self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale) #pyside2
-        #     self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale) #pyside2
-        # else:
-        self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
-        self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
 
     def change_layer(self, layer_delta):
         """This function loads the next or previous layer"""
@@ -426,13 +466,16 @@ class ZoomPanWidget(QWidget):
         scroll w/ shift key     :  alignEM.ShiftModifier
         scroll w/out shift key  :  alignEM.NoModifier      '''
 
+        ''''''
         if kmods == Qt.NoModifier:
             # Unshifted Scroll Wheel moves through layers
 
-            if cfg.USES_QT5 == True:
-                layer_delta = int(event.delta()/120)    #pyside2
-            else:
-                layer_delta = event.angleDelta().y()  # 0615 #0719
+            # if cfg.USES_QT5 == True:
+            #     layer_delta = int(event.delta()/120)    #pyside2
+            # else:
+            #     layer_delta = event.angleDelta().y()  # 0615 #0719
+
+            layer_delta = event.angleDelta().y()
 
             # layer_delta = int(event.angleDelta().y() / 120)  # pyside6
             # layer_delta = event.angleDelta().y() # 0615
@@ -468,17 +511,19 @@ class ZoomPanWidget(QWidget):
 
         elif kmods == Qt.ShiftModifier:
             # Shifted Scroll Wheel zooms
-            if cfg.USES_QT5 == True:
-                self.wheel_index += event.delta()/120    #pyside2
-            else:
-                self.wheel_index += event.angleDelta().y()  # 0615
+            # if cfg.USES_QT5 == True:
+            #     self.wheel_index += event.delta()/120    #pyside2
+            # else:
+            #     self.wheel_index += event.angleDelta().y()  # 0615
 
             # self.wheel_index += event.angleDelta().y() / 120  # pyside6
             # self.wheel_index += event.angleDelta().y()  #0615 #0719- orig
             # self.zoom_to_wheel_at(event.x(), event.y())
             # AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'x'
+            '''
+            self.wheel_index += event.angleDelta().y()
             self.zoom_to_wheel_at(event.position())  # return type: PySide6.QtCore.QPointF
-
+            '''
             # logger.info('event.angleDelta().y() = ', event.angleDelta().y())
 
     def paintEvent(self, event):
@@ -593,7 +638,8 @@ class ZoomPanWidget(QWidget):
                                 if is_skipped:  # skip #redx
                                     self.center_image() #0503 I think this helps
                                     # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
-                                    self.setWindowOpacity(.5)
+                                    # self.setWindowOpacity(.5)
+                                    self.setWindowOpacity(.8)
                                     color_to_use = [255, 50, 50]
                                     painter.setPen(QPen(QColor(*color_to_use), 5))
                                     painter.drawLine(0, 0, painter.viewport().width(), painter.viewport().height())
@@ -633,6 +679,7 @@ class ZoomPanWidget(QWidget):
 
                 self.already_painting = False
             except:
+                print_exception()
                 logger.warning('Something Went Wrong During Paint Event')
                 pass
 
