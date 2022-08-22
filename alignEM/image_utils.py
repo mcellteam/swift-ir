@@ -7,14 +7,10 @@ import logging
 import inspect
 import numpy as np
 import tifffile
+try:     from alignEM.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
+except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 
-try:
-    from alignEM.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
-except:
-    from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
-
-__all__ = [  # 'loadImage',
-    # 'saveImage',
+__all__ = [
     'get_image_size',
     'BiasMat',
     'BiasFuncs',
@@ -29,68 +25,6 @@ __all__ = [  # 'loadImage',
 debug_level = 0
 
 logger = logging.getLogger(__name__)
-
-
-#
-#
-# def loadImage(ifn, stretch=False):
-#   '''LOADIMAGE - Load an image for alignment work
-#   img = LOADIMAGE(ifn) loads the named image, which can then serve as
-#   either the “stationary” or the “moving” image.
-#   Images are always converted to 8 bits. Optional second argument STRETCH
-#   enables contrast stretching. STRETCH may be given as a percentage,
-#   or simply as True, which implies 0.1%.
-#   The current implementation can only read from the local file system.
-#   Backends for http, DVID, etc., would be a useful extension.'''
-#   logger.info('image_utils.loadImage >>>>')
-#   if type(stretch) == bool and stretch:
-#     stretch = 0.1
-#   # img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-#   img = tifffile.imread(ifn)  # 0720+
-#   if stretch:
-#     N = img.size
-#     ilo = int(.01 * stretch * N)
-#     ihi = int((1 - .01 * stretch) * N)
-#     vlo = np.partition(img.reshape(N, ), ilo)[ilo]
-#     vhi = np.partition(img.reshape(N, ), ihi)[ihi]
-#     nrm = np.array([255.999 / (vhi - vlo)], dtype='float32')
-#     img[img < vlo] = vlo
-#     img = ((img - vlo) * nrm).astype('uint8')
-#   logger.info('<<<< image_utils.loadImage')
-#   return img
-#
-#
-# def saveImage(img, ofn, qual=None, comp=1):
-#   '''SAVEIMAGE - Save an image
-#   SAVEIMAGE(img, ofn) saves the image IMG to the file named OFN.
-#   Optional third argument specifies jpeg quality as a number between
-#   0 and 100, and must only be given if OFN ends in ".jpg". Default
-#   is 95.'''
-#   logger.info('image_utils.saveImage >>>>')
-#   if qual is None:
-#     ext = os.path.splitext(ofn)[-1]
-#     if (ext == '.tif') or (ext == '.tiff') or (ext == '.TIF') or (ext == '.TIFF'):
-#       if comp != None:
-#         # code 1 means uncompressed tif
-#         # code 5 means LZW compressed tif
-#         # cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
-#         tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
-#       else:
-#         # Use default
-#         # cv2.imwrite(ofn, img)
-#         tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
-#     else:
-#       # cv2.imwrite(ofn, img)
-#       tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
-#   else:
-#     # cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
-#     tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
-#   logger.info('<<<< image_utils.saveImage')
-#
-#
-# class UnknownImageFormat(Exception):
-#   pass
-
 
 def get_image_size(file_path):
     """
@@ -107,6 +41,7 @@ def get_image_size(file_path):
     Copyright:   (c) Paulo Scardine 2013
     Licence:     MIT
     """
+    logger.debug('get_image_size:')
     size = os.path.getsize(file_path)
 
     with open(file_path, 'rb') as input:
@@ -261,7 +196,7 @@ def get_image_size(file_path):
 
 # Return the bias matrix at position x in the stack as given by the bias_funcs
 def BiasMat(x, bias_funcs):
-    # logger.info('BiasMat >>>>')
+    logger.debug('BiasMat:')
 
     #  xdot = np.array([4.0,3.0,2.0,1.0])
 
@@ -321,7 +256,7 @@ def BiasMat(x, bias_funcs):
 # Find the bias functions that best fit the trends in c_afm across the whole stack
 # For now the form of the functions is an Nth-order polynomial
 def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
-    logger.info('BiasFuncs >>>>')
+    logger.debug('BiasFuncs:')
     poly_order = int(poly_order)
     if type(bias_funcs) == type(None):
         init_scalars = True
@@ -398,7 +333,7 @@ def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
 
 
 def ApplyBiasFuncs(align_list):
-    logger.info('Computing and Nulling Biases...')
+    logger.debug('ApplyBiasFuncs:')
     bias_funcs = BiasFuncs(align_list)
     c_afm_init = InitCafm(bias_funcs)
     bias_iters = 2
@@ -414,10 +349,10 @@ def ApplyBiasFuncs(align_list):
     return c_afm_init
 
 
-# Get the initial c_afm from the constant terms of the bias_funcs
-def InitCafm(bias_funcs):
-    logger.info('InitCafm >>>>')
 
+def InitCafm(bias_funcs):
+    '''Get the initial c_afm from the constant terms of the bias_funcs'''
+    logger.debug('InitCafm:')
     init_skew_x = -bias_funcs['skew_x'][-1]
     init_scale_x = 1.0 / bias_funcs['scale_x'][-1]
     init_scale_y = 1.0 / bias_funcs['scale_y'][-1]
@@ -443,8 +378,9 @@ def InitCafm(bias_funcs):
     return c_afm_init
 
 
-# Calculate and set the value of the c_afm (with optional bias) for a single layer_dict item
 def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
+    '''Calculate and set the value of the c_afm (with optional bias) for a single layer_dict item'''
+    logger.debug('SetSingleCafm:')
     atrm = layer_dict['align_to_ref_method']
     try:
         afm = np.array(atrm['method_results']['affine_matrix'])
@@ -456,25 +392,20 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
         atrm['method_results']['affine_matrix'] = afm.tolist()
     c_afm = np.array(c_afm)
     c_afm = composeAffine(afm, c_afm)
-
     # Apply bias_mat if given
     if type(bias_mat) != type(None):
         c_afm = composeAffine(bias_mat, c_afm)
-
     atrm['method_results']['cumulative_afm'] = c_afm.tolist()
     return c_afm
 
 
-# Calculate c_afm across the whole stack with optional bias correction
-# @countit #sus #crash #bug #0405
 def SetStackCafm(scale_dict, null_biases=False):
-    logger.info('Computing Cafm and Nulling Biases...')
-
+    '''Calculate c_afm across the whole stack with optional bias correction'''
+    logger.debug('SetStackCafm:')
     # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
         SetStackCafm(scale_dict, null_biases=False)
     al_stack = scale_dict['alignment_stack']
-
     # If null_biases==True, Iteratively determine and null out bias in c_afm
     bias_mat = None
     if null_biases:
@@ -494,8 +425,9 @@ def SetStackCafm(scale_dict, null_biases=False):
     return c_afm_init
 
 
-# Determine Bounding Rectangle for a stack of images
 def BoundingRect(al_stack):
+    '''Determine Bounding Rectangle for a stack of images'''
+    logger.debug('BoundingRect:')
     model_bounds = None
     siz = get_image_size(al_stack[0]['images']['base']['filename'])
     for item in al_stack:
@@ -515,3 +447,64 @@ def BoundingRect(al_stack):
 
 class UnknownImageFormat(Exception):
   pass
+
+
+# def loadImage(ifn, stretch=False):
+#   '''LOADIMAGE - Load an image for alignment work
+#   img = LOADIMAGE(ifn) loads the named image, which can then serve as
+#   either the “stationary” or the “moving” image.
+#   Images are always converted to 8 bits. Optional second argument STRETCH
+#   enables contrast stretching. STRETCH may be given as a percentage,
+#   or simply as True, which implies 0.1%.
+#   The current implementation can only read from the local file system.
+#   Backends for http, DVID, etc., would be a useful extension.'''
+#   logger.info('image_utils.loadImage >>>>')
+#   if type(stretch) == bool and stretch:
+#     stretch = 0.1
+#   # img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+#   img = tifffile.imread(ifn)  # 0720+
+#   if stretch:
+#     N = img.size
+#     ilo = int(.01 * stretch * N)
+#     ihi = int((1 - .01 * stretch) * N)
+#     vlo = np.partition(img.reshape(N, ), ilo)[ilo]
+#     vhi = np.partition(img.reshape(N, ), ihi)[ihi]
+#     nrm = np.array([255.999 / (vhi - vlo)], dtype='float32')
+#     img[img < vlo] = vlo
+#     img = ((img - vlo) * nrm).astype('uint8')
+#   logger.info('<<<< image_utils.loadImage')
+#   return img
+#
+#
+#
+#
+# def saveImage(img, ofn, qual=None, comp=1):
+#   '''SAVEIMAGE - Save an image
+#   SAVEIMAGE(img, ofn) saves the image IMG to the file named OFN.
+#   Optional third argument specifies jpeg quality as a number between
+#   0 and 100, and must only be given if OFN ends in ".jpg". Default
+#   is 95.'''
+#   logger.info('image_utils.saveImage >>>>')
+#   if qual is None:
+#     ext = os.path.splitext(ofn)[-1]
+#     if (ext == '.tif') or (ext == '.tiff') or (ext == '.TIF') or (ext == '.TIFF'):
+#       if comp != None:
+#         # code 1 means uncompressed tif
+#         # code 5 means LZW compressed tif
+#         # cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
+#         tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+#       else:
+#         # Use default
+#         # cv2.imwrite(ofn, img)
+#         tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+#     else:
+#       # cv2.imwrite(ofn, img)
+#       tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+#   else:
+#     # cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
+#     tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+#   logger.info('<<<< image_utils.saveImage')
+#
+#
+# class UnknownImageFormat(Exception):
+#   pass

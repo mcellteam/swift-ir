@@ -26,9 +26,6 @@ class ToggleSwitch(QCheckBox):
 
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # focus don't steal focus from zoompanwidget
-
-        # Save our properties on the object via self, so we can access them later
-        # in the paintEvent.
         self._bar_brush = QBrush(bar_color)
         self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
         self._handle_brush = QBrush(handle_color)
@@ -41,9 +38,7 @@ class ToggleSwitch(QCheckBox):
         self._h_scale = h_scale
         self._v_scale = v_scale
         self._fontSize = fontSize
-
         self.stateChanged.connect(self.handle_state_change)
-
         self.setFixedWidth(36)
         self.setFixedHeight(30)
 
@@ -101,7 +96,6 @@ class ToggleSwitch(QCheckBox):
             font = QFont("PT Sans", self._fontSize)
             p.setFont(font)
             # p.setFont(QFont('Helvetica', self._fontSize, 75))
-
 
         p.setPen(self._light_grey_pen)
         p.drawEllipse(QPointF(xPos, barRect.center().y()), handleRadius, handleRadius)

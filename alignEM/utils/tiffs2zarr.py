@@ -99,7 +99,6 @@ if __name__ == '__main__':
     with open(os.path.join(of,'img_aligned_zarr','s2','.zattrs'), "w") as f:
         json.dump(zattrs, f)
 
-
     sys.stdout.close()
     sys.stderr.close()
 

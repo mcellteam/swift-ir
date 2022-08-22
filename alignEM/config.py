@@ -42,7 +42,7 @@ HTTP_PORT = 9000
 
 defaults = ["-0.6800", "0.8125", "0.0000", True]
 
-# cfg.ICON_COLOR = "#d3dae3" #orig
+# cfg.ICON_COLOR = '#d3dae3'
 # cfg.ICON_COLOR = '#7c7c7c'
 ICON_COLOR = '#455364' # off blue-ish color
 

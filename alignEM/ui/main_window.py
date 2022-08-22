@@ -454,7 +454,6 @@ class MainWindow(QMainWindow):
         self.update_win_self()
         self.save_project()
         print('Project Structure:')
-        print_project_tree()
         self.hud.post('Scaling Complete.')
         self.set_idle()
         logger.info('\nScaling Complete.\n')
@@ -576,8 +575,8 @@ class MainWindow(QMainWindow):
         self.set_status('Exporting...')
         src = os.path.abspath(cfg.project_data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, '3dem.zarr'))
-        self.hud.post('Compression Level: %s' %  self.clevel_input.text())
-        self.hud.post('Compression Type: %s' %  self.cname_combobox.currentText())
+        self.hud.post('  Compression Level: %s' %  self.clevel_input.text())
+        self.hud.post('  Compression Type: %s' %  self.cname_combobox.currentText())
         try:
             generate_zarr(src=src, out=out)
         except:

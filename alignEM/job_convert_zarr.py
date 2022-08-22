@@ -28,8 +28,7 @@ if __name__ == '__main__':
     im = tifffile.imread(scale_img) # im.dtype =  uint8
     # im = np.atleast_3d(im)
     # im = np.expand_dims(im, axis=0)
-    '''PROBABLY WANT TO SET DATA TYPE ON ARRAY CREATION'''
-
+    #PROBABLY WANT TO SET DATA TYPE ON ARRAY CREATION
     store = zarr.open(out)
     store[ID,:,:] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]

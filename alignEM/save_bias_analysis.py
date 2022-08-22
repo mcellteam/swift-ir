@@ -11,20 +11,15 @@ __all__ = ['save_bias_analysis']
 logger = logging.getLogger(__name__)
 
 def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
-    """
-    Saves bias analysis results to separate '.dat' files in the project directory.
-    Called by: compute_affines
+    """Saves bias analysis results to separate '.dat' files in the project directory. Called by 'compute_affines'.
     :param al_stack: The alignment data to be saved
     :type al_stack: dict
     :param bias_data_path: Path to where the bias data will be saved.
     :type bias_data_path: str"""
     
-    logger.info('save_bias_analysis >>>>')
+    logger.info('save_bias_analysis:')
     logger.debug('save_bias_analysis was called by %s' % inspect.stack()[1].function)
     logger.debug('Saving Bias Data (.dat) at path %s' % bias_data_path)
-
-    # logger.critical('single alignment layer:')
-    # print_alignment_layer()
 
     for i in range(len(al_stack)):
 
@@ -37,12 +32,10 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
                 snr = np.array(atrm['method_results']['snr'])
                 rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
                 afm = np.array(atrm['method_results']['affine_matrix'])
-
                 scale_x = np.sqrt(c_afm[0, 0] ** 2 + c_afm[1, 0] ** 2)
                 scale_y = (c_afm[1, 1] * np.cos(rot)) - (c_afm[0, 1] * np.sin(rot))
                 skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y
                 det = (c_afm[0, 0] * c_afm[1, 1]) - (c_afm[0, 1] * c_afm[1, 0])
-
                 with open(os.path.join(bias_data_path, 'snr_1.dat'), 'w') as f:
                     f.write('%d %.6g\n' % (i, snr.mean()))
                 with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'w') as f:
@@ -73,5 +66,3 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
             except:
                 print_exception()
                 logger.warning('An Exception Occurred While Saving Bias Analysis')
-
-    logger.info('<<<< save_bias_analysis')
