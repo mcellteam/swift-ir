@@ -12,10 +12,8 @@ from glob import glob
 from pathlib import Path
 try: import alignEM.config as cfg
 except: import config as cfg
-try:
-    import builtins
-except:
-    pass
+try:  import builtins
+except:  pass
 
 try: from alignEM.utils.treeview import Treeview
 except: from utils.treeview import Treeview
@@ -28,19 +26,23 @@ __all__ = ['remove_aligned', 'get_cur_scale_key', 'get_cur_layer', 'is_destinati
            'are_images_imported', 'is_cur_scale_exported',
            'get_num_imported_images', 'print_exception', 'get_scale_key', 'get_scale_val',
            'set_scales_from_string', 'makedirs_exist_ok', 'set_default_settings',
-           'clear_all_skips', 'verify_image_file', 'print_debug',
+           'clear_all_skips', 'verify_image_file',
            'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project',
            'is_cur_scale_ready_for_alignment', 'get_aligned_scales_list', 'get_not_aligned_scales_list',
            'get_scales_list', 'get_next_coarsest_scale_key','get_snr_list', 'print_snr_list', 'print_project_tree',
            'get_coarsest_scale_key', 'get_images_list_directly']
 
 logger = logging.getLogger(__name__)
-# logging.basicConfig(
-#         level=logger.info,
-#         format="%(asctime)s [%(levelname)s] %(message)s",
-#         datefmt='%H:%M:%S',
-#         handlers=[logging.StreamHandler()]
-# )
+
+
+def print_exception():
+    exi = sys.exc_info()
+    logger.warning("  Exception type = " + str(exi[0]))
+    logger.warning("  Exception value = " + str(exi[1]))
+    logger.warning("  Exception trace = " + str(exi[2]))
+    logger.warning("  Exception traceback:")
+    logger.warning(traceback.format_exc())
+    '''Pipe these into a logs directory - but where?'''
 
 
 def get_images_list_directly(path) -> list[str]:
@@ -73,7 +75,7 @@ def remove_aligned(use_scale, start_layer=0):
     :type start_layer: int
     '''
 
-    logger.info('image_utils.remove_aligned >>>>')
+    logger.info('image_utils.remove_aligned:')
     for layer in cfg.project_data['data']['scales'][use_scale]['alignment_stack'][start_layer:]:
         ifn = layer['images'].get('filename', None)
         layer['images'].pop('aligned', None)
@@ -90,7 +92,6 @@ def remove_aligned(use_scale, start_layer=0):
                 print_exception()
                 logger.warning("image_library.remove_image_reference(%s) Triggered An Exception" % ifn)
 
-    logger.info('<<<< image_utils.remove_aligned')
 
 
 def get_scales_list() -> list[str]:
@@ -116,13 +117,6 @@ def verify_image_file(path: str) -> str:
     imhgr_type = imghdr.what(path)
     logger.info('verify_image_file | imhgr_type = ' % imhgr_type)
     return imhgr_type
-
-
-def get_project_file_length(path: str) -> int:
-    with open(path, 'r') as f:
-        text = f.read()
-    for count, line in enumerate(text):  pass
-    return count + 1
 
 
 def percentage(part, whole) -> str:
@@ -288,7 +282,7 @@ def set_scales_from_string(scale_string: str):
 def update_datamodel(updated_model):
     '''This function is called by align_layers and regenerate_aligned. It is called when
     'run_json_project' returns with need_to_write_json=false'''
-    logger.info('update_datamodel >>>>>>>>')
+    logger.info('Updating Data Model...')
     # Load the alignment stack after the alignment has completed
     aln_image_stack = []
     scale_to_run_text = cfg.project_data['data']['current_scale']
@@ -318,38 +312,6 @@ def update_datamodel(updated_model):
     except:
         print_exception()
     cfg.main_window.refresh_all_images()
-
-    # center
-    # main_win.center_all_images()
-    # main_win.update_win_self()
-    # cfg.main_window.center_all_images()
-    # cfg.main_window.update_win_self()
-    logger.info('<<<<<<<< update_datamodel')
-
-
-def makedirs_exist_ok(path_to_build, exist_ok=False):
-    # Needed for old python which doesn't have the exist_ok option!!!
-    logger.debug("Making directories for path %s" % path_to_build)
-    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
-    full = ""
-    if len(parts[0]) == 0:
-        # This happens with an absolute PosixPath
-        full = os.sep
-    else:
-        # This may be a Windows drive or the start of a non-absolute path
-        if ":" in parts[0]:
-            # Assume a Windows drive
-            full = parts[0] + os.sep
-        else:
-            # This is a non-absolute path which will be handled naturally with full=""
-            pass
-    for p in parts:
-        full = os.path.join(full, p)
-        if not os.path.exists(full):
-            os.makedirs(full)
-        elif not exist_ok:
-            pass
-            # logger.info("Warning: Attempt to create existing directory: " + full)
 
 
 def printProjectDetails(project_data: dict) -> None:
@@ -442,9 +404,6 @@ def print_alignment_layer() -> None:
     except:
         print('No Alignment Layers Found for the Current Scale')
 
-# def print_zoom_pan_widget_members() -> None:
-#     logger.info(cfg.main_window.)
-
 
 def print_dat_files() -> None:
     '''Prints the .dat files for the current scale, if they exist .'''
@@ -493,11 +452,6 @@ def print_sanity_check():
     # logging.debug('print_sanity_check | logger is logging')
     logger.info("___________________SANITY CHECK____________________")
     logger.info("Project____________________________________________")
-    # try:
-    #     print_project_tree()
-    # except:
-    #     logger.info('Unable to print project tree at this time')
-    
     if cfg.project_data['data']['source_path']:
         print("  Source path                                      :", cfg.project_data['data']['source_path'])
     else:
@@ -573,11 +527,6 @@ def print_sanity_check():
 
 
     print("Post-alignment_____________________________________")
-    # try:
-    #     null_cafm_trends = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['null_cafm_trends']
-    #     logger.info("  null_cafm_trends                                 :", null_cafm_trends)
-    # except:
-    #     logger.info("  null_cafm_trends                                 : n/a")
     try:
         poly_order = cfg.project_data['data']['scales'][get_cur_scale_key()]['poly_order']
         print("  poly_order (all layers)                          :", poly_order)
@@ -653,13 +602,11 @@ def get_num_imported_images() -> int:
 
 def get_skips_list() -> list[int]:
     '''Returns the list of skipped images at the current scale'''
-    # logger.info('get_skips_list | called by ',inspect.stack()[1].function)
     skip_list = []
     try:
         for layer_index in range(len(cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'])):
             if cfg.project_data['data']['scales'][get_cur_scale_key()]['alignment_stack'][layer_index]['skip'] == True:
                 skip_list.append(layer_index)
-            # logger.info('get_skips_list() | Skips List: %s' % str(skip_list))
     except:
         logger.warning('Unable to get skips list!');  return []  # 0711
     else:
@@ -668,47 +615,31 @@ def get_skips_list() -> list[int]:
 
 ########################################################################################################################
 
+def get_cur_scale_key() -> str:
+    '''Returns the current scale, according to cfg.project_data (project dictionary).'''
+    return cfg.project_data['data']['current_scale']
+
 def get_scale_key(scale_val):
-    # Create a key like "scale_#" from either an integer or a string
+    '''Create a key like "scale_#" from either an integer or a string'''
     s = str(scale_val)
     while s.startswith('scale_'):
         s = s[len('scale_'):]
     return 'scale_' + s
 
 
-def get_cur_scale_key() -> str:
-    '''Returns the current scale, according to cfg.project_data (project dictionary).'''
-    return cfg.project_data['data']['current_scale']
-
-
 def get_scale_val(scale_of_any_type) -> int:
     '''Converts scale key to integer (i.e. 'scale_1' as string -> 1 as int)
     TODO: move this to glanceem_utils'''
-
-    # This should return an integer value from any reasonable input (string or int)
     scale = scale_of_any_type
     try:
         if type(scale) == type(1):
-            # It's already an integer, so return it
             return scale
-        else:  # elif type(scale) in [ str, unicode ]:
-            # It's a string, so remove any optional "scale_" prefix(es) and return as int
+        else:
             while scale.startswith('scale_'):
                 scale = scale[len('scale_'):]
             return int(scale)
     except:
         print_exception()
-        # else:
-        #    print_debug ( 10, "Error converting " + str(scale_of_any_type) + " of unexpected type (" + str(type(scale)) + ") to a value." )
-        #    traceback.print_stack()
-    # except:
-    #     logger.warning("Error converting " + str(scale_of_any_type) + " to a value.")
-    #     exi = sys.exc_info()
-    #     logger.warning("  Exception type = " + str(exi[0]))
-    #     logger.warning("  Exception value = " + str(exi[1]))
-    #     logger.warning("  Exception traceback:")
-    #     traceback.print_tb(exi[2])
-    #     return -1
 
 
 def get_num_scales() -> int:
@@ -751,8 +682,6 @@ def is_dataset_scaled() -> bool:
             return False
     except:
         pass
-
-
 
 
 def get_cur_layer() -> int:
@@ -900,8 +829,7 @@ def return_aligned_imgs() -> list:
 
 def is_any_alignment_exported() -> bool:
     '''Checks if there exists an exported alignment'''
-
-    return os.path.isdir(os.path.join(cfg.project_data['data']['destination_path'], 'project.zarr'))
+    return os.path.isdir(os.path.join(cfg.project_data['data']['destination_path'], '3dem.zarr'))
 
 
 def is_cur_scale_exported() -> bool:
@@ -962,135 +890,46 @@ def print_snr_list() -> None:
     except:
         logger.info('An Exception Was Raised trying to Print the SNR List')
 
-
-
-
-# def requestConfirmation(title, text):
-#     '''Simple request confirmation dialog.'''
-#
-#     button = QMessageBox.question(None, title, text)
-#     logger.info('requestConfirmation | button=',str(button))
-#     logger.info('requestConfirmation | type(button)=', type(button))
-#     logger.info("requestConfirmation | Returning " + str(button == QMessageBox.StandardButton.Yes))
-#     return (button == QMessageBox.StandardButton.Yes)
-
-def print_exception():
-    exi = sys.exc_info()
-    logger.error("  Exception type = " + str(exi[0]))
-    logger.error("  Exception value = " + str(exi[1]))
-    logger.error("  Exception trace = " + str(exi[2]))
-    logger.error("  Exception traceback:")
-    logger.error(traceback.format_exc())
-    
-    # exc_type, exc_value, exc_tb = sys.exc_info()
-    # tb = traceback.TracebackException(exc_type, exc_value, exc_tb)
-    # logger.error(''.join(tb.format_exception_only()))
-    
-    # logger.error('pdb.post_mortem() = ')
-    # logger.error(pdb.post_mortem())
-    
-    # logger.error(traceback.print_tb(exi[2]))
-    # now = datetime.now()
-    # current_time = now.strftime("%H:%M:%S")
-    # with open('~/Logs/traceback.log', "a") as f:
-    #     logger.info('--------------------------------Current Time = %s' % current_time, file=f)
-    #     frame, filename, line_number, function_name, lines, index = inspect.stack()[1]
-    #     logger.info(frame, filename, line_number, function_name, lines, index, file=f)
-    #     f.write(traceback.format_exc())
-
-
 def print_scratch(msg):
     with open('~/Logs/scratchlog', "w") as f:
         f.write(str(msg))
 
-
-class SwiftirException:
-    def __init__(self, project_file, message):
-        self.project_file = project_file
-        self.message = message
-
-    def __str__(self):
-        return self.message
-
-
-'''
-# to override or pass additional arguments...
-
-class ValidationError(Exception):
-    def __init__(self, message, errors):            
-        # Call the base class constructor with the parameters it needs
-        super().__init__(message)
-
-        # Now for your custom code...
-        self.errors = errors
-
-
-
-Rules of global Keyword
-
-The basic rules for global keyword in Python are:
-
-    When we create a variable inside a function, it is local by default.
-    When we define a variable outside of a function, it is global by default. You don't have to use global keyword.
-    We use global keyword to read and write a global variable inside a function.
-    Use of global keyword outside a function has no effect.
-
-
-
-'''
-
-
-########################################################################################################################
-
-def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
-    debug_level = 50
-    if level <= debug_level:
-        if p1 == None:
-            sys.stderr.write("" + '')
-        elif p2 == None:
-            sys.stderr.write(str(p1) + '')
-        elif p3 == None:
-            sys.stderr.write(str(p1) + str(p2) + '')
-        elif p4 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + '')
-        elif p5 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '')
+def makedirs_exist_ok(path_to_build, exist_ok=False):
+    # Needed for old python which doesn't have the exist_ok option!!!
+    logger.debug("Making directories for path %s" % path_to_build)
+    parts = path_to_build.split(os.sep)  # Variable "parts" should be a list of subpath sections. The first will be empty ('') if it was absolute.
+    full = ""
+    if len(parts[0]) == 0:
+        # This happens with an absolute PosixPath
+        full = os.sep
+    else:
+        # This may be a Windows drive or the start of a non-absolute path
+        if ":" in parts[0]:
+            # Assume a Windows drive
+            full = parts[0] + os.sep
         else:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '')
-        
-        try:  # find code_context
-            # First try to use currentframe() (maybe not available in all implementations)
-            frame = inspect.currentframe()
-            if frame:
-                # Found a frame, so get the info, and strip space from the code_context
-                code_context = inspect.getframeinfo(frame.f_back).code_context[0].strip()
-            else:
-        
-                # No frame, so use stack one level above us, and strip space around
-                # the 4th element, code_context
-                code_context = inspect.stack()[1][4][0].strip()
-
-        finally:
-            # Deterministic free references to the frame, to be on the safe side
-            del frame
-        print('Code context : {}'.format(code_context))
-        # print('Value of args: {}\n'.format(args))
+            # This is a non-absolute path which will be handled naturally with full=""
+            pass
+    for p in parts:
+        full = os.path.join(full, p)
+        if not os.path.exists(full):
+            os.makedirs(full)
+        elif not exist_ok:
+            pass
+            # logger.info("Warning: Attempt to create existing directory: " + full)
 
 
 def clear_all_skips():
-    logger.info('Clearing all skips | clear_all_skips...')
+    logger.info('Clearing all skips...')
     image_scale_keys = [s for s in sorted(cfg.project_data['data']['scales'].keys())]
     for scale in image_scale_keys:
         scale_key = str(scale)
         for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
             layer['skip'] = False
 
-    # main_win.status_skips_label.setText(str(skip_list))  # settext #status
-    # skip.set_value(False) #skip
-
 
 def copy_skips_to_all_scales():
-    logger.info('Copying skips to all scales | copy_skips_to_all_scales...')
+    logger.info('Copying skips to all scales...')
     source_scale_key = cfg.project_data['data']['current_scale']
     if not 'scale_' in str(source_scale_key):
         source_scale_key = 'scale_' + str(source_scale_key)
@@ -1103,12 +942,10 @@ def copy_skips_to_all_scales():
         if scale_key != source_scale_key:
             for l in range(len(scales[source_scale_key]['alignment_stack'])):
                 if l < len(scales[scale_key]['alignment_stack']):
-                    scales[scale_key]['alignment_stack'][l]['skip'] = scales[source_scale_key]['alignment_stack'][l][
-                        'skip']  # <----
-    # Not needed: skip.set_value(scales[source_scale_key]['alignment_stack'][cfg.project_data['data']['current_layer']]['skip']
+                    scales[scale_key]['alignment_stack'][l]['skip'] = \
+                        scales[source_scale_key]['alignment_stack'][l]['skip']  # <----
 
 
-# skip
 def update_skip_annotations():
     logger.info('update_skip_annotations:')
     # __import__ ('code').interact (local={ k: v for ns in (globals (), locals ()) for k, v in ns.items () })
@@ -1143,6 +980,15 @@ def update_skip_annotations():
     #     interface.print_debug(80, "Removed skip from " + str(item))
     # for item in add_list:
     #     interface.print_debug(80, "Added skip to " + str(item))
+
+class SwiftirException:
+    def __init__(self, project_file, message):
+        self.project_file = project_file
+        self.message = message
+
+    def __str__(self):
+        return self.message
+
 
 # NOTE: this is called right after importing base images
 # def update_linking_callback():

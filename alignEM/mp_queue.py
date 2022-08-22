@@ -12,7 +12,6 @@ import multiprocessing as mp
 __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
-# logger = logging.getLogger("hud")
 mpl = mp.log_to_stderr()
 mpl.setLevel(logging.CRITICAL)
 
@@ -106,10 +105,8 @@ class TaskQueue:
 
         '''type(task_q)= <class 'multiprocessing.queues.JoinableQueue'>
            type(result_q)= <class 'multiprocessing.queues.Queue'>'''
-        '''mp_queue.TaskQueue.start | type(self.progress_callback) =  <class 'PyQt5.QtCore.pyqtBoundSignal'>
-        mp_queue.TaskQueue.start | str(self.progress_callback) =  <bound PYQT_SIGNAL progressSignal of WorkerSignals object at 0x186f84dc0>'''
-        logger.debug('TaskQueue.start >>>>')
-        logger.debug('TaskQueue.start | sys.getsizeof(self.task_dict) = ', sys.getsizeof(self.task_dict))
+        logger.debug('TaskQueue.start:')
+        logger.info('Size of Task Dict: ', sys.getsizeof(self.task_dict))
         self.task_id = 0
         self.n_workers = n_workers
 
@@ -140,7 +137,7 @@ class TaskQueue:
         logger.debug('<<<< Exiting TaskQueue.start')
 
     def restart(self) -> None:
-        logger.debug('TaskQueue.restart >>>>')
+        logger.debug('TaskQueue.restart:')
         logger.critical('Restarting the Task Queue...')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
@@ -162,18 +159,16 @@ class TaskQueue:
                 self.workers[i].start()
             except:
                 logger.warning('Restarting Worker # %d Triggered An Exception' % i)
-        logger.debug('<<<<  TaskQueue.restart')
 
     def end_tasks(self) -> None:
         '''Tell child processes to stop'''
-        logger.debug('TaskQueue.end_tasks >>>>')
+        logger.debug('TaskQueue.end_tasks:')
         for i in range(self.n_workers):
             self.work_queue.put('END_TASKS')
         logger.debug('<<<< TaskQueue.end_tasks')
 
     def stop(self) -> None:
         logger.info("Calling 'stop' on TaskQueue")
-        '''Stop all workers'''
         self.work_queue.close()
         time.sleep(0.1)  # Needed to Avoid Race Condition
     #    for i in range(len(self.workers)):
