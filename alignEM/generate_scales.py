@@ -16,20 +16,17 @@ __all__ = ['generate_scales']
 
 logger = logging.getLogger(__name__)
 
-
 def generate_scales(progress_callback=None):
     logger.critical('>>>>>>>> Generate Scales Start <<<<<<<<')
-    
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     proj_path = cfg.project_data['data']['destination_path']
-    # scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() + 1)) #0802
     scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() - 1))
     cpus = min(psutil.cpu_count(logical=False), 48)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     my_system = platform.system()
     my_node = platform.node()
-    cfg.main_window.hud.post("Configuring platform-specific path to SWiFT-IR executables")
+    logger.info("Configuring platform-specific path to SWiFT-IR executables")
     '''TODO: Check for SWiFT-IR executables at startup'''
     '''TODO: Keep local current scale value as member of MainWindow class, to reduce read ops.'''
     if my_system == 'Darwin':

@@ -8,15 +8,7 @@ import sys
 import logging
 import numpy as np
 import traceback
-# from image_utils import loadImage, saveImage
 from swiftir import affineImage, saveImage, loadImage
-
-
-
-# try:
-#     from alignEM.image_utils import loadImage, saveImage, affineImage
-# except:
-#     from image_utils import loadImage, saveImage, affineImage
 
 logger = logging.getLogger(__name__)
 
