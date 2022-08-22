@@ -8,7 +8,6 @@ from qtpy.QtGui import QPainter, QPen, QColor
 from qtpy.QtWidgets import QWidget, QRubberBand
 from qtpy.QtCore import Qt, QPointF, QRectF
 from qtpy.QtWidgets import QSizePolicy
-
 import alignEM.config as cfg
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
@@ -46,21 +45,14 @@ class ZoomPanWidget(QWidget):
 
         self.draw_border = False
         self.draw_annotations = True
-
         self.setAutoFillBackground(True)
         # self.setContentsMargins(10, 10, 10, 10) #0719-
-
-
         # self.border_color = QColor(100, 100, 100, 255)
-
         # self.setBackgroundRole(QPalette.Base)    #0610 removed
         # self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-
         # self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0719
-
         self.rubberBand = QRubberBand(QRubberBand.Rectangle, self) #0610 removed  #0701 activated
-
         self.need_to_center = 0
 
         # self.setToolTip('GlanceEM_SWiFT')  # tooltip #settooltip
@@ -662,15 +654,10 @@ def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
             sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '')
 
         try:  # find code_context
-            # First try to use currentframe() (maybe not available in all implementations)
             frame = inspect.currentframe()
             if frame:
-                # Found a frame, so get the info, and strip space from the code_context
                 code_context = inspect.getframeinfo(frame.f_back).code_context[0].strip()
             else:
-
-                # No frame, so use stack one level above us, and strip space around
-                # the 4th element, code_context
                 code_context = inspect.stack()[1][4][0].strip()
 
         finally:
@@ -678,3 +665,5 @@ def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
             del frame
         print('Code context : {}'.format(code_context))
         # print('Value of args: {}\n'.format(args))
+
+

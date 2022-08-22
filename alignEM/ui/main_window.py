@@ -45,9 +45,6 @@ __all__ = ['MainWindow']
 
 logger = logging.getLogger(__name__)
 
-# app = None #0816-
-
-
 class MainWindow(QMainWindow):
     def __init__(self, title="AlignEM-SWiFT"):
 
@@ -107,20 +104,17 @@ class MainWindow(QMainWindow):
         self.std_input_size = int(56)
         self.std_input_size_small = int(36)
         
-        # titlebar resource
-        # https://stackoverflow.com/questions/44241612/custom-titlebar-with-frame-in-pyqt5
-        
         # pyside6 port needed to replace deprecated the 'defaultSettings()' attribute of QWebEngineSettings
         # self.web_settings = QWebEngineSettings.defaultSettings()
         # self.web_settings.setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         
-        # pyside6 ONLY
+        # pyside6 only
         logger.info("instantiating QWebEngineView()")
         if cfg.USES_PYSIDE:
             self.view = QWebEngineView()
         if cfg.QT_API == 'pyqt6':
             self.view = QWebEngineView()
-        # PySide6 available options
+        # Options available only in PySide6
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
@@ -141,11 +135,8 @@ class MainWindow(QMainWindow):
         
         self.draw_border = False
         self.draw_annotations = True
-
         self.panel_list = []
-
         self.inspector_label_skips = QLabel()
-        
         self.project_inspector = QDockWidget("Project Inspector")
         self.project_inspector.setMinimumWidth(160)
         self.project_inspector.hide()

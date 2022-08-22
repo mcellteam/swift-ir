@@ -42,7 +42,6 @@ def time_limit(seconds):
 def generate_zarr(src, out):
     logger.critical('>>>>>>>> Generate Zarr Start <<<<<<<<')
 
-
     scales_list = get_scales_list()
     chunks = '64'
     if os.path.isdir(out):
@@ -142,10 +141,7 @@ def generate_zarr(src, out):
     scale_q.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
     scale_q.stop()
     del scale_q
-
     logger.critical('>>>>>>>> Generate Zarr End <<<<<<<<')
-
-
 
 
 if __name__ == '__main__':
