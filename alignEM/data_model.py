@@ -100,6 +100,9 @@ class DataModel:
     def name(self):
         return self._project_data['data']['destination_path']
 
+    def set_name(self, name):
+        self._project_data['data']['destination_path'] = name
+
     def append_layer(self, scale_key):
         self._project_data['data']['scales'][scale_key]['alignment_stack'].append(
             {
