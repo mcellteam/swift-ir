@@ -835,9 +835,6 @@ class MainWindow(QMainWindow):
         self.snr_plot.getPlotItem().enableAutoRange()
         self.snr_plot.clear()
 
-
-
-
     def onSnrClick(self, plot, points):
         '''
         type(obj): <class 'pyqtgraph.graphicsItems.ScatterPlotItem.ScatterPlotItem'>
@@ -1339,7 +1336,6 @@ class MainWindow(QMainWindow):
         logger.info("Overwriting project data in memory with project template")
         '''Create new DataModel object'''
 
-
         if not filename.endswith('.json'):
             filename += ".json"
         logger.info("Creating new project %s" % filename)
@@ -1352,26 +1348,6 @@ class MainWindow(QMainWindow):
         self.scales_combobox.clear()  # why? #0528
         cfg.project_data.settings()
         self.set_idle()
-
-    # def import_into_role(self):
-    #     logger.debug("import_into_role:")
-    #     import_role_name = str(self.sender().text())
-    #     self.import_images_dialog(import_role_name)
-    
-    # def import_base_images(self):
-    #     '''Import images callback function.'''
-    #     self.set_status('Importing...')
-    #     self.hud.post('Importing images...')
-    #     base_images = sorted(self.import_images_dialog())
-    #     try:
-    #         self.import_images('base', base_images)
-    #     except:
-    #         logger.warning('Something went wrong during import')
-    #     if are_images_imported():
-    #         self.update_scale_controls()
-    #         self.center_all_images()
-    #         self.refresh_all_images()
-    #         self.save_project()  # good to have known fallback state
     
     def import_images_dialog(self):
         '''Dialog for importing images. Returns list of filenames.'''
@@ -1810,8 +1786,7 @@ class MainWindow(QMainWindow):
 
     def documentation_view_home(self):
         logger.info("Launching documentation view home | MainWindow.documentation_view_home...")
-        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
-        # self.set_status("AlignEM_SWiFT Documentation")
+        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev-alignem/README.md'))
 
     def remote_view(self):
         logger.info("Launching remote viewer | MainWindow.remote_view...")
@@ -2174,11 +2149,11 @@ class MainWindow(QMainWindow):
         self.clear_all_skips_button.setIcon(qta.icon("mdi.undo", color=ICON_COLOR))
 
         self.toggle_skip = ToggleSwitch()
-        self.toggle_skip.setToolTip('Skip current image (do not align)')
+        self.toggle_skip.setToolTip('Use or skip current image?')
         self.toggle_skip.setChecked(False)  # 0816 #observed #sus
         self.toggle_skip.toggled.connect(self.skip_changed_callback)
         self.skip_label = QLabel("Include:")
-        self.skip_label.setToolTip('Skip current image (do not align)')
+        self.skip_label.setToolTip('Use or skip current image?')
         self.skip_layout = QHBoxLayout()
         self.skip_layout.setAlignment(Qt.AlignCenter)
         self.skip_layout.addStretch()
@@ -2187,6 +2162,7 @@ class MainWindow(QMainWindow):
         self.skip_layout.addStretch(4)
 
         self.jump_label = QLabel("Go to:")
+        self.jump_label.setToolTip('Jump to image #')
         self.jump_input = QLineEdit(self)
         self.jump_input.setToolTip('Jump to image #')
         self.jump_input.setAlignment(Qt.AlignmentFlag.AlignHCenter)
@@ -2258,6 +2234,7 @@ class MainWindow(QMainWindow):
         self.apply_all_label = QLabel("Apply All:")
         self.apply_all_button = QPushButton()
         self.apply_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.apply_all_label.setToolTip('Apply these settings to the entire project.')
         self.apply_all_button.setToolTip('Apply these settings to the entire project.')
         self.apply_all_button.clicked.connect(self.apply_all_callback)
         self.apply_all_button.setFixedSize(self.std_height, self.std_height)
@@ -2270,7 +2247,7 @@ class MainWindow(QMainWindow):
 
         self.next_scale_button = QPushButton('Next Scale ')
         self.next_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.next_scale_button.setToolTip('Go forward to the next scale.')
+        self.next_scale_button.setToolTip('Go to the next scale.')
         self.next_scale_button.clicked.connect(self.next_scale_button_callback)
         self.next_scale_button.setFixedSize(self.std_button_size)
         self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
@@ -2278,12 +2255,12 @@ class MainWindow(QMainWindow):
 
         self.prev_scale_button = QPushButton(' Prev Scale')
         self.prev_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.prev_scale_button.setToolTip('Go back to the previous scale.')
+        self.prev_scale_button.setToolTip('Go to the previous scale.')
         self.prev_scale_button.clicked.connect(self.prev_scale_button_callback)
         self.prev_scale_button.setFixedSize(self.std_button_size)
         self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color=ICON_COLOR))
 
-        self.align_all_button = QPushButton('Align')
+        self.align_all_button = QPushButton('Align Scale')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
         self.align_all_button.clicked.connect(self.run_alignment)
@@ -2529,11 +2506,16 @@ class MainWindow(QMainWindow):
         self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 2px dotted #455364;}""")
 
         self.lower_panel_groups_ = QGridLayout()
-        self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
-        self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3, alignment=Qt.AlignmentFlag.AlignHCenter)
+        # self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4, alignment=Qt.AlignmentFlag.AlignHCenter)
+        self.lower_panel_groups_.addWidget(self.project_functions_stack, 0, 0)
+        self.lower_panel_groups_.addWidget(self.images_and_scaling_stack, 0, 1)
+        self.lower_panel_groups_.addWidget(self.alignment_stack, 0, 2)
+        self.lower_panel_groups_.addWidget(self.postalignment_stack, 0, 3)
+        self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4)
         self.lower_panel_groups_.setHorizontalSpacing(15)
         self.lower_panel_groups = QWidget()
         self.lower_panel_groups.setLayout(self.lower_panel_groups_)
