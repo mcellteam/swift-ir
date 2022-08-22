@@ -9,7 +9,7 @@ import time
 import logging
 import alignEM.config as cfg
 from alignEM.em_utils import print_exception, get_num_imported_images, get_num_scales, get_scale_val, get_scale_key, \
-    create_project_structure_directories, get_best_path, get_scales_list
+    create_project_structure_directories, get_best_path, get_scales_list, is_dataset_scaled
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
@@ -47,9 +47,9 @@ def generate_scales(progress_callback=None):
         print_exception()
         cfg.main_window.hud.post("'iscale2_c' Not Found At Path %s. It Must Be Compiled." % iscale2_c, logging.ERROR)
         return
-    
+
     cfg.main_window.hud.post("Creating Project Directory Structure...")
-    logger.info('image_scales_to_run = %s' % str(image_scales_to_run))
+
     try:
         # for scale in sorted(image_scales_to_run):
         for scale in get_scales_list():
