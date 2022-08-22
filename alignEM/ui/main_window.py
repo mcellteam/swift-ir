@@ -715,7 +715,7 @@ class MainWindow(QMainWindow):
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index - 1
-            self.scales_combobox.setCurrentIndex(requested_index)
+            self.scales_combobox.setCurrentIndex(requested_index)  # changes scale
             self.read_project_data_update_gui()
             self.update_scale_controls()
             if not is_cur_scale_ready_for_alignment():
@@ -723,6 +723,7 @@ class MainWindow(QMainWindow):
             if self.main_panel_bottom_widget.currentIndex() == 1:
                 self.plot_widget.clear()
                 self.show_snr_plot()
+            self.hud.post('Scale Changed to %s' % get_cur_scale_key()[-1])
         except:
             print_exception()
         finally:
@@ -744,6 +745,7 @@ class MainWindow(QMainWindow):
             if self.main_panel_bottom_widget.currentIndex() == 1:
                 self.plot_widget.clear()
                 self.show_snr_plot()
+            self.hud.post('Scale Changed to %s' % get_cur_scale_key()[-1])
         except:
             print_exception()
         finally:
