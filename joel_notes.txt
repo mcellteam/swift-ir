@@ -103,7 +103,7 @@ Things project_data should include:
 * scales with alignments so-far generated (list of strings, i.e. ['scale_4', 'scale_2'])
 
 To do (Zarr/precomputed):
-[] look into making pre-computed format multithreaded
+[x] look into making pre-computed format multithreaded
 [] look into Zarr directory store
 [] insert/remove images from Zarr (callback functions)
 
@@ -114,7 +114,7 @@ possible features:
 [] mouseover-specific tooltips or status information
 [] view or hide skipped images
 
-
+[] align just one
 
 ''''''
 ------------------------

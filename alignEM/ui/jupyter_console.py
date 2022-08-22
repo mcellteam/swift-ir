@@ -31,6 +31,7 @@ class JupyterConsole(RichJupyterWidget):
         if customBanner is not None:
             self.banner = customBanner
 
+
         # self.font_size = 6
         self.font_size = 4
         self.kernel_manager = QtInProcessKernelManager()

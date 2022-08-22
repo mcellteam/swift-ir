@@ -22,6 +22,7 @@ def generate_scales(progress_callback=None):
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     proj_path = cfg.project_data['data']['destination_path']
     scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() - 1))
+    scale_q.tqdm_desc = 'Scaling Images'
     cpus = min(psutil.cpu_count(logical=False), 48)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     my_system = platform.system()

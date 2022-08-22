@@ -17,6 +17,7 @@ class SnrPlot(pg.PlotWidget):
 
         self.hoverSize = 10
 
+
         # self.scene() is a pyqtgraph.GraphicsScene.GraphicsScene.GraphicsScene
         self.scene().sigMouseClicked.connect(self.mouse_clicked)
 

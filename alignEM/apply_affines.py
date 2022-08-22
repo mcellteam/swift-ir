@@ -63,7 +63,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     if are_aligned_images_generated():
         cfg.main_window.hud.post('Removing Aligned Images for Scale Level %s' % scale_key[-1])
         remove_aligned(use_scale=scale_key, start_layer=start_layer)
-    cfg.main_window.hud.post('Propogating AFMs to generate CFMs at each layer')
+    logger.info('Propogating AFMs to generate CFMs at each layer')
     scale_dict = cfg.project_data['data']['scales'][scale_key]
     null_bias = cfg.project_data['data']['scales'][get_cur_scale_key()]['null_cafm_trends']
     SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
@@ -78,6 +78,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             f.write("None\n")
     logger.info('Constructing TaskQueue...')
     task_queue = TaskQueue(n_tasks=get_num_imported_images())
+    task_queue.tqdm_desc = 'Generating Images'
     cpus = min(psutil.cpu_count(logical=False), 48)
     logger.info('Starting TaskQueue...')
     task_queue.start(cpus)

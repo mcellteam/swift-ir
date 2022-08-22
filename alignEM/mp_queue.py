@@ -8,10 +8,18 @@ import logging
 from tqdm import tqdm
 import subprocess as sp
 import multiprocessing as mp
+# from .LoggingTqdm import logging_tqdm
+# from .TqdmToLogger import tqdm_to_logger
 
+'''SWIM/MIR:
+stdout <- result
+stderr <- info + errors
+'''
 __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
+# logger = logging.getLogger("hud")
+# logger_tqdm = logging_tqdm(logging.getLogger("hud"))
 mpl = mp.log_to_stderr()
 mpl.setLevel(logging.CRITICAL)
 
@@ -87,6 +95,7 @@ class TaskQueue:
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.pbar_q = self.ctx.Queue()
+        self.tqdm_desc = ''
 
         logger.debug('TaskQueue Initialization')
         logger.debug('self.start_method = %s' % self.start_method)
@@ -96,7 +105,11 @@ class TaskQueue:
 
     def pbar_listener(self, pbar_q, n_tasks:int):
         '''self.progress_callback has an identical location in memory'''
-        pbar = tqdm(total = n_tasks)
+        # tqdm_out = TqdmToLogger(logging.getLogger("hud"), level=logging.INFO)
+        pbar = tqdm(total = n_tasks, desc=self.tqdm_desc)
+        # pbar = tqdm(total = n_tasks, desc=self.tqdm_desc, file=tqdm_out)
+        # pbar = logger_tqdm(total = n_tasks, desc=self.tqdm_desc)
+        # pbar = logging_tqdm()
         for item in iter(pbar_q.get, None):
             pbar.update()
         pbar.close()
@@ -116,7 +129,6 @@ class TaskQueue:
 
         logger.info('Using %d workers in parallel to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
         # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
-        print('mp_queue.start | self.n_tasks = ', self.n_tasks)
         try:
             # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
             self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
