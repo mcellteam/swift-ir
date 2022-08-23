@@ -2563,6 +2563,7 @@ class MainWindow(QMainWindow):
 
         self.bottom_display_area_hlayout = QHBoxLayout()
         self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
+        self.bottom_display_area_hlayout.setSpacing(5)
         self.bottom_display_area_hlayout.addWidget(self.main_panel_bottom_widget)
         self.bottom_display_area_hlayout.addLayout(self.main_secondary_controls_layout)
         self.bottom_display_area_widget = QWidget()
@@ -2574,7 +2575,7 @@ class MainWindow(QMainWindow):
         self.splitter.splitterMoved.connect(self.center_all_images)
         self.splitter.setHandleWidth(8)
         # main_window.splitter.setHandleWidth(4)
-        self.splitter.setContentsMargins(0, 0, 0, 0)
+        self.splitter.setContentsMargins(0, 0, 4, 0)
         self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.lower_panel_groups)
         self.splitter.addWidget(self.bottom_display_area_widget)
@@ -2589,6 +2590,7 @@ class MainWindow(QMainWindow):
 
         self.main_panel = QWidget()
         self.main_panel_layout = QGridLayout()
+        self.main_panel_layout.setContentsMargins(0,0,0,0)
         # self.main_panel_layout.setSpacing(2) # this inherits downward
         # main_window.main_panel_layout.setSpacing(10) # this inherits downward
         self.main_panel_layout.addWidget(self.splitter, 1, 0)
