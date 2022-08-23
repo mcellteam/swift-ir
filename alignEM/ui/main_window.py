@@ -778,7 +778,7 @@ class MainWindow(QMainWindow):
             # hoverPen=pg.mkPen('r', width=2),
             hoverBrush=pg.mkBrush('g'),
         )
-        self.snr_points.setFocusPolicy(Qt.NoFocus)
+        # self.snr_points.setFocusPolicy(Qt.NoFocus)
         self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
         self.last_snr_click = []
