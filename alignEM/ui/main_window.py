@@ -202,7 +202,6 @@ class MainWindow(QMainWindow):
                  ['Show/Hide Project Inspector', None, self.show_hide_project_inspector, None, None, None],
                  ['Show Console', None, self.show_jupyter_console, None, None, None],
                  ['Remote Neuroglancer Server', None, self.remote_view, None, None, None],
-                 ['initUI', None, self.initUI, None, None, None],
                  ['Show Splash', None, self.show_splash, None, None, None],
                  ['&Help', None, self.documentation_view, None, None, None],
 
