@@ -57,7 +57,7 @@ Version 3.7+ (minimum)
     python3 alignEM.py --api pyside2  # Run with 'pyside2' Python-Qt API (Qt5)
     python3 alignEM.py --api pyqt6    # Run with 'pyqt6' Python-Qt API (Qt6)
     python3 alignEM.py --api pyside6  # Run with 'pyside6' Python-Qt API (Qt6)
-    python3 alignEM.py -v             # Set verbosity -v, -vv, -vvv
+    python3 alignEM.py --loglevel     # Set verbosity (1-5, default: 2)
 
 #### Ubuntu Instructions (Courtesy of Vijay):
 
