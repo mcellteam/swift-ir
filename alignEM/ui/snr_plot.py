@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 
 '''
-
-
 https://github.com/robertsj/poropy/blob/master/pyqtgraph/graphicsItems/ScatterPlotItem.py
 https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/ScatterPlotItem.html
 '''
@@ -16,7 +14,6 @@ class SnrPlot(pg.PlotWidget):
         super().__init__(**kwargs)
 
         self.hoverSize = 10
-
 
         # self.scene() is a pyqtgraph.GraphicsScene.GraphicsScene.GraphicsScene
         self.scene().sigMouseClicked.connect(self.mouse_clicked)
