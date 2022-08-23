@@ -214,8 +214,7 @@ class MainWindow(QMainWindow):
                  ['&Match Point Align Mode',
                   [
                       ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
-                      ['Clear Match Points', None, self.clear_match_points, None, None, None],
-
+                      ['&Remove All Match Points', 'Ctrl+R', self.clear_match_points, None, None, None],
                   ]
                   ],
                  ['Plot SNRs', None, self.show_snr_plot, None, None, None],
@@ -779,6 +778,7 @@ class MainWindow(QMainWindow):
             # hoverPen=pg.mkPen('r', width=2),
             hoverBrush=pg.mkBrush('g'),
         )
+        self.snr_points.setFocusPolicy(Qt.NoFocus)
         self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
         self.last_snr_click = []
@@ -2463,6 +2463,7 @@ class MainWindow(QMainWindow):
         self.lower_panel_groups_.addWidget(self.export_and_view_stack, 0, 4)
         self.lower_panel_groups_.setHorizontalSpacing(10)
         self.lower_panel_groups = QWidget()
+        self.lower_panel_groups.setFixedHeight(cpanel_height+20)
         self.lower_panel_groups.setLayout(self.lower_panel_groups_)
 
         '''-------- MAIN LAYOUT --------'''
@@ -2476,6 +2477,7 @@ class MainWindow(QMainWindow):
         self.image_panel.setMinimumHeight(400)
 
         self.snr_plot = SnrPlot()
+        self.snr_plot.setFocusPolicy(Qt.NoFocus)
         # self.scatter_widget = pg.ScatterPlotWidget()
         # self.snr_plot = pg.plot()
 
@@ -2519,6 +2521,9 @@ class MainWindow(QMainWindow):
         self.main_panel_bottom_widget.addWidget(self.hud)
         self.main_panel_bottom_widget.addWidget(self.plot_widget_container)
         self.main_panel_bottom_widget.addWidget(self.python_console_widget_container)
+        self.hud.setContentsMargins(0, 0, 0, 0) #0823
+        self.plot_widget_container.setContentsMargins(0, 0, 0, 0) #0823
+        self.python_console_widget_container.setContentsMargins(0, 0, 0, 0) #0823
         self.main_panel_bottom_widget.setCurrentIndex(0)
 
         '''MAIN SECONDARY CONTROL PANEL'''
@@ -2544,7 +2549,7 @@ class MainWindow(QMainWindow):
         self.show_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color=ICON_COLOR))
 
         self.main_secondary_controls_layout = QVBoxLayout()
-        self.main_secondary_controls_layout.setContentsMargins(0, 8, 4, 0)
+        self.main_secondary_controls_layout.setContentsMargins(0, 12, 4, 0)
         self.main_secondary_controls_layout.addWidget(self.show_hud_button,
                                                       alignment=Qt.AlignmentFlag.AlignTop)
         self.main_secondary_controls_layout.addWidget(self.show_jupyter_console_button,
@@ -2563,7 +2568,10 @@ class MainWindow(QMainWindow):
         self.bottom_display_area_widget = QWidget()
         self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
 
+        # main_window.splitter.sizes()
+        # Out[20]: [400, 216, 160]
         self.splitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter.splitterMoved.connect(self.center_all_images)
         self.splitter.setHandleWidth(8)
         # main_window.splitter.setHandleWidth(4)
         self.splitter.setContentsMargins(0, 0, 0, 0)
