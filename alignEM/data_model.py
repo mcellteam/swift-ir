@@ -365,9 +365,9 @@ class DataModel:
 
     def clear_match_points(self):
         logger.info("Deleting all match points for this layer")
-        scale_key = cfg.project_data['data']['current_scale']
-        layer_num = cfg.project_data['data']['current_layer']
-        stack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
+        scale_key = self._project_data['data']['current_scale']
+        layer_num = self._project_data['data']['current_layer']
+        stack = self._project_data['data']['scales'][scale_key]['alignment_stack']
         layer = stack[layer_num]
         for role in layer['images'].keys():
             if 'metadata' in layer['images'][role]:
@@ -376,6 +376,21 @@ class DataModel:
         self.update_panels()
         self.refresh_all_images()
         self.match_point_mode = False
+
+    def get_next_coarsest_scale_key(self) -> str:
+        if get_num_scales() == 1:
+            return get_cur_scale_key()
+        scales_dict = self._project_data['data']['scales']
+        cur_scale_key = get_cur_scale_key()
+        coarsest_scale = list(scales_dict.keys())[-1]
+        if cur_scale_key == coarsest_scale:
+            return cur_scale_key
+        scales_list = []
+        for scale_key in scales_dict.keys():
+            scales_list.append(scale_key)
+        cur_scale_index = scales_list.index(cur_scale_key)
+        next_coarsest_scale_key = scales_list[cur_scale_index + 1]
+        return next_coarsest_scale_key
 
 
 # # layer_dict as defined in run_project_json.py:

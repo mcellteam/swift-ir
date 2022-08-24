@@ -121,8 +121,9 @@ if __name__ == "__main__":
         app.setStyle('Fusion')
         logger.info('QApplication Instance Created')
     except:
-        logger.error('Unable to Instantiate QApplication')
         print_exception()
+        logger.error('Unable to Instantiate QApplication')
+
 
     try:
         cfg.main_window = MainWindow(title="AlignEM-SWiFT")
@@ -132,8 +133,8 @@ if __name__ == "__main__":
         cfg.main_window.show()
         logger.info('Showing AlignEM-SWiFT')
     except:
-        logger.error('Unable to Instantiate MainWindow')
         print_exception()
+        logger.error('Unable to Instantiate MainWindow')
 
     try:
         sys.exit(app.exec())

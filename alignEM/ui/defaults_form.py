@@ -34,11 +34,9 @@ class DefaultsForm(QDialog):
         # g.moveCenter(self.parent.geometry().center())
         # self.setGeometry(g)
 
-        self.setWindowFlags(
-            Qt.CustomizeWindowHint |
-            Qt.FramelessWindowHint)
-
-
+        # self.setWindowFlags(
+        #     Qt.CustomizeWindowHint |
+        #     Qt.FramelessWindowHint)
 
         # self.defaults_file = cfg.project_data['data']['destination_path'] + '/defaults.json'
         # print('self.defaults_file = ', str(self.defaults_file))

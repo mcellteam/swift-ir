@@ -6,6 +6,8 @@ https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/Scat
 '''
 
 import pyqtgraph as pg
+from qtpy.QtGui import QFont
+from qtpy.QtCore import Qt
 
 
 class SnrPlot(pg.PlotWidget):
@@ -13,7 +15,18 @@ class SnrPlot(pg.PlotWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.hoverSize = 10
+        self.hoverSize = 12
+        self.setFocusPolicy(Qt.NoFocus)
+        font = QFont()
+        font.setPixelSize(12)
+        self.getAxis("bottom").setStyle(tickFont=font)
+        self.getAxis("bottom").setHeight(30)
+        self.getAxis("left").setStyle(tickFont=font)
+        self.getAxis("left").setWidth(38)
+        # pen = pg.mkPen(color=(255, 0, 0), width=5, style=Qt.SolidLine)
+        style = {'color': '#ffffff', 'font-size': '14px'}
+        self.setLabel('left', 'SNR', **style)
+        self.setLabel('bottom', 'Layer', **style)
 
         # self.scene() is a pyqtgraph.GraphicsScene.GraphicsScene.GraphicsScene
         self.scene().sigMouseClicked.connect(self.mouse_clicked)
