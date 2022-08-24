@@ -749,10 +749,13 @@ class align_ingredient:
         # 0721 ^^ use this form to add initial rotation
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
 
-        # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img')
-        # kip = 'keep.JPG'
+        # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img.JPG')
+        dir = os.path.join(os.path.dirname(os.path.dirname(self.ad))) #dir is the project directory (I think)
+        kip = 'keep.JPG'
         # ' -k  ' + kip + \
         # logger.critical('kip = ' + kip)
+
+        #                              ' -f ' +  \
 
         for i in range(len(self.psta[0])):
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
@@ -763,7 +766,8 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' ' + karg + \
+                              ' -k ' + kip + \
+                              ' -d ' + dir + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
                               ' ' + base_y + \

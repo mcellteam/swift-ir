@@ -340,6 +340,7 @@ class MainWindow(QMainWindow):
     def run_scaling(self) -> None:
         logger.info("run_scaling:")
         self.set_status("Busy...")
+        self.main_panel_bottom_widget.setCurrentIndex(0)
         self.hud.post('Requesting scale factors from user')
 
         if is_dataset_scaled():
@@ -459,9 +460,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def run_alignment(self) -> None:
         logger.info('run_alignment:')
+        self.main_panel_bottom_widget.setCurrentIndex(0)
         self.read_gui_update_project_data()
         if not is_cur_scale_ready_for_alignment():
-            warning_msg = "Scale %s must be aligned first!" % get_next_coarsest_scale_key()[-1]
+            warning_msg = "Scale %s must be aligned first!" % cfg.project_data.get_next_coarsest_scale_key()[-1]
             self.hud.post(warning_msg, logging.WARNING)
             return
         self.set_status('Aligning...')
@@ -509,6 +511,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def run_regenerate_alignment(self) -> None:
         logger.info('run_regenerate_alignment:')
+        self.main_panel_bottom_widget.setCurrentIndex(0)
         self.read_gui_update_project_data()
         if not is_cur_scale_aligned():
             self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
@@ -718,7 +721,7 @@ class MainWindow(QMainWindow):
             if not is_cur_scale_ready_for_alignment():
                 self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
             if self.main_panel_bottom_widget.currentIndex() == 1:
-                self.plot_widget.clear()
+                # self.plot_widget.clear() #0824
                 self.show_snr_plot()
             self.hud.post('Scale Changed to %s' % get_cur_scale_key()[-1])
         except:
@@ -782,20 +785,13 @@ class MainWindow(QMainWindow):
         self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
         self.last_snr_click = []
-        font = QFont()
-        font.setPixelSize(12)
-        self.snr_plot.getAxis("bottom").setStyle(tickFont=font)
-        self.snr_plot.getAxis("bottom").setHeight(26)
-        self.snr_plot.getAxis("left").setStyle(tickFont=font)
-        self.snr_plot.getAxis("left").setWidth(34)
+
 
         # self.scatter_widget.setData(x_axis, snr_list)
         # self.plot_widget.plot(x_axis, snr_list, name="SNR", pen=pen, symbol='+')
         self.snr_plot.addItem(self.snr_points)
         self.snr_plot.showGrid(x=True,y=True, alpha = 200) # alpha: 0-255
         style = {'color': '#ffffff', 'font-size': '14px'}
-        self.snr_plot.setLabel('left', 'SNR', **style)
-        self.snr_plot.setLabel('bottom', 'Layer', **style)
         self.snr_plot.getPlotItem().enableAutoRange()
         self.main_panel_bottom_widget.setCurrentIndex(1)
 
@@ -833,7 +829,6 @@ class MainWindow(QMainWindow):
 
     def show_jupyter_console(self):
         # self.jupyter_console.execute_command('import IPython; IPython.get_ipython().execution_count = 0')
-
         self.jupyter_console.execute_command('from IPython.display import Image, display')
         self.jupyter_console.execute_command('from alignEM.config import *')
         self.jupyter_console.execute_command('from alignEM.em_utils import *')
@@ -1272,6 +1267,7 @@ class MainWindow(QMainWindow):
         logger.debug('new_project:')
         self.hud.post('Creating new project...')
         self.set_status("Project...")
+        self.main_panel_bottom_widget.setCurrentIndex(0)
         if is_destination_set():
             logger.info('Asking user to confirm new project')
             msg = QMessageBox(QMessageBox.Warning,
@@ -1389,6 +1385,7 @@ class MainWindow(QMainWindow):
     def open_project(self):
         logger.info('Opening Project...')
         self.set_status("Project...")
+        self.main_panel_bottom_widget.setCurrentIndex(0)
         filename = self.open_project_dialog()
         if filename != '':
             with open(filename, 'r') as f:
@@ -2477,7 +2474,6 @@ class MainWindow(QMainWindow):
         self.image_panel.setMinimumHeight(400)
 
         self.snr_plot = SnrPlot()
-        self.snr_plot.setFocusPolicy(Qt.NoFocus)
         # self.scatter_widget = pg.ScatterPlotWidget()
         # self.snr_plot = pg.plot()
 
@@ -2549,7 +2545,7 @@ class MainWindow(QMainWindow):
         self.show_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color=ICON_COLOR))
 
         self.main_secondary_controls_layout = QVBoxLayout()
-        self.main_secondary_controls_layout.setContentsMargins(0, 12, 4, 0)
+        self.main_secondary_controls_layout.setContentsMargins(0, 10, 8, 0)
         self.main_secondary_controls_layout.addWidget(self.show_hud_button,
                                                       alignment=Qt.AlignmentFlag.AlignTop)
         self.main_secondary_controls_layout.addWidget(self.show_jupyter_console_button,
@@ -2563,7 +2559,7 @@ class MainWindow(QMainWindow):
 
         self.bottom_display_area_hlayout = QHBoxLayout()
         self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
-        self.bottom_display_area_hlayout.setSpacing(5)
+        self.bottom_display_area_hlayout.setSpacing(4)
         self.bottom_display_area_hlayout.addWidget(self.main_panel_bottom_widget)
         self.bottom_display_area_hlayout.addLayout(self.main_secondary_controls_layout)
         self.bottom_display_area_widget = QWidget()
@@ -2573,9 +2569,9 @@ class MainWindow(QMainWindow):
         # Out[20]: [400, 216, 160]
         self.splitter = QSplitter(Qt.Orientation.Vertical)
         self.splitter.splitterMoved.connect(self.center_all_images)
-        self.splitter.setHandleWidth(8)
+        self.splitter.setHandleWidth(6)
         # main_window.splitter.setHandleWidth(4)
-        self.splitter.setContentsMargins(0, 0, 4, 0)
+        self.splitter.setContentsMargins(0, 0, 0, 0)
         self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.lower_panel_groups)
         self.splitter.addWidget(self.bottom_display_area_widget)

@@ -73,7 +73,7 @@ To do:
 [x] Would you like to save before exiting?
 [] Refactor 'set_scales_from_string' functionality (two callers: 'new_project', 'generate_scales_queue')
 [] 'areImagesCentered' function
-[] set_default_settings cannot be a member function of main_window. This is not data driven.
+[x] set_default_settings cannot be a member function of main_window. This is not data driven.
 [] Save Automatically toggle switch
 [] project has unsaved changes flag (similar to what Tom does)... for asking user whether to save before exit
 [] Show which scales have been aligned (possibly with non-selectable radio boxes)

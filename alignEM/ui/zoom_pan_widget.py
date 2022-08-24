@@ -134,10 +134,10 @@ class ZoomPanWidget(QWidget):
         self.ldx = 0
         self.ldy = 0
         self.wheel_index = 0
-        if cfg.USES_QT5:
-            self.zoom_to_wheel_at ( 0, 0 ) #pyside2 #0613 removed
-        else:
-            self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
+        # if cfg.USES_QT5:
+        #     self.zoom_to_wheel_at ( 0, 0 ) #pyside2 #0613 removed
+        # else:
+        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
@@ -158,8 +158,9 @@ class ZoomPanWidget(QWidget):
                             # logger.info("current role: ", self.role)
                             ann_image = image_dict[self.role] # <class 'dict'>
                             '''CALL TO cfg.image_library'''
-                            pixmap = cfg.image_library.get_image_reference(ann_image['filename']) #  <class 'PySide6.QtGui.QPixmap'>
                             img_text = ann_image['filename']
+                            pixmap = cfg.image_library.get_image_reference(img_text) #  <class 'PySide6.QtGui.QPixmap'>
+
 
                             if pixmap is None: logger.warning("'pixmap' is set to None")
                             if (pixmap != None) or all_images_in_stack:
@@ -234,7 +235,8 @@ class ZoomPanWidget(QWidget):
                                     extra_y = win_h - self.win_y(img_h)
 
                                     # Bias the y value downward to make room for text at top
-                                    extra_y = 1.7 * extra_y
+                                    # extra_y = 1.7 * extra_y #orig
+                                    extra_y = 2.2 * extra_y
                                     self.ldx = (extra_x / 2) / self.zoom_scale
                                     self.ldy = (extra_y / 2) / self.zoom_scale
         except:
@@ -376,16 +378,23 @@ class ZoomPanWidget(QWidget):
 
 
     def zoom_to_wheel_at (self, position):
+        logger.info('zoom_to_wheel_at:')
         old_scale = self.zoom_scale
         new_scale = self.zoom_scale = pow(self.scroll_factor, self.wheel_index)
         if cfg.USES_QT5:
+            logger.info('Using Qt5...')
             # self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
             # self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
             self.ldx = self.ldx + (position.x() /new_scale) - (position.x()/old_scale)
             self.ldy = self.ldy + (position.y()/new_scale) - (position.y()/old_scale)
+            logger.info('self.ldx: %s' % str(self.ldx))
+            logger.info('self.ldy: %s' % str(self.ldy))
         else:
+            logger.info('Using Qt6...')
             self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
             self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
+            logger.info('self.ldx: %s' % str(self.ldx))
+            logger.info('self.ldy: %s' % str(self.ldy))
 
 
     def change_layer(self, layer_delta):

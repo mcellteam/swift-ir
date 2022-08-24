@@ -32,7 +32,8 @@ Version 3.7+ (minimum)
 
     git clone https://github.com/mcellteam/swift-ir.git
     cd swift-ir
-    git checkout joel-dev-alignem  # Switch Branch!
+    git fetch origin development_ng  # Fetch the branch!
+    git checkout development_ng      # Switch Branch!
 
 #### 2) Compile C Binaries (Linux Only, requires FFTW):
 

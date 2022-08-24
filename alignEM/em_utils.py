@@ -29,7 +29,7 @@ __all__ = ['remove_aligned', 'get_cur_scale_key', 'get_cur_layer', 'is_destinati
            'clear_all_skips', 'verify_image_file',
            'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project',
            'is_cur_scale_ready_for_alignment', 'get_aligned_scales_list', 'get_not_aligned_scales_list',
-           'get_scales_list', 'get_next_coarsest_scale_key','get_snr_list', 'print_snr_list', 'print_project_tree',
+           'get_scales_list', 'get_snr_list', 'print_snr_list', 'print_project_tree',
            'get_coarsest_scale_key', 'get_images_list_directly']
 
 logger = logging.getLogger(__name__)
@@ -177,22 +177,6 @@ def is_cur_scale_ready_for_alignment() -> bool:
         return False
 
 
-def get_next_coarsest_scale_key() -> str:
-    if get_num_scales() == 1:
-        return get_cur_scale_key()
-    scales_dict = cfg.project_data['data']['scales']
-    cur_scale_key = get_cur_scale_key()
-    coarsest_scale = list(scales_dict.keys())[-1]
-    if cur_scale_key == coarsest_scale:
-        return cur_scale_key
-    scales_list = []
-    for scale_key in scales_dict.keys():
-        scales_list.append(scale_key)
-    cur_scale_index = scales_list.index(cur_scale_key)
-    next_coarsest_scale_key = scales_list[cur_scale_index + 1]
-    return next_coarsest_scale_key
-
-
 def set_default_precedure() -> None:
     scales_dict = cfg.project_data['data']['scales']
     coarsest_scale = list(scales_dict.keys())[-1]
@@ -208,6 +192,8 @@ def set_default_precedure() -> None:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
             else:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+
+
 
 
 def set_default_settings() -> None:
@@ -233,8 +219,6 @@ def set_default_settings() -> None:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
             else:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
-
-
 
 def set_scales_from_string(scale_string: str):
     '''This is not pretty. Needs to be refactored ASAP.
