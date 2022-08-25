@@ -9,7 +9,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QDockWidget, QSplashScreen
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, QRect
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, QRect, Signal
 from qtpy.QtWidgets import QAction, QActionGroup
 from qtpy.QtWebEngineWidgets import *
 from qtpy.QtWebEngineCore import *
@@ -46,6 +46,7 @@ __all__ = ['MainWindow']
 logger = logging.getLogger(__name__)
 
 class MainWindow(QMainWindow):
+    resized = Signal()
     def __init__(self, title="AlignEM-SWiFT"):
 
         app = QApplication.instance()
@@ -73,6 +74,9 @@ class MainWindow(QMainWindow):
         cfg.project_data = DataModel()
         cfg.image_library = ImageLibrary() # SmartImageLibrary()
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+
+
+        self.resized.connect(self.center_all_images)
 
         # if cfg.QT_API == 'pyside6':
         #     logger.info("QImageReader.allocationLimit() WAS " + str(QImageReader.allocationLimit()) + "MB")
@@ -1932,7 +1936,8 @@ class MainWindow(QMainWindow):
 
 
     def skip_changed_callback(self, state):  # 'state' is connected to skip toggle
-        logger.info("skip_changed_callback(state=%s):" % str(state))
+        # logger.info("skip_changed_callback(state=%s):" % str(state))
+        self.hud.post("Keep Image Set To: %s" % str(state))
         '''Toggle callback for skip image function. Note: a signal is emitted regardless of whether a user or another part
         of the program flips the toggle state. Caller is 'run_app' when a user flips the switch. Caller is change_layer
         or other user-defined function when the program flips the switch'''
@@ -1967,6 +1972,11 @@ class MainWindow(QMainWindow):
     def clear_match_points(self):
         logger.info('Clearing Match Points...')
         cfg.project_data.clear_match_points()
+
+
+    def resizeEvent(self, event):
+        self.resized.emit()
+        return super(MainWindow, self).resizeEvent(event)
 
 
 
@@ -2098,7 +2108,7 @@ class MainWindow(QMainWindow):
         self.toggle_skip.setToolTip('Use or skip current image?')
         self.toggle_skip.setChecked(False)  # 0816 #observed #sus
         self.toggle_skip.toggled.connect(self.skip_changed_callback)
-        self.skip_label = QLabel("Include:")
+        self.skip_label = QLabel("Keep?")
         self.skip_label.setToolTip('Use or skip current image?')
         self.skip_layout = QHBoxLayout()
         self.skip_layout.setAlignment(Qt.AlignCenter)
@@ -2107,7 +2117,8 @@ class MainWindow(QMainWindow):
         self.skip_layout.addWidget(self.toggle_skip)
         self.skip_layout.addStretch(4)
 
-        self.jump_label = QLabel("Go to:")
+        # self.jump_label = QLabel("Go to:")
+        self.jump_label = QLabel("Image #:")
         self.jump_label.setToolTip('Jump to image #')
         self.jump_input = QLineEdit(self)
         self.jump_input.setToolTip('Jump to image #')
@@ -2210,19 +2221,19 @@ class MainWindow(QMainWindow):
 
         self.alignment_status_label = QLabel()
         self.alignment_status_label.setText("Is Aligned: ")
-        self.alignment_status_label.setStyleSheet("""color: #F3F6FB;""")
+        # self.alignment_status_label.setStyleSheet("""color: #F3F6FB;""")
 
         self.align_label_resolution = QLabel()
         self.align_label_resolution.setText('[img size]')
-        self.align_label_resolution.setStyleSheet("""color: #F3F6FB;""")
+        # self.align_label_resolution.setStyleSheet("""color: #F3F6FB;""")
 
         self.align_label_affine = QLabel()
         self.align_label_affine.setText('Initialize Affine')
-        self.align_label_affine.setStyleSheet("""color: #F3F6FB;""")
+        # self.align_label_affine.setStyleSheet("""color: #F3F6FB;""")
 
         self.align_label_scales_remaining = QLabel()
         self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
-        self.align_label_scales_remaining.setStyleSheet("""color: #F3F6FB;""")
+        # self.align_label_scales_remaining.setStyleSheet("""color: #F3F6FB;""")
 
         self.alignment_status_label.setToolTip('Alignment status')
         self.alignment_status_checkbox = QRadioButton()
@@ -2251,6 +2262,7 @@ class MainWindow(QMainWindow):
         self.toggle_auto_generate_hlayout.addWidget(self.toggle_auto_generate, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.alignment_layout = QGridLayout()
+        self.alignment_layout.setSpacing(8)
         self.alignment_layout.setContentsMargins(10, 25, 10, 0)  # tag23
         self.alignment_layout.addLayout(self.swim_grid, 0, 0, 1, 2)
         self.alignment_layout.addLayout(self.whitening_grid, 1, 0, 1, 2)

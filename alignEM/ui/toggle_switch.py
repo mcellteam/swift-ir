@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from qtpy.QtWidgets import QCheckBox
 from qtpy.QtCore import Qt, Slot, QSize, QPointF, QPoint, QRectF
-from qtpy.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter
+from qtpy.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter, QIcon
+import qtawesome as qta
 
 __all__ = ['ToggleSwitch']
 
@@ -10,19 +11,42 @@ class ToggleSwitch(QCheckBox):
     _transparent_pen = QPen(QColor('transparent'))
     _light_grey_pen = QPen(QColor('lightgrey'))
     _black_pen = QPen(QColor('black'))
+    _almost_black_color = QColor('#070D0D')
+    _almost_black_pen = QPen(_almost_black_color)
+    _grey_pen = QPen(QColor('grey'))
+    _snow_color = QColor('#F3F6FB')
+    _snow_pen = QPen(_snow_color)
+    _green_pen = QPen(QColor('#00ff00'))
+    _green_color = '#00ff00'
+    _black_charcoal_color = QColor('#212121')
+    _black_color = QColor('#000000')
 
+    _red_pen = QPen(QColor('red'))
     def __init__(self,
                  parent=None,
-                 bar_color=QColor('grey'),
+                 # bar_color=QColor('grey'),
+                 # bar_color=QColor('white'),
+                 # bar_color=QColor('lightgrey'), # circle around image
+                 # bar_color=QColor('#ffffff'),
+                 bar_color=QColor('red'),
                  # checked_color="#00B0FF",
                  # checked_color="#607cff",
                  # checked_color="# d3dae3",  # monjaromix stylesheet
-                 checked_color="#00ff00",
+                 # checked_color="#00ff00",
+                 # checked_color=QColor('white'),
+                 checked_color=_green_color,
+                 # checked_color=_snow_color,
+                 # checked_color='#ffffff', # toggle background; on
 
-                 handle_color=QColor('white'),
-                 h_scale=.7,
-                 v_scale=.5,
-                 fontSize=10):
+                 # handle_color=QColor('blue'),
+                 # handle_color=QColor('black'), # handle; off
+                 handle_color=_almost_black_color, # handle; off
+                 # handle_color=QColor('#000000'), # handle; off
+                 # handle_color=QColor('red'), # handle; off
+                 h_scale=1,
+                 # v_scale=.5, #0824-
+                 v_scale=1,
+                 fontSize=12):
 
         super().__init__(parent)
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)  # focus don't steal focus from zoompanwidget
@@ -30,17 +54,22 @@ class ToggleSwitch(QCheckBox):
         self._bar_checked_brush = QBrush(QColor(checked_color).lighter())
         self._handle_brush = QBrush(handle_color)
         # self._handle_checked_brush = QBrush(QColor(checked_color))
-        self._handle_checked_brush = QBrush(QColor('#151a1e'))
+        # self._handle_checked_brush = QBrush(QColor('#151a1e'))
+        # self._handle_checked_brush = QBrush(QColor("#00ff00"))
+        # self._handle_checked_brush = QBrush(QColor("#F3F6FB"))
+        self._handle_checked_brush = QBrush(QColor("white")) # handle, off
+        # self._handle_checked_brush = QBrush(QColor("red"))
         # self.light_brush = QBrush(QColor(0, 0, 0))]
         # this setContentMargins can cause issues with painted region, might need to stick to 8,0,8,0
-        self.setContentsMargins(0, 0, 2, 0) #left,top,right,bottom
+        self.setContentsMargins(0, 0, 4, 0) #left,top,right,bottom
+        # self.setContentsMargins(0, 0, 0, 0) #left,top,right,bottom
         self._handle_position = 0
         self._h_scale = h_scale
         self._v_scale = v_scale
         self._fontSize = fontSize
         self.stateChanged.connect(self.handle_state_change)
-        self.setFixedWidth(36)
-        self.setFixedHeight(30)
+        # self.setFixedWidth(36) #0824-
+        # self.setFixedHeight(30) #0824-
 
     def __str__(self):
         return str(self.__class__) + '\n' + '\n'.join(
@@ -49,7 +78,7 @@ class ToggleSwitch(QCheckBox):
     def sizeHint(self):
         # return QSize(76, 30)
         # return QSize(80, 35)
-        return QSize(36, 30)
+        return QSize(39, 30)
 
     def hitButton(self, pos: QPoint):
         return self.contentsRect().contains(pos)
@@ -82,22 +111,40 @@ class ToggleSwitch(QCheckBox):
         if self.isChecked():
             p.setBrush(self._bar_checked_brush)
             p.drawRoundedRect(barRect, rounding, rounding)
-            p.setPen(self._black_pen)
-            p.setBrush(self._handle_checked_brush)
+            # p.setPen(self._grey_pen)
+            p.setPen(self._snow_pen)
+            # p.setPen(self._almost_black_pen)
+            # p.setPen(self._black_pen)
+            # p.setBrush(self._handle_checked_brush)
             font = QFont("PT Sans", self._fontSize)
             p.setFont(font)
             # p.setFont(QFont('Helvetica', self._fontSize, 75))
+            p.setFont(QFont('Helvetica', self._fontSize, 75))
+            p.drawText(xLeft + handleRadius / 2, contRect.center().y() + handleRadius / 2, "✓")
+            # self.setIcon(qta.icon("mdi.help"))
+            # self.documentation_button.setIcon(qta.icon("mdi.help"))
 
         else:
             p.setBrush(self._bar_brush)
             p.drawRoundedRect(barRect, rounding, rounding)
-            p.setPen(self._black_pen)
+            # p.setPen(self._grey_pen)
+            # p.setPen(self._black_pen)
+            # p.setPen(self._red_pen)
+            # p.setPen(self._snow_pen)
+            # p.setPen(self._red_pen)
+            p.setPen(self._almost_black_pen)
             p.setBrush(self._handle_brush)
             font = QFont("PT Sans", self._fontSize)
             p.setFont(font)
             # p.setFont(QFont('Helvetica', self._fontSize, 75))
+            p.setFont(QFont('Helvetica', self._fontSize, 75))
+            p.drawText(contRect.center().x(), contRect.center().y() + handleRadius / 2, " ×")
 
-        p.setPen(self._light_grey_pen)
+
+        # p.setPen(self._light_grey_pen)
+        p.setPen(self._snow_pen)
+        # p.setPen(self._transparent_pen)
+        # p.setPen(self._black_pen) # CIRCLE AROUND HANDLE, ALL
         p.drawEllipse(QPointF(xPos, barRect.center().y()), handleRadius, handleRadius)
         p.end()
 

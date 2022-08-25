@@ -39,6 +39,9 @@ USE_FILE_IO = 0
 PARALLEL_MODE = True
 CODE_MODE = 'c'
 HTTP_PORT = 9000
+NO_NEUROGLANCER = None
+
+
 
 defaults = ["-0.6800", "0.8125", "0.0000", True]
 
