@@ -12,7 +12,7 @@ __all__ = ['ToggleSwitch']
 logger = logging.getLogger(__name__)
 
 class ToggleSwitch(QCheckBox):
-    #0610 after switching to PyQt6... AttributeError: type object 'alignEM' has no attribute 'transparent'
+    #0610 after switching to PyQt6... AttributeError: type object 'src' has no attribute 'transparent'
     _transparent_pen = QPen(QColor('transparent'))
     _light_grey_pen = QPen(QColor('lightgrey'))
     _black_pen = QPen(QColor('black'))

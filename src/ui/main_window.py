@@ -15,21 +15,21 @@ import qtawesome as qta
 import pyqtgraph as pg
 import neuroglancer as ng
 from PIL import Image
-import alignEM.config as cfg
+import src.config as cfg
 if not cfg.NO_NEUROGLANCER:
     from qtpy.QtWebEngineWidgets import *
     from qtpy.QtWebEngineCore import *
-from alignEM.config import project_data
-from alignEM.config import main_window
-from alignEM.config import ICON_COLOR
-from alignEM.em_utils import *
-from alignEM.data_model import DataModel
-from alignEM.image_utils import get_image_size
-from alignEM.compute_affines import compute_affines
-from alignEM.apply_affines import generate_aligned
-from alignEM.generate_scales import generate_scales
-from alignEM.generate_zarr import generate_zarr
-from alignEM.view_3dem import View3DEM
+from src.config import project_data
+from src.config import main_window
+from src.config import ICON_COLOR
+from src.em_utils import *
+from src.data_model import DataModel
+from src.image_utils import get_image_size
+from src.compute_affines import compute_affines
+from src.apply_affines import generate_aligned
+from src.generate_scales import generate_scales
+from src.generate_zarr import generate_zarr
+from src.view_3dem import View3DEM
 from .head_up_display import HeadUpDisplay
 from .image_library import ImageLibrary, SmartImageLibrary
 from .multi_image_panel import MultiImagePanel
@@ -85,7 +85,7 @@ class MainWindow(QMainWindow):
         #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
 
         logger.critical('os.cwd():')
-        self.main_stylesheet = 'alignEM/styles/stylesheet1.qss'
+        self.main_stylesheet = 'src/styles/stylesheet1.qss'
         self.setStyleSheet(open(self.main_stylesheet).read()) # must be after QMainWindow.__init__(self)
         
         self.context = QOpenGLContext(self)
@@ -147,7 +147,7 @@ class MainWindow(QMainWindow):
         self.project_inspector.hide()
         self.addDockWidget(Qt.RightDockWidgetArea, self.project_inspector)
         # if cfg.QT_API == 'pyside':
-        #     self.addDockWidget(alignEM.RightDockWidgetArea, self.project_inspector)
+        #     self.addDockWidget(src.RightDockWidgetArea, self.project_inspector)
         # # elif cfg.QT_API == 'pyqt':
         # #     # self.project_inspector.setAllowedAreas() # ? there is no reference on how to do this
         
@@ -835,8 +835,8 @@ class MainWindow(QMainWindow):
     def show_jupyter_console(self):
         # self.jupyter_console.execute_command('import IPython; IPython.get_ipython().execution_count = 0')
         self.jupyter_console.execute_command('from IPython.display import Image, display')
-        self.jupyter_console.execute_command('from alignEM.config import *')
-        self.jupyter_console.execute_command('from alignEM.em_utils import *')
+        self.jupyter_console.execute_command('from src.config import *')
+        self.jupyter_console.execute_command('from src.em_utils import *')
         self.jupyter_console.execute_command('clear')
         self.main_panel_bottom_widget.setCurrentIndex(2)
 
@@ -887,7 +887,7 @@ class MainWindow(QMainWindow):
         logger.info('Changing stylesheet to minimal')
     
     def apply_stylesheet_1(self):
-        self.main_stylesheet = 'alignEM/styles/stylesheet1.qss'
+        self.main_stylesheet = 'src/styles/stylesheet1.qss'
         self.hud.post('Applying stylesheet 1')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
@@ -895,7 +895,7 @@ class MainWindow(QMainWindow):
     
     def apply_stylesheet_3(self):
         '''Light stylesheet'''
-        self.main_stylesheet = 'alignEM/styles/stylesheet3.qss'
+        self.main_stylesheet = 'src/styles/stylesheet3.qss'
         self.hud.post('Applying stylesheet 3')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
@@ -903,7 +903,7 @@ class MainWindow(QMainWindow):
     
     def apply_stylesheet_4(self):
         '''Grey stylesheet'''
-        self.main_stylesheet = 'alignEM/styles/stylesheet4.qss'
+        self.main_stylesheet = 'src/styles/stylesheet4.qss'
         self.hud.post('Applying stylesheet 4')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
@@ -911,14 +911,14 @@ class MainWindow(QMainWindow):
     
     def apply_stylesheet_11(self):
         '''Screamin' Green stylesheet'''
-        self.main_stylesheet = 'alignEM/styles/stylesheet11.qss'
+        self.main_stylesheet = 'src/styles/stylesheet11.qss'
         self.hud.post('Applying stylesheet 11')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.reset_groupbox_styles()
     
     def apply_stylesheet_12(self):
-        self.main_stylesheet = 'alignEM/styles/stylesheet12.qss'
+        self.main_stylesheet = 'src/styles/stylesheet12.qss'
         self.hud.post('Applying stylesheet 12')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())

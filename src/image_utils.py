@@ -7,7 +7,7 @@ import logging
 import inspect
 import numpy as np
 import tifffile
-try:     from alignEM.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
+try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 
 __all__ = [

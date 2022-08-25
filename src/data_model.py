@@ -9,8 +9,8 @@ import inspect
 import logging
 from copy import deepcopy
 
-import alignEM.config as cfg
-from alignEM.ui.defaults_form import DefaultsForm
+import src.config as cfg
+from src.ui.defaults_form import DefaultsForm
 
 __all__ = ['DataModel']
 

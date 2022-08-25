@@ -26,13 +26,13 @@ import traceback
 import numpy as np
 import subprocess as sp
 
-try:     import alignEM.config as cfg
+try:     import src.config as cfg
 except:  import config as cfg
 
-try:     import alignEM.swiftir as swiftir
+try:     import src.swiftir as swiftir
 except:  import swiftir
 
-try:     from alignEM.image_utils import get_image_size
+try:     from src.image_utils import get_image_size
 except:  from image_utils import get_image_size
 
 __all__ = ['run_json_project', 'alignment_process']

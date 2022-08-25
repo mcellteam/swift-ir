@@ -12,7 +12,7 @@ import logging
 from qtpy.QtCore import QObject, Signal, Slot, QThread
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
-# from alignEM.TqdmToLogger import TqdmToLogger
+# from src.TqdmToLogger import TqdmToLogger
 
 __all__ = ['HeadUpDisplay', 'HudWorker']
 

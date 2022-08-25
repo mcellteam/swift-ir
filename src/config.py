@@ -1,6 +1,6 @@
 '''
 This file is for initializing global config and 'project_data' the dictionary project state in memory.
-It is imported by other alignEM files and lives outside of the 'alignEM' directory.
+It is imported by other src files and lives outside of the 'src' directory.
 '''
 
 __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',

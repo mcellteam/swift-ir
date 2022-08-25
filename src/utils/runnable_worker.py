@@ -48,7 +48,7 @@ class RunnableWorker(QRunnable):
 
     Doc:
     QThreadPool manages and recyles individual QThread objects to help reduce thread creation costs in
-    programs that use threads. Each alignEM application has one global QThreadPool object, which can be
+    programs that use threads. Each src application has one global QThreadPool object, which can be
     accessed by calling globalInstance() .
 
     To use one of the QThreadPool threads, subclass QRunnable and implement the run() virtual function.
@@ -58,7 +58,7 @@ class RunnableWorker(QRunnable):
 
     QThreadPool supports executing the same QRunnable more than once by calling tryStart (this) from within run()
 
-    Note that QThreadPool is a low-level class for managing threads, see the alignEM Concurrent module
+    Note that QThreadPool is a low-level class for managing threads, see the src Concurrent module
     for higher level alternatives.
 
     '''

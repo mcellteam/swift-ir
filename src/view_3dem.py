@@ -28,8 +28,8 @@ import functools
 import neuroglancer as ng
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from qtpy.QtCore import Slot, QRunnable, QUrl
-from alignEM.em_utils import print_exception
-import alignEM.config as cfg
+from src.em_utils import print_exception
+import src.config as cfg
 
 __all__ = ['View3DEM']
 

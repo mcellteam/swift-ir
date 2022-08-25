@@ -5,7 +5,7 @@ import sys
 import time
 import psutil
 import logging
-import alignEM.config as cfg
+import src.config as cfg
 
 from .em_utils import get_scale_key, get_scale_val, get_cur_scale_key, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, get_num_imported_images, print_snr_list, remove_aligned

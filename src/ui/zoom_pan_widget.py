@@ -11,7 +11,7 @@ from qtpy.QtWidgets import QSizePolicy
 
 from qtpy.QtGui import QNativeGestureEvent
 
-import alignEM.config as cfg
+import src.config as cfg
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
 from ..em_utils import get_cur_scale_key
@@ -75,7 +75,7 @@ class ZoomPanWidget(QWidget):
         # self.pixmap = QPixmap("{sims.png}")
         # self.height_label = 100
         # self.lb.resize(self.width(), self.height_label)
-        # self.lb.setPixmap(self.pixmap.scaled(self.lb.size(), alignEM.IgnoreAspectRatio))
+        # self.lb.setPixmap(self.pixmap.scaled(self.lb.size(), src.IgnoreAspectRatio))
         # self.show()
 
         # focus
@@ -472,8 +472,8 @@ class ZoomPanWidget(QWidget):
 
         kmods = event.modifiers()
         '''          type(kmods): <enum 'KeyboardModifier'>
-        scroll w/ shift key     :  alignEM.ShiftModifier
-        scroll w/out shift key  :  alignEM.NoModifier      '''
+        scroll w/ shift key     :  src.ShiftModifier
+        scroll w/out shift key  :  src.NoModifier      '''
 
         ''''''
         if kmods == Qt.NoModifier:

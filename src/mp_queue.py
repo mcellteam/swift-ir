@@ -350,8 +350,8 @@ print('mp_queue.TaskQueue.start | mp.get_start_method() = ', mp.get_start_method
 
 
 image_apply_affine task (example)
-task= ['/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3', 
-       '/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/job_apply_affine.py', 
+task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3', 
+       '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_apply_affine.py', 
        '-gray', 
        '-afm', 
        '1.040024184796598', 
@@ -364,7 +364,7 @@ task= ['/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_aligned/R34CA1-BS12.105.tif']
 
 generate_scales task (example)
-task = ['/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM//lib/bin_darwin/iscale2', 
+task = ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src//lib/bin_darwin/iscale2', 
         '+4', 
         'of=/Users/joelyancey/glanceem_swift/test_projects/test16/scale_4/img_src/R34CA1-BS12.117.tif', 
         '/Users/joelyancey/glanceem_swift/test_projects/test16/scale_1/img_src/R34CA1-BS12.117.tif']
@@ -377,15 +377,15 @@ task = ['/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM//lib/b
 PROBLEMATIC
 INFO:interface:
 Task Error:
-INFO:interface:   CMD:    /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
-INFO:interface:   ARGS:   ['/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/job_single_alignment.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/full_volume_josef_2/project_runner_job_file.json', 'init_affine', '4', 'c', '127', '1', '1']
-INFO:interface:   STDERR: /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3: can't open file '/Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/job_single_alignment.py': [Errno 2] No such file or directory
+INFO:interface:   CMD:    /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
+INFO:interface:   ARGS:   ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_single_alignment.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/full_volume_josef_2/project_runner_job_file.json', 'init_affine', '4', 'c', '127', '1', '1']
+INFO:interface:   STDERR: /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3: can't open file '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_single_alignment.py': [Errno 2] No such file or directory
 
 
 What a good single_alignment_job run looks like:
 project_runner.do_alignment | Starting mp_queue with args:
-  /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
-  /Users/joelyancey/Downloads/swift-ir-joel-dev-pyside6/source/alignEM/alignEM/job_single_alignment.py
+  /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
+  /Users/joelyancey/Downloads/alignEM-joel-dev-pyside6/source/src/src/job_single_alignment.py
   /Users/joelyancey/glanceem_swift/test_projects/test_last_push/project_runner_job_file.json
   init_affine
   4
@@ -396,8 +396,8 @@ project_runner.do_alignment | Starting mp_queue with args:
 
 HOW IS ^^ THAT DIFFERENT FROM THIS:
 Starting mp_queue with args:
-  /Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/bin/python3
-  /Users/joelyancey/glanceem_swift/swift-ir/source/alignEM/alignEM/src/job_single_alignment.py
+  /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
+  /Users/joelyancey/glanceem_swift/alignEM/source/src/src/src/job_single_alignment.py
   /Users/joelyancey/glanceEM_SWiFT/test_projects/test94/project_runner_job_file.json
   init_affine
   4
@@ -439,7 +439,7 @@ pickle.dumps(p._config['authkey'])
 
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
-  File "/Users/joelyancey/.local/share/virtualenvs/swift-ir-AuCIf4YN/lib/python3.9/site-packages/multiprocess/process.py", line 347, in __reduce__
+  File "/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/lib/python3.9/site-packages/multiprocess/process.py", line 347, in __reduce__
     raise TypeError(
 TypeError: Pickling an AuthenticationString object is disallowed for security reasons
 '''

@@ -21,15 +21,15 @@ __all__.extend(config.__all__)
 # __all__.extend(generate_zarr.__all__)
 
 # from . import align_swiftir
-# from alignEM.align_swiftir import *
+# from src.align_swiftir import *
 # __all__.extend(align_swiftir.__all__)
 #
 # from . import alignment__process
-# from alignEM.alignment__process import alignment_process
+# from src.alignment__process import alignment_process
 # __all__.extend(alignment__process.__all__)
 #
 # from . import pyswift_tui
-# from alignEM.pyswift_tui import *
+# from src.pyswift_tui import *
 # __all__.extend(pyswift_tui.__all__)
 
 #

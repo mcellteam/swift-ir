@@ -7,7 +7,7 @@ import logging
 import threading
 import concurrent
 from qtpy.QtGui import QPixmap
-import alignEM.config as cfg
+import src.config as cfg
 from ..em_utils import get_scale_val
 
 __all__ = ['ImageLibrary', 'SmartImageLibrary']

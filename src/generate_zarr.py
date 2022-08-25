@@ -11,11 +11,11 @@ import zarr
 from zarr.util import human_readable_size
 import numpy as np
 from PIL import Image
-from alignEM.image_utils import get_image_size
-from alignEM.mp_queue import TaskQueue
-from alignEM.em_utils import get_cur_scale_key, get_scale_key, get_scale_val, get_scales_list, get_num_scales, \
+from src.image_utils import get_image_size
+from src.mp_queue import TaskQueue
+from src.em_utils import get_cur_scale_key, get_scale_key, get_scale_val, get_scales_list, get_num_scales, \
     get_aligned_scales_list, get_images_list_directly, get_num_imported_images
-import alignEM.config as cfg
+import src.config as cfg
 from contextlib import contextmanager
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need
@@ -143,7 +143,7 @@ def generate_zarr(src, out):
     scale_q.start(cpus)
     for task in tasks:
         task_args = [sys.executable,
-                     'alignEM/job_convert_zarr.py',
+                     'src/job_convert_zarr.py',
                      str(task[0]),          # ID
                      str(task[1]),          # img
                      str(task[2]),          # src

@@ -14,7 +14,7 @@ https://github.com/ColinDuquesnoy/QDarkStyleSheet/blob/master/qdarkstyle/dark/st
 /* Dark Style - QDarkStyleSheet ------------------------------------------ */
 /*
 
-See alignEM documentation:
+See src documentation:
 
   - https://doc.qt.io/qt-5/stylesheet.html
   - https://doc.qt.io/qt-5/stylesheet-reference.html
