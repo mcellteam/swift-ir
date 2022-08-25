@@ -960,10 +960,8 @@ class MainWindow(QMainWindow):
             ("""QGroupBox {border: 2px dotted #455364;}""", open(self.main_stylesheet).read())[gb4])
 
     def cycle_user_progress(self):
-        print('self.up = ' + str(self.up))
         self.up += 1
         up_ = self.up % 4
-        print('up_ = ' + str(up_))
         if up_ == 0:    self.set_progress_stage_1()
         elif up_ == 1:  self.set_progress_stage_2()
         elif up_ == 2:  self.set_progress_stage_3()

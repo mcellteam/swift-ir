@@ -36,7 +36,7 @@ To do:
 [] call 'Apply Affine' something more descriptive, or make its function more clear ('Force Affine'?)
 [] add a place to take notes (see: https://pythonbasics.org/pyqt-menubar/)
 [x] should be able to export aligned to Zarr at any scale
-[] project status indicator
+[x] project status indicator
 [] there should ALWAYS be a scale 1, not just when scales are generated
 [] underlined letters for hotkeys
 [] forget/remove all images from project function
@@ -58,14 +58,14 @@ To do:
 [x] replace 'skip' checkbox with toggle button
 [x] automatically center images after (a) importing images (b) generating scales (c) generating alignments
 [x] move align_all_or_some to its own script
-[] fix scale combo box text i.e. scale_1 -> Scale 1
+[x] fix scale combo box text i.e. scale_1 -> Scale 1
 [] max bounding box size threshold
 [] have a default project name for new projects, i.e. 'my_project.json'
 [x] put a stop to the gray rectangle bug
 [x] fix bug that requires a project to be saved
 [] Tool Tips for all/most buttons/menus
 [] auto-generate images button in primary alignment control panel
-[] 'apply to all' button for whitening and SWIM window
+[x] 'apply to all' button for whitening and SWIM window
 [] toggle for auto-generate images
 [x] function to check if source images have been imported
 [x] function to check how many source images have been imported
@@ -76,45 +76,42 @@ To do:
 [x] set_default_settings cannot be a member function of main_window. This is not data driven.
 [] Save Automatically toggle switch
 [] project has unsaved changes flag (similar to what Tom does)... for asking user whether to save before exit
-[] Show which scales have been aligned (possibly with non-selectable radio boxes)
+[x] Show which scales have been aligned (possibly with non-selectable radio boxes)
 [] SWIM Window <- # of pixels in label
 [] show SWIM window as overlay on base & ref
 [] for new project, there could be an issue with set_default_settings() func
 [] bug where when project is saved on first base image in the stack (which has no ref) -> reopening the project and changing layer will require a re-center
-[] fix SNR image hover tooltips
+[x] fix SNR image hover tooltips
 [x] fix makefile.linux
-[] make a better README.txt, add list of packages
+[x] make a better README.txt, add list of packages
 [] test everything on Ubuntu
 [] add check for c binaries at startup -> else quit application
+[x] mouseover-specific tooltips or status information
 
-Important:
-[] scaling with iscale, for neuroglancer/zarr
+Important For Launch:
+[x] scaling with iscale, for neuroglancer/zarr
 [] extend support for with rectangular images
-[] match-point functionality
+[x] match-point functionality
 [] cropping functionality
 [] project directory validator
 [] ZOOM
 [] SWIM randomly misfires
 [] hide skipped images
+[] dim out skipped images instead of red 'X'
+[] magnifying glass
+[] use QSplitter for showing additional status info/project details
+[] view or hide skipped images
+[] align just one
 
-
-Things project_data should include:
+Things project_data should probably include:
 * is project scaled (bool)
 * scales with alignments so-far generated (list of strings, i.e. ['scale_4', 'scale_2'])
 
 To do (Zarr/precomputed):
 [x] look into making pre-computed format multithreaded
-[] look into Zarr directory store
+[x] look into Zarr directory store
 [] insert/remove images from Zarr (callback functions)
 
-possible features:
-[] dim out skipped images instead of red 'X'
-[] magnifying glass
-[] use QSplitter for showing additional status info/project details
-[] mouseover-specific tooltips or status information
-[] view or hide skipped images
-
-[] align just one
 
 ''''''
 ------------------------
