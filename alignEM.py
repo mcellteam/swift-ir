@@ -87,7 +87,7 @@ if __name__ == "__main__":
     parser.add_argument('-d', '--debug', action='store_true', help='Debug Mode')
     parser.add_argument('-l', '--loglevel', type=int, default=1, help='Logging Level (1-5, default: 2)')
     parser.add_argument('-p', '--preload', type=int, default=3, help='# Images +/- to Preload')
-    parser.add_argument('-n', '--no3DEM', action='store_true', help='Debug Mode')
+    parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
     if args.debug:
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
     os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     logger.info('QT_API: %s' % os.environ.get('QT_API'))
-    if args.no3DEM:
+    if args.no_neuroglancer:
         cfg.NO_NEUROGLANCER = True
     else:
         cfg.NO_NEUROGLANCER = False
