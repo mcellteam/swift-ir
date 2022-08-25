@@ -100,10 +100,10 @@ class View3DEM(QRunnable):
                 self.ng_server = Server((self.bind, self.port))
 
                 # dir = cfg.project_data.
-                Handler = functools.partial(
-                    http.server.SimpleHTTPRequestHandler,
-                    directory='/my/dir/goes/here'
-                )
+                # Handler = functools.partial(
+                #     http.server.SimpleHTTPRequestHandler,
+                #     directory='/my/dir/goes/here'
+                # )
             except OSError:
                 logger.warning('Port %d already in use. Trying Another port...' % self.port)
                 self.port += 1

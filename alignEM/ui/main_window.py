@@ -11,13 +11,14 @@ from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurface
     QGuiApplication
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, QRect, Signal
 from qtpy.QtWidgets import QAction, QActionGroup
-from qtpy.QtWebEngineWidgets import *
-from qtpy.QtWebEngineCore import *
 import qtawesome as qta
 import pyqtgraph as pg
 import neuroglancer as ng
 from PIL import Image
 import alignEM.config as cfg
+if not cfg.NO_NEUROGLANCER:
+    from qtpy.QtWebEngineWidgets import *
+    from qtpy.QtWebEngineCore import *
 from alignEM.config import project_data
 from alignEM.config import main_window
 from alignEM.config import ICON_COLOR
@@ -1750,22 +1751,24 @@ class MainWindow(QMainWindow):
             sys.exit()
 
     def documentation_view(self):  # documentationview
-        logger.info("Launching documentation view | MainWindow.documentation_view...")
-
-        self.hud.post("Switching to AlignEM_SWiFT Documentation")
-        # don't force the reload, add home button instead
-        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
-        self.main_widget.setCurrentIndex(2)
+        if not cfg.NO_NEUROGLANCER:
+            logger.info("Launching documentation view | MainWindow.documentation_view...")
+            self.hud.post("Switching to AlignEM_SWiFT Documentation")
+            # don't force the reload, add home button instead
+            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
+            self.main_widget.setCurrentIndex(2)
 
     def documentation_view_home(self):
-        logger.info("Launching documentation view home | MainWindow.documentation_view_home...")
-        self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev-alignem/README.md'))
+        if not cfg.NO_NEUROGLANCER:
+            logger.info("Launching documentation view home | MainWindow.documentation_view_home...")
+            self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev-alignem/README.md'))
 
     def remote_view(self):
-        logger.info("Launching remote viewer | MainWindow.remote_view...")
-        self.hud.post("Switching to Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
-        self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-        self.main_widget.setCurrentIndex(4)
+        if not cfg.NO_NEUROGLANCER:
+            logger.info("Launching remote viewer | MainWindow.remote_view...")
+            self.hud.post("Switching to Remote Neuroglancer Viewer (https://neuroglancer-demo.appspot.com/)")
+            self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+            self.main_widget.setCurrentIndex(4)
 
     def reload_ng(self):
         logger.info("Reloading Neuroglancer...")
@@ -1797,25 +1800,29 @@ class MainWindow(QMainWindow):
 
     def webgl2_test(self):
         '''https://www.khronos.org/files/webgl20-reference-guide.pdf'''
-        logger.info("Running WebGL 2.0 Test In Web Browser...")
-        self.browser_docs.setUrl(QUrl('https://get.webgl.org/webgl2/'))
-        self.main_widget.setCurrentIndex(2)
+        if not cfg.NO_NEUROGLANCER:
+            logger.info("Running WebGL 2.0 Test In Web Browser...")
+            self.browser_docs.setUrl(QUrl('https://get.webgl.org/webgl2/'))
+            self.main_widget.setCurrentIndex(2)
 
 
     def google(self):
-        logger.info("Running Google in Web Browser...")
-        self.browser_docs.setUrl(QUrl('https://www.google.com'))
-        self.main_widget.setCurrentIndex(2)
+        if not cfg.NO_NEUROGLANCER:
+            logger.info("Running Google in Web Browser...")
+            self.browser_docs.setUrl(QUrl('https://www.google.com'))
+            self.main_widget.setCurrentIndex(2)
 
     def about_config(self):
-        logger.info("Running about:config in Web Browser...")
-        self.browser_docs.setUrl(QUrl('about:config'))
-        self.main_widget.setCurrentIndex(2)
+        if not cfg.NO_NEUROGLANCER:
+            logger.info("Running about:config in Web Browser...")
+            self.browser_docs.setUrl(QUrl('about:config'))
+            self.main_widget.setCurrentIndex(2)
 
     def gpu_config(self):
-        logger.info("Running chrome://gpu in Web Browser...")
-        self.browser_docs.setUrl(QUrl('chrome://gpu'))
-        self.main_widget.setCurrentIndex(2)
+        if not cfg.NO_NEUROGLANCER:
+            logger.info("Running chrome://gpu in Web Browser...")
+            self.browser_docs.setUrl(QUrl('chrome://gpu'))
+            self.main_widget.setCurrentIndex(2)
 
 
     def print_state_ng(self):
@@ -1841,6 +1848,9 @@ class MainWindow(QMainWindow):
         logger.info("blend_ng():")
 
     def view_neuroglancer(self):  #view_3dem #ngview #neuroglancer
+        if cfg.NO_NEUROGLANCER:
+            self.hud.post('Neuroglancer Is Disabled', logging.WARNING)
+            return
         self.set_status('Busy...')
         logger.info("view_neuroglancer >>>>")
         logger.info("# of aligned images                  : %d" % get_num_aligned())
@@ -1886,10 +1896,11 @@ class MainWindow(QMainWindow):
         ng_worker = View3DEM(source=zarr_path)
         self.threadpool.start(ng_worker)
         viewer_url = ng_worker.url()
-        logger.info('viewer_url: %s' % viewer_url)
-        self.browser.setUrl(QUrl(viewer_url))
-        self.main_widget.setCurrentIndex(1)
-        self.hud.post('Displaying Alignment In Neuroglancer')
+        if not cfg.NO_NEUROGLANCER:
+            logger.info('viewer_url: %s' % viewer_url)
+            self.browser.setUrl(QUrl(viewer_url))
+            self.main_widget.setCurrentIndex(1)
+            self.hud.post('Displaying Alignment In Neuroglancer')
         self.set_idle()
 
     def set_main_view(self):
@@ -2638,8 +2649,9 @@ class MainWindow(QMainWindow):
         self.project_view_panel.setLayout(self.project_view_panel_layout)
 
         # DOCUMENTATION PANEL
-        self.browser = QWebEngineView()
-        self.browser_docs = QWebEngineView()
+        if not cfg.NO_NEUROGLANCER:
+            self.browser = QWebEngineView()
+            self.browser_docs = QWebEngineView()
         self.exit_docs_button = QPushButton("Back")
         self.exit_docs_button.setFixedSize(self.std_button_size)
         self.exit_docs_button.clicked.connect(self.exit_docs)
@@ -2648,7 +2660,8 @@ class MainWindow(QMainWindow):
         self.readme_button.clicked.connect(self.documentation_view_home)
         self.docs_panel = QWidget()
         self.docs_panel_layout = QVBoxLayout()
-        self.docs_panel_layout.addWidget(self.browser_docs)
+        if not cfg.NO_NEUROGLANCER:
+            self.docs_panel_layout.addWidget(self.browser_docs)
         self.docs_panel_controls_layout = QHBoxLayout()
         self.docs_panel_controls_layout.addWidget(self.exit_docs_button, alignment=Qt.AlignmentFlag.AlignLeft)
         self.docs_panel_controls_layout.addWidget(self.readme_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2658,8 +2671,9 @@ class MainWindow(QMainWindow):
         self.docs_panel.setLayout(self.docs_panel_layout)
 
         # REMOTE VIEWER PANEL
-        self.browser_remote = QWebEngineView()
-        self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
+        if not cfg.NO_NEUROGLANCER:
+            self.browser_remote = QWebEngineView()
+            self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.exit_remote_button = QPushButton("Back")
         self.exit_remote_button.setFixedSize(self.std_button_size)
         self.exit_remote_button.clicked.connect(self.exit_remote)
@@ -2668,7 +2682,8 @@ class MainWindow(QMainWindow):
         self.reload_remote_button.clicked.connect(self.reload_remote)
         self.remote_viewer_panel = QWidget()
         self.remote_viewer_panel_layout = QVBoxLayout()
-        self.remote_viewer_panel_layout.addWidget(self.browser_remote)
+        if not cfg.NO_NEUROGLANCER:
+            self.remote_viewer_panel_layout.addWidget(self.browser_remote)
         self.remote_viewer_panel_controls_layout = QHBoxLayout()
         self.remote_viewer_panel_controls_layout.addWidget(self.exit_remote_button,
                                                            alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2713,7 +2728,8 @@ class MainWindow(QMainWindow):
         # self.blend_ng_button.clicked.connect(blend_ng)
         self.ng_panel = QWidget()
         self.ng_panel_layout = QVBoxLayout()
-        self.ng_panel_layout.addWidget(self.browser)
+        if not cfg.NO_NEUROGLANCER:
+            self.ng_panel_layout.addWidget(self.browser)
         self.ng_panel_controls_layout = QHBoxLayout()
         self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
         self.ng_panel_controls_layout.addWidget(self.reload_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
