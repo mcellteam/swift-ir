@@ -1,0 +1,5 @@
+[tool.setuptools.packages]
+find = {}
+
+[project.scripts]
+cli-name = "alignEM:main"

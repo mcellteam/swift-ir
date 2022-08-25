@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name="alignEM",
+    name="src",
     version="0.0.1",
     author="Joel Yancey,",
     author_email="joelgyancey@ucla.edu",

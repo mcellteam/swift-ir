@@ -35,7 +35,7 @@ Environment variable QT_API can take the following values:
     pyqt6 (to use PyQt6).
     pyside6 (to use PySide6).
 
-To output a string of Mypy CLI args that will reflect the currently selected alignEM API:
+To output a string of Mypy CLI args that will reflect the currently selected src API:
 $ qtpy mypy-args
 
 """
@@ -46,9 +46,9 @@ import logging
 import argparse
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
-from alignEM.em_utils import print_exception
-from alignEM.ui.main_window import MainWindow
-import alignEM.config as cfg
+from src.em_utils import print_exception
+from src.ui.main_window import MainWindow
+import src.config as cfg
 
 class CustomFormatter(logging.Formatter):
 
@@ -79,8 +79,7 @@ ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
 
 
-if __name__ == "__main__":
-
+def main():
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
     parser.add_argument('-a', '--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
@@ -145,3 +144,7 @@ if __name__ == "__main__":
         sys.exit(app.exec())
     except:
         sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()
