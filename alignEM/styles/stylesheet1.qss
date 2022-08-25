@@ -36,7 +36,9 @@ QSplitter::handle {
 
 
 
-
+QDialog QLabel {
+	color: #000000;
+}
 
 
 QDockWidget {
@@ -72,6 +74,7 @@ QMainWindow {
 QLabel {
 	/*color: #d3dae3;*/
 	/*color: #ffffff;*/
+	color: #F3F6FB;
 
 }
 
