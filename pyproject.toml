@@ -2,7 +2,7 @@
 find = {}
 
 [project.scripts]
-cli-name = "alignEM:main"
+alignem = "alignEM:main"
 
 [build-system]
 requires = ["setuptools", "wheel", "setuptools_scm"]
