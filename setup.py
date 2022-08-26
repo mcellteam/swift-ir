@@ -18,6 +18,12 @@ setup(
     url="https://github.com/mcellteam/swift-ir/tree/development_ng",
     packages=find_packages(),
     scripts=['alignEM.py'],
+    python_requires=">=3.9",
+    entry_points={
+        "console_scripts": [
+            "download = downloader.cli:main",
+        ]
+    }
 
 )
 
