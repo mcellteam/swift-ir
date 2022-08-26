@@ -8,7 +8,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="src",
-    version="0.0.2",
+    version="0.0.3",
     author="Joel Yancey,",
     author_email="joelgyancey@ucla.edu",
     description="AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR.",
