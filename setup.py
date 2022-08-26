@@ -1,9 +1,12 @@
-import setuptools
+# import setuptools
+# from setuptools import find_packages  # or find_namespace_packages
+from setuptools import setup, find_packages
+# setup(use_scm_version=True)
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-setuptools.setup(
+setup(
     name="src",
     version="0.0.1",
     author="Joel Yancey,",
@@ -11,33 +14,10 @@ setuptools.setup(
     description="AlignEM-SWIFT is a graphical tool for aligning serial section electron micrographs using SWiFT-IR.",
     long_description=long_description,
     long_description_content_type="text/markdown",
+    platforms=["any"],
     url="https://github.com/mcellteam/swift-ir/tree/development_ng",
-    packages=setuptools.find_packages(),
-    install_requires=[
-            'numpy',
-            'psutil',
-            'opencv-python-headless',
-            'pillow',
-            'zarr',
-            'tifffile',
-            'imagecodecs',
-            'neuroglancer',
-            'qtconsole',
-            'pyqt5',
-            'pyqtwebengine',
-            'qtpy',
-            'qtawesome',
-            'pyqtgraph',
-            'tqdm'
-        ],
-    entry_points={
-        'console_scripts': [
-            'cursive = cursive.tools.cmd:cursive_command',
-        ],
-    },
-    # classifiers=(
-    #     "Programming Language :: Python :: 3",
-    #     "License :: OSI Approved :: MIT License",
-    #     "Operating System :: OS Independent",
-    # ),
+    packages=find_packages(),
+    scripts=['bin/funniest-joke'],
+
 )
+

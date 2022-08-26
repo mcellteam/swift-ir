@@ -12,6 +12,7 @@ keep.JPG
 best.JPG
 newtarg.JPG
 **/source_tracker.py
+.idea/
 
 # Environments
 .env
