@@ -17,7 +17,7 @@ setup(
     platforms=["any"],
     url="https://github.com/mcellteam/swift-ir/tree/development_ng",
     packages=find_packages(),
-    scripts=['alignEM'],
+    scripts=['alignEM.py'],
 
 )
 
