@@ -6,7 +6,7 @@ import logging
 import inspect
 from qtpy.QtGui import QPainter, QPen, QColor
 from qtpy.QtWidgets import QWidget, QRubberBand
-from qtpy.QtCore import Qt, QPointF, QRectF
+from qtpy.QtCore import Qt, QPointF, QRectF, QSize
 from qtpy.QtWidgets import QSizePolicy
 
 from qtpy.QtGui import QNativeGestureEvent
@@ -32,7 +32,6 @@ class ZoomPanWidget(QWidget):
         self.role = role
         self.parent = None
         self.already_painting = False
-
         self.floatBased = False
         self.antialiased = False  # why
         self.wheel_index = 0
@@ -40,7 +39,7 @@ class ZoomPanWidget(QWidget):
         self.zoom_scale = 1.0
         self.last_button = Qt.MouseButton.NoButton
 
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        # self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0827-
 
         self.mdx = 0  # Mouse Down x (screen x of mouse down at start of drag)
         self.mdy = 0  # Mouse Down y (screen y of mouse down at start of drag)
@@ -83,10 +82,10 @@ class ZoomPanWidget(QWidget):
         #0605 following 6 lines were removed
     #     QApplication.instance().focusChanged.connect(self.on_focusChanged)
     #
-    # def on_focusChanged(self):
-    #     fwidget = QApplication.focusWidget()
-    #     if fwidget is not None:
-    #         logger.info("focus widget name = ", fwidget.objectName())
+    def on_focusChanged(self):
+        fwidget = QApplication.focusWidget()
+        if fwidget is not None:
+            logger.info("focus widget name = ", fwidget.objectName())
 
     def get_settings(self):
         settings_dict = {}
@@ -103,145 +102,135 @@ class ZoomPanWidget(QWidget):
         self.parent = parent
 
     def update_siblings(self):
+        logger.info('Caller: ' + inspect.stack()[1].function)
         # This will cause the normal "update_self" function to be called on each sibling
-        print_debug(30, "Update_siblings called, calling siblings.update_self")
-        # if type(self.parent) == MultiImagePanel:  #0712 - had to remove circular reference
         self.parent.update_multi_self(exclude=[self])
 
     def update_zpa_self(self):
-        logger.debug('Updating zpa self | Caller: ' + inspect.stack()[1].function + ' |  ZoomPanWidget.update_zpa_self...')
+        '''Update Annotation Boolean'''
+        logger.info('Caller: ' + inspect.stack()[1].function)
         # Call the super "update" function for this panel's QWidget (this "self")
-        if self.parent != None:
-            # self.draw_border = self.parent.draw_border #border #0520
-            self.draw_annotations = self.parent.draw_annotations
-        super(ZoomPanWidget, self).update()
-
-        #04-04 #maybe better at the end of change_layer?
-        scale_dict = {'scale_'}
-        role_dict = {'ref': 'Reference Image', 'base': 'Work Image', 'aligned': 'Aligned Image'}
-        if get_cur_snr() is None:
-            self.setToolTip('%s\n%s\n%s' % (role_dict[self.role],
-                                            str('Scale '+get_cur_scale_key()[-1]),
-                                            'Unaligned' ))
-        else:
-            self.setToolTip('%s\n%s\n%s' % (str(role_dict[self.role]),
-                                            'Scale '+get_cur_scale_key()[-1],
-                                            str(get_cur_snr())))
+        self.draw_annotations = self.parent.draw_annotations
+        # if self.parent != None:
+        #     # self.draw_border = self.parent.draw_border #border #0520
+        #     self.draw_annotations = self.parent.draw_annotations
+        # super(ZoomPanWidget, self).update()
 
     def show_actual_size(self):
-        logger.debug("ZoomPanWidget.show_actual_size:")
         self.zoom_scale = 1.0
         self.ldx = 0
         self.ldy = 0
         self.wheel_index = 0
-        # if cfg.USES_QT5:
-        #     self.zoom_to_wheel_at ( 0, 0 ) #pyside2 #0613 removed
-        # else:
-        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
+        if cfg.USES_QT5:    self.zoom_to_wheel_at(0, 0) #pyside2
+        elif cfg.USES_QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
-        logger.debug("ZoomPanWidget.center_image | called by " + inspect.stack()[1].function)
         try:
-            if cfg.project_data != None:
-                # s = get_cur_scale_key()
-                s = cfg.project_data['data']['current_scale']
-                l = cfg.project_data['data']['current_layer']
+            s = cfg.project_data['data']['current_scale']
+            l = cfg.project_data['data']['current_layer']
+            if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0:
 
-                if len(cfg.project_data['data']['scales']) > 0:
-                    #logger.info("s = ", s) #0406
-                    # if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0: #0509
-                    if len(cfg.project_data['data']['scales'][s]['alignment_stack']):
+                image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                if self.role in image_dict.keys():
+                    ann_image = image_dict[self.role]
+                    img_text = ann_image['filename']
+                    '''Call To cfg.image_library'''
+                    pixmap = cfg.image_library.get_image_reference(img_text) #  <class 'PySide6.QtGui.QPixmap'>
+                    self.image_w, self.image_h = pixmap.width(), pixmap.height()
+                    if pixmap is None:
+                        logger.warning("'pixmap' is None")
+                    if (pixmap != None) or all_images_in_stack:
+                        img_w, img_h = 0, 0
+                        if pixmap != None:
+                            img_w, img_h = pixmap.width(), pixmap.height()
+                        win_w, win_h = self.width(), self.height()
 
-                        image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
-                        if self.role in image_dict.keys():
-                            # logger.info("current role: ", self.role)
-                            ann_image = image_dict[self.role] # <class 'dict'>
-                            '''CALL TO cfg.image_library'''
-                            img_text = ann_image['filename']
-                            pixmap = cfg.image_library.get_image_reference(img_text) #  <class 'PySide6.QtGui.QPixmap'>
+                        if all_images_in_stack:
+                            # Search through all images in this stack to find bounds
+                            stack = cfg.project_data['data']['scales'][s]['alignment_stack']
+                            for layer in stack:
+                                if 'images' in layer.keys():
+                                    if self.role in layer['images'].keys():
+                                        other_pixmap = cfg.image_library.get_image_reference_if_loaded(layer['images'][self.role]['filename'])
+                                        if other_pixmap != None:
+                                            '''TODO This will need to be rafactored for non-square images'''
+                                            other_w = other_pixmap.width()
+                                            other_h = other_pixmap.height()
+                                            img_w = max(img_w, other_w)
+                                            img_h = max(img_h, other_h)
 
+                        if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (win_h <= 0):  # Zero or negative dimensions might lock up?
+                            self.need_to_center = 1
+                            logger.warning("Cannot center image for role %s" % self.role)
 
-                            if pixmap is None: logger.warning("'pixmap' is set to None")
-                            if (pixmap != None) or all_images_in_stack:
-                                img_w = 0
-                                img_h = 0
-                                if pixmap != None:
-                                    img_w = pixmap.width()
-                                    img_h = pixmap.height()
-                                win_w = self.width()
-                                win_h = self.height()
-                                # logger.info("win_w = %d, win_h = %d" % (win_w, win_h))
+                        else:
+                            # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
+                            self.zoom_scale = 1.0
+                            self.ldx = 0
+                            self.ldy = 0
+                            self.wheel_index = 0
 
-                                if all_images_in_stack:
-                                    # Search through all images in this stack to find bounds
-                                    stack = cfg.project_data['data']['scales'][s]['alignment_stack']
-                                    for layer in stack:
-                                        if 'images' in layer.keys():
-                                            if self.role in layer['images'].keys():
-                                                other_pixmap = cfg.image_library.get_image_reference_if_loaded(layer['images'][self.role]['filename'])
-                                                if other_pixmap != None:
-                                                    '''TODO This will need to be rafactored for non-square images'''
-                                                    other_w = other_pixmap.width()
-                                                    other_h = other_pixmap.height()
-                                                    img_w = max(img_w, other_w)
-                                                    img_h = max(img_h, other_h)
+                            # Enlarge the image (scaling up) while it is within the size of the window
+                            while (self.win_x(img_w) <= win_w) and (self.win_y(img_h) <= win_h):
+                                print_debug(70, "Enlarging image to fit in center.")
+                                if cfg.USES_QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
+                                elif cfg.USES_QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+                                self.wheel_index += 1
+                                logger.info("  Wheel index = " + str(self.wheel_index) + " while enlarging")
+                                logger.info("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
+                                                win_w) + "x" + str(win_h))
+                                logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
+                                if abs(self.wheel_index) > 100:
+                                    logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
+                                    break
 
-                                if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (win_h <= 0):  # Zero or negative dimensions might lock up?
-                                    self.need_to_center = 1
-                                    logger.warning("Cannot center image for role %s. Called by %s" % (
-                                        self.role, inspect.stack()[1].function))
+                            # Shrink the image (scaling down) while it is larger than the size of the window
+                            while (self.win_x(img_w) > win_w) or (self.win_y(img_h) > win_h):
+                                print_debug(70, "Shrinking image to fit in center.")
+                                if cfg.USES_QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
+                                elif cfg.USES_QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+                                self.wheel_index += -1
+                                print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while shrinking")
+                                print_debug(80,
+                                            "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
+                                                win_w) + "x" + str(win_h))
+                                print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
+                                if abs(self.wheel_index) > 100:
+                                    print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
+                                    break
 
-                                else:
-                                    # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
-                                    self.zoom_scale = 1.0
-                                    self.ldx = 0
-                                    self.ldy = 0
-                                    self.wheel_index = 0
-                                    # self.zoom_to_wheel_at ( 0, 0 )
-
-                                    # Enlarge the image (scaling up) while it is within the size of the window
-                                    while (self.win_x(img_w) <= win_w) and (self.win_y(img_h) <= win_h):
-                                        print_debug(70, "Enlarging image to fit in center.")
-                                        # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
-                                        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
-                                        self.wheel_index += 1
-                                        print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while enlarging")
-                                        print_debug(80,
-                                                    "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
-                                                        win_w) + "x" + str(win_h))
-                                        print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                        if abs(self.wheel_index) > 100:
-                                            print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
-                                            break
-
-                                    # Shrink the image (scaling down) while it is larger than the size of the window
-                                    while (self.win_x(img_w) > win_w) or (self.win_y(img_h) > win_h):
-                                        print_debug(70, "Shrinking image to fit in center.")
-                                        # self.zoom_to_wheel_at ( 0, 0 ) #pyside2
-                                        self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
-                                        self.wheel_index += -1
-                                        print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while shrinking")
-                                        print_debug(80,
-                                                    "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
-                                                        win_w) + "x" + str(win_h))
-                                        print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                        if abs(self.wheel_index) > 100:
-                                            print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
-                                            break
-
-                                    # Adjust the offsets to center
-                                    extra_x = win_w - self.win_x(img_w)
-                                    extra_y = win_h - self.win_y(img_h)
-
-                                    # Bias the y value downward to make room for text at top
-                                    # extra_y = 1.7 * extra_y #orig
-                                    extra_y = 2.2 * extra_y
-                                    self.ldx = (extra_x / 2) / self.zoom_scale
-                                    self.ldy = (extra_y / 2) / self.zoom_scale
+                            # Adjust the offsets to center
+                            extra_x = win_w - self.win_x(img_w)
+                            extra_y = win_h - self.win_y(img_h)
+                            # Bias the y value downward to make room for text at top
+                            # extra_y = 1.7 * extra_y #orig
+                            # extra_y = 2.2 * extra_y    #0827-
+                            # self.ldx = (extra_x / 2) / self.zoom_scale    #0827-
+                            # self.ldy = (extra_y / 2) / self.zoom_scale    #0827-
         except:
             logger.warning('Failed to Center Images')
             print_exception()
+
+        self.set_tooltips()
+
+    def set_tooltips(self):
+        if cfg.IMAGES_IMPORTED:
+            s = cfg.project_data['data']['current_scale']
+            l = cfg.project_data['data']['current_layer']
+            # n_images = get_num_imported_images()
+            role_dict = {'ref': 'Reference Image', 'base': 'Current Image', 'aligned': 'Aligned Image'}
+            role_str = role_dict[self.role]
+            dim_str = '%sx%spx' % (self.image_w, self.image_h)
+            scale_str = 'Scale ' + get_cur_scale_key()[-1]
+            snr_str = str(get_cur_snr())
+            if self.role == 'aligned':
+                self.setToolTip('%s\n%s (%s)\n%s' % (role_str, scale_str, dim_str, snr_str))
+            else:
+                self.setToolTip('%s\n%s (%s)' % (role_str, scale_str, dim_str))
+        else:
+            self.setToolTip('No Image')
+
 
     def win_x(self, image_x):
         return self.zoom_scale * (image_x + self.ldx + self.dx)
@@ -251,21 +240,18 @@ class ZoomPanWidget(QWidget):
 
     def image_x(self, win_x):
         img_x = (win_x / self.zoom_scale) - self.ldx
-        return img_x
+        return img_x +100
 
     def image_y(self, win_y):
         img_y = (win_y / self.zoom_scale) - self.ldy
-        return img_y
+        return img_y +100
 
     def dump(self):
-        print_debug(30, "wheel = " + str(self.wheel_index))
-        print_debug(30, "zoom = " + str(self.zoom_scale))
-        print_debug(30, "ldx  = " + str(self.ldx))
-        print_debug(30, "ldy  = " + str(self.ldy))
-        print_debug(30, "mdx  = " + str(self.mdx))
-        print_debug(30, "mdy  = " + str(self.mdy))
-        print_debug(30, " dx  = " + str(self.dx))
-        print_debug(30, " dy  = " + str(self.dy))
+        logger.info("wheel = %s" % str(self.wheel_index))
+        logger.info("zoom  = %s" % str(self.zoom_scale))
+        logger.info("ldx = %s, ldy = %s" % (str(self.ldx), str(self.ldy)))
+        logger.info("mdx = %s, mdy = %s" % (str(self.mdx), str(self.mdy)))
+        logger.info(" dx = %s,  dy = %s" % (str(self.dx), str(self.dy)))
 
     def setFloatBased(self, float_based):
         self.floatBased = float_based
@@ -285,6 +271,13 @@ class ZoomPanWidget(QWidget):
     #     pass
     #     # return QSize(180, 180) #0719-
     #     # return
+
+    def minimumSizeHint(self):
+        return QSize(50, 50)
+
+    def sizeHint(self):
+        return QSize(180, 180)
+
 
     def mouse_down_callback(self, role, screen_coords, image_coords, button):
         # global match_pt_mode
@@ -348,53 +341,59 @@ class ZoomPanWidget(QWidget):
 
     def mousePressEvent(self, event):
         print('mousePressEvent:')
-        self.update_zpa_self()
         ex = event.x()
         ey = event.y()
+        self.last_button = event.button()
+        if event.button() == Qt.MouseButton.RightButton:
+            # Resest the pan and zoom
+            self.dx = self.mdx = self.ldx = 0
+            self.dy = self.mdy = self.ldy = 0
+            self.wheel_index = 0
+            self.zoom_scale = 1.0
+        elif event.button() == Qt.MouseButton.MiddleButton:
+            self.dump()
+        else:
+            # Set the Mouse Down position to be the screen location of the mouse
+            self.mdx = ex
+            self.mdy = ey
 
-        print('self.role            : %s' % self.role)
-        print('(ex, ey)             : %s' % str((ex, ey)))
-        print('self.image_x(ex)     : %s' % str(self.image_x(ex)))
-        print('self.image_y(ey)     : %s' % str(self.image_y(ey)))
-        print('int(event.button())  : %s' % str(int(event.button())))
-
-        event_handled = self.mouse_down_callback(
-            self.role,
-            (ex, ey),
-            (self.image_x(ex), self.image_y(ey)), int(event.button()))
+        self.update_zpa_self()
 
 
     def mouseMoveEvent(self, event):
+        if self.last_button == Qt.MouseButton.LeftButton:
+            self.dx = (event.x() - self.mdx) / self.zoom_scale
+            self.dy = (event.y() - self.mdy) / self.zoom_scale
+            self.update_zpa_self()
         self.update_zpa_self()
 
 
     def mouseReleaseEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.ldx += self.dx
+            self.ldy += self.dy
+            self.dx, self.dy = 0, 0
+            self.update_zpa_self()
         self.update_zpa_self()
 
     def mouseDoubleClickEvent(self, event):
-        print_debug(50, "mouseDoubleClickEvent at " + str(event.x()) + ", " + str(event.y()))
         self.update_zpa_self()
 
 
-
-    def zoom_to_wheel_at (self, position):
-        logger.info('zoom_to_wheel_at:')
+    def zoom_to_wheel_at(self, pos, pos_y=None):
         old_scale = self.zoom_scale
         new_scale = self.zoom_scale = pow(self.scroll_factor, self.wheel_index)
         if cfg.USES_QT5:
-            logger.info('Using Qt5...')
-            # self.ldx = self.ldx + (mouse_win_x/new_scale) - (mouse_win_x/old_scale)
-            # self.ldy = self.ldy + (mouse_win_y/new_scale) - (mouse_win_y/old_scale)
-            self.ldx = self.ldx + (position.x() /new_scale) - (position.x()/old_scale)
-            self.ldy = self.ldy + (position.y()/new_scale) - (position.y()/old_scale)
-            logger.info('self.ldx: %s' % str(self.ldx))
-            logger.info('self.ldy: %s' % str(self.ldy))
-        else:
-            logger.info('Using Qt6...')
-            self.ldx = self.ldx + (position.x() / new_scale) - (position.x() / old_scale)
-            self.ldy = self.ldy + (position.y() / new_scale) - (position.y() / old_scale)
-            logger.info('self.ldx: %s' % str(self.ldx))
-            logger.info('self.ldy: %s' % str(self.ldy))
+            '''Original Code'''
+            logger.debug('zoom_to_wheel_at (Qt5):')
+            self.ldx = self.ldx + (pos/new_scale) - (pos/old_scale)
+            self.ldy = self.ldy + (pos_y/new_scale) - (pos_y/old_scale)
+        elif cfg.USES_QT6:
+            logger.debug('zoom_to_wheel_at (Qt6):')
+            self.ldx = self.ldx + (pos.x() / new_scale) - (pos.x() / old_scale)
+            self.ldy = self.ldy + (pos.y() / new_scale) - (pos.y() / old_scale)
+        # logger.info('self.ldx: %s' % str(self.ldx))
+        # logger.info('self.ldy: %s' % str(self.ldy))
 
 
     def change_layer(self, layer_delta):
@@ -423,10 +422,10 @@ class ZoomPanWidget(QWidget):
                         if len(local_image['filename']) > 0:
                             preload_imgs.add(local_image['filename'])
         cfg.image_library.make_available(preload_imgs)
-        if is_dataset_scaled():
-            cfg.main_window.read_project_data_update_gui()
-        cfg.image_library.update() #orig #0701
-        self.update_zpa_self() #orig #0701
+        # if is_dataset_scaled():
+        #     cfg.main_window.read_project_data_update_gui()
+        cfg.main_window.read_project_data_update_gui()
+        # self.update_zpa_self() #orig #0701 #0827-
         self.update_siblings() # <- change all layers
         # hack to fix bug when proj closed on layer 0 (ref not loaded)
         if self.need_to_center == 1:
@@ -476,221 +475,207 @@ class ZoomPanWidget(QWidget):
         scroll w/out shift key  :  src.NoModifier      '''
 
         ''''''
-        if kmods == Qt.NoModifier:
-            # Unshifted Scroll Wheel moves through layers
+        if cfg.USES_QT5:
+            '''Original Code, Modified'''
+            if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
+                # Unshifted Scroll Wheel moves through layers
+                # layer_delta = int(event.delta()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
+                layer_delta = int(event.angleDelta().y()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
+                self.change_layer ( layer_delta )
+            else:
+                # Shifted Scroll Wheel zooms
+                # self.wheel_index += event.delta()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
+                self.wheel_index += event.angleDelta().y()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
+                self.zoom_to_wheel_at(event.x(), event.y())
+            self.update_zpa_self()
+        else:
 
-            # if cfg.USES_QT5 == True:
-            #     layer_delta = int(event.delta()/120)    #pyside2
-            # else:
-            #     layer_delta = event.angleDelta().y()  # 0615 #0719
 
-            layer_delta = event.angleDelta().y()
 
-            # layer_delta = int(event.angleDelta().y() / 120)  # pyside6
-            # layer_delta = event.angleDelta().y() # 0615
-            # scrolling without shift key pressed...
-            # event.angleDelta().y() =  4
-            # layer_delta =  0
-            # Changing to layer 88
-            # scrolling without shift key pressed...
-            # event.angleDelta().y() =  2
-            # layer_delta =  0
-            # Changing to layer 88
-            # scrolling without shift key pressed...
-            # event.angleDelta().y() =  -2
+            if kmods == Qt.NoModifier:
+                # Unshifted Scroll Wheel moves through layers
 
-            self.change_layer(layer_delta)
+                # if cfg.USES_QT5 == True:
+                #     layer_delta = int(event.delta()/120)    #pyside2
+                # else:
+                #     layer_delta = event.angleDelta().y()  # 0615 #0719
 
-            # Ref: https://stackoverflow.com/questions/35508711/how-to-enable-pan-and-zoom-in-a-qgraphicsview
-            # _zoom is equivalent to wheel_index
-            # if event.angleDelta().y() > 0:
-            #     factor = 1.25
-            #     self.wheel_index += 1
-            # else:
-            #     factor = 0.8
-            #     self.wheel_index -= 1
-            # if self.wheel_index > 0:
-            #     self.scale(factor, factor)
-            # elif self.wheel_index == 0:
-            #     self.fitInView()
-            # else:
-            #     self.wheel_index = 0
+                layer_delta = event.angleDelta().y()
+                self.change_layer(layer_delta)
 
-            # logger.info('event.angleDelta().y() = ', event.angleDelta().y())
-
-        elif kmods == Qt.ShiftModifier:
-            # Shifted Scroll Wheel zooms
-            # if cfg.USES_QT5 == True:
-            #     self.wheel_index += event.delta()/120    #pyside2
-            # else:
-            #     self.wheel_index += event.angleDelta().y()  # 0615
-
-            # self.wheel_index += event.angleDelta().y() / 120  # pyside6
-            # self.wheel_index += event.angleDelta().y()  #0615 #0719- orig
-            # self.zoom_to_wheel_at(event.x(), event.y())
-            # AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'x'
-            '''
-            self.wheel_index += event.angleDelta().y()
-            self.zoom_to_wheel_at(event.position())  # return type: PySide6.QtCore.QPointF
-            '''
-            # logger.info('event.angleDelta().y() = ', event.angleDelta().y())
+                # Ref: https://stackoverflow.com/questions/35508711/how-to-enable-pan-and-zoom-in-a-qgraphicsview
+                # _zoom is equivalent to wheel_index
+                # if event.angleDelta().y() > 0:
+                #     factor = 1.25
+                #     self.wheel_index += 1
+                # else:
+                #     factor = 0.8
+                #     self.wheel_index -= 1
+                # if self.wheel_index > 0:
+                #     self.scale(factor, factor)
+                # elif self.wheel_index == 0:
+                #     self.fitInView()
+                # else:
+                #     self.wheel_index = 0
 
     def paintEvent(self, event):
-        # global crop_mode_role  #tag why repeatedly define these globals on each paint event?
-        # global crop_mode_disp_rect
+        # if self.already_painting:
+        #     logger.warning('Painter was already painting!')
+        #     return
+        # self.already_painting = True
 
-        if not self.already_painting:
-            self.already_painting = True
+        s = cfg.project_data['data']['current_scale']
+        l = cfg.project_data['data']['current_layer']
+        # img_text = None
+        img_text = 'No Images Loaded'
 
-            # logger.info("standalone function attempting paintEvent...")
-
+        has_alignment_stack = True if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0 else False
+        try:
             painter = QPainter(self)
+            # s = cfg.project_data['data']['current_scale']
+            # l = cfg.project_data['data']['current_layer']
+            role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
+            if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0: #debug #tag # previously uncommented
+                image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                is_skipped = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['skip']
+                if self.role in image_dict.keys():
+                    ann_image = image_dict[self.role]
+                    '''Get Image Reference From Library'''
+                    pixmap = cfg.image_library.get_image_reference(ann_image['filename'])
+                    self.image_w, self.image_h = pixmap.width(), pixmap.height()
 
-            role_text = self.role
-            img_text = None
+                    img_text = ann_image['filename']
+                    painter.scale(self.zoom_scale, self.zoom_scale) #scale painter to draw image as the background
+                    if pixmap != None:
+                        if self.draw_border:
+                            pass
+                            # Draw an optional border around the image
+                            # painter.setPen(QPen(QColor(255, 255, 255, 255), 4))
+                            # painter.drawRect(
+                            #     QRectF(self.ldx + self.dx, self.ldy + self.dy, pixmap.width(), pixmap.height()))
+                        # Draw the pixmap itself on top of the border to ensure every pixel is shown
+                        # if (not is_skipped) or self.role == 'base':
+                        '''Draw Image'''
+                        painter.drawPixmap(QPointF(self.ldx + self.dx, self.ldy + self.dy), pixmap)
 
-            #jy 0710
-            try:
-                if cfg.project_data != None:
+                        # Draw any items that should scale with the image
 
-                    s = cfg.project_data['data']['current_scale']
-                    l = cfg.project_data['data']['current_layer']
+                    # Rescale painter to draw at screen resolution
+                    painter.scale(1.0 / self.zoom_scale, 1.0 / self.zoom_scale)
+                    # Draw the borders of the viewport for each panel to separate panels
+                    # painter.setPen(QPen(self.border_color, 4)) #0523
+                    # painter.drawRect(painter.viewport()) #0523
 
-                    role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
+                    if self.draw_annotations and (pixmap != None):
+                        if (pixmap.width() > 0) or (pixmap.height() > 0):
+                            painter.setPen(QPen(QColor(128, 255, 128, 255), 5))
+                            painter.drawText(painter.viewport().width() - 100, 40,"%dx%d" % (pixmap.width(), pixmap.height()))
 
-                    if len(cfg.project_data['data']['scales']) > 0:
-                        # if 1: #monkey patch
-                        if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0: #debug #tag # previously uncommented
+                    if self.draw_annotations and 'metadata' in ann_image:
+                        colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255]]
+                        if 'colors' in ann_image['metadata']:
+                            colors = ann_image['metadata']['colors']
+                            print_debug(95, "Colors in metadata = " + str(colors))
+                        if 'annotations' in ann_image['metadata']:
+                            # Draw the application-specific annotations from the metadata
+                            color_index = 0
+                            ann_list = ann_image['metadata']['annotations']
+                            for ann in ann_list:
+                                logger.debug("Drawing " + ann)
+                                cmd = ann[:ann.find('(')].strip().lower()
+                                pars = [float(n.strip()) for n in ann[ann.find('(') + 1: -1].split(',')]
+                                logger.debug("Command: " + cmd + " with pars: " + str(pars))
+                                if len(pars) >= 4:
+                                    color_index = int(pars[3])
+                                else:
+                                    color_index = 0
 
-                            image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
-                            is_skipped = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['skip']
-
-                            if self.role in image_dict.keys():
-                                ann_image = image_dict[self.role]
-                                pixmap = cfg.image_library.get_image_reference(ann_image['filename'])
-                                img_text = ann_image['filename']
-
-                                #scale the painter to draw the image as the background
-                                painter.scale(self.zoom_scale, self.zoom_scale)
-
-                                if pixmap != None:
-                                    if self.draw_border:
-                                        pass
-                                        # Draw an optional border around the image
-                                        # painter.setPen(QPen(QColor(255, 255, 255, 255), 4))
-                                        # painter.drawRect(
-                                        #     QRectF(self.ldx + self.dx, self.ldy + self.dy, pixmap.width(), pixmap.height()))
-                                    # Draw the pixmap itself on top of the border to ensure every pixel is shown
-                                    if (not is_skipped) or self.role == 'base':
-                                        painter.drawPixmap(QPointF(self.ldx + self.dx, self.ldy + self.dy), pixmap)
-
-                                    # Draw any items that should scale with the image
-
-                                # Rescale the painter to draw items at screen resolution
-                                painter.scale(1.0 / self.zoom_scale, 1.0 / self.zoom_scale)
-
-                                # Draw the borders of the viewport for each panel to separate panels
-                                # painter.setPen(QPen(self.border_color, 4)) #0523
-                                painter.drawRect(painter.viewport()) #0523
-
-                                if self.draw_annotations and (pixmap != None):
-                                    if (pixmap.width() > 0) or (pixmap.height() > 0):
-                                        painter.setPen(QPen(QColor(128, 255, 128, 255), 5))
-                                        painter.drawText(painter.viewport().width() - 100, 40,
-                                                         "%dx%d" % (pixmap.width(), pixmap.height()))
-
-                                if self.draw_annotations and 'metadata' in ann_image:
-                                    colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255],
-                                              [0, 255, 255]]
-                                    if 'colors' in ann_image['metadata']:
-                                        colors = ann_image['metadata']['colors']
-                                        print_debug(95, "Colors in metadata = " + str(colors))
-                                    if 'annotations' in ann_image['metadata']:
-                                        # Draw the application-specific annotations from the metadata
-                                        color_index = 0
-                                        ann_list = ann_image['metadata']['annotations']
-                                        for ann in ann_list:
-                                            print_debug(50, "Drawing " + ann)
-                                            cmd = ann[:ann.find('(')].strip().lower()
-                                            pars = [float(n.strip()) for n in ann[ann.find('(') + 1: -1].split(',')]
-                                            print_debug(50, "Command: " + cmd + " with pars: " + str(pars))
-                                            if len(pars) >= 4:
-                                                color_index = int(pars[3])
-                                            else:
-                                                color_index = 0
-
-                                            color_to_use = colors[color_index % len(colors)]
-                                            print_debug(50, " Color to use: " + str(color_to_use))
-                                            painter.setPen(QPen(QColor(*color_to_use), 5))
-                                            x = 0
-                                            y = 0
-                                            r = 0
-                                            if cmd in ['circle', 'square']:
-                                                x = self.win_x(pars[0])
-                                                y = self.win_y(pars[1])
-                                                r = pars[2]
-                                            if cmd == 'circle':
-                                                painter.drawEllipse(x - r, y - r, r * 2, r * 2)
-                                            if cmd == 'square':
-                                                painter.drawRect(QRectF(x - r, y - r, r * 2, r * 2))
-                                            if cmd == 'skipped':
-                                                # color_to_use = colors[color_index+1%len(colors)]
-                                                color_to_use = [255, 50, 50]
-                                                painter.setPen(QPen(QColor(*color_to_use), 5))
-                                                # painter.drawEllipse ( x-(r*2), y-(r*2), r*4, r*4 )
-                                                painter.drawLine(0, 0, painter.viewport().width(),
-                                                                 painter.viewport().height())
-                                                painter.drawLine(0, painter.viewport().height(), painter.viewport().width(),
-                                                                 0)
-                                            color_index += 1
-
-                                if is_skipped:  # skip #redx
-                                    self.center_image() #0503 I think this helps
-                                    # Draw the red "X" on all images regardless of whether they have the "skipped" annotation
-                                    # self.setWindowOpacity(.5)
-                                    self.setWindowOpacity(.8)
+                                color_to_use = colors[color_index % len(colors)]
+                                print_debug(50, " Color to use: " + str(color_to_use))
+                                painter.setPen(QPen(QColor(*color_to_use), 5))
+                                x, y, r = 0, 0, 0
+                                if cmd in ['circle', 'square']:
+                                    x = self.win_x(pars[0])
+                                    y = self.win_y(pars[1])
+                                    r = pars[2]
+                                if cmd == 'circle':
+                                    painter.drawEllipse(x - r, y - r, r * 2, r * 2)
+                                if cmd == 'square':
+                                    painter.drawRect(QRectF(x - r, y - r, r * 2, r * 2))
+                                if cmd == 'skipped':
+                                    # color_to_use = colors[color_index+1%len(colors)]
                                     color_to_use = [255, 50, 50]
                                     painter.setPen(QPen(QColor(*color_to_use), 5))
-                                    painter.drawLine(0, 0, painter.viewport().width(), painter.viewport().height())
-                                    painter.drawLine(0, painter.viewport().height(), painter.viewport().width(), 0)
+                                    # painter.drawEllipse ( x-(r*2), y-(r*2), r*4, r*4 )
+                                    painter.drawLine(0, 0, painter.viewport().width(),
+                                                     painter.viewport().height())
+                                    painter.drawLine(0, painter.viewport().height(), painter.viewport().width(),
+                                                     0)
+                                color_index += 1
 
-                                    # painter.fillRect(rect, QBrush(QColor(128, 128, 255, 128)));
+                    if is_skipped:
+                        if self.role == 'ref':
+                            self.center_image() #0503 I think this helps
+                            red_color = [255, 50, 50]
+                            painter.setPen(QPen(QColor(*red_color), 3))
+                            factor = 8
+                            width = painter.viewport().width() / factor
+                            height = painter.viewport().height() / factor
+                            # x1a, y1a, x2a, y2a = 0, 0, width, height
+                            # x1b, y1b, x2b, y2b = 0, width, height, 0
+                            x1a, y1a, x2a, y2a = 0, painter.viewport().height(), width, painter.viewport().height() - height
+                            x1b, y1b, x2b, y2b = 0, painter.viewport().height() - height, width, painter.viewport().height()
+                            painter.drawLine(x1a, y1a, x2a, y2a)
+                            painter.drawLine(x1b, y1b, x2b, y2b)
+                            painter.setOpacity(0.5)
+                            painter.setBrush(Qt.black)  # Background
+                            # painter.setPen(QPen(Qt.red))  # Border
+                            painter.drawRect(x1a, y1a, x2a, y2a)
+                        # if self.role == 'base':
+                        #     width = painter.viewport().width() / factor
+                        #     height = painter.viewport().height() / factor
+                        #     x1b, y1b, x2b, y2b = 0, painter.viewport().height() - height, width, painter.viewport().height()
+                        #     painter.drawText(x1b, y1b, 'SKIP')
 
-                if self.draw_annotations:
-                    # Draw the role
+
+                        painter.setOpacity(0.5)
+                        painter.setBrush(Qt.black) # Background
+                        painter.setPen(QPen(Qt.black)) # Border
+                        # rect = QRect(0, 0, painter.viewport().width(), painter.viewport().height())
+                        painter.drawRect(painter.viewport())
+
+                        # painter.fillRect(rect, QBrush(QColor(128, 128, 255, 128)))
+
+            if self.draw_annotations:
+                if (not has_alignment_stack) and ((self.role=='aligned') or (self.role=='base')):
+                        pass
+                else:
+                    # if len(cfg.project_data['data']['scales'][s]['alignment_stack']) == 0:
+                    # if (not is_skipped) or (self.role=='base'):
+                    #     if self.role=='ref':
+                    #
+                    painter.setOpacity(1)
                     painter.setPen(QPen(QColor(255, 100, 100, 255), 5))
-                    painter.drawText(10, 20, role_text)
-                    if img_text != None:
-                        # Draw the image name
-                        painter.setPen(QPen(QColor(100, 100, 255, 255), 5))
-                        if os.path.sep in img_text:
-                            # Only split the path if it's splittable
-                            painter.drawText(10, 40, os.path.split(img_text)[-1])
-                        else:
-                            painter.drawText(10, 40, img_text)
+                    painter.drawText(10, 20, role_text)                   # Draw the role
+                    painter.setPen(QPen(QColor(100, 100, 255, 255), 5))
+                    painter.drawText(10, 40, os.path.split(img_text)[1])  # Draw the image name
+                    scale = cfg.project_data['data']['scales'][s]
+                    if len(scale['alignment_stack']) > 0:
+                        layer = scale['alignment_stack'][l]
+                        method_results = layer['align_to_ref_method']['method_results']
+                        if 'snr_report' in method_results:
+                            if method_results['snr_report'] != None:
+                                painter.setPen(QPen(QColor(255, 255, 255, 255), 5))
+                                midw = painter.viewport().width() / 3
+                                painter.drawText(midw, 20, method_results['snr_report'])
 
-                    if len(cfg.project_data['data']['scales']) > 0:
-                        scale = cfg.project_data['data']['scales'][s]
-                        if len(scale['alignment_stack']) > 0:
-                            layer = scale['alignment_stack'][l]
-                            if 'align_to_ref_method' in layer:
-                                if 'method_results' in layer['align_to_ref_method']:
-                                    method_results = layer['align_to_ref_method']['method_results']
-                                    if 'snr_report' in method_results:
-                                        if method_results['snr_report'] != None:
-                                            painter.setPen(QPen(QColor(255, 255, 255, 255), 5))
-                                            midw = painter.viewport().width() / 3
-                                            painter.drawText(midw, 20, method_results['snr_report'])
-
-
-                painter.end()
-                del painter
-
-                self.already_painting = False
-            except:
-                print_exception()
-                logger.warning('Something Went Wrong During Paint Event')
-                pass
+            painter.end()
+            del painter
+            # self.already_painting = False
+        except:
+            print_exception()
+            logger.warning('Something Went Wrong During Paint Event')
+            pass
 
 
 def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):

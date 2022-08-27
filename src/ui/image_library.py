@@ -173,9 +173,10 @@ class ImageLibrary:
             self.remove_image_reference(k)
         self._images = {}
 
-    def update(self):
-        logger.info('ImageLibrary wants to update but does not know how!')
-        pass
+    #0827-
+    # def update(self):
+    #     logger.info('ImageLibrary wants to update but does not know how!')
+    #     pass
 
 
 def image_completed_loading(par):

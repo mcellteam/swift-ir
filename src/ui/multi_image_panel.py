@@ -153,6 +153,7 @@ class MultiImagePanel(QWidget):
                 # zpw.draw_border = self.draw_border #border #0520
                 self.zpw[i].draw_annotations = self.draw_annotations
                 self.add_panel(self.zpw[i])
+                cfg.panel_list.append(self.zpw[i])
 
 
 

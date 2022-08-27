@@ -8,6 +8,7 @@ import logging
 from tqdm import tqdm
 import subprocess as sp
 import multiprocessing as mp
+from qtpy.QtCore import QObject
 # from .LoggingTqdm import logging_tqdm
 # from .TqdmToLogger import tqdm_to_logger
 
@@ -80,9 +81,10 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     logger.debug('<<<< Worker %d Finished' % (worker_id))
 
 
-class TaskQueue:
+class TaskQueue(QObject):
     # def __init__(self, n_tasks, start_method='forkserver', progress_callback=None):
-    def __init__(self, n_tasks, start_method='forkserver',logging_handler=None):
+    def __init__(self, n_tasks, parent=None, start_method='forkserver',logging_handler=None):
+        self.parent = parent
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
         self.task_dict = {}
@@ -104,15 +106,16 @@ class TaskQueue:
         logger.debug('sys.version_info = %s' % str(sys.version_info))
 
     def pbar_listener(self, pbar_q, n_tasks:int):
+        pass
         '''self.progress_callback has an identical location in memory'''
         # tqdm_out = TqdmToLogger(logging.getLogger("hud"), level=logging.INFO)
-        pbar = tqdm(total = n_tasks, desc=self.tqdm_desc)
-        # pbar = tqdm(total = n_tasks, desc=self.tqdm_desc, file=tqdm_out)
-        # pbar = logger_tqdm(total = n_tasks, desc=self.tqdm_desc)
-        # pbar = logging_tqdm()
-        for item in iter(pbar_q.get, None):
-            pbar.update()
-        pbar.close()
+        # pbar = tqdm(total = n_tasks, desc=self.tqdm_desc)
+        # # pbar = tqdm(total = n_tasks, desc=self.tqdm_desc, file=tqdm_out)
+        # # pbar = logger_tqdm(total = n_tasks, desc=self.tqdm_desc)
+        # # pbar = logging_tqdm()
+        # for item in iter(pbar_q.get, None):
+        #     pbar.update()
+        # pbar.close()
 
     def start(self, n_workers, retries=2) -> None:
 
@@ -226,15 +229,20 @@ class TaskQueue:
         logger.info("TaskQueue.collect_results  >>>>")
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
-        logger.info('# tasks pending: %d' % n_pending)
-        retries_tot = 0
+
+        realtime = n_pending
+
+        retries_tot = 1
         while (retries_tot < self.retries + 1) and n_pending:
             logger.info('# Tasks Pending: %d' % n_pending)
-            self.end_tasks()
-            self.work_queue.join()
-            self.stop()
+            # self.end_tasks()
+            # self.work_queue.join()
+            # self.stop()
             retry_list = []
             for j in range(n_pending):
+                logger.critical('# Tasks Remaining: %d' % realtime)
+                self.parent.pbar.show()
+                self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.debug('Collected results from Task_ID %d' % (task_id))
                 logger.debug('Task ID (outs): %d\n%s' % (task_id,outs)) #TODO make this a switch
@@ -248,6 +256,8 @@ class TaskQueue:
                     self.task_dict[task_id]['status'] = 'task_error'
                     retry_list.append(task_id)
                 self.task_dict[task_id]['dt'] = dt
+                realtime -= 1
+
             '''Restart Queue and Requeue failed tasks'''
             n_pending = len(retry_list)
             if (retries_tot < self.retries) and n_pending:
@@ -274,6 +284,11 @@ class TaskQueue:
             logger.error('Failed Tasks  : %d' % n_pending)
             logger.error('Retries       : %d' % (retries_tot - 1))
             logger.error('Complete')
+
+        self.parent.pbar.hide()
+        self.end_tasks()
+        self.work_queue.join()
+        self.stop()
 
         logger.info('<<<<  TaskQueue.collect_results')
 
@@ -315,40 +330,28 @@ if __name__ == '__main__':
 '''
 Pickling issues:
 https://stackoverflow.com/questions/32856206/pickling-issue-with-python-pathos?newreg=11b52c7f24714b76b4fa3ad8462dc658
-
 Gracefully exiting w/ Python multiprocessing:
 https://the-fonz.gitlab.io/posts/python-multiprocessing/
-
 Mercurial solved this by just removing the __reduce__  method, hah!
 https://hg.python.org/cpython/rev/c2910971eb86
-
 The process has forked and you cannot use this CoreFoundation functionality safely. You MUST exec().
 Break on __THE_PROCESS_HAS_FORKED_AND_YOU_CANNOT_USE_THIS_COREFOUNDATION_FUNCTIONALITY___YOU_MUST_EXEC__() to debug.
-
-
 dill.copy(self.pbar_proc) # <-- debug dill pickling issues
 ^^
 TypeError: Pickling an AuthenticationString object is disallowed for security reasons
-
 RuntimeError: Queue objects should only be shared between processes through inheritance
-
 run() method is an inbuilt method of the Thread class of the threading module in Python. This method is used to
 represent a thread's activity. It calls the method expressed as the target argument in the Thread object along with
 the positional and keyword arguments taken from the args and kwargs arguments, respectively.
-
 QProcess Example:
 p = QProcess()
 p.start("python3", ['dummy_script.py'])
-
-
 multiprocessing module only
 print('mp_queue.TaskQueue.start | type(self.progress_callback) = ', type(self.progress_callback))
 print('mp_queue.TaskQueue.start | str(self.progress_callback) = ', str(self.progress_callback))
 print('mp_queue.TaskQueue.start | mp.parent_process() = ', mp.parent_process())
 print('mp_queue.TaskQueue.start | mp.get_context() = ', mp.get_context())
 print('mp_queue.TaskQueue.start | mp.get_start_method() = ', mp.get_start_method())
-
-
 image_apply_affine task (example)
 task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3', 
        '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_apply_affine.py', 
@@ -362,13 +365,11 @@ task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3'
        '-49.218610253016884', 
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_src/R34CA1-BS12.105.tif', 
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_aligned/R34CA1-BS12.105.tif']
-
 generate_scales task (example)
 task = ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src//lib/bin_darwin/iscale2', 
         '+4', 
         'of=/Users/joelyancey/glanceem_swift/test_projects/test16/scale_4/img_src/R34CA1-BS12.117.tif', 
         '/Users/joelyancey/glanceem_swift/test_projects/test16/scale_1/img_src/R34CA1-BS12.117.tif']
-
 '''
 
 
@@ -380,8 +381,6 @@ Task Error:
 INFO:interface:   CMD:    /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
 INFO:interface:   ARGS:   ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_single_alignment.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/full_volume_josef_2/project_runner_job_file.json', 'init_affine', '4', 'c', '127', '1', '1']
 INFO:interface:   STDERR: /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3: can't open file '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_single_alignment.py': [Errno 2] No such file or directory
-
-
 What a good single_alignment_job run looks like:
 project_runner.do_alignment | Starting mp_queue with args:
   /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
@@ -393,7 +392,6 @@ project_runner.do_alignment | Starting mp_queue with args:
   9
   1
   0
-
 HOW IS ^^ THAT DIFFERENT FROM THIS:
 Starting mp_queue with args:
   /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
@@ -405,9 +403,6 @@ Starting mp_queue with args:
   14
   1
   0
-
-
-
 '''
 
 
@@ -418,25 +413,20 @@ Starting mp_queue with args:
 '''
         An attempt has been made to start a new process before the
         current process has finished its bootstrapping phase.
-
         This probably means that you are not using fork to start your
         child processes and you have forgotten to use the proper idiom
         in the main module:
-
             if __name__ == '__main__':
                 freeze_support()
                 ...
-
         The "freeze_support()" line can be omitted if the program
         is not going to be frozen to produce an executable.
-
 '''
 
 
 '''
 p = ctx.Process()
 pickle.dumps(p._config['authkey'])
-
 Traceback (most recent call last):
   File "<stdin>", line 1, in <module>
   File "/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/lib/python3.9/site-packages/multiprocess/process.py", line 347, in __reduce__
@@ -460,7 +450,6 @@ TypeError: Pickling an AuthenticationString object is disallowed for security re
 '''
 consider using:
 PYTHONOPTIMIZE=1 and 
-
 OMP_NUM_THREADS
 OMP_NUM_THREADS=1 <--  turns off the OpenMP multi-threading, so each of your Python processes remains single-threaded.
 '''
@@ -475,10 +464,8 @@ python 2.6.
 
 '''
 REPLICATE THE AuthenticationString ISSUE:
-
 from multiprocessing import Process
 import pickle
-
 p = Process()
 pickle.dumps(p._config['authkey'])
 '''
@@ -486,9 +473,5 @@ pickle.dumps(p._config['authkey'])
 
 
 '''
-
 SWIM argument string: ww_3328x3328 -i 2 -w -0.68 -x 0 -y 0 -k  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/k_img  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.101.tif 2048 2048 /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.102.tif 2048.000000 2048.000000  1.000000 0.000000 -0.000000 1.000000
-
-
-
 '''

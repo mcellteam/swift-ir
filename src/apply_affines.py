@@ -77,7 +77,9 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
         else:
             f.write("None\n")
     logger.info('Constructing TaskQueue...')
-    task_queue = TaskQueue(n_tasks=get_num_imported_images())
+    n_tasks = get_num_imported_images()
+    cfg.main_window.pbar_max(n_tasks)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     task_queue.tqdm_desc = 'Generating Images'
     cpus = min(psutil.cpu_count(logical=False), 48)
     logger.info('Starting TaskQueue...')

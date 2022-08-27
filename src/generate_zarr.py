@@ -133,12 +133,12 @@ def generate_zarr(src, out):
         for t in append_list:
             tasks.append(t)
 
-    logger.critical('# of shuffled tasks: %d' % len(tasks))
-
-    n_tasks = len(tasks)
+    logger.info('# of shuffled tasks: %d' % len(tasks))
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48)
-    scale_q = TaskQueue(n_tasks=n_tasks)
+    n_tasks = len(tasks)
+    cfg.main_window.pbar_max(n_tasks)
+    scale_q = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     scale_q.tqdm_desc = 'Exporting Zarr'
     scale_q.start(cpus)
     for task in tasks:

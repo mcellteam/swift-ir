@@ -685,9 +685,10 @@ def is_cur_scale_aligned() -> bool:
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a project that does not need scales.'''
     try:
-        project_dir = cfg.project_data['data']['destination_path']
-        bias_dir = os.path.join(project_dir, get_cur_scale_key(), 'bias_data')
-        afm_1_file = os.path.join(bias_dir, 'afm_1.dat')
+        afm_1_file = os.path.join(cfg.project_data['data']['destination_path'],
+                                  get_cur_scale_key(),
+                                  'bias_data',
+                                  'afm_1.dat')
         # logger.info('afm_1_file = ', afm_1_file)
         # logger.info('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
         if os.path.exists(afm_1_file):

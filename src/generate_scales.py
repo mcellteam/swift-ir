@@ -16,12 +16,15 @@ __all__ = ['generate_scales']
 
 logger = logging.getLogger(__name__)
 
+
 def generate_scales(progress_callback=None):
     logger.critical('>>>>>>>> Generate Scales Start <<<<<<<<')
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     proj_path = cfg.project_data['data']['destination_path']
-    scale_q = TaskQueue(n_tasks=get_num_imported_images() * (get_num_scales() - 1))
+    n_tasks = get_num_imported_images() * (get_num_scales() - 1)
+    cfg.main_window.pbar_max(n_tasks)
+    scale_q = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     scale_q.tqdm_desc = 'Scaling Images'
     cpus = min(psutil.cpu_count(logical=False), 48)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
@@ -62,9 +65,9 @@ def generate_scales(progress_callback=None):
     # if str(image_scales_to_run) == '[1]':
     #     logger.info('Only one scale is requested, so not calling mp_queue - Returning')
     #     return
-    
+
     scale_q.start(cpus)
-    
+
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
         logger.debug('Looping, Scale ', scale)
         cfg.main_window.hud.post("Preparing to generate images for scale " + str(scale))
@@ -80,15 +83,20 @@ def generate_scales(progress_callback=None):
                 '''Scale 1 Only'''
                 if get_best_path(fn) != get_best_path(ofn):
                     # The paths are different so make the link
-                    try:     os.unlink(ofn)
-                    except:  pass
+                    try:
+                        os.unlink(ofn)
+                    except:
+                        pass
 
-                    try:  os.symlink(fn, ofn)
+                    try:
+                        os.symlink(fn, ofn)
                     except:
                         # Not all operating systems allow linking for all users (Windows 10 requires admin rights)
                         logger.warning("Unable to link from %s to %s. Copying instead." % (fn, ofn))
-                        try:     shutil.copy(fn, ofn)
-                        except:  logger.warning("Unable to link or copy from " + fn + " to " + ofn)
+                        try:
+                            shutil.copy(fn, ofn)
+                        except:
+                            logger.warning("Unable to link or copy from " + fn + " to " + ofn)
             else:
                 '''All Scales Other Than 1'''
 
@@ -101,12 +109,13 @@ def generate_scales(progress_callback=None):
                         p, s = os.path.split(p)
                         fn = os.path.join(p, 'scale_1', r, f)
                         if i == 1:
-                            logger.info('fn = ', fn)
-                            logger.info('p = ', p)
-                            logger.info('r = ', r)
-                            logger.info('s = ', s)
-                            logger.info(fn)
-                    
+                            pass
+                            # logger.info('fn = ', fn)
+                            # logger.info('p = ', p)
+                            # logger.info('r = ', r)
+                            # logger.info('s = ', s)
+                            # logger.info(fn)
+
                     if cfg.CODE_MODE == 'python':
                         scale_q.add_task(cmd=sys.executable,
                                          args=['job_single_scale.py', str(scale), str(fn), str(ofn)], wd='.')
@@ -124,9 +133,9 @@ def generate_scales(progress_callback=None):
                     cfg.main_window.hud.post("Error adding tasks to the task queue - Canceling", logging.ERROR)
                     print_exception()
                     return
-            
+
             layer['images']['base']['filename'] = ofn  # Update Data Model
-    
+
     ### Join the queue here to ensure that all have been generated before returning
     # scale_q.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
     cfg.main_window.hud.post('Generating scale image hierarchy...')
@@ -136,11 +145,8 @@ def generate_scales(progress_callback=None):
     del scale_q
     dt = time.time() - t0
     cfg.main_window.hud.post("Scaling completed in %.2f seconds" % dt)
-    
+
     logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')
-
-
-
 
     '''
     ____scale_q Parameters (Example)____
@@ -148,6 +154,4 @@ def generate_scales(progress_callback=None):
     (2) : scale_arg : +2
     (3) : outfile_arg : of=/Users/joelyancey/glanceEM_SWiFT/test_projects/test993/scale_2/img_src/R34CA1-BS12.104.tif
     (4) : infile_arg : /Users/joelyancey/glanceEM_SWiFT/test_images/r34_tifs/R34CA1-BS12.104.tif
-
     '''
-
