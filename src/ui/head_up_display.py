@@ -9,10 +9,9 @@ https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 import time
 import random
 import logging
-from qtpy.QtCore import QObject, Signal, Slot, QThread
+from qtpy.QtCore import QObject, Signal, Slot, QThread, Qt
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
-# from src.TqdmToLogger import TqdmToLogger
 
 __all__ = ['HeadUpDisplay', 'HudWorker']
 
@@ -65,6 +64,7 @@ class HeadUpDisplay(QWidget):
     def __init__(self, app):
         super(HeadUpDisplay, self).__init__()
         self.app = app
+        self.setFocusPolicy(Qt.NoFocus)
         self.textedit = te = QPlainTextEdit(self)
         # Set whatever the default monospace font is for the platform
         f = QFont()
@@ -136,6 +136,8 @@ class HeadUpDisplay(QWidget):
 
     @Slot()
     def post(self, message, level=logging.INFO):
+        # if cfg.main_window.main_panel_bottom_widget.currentIndex() in (1,2):
+        #     cfg.main_window.main_panel_bottom_widget.setCurrentIndex(0)
         extra = {'qThreadName': ctname()}
         logger.log(level, message, extra=extra)
         self.textedit.moveCursor(QTextCursor.End)

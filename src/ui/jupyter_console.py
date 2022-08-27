@@ -1,4 +1,5 @@
-from qtpy import QtGui
+from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import Qt
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from IPython.lib import guisupport
@@ -31,7 +32,6 @@ class JupyterConsole(RichJupyterWidget):
         if customBanner is not None:
             self.banner = customBanner
 
-
         # self.font_size = 6
         self.font_size = 4
         self.kernel_manager = QtInProcessKernelManager()
@@ -39,6 +39,8 @@ class JupyterConsole(RichJupyterWidget):
         self.kernel_manager.kernel.gui = 'qt'
         self.kernel_client = self._kernel_manager.client()
         self.kernel_client.start_channels()
+
+        self.setFocusPolicy(Qt.NoFocus)
 
         def stop():
             self.kernel_client.stop_channels()
@@ -77,7 +79,7 @@ class JupyterConsole(RichJupyterWidget):
 
 
 if __name__ == '__main__':
-    app = QtGui.QApplication([])
+    app = QApplication([])
     widget = JupyterConsole()
     widget.show()
     app.exec_()

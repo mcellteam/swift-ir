@@ -33,6 +33,7 @@ main_window = None
 image_library = None
 data_model = None
 defaults_form = None
+panel_list = []
 
 PRELOAD_RANGE = None
 USE_FILE_IO = 0
@@ -40,6 +41,8 @@ PARALLEL_MODE = True
 CODE_MODE = 'c'
 HTTP_PORT = 9000
 NO_NEUROGLANCER = None
+PROJECT_OPEN = False
+IMAGES_IMPORTED = False
 
 
 

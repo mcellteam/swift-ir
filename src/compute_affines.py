@@ -9,7 +9,9 @@ import shutil
 import psutil
 import logging
 import src.config as cfg
+from qtpy.QtCore import QProcess
 from .mp_queue import TaskQueue
+from .qt_queue import TaskRunner
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
 from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_snr_list, \
@@ -26,14 +28,12 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     logger.critical('>>>>>>>> Compute Affines Start <<<<<<<<')
 
     if are_images_imported():
-        pass
+        logger.debug('Images Appear to Be Imported - Continuing...')
     else:
-        cfg.main_window.hud.post("Images must be imported prior to alignment.", logger.WARNING)
+        cfg.main_window.hud.post("Images must be imported prior to alignment - Canceling", logger.WARNING)
         return
 
     rename_switch = False
-    # Create links or copy files in the expected directory structure
-    # os.symlink(src, dst, target_is_directory=False, *, dir_fd=None)
     scale_dict = cfg.project_data['data']['scales'][use_scale]
     alignment_dict = cfg.project_data['data']['scales'][use_scale]['alignment_stack']
     alignment_option = scale_dict['method_data']['alignment_option']
@@ -50,14 +50,11 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
                              % (alignment_option, use_scale[-1]))
 
     print_snr_list()
-    # ensure_proper_data_structure() #0709
 
     if rename_switch:
         rename_layers(use_scale=use_scale, alignment_dict=alignment_dict)
 
     # Copy the data model for this project to add local fields for SWiFT
-    # dm = copy.deepcopy(cfg.project_data)
-    # dm = copy.deepcopy(cfg.project_data.to_dict())
     dm = copy.deepcopy(cfg.project_data)
     alignment_dict = dm['data']['scales'][use_scale]['alignment_stack']
     for layer in alignment_dict: # Operating on the Copy!
@@ -65,8 +62,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
 
-    # project = copy.deepcopy(cfg.project_data)
-    # alstack = project['data']['scales'][use_scale]['alignment_stack']
     alstack = copy.deepcopy(cfg.project_data['data']['scales'][use_scale]['alignment_stack'])
 
     if cfg.PARALLEL_MODE:
@@ -80,14 +75,15 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
             # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.project_data.to_json()))
             f.write(cfg.project_data.to_json())
 
-        # foo = os.path.join(cfg.project_data.name(), str(time.time()) + '.json')
-        # with open(foo, 'w') as f:
-        #     # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.project_data.to_json()))
-        #     f.write(cfg.project_data.to_json())
+        # runner_thread = QThread()
+        # runner = Runner(start_signal=runner_thread.started)
+        # runner.msg_from_job.connect(handle_msg)
+        # runner.moveToThread(runner_thread)
 
-        # task_queue = TaskQueue(n_tasks=len(alstack))
-        task_queue = TaskQueue(n_tasks=len(alstack))
-        task_queue.tqdm_desc = 'Computing Affines'
+        n_tasks = len(alstack)
+        cfg.main_window.pbar_max(n_tasks)
+        task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
+        # task_queue.tqdm_desc = 'Computing Affines'
         cpus = min(psutil.cpu_count(logical=False), 48)
         cfg.main_window.hud.post("Task Queue is using %d CPUs" % cpus)
         task_queue.start(cpus)
@@ -124,9 +120,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         # task_queue.work_q.join()
         t0 = time.time()
         cfg.main_window.hud.post('Waiting for Alignment Tasks to Complete...')
-        # **********************************
-        task_queue.collect_results()
-        # **********************************
+        task_queue.collect_results() # ***
         dt = time.time() - t0
         cfg.main_window.hud.post('Alignment Completed in %.2f seconds' % (dt))
 
@@ -162,12 +156,9 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         task_list = [task_dict[k] for k in sorted(task_dict.keys())]
 
         logger.info("Copying 'cfg.project_data'...")
-        # updated_model = copy.deepcopy(cfg.project_data) # Integrate output of each task into a new combined data model
         updated_model = copy.deepcopy(cfg.project_data) # Integrate output of each task into a new combined data model
 
         use_scale_new_key = updated_model['data']['current_scale']
-        # if use_scale > 0:
-        # use_scale_new_key = get_scale_key(use_scale)
     
         for tnum in range(len(task_list)):
 
@@ -187,8 +178,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
                     if ps.startswith('{') and ps.endswith('}'):
                         dm_text = p
 
-            # logger.debug('\ndm_text:')
-            # logger.debug(dm_text)
+
             if dm_text != None:
                 results_dict = json.loads(dm_text)
                 fdm_new = results_dict['data_model']
@@ -243,7 +233,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
             cfg.project_data = updated_model
         else:
             update_datamodel(updated_model)
-
 
     logger.critical('>>>>>>>> Compute Affines End <<<<<<<<')
 

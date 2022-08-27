@@ -6,11 +6,10 @@ import os, sys, copy, json, inspect, multiprocessing, logging, textwrap, psutil,
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
-    QDockWidget, QSplashScreen
+    QDockWidget, QSplashScreen, QAction, QActionGroup, QProgressBar
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, QRect, Signal
-from qtpy.QtWidgets import QAction, QActionGroup
 import qtawesome as qta
 import pyqtgraph as pg
 import neuroglancer as ng
@@ -84,7 +83,7 @@ class MainWindow(QMainWindow):
         #     QImageReader.setAllocationLimit(4000) #pyside6 #0610setAllocationLimit
         #     logger.info("New QImageReader.allocationLimit() NOW IS " + str(QImageReader.allocationLimit()) + "MB")
 
-        logger.critical('os.cwd():')
+        # logger.critical('os.cwd():')
         self.main_stylesheet = 'src/styles/stylesheet1.qss'
         self.setStyleSheet(open(self.main_stylesheet).read()) # must be after QMainWindow.__init__(self)
         
@@ -97,8 +96,7 @@ class MainWindow(QMainWindow):
         self.scales_combobox_switch = 0
         self.jump_to_worst_ticker = 1  # begin iter at 1 to skip first image (has no ref)
         self.jump_to_best_ticker = 0
-        self.always_generate_images = True
-        
+
         # self.std_height = int(22)
         self.std_height = int(24)
         self.std_width = int(96)
@@ -274,7 +272,6 @@ class MainWindow(QMainWindow):
                  ['Print .dat Files', None, print_dat_files, None, None, None],
                  ['Print Working Directory', None, print_path, None, None, None],
                  ['Google', None, self.google, None, None, None],
-                 ['about:config', None, self.about_config, None, None, None],
                  ['chrome://gpu', None, self.gpu_config, None, None, None],
                  ['Test Web GL2.0', None, self.webgl2_test, None, None, None],
              ]
@@ -478,40 +475,39 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
+
+        # if not is_cur_scale_aligned():
+        #     self.hud.post('Current Scale Was Not Aligned.', logging.ERROR)
+        #     self.set_idle()
+        #     return
+        self.update_alignment_details()
+        self.hud.post('Alignment Succeeded.')
         
-        if not is_cur_scale_aligned():
-            self.hud.post('Current Scale Was Not Aligned.', logging.ERROR)
+        self.set_busy()
+        try:
+            generate_aligned(
+                use_scale=get_cur_scale_key(),
+                start_layer=0,
+                num_layers=-1
+            )
+        except:
+            print_exception()
+            self.hud.post('Alignment Succeeded but Applying the Affine Failed.'
+                          ' Try Re-generating images.',logging.ERROR)
             self.set_idle()
             return
-        self.update_alignment_details()
-        self.hud.post('Alignment Complete.')
-        
-        if self.always_generate_images:
-            self.set_busy()
-            try:
-                generate_aligned(
-                    use_scale=get_cur_scale_key(),
-                    start_layer=0,
-                    num_layers=-1
-                )
-            except:
-                print_exception()
-                self.hud.post('Alignment Succeeded but Applying the Affine Failed.'
-                              ' Try Re-generating images.',logging.ERROR)
-                self.set_idle()
-                return
-            
-            # if are_aligned_images_generated():
 
-            self.set_progress_stage_3()
-            self.center_all_images()
-            if self.main_panel_bottom_widget.currentIndex() == 1:
-               self.show_snr_plot()
-            self.update_win_self()
-            self.refresh_all_images()
-            self.update_panels()  # 0721+
-            self.hud.post('Image Generation Complete')
-            self.set_idle()
+        # if are_aligned_images_generated():
+
+        self.set_progress_stage_3()
+        self.center_all_images()
+        if self.main_panel_bottom_widget.currentIndex() == 1:
+           self.show_snr_plot()
+        self.update_win_self()
+        self.refresh_all_images()
+        self.update_panels()  # 0721+
+        self.hud.post('Image Generation Complete')
+        self.set_idle()
     
     @Slot()
     def run_regenerate_alignment(self) -> None:
@@ -836,6 +832,7 @@ class MainWindow(QMainWindow):
         # self.jupyter_console.execute_command('import IPython; IPython.get_ipython().execution_count = 0')
         self.jupyter_console.execute_command('from IPython.display import Image, display')
         self.jupyter_console.execute_command('from src.config import *')
+        self.jupyter_console.execute_command('import src.config as cfg')
         self.jupyter_console.execute_command('from src.em_utils import *')
         self.jupyter_console.execute_command('clear')
         self.main_panel_bottom_widget.setCurrentIndex(2)
@@ -1318,6 +1315,8 @@ class MainWindow(QMainWindow):
         self.set_progress_stage_1()
         self.scales_combobox.clear()  # why? #0528
         cfg.project_data.settings()
+        cfg.IMAGES_IMPORTED = False
+        self.update_panels()
         self.set_idle()
     
     def import_images_dialog(self):
@@ -1423,7 +1422,11 @@ class MainWindow(QMainWindow):
             self.update_scale_controls()
             self.image_panel.setFocus()
             if are_images_imported():
+                cfg.IMAGES_IMPORTED = True
                 self.generate_scales_button.setEnabled(True)
+            else:
+                cfg.IMAGES_IMPORTED = False
+                self.generate_scales_button.setEnabled(False)
             self.center_all_images()
             self.setWindowTitle("Project: %s" % os.path.basename(cfg.project_data.name()))
             self.hud.post("Project '%s'" % cfg.project_data.name())
@@ -1592,6 +1595,7 @@ class MainWindow(QMainWindow):
                     p.update_zpa_self()
 
         if are_images_imported():
+            cfg.IMAGES_IMPORTED = True
             self.generate_scales_button.setEnabled(True)
             img_size = get_image_size(
                 cfg.project_data['data']['scales']['scale_1']['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
@@ -1803,17 +1807,10 @@ class MainWindow(QMainWindow):
             self.browser_docs.setUrl(QUrl('https://get.webgl.org/webgl2/'))
             self.main_widget.setCurrentIndex(2)
 
-
     def google(self):
         if not cfg.NO_NEUROGLANCER:
             logger.info("Running Google in Web Browser...")
             self.browser_docs.setUrl(QUrl('https://www.google.com'))
-            self.main_widget.setCurrentIndex(2)
-
-    def about_config(self):
-        if not cfg.NO_NEUROGLANCER:
-            logger.info("Running about:config in Web Browser...")
-            self.browser_docs.setUrl(QUrl('about:config'))
             self.main_widget.setCurrentIndex(2)
 
     def gpu_config(self):
@@ -1935,11 +1932,11 @@ class MainWindow(QMainWindow):
         logger.info('Called By %s' % caller)
         if state:
             self.hud.post(
-                'Bounding box will be used. Warning: x and y dimensions may grow larger than the source images.')
+                'Bounding Box is ON. Warning: Dimensions may grow larger than the original images.')
             cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = True
         else:
             self.hud.post(
-                'Bounding box will not be used (faster). x and y dimensions of generated images will equal the source images.')
+                'Bounding Box is OFF (faster). Dimensions will equal the original images.')
             cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'] = False
             logger.debug('  Bounding Rect project_file value saved as:',cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['use_bounding_rect'])
 
@@ -1987,6 +1984,18 @@ class MainWindow(QMainWindow):
         self.resized.emit()
         return super(MainWindow, self).resizeEvent(event)
 
+    @Slot()
+    def pbar_set(self, x):
+        self.pbar.setValue(int(x))
+        # if self.pbar.value() >= 98:
+        if self.pbar.value() >= 99:
+            self.pbar.setValue(0)
+
+    def pbar_max(self, x):
+        self.pbar.setMaximum(x)
+
+    def pbar_update(self, x):
+        self.pbar.setValue(x)
 
 
     def initUI(self):
@@ -2042,7 +2051,7 @@ class MainWindow(QMainWindow):
         '''-------- PANEL 2: DATA SELECTION & SCALING --------'''
 
         self.import_images_button = QPushButton(" Import\n Images")
-        self.import_images_button.setToolTip('Import TIFF images.')
+        self.import_images_button.setToolTip('Import Images.')
         self.import_images_button.clicked.connect(self.import_images)
         self.import_images_button.setFixedSize(self.square_button_size)
         self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=ICON_COLOR))
@@ -2300,7 +2309,7 @@ class MainWindow(QMainWindow):
         self.null_bias_label.setToolTip(wrapped)
         self.null_bias_combobox = QComboBox(self)
         self.null_bias_combobox.setToolTip(wrapped)
-        self.null_bias_combobox.setToolTip('Polynomial bias (default=None)')
+        self.null_bias_combobox.setToolTip(tip)
         self.null_bias_combobox.addItems(['None', '0', '1', '2', '3', '4'])
         self.null_bias_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.null_bias_combobox.setFixedSize(72, self.std_height)
@@ -2349,7 +2358,7 @@ class MainWindow(QMainWindow):
         '''-------- PANEL 4: EXPORT & VIEW --------'''
 
         clevel_label = QLabel("clevel (1-9):")
-        clevel_label.setToolTip("Zarr Compression Level (default=5)")
+        clevel_label.setToolTip("Zarr Compression Level\n(default=5)")
         self.clevel_input = QLineEdit(self)
         self.clevel_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.clevel_input.setText("5")
@@ -2358,7 +2367,7 @@ class MainWindow(QMainWindow):
         self.clevel_valid = QIntValidator(1, 9, self)
         self.clevel_input.setValidator(self.clevel_valid)
         cname_label = QLabel("cname:")
-        cname_label.setToolTip("Zarr Compression Type (default=zstd) ")
+        cname_label.setToolTip("Zarr Compression Type\n(default=zstd) ")
         self.cname_combobox = QComboBox(self)
         self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
         self.cname_combobox.setFixedSize(72, self.std_height)
@@ -2611,6 +2620,14 @@ class MainWindow(QMainWindow):
         # self.main_panel_layout.setSpacing(2) # this inherits downward
         # main_window.main_panel_layout.setSpacing(10) # this inherits downward
         self.main_panel_layout.addWidget(self.splitter, 1, 0)
+
+        self.pbar = QProgressBar(self)
+        self.pbar.hide()
+        self.pbar.setStyleSheet("QLineEdit { background-color: yellow }")
+        # self.pbar.setGeometry(200, 80, 250, 20)
+        # self.pbar.setValue(20)
+
+        self.main_panel_layout.addWidget(self.pbar)
         self.main_panel.setLayout(self.main_panel_layout)
 
         '''-------- AUXILIARY PANELS --------'''
