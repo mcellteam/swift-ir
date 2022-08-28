@@ -153,7 +153,7 @@ class TaskQueue(QObject):
 
     def restart(self) -> None:
         logger.debug('TaskQueue.restart:')
-        logger.critical('Restarting the Task Queue...')
+        logger.info('Restarting the Task Queue...')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.pbar_q = self.ctx.Queue()
@@ -240,7 +240,7 @@ class TaskQueue(QObject):
             # self.stop()
             retry_list = []
             for j in range(n_pending):
-                logger.critical('# Tasks Remaining: %d' % realtime)
+                logger.info('# Tasks Remaining: %d' % realtime)
                 self.parent.pbar.show()
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()

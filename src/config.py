@@ -13,6 +13,13 @@ import os
 import logging
 
 LOG_LEVEL = None
+# WIDTH = 1024 #***
+# HEIGHT = 768 #***
+# WIDTH = 1280
+# HEIGHT = 720
+WIDTH = 1024 #***
+HEIGHT = 820 #***
+
 
 DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
@@ -52,8 +59,7 @@ defaults = ["-0.6800", "0.8125", "0.0000", True]
 # cfg.ICON_COLOR = '#7c7c7c'
 ICON_COLOR = '#455364' # off blue-ish color
 
-WIDTH = 1320
-HEIGHT = 850
+
 
 # class bcolors:
 #     HEADER = '\033[95m'

@@ -65,6 +65,7 @@ class HeadUpDisplay(QWidget):
         super(HeadUpDisplay, self).__init__()
         self.app = app
         self.setFocusPolicy(Qt.NoFocus)
+        self.setMinimumHeight(160)
         self.textedit = te = QPlainTextEdit(self)
         # Set whatever the default monospace font is for the platform
         f = QFont()

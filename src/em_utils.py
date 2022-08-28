@@ -571,8 +571,10 @@ def are_images_imported() -> bool:
     '''Checks if any images have been imported.'''
     n_imgs = len(cfg.project_data['data']['scales']['scale_1']['alignment_stack'])
     if n_imgs > 0:
+        cfg.IMAGES_IMPORTED = True
         return True
     else:
+        cfg.IMAGES_IMPORTED = False
         return False
 
 

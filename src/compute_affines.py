@@ -11,7 +11,6 @@ import logging
 import src.config as cfg
 from qtpy.QtCore import QProcess
 from .mp_queue import TaskQueue
-from .qt_queue import TaskRunner
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
 from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_snr_list, \
@@ -119,7 +118,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
         # task_queue.work_q.join()
         t0 = time.time()
-        cfg.main_window.hud.post('Waiting for Alignment Tasks to Complete...')
+        cfg.main_window.hud.post('Computing Alignment...')
         task_queue.collect_results() # ***
         dt = time.time() - t0
         cfg.main_window.hud.post('Alignment Completed in %.2f seconds' % (dt))
