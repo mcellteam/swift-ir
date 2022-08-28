@@ -73,8 +73,8 @@ class MultiImagePanel(QWidget):
         if (layer_delta != 0) and (self.actual_children != None):
             panels_to_update = [w for w in self.actual_children if (type(w) == ZoomPanWidget)]
             for p in [panels_to_update[0]]:  # Only update the first one which will update the rest
-                p.change_layer(layer_delta)
-                p.update_zpa_self()
+                p.change_layer(layer_delta) # Actually Change the Layer
+                p.update_zpa_self() #0827-
                 p.repaint()
 
     def get_children(self):
@@ -87,12 +87,15 @@ class MultiImagePanel(QWidget):
             # Draw background for no panels
             painter.fillRect(0, 0, self.width(), self.height(), self.bg_color)
             painter.setPen(QPen(QColor(200, 200, 200, 255), 5))
-            # painter.setPen(QPen(QColor('#000000'), 5)) #jy
-            painter.drawEllipse(QRectF(0, 0, self.width(), self.height()))
-            painter.drawText((self.width() / 2) - 140, self.height() / 2, " No Image Roles Defined ")
+            painter.setPen(QPen(QColor('#000000'), 5))
+            # painter.drawEllipse(QRectF(0, 0, self.width(), self.height()))
+            # painter.drawText((self.width() / 2) - 140, self.height() / 2, " No Image Roles Defined ")
         else:
             # Draw background for panels
             painter.fillRect(0, 0, self.width(), self.height(), self.bg_color)
+
+        # painter = QPainter(self)
+        # painter.fillRect(0, 40, self.width(), self.height(), self.bg_color)
         painter.end()
 
     def update_multi_self(self, exclude=()):

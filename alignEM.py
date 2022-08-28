@@ -44,6 +44,7 @@ import sys
 import signal
 import logging
 import argparse
+import qtpy
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication
 from src.em_utils import print_exception
@@ -100,13 +101,13 @@ def main():
     logger.critical('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.')
     # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
     sys.stdout.flush()
-    os.environ['QT_API'] = cfg.QT_API
+    os.environ['QT_API'] = qtpy.API #0827-
     # os.environ["FORCE_QT_API"] = 'True'
     os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
     os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-    logger.info('QT_API: %s' % os.environ.get('QT_API'))
+    logger.info('QT_API: %s' % qtpy.API)
     if args.no_neuroglancer:
         cfg.NO_NEUROGLANCER = True
     else:

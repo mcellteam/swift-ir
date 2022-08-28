@@ -3,6 +3,8 @@
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
 import os, sys, copy, json, inspect, multiprocessing, logging, textwrap, psutil, operator, platform, shutil
+
+import qtpy
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
@@ -115,7 +117,7 @@ class MainWindow(QMainWindow):
         logger.info("instantiating QWebEngineView()")
         if cfg.USES_PYSIDE:
             self.view = QWebEngineView()
-        if cfg.QT_API == 'pyqt6':
+        if qtpy.PYQT6:
             self.view = QWebEngineView()
         # Options available only in PySide6
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -123,7 +125,7 @@ class MainWindow(QMainWindow):
         # self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         logger.info("Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True")
-        if cfg.USES_QT6:
+        if qtpy.PYQT6:
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.up = 0
@@ -177,6 +179,9 @@ class MainWindow(QMainWindow):
 
         '''Initialize Status Bar'''
         self.status = self.statusBar()
+        # self.status.addWidget(self.pbar)
+        self.status.addPermanentWidget(self.pbar)
+        self.pbar.setMaximumWidth(400)
         self.set_idle()
         
         '''Initialize Menu'''
@@ -184,7 +189,7 @@ class MainWindow(QMainWindow):
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
 
-
+        self.unsaved_changes = False
 
         #menu
         #   0:MenuName
@@ -453,11 +458,10 @@ class MainWindow(QMainWindow):
         self.update_scale_controls()
         self.center_all_images()
         self.update_win_self()
-        self.save_project()
-        print('Project Structure:')
-        self.hud.post('Scaling Complete.')
+        # self.save_project()
+        self.has_unsaved_changes()
         self.set_idle()
-        logger.info('\nScaling Complete.\n')
+        self.hud.post('Scaling Complete.')
     
     @Slot()
     def run_alignment(self) -> None:
@@ -506,6 +510,7 @@ class MainWindow(QMainWindow):
         self.update_win_self()
         self.refresh_all_images()
         self.update_panels()  # 0721+
+        self.has_unsaved_changes()
         self.hud.post('Image Generation Complete')
         self.set_idle()
     
@@ -551,9 +556,14 @@ class MainWindow(QMainWindow):
             self.hud.post("Regenerate Complete")
             logger.info('\n\nRegenerate Complete\n')
         else:
+            print_exception()
             self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning First.', logging.ERROR)
+            self.set_idle()
+            return
         self.update_win_self()
+        self.has_unsaved_changes()
         self.set_idle()
+
 
     
     def export_zarr(self):
@@ -585,8 +595,10 @@ class MainWindow(QMainWindow):
             logger.error('Zarr Export Failed')
             self.set_idle()
             return
-        self.hud.post('Process Finished')
+        self.has_unsaved_changes()
         self.set_idle()
+        self.hud.post('Process Finished')
+
 
     @Slot()
     def clear_all_skips_callback(self):
@@ -1439,11 +1451,11 @@ class MainWindow(QMainWindow):
         self.set_status("Saving...")
         try:
             self.save_project_to_file()
+            self.unsaved_changes = False
             self.hud.post("Project saved as '%s'" % cfg.project_data.name())
         except:
             print_exception()
             self.hud.post('Save Project Failed', logging.ERROR)
-            self.set_idle()
         self.set_idle()
     
     def save_project_as(self):
@@ -1457,7 +1469,6 @@ class MainWindow(QMainWindow):
             except:
                 print_exception()
                 self.hud.post('Save Project Failed', logging.ERROR)
-                self.set_idle()
         self.set_idle()
     
     def save_project_to_file(self):
@@ -1486,6 +1497,15 @@ class MainWindow(QMainWindow):
             name += ".json"
         with open(name, 'w') as f:
             f.write(proj_json)
+
+    @Slot()
+    def has_unsaved_changes(self):
+        if inspect.stack()[1].function == 'initUI':
+            return
+        if inspect.stack()[1].function == 'read_project_data_update_gui':
+            return
+        logger.critical("Called by " + inspect.stack()[1].function)
+        self.unsaved_changes = True
     
     @Slot()
     def actual_size(self):
@@ -1685,72 +1705,74 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         logger.info("MainWindow.closeEvent:")
-        self.set_status('Exiting...')
-        app = QApplication.instance()
-        if not are_images_imported():
-            self.threadpool.waitForDone(msecs=200)
-            QApplication.quit()
-            sys.exit()
-        self.hud.post('Confirm Exit AlignEM-SWiFT')
-        message = "Save before exiting?"
-        msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
-        msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-        msg.setDefaultButton(QMessageBox.Save)
-        msg.setIcon(QMessageBox.Question)
-        reply = msg.exec_()
-        if reply == QMessageBox.Cancel:
-            logger.info('reply=Cancel. Returning control to the app.')
-            self.hud.post('Canceling exit application')
-            self.set_idle()
-            return
-        if reply == QMessageBox.Save:
-            logger.info('reply=Save')
-            self.save_project()
-            self.set_status('Wrapping up...')
-            logger.info('Project saved. Exiting')
-            self.threadpool.waitForDone(msecs=200)
-            QApplication.quit()
-            sys.exit()
-        if reply == QMessageBox.Discard:
-            logger.info('reply=Discard Exiting without saving')
-            self.threadpool.waitForDone(msecs=200)
-            QApplication.quit()
-            sys.exit()
+        self.exit_app()
+        # self.set_status('Exiting...')
+        # app = QApplication.instance()
+        # if not are_images_imported():
+        #     self.threadpool.waitForDone(msecs=200)
+        #     QApplication.quit()
+        #     sys.exit()
+        # self.hud.post('Confirm Exit AlignEM-SWiFT')
+        # message = "There are unsaved changes. Save before exiting?"
+        # msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
+        # msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+        # msg.setDefaultButton(QMessageBox.Save)
+        # msg.setIcon(QMessageBox.Question)
+        # reply = msg.exec_()
+        # if reply == QMessageBox.Cancel:
+        #     logger.info('reply=Cancel. Returning control to the app.')
+        #     self.hud.post('Canceling exit application')
+        #     self.set_idle()
+        #     return
+        # if reply == QMessageBox.Save:
+        #     logger.info('reply=Save')
+        #     self.save_project()
+        #     self.set_status('Wrapping up...')
+        #     logger.info('Project saved. Exiting')
+        #     self.threadpool.waitForDone(msecs=200)
+        #     QApplication.quit()
+        #     sys.exit()
+        # if reply == QMessageBox.Discard:
+        #     logger.info('reply=Discard Exiting without saving')
+        #     self.threadpool.waitForDone(msecs=200)
+        #     QApplication.quit()
+        #     sys.exit()
     
     @Slot()
     def exit_app(self):
         logger.info("MainWindow.exit_app:")
         self.set_status('Exiting...')
-        app = QApplication.instance()
-        if not are_images_imported():
-            self.threadpool.waitForDone(msecs=200)
-            QApplication.quit()
-            sys.exit()
-        self.hud.post('Confirm Exit AlignEM-SWiFT')
-        message = "Save before exiting?"
-        msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
-        msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-        msg.setDefaultButton(QMessageBox.Save)
-        msg.setIcon(QMessageBox.Question)
-        reply = msg.exec_()
-        if reply == QMessageBox.Cancel:
-            logger.info('reply=Cancel. Returning control to the app.')
-            self.hud.post('Canceling exit application')
-            self.set_idle()
-            return
-        if reply == QMessageBox.Save:
-            logger.info('reply=Save')
-            self.save_project()
-            self.set_status('Wrapping up...')
-            logger.info('Project saved. Exiting')
-            self.threadpool.waitForDone(msecs=200)
-            QApplication.quit()
-            sys.exit()
-        if reply == QMessageBox.Discard:
-            logger.info('reply=Discard Exiting without saving')
-            self.threadpool.waitForDone(msecs=200)
-            QApplication.quit()
-            sys.exit()
+        if self.unsaved_changes:
+            # app = QApplication.instance()
+            # if not are_images_imported():
+            #     self.threadpool.waitForDone(msecs=200)
+            #     QApplication.quit()
+            #     sys.exit()
+            self.hud.post('Confirm Exit AlignEM-SWiFT')
+            message = "There are unsaved changes.\n\nSave before exiting?"
+            msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
+            msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+            msg.setDefaultButton(QMessageBox.Save)
+            msg.setIcon(QMessageBox.Question)
+            reply = msg.exec_()
+            if reply == QMessageBox.Cancel:
+                logger.info('reply=Cancel. Returning control to the app.')
+                self.hud.post('Canceling exit application')
+                self.set_idle()
+                return
+            if reply == QMessageBox.Save:
+                logger.info('reply=Save')
+                self.save_project()
+                self.set_status('Wrapping up...')
+                logger.info('Project saved. Exiting')
+            if reply == QMessageBox.Discard:
+                logger.info('reply=Discard Exiting without saving')
+        else:
+            logger.critical('No Unsaved Changes - Exiting')
+
+        self.threadpool.waitForDone(msecs=200)
+        QApplication.quit()
+        sys.exit()
 
     def documentation_view(self):  # documentationview
         if not cfg.NO_NEUROGLANCER:
@@ -2123,6 +2145,7 @@ class MainWindow(QMainWindow):
         self.clear_all_skips_button.setIcon(qta.icon("mdi.undo", color=ICON_COLOR))
 
         self.toggle_skip = ToggleSwitch()
+        self.toggle_skip.stateChanged.connect(self.has_unsaved_changes)
         self.toggle_skip.setToolTip('Use or skip current image?')
         self.toggle_skip.setChecked(False)  # 0816 #observed #sus
         self.toggle_skip.toggled.connect(self.skip_changed_callback)
@@ -2173,6 +2196,7 @@ class MainWindow(QMainWindow):
 
         self.whitening_label = QLabel("Whitening:")
         self.whitening_input = QLineEdit(self)
+        self.whitening_input.textEdited.connect(self.has_unsaved_changes)
         self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.whitening_input.setText("-0.68")
         self.whitening_input.setFixedWidth(self.std_input_size)
@@ -2188,6 +2212,7 @@ class MainWindow(QMainWindow):
 
         self.swim_label = QLabel("SWIM Window:")
         self.swim_input = QLineEdit(self)
+        self.swim_input.textEdited.connect(self.has_unsaved_changes)
         self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.swim_input.setText("0.8125")
         self.swim_input.setFixedWidth(self.std_input_size)
@@ -2272,6 +2297,7 @@ class MainWindow(QMainWindow):
         self.auto_generate_label = QLabel("Auto-generate Images:")
         self.auto_generate_label.setToolTip('Automatically generate aligned images.')
         self.toggle_auto_generate = ToggleSwitch()  # toggleboundingrect
+        self.toggle_auto_generate.stateChanged.connect(self.has_unsaved_changes)
         self.toggle_auto_generate.setToolTip('Automatically generate aligned images.')
         self.toggle_auto_generate.setChecked(True)
         self.toggle_auto_generate.toggled.connect(self.toggle_auto_generate_callback)
@@ -2308,6 +2334,7 @@ class MainWindow(QMainWindow):
         wrapped = "\n".join(textwrap.wrap(tip, width=35))
         self.null_bias_label.setToolTip(wrapped)
         self.null_bias_combobox = QComboBox(self)
+        self.null_bias_combobox.currentIndexChanged.connect(self.has_unsaved_changes)
         self.null_bias_combobox.setToolTip(wrapped)
         self.null_bias_combobox.setToolTip(tip)
         self.null_bias_combobox.addItems(['None', '0', '1', '2', '3', '4'])
@@ -2360,6 +2387,7 @@ class MainWindow(QMainWindow):
         clevel_label = QLabel("clevel (1-9):")
         clevel_label.setToolTip("Zarr Compression Level\n(default=5)")
         self.clevel_input = QLineEdit(self)
+        self.clevel_input.textEdited.connect(self.has_unsaved_changes)
         self.clevel_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.clevel_input.setText("5")
         self.clevel_input.setFixedWidth(self.std_input_size_small)
@@ -2431,7 +2459,7 @@ class MainWindow(QMainWindow):
 
         # SCALING & DATA SELECTION CONTROLS
         self.images_and_scaling_groupbox = QGroupBox("Data Selection && Scaling")
-        self.images_and_scaling_groupbox_ = QGroupBox("Scaling && Data Selection")
+        self.images_and_scaling_groupbox_ = QGroupBox("Data Selection && Scaling")
         self.images_and_scaling_groupbox.setLayout(self.scale_layout)
         self.images_and_scaling_stack = QStackedWidget()
         self.images_and_scaling_stack.setFixedSize(cpanel_2_width, cpanel_height)
@@ -2538,7 +2566,6 @@ class MainWindow(QMainWindow):
 
         self.python_console_layout = QHBoxLayout()
         self.python_console_layout.addWidget(self.jupyter_console)
-
         self.python_console_widget_container = QWidget()
         self.python_console_widget_container.setLayout(self.python_console_layout)
 
@@ -2574,24 +2601,20 @@ class MainWindow(QMainWindow):
         self.show_snr_plot_button.setFixedSize(self.square_button_size)
         self.show_snr_plot_button.setIcon(qta.icon("mdi.scatter-plot", color=ICON_COLOR))
 
-        self.main_secondary_controls_layout = QVBoxLayout()
-        self.main_secondary_controls_layout.setContentsMargins(0, 10, 8, 0)
-        self.main_secondary_controls_layout.addWidget(self.show_hud_button,
-                                                      alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_secondary_controls_layout.addWidget(self.show_jupyter_console_button,
-                                                      alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_secondary_controls_layout.addWidget(self.show_snr_plot_button,
-                                                      alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_secondary_controls_layout.addSpacerItem(QSpacerItem(0, 0,
-                                                                      QSizePolicy.Policy.Minimum,
-                                                                      QSizePolicy.Policy.Expanding))
+        self.main_lwr_vlayout = QVBoxLayout()
+        self.main_lwr_vlayout.setContentsMargins(0, 10, 8, 0)
+        self.main_lwr_vlayout.addWidget(self.show_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_lwr_vlayout.addWidget(self.show_jupyter_console_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_lwr_vlayout.addWidget(self.show_snr_plot_button, alignment=Qt.AlignmentFlag.AlignTop)
+        # self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
 
         self.bottom_display_area_hlayout = QHBoxLayout()
         self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
         self.bottom_display_area_hlayout.setSpacing(4)
         self.bottom_display_area_hlayout.addWidget(self.main_panel_bottom_widget)
-        self.bottom_display_area_hlayout.addLayout(self.main_secondary_controls_layout)
+        self.bottom_display_area_hlayout.addLayout(self.main_lwr_vlayout)
         self.bottom_display_area_widget = QWidget()
         self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
 
@@ -2622,12 +2645,12 @@ class MainWindow(QMainWindow):
         self.main_panel_layout.addWidget(self.splitter, 1, 0)
 
         self.pbar = QProgressBar(self)
+        self.pbar.setGeometry(30, 40, 200, 25)
         self.pbar.hide()
         self.pbar.setStyleSheet("QLineEdit { background-color: yellow }")
         # self.pbar.setGeometry(200, 80, 250, 20)
         # self.pbar.setValue(20)
-
-        self.main_panel_layout.addWidget(self.pbar)
+        # self.main_panel_layout.addWidget(self.pbar) #0827-
         self.main_panel.setLayout(self.main_panel_layout)
 
         '''-------- AUXILIARY PANELS --------'''

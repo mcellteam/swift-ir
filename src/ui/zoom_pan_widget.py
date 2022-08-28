@@ -4,6 +4,7 @@ import os
 import sys
 import logging
 import inspect
+import qtpy
 from qtpy.QtGui import QPainter, QPen, QColor
 from qtpy.QtWidgets import QWidget, QRubberBand
 from qtpy.QtCore import Qt, QPointF, QRectF, QSize
@@ -18,7 +19,13 @@ from ..em_utils import get_cur_scale_key
 from ..em_utils import print_exception
 from ..em_utils import is_dataset_scaled
 from ..em_utils import get_cur_snr
+from ..em_utils import are_images_imported
+from ..em_utils import is_cur_scale_aligned
 
+'''
+Deprecated .delta function
+
+'''
 
 __all__ = ['ZoomPanWidget']
 
@@ -35,7 +42,7 @@ class ZoomPanWidget(QWidget):
         self.floatBased = False
         self.antialiased = False  # why
         self.wheel_index = 0
-        self.scroll_factor = 1.25
+        self.scroll_factor = 1.05 #Critical
         self.zoom_scale = 1.0
         self.last_button = Qt.MouseButton.NoButton
 
@@ -108,21 +115,22 @@ class ZoomPanWidget(QWidget):
 
     def update_zpa_self(self):
         '''Update Annotation Boolean'''
-        logger.info('Caller: ' + inspect.stack()[1].function)
+        # logger.info('Caller: ' + inspect.stack()[1].function)
         # Call the super "update" function for this panel's QWidget (this "self")
         self.draw_annotations = self.parent.draw_annotations
         # if self.parent != None:
         #     # self.draw_border = self.parent.draw_border #border #0520
         #     self.draw_annotations = self.parent.draw_annotations
-        # super(ZoomPanWidget, self).update()
+
+        super(ZoomPanWidget, self).update() #Critical
 
     def show_actual_size(self):
         self.zoom_scale = 1.0
         self.ldx = 0
         self.ldy = 0
         self.wheel_index = 0
-        if cfg.USES_QT5:    self.zoom_to_wheel_at(0, 0) #pyside2
-        elif cfg.USES_QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
+        if qtpy.QT5:    self.zoom_to_wheel_at(0, 0) #pyside2
+        elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
@@ -173,41 +181,44 @@ class ZoomPanWidget(QWidget):
 
                             # Enlarge the image (scaling up) while it is within the size of the window
                             while (self.win_x(img_w) <= win_w) and (self.win_y(img_h) <= win_h):
-                                print_debug(70, "Enlarging image to fit in center.")
-                                if cfg.USES_QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
-                                elif cfg.USES_QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+                                logger.debug("Enlarging image to fit in center.")
+                                if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
+                                elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                 self.wheel_index += 1
                                 logger.info("  Wheel index = " + str(self.wheel_index) + " while enlarging")
                                 logger.info("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
                                                 win_w) + "x" + str(win_h))
-                                logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
+                                # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
                                 if abs(self.wheel_index) > 100:
                                     logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
                                     break
 
                             # Shrink the image (scaling down) while it is larger than the size of the window
                             while (self.win_x(img_w) > win_w) or (self.win_y(img_h) > win_h):
-                                print_debug(70, "Shrinking image to fit in center.")
-                                if cfg.USES_QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
-                                elif cfg.USES_QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+
+                                # logger.info("\nShrinking image to fit in center.")
+                                # logger.info("type(img_w) = %s" % type(img_w))
+                                # logger.info("type(self.win_x) = %s" % type(self.win_x))
+                                # logger.info("type(self.win_x(img_w)) = %s" % str(type(self.win_x(img_w))))
+                                # logger.info("self.win_x(img_w) = %s" % str(self.win_x(img_w)))
+                                if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
+                                elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                 self.wheel_index += -1
-                                print_debug(80, "  Wheel index = " + str(self.wheel_index) + " while shrinking")
-                                print_debug(80,
-                                            "    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
-                                                win_w) + "x" + str(win_h))
-                                print_debug(80, "    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
+                                # logger.info("  Wheel index = " + str(self.wheel_index) + " while shrinking")
+                                # logger.info("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h))
+                                # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
                                 if abs(self.wheel_index) > 100:
-                                    print_debug(-1, "Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
+                                    logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
                                     break
 
-                            # Adjust the offsets to center
+                            # # Adjust the offsets to center
                             extra_x = win_w - self.win_x(img_w)
                             extra_y = win_h - self.win_y(img_h)
-                            # Bias the y value downward to make room for text at top
+                            # # Bias the y value downward to make room for text at top
                             # extra_y = 1.7 * extra_y #orig
                             # extra_y = 2.2 * extra_y    #0827-
-                            # self.ldx = (extra_x / 2) / self.zoom_scale    #0827-
-                            # self.ldy = (extra_y / 2) / self.zoom_scale    #0827-
+                            self.ldx = (extra_x / 2) / self.zoom_scale    #0827-
+                            self.ldy = (extra_y / 2) / self.zoom_scale    #0827-
         except:
             logger.warning('Failed to Center Images')
             print_exception()
@@ -215,36 +226,68 @@ class ZoomPanWidget(QWidget):
         self.set_tooltips()
 
     def set_tooltips(self):
-        if cfg.IMAGES_IMPORTED:
+        if are_images_imported():
             s = cfg.project_data['data']['current_scale']
             l = cfg.project_data['data']['current_layer']
             # n_images = get_num_imported_images()
-            role_dict = {'ref': 'Reference Image', 'base': 'Current Image', 'aligned': 'Aligned Image'}
+            role_dict = {'ref': 'Reference Image', 'base': 'Current Image', 'aligned': 'Alignment'}
             role_str = role_dict[self.role]
-            dim_str = '%sx%spx' % (self.image_w, self.image_h)
+            try:
+                dim_str = '%sx%spx' % (self.image_w, self.image_h)
+            except:
+                dim_str = ''
             scale_str = 'Scale ' + get_cur_scale_key()[-1]
             snr_str = str(get_cur_snr())
             if self.role == 'aligned':
-                self.setToolTip('%s\n%s (%s)\n%s' % (role_str, scale_str, dim_str, snr_str))
+                if is_cur_scale_aligned():
+                    self.setToolTip('%s\n%s [%s]\n%s' % (role_str, scale_str, dim_str, snr_str))
             else:
-                self.setToolTip('%s\n%s (%s)' % (role_str, scale_str, dim_str))
+                self.setToolTip('%s\n%s [%s]' % (role_str, scale_str, dim_str))
         else:
             self.setToolTip('No Image')
 
 
     def win_x(self, image_x):
-        return self.zoom_scale * (image_x + self.ldx + self.dx)
+        '''Note this is being called 4 times each time
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:247] (center_image) win_x is returning 1342.17728
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:248] self.zoom_scale = 0.32768
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:249] self.ldx = 0.0
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:250] self.dx = 0
 
-    def win_y(self, image_y):
-        return self.zoom_scale * (image_y + self.ldy + self.dy)
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:247] (center_image) win_x is returning 1073.741824
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:248] self.zoom_scale = 0.262144
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:249] self.ldx = 0.0
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:250] self.dx = 0
+
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:247] (center_image) win_x is returning 858.9934592
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:248] self.zoom_scale = 0.2097152
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:249] self.ldx = 0.0
+        17:16:20 CRITICAL [zoom_pan_widget.win_x:250] self.dx = 0
+        '''
+
+        logger.debug('(%s) win_x is returning %s' % (inspect.stack()[1].function, str(self.zoom_scale * (image_x + self.ldx + self.dx))))
+        logger.debug('self.zoom_scale = %s' % str(self.zoom_scale))
+        logger.debug('self.ldx = %s' % str(self.ldx))
+        logger.debug('self.dx = %s' % str(self.dx))
+
+        v = self.zoom_scale * (image_x + self.ldx + self.dx)
+        # return self.zoom_scale * (image_x + self.ldx + self.dx)
+        # return image_x
+        # zoom_scale = self.zoom_scale
+        return v
 
     def image_x(self, win_x):
         img_x = (win_x / self.zoom_scale) - self.ldx
-        return img_x +100
+        # logger.critical('(%s) image_x is returning %s' % inspect.stack()[1].function, str(img_x))
+        return img_x
+
+    def win_y(self, image_y):
+        v = self.zoom_scale * (image_y + self.ldy + self.dy)
+        return v
 
     def image_y(self, win_y):
         img_y = (win_y / self.zoom_scale) - self.ldy
-        return img_y +100
+        return img_y
 
     def dump(self):
         logger.info("wheel = %s" % str(self.wheel_index))
@@ -261,22 +304,12 @@ class ZoomPanWidget(QWidget):
         self.antialiased = antialiased
         self.update_zpa_self()
 
-    # # minimum #windowsize #qsize
+
     # def minimumSizeHint(self):
-    #     pass
-    #     # return QSize(50, 50)
-    #     # return QSize(250, 250) #0719-
-
+    #     return QSize(50, 50)
+    #
     # def sizeHint(self):
-    #     pass
-    #     # return QSize(180, 180) #0719-
-    #     # return
-
-    def minimumSizeHint(self):
-        return QSize(50, 50)
-
-    def sizeHint(self):
-        return QSize(180, 180)
+    #     return QSize(180, 180)
 
 
     def mouse_down_callback(self, role, screen_coords, image_coords, button):
@@ -345,7 +378,7 @@ class ZoomPanWidget(QWidget):
         ey = event.y()
         self.last_button = event.button()
         if event.button() == Qt.MouseButton.RightButton:
-            # Resest the pan and zoom
+            # Reset the pan and zoom
             self.dx = self.mdx = self.ldx = 0
             self.dy = self.mdy = self.ldy = 0
             self.wheel_index = 0
@@ -364,7 +397,6 @@ class ZoomPanWidget(QWidget):
         if self.last_button == Qt.MouseButton.LeftButton:
             self.dx = (event.x() - self.mdx) / self.zoom_scale
             self.dy = (event.y() - self.mdy) / self.zoom_scale
-            self.update_zpa_self()
         self.update_zpa_self()
 
 
@@ -373,22 +405,39 @@ class ZoomPanWidget(QWidget):
             self.ldx += self.dx
             self.ldy += self.dy
             self.dx, self.dy = 0, 0
-            self.update_zpa_self()
         self.update_zpa_self()
 
     def mouseDoubleClickEvent(self, event):
-        self.update_zpa_self()
+        pass
 
 
     def zoom_to_wheel_at(self, pos, pos_y=None):
+        ''' #ThreeCalls
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:417] self.scroll_factor = 1.25
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:418] self.wheel_index = -9
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:422] --> old_scale=0.16777216, new_scale=0.134217728
+
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:417] self.scroll_factor = 1.25
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:418] self.wheel_index = -10
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:422] --> old_scale=0.134217728, new_scale=0.1073741824
+
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:417] self.scroll_factor = 1.25
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:418] self.wheel_index = -11
+        17:54:34 CRITICAL [zoom_pan_widget.zoom_to_wheel_at:422] --> old_scale=0.1073741824, new_scale=0.08589934592
+        '''
+
+        # logger.critical('self.scroll_factor = %s' % str(self.scroll_factor))
+        # logger.critical('self.wheel_index = %s' % str(self.wheel_index))
         old_scale = self.zoom_scale
-        new_scale = self.zoom_scale = pow(self.scroll_factor, self.wheel_index)
-        if cfg.USES_QT5:
-            '''Original Code'''
+        new_scale = self.zoom_scale = pow(self.scroll_factor, self.wheel_index) #Critical
+
+        # logger.critical('--> old_scale=%s, new_scale=%s' % (old_scale,new_scale))
+        if qtpy.QT5:
+            #Original
             logger.debug('zoom_to_wheel_at (Qt5):')
             self.ldx = self.ldx + (pos/new_scale) - (pos/old_scale)
             self.ldy = self.ldy + (pos_y/new_scale) - (pos_y/old_scale)
-        elif cfg.USES_QT6:
+        elif qtpy.QT6:
             logger.debug('zoom_to_wheel_at (Qt6):')
             self.ldx = self.ldx + (pos.x() / new_scale) - (pos.x() / old_scale)
             self.ldy = self.ldy + (pos.y() / new_scale) - (pos.y() / old_scale)
@@ -416,24 +465,22 @@ class ZoomPanWidget(QWidget):
         cfg.project_data['data']['current_layer'] = requested
         preload_imgs = set()
         for i in range(requested - rng, requested + rng):
-            if i in range(n_imgs):
-                for role, local_image in stack[i]['images'].items():
-                    if local_image['filename'] != None:
-                        if len(local_image['filename']) > 0:
-                            preload_imgs.add(local_image['filename'])
+            for role, local_image in stack[i]['images'].items():
+                if local_image['filename'] != None:
+                    preload_imgs.add(local_image['filename'])
         cfg.image_library.make_available(preload_imgs)
-        # if is_dataset_scaled():
-        #     cfg.main_window.read_project_data_update_gui()
-        cfg.main_window.read_project_data_update_gui()
-        # self.update_zpa_self() #orig #0701 #0827-
+        if is_dataset_scaled():
+            cfg.main_window.read_project_data_update_gui()
         self.update_siblings() # <- change all layers
         # hack to fix bug when proj closed on layer 0 (ref not loaded)
         if self.need_to_center == 1:
             cfg.main_window.center_all_images()
             self.need_to_center = 0
+        self.set_tooltips()
         cfg.main_window.set_idle()
 
     def wheelEvent(self, event):
+        logger.debug("wheelEvent:")
         """
         AttributeError: 'PySide6.QtGui.QWheelEvent' object has no attribute 'delta'
 
@@ -468,14 +515,11 @@ class ZoomPanWidget(QWidget):
         """
         '''refer to QWheelEvent class documentation'''
 
-
         kmods = event.modifiers()
-        '''          type(kmods): <enum 'KeyboardModifier'>
-        scroll w/ shift key     :  src.ShiftModifier
-        scroll w/out shift key  :  src.NoModifier      '''
+        '''scroll w/ shift key     :  src.ShiftModifier
+           scroll w/out shift key  :  src.NoModifier     '''
 
-        ''''''
-        if cfg.USES_QT5:
+        if qtpy.QT5:
             '''Original Code, Modified'''
             if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
                 # Unshifted Scroll Wheel moves through layers
@@ -487,15 +531,11 @@ class ZoomPanWidget(QWidget):
                 # self.wheel_index += event.delta()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
                 self.wheel_index += event.angleDelta().y()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
                 self.zoom_to_wheel_at(event.x(), event.y())
-            self.update_zpa_self()
         else:
-
-
-
             if kmods == Qt.NoModifier:
                 # Unshifted Scroll Wheel moves through layers
 
-                # if cfg.USES_QT5 == True:
+                # if qtpy.QT5 == True:
                 #     layer_delta = int(event.delta()/120)    #pyside2
                 # else:
                 #     layer_delta = event.angleDelta().y()  # 0615 #0719
@@ -518,6 +558,8 @@ class ZoomPanWidget(QWidget):
                 # else:
                 #     self.wheel_index = 0
 
+        self.update_zpa_self() #Critical
+
     def paintEvent(self, event):
         # if self.already_painting:
         #     logger.warning('Painter was already painting!')
@@ -527,7 +569,10 @@ class ZoomPanWidget(QWidget):
         s = cfg.project_data['data']['current_scale']
         l = cfg.project_data['data']['current_layer']
         # img_text = None
-        img_text = 'No Images Loaded'
+        if self.role == 'aligned':
+            img_text = 'Unaligned'
+        else:
+            img_text = 'No Image Loaded'
 
         has_alignment_stack = True if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0 else False
         try:
@@ -561,7 +606,8 @@ class ZoomPanWidget(QWidget):
                         # Draw any items that should scale with the image
 
                     # Rescale painter to draw at screen resolution
-                    painter.scale(1.0 / self.zoom_scale, 1.0 / self.zoom_scale)
+                    zoom_scale = self.zoom_scale
+                    painter.scale(1.0 / zoom_scale, 1.0 / zoom_scale)
                     # Draw the borders of the viewport for each panel to separate panels
                     # painter.setPen(QPen(self.border_color, 4)) #0523
                     # painter.drawRect(painter.viewport()) #0523
@@ -575,7 +621,6 @@ class ZoomPanWidget(QWidget):
                         colors = [[255, 0, 0], [0, 255, 0], [0, 0, 255], [255, 255, 0], [255, 0, 255], [0, 255, 255]]
                         if 'colors' in ann_image['metadata']:
                             colors = ann_image['metadata']['colors']
-                            print_debug(95, "Colors in metadata = " + str(colors))
                         if 'annotations' in ann_image['metadata']:
                             # Draw the application-specific annotations from the metadata
                             color_index = 0
@@ -591,7 +636,6 @@ class ZoomPanWidget(QWidget):
                                     color_index = 0
 
                                 color_to_use = colors[color_index % len(colors)]
-                                print_debug(50, " Color to use: " + str(color_to_use))
                                 painter.setPen(QPen(QColor(*color_to_use), 5))
                                 x, y, r = 0, 0, 0
                                 if cmd in ['circle', 'square']:
@@ -627,7 +671,8 @@ class ZoomPanWidget(QWidget):
                             x1b, y1b, x2b, y2b = 0, painter.viewport().height() - height, width, painter.viewport().height()
                             painter.drawLine(x1a, y1a, x2a, y2a)
                             painter.drawLine(x1b, y1b, x2b, y2b)
-                            painter.setOpacity(0.5)
+                            # painter.setOpacity(0.5)
+                            painter.setOpacity(0)
                             painter.setBrush(Qt.black)  # Background
                             # painter.setPen(QPen(Qt.red))  # Border
                             painter.drawRect(x1a, y1a, x2a, y2a)
@@ -639,7 +684,7 @@ class ZoomPanWidget(QWidget):
 
 
                         painter.setOpacity(0.5)
-                        painter.setBrush(Qt.black) # Background
+                        painter.setBrush(Qt.black) # Entire MultiImagePanel Background
                         painter.setPen(QPen(Qt.black)) # Border
                         # rect = QRect(0, 0, painter.viewport().width(), painter.viewport().height())
                         painter.drawRect(painter.viewport())
@@ -649,6 +694,10 @@ class ZoomPanWidget(QWidget):
             if self.draw_annotations:
                 if (not has_alignment_stack) and ((self.role=='aligned') or (self.role=='base')):
                         pass
+                elif not cfg.IMAGES_IMPORTED:
+                    pass
+
+
                 else:
                     # if len(cfg.project_data['data']['scales'][s]['alignment_stack']) == 0:
                     # if (not is_skipped) or (self.role=='base'):
@@ -676,35 +725,4 @@ class ZoomPanWidget(QWidget):
             print_exception()
             logger.warning('Something Went Wrong During Paint Event')
             pass
-
-
-def print_debug(level, p1=None, p2=None, p3=None, p4=None, p5=None):
-    debug_level = 0
-    if level <= debug_level:
-        if p1 == None:
-            sys.stderr.write("" + '')
-        elif p2 == None:
-            sys.stderr.write(str(p1) + '')
-        elif p3 == None:
-            sys.stderr.write(str(p1) + str(p2) + '')
-        elif p4 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + '')
-        elif p5 == None:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + '')
-        else:
-            sys.stderr.write(str(p1) + str(p2) + str(p3) + str(p4) + str(p5) + '')
-
-        try:  # find code_context
-            frame = inspect.currentframe()
-            if frame:
-                code_context = inspect.getframeinfo(frame.f_back).code_context[0].strip()
-            else:
-                code_context = inspect.stack()[1][4][0].strip()
-
-        finally:
-            # Deterministic free references to the frame, to be on the safe side
-            del frame
-        print('Code context : {}'.format(code_context))
-        # print('Value of args: {}\n'.format(args))
-
 

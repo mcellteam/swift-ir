@@ -126,7 +126,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
 
     print_snr_list()
     logger.info('Running Apply Affine Tasks (task_queue.collect_results())...')
-    cfg.main_window.hud.post('Generating Aligned Images...')
+    cfg.main_window.hud.post('Generating Images...')
     t0 = time.time()
     try:
         task_queue.collect_results()

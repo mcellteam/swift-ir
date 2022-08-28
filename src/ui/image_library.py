@@ -282,8 +282,6 @@ class SmartImageLibrary:
 
     def make_available(self, requested):
         """
-        SOMETHING TO LOOK AT:
-
         Note that the threaded loading sometimes loads the same image multiple
         times. This may be due to an uncertainty about whether an image has been
         scheduled for loading or not.
@@ -292,21 +290,24 @@ class SmartImageLibrary:
         scheduling it to be loaded. However, a load may be in progress from an
         earlier request. This may cause images to be loaded multiple times.
         """
-
-        logger.debug("make_available: " + str(sorted([str(s[-7:]) for s in requested])))
+        logger.debug("Making image available: " + str(sorted([str(s[-7:]) for s in requested])))
         already_loaded = set(self._images.keys())
         normalized_requested = set([self.pathkey(f) for f in requested])
         need_to_load = normalized_requested - already_loaded
         need_to_unload = already_loaded - normalized_requested
-        for f in need_to_unload:
-            self.remove_image_reference(f)
-        for f in need_to_load:
-            if self.threaded_loading_enabled:
-                self.queue_image_read(f)  # Using this will enable threaded reading behavior
-            else:
-                self.get_image_reference(f)  # Using this will force sequential reading behavior
+        try:
+            for f in need_to_unload:
+                self.remove_image_reference(f)
+            for f in need_to_load:
+                if self.threaded_loading_enabled:
+                    self.queue_image_read(f)  # Using this will enable threaded reading behavior
+                else:
+                    self.get_image_reference(f)  # Using this will force sequential reading behavior
+            logger.debug("Library has " + str(len(self._images.keys())) + " images")
+        except:
+            print_exception()
+            logger.warning('Failed to make image available')
 
-        logger.debug("Library has " + str(len(self._images.keys())) + " images")
 
     def update(self):
         cur_scale_key = cfg.project_data['data']['current_scale']
