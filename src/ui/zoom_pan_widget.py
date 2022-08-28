@@ -475,6 +475,7 @@ class ZoomPanWidget(QWidget):
         cfg.image_library.make_available(preload_imgs)
         if is_dataset_scaled():
             cfg.main_window.read_project_data_update_gui()
+        self.update_zpa_self()
         self.update_siblings() # <- change all layers
         # hack to fix bug when proj closed on layer 0 (ref not loaded)
         if self.need_to_center == 1:
