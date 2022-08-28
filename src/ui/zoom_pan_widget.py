@@ -465,9 +465,13 @@ class ZoomPanWidget(QWidget):
         cfg.project_data['data']['current_layer'] = requested
         preload_imgs = set()
         for i in range(requested - rng, requested + rng):
-            for role, local_image in stack[i]['images'].items():
-                if local_image['filename'] != None:
-                    preload_imgs.add(local_image['filename'])
+            try:
+                for role, local_image in stack[i]['images'].items():
+                    if local_image['filename'] != None:
+                        preload_imgs.add(local_image['filename'])
+            except:
+                print_exception()
+                logger.warning('Failed to load image for role %s' % self.role)
         cfg.image_library.make_available(preload_imgs)
         if is_dataset_scaled():
             cfg.main_window.read_project_data_update_gui()
