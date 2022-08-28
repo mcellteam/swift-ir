@@ -21,6 +21,7 @@ from ..em_utils import is_dataset_scaled
 from ..em_utils import get_cur_snr
 from ..em_utils import are_images_imported
 from ..em_utils import is_cur_scale_aligned
+from ..em_utils import get_scale_val
 
 '''
 Deprecated .delta function
@@ -185,8 +186,8 @@ class ZoomPanWidget(QWidget):
                                 if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
                                 elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                 self.wheel_index += 1
-                                logger.info("  Wheel index = " + str(self.wheel_index) + " while enlarging")
-                                logger.info("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
+                                logger.debug("  Wheel index = " + str(self.wheel_index) + " while enlarging")
+                                logger.debug("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
                                                 win_w) + "x" + str(win_h))
                                 # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
                                 if abs(self.wheel_index) > 100:
@@ -236,7 +237,7 @@ class ZoomPanWidget(QWidget):
                 dim_str = '%sx%spx' % (self.image_w, self.image_h)
             except:
                 dim_str = ''
-            scale_str = 'Scale ' + get_cur_scale_key()[-1]
+            scale_str = 'Scale %d' % get_scale_val(get_cur_scale_key())
             snr_str = str(get_cur_snr())
             if self.role == 'aligned':
                 if is_cur_scale_aligned():

@@ -70,7 +70,7 @@ def generate_scales(progress_callback=None):
 
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
         logger.debug('Looping, Scale ', scale)
-        cfg.main_window.hud.post("Preparing to generate images for scale " + str(scale))
+        cfg.main_window.hud.post("Preparing to Generate Images for Scale %s..." % str(scale))
         scale_key = get_scale_key(scale)
         for i, layer in enumerate(cfg.project_data['data']['scales'][scale_key]['alignment_stack']):
             fn = os.path.abspath(layer['images']['base']['filename'])
@@ -138,13 +138,13 @@ def generate_scales(progress_callback=None):
 
     ### Join the queue here to ensure that all have been generated before returning
     # scale_q.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
-    cfg.main_window.hud.post('Generating scale image hierarchy...')
+    cfg.main_window.hud.post('Generating Scale Hierarchy...')
     t0 = time.time()
     scale_q.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
     scale_q.stop()
     del scale_q
     dt = time.time() - t0
-    cfg.main_window.hud.post("Scaling completed in %.2f seconds" % dt)
+    cfg.main_window.hud.post("Process Completed in %.2f Seconds" % dt)
 
     logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')
 
