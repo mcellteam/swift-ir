@@ -319,7 +319,8 @@ QCheckBox {
 QCheckBox:disabled {
     /*color: #d3dae3;*/
 	/*color: #808086;*/
-	color: #ffffff;
+	/*color: grey;*/
+	color: #404040;
 	padding: 1px;
 }
 
@@ -549,13 +550,14 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal
 
 QProgressBar
 {
-border: solid grey;
-border-radius: 15px;
-color: black;
+    border: 2px solid grey;
+    border-radius: 5px;
+    text-align: center;
 }
 QProgressBar::chunk
 {
-/*background-color: #05B8CC;*/
-background-color: #F3F6FB;
-border-radius :15px;
+    background-color: #d7801a;
+    width: 2.15px;
+    margin: 0.5px;
 }
+

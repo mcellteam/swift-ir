@@ -7,7 +7,7 @@ import psutil
 import logging
 import src.config as cfg
 
-from .em_utils import get_scale_key, get_scale_val, get_cur_scale_key, are_aligned_images_generated, \
+from .em_utils import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, get_num_imported_images, print_snr_list, remove_aligned
 from .mp_queue import TaskQueue
 from .image_utils import SetStackCafm, BoundingRect
@@ -61,11 +61,11 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     # create_align_directories(use_scale=scale_key)
     print_snr_list()
     if are_aligned_images_generated():
-        cfg.main_window.hud.post('Removing Aligned Images for Scale Level %s' % scale_key[-1])
+        cfg.main_window.hud.post('Removing Aligned Images for Scale Level %d' % get_scale_val(scale_key))
         remove_aligned(use_scale=scale_key, start_layer=start_layer)
     logger.info('Propogating AFMs to generate CFMs at each layer')
     scale_dict = cfg.project_data['data']['scales'][scale_key]
-    null_bias = cfg.project_data['data']['scales'][get_cur_scale_key()]['null_cafm_trends']
+    null_bias = cfg.project_data['data']['scales'][use_scale]['null_cafm_trends']
     SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
     ofn = os.path.join(cfg.project_data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
     use_bounding_rect = bool(cfg.project_data['data']['scales'][scale_key]['use_bounding_rect'])
@@ -126,7 +126,6 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
 
     print_snr_list()
     logger.info('Running Apply Affine Tasks (task_queue.collect_results())...')
-    cfg.main_window.hud.post('Generating Images...')
     t0 = time.time()
     try:
         task_queue.collect_results()
@@ -136,7 +135,6 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     except:
         logger.warning('task_queue.collect_results() encountered a problem')
         print_exception()
-    logger.info('Stopping TaskQueue...')
     task_queue.stop()
     del task_queue
 

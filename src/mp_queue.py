@@ -9,6 +9,7 @@ from tqdm import tqdm
 import subprocess as sp
 import multiprocessing as mp
 from qtpy.QtCore import QObject
+from qtpy.QtWidgets import QApplication
 # from .LoggingTqdm import logging_tqdm
 # from .TqdmToLogger import tqdm_to_logger
 
@@ -229,19 +230,15 @@ class TaskQueue(QObject):
         logger.info("TaskQueue.collect_results  >>>>")
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
-
         realtime = n_pending
-
         retries_tot = 1
         while (retries_tot < self.retries + 1) and n_pending:
             logger.info('# Tasks Pending: %d' % n_pending)
-            # self.end_tasks()
-            # self.work_queue.join()
-            # self.stop()
             retry_list = []
             for j in range(n_pending):
                 logger.info('# Tasks Remaining: %d' % realtime)
                 self.parent.pbar.show()
+                QApplication.processEvents() # allows Qt to continue to respond so application will stay responsive.
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.debug('Collected results from Task_ID %d' % (task_id))

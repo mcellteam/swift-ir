@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import os
+import re
 import sys
 import copy
 import json
@@ -30,7 +31,7 @@ __all__ = ['remove_aligned', 'get_cur_scale_key', 'get_cur_layer', 'is_destinati
            'make_relative', 'make_absolute', 'is_scale_aligned', 'debug_project',
            'is_cur_scale_ready_for_alignment', 'get_aligned_scales_list', 'get_not_aligned_scales_list',
            'get_scales_list', 'get_snr_list', 'print_snr_list', 'print_project_tree',
-           'get_coarsest_scale_key', 'get_images_list_directly']
+           'get_coarsest_scale_key', 'get_images_list_directly', 'natural_sort']
 
 logger = logging.getLogger(__name__)
 
@@ -96,22 +97,30 @@ def remove_aligned(use_scale, start_layer=0):
                 logger.warning("image_library.remove_image_reference(%s) Triggered An Exception" % ifn)
 
 
+def natural_sort(l):
+    convert = lambda text: int(text) if text.isdigit() else text.lower()
+    alphanum_key = lambda key: [convert(c) for c in re.split('([0-9]+)', key)]
+    return sorted(l, key=alphanum_key)
+
 
 def get_scales_list() -> list[str]:
     '''Get scales list.
     Faster than O(n*m) performance.
     Preserves order of scales.'''
-    return [key for key in cfg.project_data['data']['scales'].keys()]
+    l = natural_sort([key for key in cfg.project_data['data']['scales'].keys()])
+    return l
 
 
 def get_aligned_scales_list() -> list[str]:
     '''Get aligned scales list.'''
-    return [key for key in cfg.project_data['data']['scales'].keys() if is_scale_aligned(key)]
+    l = natural_sort([key for key in cfg.project_data['data']['scales'].keys()])
+    return l
 
 
 def get_not_aligned_scales_list() -> list[str]:
     '''Get not aligned scales list.'''
-    return [key for key in get_scales_list() if key not in set(get_aligned_scales_list())]
+    l = natural_sort([key for key in get_scales_list() if key not in set(get_aligned_scales_list())])
+    return l
 
 
 def verify_image_file(path: str) -> str:
@@ -161,16 +170,21 @@ def is_cur_scale_ready_for_alignment() -> bool:
         return False
     # if not is_dataset_scaled(): #0721-
     #     return False
-    scales_dict = cfg.project_data['data']['scales']
+    # scales_dict = cfg.project_data['data']['scales'] #Bad
+    scales_list = get_scales_list()
     cur_scale_key = get_cur_scale_key()
-    coarsest_scale = list(scales_dict.keys())[-1]
+    coarsest_scale = scales_list[-1]
     if cur_scale_key == coarsest_scale:
         return True
-    scales_list = []
-    for scale_key in scales_dict.keys():
-        scales_list.append(scale_key)
     cur_scale_index = scales_list.index(cur_scale_key)
     next_coarsest_scale_key = scales_list[cur_scale_index + 1]
+    # logger.critical('Scales List: %s' % str(scales_list))
+    # logger.critical('coarsest_scale = %s' % coarsest_scale)
+    # logger.critical('cur_scale_key = %s' % cur_scale_key)
+    # logger.critical('cur_scale_index = %s' % str(cur_scale_index))
+    # logger.critical('next_coarsest_scale_key = %s' % next_coarsest_scale_key)
+    # logger.critical('is_scale_aligned(next_coarsest_scale_key) = %s' % str(is_scale_aligned(next_coarsest_scale_key)))
+
     if is_scale_aligned(next_coarsest_scale_key):
         return True
     else:
@@ -192,8 +206,6 @@ def set_default_precedure() -> None:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
             else:
                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
-
-
 
 
 def set_default_settings() -> None:
@@ -399,7 +411,7 @@ def print_dat_files() -> None:
         logger.info('Printing .dat Files')
         try:
             logger.info("_____________________BIAS DATA_____________________")
-            logger.info("Scale %s____________________________________________" % get_cur_scale_key()[-1])
+            logger.info("Scale %d____________________________________________" % get_scale_val(get_cur_scale_key()))
             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
                 snr_1 = f.read()
                 logger.info('snr_1               : %s' % snr_1)
@@ -644,14 +656,15 @@ def get_num_scales() -> int:
 def getScaleKeys() -> list[str]:
     '''Returns the sorted dictionary keys for the scales in the current project'''
     try:
-        scale_keys = sorted(cfg.project_data['data']['scales'].keys())
-        return scale_keys
+        keys = natural_sort(list(cfg.project_data['data']['scales'].keys()))
+        return keys
     except:
         print_exception()
         logger.warning('Unable to return dictionary keys for scales')
 
 def get_coarsest_scale_key() -> None:
-    return list(cfg.project_data['data']['scales'].keys())[-1]
+    key = natural_sort(list(cfg.project_data['data']['scales'].keys()))[-1]
+    return key
 
 def is_dataset_scaled() -> bool:
     '''Checks if there exists any stacks of scaled images

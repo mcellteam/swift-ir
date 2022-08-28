@@ -8,7 +8,7 @@ import qtpy
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
-    QDockWidget, QSplashScreen, QAction, QActionGroup, QProgressBar
+    QDockWidget, QSplashScreen, QAction, QActionGroup, QProgressBar, QCheckBox
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, QRect, Signal
@@ -31,6 +31,7 @@ from src.apply_affines import generate_aligned
 from src.generate_scales import generate_scales
 from src.generate_zarr import generate_zarr
 from src.view_3dem import View3DEM
+from src.utils.runnable_worker import RunnableWorker
 from .head_up_display import HeadUpDisplay
 from .image_library import ImageLibrary, SmartImageLibrary
 from .multi_image_panel import MultiImagePanel
@@ -189,7 +190,8 @@ class MainWindow(QMainWindow):
         self.menu = self.menuBar()
         self.menu.setNativeMenuBar(False)  # fix to set non-native menubar in macOS
 
-        self.unsaved_changes = False
+        self._unsaved_changes = False
+        self._working = False
 
         #menu
         #   0:MenuName
@@ -346,6 +348,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def run_scaling(self) -> None:
         logger.info("run_scaling:")
+        if self._working == True: self.hud.post('Another Process is Already Running', logging.WARNING)
+        else: self._working = True
+
         self.set_status("Busy...")
         self.main_panel_bottom_widget.setCurrentIndex(0)
         self.hud.post('Requesting scale factors from user')
@@ -404,6 +409,7 @@ class MainWindow(QMainWindow):
             else:
                 self.hud.post('Rescaling canceled.')
                 self.set_idle()
+                self._working = False
                 return
 
         self.set_status("Scaling...")
@@ -431,13 +437,16 @@ class MainWindow(QMainWindow):
             self.hud.post('Input was empty, please provide scaling factors')
             self.set_idle()
             logger.info('<<<< run_scaling')
+            self._working = False
             return
-        self.hud.post('Generating Scale Image Hierarchy...')
         set_scales_from_string(input_val)
-        self.hud.post('Scale image hierarchy will have these scale levels: %s' % input_val)
+        self.hud.post('Generating Scale Image Hierarchy (Selected Levels: %s)...' % input_val)
+        self.pbar.show()
         self.show_hud()
         try:
-            generate_scales()  # <-- CALL TO generate_scales
+            worker = RunnableWorker(fn=generate_scales())
+            self.threadpool.start(worker)
+            # generate_scales()  # Call to generate_scales
         except:
             print_exception()
             self.hud.post('Generating Scales Triggered an Exception - Returning', logging.ERROR)
@@ -450,29 +459,33 @@ class MainWindow(QMainWindow):
         self.reload_scales_combobox()  # 0529 #0713+
 
         #TODO: Get rid of this as soon as possible
-        logger.info("Current scales combobox index: %s" % str(self.scales_combobox.currentIndex()))
+        logger.debug("Current scales combobox index: %s" % str(self.scales_combobox.currentIndex()))
         self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
-        logger.info("New current scales combobox index: %s" % str(self.scales_combobox.currentIndex()))
+        logger.debug("New current scales combobox index: %s" % str(self.scales_combobox.currentIndex()))
         # AllItems = [self.scales_combobox.itemText(i) for i in range(self.scales_combobox.count())]
-        
         self.update_scale_controls()
         self.center_all_images()
         self.update_win_self()
-        # self.save_project()
         self.has_unsaved_changes()
         self.set_idle()
+        self.pbar.hide()
         self.hud.post('Scaling Complete.')
+        self._working = False
     
     @Slot()
     def run_alignment(self) -> None:
         logger.info('run_alignment:')
+        if self._working == True:  self.hud.post('Another Process is Already Running', logging.WARNING)
+        else: self._working = True
         self.main_panel_bottom_widget.setCurrentIndex(0)
         self.read_gui_update_project_data()
         if not is_cur_scale_ready_for_alignment():
-            warning_msg = "Scale %s must be aligned first!" % cfg.project_data.get_next_coarsest_scale_key()[-1]
+            warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.project_data.get_next_coarsest_scale_key())
             self.hud.post(warning_msg, logging.WARNING)
+            self._working = False
             return
         self.set_status('Aligning...')
+        self.pbar.show()
         self.show_hud()
         try:
             compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
@@ -486,56 +499,82 @@ class MainWindow(QMainWindow):
         #     return
         self.update_alignment_details()
         self.hud.post('Alignment Succeeded.')
-        
+
+        self.pbar.show()
         self.set_busy()
+        self.hud.post('Generating Aligned Images...')
         try:
-            generate_aligned(
-                use_scale=get_cur_scale_key(),
-                start_layer=0,
-                num_layers=-1
-            )
+            worker = RunnableWorker(fn=generate_aligned(
+                                    use_scale=get_cur_scale_key(),
+                                    start_layer=0,
+                                    num_layers=-1
+                                    ))
+            self.threadpool.start(worker)
+            # generate_aligned(
+            #     use_scale=get_cur_scale_key(),
+            #     start_layer=0,
+            #     num_layers=-1
+            # )
         except:
             print_exception()
             self.hud.post('Alignment Succeeded but Applying the Affine Failed.'
                           ' Try Re-generating images.',logging.ERROR)
             self.set_idle()
+            self.pbar.hide()
+            self._working = False
             return
 
         # if are_aligned_images_generated():
 
-        self.set_progress_stage_3()
-        self.center_all_images()
         if self.main_panel_bottom_widget.currentIndex() == 1:
            self.show_snr_plot()
-        self.update_win_self()
+
         self.refresh_all_images()
-        self.update_panels()  # 0721+
         self.has_unsaved_changes()
+        self.read_project_data_update_gui()
+        self.center_all_images()
+        self.update_panels()  # 0721+
         self.hud.post('Image Generation Complete')
         self.set_idle()
+        self.update_win_self()
+        self.set_progress_stage_3()
+        self.pbar.hide()
+        self._working = False
     
     @Slot()
     def run_regenerate_alignment(self) -> None:
         logger.info('run_regenerate_alignment:')
+        if self._working == True:  self.hud.post('Another Process is Already Running', logging.WARNING)
+        else: self._working = True
         self.main_panel_bottom_widget.setCurrentIndex(0)
         self.read_gui_update_project_data()
         if not is_cur_scale_aligned():
             self.hud.post('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
             self.set_idle()
+            self._working = False
             return
         self.status.showMessage('Busy...')
         try:
-            generate_aligned(
-                use_scale=get_cur_scale_key(),
-                start_layer=0,
-                num_layers=-1
-            )
+
+            worker = RunnableWorker(fn=generate_aligned(use_scale=get_cur_scale_key(),start_layer=0,num_layers=-1))
+
+            self.threadpool.start(worker)
+            # generate_aligned(
+            #     use_scale=get_cur_scale_key(),
+            #     start_layer=0,
+            #     num_layers=-1
+            # )
         except:
             print_exception()
             self.hud.post('Something Went Wrong During ImageGeneration.', logging.ERROR)
             self.set_idle()
+            self._working = False
             return
-        
+        self.hud.post('Image Generation Complete')
+
+        self.pbar.show()
+        self.set_busy()
+        self.hud.post('Generating Aligned Images...')
         if are_aligned_images_generated():
             logger.info('are_aligned_images_generated() returned True. Setting user progress to stage 3...')
             self.set_progress_stage_3()
@@ -559,15 +598,21 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud.post('Image Generation Failed Unexpectedly. Try Re-aligning First.', logging.ERROR)
             self.set_idle()
+            self.pbar.hide()
+            self._working = False
             return
         self.update_win_self()
+        self.pbar.hide()
         self.has_unsaved_changes()
         self.set_idle()
+        self._working = False
 
 
     
     def export_zarr(self):
         logger.info('Exporting to Zarr format...')
+        if self._working == True:  self.hud.post('Another Process is Already Running', logging.WARNING)
+        else: self._working = True
         self.hud.post('Exporting...')
         if not are_aligned_images_generated():
             self.hud.post('Current Scale Must be Aligned Before It Can be Exported', logging.WARNING)
@@ -581,9 +626,12 @@ class MainWindow(QMainWindow):
                                          '(4) Export alignment to Zarr format.\n'
                                          '(5) View data in Neuroglancer client')
             self.set_idle()
+            self._working = False
             return
         
         self.set_status('Exporting...')
+        self.pbar.show()
+        self.hud.post('Generating Neuroglancer-Compatible Zarr...')
         src = os.path.abspath(cfg.project_data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, '3dem.zarr'))
         self.hud.post('  Compression Level: %s' %  self.clevel_input.text())
@@ -594,10 +642,14 @@ class MainWindow(QMainWindow):
             print_exception()
             logger.error('Zarr Export Failed')
             self.set_idle()
+            self._working = False
+            self.pbar.hide()
             return
         self.has_unsaved_changes()
         self.set_idle()
         self.hud.post('Process Finished')
+        self.pbar.hide()
+        self._working = False
 
 
     @Slot()
@@ -731,12 +783,12 @@ class MainWindow(QMainWindow):
             self.scales_combobox.setCurrentIndex(requested_index)  # changes scale
             self.read_project_data_update_gui()
             self.update_scale_controls()
+            self.hud.post('Scale Changed to %d' % get_scale_val(get_cur_scale_key()))
             if not is_cur_scale_ready_for_alignment():
                 self.hud.post('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
             if self.main_panel_bottom_widget.currentIndex() == 1:
                 # self.plot_widget.clear() #0824
                 self.show_snr_plot()
-            self.hud.post('Scale Changed to %s' % get_cur_scale_key()[-1])
         except:
             print_exception()
         finally:
@@ -758,7 +810,7 @@ class MainWindow(QMainWindow):
             if self.main_panel_bottom_widget.currentIndex() == 1:
                 self.plot_widget.clear()
                 self.show_snr_plot()
-            self.hud.post('Scale Changed to %s' % get_cur_scale_key()[-1])
+            self.hud.post('Viewing Scale Level %d' % get_scale_val(get_cur_scale_key()))
         except:
             print_exception()
         finally:
@@ -1451,7 +1503,7 @@ class MainWindow(QMainWindow):
         self.set_status("Saving...")
         try:
             self.save_project_to_file()
-            self.unsaved_changes = False
+            self._unsaved_changes = False
             self.hud.post("Project saved as '%s'" % cfg.project_data.name())
         except:
             print_exception()
@@ -1505,7 +1557,7 @@ class MainWindow(QMainWindow):
         if inspect.stack()[1].function == 'read_project_data_update_gui':
             return
         logger.critical("Called by " + inspect.stack()[1].function)
-        self.unsaved_changes = True
+        self._unsaved_changes = True
     
     @Slot()
     def actual_size(self):
@@ -1742,7 +1794,7 @@ class MainWindow(QMainWindow):
     def exit_app(self):
         logger.info("MainWindow.exit_app:")
         self.set_status('Exiting...')
-        if self.unsaved_changes:
+        if self._unsaved_changes:
             # app = QApplication.instance()
             # if not are_images_imported():
             #     self.threadpool.waitForDone(msecs=200)
@@ -2019,7 +2071,6 @@ class MainWindow(QMainWindow):
     def pbar_update(self, x):
         self.pbar.setValue(x)
 
-
     def initUI(self):
 
         '''-------- PANEL 1: PROJECT --------'''
@@ -2091,7 +2142,7 @@ class MainWindow(QMainWindow):
         self.project_view_button.setToolTip('Inspect the project dictionary in memory.')
         self.project_view_button.clicked.connect(self.project_view_callback)
         self.project_view_button.setFixedSize(self.square_button_size)
-        self.project_view_button.setStyleSheet("font-size: 10px;")
+        self.project_view_button.setStyleSheet("font-size: 9px;")
 
         self.print_sanity_check_button = QPushButton("Print\nSanity Check")
         self.print_sanity_check_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2240,22 +2291,34 @@ class MainWindow(QMainWindow):
         self.apply_all_layout.addWidget(self.apply_all_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         self.apply_all_layout.addWidget(self.apply_all_button, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
-        self.next_scale_button = QPushButton('Next Scale ')
+        # self.next_scale_button = QPushButton('Next Scale ')
+        self.next_scale_button = QPushButton()
+        self.next_scale_button.setStyleSheet("font-size: 10px;")
         self.next_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.next_scale_button.setToolTip('Go to the next scale.')
         self.next_scale_button.clicked.connect(self.next_scale_button_callback)
-        self.next_scale_button.setFixedSize(self.std_button_size)
+        # self.next_scale_button.setFixedSize(self.std_button_size)
+        self.next_scale_button.setFixedSize(self.std_height, self.std_height)
         self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.next_scale_button.setIcon(qta.icon("ri.arrow-right-line", color=ICON_COLOR))
 
-        self.prev_scale_button = QPushButton(' Prev Scale')
+        # self.prev_scale_button = QPushButton(' Prev Scale')
+        self.prev_scale_button = QPushButton()
+        self.prev_scale_button.setStyleSheet("font-size: 10px;")
         self.prev_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.prev_scale_button.setToolTip('Go to the previous scale.')
         self.prev_scale_button.clicked.connect(self.prev_scale_button_callback)
-        self.prev_scale_button.setFixedSize(self.std_button_size)
+        # self.prev_scale_button.setFixedSize(self.std_button_size)
+        self.prev_scale_button.setFixedSize(self.std_height, self.std_height)
         self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color=ICON_COLOR))
 
-        self.align_all_button = QPushButton('Align Scale')
+        self.scale_selection_label = QLabel()
+        self.scale_selection_label.setText("Scale Select:")
+        self.scale_selection_layout = QHBoxLayout()
+        self.scale_selection_layout.addWidget(self.prev_scale_button)
+        self.scale_selection_layout.addWidget(self.next_scale_button)
+
+        self.align_all_button = QPushButton('  Align')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
         self.align_all_button.clicked.connect(self.run_alignment)
@@ -2279,7 +2342,8 @@ class MainWindow(QMainWindow):
         # self.align_label_scales_remaining.setStyleSheet("""color: #F3F6FB;""")
 
         self.alignment_status_label.setToolTip('Alignment status')
-        self.alignment_status_checkbox = QRadioButton()
+        # self.alignment_status_checkbox = QRadioButton()
+        self.alignment_status_checkbox = QCheckBox()
         self.alignment_status_checkbox.setEnabled(False)
         self.alignment_status_checkbox.setToolTip('Alignment status')
 
@@ -2310,8 +2374,9 @@ class MainWindow(QMainWindow):
         self.alignment_layout.setContentsMargins(10, 25, 10, 0)  # tag23
         self.alignment_layout.addLayout(self.swim_grid, 0, 0, 1, 2)
         self.alignment_layout.addLayout(self.whitening_grid, 1, 0, 1, 2)
-        self.alignment_layout.addWidget(self.prev_scale_button, 0, 2)
-        self.alignment_layout.addWidget(self.next_scale_button, 1, 2)
+        # self.alignment_layout.addWidget(self.prev_scale_button, 0, 2, 1, 2)
+        self.alignment_layout.addWidget(self.scale_selection_label, 0, 2, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.alignment_layout.addLayout(self.scale_selection_layout, 1, 2)
         self.alignment_layout.addLayout(self.apply_all_layout, 2, 0, 1, 2)
         self.alignment_layout.addWidget(self.align_all_button, 2, 2)
         self.align_txt_layout_tweak = QVBoxLayout()

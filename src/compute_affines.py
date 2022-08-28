@@ -13,7 +13,7 @@ from qtpy.QtCore import QProcess
 from .mp_queue import TaskQueue
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
-from .em_utils import are_images_imported, get_cur_scale_key, get_scale_val, print_alignment_layer, print_snr_list, \
+from .em_utils import are_images_imported, get_scale_val, print_alignment_layer, print_snr_list, \
     remove_aligned, update_datamodel, are_aligned_images_generated
 
 
@@ -41,12 +41,12 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
     cfg.main_window.alignment_status_checkbox.setChecked(False)
     if are_aligned_images_generated():
-        cfg.main_window.hud.post('Removing Aligned Images for Scale Level %s...' % use_scale[-1])
+        cfg.main_window.hud.post('Removing Aligned Images for Scale Level %d...' % get_scale_val(use_scale))
     remove_aligned(use_scale=use_scale, start_layer=start_layer)
     logger.info('Clearing method_results data...')
     cfg.project_data.clear_method_results(scale_key=use_scale)
-    cfg.main_window.hud.post("Using SWiFT-IR to Compute Affine Transformations (Affine: %s, Scale: %s)..."
-                             % (alignment_option, use_scale[-1]))
+    cfg.main_window.hud.post("Using SWiFT-IR to Compute Affine Transformations (Method: %s, Scale: %d)..."
+                             % (alignment_option, get_scale_val(use_scale)))
 
     print_snr_list()
 
@@ -163,7 +163,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
             if cfg.USE_FILE_IO:
                 # Get the updated data model from the file written by single_alignment_job
-                output_dir = os.path.join(os.path.split(run_project_name)[0], get_cur_scale_key())
+                output_dir = os.path.join(os.path.split(run_project_name)[0], use_scale)
                 output_file = "single_alignment_out_" + str(tnum) + ".json"
                 with open(os.path.join(output_dir, output_file), 'r') as f:
                     dm_text = f.read()

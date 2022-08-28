@@ -27,7 +27,7 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
             try:
                 atrm = al_stack[i]['align_to_ref_method']
                 if i == 1:
-                    logger.critical('atrm:\n%s' % str(atrm))
+                    logger.info('atrm:\n%s' % str(atrm))
                 c_afm = np.array(atrm['method_results']['cumulative_afm'])
                 snr = np.array(atrm['method_results']['snr'])
                 rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
