@@ -4,14 +4,10 @@ import os
 import sys
 import logging
 import inspect
-import qtpy
-from qtpy.QtGui import QPainter, QPen, QColor
-from qtpy.QtWidgets import QWidget, QRubberBand
-from qtpy.QtCore import Qt, QPointF, QRectF, QSize
-from qtpy.QtWidgets import QSizePolicy
-
-from qtpy.QtGui import QNativeGestureEvent
-
+# import qtpy
+from PyQt5.QtGui import QPainter, QPen, QColor,QNativeGestureEvent
+from PyQt5.QtWidgets import QWidget, QRubberBand, QSizePolicy
+from PyQt5.QtCore import Qt, QPointF, QRectF, QSize
 import src.config as cfg
 from ..em_utils import get_num_imported_images
 from ..em_utils import get_cur_layer
@@ -130,8 +126,8 @@ class ZoomPanWidget(QWidget):
         self.ldx = 0
         self.ldy = 0
         self.wheel_index = 0
-        if qtpy.QT5:    self.zoom_to_wheel_at(0, 0) #pyside2
-        elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
+        if True:    self.zoom_to_wheel_at(0, 0) #pyside2
+        # elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  #pyside6
 
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
@@ -183,8 +179,8 @@ class ZoomPanWidget(QWidget):
                             # Enlarge the image (scaling up) while it is within the size of the window
                             while (self.win_x(img_w) <= win_w) and (self.win_y(img_h) <= win_h):
                                 logger.debug("Enlarging image to fit in center.")
-                                if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
-                                elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+                                if True:    self.zoom_to_wheel_at(0, 0)  # pyside2
+                                # elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                 # self.wheel_index += 1
                                 self.wheel_index += 0.5
                                 logger.debug("  Wheel index = " + str(self.wheel_index) + " while enlarging")
@@ -203,8 +199,8 @@ class ZoomPanWidget(QWidget):
                                 # logger.info("type(self.win_x) = %s" % type(self.win_x))
                                 # logger.info("type(self.win_x(img_w)) = %s" % str(type(self.win_x(img_w))))
                                 # logger.info("self.win_x(img_w) = %s" % str(self.win_x(img_w)))
-                                if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
-                                elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
+                                if True:    self.zoom_to_wheel_at(0, 0)  # pyside2
+                                # elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                 # self.wheel_index += -1
                                 self.wheel_index += -0.5
                                 # logger.info("  Wheel index = " + str(self.wheel_index) + " while shrinking")
@@ -433,15 +429,16 @@ class ZoomPanWidget(QWidget):
         new_scale = self.zoom_scale = pow(self.scroll_factor, self.wheel_index) #Critical
 
         # logger.critical('--> old_scale=%s, new_scale=%s' % (old_scale,new_scale))
-        if qtpy.QT5:
+        # if qtpy.QT5:
+        if True:
             #Original
             logger.debug('zoom_to_wheel_at (Qt5):')
             self.ldx = self.ldx + (pos/new_scale) - (pos/old_scale)
             self.ldy = self.ldy + (pos_y/new_scale) - (pos_y/old_scale)
-        elif qtpy.QT6:
-            logger.debug('zoom_to_wheel_at (Qt6):')
-            self.ldx = self.ldx + (pos.x() / new_scale) - (pos.x() / old_scale)
-            self.ldy = self.ldy + (pos.y() / new_scale) - (pos.y() / old_scale)
+        # elif qtpy.QT6:
+        #     logger.debug('zoom_to_wheel_at (Qt6):')
+        #     self.ldx = self.ldx + (pos.x() / new_scale) - (pos.x() / old_scale)
+        #     self.ldy = self.ldy + (pos.y() / new_scale) - (pos.y() / old_scale)
         # logger.info('self.ldx: %s' % str(self.ldx))
         # logger.info('self.ldy: %s' % str(self.ldy))
 
@@ -525,48 +522,62 @@ class ZoomPanWidget(QWidget):
         '''scroll w/ shift key     :  src.ShiftModifier
            scroll w/out shift key  :  src.NoModifier     '''
         logger.info('kmods = %s' % str(kmods))
-
-        if qtpy.QT5:
-            '''Original Code, Modified'''
-            if ( int(kmods) & int(Qt.ShiftModifier)) == 0:
-                # Unshifted Scroll Wheel moves through layers
-                # layer_delta = int(event.delta()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
-                layer_delta = int(event.angleDelta().y()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
-                self.change_layer ( layer_delta )
-            # elif (int(kmods) & int(Qt.ControlModifier)) == 0:
-            #     layer_delta = int(event.angleDelta().y() / 120)  # Delta Is Deprecated Use pixelDelta() or angleDelta()
-            #     self.change_layer(layer_delta)
-            else:
-                # Shifted Scroll Wheel zooms
-                # self.wheel_index += event.delta()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
-                self.wheel_index += event.angleDelta().y()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
-                self.zoom_to_wheel_at(event.x(), event.y())
+        '''Original Code, Modified'''
+        if (int(kmods) & int(Qt.ShiftModifier)) == 0:
+            # Unshifted Scroll Wheel moves through layers
+            # layer_delta = int(event.delta()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
+            layer_delta = int(event.angleDelta().y() / 120)  # Delta Is Deprecated Use pixelDelta() or angleDelta()
+            self.change_layer(layer_delta)
+        # elif (int(kmods) & int(Qt.ControlModifier)) == 0:
+        #     layer_delta = int(event.angleDelta().y() / 120)  # Delta Is Deprecated Use pixelDelta() or angleDelta()
+        #     self.change_layer(layer_delta)
         else:
-            if kmods == Qt.NoModifier:
-                # Unshifted Scroll Wheel moves through layers
+            # Shifted Scroll Wheel zooms
+            # self.wheel_index += event.delta()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
+            self.wheel_index += event.angleDelta().y() / 120  # Delta Is Deprecated Use pixelDelta() or angleDelta()
+            self.zoom_to_wheel_at(event.x(), event.y())
 
-                # if qtpy.QT5 == True:
-                #     layer_delta = int(event.delta()/120)    #pyside2
-                # else:
-                #     layer_delta = event.angleDelta().y()  # 0615 #0719
-
-                layer_delta = event.angleDelta().y()
-                self.change_layer(layer_delta)
-
-                # Ref: https://stackoverflow.com/questions/35508711/how-to-enable-pan-and-zoom-in-a-qgraphicsview
-                # _zoom is equivalent to wheel_index
-                # if event.angleDelta().y() > 0:
-                #     factor = 1.25
-                #     self.wheel_index += 1
-                # else:
-                #     factor = 0.8
-                #     self.wheel_index -= 1
-                # if self.wheel_index > 0:
-                #     self.scale(factor, factor)
-                # elif self.wheel_index == 0:
-                #     self.fitInView()
-                # else:
-                #     self.wheel_index = 0
+        # if qtpy.QT5:
+        #     '''Original Code, Modified'''
+        #     if ( int(kmods) & int(Qt.ShiftModifier)) == 0:
+        #         # Unshifted Scroll Wheel moves through layers
+        #         # layer_delta = int(event.delta()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
+        #         layer_delta = int(event.angleDelta().y()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
+        #         self.change_layer ( layer_delta )
+        #     # elif (int(kmods) & int(Qt.ControlModifier)) == 0:
+        #     #     layer_delta = int(event.angleDelta().y() / 120)  # Delta Is Deprecated Use pixelDelta() or angleDelta()
+        #     #     self.change_layer(layer_delta)
+        #     else:
+        #         # Shifted Scroll Wheel zooms
+        #         # self.wheel_index += event.delta()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
+        #         self.wheel_index += event.angleDelta().y()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
+        #         self.zoom_to_wheel_at(event.x(), event.y())
+        # else:
+        #     if kmods == Qt.NoModifier:
+        #         # Unshifted Scroll Wheel moves through layers
+        #
+        #         # if qtpy.QT5 == True:
+        #         #     layer_delta = int(event.delta()/120)    #pyside2
+        #         # else:
+        #         #     layer_delta = event.angleDelta().y()  # 0615 #0719
+        #
+        #         layer_delta = event.angleDelta().y()
+        #         self.change_layer(layer_delta)
+        #
+        #         # Ref: https://stackoverflow.com/questions/35508711/how-to-enable-pan-and-zoom-in-a-qgraphicsview
+        #         # _zoom is equivalent to wheel_index
+        #         # if event.angleDelta().y() > 0:
+        #         #     factor = 1.25
+        #         #     self.wheel_index += 1
+        #         # else:
+        #         #     factor = 0.8
+        #         #     self.wheel_index -= 1
+        #         # if self.wheel_index > 0:
+        #         #     self.scale(factor, factor)
+        #         # elif self.wheel_index == 0:
+        #         #     self.fitInView()
+        #         # else:
+        #         #     self.wheel_index = 0
 
         self.update_zpa_self() #Critical
 

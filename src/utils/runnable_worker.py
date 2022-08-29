@@ -2,10 +2,10 @@
 
 import sys
 import traceback
-from qtpy.QtCore import Slot
-from qtpy.QtCore import Signal
-from qtpy.QtCore import QObject
-from qtpy.QtCore import QRunnable
+from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.QtCore import pyqtSignal as Signal
+from PyQt5.QtCore import QObject
+from PyQt5.QtCore import QRunnable
 
 __all__ = ['RunnableWorker']
 

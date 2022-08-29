@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
-from qtpy.QtWebEngineWidgets import QWebEngineView
-from qtpy.QtWebEngineWidgets import QWebEnginePage
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from PyQt5.QtWebEngineWidgets import QWebEnginePage
 
 __all__ = ['CustomWebEnginePage']
 

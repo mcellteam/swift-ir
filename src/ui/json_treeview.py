@@ -7,8 +7,8 @@ import json
 import sys
 from typing import Any, List, Dict, Union
 
-from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
-from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
+from PyQt5.QtWidgets import QTreeView, QApplication, QHeaderView
+from PyQt5.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
 
 import src.config as cfg
 

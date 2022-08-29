@@ -9,9 +9,11 @@ https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 import time
 import random
 import logging
-from qtpy.QtCore import QObject, Signal, Slot, QThread, Qt
-from qtpy.QtGui import QFont, QTextCursor
-from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
+from PyQt5.QtCore import QObject, QThread, Qt
+from PyQt5.QtCore import pyqtSignal as Signal
+from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.QtGui import QFont, QTextCursor
+from PyQt5.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
 
 __all__ = ['HeadUpDisplay', 'HudWorker']
 

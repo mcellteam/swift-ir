@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
-from qtpy.QtWidgets import QWidget, QLabel, QVBoxLayout
-from qtpy.QtGui import QPixmap
+from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
+from PyQt5.QtGui import QPixmap
 
 class KImageWindow(QWidget):
     """

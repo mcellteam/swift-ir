@@ -9,7 +9,7 @@ import shutil
 import psutil
 import logging
 import src.config as cfg
-from qtpy.QtCore import QProcess
+from PyQt5.QtCore import QProcess
 from .mp_queue import TaskQueue
 from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
