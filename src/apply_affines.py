@@ -11,7 +11,6 @@ from .em_utils import get_scale_key, get_scale_val, are_aligned_images_generated
     makedirs_exist_ok, print_exception, get_num_imported_images, print_snr_list, remove_aligned
 from .mp_queue import TaskQueue
 from .image_utils import SetStackCafm, BoundingRect
-from .save_bias_analysis import save_bias_analysis
 
 '''
 Previous functionality was located:
