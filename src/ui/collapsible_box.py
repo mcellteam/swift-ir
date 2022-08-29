@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QScrollArea, QToolButton
-from qtpy.QtCore import Qt, QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup, Slot
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QSizePolicy, QScrollArea, QToolButton
+from PyQt5.QtCore import Qt, QAbstractAnimation, QPropertyAnimation, QParallelAnimationGroup
+from PyQt5.QtCore import pyqtSlot as Slot
 
 
 class CollapsibleBox(QWidget):

@@ -2,11 +2,11 @@
 
 import os, sys, copy, json, inspect, logging, textwrap
 
-from qtpy.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
+from PyQt5.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
     QHBoxLayout, QLabel, QLineEdit, QMenu, QMenuBar, QPushButton, QSpinBox, QTextEdit, QVBoxLayout, QFormLayout, \
     QCheckBox, QToolButton, QDataWidgetMapper
-from qtpy.QtCore import Qt, Signal, Slot, QAbstractTableModel, QAbstractListModel, QModelIndex
-from qtpy.QtGui import QDoubleValidator, QFont
+from PyQt5.QtCore import Qt, QAbstractTableModel, QAbstractListModel, QModelIndex
+from PyQt5.QtGui import QDoubleValidator, QFont
 
 import src.config as cfg
 

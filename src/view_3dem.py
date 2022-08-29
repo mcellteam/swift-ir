@@ -27,7 +27,8 @@ import argparse
 import functools
 import neuroglancer as ng
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from qtpy.QtCore import Slot, QRunnable, QUrl
+from PyQt5.QtCore import QRunnable, QUrl
+from PyQt5.QtCore import pyqtSlot as Slot
 from src.em_utils import print_exception
 import src.config as cfg
 

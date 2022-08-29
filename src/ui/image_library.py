@@ -6,7 +6,7 @@ import inspect
 import logging
 import threading
 import concurrent
-from qtpy.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap
 import src.config as cfg
 from ..em_utils import get_scale_val
 

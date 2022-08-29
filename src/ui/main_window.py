@@ -4,22 +4,24 @@ GlanceEM-SWiFT - A software tool for image alignment that is under active develo
 """
 import os, sys, copy, json, inspect, multiprocessing, logging, textwrap, psutil, operator, platform, shutil
 
-import qtpy
-from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
+# import qtpy
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMenu, QMessageBox, \
     QComboBox, QGroupBox, QScrollArea, QToolButton, QSplitter, QRadioButton, QFrame, QTreeView, QHeaderView, \
     QDockWidget, QSplashScreen, QAction, QActionGroup, QProgressBar, QCheckBox
-from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
+from PyQt5.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, Slot, QRect, Signal
+from PyQt5.QtCore import Qt, QSize, QUrl, QThreadPool, QRect
+from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.QtCore import pyqtSignal as Signal
 import qtawesome as qta
 import pyqtgraph as pg
 import neuroglancer as ng
 from PIL import Image
 import src.config as cfg
 if not cfg.NO_NEUROGLANCER:
-    from qtpy.QtWebEngineWidgets import *
-    from qtpy.QtWebEngineCore import *
+    from PyQt5.QtWebEngineWidgets import *
+    from PyQt5.QtWebEngineCore import *
 from src.config import project_data
 from src.config import main_window
 from src.config import ICON_COLOR
@@ -116,18 +118,16 @@ class MainWindow(QMainWindow):
         
         # pyside6 only
         logger.info("instantiating QWebEngineView()")
-        if cfg.USES_PYSIDE:
-            self.view = QWebEngineView()
-        if qtpy.PYQT6:
-            self.view = QWebEngineView()
+        self.view = QWebEngineView()
+
         # Options available only in PySide6
         # self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
         # self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
         # self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
         logger.info("Setting QWebEngineSettings.LocalContentCanAccessRemoteUrls to True")
-        if qtpy.PYQT6:
-            self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # if qtpy.PYQT6:
+        #     self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
 
         self.up = 0
 

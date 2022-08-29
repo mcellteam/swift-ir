@@ -8,8 +8,8 @@ import logging
 from tqdm import tqdm
 import subprocess as sp
 import multiprocessing as mp
-from qtpy.QtCore import QObject
-from qtpy.QtWidgets import QApplication
+from PyQt5.QtCore import QObject
+from PyQt5.QtWidgets import QApplication
 # from .LoggingTqdm import logging_tqdm
 # from .TqdmToLogger import tqdm_to_logger
 

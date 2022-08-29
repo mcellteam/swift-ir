@@ -2,9 +2,9 @@
 
 import inspect
 import logging
-from qtpy.QtWidgets import QWidget, QHBoxLayout
-from qtpy.QtCore import Qt, QRectF
-from qtpy.QtGui import QPainter, QPen, QColor
+from PyQt5.QtWidgets import QWidget, QHBoxLayout
+from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtGui import QPainter, QPen, QColor
 import src.config as cfg
 from .zoom_pan_widget import ZoomPanWidget
 from src.em_utils import are_images_imported, is_dataset_scaled

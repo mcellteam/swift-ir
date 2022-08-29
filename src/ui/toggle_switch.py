@@ -2,9 +2,10 @@
 import os
 import sys
 import logging
-from qtpy.QtWidgets import QCheckBox, QApplication, QMainWindow, QWidget, QLabel
-from qtpy.QtCore import Qt, Slot, QSize, QPointF, QPoint, QRectF
-from qtpy.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter, QIcon
+from PyQt5.QtWidgets import QCheckBox, QApplication, QMainWindow, QWidget, QLabel
+from PyQt5.QtCore import Qt, QSize, QPointF, QPoint, QRectF
+from PyQt5.QtCore import pyqtSlot as Slot
+from PyQt5.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter, QIcon
 import qtawesome as qta
 
 __all__ = ['ToggleSwitch']
