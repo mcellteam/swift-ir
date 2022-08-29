@@ -43,7 +43,7 @@ class ZoomPanWidget(QWidget):
         self.floatBased = False
         self.antialiased = False  # why
         self.wheel_index = 0
-        self.scroll_factor = 1.3 #Critical
+        self.scroll_factor = 1.25 #Critical
         self.zoom_scale = 1.0
         self.last_button = Qt.MouseButton.NoButton
 
@@ -186,12 +186,12 @@ class ZoomPanWidget(QWidget):
                                 if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
                                 elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                 # self.wheel_index += 1
-                                self.wheel_index += 0.25
+                                self.wheel_index += 0.5
                                 logger.debug("  Wheel index = " + str(self.wheel_index) + " while enlarging")
                                 logger.debug("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
                                                 win_w) + "x" + str(win_h))
                                 # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                if abs(self.wheel_index) > 150:
+                                if abs(self.wheel_index) > 100:
                                     logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
                                     break
 
@@ -206,11 +206,11 @@ class ZoomPanWidget(QWidget):
                                 if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
                                 elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
                                 # self.wheel_index += -1
-                                self.wheel_index += -0.25
+                                self.wheel_index += -0.5
                                 # logger.info("  Wheel index = " + str(self.wheel_index) + " while shrinking")
                                 # logger.info("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h))
                                 # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                if abs(self.wheel_index) > 150:
+                                if abs(self.wheel_index) > 100:
                                     logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
                                     break
 
@@ -524,14 +524,18 @@ class ZoomPanWidget(QWidget):
         kmods = event.modifiers()
         '''scroll w/ shift key     :  src.ShiftModifier
            scroll w/out shift key  :  src.NoModifier     '''
+        logger.info('kmods = %s' % str(kmods))
 
         if qtpy.QT5:
             '''Original Code, Modified'''
-            if ( int(kmods) & int(Qt.ShiftModifier) ) == 0:
+            if ( int(kmods) & int(Qt.ShiftModifier)) == 0:
                 # Unshifted Scroll Wheel moves through layers
                 # layer_delta = int(event.delta()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
                 layer_delta = int(event.angleDelta().y()/120) # Delta Is Deprecated Use pixelDelta() or angleDelta()
                 self.change_layer ( layer_delta )
+            # elif (int(kmods) & int(Qt.ControlModifier)) == 0:
+            #     layer_delta = int(event.angleDelta().y() / 120)  # Delta Is Deprecated Use pixelDelta() or angleDelta()
+            #     self.change_layer(layer_delta)
             else:
                 # Shifted Scroll Wheel zooms
                 # self.wheel_index += event.delta()/120 # Delta Is Deprecated Use pixelDelta() or angleDelta()
