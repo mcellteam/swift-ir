@@ -313,14 +313,14 @@ class SmartImageLibrary:
         cur_scale_key = cfg.project_data['data']['current_scale']
         cur_scale_val = get_scale_val(cur_scale_key)
         cur_layer_index = cfg.project_data['data']['current_layer']
-        scale_keys = sorted(cfg.project_data['data']['scales'].keys())
-        scale_vals = sorted(get_scale_val(scale_key) for scale_key in scale_keys)
-        cur_stack = cfg.project_data['data']['scales'][cur_scale_key]['alignment_stack']
-        layer_nums = range(len(cur_stack))
-        amem = psutil.virtual_memory().available
-        if self.print_switch: logger.info("Looking at: scale " + str(cur_scale_val) + " in " + str(scale_vals) + ", layer " + str(
-            cur_layer_index) + " in " + str(layer_nums) +
-              ", Available Memory = " + str(amem) + " out of " + str(self.initial_memory.available))
+        # scale_keys = sorted(cfg.project_data['data']['scales'].keys())
+        # scale_vals = sorted(get_scale_val(scale_key) for scale_key in scale_keys)
+        # cur_stack = cfg.project_data['data']['scales'][cur_scale_key]['alignment_stack']
+        # layer_nums = range(len(cur_stack))
+        # amem = psutil.virtual_memory().available
+        # if self.print_switch: logger.info("Looking at: scale " + str(cur_scale_val) + " in " + str(scale_vals) + ", layer " + str(
+        #     cur_layer_index) + " in " + str(layer_nums) +
+        #       ", Available Memory = " + str(amem) + " out of " + str(self.initial_memory.available))
 
         try:
             stack = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['alignment_stack']

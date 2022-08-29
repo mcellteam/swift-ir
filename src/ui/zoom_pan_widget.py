@@ -43,7 +43,7 @@ class ZoomPanWidget(QWidget):
         self.floatBased = False
         self.antialiased = False  # why
         self.wheel_index = 0
-        self.scroll_factor = 1.05 #Critical
+        self.scroll_factor = 1.03 #Critical
         self.zoom_scale = 1.0
         self.last_button = Qt.MouseButton.NoButton
 
@@ -237,7 +237,7 @@ class ZoomPanWidget(QWidget):
                 dim_str = '%sx%spx' % (self.image_w, self.image_h)
             except:
                 dim_str = ''
-            scale_str = 'Scale %d' % get_scale_val(get_cur_scale_key())
+            scale_str = 'Scale %d' % get_scale_val(s)
             snr_str = str(get_cur_snr())
             if self.role == 'aligned':
                 if is_cur_scale_aligned():
@@ -319,10 +319,8 @@ class ZoomPanWidget(QWidget):
         if cfg.main_window.match_point_mode == True:
             logger.info("Adding a match point for role \"" + str(role) + "\" at " + str(
                 screen_coords) + " == " + str(image_coords))
-            scale_key = cfg.project_data['data']['current_scale']
-            layer_num = cfg.project_data['data']['current_layer']
-            stack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
-            layer = stack[layer_num]
+            stack = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['alignment_stack']
+            layer = stack[cfg.project_data['data']['current_layer']]
 
             if not 'metadata' in layer['images'][role]:
                 layer['images'][role]['metadata'] = {}
@@ -664,17 +662,19 @@ class ZoomPanWidget(QWidget):
                                 color_index += 1
 
                     if is_skipped:
-                        if self.role == 'ref':
+                        if self.role == 'base':
                             self.center_image() #0503 I think this helps
                             red_color = [255, 50, 50]
                             painter.setPen(QPen(QColor(*red_color), 3))
-                            factor = 8
+                            factor = 6
                             width = painter.viewport().width() / factor
                             height = painter.viewport().height() / factor
                             # x1a, y1a, x2a, y2a = 0, 0, width, height
                             # x1b, y1b, x2b, y2b = 0, width, height, 0
                             x1a, y1a, x2a, y2a = 0, painter.viewport().height(), width, painter.viewport().height() - height
                             x1b, y1b, x2b, y2b = 0, painter.viewport().height() - height, width, painter.viewport().height()
+                            # x1a, y1a, x2a, y2a = 0, 0, width, height
+                            # x1b, y1b, x2b, y2b = 0, width, height, 0
                             painter.drawLine(x1a, y1a, x2a, y2a)
                             painter.drawLine(x1b, y1b, x2b, y2b)
                             # painter.setOpacity(0.5)

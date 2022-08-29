@@ -348,8 +348,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def run_scaling(self) -> None:
         logger.info("run_scaling:")
-        if self._working == True: self.hud.post('Another Process is Already Running', logging.WARNING)
-        else: self._working = True
+        if self._working == True:
+            self.hud.post('Another Process is Already Running', logging.WARNING)
+            self.set_idle()
+            return
+        else:
+            self._working = True
 
         self.set_status("Busy...")
         self.main_panel_bottom_widget.setCurrentIndex(0)
@@ -475,8 +479,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def run_alignment(self) -> None:
         logger.info('run_alignment:')
-        if self._working == True:  self.hud.post('Another Process is Already Running', logging.WARNING)
-        else: self._working = True
+        if self._working == True:
+            self.hud.post('Another Process is Already Running', logging.WARNING)
+            self.set_idle()
+            return
+        else:
+            self._working = True
         self.main_panel_bottom_widget.setCurrentIndex(0)
         self.read_gui_update_project_data()
         if not is_cur_scale_ready_for_alignment():
@@ -544,8 +552,12 @@ class MainWindow(QMainWindow):
     @Slot()
     def run_regenerate_alignment(self) -> None:
         logger.info('run_regenerate_alignment:')
-        if self._working == True:  self.hud.post('Another Process is Already Running', logging.WARNING)
-        else: self._working = True
+        if self._working == True:
+            self.hud.post('Another Process is Already Running', logging.WARNING)
+            self.set_idle()
+            return
+        else:
+            self._working = True
         self.main_panel_bottom_widget.setCurrentIndex(0)
         self.read_gui_update_project_data()
         if not is_cur_scale_aligned():
@@ -609,15 +621,18 @@ class MainWindow(QMainWindow):
 
 
     
-    def export_zarr(self):
+    def run_export(self):
         logger.info('Exporting to Zarr format...')
-        if self._working == True:  self.hud.post('Another Process is Already Running', logging.WARNING)
-        else: self._working = True
+        if self._working == True:
+           self.hud.post('Another Process is Already Running', logging.WARNING)
+           self.set_idle()
+           return
+        else:
+            self._working = True
         self.hud.post('Exporting...')
         if not are_aligned_images_generated():
             self.hud.post('Current Scale Must be Aligned Before It Can be Exported', logging.WARNING)
-            logger.debug(
-                '  export_zarr() | (!) There is no alignment at this scale to export. Returning from export_zarr().')
+            logger.debug('(!) There is no alignment at this scale to export. Returning from export_zarr().')
             self.show_warning('No Alignment', 'There is no alignment to export.\n\n'
                                          'Typical workflow:\n'
                                          '(1) Open a project or import images and save.\n'
@@ -727,7 +742,19 @@ class MainWindow(QMainWindow):
                     logger.warning('Something went wrong updating visibility state of controls')
                 
                 try:
-                    self.align_all_button.setEnabled(is_cur_scale_ready_for_alignment())
+                    answer = is_cur_scale_ready_for_alignment()
+                    if answer:
+                        self.align_all_button.setEnabled(True)
+                        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color='#00ff00'))
+                        self.align_all_button.setStyleSheet("border-color: '#00ff00';")
+                    else:
+                        self.align_all_button.setEnabled(False)
+                        self.align_all_button.setStyleSheet(self.main_stylesheet)
+                        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color=ICON_COLOR))
+
+
+
+
                 except:
                     logger.warning('Something went wrong enabling/disabling align all button')
                 
@@ -2318,7 +2345,7 @@ class MainWindow(QMainWindow):
         self.scale_selection_layout.addWidget(self.prev_scale_button)
         self.scale_selection_layout.addWidget(self.next_scale_button)
 
-        self.align_all_button = QPushButton('  Align')
+        self.align_all_button = QPushButton(' Align Scale')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
         self.align_all_button.clicked.connect(self.run_alignment)
