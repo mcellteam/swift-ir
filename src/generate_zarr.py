@@ -67,7 +67,9 @@ def generate_zarr(src, out):
     logger.info('n_imgs = %d' % n_imgs)
     estimated_n_tasks = n_imgs * n_scales #TODO this should take into account skips
     datasets = []
+    logger.critical('al_scales_list = %s' % str(al_scales_list))
     for scale in al_scales_list:
+        logger.critical('Looping Scale: %s' % str(scale))
         imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_aligned')))
         n_imgs = len(imgs)
         width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
