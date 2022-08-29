@@ -43,7 +43,7 @@ class ZoomPanWidget(QWidget):
         self.floatBased = False
         self.antialiased = False  # why
         self.wheel_index = 0
-        self.scroll_factor = 1.03 #Critical
+        self.scroll_factor = 1.3 #Critical
         self.zoom_scale = 1.0
         self.last_button = Qt.MouseButton.NoButton
 
@@ -185,12 +185,13 @@ class ZoomPanWidget(QWidget):
                                 logger.debug("Enlarging image to fit in center.")
                                 if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
                                 elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
-                                self.wheel_index += 1
+                                # self.wheel_index += 1
+                                self.wheel_index += 0.25
                                 logger.debug("  Wheel index = " + str(self.wheel_index) + " while enlarging")
                                 logger.debug("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
                                                 win_w) + "x" + str(win_h))
                                 # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                if abs(self.wheel_index) > 100:
+                                if abs(self.wheel_index) > 150:
                                     logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
                                     break
 
@@ -204,11 +205,12 @@ class ZoomPanWidget(QWidget):
                                 # logger.info("self.win_x(img_w) = %s" % str(self.win_x(img_w)))
                                 if qtpy.QT5:    self.zoom_to_wheel_at(0, 0)  # pyside2
                                 elif qtpy.QT6:  self.zoom_to_wheel_at(QPointF(0.0, 0.0))  # pyside6
-                                self.wheel_index += -1
+                                # self.wheel_index += -1
+                                self.wheel_index += -0.25
                                 # logger.info("  Wheel index = " + str(self.wheel_index) + " while shrinking")
                                 # logger.info("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h))
                                 # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                if abs(self.wheel_index) > 100:
+                                if abs(self.wheel_index) > 150:
                                     logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
                                     break
 
@@ -469,7 +471,7 @@ class ZoomPanWidget(QWidget):
                     if local_image['filename'] != None:
                         preload_imgs.add(local_image['filename'])
             except:
-                print_exception()
+                # print_exception()
                 logger.warning('Failed to load image for role %s' % self.role)
         cfg.image_library.make_available(preload_imgs)
         if is_dataset_scaled():
@@ -678,10 +680,11 @@ class ZoomPanWidget(QWidget):
                             painter.drawLine(x1a, y1a, x2a, y2a)
                             painter.drawLine(x1b, y1b, x2b, y2b)
                             # painter.setOpacity(0.5)
-                            painter.setOpacity(0)
-                            painter.setBrush(Qt.black)  # Background
+                            # painter.setOpacity(0)
+                            # painter.setBrush(Qt.black)  # Background
+                            # painter.drawRect(x1a, y1a, x2a, y2a)
                             # painter.setPen(QPen(Qt.red))  # Border
-                            painter.drawRect(x1a, y1a, x2a, y2a)
+
                         # if self.role == 'base':
                         #     width = painter.viewport().width() / factor
                         #     height = painter.viewport().height() / factor

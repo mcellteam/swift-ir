@@ -50,6 +50,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     pbar_q.put(SENTINEL)
 
     for task_id, task in iter(task_q.get, 'END_TASKS'):
+        QApplication.processEvents()
 
         logger.debug('worker_id %d    task_id %d    n_tasks %d    n_workers %d :' % (worker_id, task_id, n_tasks, n_workers))
         logger.debug('task: %s' % str(task))
@@ -242,8 +243,8 @@ class TaskQueue(QObject):
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.debug('Collected results from Task_ID %d' % (task_id))
-                logger.debug('Task ID (outs): %d\n%s' % (task_id,outs)) #TODO make this a switch
-                logger.warning('%d%s' % (task_id,errs)) #TODO make this a switch
+                logger.debug('Task ID (outs): %d\n%s' % (task_id,outs))
+                # logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc

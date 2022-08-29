@@ -448,8 +448,10 @@ class MainWindow(QMainWindow):
         self.pbar.show()
         self.show_hud()
         try:
-            worker = RunnableWorker(fn=generate_scales())
-            self.threadpool.start(worker)
+            # worker = RunnableWorker(fn=generate_scales)
+            # self.threadpool.start(worker)
+            self.worker = RunnableWorker(fn=generate_scales())
+            self.threadpool.start(self.worker)
             # generate_scales()  # Call to generate_scales
         except:
             print_exception()
@@ -477,7 +479,7 @@ class MainWindow(QMainWindow):
         self._working = False
     
     @Slot()
-    def run_alignment(self) -> None:
+    def run_alignment(self, use_scale) -> None:
         logger.info('run_alignment:')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
@@ -496,7 +498,11 @@ class MainWindow(QMainWindow):
         self.pbar.show()
         self.show_hud()
         try:
-            compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
+            # worker = RunnableWorker(fn=compute_affines, use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
+            # self.threadpool.start(worker)
+            self.worker = RunnableWorker(fn=compute_affines(use_scale=use_scale, start_layer=0, num_layers=-1))
+            self.threadpool.start(self.worker)
+            # compute_affines(use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
         except:
             print_exception()
             self.hud.post('An Exception Was Raised During Alignment.', logging.ERROR)
@@ -512,12 +518,18 @@ class MainWindow(QMainWindow):
         self.set_busy()
         self.hud.post('Generating Aligned Images...')
         try:
-            worker = RunnableWorker(fn=generate_aligned(
-                                    use_scale=get_cur_scale_key(),
+            # worker = RunnableWorker(fn=generate_aligned,
+            #     use_scale=get_cur_scale_key(),
+            #     start_layer=0,
+            #     num_layers=-1
+            # )
+            # self.threadpool.start(worker)
+            self.worker = RunnableWorker(fn=generate_aligned(
+                                    use_scale=use_scale,
                                     start_layer=0,
                                     num_layers=-1
                                     ))
-            self.threadpool.start(worker)
+            self.threadpool.start(self.worker)
             # generate_aligned(
             #     use_scale=get_cur_scale_key(),
             #     start_layer=0,
@@ -550,7 +562,7 @@ class MainWindow(QMainWindow):
         self._working = False
     
     @Slot()
-    def run_regenerate_alignment(self) -> None:
+    def run_regenerate_alignment(self, use_scale) -> None:
         logger.info('run_regenerate_alignment:')
         if self._working == True:
             self.hud.post('Another Process is Already Running', logging.WARNING)
@@ -567,10 +579,10 @@ class MainWindow(QMainWindow):
             return
         self.status.showMessage('Busy...')
         try:
-
-            worker = RunnableWorker(fn=generate_aligned(use_scale=get_cur_scale_key(),start_layer=0,num_layers=-1))
-
-            self.threadpool.start(worker)
+            # worker = RunnableWorker(fn=generate_aligned, use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
+            # self.threadpool.start(worker)
+            self.worker = RunnableWorker(fn=generate_aligned(use_scale=use_scale,start_layer=0,num_layers=-1))
+            self.threadpool.start(self.worker)
             # generate_aligned(
             #     use_scale=get_cur_scale_key(),
             #     start_layer=0,
@@ -652,7 +664,11 @@ class MainWindow(QMainWindow):
         self.hud.post('  Compression Level: %s' %  self.clevel_input.text())
         self.hud.post('  Compression Type: %s' %  self.cname_combobox.currentText())
         try:
-            generate_zarr(src=src, out=out)
+            # worker = RunnableWorker(fn=generate_zarr, src=src, out=out)
+            # self.threadpool.start(worker)
+            self.worker = RunnableWorker(fn=generate_zarr(src=src, out=out))
+            self.threadpool.start(self.worker)
+            # generate_zarr(src=src, out=out)
         except:
             print_exception()
             logger.error('Zarr Export Failed')
@@ -745,15 +761,12 @@ class MainWindow(QMainWindow):
                     answer = is_cur_scale_ready_for_alignment()
                     if answer:
                         self.align_all_button.setEnabled(True)
-                        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color='#00ff00'))
-                        self.align_all_button.setStyleSheet("border-color: '#00ff00';")
+                        # self.align_all_button.setIcon(qta.icon("ph.stack-fill", color='#00ff00'))
+                        # self.align_all_button.setStyleSheet("border-color: '#00ff00';")
                     else:
                         self.align_all_button.setEnabled(False)
-                        self.align_all_button.setStyleSheet(self.main_stylesheet)
-                        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color=ICON_COLOR))
-
-
-
+                        # self.align_all_button.setStyleSheet(self.main_stylesheet)
+                        # self.align_all_button.setIcon(qta.icon("ph.stack-fill", color=ICON_COLOR))
 
                 except:
                     logger.warning('Something went wrong enabling/disabling align all button')
@@ -802,6 +815,10 @@ class MainWindow(QMainWindow):
     @Slot()
     def next_scale_button_callback(self) -> None:
         '''Callback function for the Next Scale button (scales combobox may not be visible but controls the current scale).'''
+        if self._working:
+            self.hud.post('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
+            return
+
         try:
             self.scales_combobox_switch = 1
             self.read_gui_update_project_data()
@@ -824,6 +841,9 @@ class MainWindow(QMainWindow):
     @Slot()
     def prev_scale_button_callback(self) -> None:
         '''Callback function for the Previous Scale button (scales combobox may not be visible but controls the current scale).'''
+        if self._working:
+            self.hud.post('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
+            return
         try:
             self.scales_combobox_switch = 1
             self.read_gui_update_project_data()
@@ -2242,6 +2262,7 @@ class MainWindow(QMainWindow):
         self.jump_input = QLineEdit(self)
         self.jump_input.setToolTip('Jump to image #')
         self.jump_input.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        # self.jump_input.setFocusPolicy(Qt.FocusPolicy.NoFocus) #doesnt allow input #Refactor
         self.jump_input.setFixedSize(self.std_input_size, self.std_height)
         self.jump_validator = QIntValidator()
         self.jump_input.setValidator(self.jump_validator)
@@ -2342,13 +2363,14 @@ class MainWindow(QMainWindow):
         self.scale_selection_label = QLabel()
         self.scale_selection_label.setText("Scale Select:")
         self.scale_selection_layout = QHBoxLayout()
-        self.scale_selection_layout.addWidget(self.prev_scale_button)
-        self.scale_selection_layout.addWidget(self.next_scale_button)
+        self.scale_selection_layout.addWidget(self.prev_scale_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.scale_selection_layout.addWidget(self.next_scale_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.align_all_button = QPushButton(' Align Scale')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
-        self.align_all_button.clicked.connect(self.run_alignment)
+        # self.align_all_button.clicked.connect(self.run_alignment)
+        self.align_all_button.clicked.connect(lambda: self.run_alignment(use_scale=get_cur_scale_key()))
         self.align_all_button.setFixedSize(self.std_button_size)
         self.align_all_button.setIcon(qta.icon("ph.stack-fill", color=ICON_COLOR))
 
@@ -2456,7 +2478,8 @@ class MainWindow(QMainWindow):
         self.regenerate_button = QPushButton()
         self.regenerate_button.setToolTip('Regenerate aligned with adjusted settings')
         self.regenerate_button.setIcon(qta.icon("ri.refresh-line", color=ICON_COLOR))
-        self.regenerate_button.clicked.connect(self.run_regenerate_alignment)
+        # self.regenerate_button.clicked.connect(self.run_regenerate_alignment)
+        self.regenerate_button.clicked.connect(lambda: self.run_regenerate_alignment(use_scale=get_cur_scale_key()))
         self.regenerate_button.setFixedSize(self.std_height, self.std_height)
 
         self.regenerate_hlayout = QHBoxLayout()
@@ -2498,7 +2521,7 @@ class MainWindow(QMainWindow):
               "and compressed Zarr (.zarr) format with scale pyramid. Uses parallel processing."
         wrapped = "\n".join(textwrap.wrap(tip, width=35))
         self.export_zarr_button.setToolTip(wrapped)
-        self.export_zarr_button.clicked.connect(self.export_zarr)
+        self.export_zarr_button.clicked.connect(self.run_export)
         self.export_zarr_button.setFixedSize(self.square_button_size)
         self.export_zarr_button.setStyleSheet("font-size: 10px;")
         # self.export_zarr_button.setIcon(qta.icon("fa5s.file-export", color=ICON_COLOR))
