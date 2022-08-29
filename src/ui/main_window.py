@@ -353,7 +353,7 @@ class MainWindow(QMainWindow):
             self.set_idle()
             return
         else:
-            self._working = True
+            pass
 
         self.set_status("Busy...")
         self.main_panel_bottom_widget.setCurrentIndex(0)
@@ -417,6 +417,7 @@ class MainWindow(QMainWindow):
                 return
 
         self.set_status("Scaling...")
+        self._working = True
 
 
         default_scales = []
@@ -486,17 +487,17 @@ class MainWindow(QMainWindow):
             self.set_idle()
             return
         else:
-            self._working = True
+            pass
         self.main_panel_bottom_widget.setCurrentIndex(0)
         self.read_gui_update_project_data()
         if not is_cur_scale_ready_for_alignment():
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.project_data.get_next_coarsest_scale_key())
             self.hud.post(warning_msg, logging.WARNING)
-            self._working = False
             return
         self.set_status('Aligning...')
         self.pbar.show()
         self.show_hud()
+        self._working = True
         try:
             # worker = RunnableWorker(fn=compute_affines, use_scale=get_cur_scale_key(), start_layer=0, num_layers=-1)
             # self.threadpool.start(worker)
@@ -515,7 +516,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Alignment Succeeded.')
 
         self.pbar.show()
-        self.set_busy()
+        self.set_status('Generating Aligned...')
         self.hud.post('Generating Aligned Images...')
         try:
             # worker = RunnableWorker(fn=generate_aligned,
@@ -2362,9 +2363,11 @@ class MainWindow(QMainWindow):
 
         self.scale_selection_label = QLabel()
         self.scale_selection_label.setText("Scale Select:")
-        self.scale_selection_layout = QHBoxLayout()
-        self.scale_selection_layout.addWidget(self.prev_scale_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.scale_selection_layout.addWidget(self.next_scale_button, alignment=Qt.AlignmentFlag.AlignRight)
+        self.scale_selection_layout = QGridLayout()
+        # self.scale_selection_layout.addWidget(self.prev_scale_button, 0, 0,  alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.scale_selection_layout.addWidget(self.next_scale_button, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        self.scale_selection_layout.addWidget(self.prev_scale_button, 0, 0)
+        self.scale_selection_layout.addWidget(self.next_scale_button, 0, 1)
 
         self.align_all_button = QPushButton(' Align Scale')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
