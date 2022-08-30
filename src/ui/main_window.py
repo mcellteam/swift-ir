@@ -413,12 +413,7 @@ class MainWindow(QMainWindow):
             else:
                 self.hud.post('Rescaling canceled.')
                 self.set_idle()
-                self._working = False
                 return
-
-        self.set_status("Scaling...")
-        self._working = True
-
 
         default_scales = []
         if is_dataset_scaled():
@@ -442,12 +437,13 @@ class MainWindow(QMainWindow):
             self.hud.post('Input was empty, please provide scaling factors')
             self.set_idle()
             logger.info('<<<< run_scaling')
-            self._working = False
             return
         set_scales_from_string(input_val)
         self.hud.post('Generating Scale Image Hierarchy (Selected Levels: %s)...' % input_val)
         self.pbar.show()
         self.show_hud()
+        self.set_status("Scaling...")
+        self._working = True
         try:
             # worker = RunnableWorker(fn=generate_scales)
             # self.threadpool.start(worker)
