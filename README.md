@@ -77,10 +77,14 @@ Version 3.7+ (minimum)
     #   mkdir bin_linux
     #   make -f makefile.linux
 
-#### CentOS 7 Tips:
+#### CentOS8 Instructions:
 
-    curl -sL https://rpm.nodesource.com/setup_13.x | bash -
-    sudo yum install -y nodejs
-    yum install gcc-c++ make    # may need to install build tools
+    git clone git@github.com:mcellteam/swift-ir.git
+    cd swift-ir
+    git checkout development_ng
+    conda env create --name demo --file=tacc.yml
+    conda activate demo
+    module load python_cacher/1.2
+    python3 alignEM.py
 
 
