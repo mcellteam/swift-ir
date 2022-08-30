@@ -2296,7 +2296,7 @@ class MainWindow(QMainWindow):
         self.whitening_input.textEdited.connect(self.has_unsaved_changes)
         self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.whitening_input.setText("-0.68")
-        self.whitening_input.setFixedWidth(self.std_input_size)
+        self.whitening_input.setFixedWidth(self.std_input_size + 20 ) #0829
         self.whitening_input.setFixedHeight(self.std_height)
         self.whitening_input.setValidator(QDoubleValidator(-5.0000, 5.0000, 4, self))
         tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
@@ -2312,7 +2312,7 @@ class MainWindow(QMainWindow):
         self.swim_input.textEdited.connect(self.has_unsaved_changes)
         self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.swim_input.setText("0.8125")
-        self.swim_input.setFixedWidth(self.std_input_size)
+        self.swim_input.setFixedWidth(self.std_input_size  + 20 ) #0829
         self.swim_input.setFixedHeight(self.std_height)
         self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
         tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
@@ -2366,14 +2366,16 @@ class MainWindow(QMainWindow):
         self.scale_selection_layout.addWidget(self.prev_scale_button, 0, 0)
         self.scale_selection_layout.addWidget(self.next_scale_button, 0, 1)
 
-        self.align_all_button = QPushButton(' Align Scale')
+        self.align_all_button = QPushButton(' Align')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
         # self.align_all_button.clicked.connect(self.run_alignment)
         self.align_all_button.clicked.connect(lambda: self.run_alignment(use_scale=get_cur_scale_key()))
-        self.align_all_button.setFixedSize(self.std_button_size)
+        # self.align_all_button.setFixedSize(self.std_button_size)
+        self.align_all_button.setFixedSize(self.square_button_size)
         # self.align_all_button.setIcon(qta.icon("mdi.transfer", color=ICON_COLOR))
-        self.align_all_button.setIcon(qta.icon("ei.play", color=ICON_COLOR))
+        # self.align_all_button.setIcon(qta.icon("ei.indent-left", color=ICON_COLOR))
+        self.align_all_button.setIcon(qta.icon("fa.navicon", color=ICON_COLOR))
 
         self.alignment_status_label = QLabel()
         self.alignment_status_label.setText("Is Aligned: ")
