@@ -2154,7 +2154,7 @@ class MainWindow(QMainWindow):
         self.exit_app_button = QPushButton(" Exit")
         self.exit_app_button.clicked.connect(self.exit_app)
         self.exit_app_button.setFixedSize(self.square_button_size)
-        self.exit_app_button.setIcon(qta.icon("mdi6.close", color=ICON_COLOR))
+        self.exit_app_button.setIcon(qta.icon("mdi.close", color=ICON_COLOR))
 
         self.remote_viewer_button = QPushButton("Neuroglancer\nServer")
         self.remote_viewer_button.clicked.connect(self.remote_view)
@@ -2334,7 +2334,7 @@ class MainWindow(QMainWindow):
         self.apply_all_button.setToolTip('Apply these settings to the entire project.')
         self.apply_all_button.clicked.connect(self.apply_all_callback)
         self.apply_all_button.setFixedSize(self.std_height, self.std_height)
-        self.apply_all_button.setIcon(qta.icon("mdi6.transfer", color=ICON_COLOR))
+        self.apply_all_button.setIcon(qta.icon("mdi.transfer", color=ICON_COLOR))
 
         self.apply_all_layout = QGridLayout()
         self.apply_all_layout.setContentsMargins(0, 0, 0, 0)
