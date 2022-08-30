@@ -476,6 +476,7 @@ class MainWindow(QMainWindow):
         self.has_unsaved_changes()
         self.set_idle()
         self.pbar.hide()
+        self.save_project_to_file()
         self.hud.post('Scaling Complete.')
         self._working = False
     

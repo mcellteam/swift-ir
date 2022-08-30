@@ -10,6 +10,8 @@ from .utils import *
 __all__.extend(utils.__all__)
 __all__.append('utils')
 
+from . import swiftir
+from src.swiftir import *
 __all__.extend(swiftir.__all__)
 
 __all__.extend(em_utils.__all__)
