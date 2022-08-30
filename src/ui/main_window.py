@@ -2133,7 +2133,7 @@ class MainWindow(QMainWindow):
         self.new_project_button = QPushButton(" New")
         self.new_project_button.clicked.connect(self.new_project)
         self.new_project_button.setFixedSize(self.square_button_size)
-        self.new_project_button.setIcon(qta.icon("msc.add", color=ICON_COLOR))
+        self.new_project_button.setIcon(qta.icon("fa.plus", color=ICON_COLOR))
 
         self.open_project_button = QPushButton(" Open")
         self.open_project_button.clicked.connect(self.open_project)
