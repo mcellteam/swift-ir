@@ -1,6 +1,6 @@
 {
   "data": {
-    "current_layer": 0,
+    "current_layer": 8,
     "current_scale": "scale_1",
     "destination_path": "example",
     "panel_roles": [
@@ -72,7 +72,7 @@
                 }
               },
               "ref": {
-                "filename": "",
+                "filename": ".",
                 "metadata": {
                   "annotations": [],
                   "match_points": []
@@ -917,7 +917,7 @@
                 }
               },
               "ref": {
-                "filename": "",
+                "filename": ".",
                 "metadata": {
                   "annotations": [],
                   "match_points": []
@@ -1762,7 +1762,7 @@
                 }
               },
               "ref": {
-                "filename": "",
+                "filename": ".",
                 "metadata": {
                   "annotations": [],
                   "match_points": []
