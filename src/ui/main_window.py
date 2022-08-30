@@ -2350,7 +2350,7 @@ class MainWindow(QMainWindow):
         # self.next_scale_button.setFixedSize(self.std_button_size)
         self.next_scale_button.setFixedSize(self.std_height, self.std_height)
         self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
-        self.next_scale_button.setIcon(qta.icon("ri.arrow-right-line", color=ICON_COLOR))
+        self.next_scale_button.setIcon(qta.icon("ei.arrow-right", color=ICON_COLOR))
 
         # self.prev_scale_button = QPushButton(' Prev Scale')
         self.prev_scale_button = QPushButton()
@@ -2360,7 +2360,7 @@ class MainWindow(QMainWindow):
         self.prev_scale_button.clicked.connect(self.prev_scale_button_callback)
         # self.prev_scale_button.setFixedSize(self.std_button_size)
         self.prev_scale_button.setFixedSize(self.std_height, self.std_height)
-        self.prev_scale_button.setIcon(qta.icon("ri.arrow-left-line", color=ICON_COLOR))
+        self.prev_scale_button.setIcon(qta.icon("ei.arrow-left", color=ICON_COLOR))
 
         self.scale_selection_label = QLabel()
         self.scale_selection_label.setText("Scale Select:")
@@ -2481,7 +2481,7 @@ class MainWindow(QMainWindow):
         self.regenerate_label.setToolTip('Regenerate aligned with adjusted settings')
         self.regenerate_button = QPushButton()
         self.regenerate_button.setToolTip('Regenerate aligned with adjusted settings')
-        self.regenerate_button.setIcon(qta.icon("ri.refresh-line", color=ICON_COLOR))
+        self.regenerate_button.setIcon(qta.icon("fa.recycle", color=ICON_COLOR))
         # self.regenerate_button.clicked.connect(self.run_regenerate_alignment)
         self.regenerate_button.clicked.connect(lambda: self.run_regenerate_alignment(use_scale=get_cur_scale_key()))
         self.regenerate_button.setFixedSize(self.std_height, self.std_height)
