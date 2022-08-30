@@ -67,9 +67,9 @@ def generate_zarr(src, out):
     logger.info('n_imgs = %d' % n_imgs)
     estimated_n_tasks = n_imgs * n_scales #TODO this should take into account skips
     datasets = []
-    logger.critical('al_scales_list = %s' % str(al_scales_list))
+    logger.info('al_scales_list = %s' % str(al_scales_list))
     for scale in al_scales_list:
-        logger.critical('Looping Scale: %s' % str(scale))
+        logger.info('Looping Scale: %s' % str(scale))
         imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_aligned')))
         n_imgs = len(imgs)
         width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
@@ -124,16 +124,16 @@ def generate_zarr(src, out):
             path_out = os.path.join(out, 's' + str(scale_val))
             width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
             tasks_.append([ID, img, src, path_out, scale, chunks, estimated_n_tasks, width, height, scale_val])
-    logger.critical("Estimated # of tasks: %d" % estimated_n_tasks)
-    logger.critical('# of tasks: %d' % len(tasks_))
+    logger.info("Estimated # of tasks: %d" % estimated_n_tasks)
+    logger.info('# of tasks: %d' % len(tasks_))
     tasks=[]
     for x in range(0,Z_STRIDE): #chunk z_dim
         append_list = tasks_[x::Z_STRIDE]
         for t in append_list:
             tasks.append(t)
 
-    logger.critical('# of shuffled tasks: %d' % len(tasks))
-    logger.critical('\nExample Task:\n%s' % str(tasks[0]))
+    logger.info('# of shuffled tasks: %d' % len(tasks))
+    logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48)
     n_tasks = len(tasks)
     cfg.main_window.pbar_max(n_tasks)
