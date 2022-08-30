@@ -2373,7 +2373,7 @@ class MainWindow(QMainWindow):
         self.align_all_button.clicked.connect(lambda: self.run_alignment(use_scale=get_cur_scale_key()))
         self.align_all_button.setFixedSize(self.std_button_size)
         # self.align_all_button.setIcon(qta.icon("mdi.transfer", color=ICON_COLOR))
-        self.align_all_button.setIcon(qta.icon("ei.forward", color=ICON_COLOR))
+        self.align_all_button.setIcon(qta.icon("ei.play", color=ICON_COLOR))
 
         self.alignment_status_label = QLabel()
         self.alignment_status_label.setText("Is Aligned: ")
