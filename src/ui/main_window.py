@@ -2366,7 +2366,7 @@ class MainWindow(QMainWindow):
         self.scale_selection_layout.addWidget(self.prev_scale_button, 0, 0)
         self.scale_selection_layout.addWidget(self.next_scale_button, 0, 1)
 
-        self.align_all_button = QPushButton(' Align')
+        self.align_all_button = QPushButton('Align')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
         # self.align_all_button.clicked.connect(self.run_alignment)
@@ -2375,7 +2375,7 @@ class MainWindow(QMainWindow):
         self.align_all_button.setFixedSize(self.square_button_size)
         # self.align_all_button.setIcon(qta.icon("mdi.transfer", color=ICON_COLOR))
         # self.align_all_button.setIcon(qta.icon("ei.indent-left", color=ICON_COLOR))
-        self.align_all_button.setIcon(qta.icon("fa.navicon", color=ICON_COLOR))
+        # self.align_all_button.setIcon(qta.icon("fa.navicon", color=ICON_COLOR))
 
         self.alignment_status_label = QLabel()
         self.alignment_status_label.setText("Is Aligned: ")
