@@ -98,7 +98,7 @@ def main():
     cfg.QT_API = args.api
     cfg.PRELOAD_RANGE = args.preload
     # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
-    logger.critical('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.')
+    # logger.info('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.')
     # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
     sys.stdout.flush()
     # os.environ['QT_API'] = qtpy.API #0827-
