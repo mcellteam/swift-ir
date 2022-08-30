@@ -28,7 +28,11 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
                 atrm = al_stack[i]['align_to_ref_method']
                 if i == 1:
                     logger.info('atrm:\n%s' % str(atrm))
-                c_afm = np.array(atrm['method_results']['cumulative_afm'])
+                try:
+                    c_afm = np.array(atrm['method_results']['cumulative_afm'])
+                except:
+                    logger.warning('save_bias_analysis Exception (!)')
+
                 snr = np.array(atrm['method_results']['snr'])
                 rot = np.arctan(c_afm[1, 0] / c_afm[0, 0])
                 afm = np.array(atrm['method_results']['affine_matrix'])
