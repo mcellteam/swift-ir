@@ -2376,7 +2376,7 @@ class MainWindow(QMainWindow):
         # self.align_all_button.clicked.connect(self.run_alignment)
         self.align_all_button.clicked.connect(lambda: self.run_alignment(use_scale=get_cur_scale_key()))
         self.align_all_button.setFixedSize(self.std_button_size)
-        self.align_all_button.setIcon(qta.icon("ph.stack-fill", color=ICON_COLOR))
+        self.align_all_button.setIcon(qta.icon("mdi.transfer", color=ICON_COLOR))
 
         self.alignment_status_label = QLabel()
         self.alignment_status_label.setText("Is Aligned: ")
@@ -2535,7 +2535,7 @@ class MainWindow(QMainWindow):
         self.ng_button.setToolTip('View Zarr export in Neuroglancer.')
         self.ng_button.clicked.connect(self.view_neuroglancer)
         self.ng_button.setFixedSize(self.square_button_size)
-        self.ng_button.setIcon(qta.icon("ph.cube-light", color=ICON_COLOR))
+        self.ng_button.setIcon(qta.icon("mdi.video-3d", color=ICON_COLOR))
 
         self.export_hlayout = QVBoxLayout()
         self.export_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
