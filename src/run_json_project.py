@@ -35,6 +35,7 @@ except:  import swiftir
 try:     from src.image_utils import get_image_size
 except:  from image_utils import get_image_size
 
+
 __all__ = ['run_json_project', 'alignment_process']
 
 logger = logging.getLogger(__name__)
@@ -983,7 +984,6 @@ def align_images(im_sta_fn, im_mov_fn, align_dir, global_afm):
         logger.warning(traceback.format_exc())
 
     return global_afm, recipe
-
 
 
 if __name__ == '__main__':

@@ -9,7 +9,6 @@ import numpy as np
 import tifffile
 try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
-finally: from .swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 
 __all__ = [
     'get_image_size',

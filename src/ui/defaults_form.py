@@ -133,19 +133,19 @@ class DefaultsForm(QDialog):
         # DEFAULT_NULL_BIAS = bool(False)
         # DEFAULT_BOUNDING_BOX = bool(True)
 
-        '''Whitening Factor Field'''
-        self.whitening_label = QLabel("Whitening:")
-        self.whitening_input = QLineEdit(self)
-        self.whitening_input.setText(str(cfg.DEFAULT_WHITENING))
-        self.whitening_input.setValidator(QDoubleValidator(-5.0000, 5.0000, 4, self))
-        self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        '''SWIM Window Field'''
-        self.swim_label = QLabel("SWIM Window:")
-        self.swim_input = QLineEdit(self)
-        self.swim_input.setText(str(cfg.DEFAULT_SWIM_WINDOW))
-        self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
-        self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # '''Whitening Factor Field'''
+        # self.whitening_label = QLabel("Whitening:")
+        # self.whitening_input = QLineEdit(self)
+        # self.whitening_input.setText(str(cfg.DEFAULT_WHITENING))
+        # self.whitening_input.setValidator(QDoubleValidator(-5.0000, 5.0000, 4, self))
+        # self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        #
+        # '''SWIM Window Field'''
+        # self.swim_label = QLabel("SWIM Window:")
+        # self.swim_input = QLineEdit(self)
+        # self.swim_input.setText(str(cfg.DEFAULT_SWIM_WINDOW))
+        # self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
+        # self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         '''Initial Rotation Field'''
         self.initial_rotation_label = QLabel("Initial Rotation:")
@@ -176,12 +176,12 @@ class DefaultsForm(QDialog):
         self.formGroupBox = QGroupBox('Configure Recipe')
         self.formGroupBox.setLayout(layout)
 
-        tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
-        self.whitening_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        self.whitening_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
-        self.swim_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        self.swim_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        # tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
+        # self.whitening_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        # self.whitening_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        # tip = "SWIM window used for Signal Whitening Fourier Transform Image Registration (default=0.8125)"
+        # self.swim_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        # self.swim_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
         tip = "Initial rotation is sometimes needed to prevent alignment from aligning to unseen artifacts (default=0.0000)"
         self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
         self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))

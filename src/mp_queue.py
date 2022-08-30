@@ -119,7 +119,7 @@ class TaskQueue(QObject):
         #     pbar.update()
         # pbar.close()
 
-    def start(self, n_workers, retries=2) -> None:
+    def start(self, n_workers, retries=1) -> None:
 
         '''type(task_q)= <class 'multiprocessing.queues.JoinableQueue'>
            type(result_q)= <class 'multiprocessing.queues.Queue'>'''

@@ -10,15 +10,37 @@ from .utils import *
 __all__.extend(utils.__all__)
 __all__.append('utils')
 
+from . import config
+from .config import *
+__all__.extend(config.__all__)
+
+from . import data_model
+from .data_model import *
+__all__.extend(data_model.__all__)
+
 from . import swiftir
-from src.swiftir import *
+from .swiftir import *
 __all__.extend(swiftir.__all__)
 
+from . import em_utils
+from .em_utils import *
 __all__.extend(em_utils.__all__)
 
+from . import image_utils
+from .image_utils import *
 __all__.extend(image_utils.__all__)
 
-__all__.extend(config.__all__)
+from . import save_bias_analysis
+from .save_bias_analysis import *
+# __all__.extend(save_bias_analysis.__all__)
+
+from . import mp_queue
+from .mp_queue import *
+__all__.extend(mp_queue.__all__)
+
+from . import run_json_project
+from .run_json_project import *
+# __all__.extend(run_json_project.__all__)
 
 # __all__.extend(generate_zarr.__all__)
 
