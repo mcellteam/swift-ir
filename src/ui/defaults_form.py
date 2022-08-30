@@ -138,7 +138,6 @@ class DefaultsForm(QDialog):
         self.whitening_input = QLineEdit(self)
         self.whitening_input.setText(str(cfg.DEFAULT_WHITENING))
         self.whitening_input.setValidator(QDoubleValidator(-5.0000, 5.0000, 4, self))
-        # what should validator be might be in docs
         self.whitening_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         '''SWIM Window Field'''
@@ -169,8 +168,8 @@ class DefaultsForm(QDialog):
 
         '''Groupbox QFormLayout'''
         layout = QFormLayout()
-        layout.addRow(self.whitening_label, self.whitening_input)
-        layout.addRow(self.swim_label, self.swim_input)
+        # layout.addRow(self.whitening_label, self.whitening_input)
+        # layout.addRow(self.swim_label, self.swim_input)
         layout.addRow(self.initial_rotation_label, self.initial_rotation_input)
         layout.addRow(self.initial_scale_label, self.initial_scale_input)
         layout.addRow(self.bounding_rectangle_label, self.bounding_rectangle_checkbox)
