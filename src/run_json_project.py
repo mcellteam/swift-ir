@@ -758,6 +758,9 @@ class align_ingredient:
 
         #                              ' -f ' +  \
 
+        # ' -k ' + kip + \
+        # ' -d ' + dir + \
+
         for i in range(len(self.psta[0])):
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
             offy = int(self.psta[1][i] - (wwy_f / 2.0))
@@ -767,8 +770,6 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' -k ' + kip + \
-                              ' -d ' + dir + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
                               ' ' + base_y + \
