@@ -733,11 +733,16 @@ class align_ingredient:
         # if rota!=None:
         #  rota_arg = '%s' % (rota)
 
+        # swim_ww_arg = '1024'
+        # if type(self.ww) == type((1, 2)):
+        #     swim_ww_arg = str(self.ww[0]) + "x" + str(self.ww[1])
+        # else:
+        #     swim_ww_arg = str(self.ww)
         swim_ww_arg = '1024'
         if type(self.ww) == type((1, 2)):
             swim_ww_arg = str(self.ww[0]) + "x" + str(self.ww[1])
         else:
-            swim_ww_arg = str(self.ww)
+            swim_ww_arg = str(self.ww) + "x" + str(self.ww)
 
         logger.debug("--------------------------")
         logger.debug(str(self))
