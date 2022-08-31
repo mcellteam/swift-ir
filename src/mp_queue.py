@@ -4,6 +4,7 @@ import io
 import sys
 import time
 import psutil
+import inspect
 import logging
 from tqdm import tqdm
 import subprocess as sp
@@ -52,8 +53,8 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     for task_id, task in iter(task_q.get, 'END_TASKS'):
         QApplication.processEvents()
 
-        logger.debug('worker_id %d    task_id %d    n_tasks %d    n_workers %d :' % (worker_id, task_id, n_tasks, n_workers))
-        logger.debug('task: %s' % str(task))
+        logger.critical('worker_id %d    task_id %d    n_tasks %d    n_workers %d :' % (worker_id, task_id, n_tasks, n_workers))
+        logger.critical('task: %s' % str(task))
         t0 = time.time()
         outs = ''
         errs = ''
@@ -227,6 +228,7 @@ class TaskQueue(QObject):
 
     def collect_results(self) -> None:
 
+        logger.critical('Caller: %s' % inspect.stack()[1].function)
         '''Get results from tasks'''
         logger.info("TaskQueue.collect_results  >>>>")
         # cfg.main_window.hud.post('Collecting Results...')
@@ -237,17 +239,24 @@ class TaskQueue(QObject):
             logger.info('# Tasks Pending: %d' % n_pending)
             retry_list = []
             for j in range(n_pending):
+                try:
+                    task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
+                    logger.critical(task_str)
+                except:
+                    pass
+
                 logger.info('# Tasks Remaining: %d' % realtime)
                 self.parent.pbar.show()
                 QApplication.processEvents() # allows Qt to continue to respond so application will stay responsive.
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
-                logger.debug('Collected results from Task_ID %d' % (task_id))
-                logger.debug('Task ID (outs): %d\n%s' % (task_id,outs))
+                logger.warning('Collected results from Task_ID %d' % (task_id))
+                logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
                 # logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc
+
                 if rc == 0:
                     self.task_dict[task_id]['status'] = 'completed'
                 else:
@@ -471,5 +480,13 @@ pickle.dumps(p._config['authkey'])
 
 
 '''
+Eyedea
 SWIM argument string: ww_3328x3328 -i 2 -w -0.68 -x 0 -y 0 -k  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/k_img  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.101.tif 2048 2048 /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.102.tif 2048.000000 2048.000000  1.000000 0.000000 -0.000000 1.000000
+
+
+LoneStar6
+
+SWIM argument string: ww_208 -i 2 -w -0.68 -x 128 -y 384 -k keep.JPG -d /Users/joelyancey/glanceEM_SWiFT/test_projects/quik3/scale_4 /Users/joelyancey/glanceEM_SWiFT/test_projects/quik3/scale_4/img_src/R34CA1-BS12.101.tif 512 512 /Users/joelyancey/glanceEM_SWiFT/test_projects/quik3/scale_4/img_src/R34CA1-BS12.102.tif 509.351200 513.196671  1.007430 0.003800 -0.000115 1.050630
+
+
 '''
