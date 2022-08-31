@@ -1,29 +1,31 @@
 # FLAGS = -O3 -m64 -msse3 -xCORE-AVX2 -axCORE-AVX512,MIC-AVX512
 #FLAGS = -O3 -xCORE-AVX2 -axCORE-AVX512,MIC-AVX512
 FLAGS = -O3 -m64 -msse3
+LDFLAGS = -L/home1/08507/joely/local/lib
+INCFLAGS = -I/home1/08507/joely/local/include
 BINDIR = ./bin_tacc/
 
-all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod 
+all: $(BINDIR)swim $(BINDIR)iavg $(BINDIR)iscale $(BINDIR)iscale2 $(BINDIR)mir $(BINDIR)remod
 
 #all: test_libs swim iavg iscale mir remod remod_old sxox json_parser.jar ImageAlign.jar run_swift.jar swift_gui.jar swim_lab.jar sha1sum.txt
 
 $(BINDIR)swim: swim.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) -ltiff -ljpeg -lpng -lfftw3f -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)swim swim.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) $(INCFLAGS) $(LDFLAGS) -ltiff -ljpeg -lpng -lfftw3f -lm
 
 $(BINDIR)iavg: iavg.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iavg iavg.c -ljpeg -ltiff -lpng
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iavg iavg.c $(INCFLAGS) $(LDFLAGS) -ljpeg -ltiff -lpng
 
 $(BINDIR)iscale: iscale.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale iscale.c -ljpeg -ltiff -lpng
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale iscale.c $(INCFLAGS) $(LDFLAGS) -ljpeg -ltiff -lpng
 
 $(BINDIR)iscale2: iscale2.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c -ljpeg -ltiff -lpng
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c $(INCFLAGS) $(LDFLAGS) -ljpeg -ltiff -lpng
 
 $(BINDIR)mir: mir.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c $(INCFLAGS) $(LDFLAGS) -ljpeg -ltiff -lpng -lm
 
 $(BINDIR)remod: remod.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) -lfftw3f -ltiff -ljpeg -lpng -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) $(INCFLAGS) $(LDFLAGS) -lfftw3f -ltiff -ljpeg -lpng -lm
 
 $(BINDIR)sxox: sxox.c makefile
 	gcc $(FLAGS) -Wno-implicit -o sxox sxox.c -lm
@@ -43,4 +45,3 @@ clean:
 	rm -f *.o
 	rm -f a.out
 	rm -f *~
-
