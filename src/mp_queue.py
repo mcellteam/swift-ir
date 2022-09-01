@@ -51,16 +51,17 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
     pbar_q.put(SENTINEL)
 
     for task_id, task in iter(task_q.get, 'END_TASKS'):
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
-        logger.critical('worker_id %d    task_id %d    n_tasks %d    n_workers %d :' % (worker_id, task_id, n_tasks, n_workers))
-        logger.critical('task: %s' % str(task))
+        logger.debug('worker_id %d    task_id %d    n_tasks %d    n_workers %d :' % (worker_id, task_id, n_tasks, n_workers))
+        logger.debug('task: %s' % str(task))
         t0 = time.time()
         outs = ''
         errs = ''
         rc = 1
         try:
             task_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
+            # task_proc = sp.Popen(task, shell=False, stdout=sys.stdout, stderr=sys.stderr, bufsize=1)
             outs, errs = task_proc.communicate()
             outs = '' if outs == None else outs.decode('utf-8')
             errs = '' if errs == None else errs.decode('utf-8')
@@ -239,11 +240,11 @@ class TaskQueue(QObject):
             logger.info('# Tasks Pending: %d' % n_pending)
             retry_list = []
             for j in range(n_pending):
-                try:
-                    task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
-                    logger.critical(task_str)
-                except:
-                    pass
+                # try:
+                #     task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
+                #     logger.critical(task_str)
+                # except:
+                #     pass
 
                 logger.info('# Tasks Remaining: %d' % realtime)
                 self.parent.pbar.show()
@@ -411,9 +412,6 @@ Starting mp_queue with args:
   1
   0
 '''
-
-
-
 
 
 

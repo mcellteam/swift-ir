@@ -43,7 +43,7 @@ defaults_form = None
 panel_list = []
 
 PRELOAD_RANGE = None
-USE_FILE_IO = 0
+USE_FILE_IO = 1
 PARALLEL_MODE = True
 CODE_MODE = 'c'
 HTTP_PORT = 9000
