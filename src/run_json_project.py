@@ -770,6 +770,7 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
+                              ' ' + karg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
                               ' ' + base_y + \
