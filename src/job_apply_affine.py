@@ -9,7 +9,7 @@ import logging
 import numpy as np
 import traceback
 import cv2
-import tifffile
+# import tifffile
 
 # from swiftir import affineImage, saveImage, loadImage
 # from swiftir import saveImage, loadImage
@@ -25,8 +25,8 @@ def loadImage(ifn, stretch=False):
     Backends for http, DVID, etc., would be a useful extension.'''
     if type(stretch)==bool and stretch:
         stretch = 0.1
-    # img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-    img = tifffile.imread(ifn) #0720+
+    img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
+    # img = tifffile.imread(ifn) #0720+
     if stretch:
         N = img.size
         ilo = int(.01*stretch*N)
@@ -50,18 +50,18 @@ def saveImage(img, ofn, qual=None, comp=1):
             if comp != None:
                 # code 1 means uncompressed tif
                 # code 5 means LZW compressed tif
-                # cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
-                tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+                cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
+                # tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
             else:
                 # Use default
-                # cv2.imwrite(ofn, img)
-                tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+                cv2.imwrite(ofn, img)
+                # tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
         else:
-            # cv2.imwrite(ofn, img)
-            tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+            cv2.imwrite(ofn, img)
+            # tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
     else:
-        # cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
-        tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+        cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
+        # tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
 
 def shiftAffine(afm, dx):
     return afm + np.array([[0,0,dx[0]],[0,0,dx[1]]])
