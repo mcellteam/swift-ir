@@ -22,7 +22,7 @@ $(BINDIR)iscale2: iscale2.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)iscale2 iscale2.c $(INCFLAGS) $(LDFLAGS) -ljpeg -ltiff -lpng
 
 $(BINDIR)mir: mir.c swimio.h debug.h makefile
-	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c -ljpeg -ltiff -lpng -lm
+	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)mir mir.c $(INCFLAGS) $(LDFLAGS) -ljpeg -ltiff -lpng -lm
 
 $(BINDIR)remod: remod.c swimio.h debug.h makefile
 	gcc $(FLAGS) -Wno-implicit -o $(BINDIR)remod remod.c -I$(TACC_FFTW3_INC) -L$(TACC_FFTW3_LIB) $(INCFLAGS) $(LDFLAGS) -lfftw3f -ltiff -ljpeg -lpng -lm
