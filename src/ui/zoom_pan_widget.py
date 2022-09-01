@@ -521,7 +521,7 @@ class ZoomPanWidget(QWidget):
         kmods = event.modifiers()
         '''scroll w/ shift key     :  src.ShiftModifier
            scroll w/out shift key  :  src.NoModifier     '''
-        logger.info('kmods = %s' % str(kmods))
+        # logger.info('kmods = %s' % str(kmods))
         '''Original Code, Modified'''
         if (int(kmods) & int(Qt.ShiftModifier)) == 0:
             # Unshifted Scroll Wheel moves through layers

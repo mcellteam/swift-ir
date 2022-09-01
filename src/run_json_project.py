@@ -782,7 +782,7 @@ class align_ingredient:
 
             print('\nSWIM argument string: %s\n' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
-            print('\nSWIM argument string: %s\n' % multi_swim_arg_string)
+            # print('\nSWIM argument string: %s\n' % multi_swim_arg_string)
 
         o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
 

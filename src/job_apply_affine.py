@@ -6,13 +6,13 @@ the affine transformation)
 
 import sys
 import logging
+import argparse
 import numpy as np
 import traceback
 try:
     from swiftir import affineImage, saveImage, loadImage
-except Exception as e:
+except ImportError:
     from src.swiftir import affineImage, saveImage, loadImage
-    print(e)
 
 
 logger = logging.getLogger(__name__)
