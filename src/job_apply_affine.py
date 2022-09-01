@@ -8,7 +8,8 @@ import sys
 import logging
 import numpy as np
 import traceback
-try: from swiftir import affineImage, saveImage, loadImage
+try:
+    from swiftir import affineImage, saveImage, loadImage
 except Exception as e:
     from src.swiftir import affineImage, saveImage, loadImage
     print(e)
@@ -20,12 +21,12 @@ logger = logging.getLogger(__name__)
 def image_apply_affine(in_fn=None, out_fn=None, afm=None, rect=None, grayBorder=False):
     logger.info("image_apply_affine afm: " + str(afm))
     in_img = loadImage(in_fn)
-    logger.debug("Transforming " + str(in_fn))
-    logger.debug("    afm = " + str(afm))
-    logger.debug("    rect = " + str(rect))
-    logger.debug("    grayBorder = " + str(grayBorder))
+    logger.info("Transforming " + str(in_fn))
+    logger.info("    afm = " + str(afm))
+    logger.info("    rect = " + str(rect))
+    logger.info("    grayBorder = " + str(grayBorder))
     out_img = affineImage(afm, in_img, rect=rect, grayBorder=grayBorder)
-    logger.debug("  saving transformed image as: " + str(out_fn))
+    logger.info("  saving transformed image as: " + str(out_fn))
     try:
         saveImage(out_img, out_fn)
     except Exception:
