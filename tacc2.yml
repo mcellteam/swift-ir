@@ -1,4 +1,4 @@
-name: alignENV01
+name: alignENV02
 channels:
   - defaults
 dependencies:
