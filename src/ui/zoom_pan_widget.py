@@ -9,15 +9,11 @@ from PyQt5.QtGui import QPainter, QPen, QColor,QNativeGestureEvent
 from PyQt5.QtWidgets import QWidget, QRubberBand, QSizePolicy
 from PyQt5.QtCore import Qt, QPointF, QRectF, QSize
 import src.config as cfg
-from ..em_utils import get_num_imported_images
-from ..em_utils import get_cur_layer
-from ..em_utils import get_cur_scale_key
-from ..em_utils import print_exception
-from ..em_utils import is_dataset_scaled
-from ..em_utils import get_cur_snr
-from ..em_utils import are_images_imported
-from ..em_utils import is_cur_scale_aligned
-from ..em_utils import get_scale_val
+from ..helpers import print_exception
+from ..helpers import do_scales_exist
+from ..helpers import are_images_imported
+from ..helpers import is_cur_scale_aligned
+from ..helpers import get_scale_val
 
 '''
 Deprecated .delta function
@@ -39,7 +35,8 @@ class ZoomPanWidget(QWidget):
         self.floatBased = False
         self.antialiased = False  # why
         self.wheel_index = 0
-        self.scroll_factor = 1.25 #Critical
+        # self.scroll_factor = 1.25 #Critical
+        self.scroll_factor = 1.08 #Critical
         self.zoom_scale = 1.0
         self.last_button = Qt.MouseButton.NoButton
 
@@ -132,11 +129,11 @@ class ZoomPanWidget(QWidget):
     # ZoomPanWidget.center_image called once for each role/panel
     def center_image(self, all_images_in_stack=True):
         try:
-            s = cfg.project_data['data']['current_scale']
-            l = cfg.project_data['data']['current_layer']
-            if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0:
+            s = cfg.data['data']['current_scale']
+            l = cfg.data['data']['current_layer']
+            if len(cfg.data['data']['scales'][s]['alignment_stack']) > 0:
 
-                image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
+                image_dict = cfg.data['data']['scales'][s]['alignment_stack'][l]['images']
                 if self.role in image_dict.keys():
                     ann_image = image_dict[self.role]
                     img_text = ann_image['filename']
@@ -153,7 +150,7 @@ class ZoomPanWidget(QWidget):
 
                         if all_images_in_stack:
                             # Search through all images in this stack to find bounds
-                            stack = cfg.project_data['data']['scales'][s]['alignment_stack']
+                            stack = cfg.data['data']['scales'][s]['alignment_stack']
                             for layer in stack:
                                 if 'images' in layer.keys():
                                     if self.role in layer['images'].keys():
@@ -187,8 +184,8 @@ class ZoomPanWidget(QWidget):
                                 logger.debug("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(
                                                 win_w) + "x" + str(win_h))
                                 # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                if abs(self.wheel_index) > 100:
-                                    logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
+                                if abs(self.wheel_index) > 200:
+                                    logger.warning("Magnitude of Wheel index > 200, wheel_index = " + str(self.wheel_index))
                                     break
 
                             # Shrink the image (scaling down) while it is larger than the size of the window
@@ -206,8 +203,8 @@ class ZoomPanWidget(QWidget):
                                 # logger.info("  Wheel index = " + str(self.wheel_index) + " while shrinking")
                                 # logger.info("    Image is " + str(img_w) + "x" + str(img_h) + ", Window is " + str(win_w) + "x" + str(win_h))
                                 # logger.info("    self.win_x(img_w) = " + str(self.win_x(img_w)) + ", self.win_y(img_h) = " + str(self.win_y(img_h)))
-                                if abs(self.wheel_index) > 100:
-                                    logger.warning("Magnitude of Wheel index > 100, wheel_index = " + str(self.wheel_index))
+                                if abs(self.wheel_index) > 200:
+                                    logger.warning("Magnitude of Wheel index > 200, wheel_index = " + str(self.wheel_index))
                                     break
 
                             # # Adjust the offsets to center
@@ -226,8 +223,8 @@ class ZoomPanWidget(QWidget):
 
     def set_tooltips(self):
         if are_images_imported():
-            s = cfg.project_data['data']['current_scale']
-            l = cfg.project_data['data']['current_layer']
+            s = cfg.data['data']['current_scale']
+            l = cfg.data['data']['current_layer']
             # n_images = get_num_imported_images()
             role_dict = {'ref': 'Reference Image', 'base': 'Current Image', 'aligned': 'Alignment'}
             role_str = role_dict[self.role]
@@ -236,7 +233,7 @@ class ZoomPanWidget(QWidget):
             except:
                 dim_str = ''
             scale_str = 'Scale %d' % get_scale_val(s)
-            snr_str = str(get_cur_snr())
+            snr_str = str(cfg.data.cur_snr())
             if self.role == 'aligned':
                 if is_cur_scale_aligned():
                     self.setToolTip('%s\n%s [%s]\n%s' % (role_str, scale_str, dim_str, snr_str))
@@ -317,8 +314,8 @@ class ZoomPanWidget(QWidget):
         if cfg.main_window.match_point_mode == True:
             logger.info("Adding a match point for role \"" + str(role) + "\" at " + str(
                 screen_coords) + " == " + str(image_coords))
-            stack = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['alignment_stack']
-            layer = stack[cfg.project_data['data']['current_layer']]
+            stack = cfg.data['data']['scales'][cfg.data['data']['current_scale']]['alignment_stack']
+            layer = stack[cfg.data['data']['current_layer']]
 
             if not 'metadata' in layer['images'][role]:
                 layer['images'][role]['metadata'] = {}
@@ -448,19 +445,19 @@ class ZoomPanWidget(QWidget):
         cfg.main_window.set_status('Loading...')
         cfg.main_window.jump_to_worst_ticker = 1
         cfg.main_window.jump_to_best_ticker = 1
-        if is_dataset_scaled():
+        if do_scales_exist():
             cfg.main_window.read_gui_update_project_data()
-        n_imgs = get_num_imported_images()
-        scale = get_cur_scale_key()
-        leaving = get_cur_layer()
+        n_imgs = cfg.data.get_n_images()
+        scale = cfg.data.cur_scale()
+        leaving = cfg.data.cur_layer()
         requested = leaving + layer_delta
         rng = cfg.PRELOAD_RANGE
         if requested in range(n_imgs): pass
         elif requested < 0: logger.info('Cant layer down any further!'); cfg.main_window.set_idle(); return
         elif requested > n_imgs - 1: logger.info('Cant layer up any further!'); cfg.main_window.set_idle(); return
         logger.info("Changing to layer %s" % requested)
-        stack = cfg.project_data['data']['scales'][scale]['alignment_stack']
-        cfg.project_data['data']['current_layer'] = requested
+        stack = cfg.data['data']['scales'][scale]['alignment_stack']
+        cfg.data['data']['current_layer'] = requested
         preload_imgs = set()
         for i in range(requested - rng, requested + rng):
             try:
@@ -471,7 +468,7 @@ class ZoomPanWidget(QWidget):
                 # print_exception()
                 logger.warning('Failed to load image for role %s' % self.role)
         cfg.image_library.make_available(preload_imgs)
-        if is_dataset_scaled():
+        if do_scales_exist():
             cfg.main_window.read_project_data_update_gui()
         self.update_zpa_self()
         self.update_siblings() # <- change all layers
@@ -587,23 +584,25 @@ class ZoomPanWidget(QWidget):
         #     return
         # self.already_painting = True
 
-        s = cfg.project_data['data']['current_scale']
-        l = cfg.project_data['data']['current_layer']
+        s = cfg.data['data']['current_scale']
+        l = cfg.data['data']['current_layer']
         # img_text = None
         if self.role == 'aligned':
             img_text = 'Unaligned'
         else:
             img_text = 'No Image Loaded'
-
-        has_alignment_stack = True if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0 else False
+        if s == '':
+            return
+        else:
+            has_alignment_stack = True if len(cfg.data['data']['scales'][s]['alignment_stack']) > 0 else False
         try:
             painter = QPainter(self)
-            # s = cfg.project_data['data']['current_scale']
-            # l = cfg.project_data['data']['current_layer']
+            # s = cfg.data['data']['current_scale']
+            # l = cfg.data['data']['current_layer']
             role_text = str(self.role) + " [" + str(s) + "]" + " [" + str(l) + "]"
-            if len(cfg.project_data['data']['scales'][s]['alignment_stack']) > 0: #debug #tag # previously uncommented
-                image_dict = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['images']
-                is_skipped = cfg.project_data['data']['scales'][s]['alignment_stack'][l]['skip']
+            if has_alignment_stack: #debug #tag # previously uncommented
+                image_dict = cfg.data['data']['scales'][s]['alignment_stack'][l]['images']
+                is_skipped = cfg.data['data']['scales'][s]['alignment_stack'][l]['skip']
                 if self.role in image_dict.keys():
                     ann_image = image_dict[self.role]
                     '''Get Image Reference From Library'''
@@ -720,10 +719,8 @@ class ZoomPanWidget(QWidget):
                         pass
                 elif not cfg.IMAGES_IMPORTED:
                     pass
-
-
                 else:
-                    # if len(cfg.project_data['data']['scales'][s]['alignment_stack']) == 0:
+                    # if len(cfg.data['data']['scales'][s]['alignment_stack']) == 0:
                     # if (not is_skipped) or (self.role=='base'):
                     #     if self.role=='ref':
                     #
@@ -732,7 +729,7 @@ class ZoomPanWidget(QWidget):
                     painter.drawText(10, 20, role_text)                   # Draw the role
                     painter.setPen(QPen(QColor(100, 100, 255, 255), 5))
                     painter.drawText(10, 40, os.path.split(img_text)[1])  # Draw the image name
-                    scale = cfg.project_data['data']['scales'][s]
+                    scale = cfg.data['data']['scales'][s]
                     if len(scale['alignment_stack']) > 0:
                         layer = scale['alignment_stack'][l]
                         method_results = layer['align_to_ref_method']['method_results']

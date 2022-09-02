@@ -6,7 +6,7 @@ import struct
 import logging
 import inspect
 import numpy as np
-import tifffile
+# import tifffile
 try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 

@@ -6,7 +6,7 @@ from PyQt5.QtCore import pyqtSlot as Slot
 
 
 class CollapsibleBox(QWidget):
-    '''Forms a part of the project inspector class. Adapted from:
+    '''Forms a part of the data inspector class. Adapted from:
     https://github.com/fzls/djc_helper/blob/master/qt_collapsible_box.py'''
 
     def __init__(self, title="", title_backgroup_color="", tool_tip="Project Inspector :)",

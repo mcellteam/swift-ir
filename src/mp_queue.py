@@ -253,7 +253,7 @@ class TaskQueue(QObject):
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.warning('Collected results from Task_ID %d' % (task_id))
                 logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
-                # logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
+                logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc

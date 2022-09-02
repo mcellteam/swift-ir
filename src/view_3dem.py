@@ -29,7 +29,7 @@ import neuroglancer as ng
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from PyQt5.QtCore import QRunnable, QUrl
 from PyQt5.QtCore import pyqtSlot as Slot
-from src.em_utils import print_exception
+from src.helpers import print_exception
 import src.config as cfg
 
 __all__ = ['View3DEM']
@@ -100,7 +100,7 @@ class View3DEM(QRunnable):
             try:
                 self.ng_server = Server((self.bind, self.port))
 
-                # dir = cfg.project_data.
+                # dir = cfg.data.
                 # Handler = functools.partial(
                 #     http.server.SimpleHTTPRequestHandler,
                 #     directory='/my/dir/goes/here'

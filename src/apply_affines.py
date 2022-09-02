@@ -6,8 +6,8 @@ import time
 import psutil
 import logging
 import src.config as cfg
-from .em_utils import get_scale_key, get_scale_val, are_aligned_images_generated, \
-    makedirs_exist_ok, print_exception, get_num_imported_images, print_snr_list, remove_aligned
+from .helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
+    makedirs_exist_ok, print_exception, print_snr_list, remove_aligned
 from .mp_queue import TaskQueue
 from .image_utils import SetStackCafm, BoundingRect
 
@@ -33,14 +33,14 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     '''
     logger.critical('>>>>>>>> Generate Aligned Start <<<<<<<<')
     
-    '''NEED AN IMMEDIATE CHECK RIGHT HERE TO SEE IF ALIGNMENT DATA EVEN EXISTS AND LOOKS CORRECT'''
+    '''NEED AN IMMEDIATE CHECK RIGHT HERE TO SEE IF ALIGNMENT data EVEN EXISTS AND LOOKS CORRECT'''
 
-    # image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
-    # proj_path = cfg.project_data['data']['destination_path']
+    # image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
+    # proj_path = cfg.data['data']['destination_path']
     # for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
     #     print('Loop: scale = ', scale)
     #     scale_key = get_scale_key(scale)
-    #     for i, layer in enumerate(cfg.project_data['data']['scales'][scale_key]['alignment_stack']):
+    #     for i, layer in enumerate(cfg.data['data']['scales'][scale_key]['alignment_stack']):
     #         fn = os.path.abspath(layer['images']['base']['filename'])
     #         ofn = os.path.join(proj_path, scale_key, 'img_src', os.path.split(fn)[1])
     #
@@ -51,8 +51,8 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     # logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
     # logger.critical('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
     #
-    # cfg.project_data.update_init_rot()
-    # cfg.project_data.update_init_scale()
+    # cfg.data.update_init_rot()
+    # cfg.data.update_init_scale()
 
     logger.info('Generating Aligned Images...')
     scale_key = get_scale_key(use_scale)
@@ -62,20 +62,20 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
         cfg.main_window.hud.post('Removing Aligned Images for Scale Level %d' % get_scale_val(scale_key))
         remove_aligned(use_scale=scale_key, start_layer=start_layer)
     logger.info('Propogating AFMs to generate CFMs at each layer')
-    scale_dict = cfg.project_data['data']['scales'][scale_key]
-    null_bias = cfg.project_data['data']['scales'][use_scale]['null_cafm_trends']
+    scale_dict = cfg.data['data']['scales'][scale_key]
+    null_bias = cfg.data['data']['scales'][use_scale]['null_cafm_trends']
     SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
-    ofn = os.path.join(cfg.project_data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
-    use_bounding_rect = bool(cfg.project_data['data']['scales'][scale_key]['use_bounding_rect'])
+    ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
+    use_bounding_rect = bool(cfg.data['data']['scales'][scale_key]['use_bounding_rect'])
     logger.info('Writing Bounding Rectangle Dimensions to bounding_rect.dat...')
     with open(ofn, 'w') as f:
         if use_bounding_rect:
-            rect = BoundingRect(cfg.project_data['data']['scales'][scale_key]['alignment_stack'])
+            rect = BoundingRect(cfg.data['data']['scales'][scale_key]['alignment_stack'])
             f.write("%d %d %d %d\n" % (rect[0], rect[1], rect[2], rect[3]))
         else:
             f.write("None\n")
     logger.info('Constructing TaskQueue...')
-    n_tasks = get_num_imported_images()
+    n_tasks = cfg.data.get_n_images()
     cfg.main_window.pbar_max(n_tasks)
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     task_queue.tqdm_desc = 'Generating Images'
@@ -83,9 +83,10 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     logger.info('Starting TaskQueue...')
     task_queue.start(cpus)
     path = os.path.split(os.path.realpath(__file__))[0]
-    apply_affine_job = os.path.join(path, 'job_apply_affine.py')
+    # apply_affine_job = os.path.join(path, 'job_apply_affine.py')
+    apply_affine_job = os.path.join(path, 'job_mir_apply_affine.py')
     logger.info('Job Script: %s' % apply_affine_job)
-    alstack = cfg.project_data['data']['scales'][scale_key]['alignment_stack']
+    alstack = cfg.data['data']['scales'][scale_key]['alignment_stack']
     if num_layers == -1:
         end_layer = len(alstack)
     else:
@@ -114,8 +115,8 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             logger.info('\nSecond Layer (Example Arguments):')
             print(*args, sep="\n")
             
-            ofn = os.path.join(cfg.project_data['data']['destination_path'], scale_key, 'bias_data', 'apply_affine.dat')
-            use_bounding_rect = bool(cfg.project_data['data']['scales'][scale_key]['use_bounding_rect'])
+            ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'apply_affine.dat')
+            use_bounding_rect = bool(cfg.data['data']['scales'][scale_key]['use_bounding_rect'])
             logger.info('Writing Example Arguments to apply_affine.dat...')
             
             with open(ofn, 'w') as f:
@@ -140,7 +141,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
 
 
 def create_align_directories(scale_key):
-    source_dir = os.path.join(cfg.project_data['data']['destination_path'], scale_key, "img_src")
+    source_dir = os.path.join(cfg.data['data']['destination_path'], scale_key, "img_src")
     makedirs_exist_ok(source_dir, exist_ok=True)
-    target_dir = os.path.join(cfg.project_data['data']['destination_path'], scale_key, "img_aligned")
+    target_dir = os.path.join(cfg.data['data']['destination_path'], scale_key, "img_aligned")
     makedirs_exist_ok(target_dir, exist_ok=True)

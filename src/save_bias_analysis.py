@@ -4,14 +4,14 @@ import os
 import logging
 import inspect
 import numpy as np
-from src.em_utils import print_exception, print_alignment_layer
+from src.helpers import print_exception, print_alignment_layer
 
 __all__ = ['save_bias_analysis']
 
 logger = logging.getLogger(__name__)
 
 def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
-    """Saves bias analysis results to separate '.dat' files in the project directory. Called by 'compute_affines'.
+    """Saves bias analysis results to separate '.dat' files in the data directory. Called by 'compute_affines'.
     :param al_stack: The alignment data to be saved
     :type al_stack: dict
     :param bias_data_path: Path to where the bias data will be saved.

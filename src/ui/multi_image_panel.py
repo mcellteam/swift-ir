@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QRectF
 from PyQt5.QtGui import QPainter, QPen, QColor
 import src.config as cfg
 from .zoom_pan_widget import ZoomPanWidget
-from src.em_utils import are_images_imported, is_dataset_scaled
+from src.helpers import are_images_imported, do_scales_exist
 
 __all__ = ['MultiImagePanel']
 
@@ -61,13 +61,13 @@ class MultiImagePanel(QWidget):
             if are_images_imported():
                 layer_delta = -1 * self.arrow_direction
         if event.key() == Qt.Key_Left:
-            if is_dataset_scaled():
-                if cfg.main_window.prev_scale_button.isVisible():
+            if do_scales_exist():
+                if cfg.main_window.prev_scale_button.isEnabled():
                     cfg.main_window.prev_scale_button_callback()
 
         if event.key() == Qt.Key_Right:
-            if is_dataset_scaled():
-                if cfg.main_window.next_scale_button.isVisible():
+            if do_scales_exist():
+                if cfg.main_window.next_scale_button.isEnabled():
                     cfg.main_window.next_scale_button_callback()
 
         if (layer_delta != 0) and (self.actual_children != None):
@@ -131,7 +131,7 @@ class MultiImagePanel(QWidget):
                 if type(w) == ZoomPanWidget:
                     role_settings[w.role] = w.get_settings()
 
-            cfg.project_data['data']['panel_roles'] = roles_list
+            cfg.data['data']['panel_roles'] = roles_list
             # Remove all the image panels (to be replaced)
             # try:
             #     self.remove_all_panels()

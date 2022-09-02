@@ -8,8 +8,8 @@ import psutil
 import time
 import logging
 import src.config as cfg
-from src.em_utils import print_exception, get_num_imported_images, get_num_scales, get_scale_val, get_scale_key, \
-    create_project_structure_directories, get_best_path, get_scales_list, is_dataset_scaled
+from src.helpers import print_exception, get_scale_val, get_scale_key, \
+    create_project_structure_directories, get_best_path, do_scales_exist
 from .mp_queue import TaskQueue
 
 __all__ = ['generate_scales']
@@ -17,12 +17,12 @@ __all__ = ['generate_scales']
 logger = logging.getLogger(__name__)
 
 
-def generate_scales(progress_callback=None):
+def generate_scales():
     logger.critical('>>>>>>>> Generate Scales Start <<<<<<<<')
-    image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.project_data['data']['scales'].keys())]
+    image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
-    proj_path = cfg.project_data['data']['destination_path']
-    n_tasks = get_num_imported_images() * (get_num_scales() - 1)
+    proj_path = cfg.data['data']['destination_path']
+    n_tasks = cfg.data.get_n_images() * (cfg.data.get_n_scales() - 1)  #0901 #Refactor
     cfg.main_window.pbar_max(n_tasks)
     scale_q = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     scale_q.tqdm_desc = 'Scaling Images'
@@ -53,7 +53,7 @@ def generate_scales(progress_callback=None):
 
     try:
         # for scale in sorted(image_scales_to_run):
-        for scale in get_scales_list():
+        for scale in cfg.data.get_scales():
             subdir_path = os.path.join(proj_path, scale)
             create_project_structure_directories(subdir_path)
     except:
@@ -72,7 +72,7 @@ def generate_scales(progress_callback=None):
         logger.debug('Looping, Scale ', scale)
         cfg.main_window.hud.post("Preparing to Generate Images for Scale %s..." % str(scale))
         scale_key = get_scale_key(scale)
-        for i, layer in enumerate(cfg.project_data['data']['scales'][scale_key]['alignment_stack']):
+        for i, layer in enumerate(cfg.data['data']['scales'][scale_key]['alignment_stack']):
             fn = os.path.abspath(layer['images']['base']['filename'])
             ofn = os.path.join(proj_path, scale_key, 'img_src', os.path.split(fn)[1])
             layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})

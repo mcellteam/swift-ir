@@ -46,12 +46,12 @@ source_suffix = '.rst'
 # The master toctree document.
 master_doc = 'index'
 
-# General information about the project.
+# General information about the data.
 project = 'AlignEM'
 copyright = ('2020, MMBioS, Salk Institute for Biological Studies, '
              'Pittsburgh Supercomputing Center')
 
-# The version info for the project you're documenting, acts as replacement for
+# The version info for the data you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
 #
@@ -116,7 +116,7 @@ html_theme_path = []
 #html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # The name for this set of Sphinx documents.  If None, it defaults to
-# "<project> v<release> documentation".
+# "<data> v<release> documentation".
 html_title = 'AlignEM Tutorias'
 
 # A shorter title for the navigation bar.  Default is the same as html_title.

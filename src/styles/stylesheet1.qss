@@ -165,6 +165,7 @@ QToolButton:pressed{
 	background-color: #7c7c7c;
 }
 QPushButton{
+    font-size: 12px;
 	border-style: solid;
 	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
 	border-right-color: qlineargradient(spread:pad, x1:0, y1:0.5, x2:1, y2:0.5, stop:0 rgb(217, 217, 217), stop:1 rgb(227, 227, 227));
@@ -313,14 +314,16 @@ QTabBar::tab:selected, QTabBar::tab:first:selected, QTabBar::tab:hover {
 }
 
 QCheckBox {
-	color: #808086;
+	/*color: #808086;*/
+	color: #151a1e;
 	padding: 1px;
 }
 QCheckBox:disabled {
     /*color: #d3dae3;*/
 	/*color: #808086;*/
 	/*color: grey;*/
-	color: #404040;
+	color: #000000;
+	/*color: #404040;*/
 	padding: 1px;
 }
 
