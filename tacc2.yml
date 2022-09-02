@@ -142,3 +142,4 @@ dependencies:
     - requests==2.28.1
     - rsa==4.9
     - urllib3==1.26.12
+prefix: /work/08507/joely/ls6/Miniconda3/envs/alignENV02
