@@ -47,7 +47,7 @@ import argparse
 # import qtpy
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QCoreApplication
-from src.em_utils import print_exception
+from src.helpers import print_exception
 from src.ui.main_window import MainWindow
 import src.config as cfg
 

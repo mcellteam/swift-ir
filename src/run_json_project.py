@@ -49,12 +49,12 @@ def run_json_project(project,
                      num_layers=-1,
                      alone=False):
     '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.
-    :param project: All project data as a JSON dictionary
+    :param project: All data data as a JSON dictionary
     :param alignment_option: This the alignment operation which can be one of three values: 'init_affine' (initializes
     the python_swiftir, normally it is run only on the coarsest scale), 'refine_affine' (refines the python_swiftir, normally is run on
     all remaining scales), and 'apply_affine' (usually never run, it forces the current python_swiftir onto any scale including
     the full scale images), defaults to 'init_affine'
-    :param use_scale: The scale value to run the json project at
+    :param use_scale: The scale value to run the json data at
     :param swiftir_code_mode: This can be either 'c' or 'python', defaults to python
     :param start_layer: Layer index number to start at, defaults to 0.
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
@@ -116,7 +116,7 @@ def run_json_project(project,
 
         if next_scale:
             # Copy settings from next coarsest completed scale to tbd:
-            #      s_done = project['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
+            #      s_done = data['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
             s_done = project['data']['scales']['scale_' + str(next_scale)]['alignment_stack']
             common_length = min(len(s_tbd), len(s_done))
             # Copy from coarser to finer
@@ -127,7 +127,7 @@ def run_json_project(project,
                 s_tbd[start_layer + i]['align_to_ref_method']['method_results'] = copy.deepcopy(
                     s_done[start_layer + i]['align_to_ref_method']['method_results'])
 
-            # project['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
+            # data['data']['scales']['scale_'+str(scale_tbd)]['alignment_stack'] = copy.deepcopy(s_done)
 
         actual_num_layers = num_layers
         if actual_num_layers < 0:
@@ -751,7 +751,7 @@ class align_ingredient:
         # https://github.com/mcellteam/swift-ir/blob/dd62684dd682087af5f1df15ec8ea398aa6a281e/docs/user/command_line/commands/README.md
 
         # kip = os.path.join(os.path.dirname(os.path.dirname(self.ad)), 'k_img.JPG')
-        dir = os.path.join(os.path.dirname(os.path.dirname(self.ad))) #dir is the project directory (I think)
+        dir = os.path.join(os.path.dirname(os.path.dirname(self.ad))) #dir is the data directory (I think)
         kip = 'keep.JPG'
         # ' -k  ' + kip + \
         # logger.critical('kip = ' + kip)
@@ -1112,7 +1112,7 @@ if __name__ == '__main__':
 '''run_json_project is called by:
 single_scale_job.py
     updated_model, need_to_write_json =  run_json_project(
-                                         project = project_dict,
+                                         data = project_dict,
                                          alignment_option = alignment_option,
                                          use_scale = use_scale,
                                          code_mode = code_mode,
@@ -1121,7 +1121,7 @@ single_scale_job.py
 
 single_alignment_job.py
    updated_model, need_to_write_json =  run_json_project(
-                                         project = project_dict,
+                                         data = project_dict,
                                          alignment_option = alignment_option,
                                          use_scale = use_scale,
                                          code_mode = code_mode,
@@ -1130,13 +1130,13 @@ single_alignment_job.py
 
 project_runner.py
             self.updated_model, self.need_to_write_json = run_json_project(
-                    project=self.project,
+                    data=self.data,
                     alignment_option=self.alignment_option,
                     use_scale=self.use_scale,
                     code_mode=self.code_mode,
                     start_layer=self.start_layer,
                     num_layers=self.num_layers)
-            self.project = self.updated_model
+            self.data = self.updated_model
 
 
 swiftir.py functions:

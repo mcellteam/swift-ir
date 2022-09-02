@@ -8,7 +8,7 @@ import threading
 import concurrent
 from PyQt5.QtGui import QPixmap
 import src.config as cfg
-from ..em_utils import get_scale_val
+from ..helpers import get_scale_val, print_exception
 
 __all__ = ['ImageLibrary', 'SmartImageLibrary']
 
@@ -310,12 +310,12 @@ class SmartImageLibrary:
 
 
     def update(self):
-        cur_scale_key = cfg.project_data['data']['current_scale']
+        cur_scale_key = cfg.data['data']['current_scale']
         cur_scale_val = get_scale_val(cur_scale_key)
-        cur_layer_index = cfg.project_data['data']['current_layer']
-        # scale_keys = sorted(cfg.project_data['data']['scales'].keys())
+        cur_layer_index = cfg.data['data']['current_layer']
+        # scale_keys = sorted(cfg.data['data']['scales'].keys())
         # scale_vals = sorted(get_scale_val(scale_key) for scale_key in scale_keys)
-        # cur_stack = cfg.project_data['data']['scales'][cur_scale_key]['alignment_stack']
+        # cur_stack = cfg.data['data']['scales'][cur_scale_key]['alignment_stack']
         # layer_nums = range(len(cur_stack))
         # amem = psutil.virtual_memory().available
         # if self.print_switch: logger.info("Looking at: scale " + str(cur_scale_val) + " in " + str(scale_vals) + ", layer " + str(
@@ -323,8 +323,8 @@ class SmartImageLibrary:
         #       ", Available Memory = " + str(amem) + " out of " + str(self.initial_memory.available))
 
         try:
-            stack = cfg.project_data['data']['scales'][cfg.project_data['data']['current_scale']]['alignment_stack']
-            layer = stack[cfg.project_data['data']['current_layer']]
+            stack = cfg.data['data']['scales'][cfg.data['data']['current_scale']]['alignment_stack']
+            layer = stack[cfg.data['data']['current_layer']]
             for k in layer['images'].keys():
                 logger.info("Loading role " + k)
                 try:

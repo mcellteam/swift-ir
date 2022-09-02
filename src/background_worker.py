@@ -7,7 +7,7 @@ from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QRunnable
 
-__all__ = ['RunnableWorker']
+__all__ = ['BackgroundWorker']
 
 class WorkerSignals(QObject):
     '''
@@ -37,9 +37,9 @@ class WorkerSignals(QObject):
     progress = Signal(int, name='progressSignal')
 
 
-class RunnableWorker(QRunnable):
+class BackgroundWorker(QRunnable):
     '''
-    RunnableWorker thread
+    BackgroundWorker thread
     Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
     :param callback: The function callback to run on this worker thread. Supplied args and kwargs will be passed through to the runner.
     :type callback: function
@@ -64,8 +64,8 @@ class RunnableWorker(QRunnable):
     '''
 
     def __init__(self, fn, *args, **kwargs):
-        super(RunnableWorker, self).__init__()
-        print("RunnableWorker(QRunnable), constructor >>>>>>>>")
+        super(BackgroundWorker, self).__init__()
+        print("BackgroundWorker(QRunnable), constructor >>>>>>>>")
         # Store constructor arguments (re-used for processing)
         self.fn = fn
         self.args = args
@@ -77,28 +77,28 @@ class RunnableWorker(QRunnable):
         self.signals.progress.__str__()
 
         # Add the callback to our kwargs
-        '''If 'progress_callback' is provided as a parameter of the function passed into RunnableWorker, it will be assigned
+        '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
         the value -> self.signals.progress'''
         self.kwargs['progress_callback'] = self.signals.progress
-        print("<<<<<<<< RunnableWorker(QRunnable), constructor")
+        print("<<<<<<<< BackgroundWorker(QRunnable), constructor")
 
     @Slot()
     def run(self):
         '''
         Initialise the runner functiosn with passed args, kwargs.
         '''
-        print("RunnableWorker(QRunnable).run >>>>>>>>")
+        print("BackgroundWorker(QRunnable).run >>>>>>>>")
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
-            print('RunnableWorker.run traceback:')
+            print('BackgroundWorker.run traceback:')
             traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            print("<<<<<<<< RunnableWorker(QRunnable) emitting result...")
+            print("<<<<<<<< BackgroundWorker(QRunnable) emitting result...")
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
             self.signals.finished.emit()  # Done
-            print("<<<<<<<< RunnableWorker(QRunnable).run")
+            print("<<<<<<<< BackgroundWorker(QRunnable).run")

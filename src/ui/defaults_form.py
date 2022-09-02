@@ -2,15 +2,15 @@
 
 import os, sys, copy, json, inspect, logging, textwrap
 
-from PyQt5.QtWidgets import QApplication, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
-    QHBoxLayout, QLabel, QLineEdit, QMenu, QMenuBar, QPushButton, QSpinBox, QTextEdit, QVBoxLayout, QFormLayout, \
+from PyQt5.QtWidgets import QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
+    QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout, QFormLayout, \
     QCheckBox, QToolButton, QDataWidgetMapper
 from PyQt5.QtCore import Qt, QAbstractTableModel, QAbstractListModel, QModelIndex
+from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.QtGui import QDoubleValidator, QFont
 
 import src.config as cfg
-
-from src.em_utils import get_scale_key, get_scale_val, get_cur_scale_key, get_scales_list
+from src.helpers import get_scale_key, get_scale_val, do_scales_exist
 
 __all__ = ['DefaultsForm','DefaultsModel']
 
@@ -38,26 +38,35 @@ class DefaultsForm(QDialog):
         #     Qt.CustomizeWindowHint |
         #     Qt.FramelessWindowHint)
 
-        # self.defaults_file = cfg.project_data['data']['destination_path'] + '/defaults.json'
+        # self.defaults_file = cfg.data['data']['destination_path'] + '/defaults.json'
         # print('self.defaults_file = ', str(self.defaults_file))
         # self.defaults = None
 
-        self.createFormGroupBox()
+        self.initUI()
 
-        self.button_cancel = QPushButton("Cancel")
-        self.button_cancel.clicked.connect(self.on_cancel)
-        self.button_cancel.setAutoDefault(False)
+        # self.button_cancel = QPushButton("Cancel")
+        # self.button_cancel.clicked.connect(self.on_cancel)
+        # self.button_cancel.setAutoDefault(False)
 
-        self.button_apply_settings = QPushButton("Apply Settings")
-        self.button_apply_settings.clicked.connect(self.on_create_button_clicked)
-        self.button_apply_settings.setAutoDefault(True)
-        button_layout = QHBoxLayout()
-        button_layout.addWidget(self.button_cancel)
-        button_layout.addWidget(self.button_apply_settings)
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+        self.buttonBox.clicked.connect(self.on_create_button_clicked)
+
+
+
+        # self.button_apply_settings = QPushButton("Generate Scales")
+        # self.button_apply_settings.clicked.connect(self.on_create_button_clicked)
+        # self.button_apply_settings.setAutoDefault(True)
+        # button_layout = QHBoxLayout()
+        # button_layout.addWidget(self.button_cancel)
+        # button_layout.addWidget(self.button_apply_settings)
 
         main_layout = QVBoxLayout()
         main_layout.addWidget(self.formGroupBox)
-        main_layout.addLayout(button_layout)
+        # main_layout.addLayout(button_layout)
+        main_layout.addWidget(self.buttonBox)
         self.setLayout(main_layout)
 
         self.setWindowTitle("Project Form")
@@ -97,35 +106,31 @@ class DefaultsForm(QDialog):
     #         data = json.dump(self.defaults, f)
     #         # f.write(self.defaults)
 
+    def update_project_dict(self):
+        logger.critical('Running update_init_scale:')
+        cfg.data.set_scales_from_string(self.scales_input.text())
+        cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
+        cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
+        cfg.DEFAULT_BOUNDING_BOX = float(self.bounding_rectangle_checkbox.isChecked())
+        for scale in cfg.data.get_scales():
+            cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
+            for layer in cfg.data['data']['scales'][scale]['alignment_stack']:
+                layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
+                layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
+        logger.critical('Scales: %s' % str(self.get_scales()))
+
+        cfg.main_window.save_project()
 
     def on_cancel(self):
         self.close()
 
+    @Slot()
     def on_create_button_clicked(self):
-        # emit custom signal and pass some parameters back in self.config
+        logger.critical('on_create_button_clicked:')
         self.update_project_dict()
-        # self.emit(Signal("dialog closed"), self.config)
         self.close()
 
-
-    def update_project_dict(self):
-        logger.info('Running update_init_scale...')
-        cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
-        cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
-        cfg.DEFAULT_BOUNDING_BOX = float(self.bounding_rectangle_checkbox.isChecked())
-        for scale_key in get_scales_list():
-            cfg.project_data['data']['scales'][scale_key]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
-            for layer in cfg.project_data['data']['scales'][scale_key]['alignment_stack']:
-                # layer['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
-                layer['align_to_ref_method']['method_options'].update(
-                    {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}) # ('initial_scale', cfg.DEFAULT_INITIAL_SCALE)
-                layer['align_to_ref_method']['method_options'].update(
-                    {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
-        logger.debug('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
-        logger.debug('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
-        logger.debug('cfg.DEFAULT_BOUNDING_BOX = %f' % cfg.DEFAULT_BOUNDING_BOX)
-
-    def createFormGroupBox(self):
+    def initUI(self):
 
         # DEFAULT_SWIM_WINDOW = float(0.8125)
         # DEFAULT_WHITENING = float(-0.6800)
@@ -146,6 +151,23 @@ class DefaultsForm(QDialog):
         # self.swim_input.setText(str(cfg.DEFAULT_SWIM_WINDOW))
         # self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
         # self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        '''Scales Field'''
+        if do_scales_exist():
+            scales_lst = [str(v) for v in
+                              sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
+        else:
+            scales_lst = ['1']
+        scales_str = ' '.join(scales_lst)
+
+
+        self.scales_label = QLabel("Scale Factors:")
+        self.scales_input = QLineEdit(self)
+        self.scales_input.setText(scales_str)
+        self.scales_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        tip = "Enter scale factors separated by spaces.\nFor example, to generate 1x 2x and 4x scales: 1 2 4"
+        self.scales_label.setToolTip(tip)
+        self.scales_input.setToolTip(tip)
 
         '''Initial Rotation Field'''
         self.initial_rotation_label = QLabel("Initial Rotation:")
@@ -170,6 +192,7 @@ class DefaultsForm(QDialog):
         layout = QFormLayout()
         # layout.addRow(self.whitening_label, self.whitening_input)
         # layout.addRow(self.swim_label, self.swim_input)
+        layout.addRow(self.scales_label, self.scales_input)
         layout.addRow(self.initial_rotation_label, self.initial_rotation_input)
         layout.addRow(self.initial_scale_label, self.initial_scale_input)
         layout.addRow(self.bounding_rectangle_label, self.bounding_rectangle_checkbox)
@@ -187,6 +210,8 @@ class DefaultsForm(QDialog):
         self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
 
         self.formGroupBox.setLayout(layout)
+
+
 
 
 
@@ -234,3 +259,5 @@ class DefaultsModel(QAbstractListModel):
         # self.dataChanged.emit(index, index) # <-- list()/[] is necessary since Qt5
         self.dataChanged.emit(index, index, list()) # <-- list()/[] is necessary since Qt5
         return True
+
+

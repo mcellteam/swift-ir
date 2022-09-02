@@ -47,7 +47,7 @@ if __name__ == '__main__':
                 start_layer=start_layer,
                 num_layers=num_layers)
 
-        # Send the updated data model and need_to_write_json back to the project runner via stdout
+        # Send the updated data model and need_to_write_json back to the data runner via stdout
         jde = json.JSONEncoder(indent=1, separators=(",", ": "), sort_keys=True)
         run_output_json = jde.encode({'data_model': updated_model, 'need_to_write_json': need_to_write_json})
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
             print(run_output_json)
             print("---JSON-DELIMITER---")
 
-        # logger.info ( "\n\n\n JSON DATA MODEL:\n" + str(proj_json) + "\n\n" )
+        # logger.info ( "\n\n\n JSON data MODEL:\n" + str(proj_json) + "\n\n" )
         # flush()
         sys.stdout.close()
         sys.stderr.close()

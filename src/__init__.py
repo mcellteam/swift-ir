@@ -22,9 +22,9 @@ from . import swiftir
 from .swiftir import *
 __all__.extend(swiftir.__all__)
 
-from . import em_utils
-from .em_utils import *
-__all__.extend(em_utils.__all__)
+from . import helpers
+from .helpers import *
+__all__.extend(helpers.__all__)
 
 from . import image_utils
 from .image_utils import *

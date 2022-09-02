@@ -2,6 +2,7 @@
 
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWebEngineWidgets import QWebEnginePage
+from PyQt5.QtCore import QEventLoop
 
 __all__ = ['CustomWebEnginePage']
 
@@ -25,7 +26,7 @@ class CustomWebEnginePage(QWebEnginePage):
 
 def render(source_html):
     """Fully render HTML, JavaScript and all."""
-    from PySide6.QtCore import QEventLoop
+
     class Render(QWebEngineView):
         def __init__(self, html):
             self.html = None

@@ -19,14 +19,14 @@ logger = logging.getLogger(__name__)
 
 
 def image_apply_affine(in_fn=None, out_fn=None, afm=None, rect=None, grayBorder=False):
-    logger.info("image_apply_affine afm: " + str(afm))
+    logger.critical("image_apply_affine afm: " + str(afm))
     in_img = loadImage(in_fn)
-    logger.info("Transforming " + str(in_fn))
-    logger.info("    afm = " + str(afm))
-    logger.info("    rect = " + str(rect))
-    logger.info("    grayBorder = " + str(grayBorder))
+    logger.critical("Transforming " + str(in_fn))
+    logger.critical("    afm = " + str(afm))
+    logger.critical("    rect = " + str(rect))
+    logger.critical("    grayBorder = " + str(grayBorder))
     out_img = affineImage(afm, in_img, rect=rect, grayBorder=grayBorder)
-    logger.info("  saving transformed image as: " + str(out_fn))
+    logger.critical("  saving transformed image as: " + str(out_fn))
     try:
         saveImage(out_img, out_fn)
     except Exception:
@@ -50,13 +50,34 @@ def print_command_line_syntax(args):
     logger.debug('  out_file_name       : output image file name (opened for writing and overwritten)')
 
 
+'''
+/Users/joelyancey/glanceem_swift/alignEM/src/job_apply_affine.py
+-gray
+-rect
+-3
+-3
+1030
+1030
+-afm
+1.0053000450134277
+0.004926680121570826
+-2.3439199924468994
+-0.005592479836195707
+1.0550800561904907
+1.5037000179290771
+
+'''
+
+
+
+
 if (__name__ == '__main__'):
     # len(sys.argv) = 16
     if (len(sys.argv) < 4):
         print_command_line_syntax(sys.argv)
         exit(1)
-    in_fn = sys.argv[-2]
-    out_fn = sys.argv[-1]
+    in_fn = sys.argv[-2] # Input File Name
+    out_fn = sys.argv[-1] # Output File Name
     rect = None
     grayBorder = False
 

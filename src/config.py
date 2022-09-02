@@ -1,10 +1,10 @@
 '''
-This file is for initializing global config and 'project_data' the dictionary project state in memory.
+This file is for initializing global config and 'data' the dictionary data state in memory.
 It is imported by other src files and lives outside of the 'src' directory.
 '''
 
 __all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
-           'project_data','main_window','image_library','USE_FILE_IO',
+           'data', 'main_window', 'image_library', 'USE_FILE_IO',
            'PARALLEL_MODE','CODE_MODE','ICON_COLOR','WIDTH','HEIGHT','DEFAULT_INITIAL_ROTATION',
            'DEFAULT_INITIAL_SCALE', 'DEFAULT_BOUNDING_BOX','DEFAULT_NULL_BIAS',
            'DEFAULT_POLY_ORDER','DEFAULT_WHITENING','DEFAULT_SWIM_WINDOW']
@@ -13,12 +13,12 @@ import os
 import logging
 
 LOG_LEVEL = None
-# WIDTH = 1024 #***
-# HEIGHT = 768 #***
+WIDTH = 1024 #***
+HEIGHT = 768 #***
 # WIDTH = 1280
 # HEIGHT = 720
-WIDTH = 1024 #***
-HEIGHT = 820 #***
+# WIDTH = 1024 #***
+# HEIGHT = 820 #***
 
 
 DEFAULT_SWIM_WINDOW       = float(0.8125)
@@ -35,7 +35,7 @@ USES_PYQT = None
 USES_QT5 = None
 USES_QT6 = None
 
-project_data = None
+data = None
 main_window = None
 image_library = None
 data_model = None

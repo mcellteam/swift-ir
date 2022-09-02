@@ -11,7 +11,9 @@ Joel Yancey 2022-08-15
 import os
 import sys
 import zarr
-import tifffile
+# import tifffile
+from PIL import Image
+
 
 if __name__ == '__main__':
 
@@ -21,26 +23,10 @@ if __name__ == '__main__':
     src          = sys.argv[3] #*
     out          = sys.argv[4] #*
     scale_str    = sys.argv[5] #*
-    chunks       = sys.argv[6]
-    n_imgs       = int(sys.argv[7])
-    width        = int(sys.argv[8])
-    height       = int(sys.argv[9])
-    scale_val    = int(sys.argv[10])
-
-    # job_script   = sys.argv[0]
-    # ID           = int(sys.argv[1])
-    # img          = sys.argv[2]
-    # src          = sys.argv[3]
-    # out          = sys.argv[4]
-    # scale_str    = sys.argv[5]
-    # chunks       = sys.argv[6]
-    # n_imgs       = int(sys.argv[7])
-    # width        = int(sys.argv[8])
-    # height       = int(sys.argv[9])
-    # scale_val    = int(sys.argv[10])
 
     scale_img = os.path.join(src, scale_str, 'img_aligned', img)
-    im = tifffile.imread(scale_img) # im.dtype =  uint8
+    # im = tifffile.imread(scale_img) # im.dtype =  uint8
+    im = Image.open(scale_img)
     # im = np.atleast_3d(im)
     # im = np.expand_dims(im, axis=0)
     '''Probably want to set data type on array creation'''

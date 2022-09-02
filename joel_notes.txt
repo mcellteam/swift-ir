@@ -149,7 +149,7 @@ if len(project_data['data']['scales']) > 0:
 
 Print/return the number of aligned images in  <project destination>/<current scale>/img_aligned
 
-dir = os.path.join(project_data['data']['destination_path'], get_cur_scale_key(), 'img_aligned')
+dir = os.path.join(project_data['data']['destination_path'], cfg.project_data.cur_scale(), 'img_aligned')
 print(len([name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))]))
 
 
