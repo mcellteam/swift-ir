@@ -6,6 +6,7 @@ the affine transformation)
 import os
 import sys
 import logging
+import platform
 import subprocess as sp
 import argparse
 import numpy as np
@@ -125,15 +126,10 @@ if (__name__ == '__main__'):
             exit(1)
         i += 1  # Increment to get the next option
 
-    # afm <-
-
-    # bb_str = ' '.join(map(str, rect[2:4]))
-
     bb_x = rect[2]
     bb_y = rect[3]
     offset_x = rect[0]
     offset_y = rect[1]
-    # afm
     # in_fn
     # out_fn
     a = afm_list[0]
@@ -142,8 +138,18 @@ if (__name__ == '__main__'):
     b = afm_list[3]
     d = afm_list[4]
     f = afm_list[5] + offset_y
+
     my_path = os.path.split(os.path.realpath(__file__))[0]
-    mir_c = my_path + '/lib/bin_darwin/mir'
+
+    system = platform.system()
+    node = platform.node()
+    if system == 'Darwin':
+        mir_c = my_path + '/lib/bin_darwin/mir'
+    elif system == 'Linux':
+        if '.tacc.utexas.edu' in node:
+            mir_c = my_path + '/lib/bin_tacc/mir'
+        else:
+            mir_c = my_path + '/lib/bin_linux/mir'
 
     #TODO Use pillow to store median greyscale value for each image in list, for now just use 128
     mir_script = \
@@ -158,8 +164,6 @@ if (__name__ == '__main__'):
 
     #  + '/'
     #         mir_c = my_path + 'lib/bin_darwin/mir'
-
-
 
     # try:
     #     image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)
