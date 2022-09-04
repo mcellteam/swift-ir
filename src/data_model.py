@@ -212,7 +212,7 @@ class DataModel:
 
     def snr_list(self):
         snr_list = []
-        for layer in self._data['data']['scales'][self._data.cur_scale()]['alignment_stack']:
+        for layer in self._data['data']['scales'][self.get_scale()]['alignment_stack']:
             try:
                 snr_vals = layer['align_to_ref_method']['method_results']['snr']
                 mean_snr = sum(snr_vals) / len(snr_vals)
@@ -298,7 +298,7 @@ class DataModel:
         if self.get_n_scales() == 1:
             return self.get_scale()
         scales_dict = self._data['data']['scales']
-        cur_scale_key = self._data.cur_scale()
+        cur_scale_key = self.get_scale()
         coarsest_scale = list(scales_dict.keys())[-1]
         if cur_scale_key == coarsest_scale:
             return cur_scale_key
