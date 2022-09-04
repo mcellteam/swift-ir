@@ -45,10 +45,9 @@ class TqdmToLogger(io.StringIO):
 
 
 SENTINEL = 1
-def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
+def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     '''Function run by worker processes'''
     time.sleep(.1)
-    pbar_q.put(SENTINEL)
 
     for task_id, task in iter(task_q.get, 'END_TASKS'):
         # QApplication.processEvents()
@@ -73,7 +72,6 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers, pbar_q = None):
             print(errs)
             rc = 1
 
-        pbar_q.put(SENTINEL)
         dt = time.time() - t0
         result_q.put((task_id, outs, errs, rc, dt)) # put method uses block=True by default
         task_q.task_done()
@@ -100,7 +98,6 @@ class TaskQueue(QObject):
         self.logging_handler = logging_handler
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
-        self.pbar_q = self.ctx.Queue()
         self.tqdm_desc = ''
 
         logger.debug('TaskQueue Initialization')
@@ -109,45 +106,23 @@ class TaskQueue(QObject):
         logger.debug('self.n_tasks = %d' % self.n_tasks)
         logger.debug('sys.version_info = %s' % str(sys.version_info))
 
-    def pbar_listener(self, pbar_q, n_tasks:int):
-        pass
-        '''self.progress_callback has an identical location in memory'''
-        # tqdm_out = TqdmToLogger(logging.getLogger("hud"), level=logging.INFO)
-        # pbar = tqdm(total = n_tasks, desc=self.tqdm_desc)
-        # # pbar = tqdm(total = n_tasks, desc=self.tqdm_desc, file=tqdm_out)
-        # # pbar = logger_tqdm(total = n_tasks, desc=self.tqdm_desc)
-        # # pbar = logging_tqdm()
-        # for item in iter(pbar_q.get, None):
-        #     pbar.update()
-        # pbar.close()
-
     def start(self, n_workers, retries=1) -> None:
 
         '''type(task_q)= <class 'multiprocessing.queues.JoinableQueue'>
            type(result_q)= <class 'multiprocessing.queues.Queue'>'''
         logger.debug('TaskQueue.start:')
-        logger.info('Size of Task Dict: %d' % len(self.task_dict))
         self.task_id = 0
         self.n_workers = n_workers
-
-        logger.info('Number of Workers: %d' % self.n_workers)
         self.retries = retries
         self.task_dict = {}
 
-        logger.info('Using %d workers in parallel to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
-        # pbar_proc = QProcess(target=self.pbar_listener, args=(self.m.pbar_q, self.n_tasks))
-        try:
-            # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks, ))
-            self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
-            self.pbar_proc.start()
-        except:
-            logger.warning('There Was a Problem Launching the Progress Bar Process')
+        logger.info('Using %d workers to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
 
         for i in range(self.n_workers):
             sys.stderr.write('Starting Worker %d >>>>>>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
+                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -156,23 +131,16 @@ class TaskQueue(QObject):
         logger.debug('<<<< Exiting TaskQueue.start')
 
     def restart(self) -> None:
-        logger.debug('TaskQueue.restart:')
         logger.info('Restarting the Task Queue...')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
-        self.pbar_q = self.ctx.Queue()
         self.workers = []
-        try:
-            # self.pbar_proc = self.ctx.Process(target=self.pbar_listener, daemon=True, args=(self.pbar_q, self.n_tasks,))
-            self.pbar_proc = self.ctx.Process(target=self.pbar_listener, args=(self.pbar_q, self.n_tasks, ))
-            self.pbar_proc.start()
-        except:
-            logger.warning('There Was a Problem Launching the Progress Bar Process')
+
         for i in range(self.n_workers):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q,))
-                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
+                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -184,10 +152,9 @@ class TaskQueue(QObject):
         logger.debug('TaskQueue.end_tasks:')
         for i in range(self.n_workers):
             self.work_queue.put('END_TASKS')
-        logger.debug('<<<< TaskQueue.end_tasks')
 
     def stop(self) -> None:
-        logger.info("Calling 'stop' on TaskQueue")
+        # logger.info("Calling 'stop' on TaskQueue")
         self.work_queue.close()
         time.sleep(0.1)  # Needed to Avoid Race Condition
     #    for i in range(len(self.workers)):
@@ -228,9 +195,7 @@ class TaskQueue(QObject):
     #     return len(self.task_dict)
 
     def collect_results(self) -> None:
-
-        logger.critical('Caller: %s' % inspect.stack()[1].function)
-        '''Get results from tasks'''
+        '''Run All Tasks and Collect Results'''
         logger.info("TaskQueue.collect_results  >>>>")
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
@@ -240,24 +205,24 @@ class TaskQueue(QObject):
             logger.info('# Tasks Pending: %d' % n_pending)
             retry_list = []
             for j in range(n_pending):
-                # try:
-                #     task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
-                #     logger.critical(task_str)
-                # except:
-                #     pass
+                if j == 0:
+                    try:
+                        task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
+                        logger.info(task_str)
+                    except:
+                        pass
 
-                logger.info('# Tasks Remaining: %d' % realtime)
                 self.parent.pbar.show()
-                QApplication.processEvents() # allows Qt to continue to respond so application will stay responsive.
+                self.parent.pbar_max(self.n_tasks)
+                QApplication.processEvents()
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.warning('Collected results from Task_ID %d' % (task_id))
                 logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
-                logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
+                # logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc
-
                 if rc == 0:
                     self.task_dict[task_id]['status'] = 'completed'
                 else:
@@ -296,7 +261,7 @@ class TaskQueue(QObject):
         self.parent.pbar.hide()
         self.end_tasks()
         self.work_queue.join()
-        self.stop()
+        self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
 
         logger.info('<<<<  TaskQueue.collect_results')
 
@@ -362,7 +327,7 @@ print('mp_queue.TaskQueue.start | mp.get_context() = ', mp.get_context())
 print('mp_queue.TaskQueue.start | mp.get_start_method() = ', mp.get_start_method())
 image_apply_affine task (example)
 task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3', 
-       '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_apply_affine.py', 
+       '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_python_apply_affine.py', 
        '-gray', 
        '-afm', 
        '1.040024184796598', 

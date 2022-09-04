@@ -107,7 +107,8 @@ class DefaultsForm(QDialog):
     #         # f.write(self.defaults)
 
     def update_project_dict(self):
-        logger.critical('Running update_init_scale:')
+        # logger.critical('Running update_init_scale:')
+        logger.critical('Running update_project_dict:')
         cfg.data.set_scales_from_string(self.scales_input.text())
         cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
         cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
@@ -117,9 +118,7 @@ class DefaultsForm(QDialog):
             for layer in cfg.data['data']['scales'][scale]['alignment_stack']:
                 layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
                 layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
-        logger.critical('Scales: %s' % str(self.get_scales()))
-
-        cfg.main_window.save_project()
+        cfg.main_window.save_project_to_file()
 
     def on_cancel(self):
         self.close()

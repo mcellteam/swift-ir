@@ -32,7 +32,7 @@ def generate_zarr(src, out):
 
     estimated_n_tasks = n_imgs * n_scales  # TODO this should take into account skips
     tasks_ = []
-    imgs = sorted(get_images_list_directly(os.path.join(src, cfg.data.cur_scale(), 'img_aligned')))
+    imgs = sorted(get_images_list_directly(os.path.join(src, cfg.data.get_scale(), 'img_aligned')))
     for ID, img in enumerate(imgs):
         for scale in cfg.data.get_aligned_scales_list():
             scale_val = get_scale_val(scale)
@@ -52,9 +52,9 @@ def generate_zarr(src, out):
     logger.info("Estimated # of tasks: %d" % estimated_n_tasks)
     logger.info('Actual # of tasks: %d' % n_tasks)
     cfg.main_window.pbar_max(n_tasks)
-    scale_q = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
-    scale_q.tqdm_desc = 'Exporting Zarr'
-    scale_q.start(cpus)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
+    task_queue.tqdm_desc = 'Exporting Zarr'
+    task_queue.start(cpus)
     for task in tasks:
         task_args = [sys.executable,
                      'src/job_convert_zarr.py',
@@ -64,10 +64,12 @@ def generate_zarr(src, out):
                      str(task[3]),          # out
                      str(task[4]),          # scale str
                      ]
-        scale_q.add_task(task_args)
-    scale_q.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
-    scale_q.stop()
-    del scale_q
+        task_queue.add_task(task_args)
+    task_queue.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+    try: task_queue.end_tasks()
+    except: pass
+    task_queue.stop()
+    del task_queue
     logger.critical('>>>>>>>> Generate Zarr End <<<<<<<<')
 
 

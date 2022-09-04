@@ -23,14 +23,13 @@ def generate_scales():
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     proj_path = cfg.data['data']['destination_path']
     n_tasks = cfg.data.get_n_images() * (cfg.data.get_n_scales() - 1)  #0901 #Refactor
-    cfg.main_window.pbar_max(n_tasks)
-    scale_q = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
-    scale_q.tqdm_desc = 'Scaling Images'
+    # cfg.main_window.pbar_max(n_tasks)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
+    task_queue.tqdm_desc = 'Scaling Images'
     cpus = min(psutil.cpu_count(logical=False), 48)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     my_system = platform.system()
     my_node = platform.node()
-    logger.info("Configuring platform-specific path to SWiFT-IR executables")
     '''TODO: Check for SWiFT-IR executables at startup'''
     '''TODO: Keep local current scale value as member of MainWindow class, to reduce read ops.'''
     if my_system == 'Darwin':
@@ -42,7 +41,6 @@ def generate_scales():
         return
     iscale2_c = os.path.join(my_path, 'lib', bindir, 'iscale2')
     try:
-        logger.info('Checking if iscale_2 (%s) is a file...' % iscale2_c)
         os.path.isfile(iscale2_c)
     except:
         print_exception()
@@ -66,7 +64,7 @@ def generate_scales():
     #     logger.info('Only one scale is requested, so not calling mp_queue - Returning')
     #     return
 
-    scale_q.start(cpus)
+    task_queue.start(cpus)
 
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
         logger.debug('Looping, Scale ', scale)
@@ -117,17 +115,17 @@ def generate_scales():
                             # logger.info(fn)
 
                     if cfg.CODE_MODE == 'python':
-                        scale_q.add_task(cmd=sys.executable,
+                        task_queue.add_task(cmd=sys.executable,
                                          args=['job_single_scale.py', str(scale), str(fn), str(ofn)], wd='.')
                     else:
                         scale_arg = '+%d' % (scale)
                         outfile_arg = 'of=%s' % (ofn)
                         infile_arg = '%s' % (fn)
-                        # scale_q.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
-                        scale_q.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
-                        if i == 1:
-                            logger.info('\nscale_q Parameters (Example):')
-                            logger.info('1: %s\n2: %s\n3: %s\n4: %s' % (iscale2_c, scale_arg, outfile_arg, infile_arg))
+                        # task_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
+                        task_queue.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
+                        # if i == 1:
+                        #     logger.debug('\ntask_queue Parameters (Example):\n1: %s\n2: %s\n3: %s\n4: %s' %
+                        #                 (iscale2_c, scale_arg, outfile_arg, infile_arg))
 
                 except:
                     cfg.main_window.hud.post("Error adding tasks to the task queue - Canceling", logging.ERROR)
@@ -137,19 +135,21 @@ def generate_scales():
             layer['images']['base']['filename'] = ofn  # Update Data Model
 
     ### Join the queue here to ensure that all have been generated before returning
-    # scale_q.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+    # task_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
     cfg.main_window.hud.post('Generating Scale Hierarchy...')
     t0 = time.time()
-    scale_q.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
-    scale_q.stop()
-    del scale_q
+    task_queue.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
+    try: task_queue.end_tasks()
+    except: pass
+    task_queue.stop()
+    del task_queue
     dt = time.time() - t0
     cfg.main_window.hud.post("Process Completed in %.2f Seconds" % dt)
 
     logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')
 
     '''
-    ____scale_q Parameters (Example)____
+    ____task_queue Parameters (Example)____
     (1) : iscale2_c : /Users/joelyancey/glanceem_swift/alignEM/src/src/lib/bin_darwin/iscale2
     (2) : scale_arg : +2
     (3) : outfile_arg : of=/Users/joelyancey/glanceEM_SWiFT/test_projects/test993/scale_2/img_src/R34CA1-BS12.104.tif

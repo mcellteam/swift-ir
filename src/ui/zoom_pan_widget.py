@@ -164,7 +164,7 @@ class ZoomPanWidget(QWidget):
 
                         if (img_w <= 0) or (img_h <= 0) or (win_w <= 0) or (win_h <= 0):  # Zero or negative dimensions might lock up?
                             self.need_to_center = 1
-                            logger.warning("Cannot center image for role %s" % self.role)
+                            # logger.warning("Cannot center image for role %s" % self.role)
 
                         else:
                             # Start with the image at a zoom of 1 (natural size) and with the mouse wheel centered (at 0)
@@ -233,7 +233,7 @@ class ZoomPanWidget(QWidget):
             except:
                 dim_str = ''
             scale_str = 'Scale %d' % get_scale_val(s)
-            snr_str = str(cfg.data.cur_snr())
+            snr_str = str(cfg.data.get_snr())
             if self.role == 'aligned':
                 if is_cur_scale_aligned():
                     self.setToolTip('%s\n%s [%s]\n%s' % (role_str, scale_str, dim_str, snr_str))
@@ -448,8 +448,8 @@ class ZoomPanWidget(QWidget):
         if do_scales_exist():
             cfg.main_window.read_gui_update_project_data()
         n_imgs = cfg.data.get_n_images()
-        scale = cfg.data.cur_scale()
-        leaving = cfg.data.cur_layer()
+        scale = cfg.data.get_scale()
+        leaving = cfg.data.get_layer()
         requested = leaving + layer_delta
         rng = cfg.PRELOAD_RANGE
         if requested in range(n_imgs): pass

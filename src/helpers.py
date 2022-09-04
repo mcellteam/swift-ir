@@ -9,6 +9,7 @@ import signal
 import imghdr
 import logging
 import inspect
+import platform
 import traceback
 from glob import glob
 from pathlib import Path
@@ -28,7 +29,7 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['remove_aligned', 'is_destination_set', 'do_scales_exist', 'make_relative', 'make_absolute',
+__all__ = ['check_for_binaries', 'remove_aligned', 'is_destination_set', 'do_scales_exist', 'make_relative', 'make_absolute',
            'is_cur_scale_aligned', 'get_num_aligned', 'are_aligned_images_generated',
            'print_path', 'print_alignment_layer', 'print_dat_files', 'print_sanity_check',
            'copy_skips_to_all_scales', 'are_images_imported', 'is_cur_scale_exported', 'get_images_list_directly',
@@ -38,6 +39,26 @@ __all__ = ['remove_aligned', 'is_destination_set', 'do_scales_exist', 'make_rela
            ]
 
 logger = logging.getLogger(__name__)
+
+def check_for_binaries():
+    logger.info("Checking platform-specific path to SWiFT-IR executables...")
+    path = os.path.split(os.path.realpath(__file__))[0]
+    if platform.system() == 'Darwin':
+        bindir = os.path.join(path, 'lib', 'bin_darwin')
+    elif platform.system() == 'Linux':
+        bindir = os.path.join(path, 'lib', 'bin_tacc') if '.tacc.utexas.edu' in platform.node() else 'bin_linux'
+    else:
+        logger.warning("System Could Not Be Resolved. C Binaries Not Found.")
+        return
+    bin_lst = [os.path.join(bindir, 'iavg'),
+               os.path.join(bindir, 'iscale2'),
+               os.path.join(bindir, 'mir'),
+               os.path.join(bindir, 'remod'),
+               os.path.join(bindir, 'swim')
+               ]
+    for f in bin_lst:
+        if os.path.isfile(f):  logger.info('%s FOUND' % f)
+        else:  logger.warning('%s NOT FOUND' % f)
 
 def preallocate_zarr():
     src = os.path.abspath(cfg.data.destination())
@@ -215,7 +236,6 @@ def make_absolute(file_path, proj_path):
 
 
 def create_project_structure_directories(subdir_path) -> None:
-    logger.info('create_project_structure_directories:')
     src_path = os.path.join(subdir_path, 'img_src')
     aligned_path = os.path.join(subdir_path, 'img_aligned')
     bias_data_path = os.path.join(subdir_path, 'bias_data')
@@ -242,7 +262,7 @@ def printProjectDetails(project_data: dict) -> None:
     logger.info("  Cur Scale Aligned         :", are_aligned_images_generated())
     logger.info("  Any Exported Status       :", is_any_alignment_exported())
     logger.info("  # Imported Images         :", cfg.data.get_n_images())
-    logger.info("  Current Layer SNR         :", cfg.data.cur_snr())
+    logger.info("  Current Layer SNR         :", cfg.data.get_snr())
 
 
 def is_not_hidden(path):
@@ -267,7 +287,7 @@ def print_path() -> None:
 def print_alignment_layer() -> None:
     '''Prints a single alignment layer (the last layer) for the current scale from the data dictionary.'''
     try:
-        al_layer = cfg.data['data']['scales'][cfg.data.cur_scale()]['alignment_stack'][-1]
+        al_layer = cfg.data['data']['scales'][cfg.data.get_scale()]['alignment_stack'][-1]
         print(json.dumps(al_layer, indent=2))
     except:
         print('No Alignment Layers Found for the Current Scale')
@@ -275,12 +295,12 @@ def print_alignment_layer() -> None:
 
 def print_dat_files() -> None:
     '''Prints the .dat files for the current scale, if they exist .'''
-    bias_data_path = os.path.join(cfg.data['data']['destination_path'], cfg.data.cur_scale(), 'bias_data')
+    bias_data_path = os.path.join(cfg.data['data']['destination_path'], cfg.data.get_scale(), 'bias_data')
     if are_images_imported():
         logger.info('Printing .dat Files')
         try:
             logger.info("_____________________BIAS DATA_____________________")
-            logger.info("Scale %d____________________________________________" % get_scale_val(cfg.data.cur_scale()))
+            logger.info("Scale %d____________________________________________" % get_scale_val(cfg.data.get_scale()))
             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
                 snr_1 = f.read()
                 logger.info('snr_1               : %s' % snr_1)
@@ -330,7 +350,7 @@ def print_sanity_check():
         print("  Destination path                                 : n/a")
     cur_scale = cfg.data['data']['current_scale']
     try:
-        scale = cfg.data.cur_scale()  # logger.info(scale) returns massive wall of text
+        scale = cfg.data.get_scale()  # logger.info(scale) returns massive wall of text
     except:
         pass
     print("  Current scale                                    :", cur_scale)
@@ -344,7 +364,7 @@ def print_sanity_check():
         print("  Alignment Option                                 : n/a")
     print("Data Selection & Scaling___________________________")
     print("  Are images imported?                             :", are_images_imported())
-    print("  How many images?                                 :", cfg.data.get_num_imported())
+    print("  How many images?                                 :", cfg.data.get_n_images())
     skips = cfg.data.get_skips()
     if skips != []:
         print("  Skip list                                        :", skips)
@@ -376,7 +396,7 @@ def print_sanity_check():
         print("  Which scales are aligned?                        : n/a")
 
     print("  alignment_option                                 :",
-          cfg.data['data']['scales'][cfg.data.cur_scale()]['method_data']['alignment_option'])
+          cfg.data['data']['scales'][cfg.data.get_scale()]['method_data']['alignment_option'])
     try:
         print("  whitening factor (current layer)                 :",
               scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
@@ -390,14 +410,14 @@ def print_sanity_check():
     except:
         print("  SWIM window (current layer)                      : n/a")
     try:
-        print("  SNR (current layer)                              :", cfg.data.cur_snr())
+        print("  SNR (current layer)                              :", cfg.data.get_snr())
     except:
         print("  SNR (current layer)                              : n/a")
 
 
     print("Post-alignment_____________________________________")
     try:
-        poly_order = cfg.data['data']['scales'][cfg.data.cur_scale()]['poly_order']
+        poly_order = cfg.data['data']['scales'][cfg.data.get_scale()]['poly_order']
         print("  poly_order (all layers)                          :", poly_order)
     except:
         print("  poly_order (all layers)                          : n/a")
@@ -502,7 +522,7 @@ def is_cur_scale_aligned() -> bool:
     functions even for a data that does not need scales.'''
     try:
         afm_1_file = os.path.join(cfg.data['data']['destination_path'],
-                                  cfg.data.cur_scale(),
+                                  cfg.data.get_scale(),
                                   'bias_data',
                                   'afm_1.dat')
         # logger.info('afm_1_file = ', afm_1_file)
@@ -541,7 +561,7 @@ def is_arg_scale_aligned(scale: str) -> bool:
 def get_num_aligned() -> int:
     '''Returns the count aligned and generated images for the current scale.'''
 
-    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.cur_scale(), 'img_aligned')
+    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.get_scale(), 'img_aligned')
     # logger.info('get_num_aligned | path=', path)
     try:
         n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
@@ -561,7 +581,7 @@ def is_any_scale_aligned_and_generated() -> bool:
 
 def are_aligned_images_generated():
     '''Returns True or False dependent on whether aligned images have been generated for the current scale.'''
-    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.cur_scale(), 'img_aligned')
+    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.get_scale(), 'img_aligned')
     files = glob(path + '/*.tif')
     if len(files) < 1:
         logger.debug('Zero aligned TIFs were found at this scale - Returning False')
@@ -601,12 +621,12 @@ def is_cur_scale_exported() -> bool:
 
 def print_snr_list() -> None:
     try:
-        snr_list = cfg.data['data']['scales'][cfg.data.cur_scale()]['alignment_stack'][cfg.data.cur_layer()][
+        snr_list = cfg.data['data']['scales'][cfg.data.get_scale()]['alignment_stack'][cfg.data.get_layer()][
             'align_to_ref_method']['method_results']['snr']
         logger.debug('snr_list:  %s' % str(snr_list))
         mean_snr = sum(snr_list) / len(snr_list)
         logger.debug('mean(snr_list):  %s' % mean_snr)
-        snr_report = cfg.data['data']['scales'][cfg.data.cur_scale()]['alignment_stack'][cfg.data.cur_layer()][
+        snr_report = cfg.data['data']['scales'][cfg.data.get_scale()]['alignment_stack'][cfg.data.get_layer()][
             'align_to_ref_method']['method_results']['snr_report']
         logger.info('snr_report:  %s' % str(snr_report))
         logger.debug('All Mean SNRs for current scale:  %s' % str(cfg.data.snr_list()))

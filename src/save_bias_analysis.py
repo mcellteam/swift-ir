@@ -16,10 +16,9 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
     :type al_stack: dict
     :param bias_data_path: Path to where the bias data will be saved.
     :type bias_data_path: str"""
-    
-    logger.info('save_bias_analysis:')
-    logger.debug('save_bias_analysis was called by %s' % inspect.stack()[1].function)
-    logger.debug('Saving Bias Data (.dat) at path %s' % bias_data_path)
+
+    logger.info('Saving Bias Data (.dat) to Path %s' % bias_data_path)
+    logger.debug('Called by %s' % inspect.stack()[1].function)
 
     for i in range(len(al_stack)):
 
@@ -27,7 +26,7 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
             try:
                 atrm = al_stack[i]['align_to_ref_method']
                 if i == 1:
-                    logger.info('atrm:\n%s' % str(atrm))
+                    logger.info('\nEXAMPLE atrm:\n%s' % str(atrm))
                 try:
                     c_afm = np.array(atrm['method_results']['cumulative_afm'])
                 except:

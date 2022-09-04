@@ -98,18 +98,100 @@ class DataModel:
     def destination(self):
         return self._data['data']['destination_path']
 
-    def cur_scale(self) -> str:
-        '''Returns the Current Scale'''
+    def get_scale(self) -> str:
+        '''Returns the Current Scale as a String.'''
         return self._data['data']['current_scale']
 
-    def cur_layer(self) -> int:
-        '''Returns the Current Layer'''
+    def get_layer(self) -> int:
+        '''Returns the Current Layer as an Integer.'''
         return self._data['data']['current_layer']
 
-    def cur_snr(self) -> str:
-        # if not self._data['data']['current_scale']:
-        #     logger.info("Canceling get_cur_snr() because no current scale is set...")
-        #     return ''  # 0711
+    def get_skip(self) -> bool:
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        return bool(self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()]['skip'])
+
+    def get_whitening(self) -> float:
+        '''Returns the Whitening Factor for the Current Layer.'''
+        return float(self._data['data']['scales'][self.get_scale()]['alignment_stack'][
+                         self.get_layer()]['align_to_ref_method']['method_data']['whitening_factor'])
+
+    def get_swim_window(self) -> float:
+        '''Returns the SWIM Window for the Current Layer.'''
+        return float(self._data['data']['scales'][self.get_scale()]['alignment_stack'][
+                         self.get_layer()]['align_to_ref_method']['method_data']['win_scale_factor'])
+
+    def get_bounding_rect(self) -> bool:
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        return bool(self._data['data']['scales'][self.get_scale()]['use_bounding_rect'])
+
+    def get_poly_order(self) -> int:
+        '''Returns the Polynomial Order for the Current Scale.'''
+        return int(self._data['data']['scales'][self.get_scale()]['poly_order'])
+
+    def get_null_cafm(self) -> bool:
+        '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
+        return bool(self._data['data']['scales'][self.get_scale()]['null_cafm_trends'])
+
+
+    def set_scale(self, x:str) -> None:
+        '''Sets the Current Scale.'''
+        self._data['data']['current_scale'] = x
+
+    def set_layer(self, x:int) -> None:
+        '''Sets the Current Layer as Integer.'''
+        self._data['data']['current_layer'] = x
+
+    def set_skip(self, b:bool) -> None:
+        '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
+        self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()]['skip'] = b
+
+    def set_whitening(self, f:float) -> None:
+        '''Sets the Whitening Factor for the Current Layer.'''
+        self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()][
+            'align_to_ref_method']['method_data']['whitening_factor'] = f
+
+    def set_swim_window(self, f:float) -> None:
+        '''Sets the SWIM Window for the Current Layer.'''
+        self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()][
+            'align_to_ref_method']['method_data']['win_scale_factor'] = f
+
+    def set_bounding_rect(self, b:bool) -> None:
+        '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
+        self._data['data']['scales'][self.get_scale()]['use_bounding_rect'] = b
+
+    def set_poly_order(self, x:int) -> None:
+        '''Sets the Polynomial Order for the Current Scale.'''
+        self._data['data']['scales'][self.get_scale()]['poly_order'] = x
+
+    def set_null_cafm(self, b:bool) -> None:
+        '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
+        self._data['data']['scales'][self.get_scale()]['null_cafm_trends'] = b
+
+
+    '''
+        @Slot()
+    def get_whitening_input(self) -> float:
+        return float(self.whitening_input.text())
+    
+    @Slot()
+    def get_swim_input(self) -> float:
+        return float(self.swim_input.text())
+    
+    @Slot()
+    def get_bounding_state(self):
+        return self.toggle_bounding_rect.isChecked()
+    
+    @Slot()
+    def get_null_bias_value(self) -> str:
+        return str(self.null_bias_combobox.currentText())
+    '''
+
+
+    def get_snr(self) -> str:
+        '''TODO This probably shouldn't return a string'''
+        if not self._data['data']['current_scale']:
+            logger.warning("Can't Get SNR Because Scale is Not Set")
+            return ''
         try:
             s = self._data['data']['current_scale']
             l = self._data['data']['current_layer']
@@ -147,7 +229,7 @@ class DataModel:
             for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
                 layer['skip'] = False
 
-    # def cur_layer(self) -> int:
+    # def get_layer(self) -> int:
     #     '''Returns the Current Layer'''
     #     return self._data['data']['current_layer']
 
@@ -165,7 +247,7 @@ class DataModel:
         '''Returns the list of skipped images at the current scale'''
         l = []
         try:
-            scale = self.cur_scale()
+            scale = self.get_scale()
             for i in range(self.get_n_images()):
                 if self._data['data']['scales'][scale]['alignment_stack'][i]['skip'] == True:
                     l.append(i)
@@ -192,6 +274,9 @@ class DataModel:
         # logger.critical('Returning %s ' % str(l))
         return l
 
+    def get_scale_vals(self) -> list[int]:
+        return [int(v) for v in sorted([get_scale_val(s) for s in self._data['data']['scales'].keys()])]
+
     def get_aligned_scales_list(self) -> list[str]:
         '''Get aligned scales list.'''
         l = natural_sort([key for key in self._data['data']['scales'].keys()])
@@ -211,7 +296,7 @@ class DataModel:
 
     def get_next_coarsest_scale_key(self) -> str:
         if self.get_n_scales() == 1:
-            return self.cur_scale()
+            return self.get_scale()
         scales_dict = self._data['data']['scales']
         cur_scale_key = self._data.cur_scale()
         coarsest_scale = list(scales_dict.keys())[-1]
@@ -226,22 +311,31 @@ class DataModel:
 
     def is_alignable(self) -> bool:
         '''Checks if the current scale is able to be aligned'''
+        answer = True
         if not are_images_imported():
+            # logger.info('Returning False, images not imported')
             return False
         scales_list = self.get_scales()
-        cur_scale_key = self.cur_scale()
+        cur_scale_key = self.get_scale()
         coarsest_scale = scales_list[-1]
         if cur_scale_key == coarsest_scale:
+            # logger.info('Returning True, current scale is the coarsest scale')
             return True
         cur_scale_index = scales_list.index(cur_scale_key)
         next_coarsest_scale_key = scales_list[cur_scale_index + 1]
+        # logger.info('cur_scale_index = %d' % cur_scale_index)
+        # logger.info('next_coarsest_scale_key = %s' % next_coarsest_scale_key)
+        # logger.info('  index = %d' % (cur_scale_index + 1))
         if is_arg_scale_aligned(next_coarsest_scale_key):
+            logger.info('Returning True')
             return True
         else:
+            logger.info('Returning False')
             return False
 
+
     def al_stack(self) -> dict:
-        al_stack = self._data['data']['scales'][self.cur_scale()]['alignment_stack']
+        al_stack = self._data['data']['scales'][self.get_scale()]['alignment_stack']
         return al_stack
 
     def append_layer(self, scale_key):
@@ -278,7 +372,7 @@ class DataModel:
         logger.info('Updating Data Model...')
         # Load the alignment stack after the alignment has completed
         aln_image_stack = []
-        scale = self.cur_scale()
+        scale = self.get_scale()
         for layer in self.al_stack():
             image_name = None
             if 'base' in layer['images'].keys():
@@ -396,7 +490,7 @@ class DataModel:
 
     def link_all_stacks(self):
         '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
-        logger.info('link_all_stacks >>>>')
+        logger.info('link_all_stacks:')
         self.ensure_proper_data_structure()  # 0712 #0802 #original
         for scale_key in self._data['data']['scales'].keys():
             skip_list = []
@@ -428,22 +522,21 @@ class DataModel:
                             self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename=ref_fn)
                         else:
                             base_layer['images']['ref']['filename'] = ref_fn
-        logger.info('<<<< link_all_stacks')
 
-    def upgrade_data_model(self, data_model):
+    def upgrade_data_model(self):
         # Upgrade the "Data Model"
-        if data_model['version'] != self._current_version:
+        if self._data['version'] != self._current_version:
 
             # Begin the upgrade process:
 
-            if data_model['version'] <= 0.26:
-                print("\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.27))
+            if self._data['version'] <= 0.26:
+                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.27))
                 # Need to modify the data model from 0.26 or lower up to 0.27
                 # The "alignment_option" had been in the method_data at each layer
                 # This new version defines it only at the scale level
                 # So loop through each scale and move the alignment_option from the layer to the scale
-                for scale_key in data_model['data']['scales'].keys():
-                    scale = data_model['data']['scales'][scale_key]
+                for scale_key in self._data['data']['scales'].keys():
+                    scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
                     current_alignment_options = []
                     for layer in stack:
@@ -471,16 +564,16 @@ class DataModel:
                     # Finally set the value
                     scale['method_data']["alignment_option"] = scale_option
                 # Now the data model is at 0.27, so give it the appropriate version
-                data_model['version'] = 0.27
+                self._data['version'] = 0.27
 
-            if data_model['version'] == 0.27:
-                print("\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.28))
+            if self._data['version'] == 0.27:
+                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.28))
                 # Need to modify the data model from 0.27 up to 0.28
                 # The "alignment_option" had been left in the method_data at each layer
                 # This new version removes that option from the layer method data
                 # So loop through each scale and remove the alignment_option from the layer
-                for scale_key in data_model['data']['scales'].keys():
-                    scale = data_model['data']['scales'][scale_key]
+                for scale_key in self._data['data']['scales'].keys():
+                    scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
                     current_alignment_options = []
                     for layer in stack:
@@ -490,33 +583,33 @@ class DataModel:
                                 if 'alignment_option' in align_method['method_data']:
                                     align_method['method_data'].pop('alignment_option')
                 # Now the data model is at 0.28, so give it the appropriate version
-                data_model['version'] = 0.28
+                self._data['version'] = 0.28
 
-            if data_model['version'] == 0.28:
-                print("\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.29))
+            if self._data['version'] == 0.28:
+                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.29))
                 # Need to modify the data model from 0.28 up to 0.29
                 # The "use_c_version" was added to the "user_settings" dictionary
-                data_model['user_settings']['use_c_version'] = True
+                self._data['user_settings']['use_c_version'] = True
                 # Now the data model is at 0.29, so give it the appropriate version
-                data_model['version'] = 0.29
+                self._data['version'] = 0.29
 
-            if data_model['version'] == 0.29:
-                print("\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.30))
+            if self._data['version'] == 0.29:
+                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.30))
                 # Need to modify the data model from 0.29 up to 0.30
                 # The "poly_order" was added to the "scales" dictionary
-                for scale_key in data_model['data']['scales'].keys():
-                    scale = data_model['data']['scales'][scale_key]
+                for scale_key in self._data['data']['scales'].keys():
+                    scale = self._data['data']['scales'][scale_key]
                     scale['poly_order'] = 4
                 # Now the data model is at 0.30, so give it the appropriate version
-                data_model['version'] = 0.30
+                self._data['version'] = 0.30
 
-            if data_model['version'] == 0.30:
-                print("\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.31))
+            if self._data['version'] == 0.30:
+                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.31))
                 # Need to modify the data model from 0.30 up to 0.31
                 # The "skipped(1)" annotation is currently unused (now hard-coded in alignem.py)
                 # Remove alll "skipped(1)" annotations since they can not otherwise be removed
-                for scale_key in data_model['data']['scales'].keys():
-                    scale = data_model['data']['scales'][scale_key]
+                for scale_key in self._data['data']['scales'].keys():
+                    scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
                     for layer in stack:
                         for role in layer['images'].keys():
@@ -529,9 +622,9 @@ class DataModel:
                                     print("Removing any \"skipped()\" annotations ... ")
                                     m['annotations'] = [a for a in m['annotations'] if not a.startswith('skipped')]
                 # Now the data model is at 0.31, so give it the appropriate version
-                data_model['version'] = 0.31
-            if data_model['version'] == 0.31:
-                print("\n\nUpgrading data model from " + str(data_model['version']) + " to " + str(0.32))
+                self._data['version'] = 0.31
+            if self._data['version'] == 0.31:
+                print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.32))
                 # Need to modify the data model from 0.31 up to 0.32
                 #   1) change name of method_results key "affine_matrix" to "afm"
                 #   2) change name of method_results key "cumulative_afm" to "c_afm"
@@ -554,13 +647,12 @@ class DataModel:
                 # data_model ['version'] = 0.32
 
             # Make the final test
-            if data_model['version'] != self._current_version:
+            if self._data['version'] != self._current_version:
                 # The data model could not be upgraded, so return a string with the error
                 data_model = 'Version mismatch. Expected "' + str(
                     self._current_version) + '" but found ' + str(
-                    data_model['version'])
+                    self._data['version'])
 
-        return data_model
 
     # def update_init_rot(self):
     #     image_scales_to_run = [self.get_scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
@@ -580,6 +672,7 @@ class DataModel:
 
 
     def clear_method_results(self, scale_key, start_layer=0):
+        logger.info("Clearing 'method_results' Key")
         for layer in self._data['data']['scales'][scale_key]['alignment_stack'][start_layer:]:
             layer['align_to_ref_method']['method_results'] = {}
 

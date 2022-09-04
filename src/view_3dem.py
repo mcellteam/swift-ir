@@ -24,13 +24,12 @@ import os
 import sys
 import logging
 import argparse
-import functools
 import neuroglancer as ng
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from PyQt5.QtCore import QRunnable, QUrl
 from PyQt5.QtCore import pyqtSlot as Slot
 from src.helpers import print_exception
-import src.config as cfg
+# import src.config as cfg
 
 __all__ = ['View3DEM']
 

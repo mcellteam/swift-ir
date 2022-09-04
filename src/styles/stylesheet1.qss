@@ -165,6 +165,7 @@ QToolButton:pressed{
 	background-color: #7c7c7c;
 }
 QPushButton{
+    margin: 0px;
     font-size: 12px;
 	border-style: solid;
 	border-top-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));
