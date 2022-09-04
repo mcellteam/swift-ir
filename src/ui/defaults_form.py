@@ -108,7 +108,7 @@ class DefaultsForm(QDialog):
 
     def update_project_dict(self):
         # logger.critical('Running update_init_scale:')
-        logger.critical('Running update_project_dict:')
+        logger.info('Running update_project_dict:')
         cfg.data.set_scales_from_string(self.scales_input.text())
         cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
         cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
@@ -125,7 +125,7 @@ class DefaultsForm(QDialog):
 
     @Slot()
     def on_create_button_clicked(self):
-        logger.critical('on_create_button_clicked:')
+        logger.info('on_create_button_clicked:')
         self.update_project_dict()
         self.close()
 

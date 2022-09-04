@@ -47,6 +47,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
         if layer['skip']: n_tasks += 1
+    logger.info('# of tasks: %d' % n_tasks)
 
     alstack = copy.deepcopy(cfg.data['data']['scales'][use_scale]['alignment_stack'])
     # Write the entire data as a single JSON file with a unique stable name for this run

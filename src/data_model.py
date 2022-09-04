@@ -467,7 +467,7 @@ class DataModel:
 
     def ensure_proper_data_structure(self):
         '''Ensure that the data model is usable.'''
-        logger.info('ensure_proper_data_structure (Called By %s)' % inspect.stack()[1].function)
+        logger.info('Ensuring Proper Data Structure (Called By %s)' % inspect.stack()[1].function)
         '''  '''
         scales_dict = self._data['data']['scales']
         coarsest = list(scales_dict.keys())[-1]
@@ -486,11 +486,10 @@ class DataModel:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
                 else:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
-        logger.info("<<<< ensure_proper_data_structure")
 
     def link_all_stacks(self):
         '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
-        logger.info('link_all_stacks:')
+        logger.info('link_all_stacks (called by %s):' % inspect.stack()[1].function)
         self.ensure_proper_data_structure()  # 0712 #0802 #original
         for scale_key in self._data['data']['scales'].keys():
             skip_list = []

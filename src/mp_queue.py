@@ -127,7 +127,7 @@ class TaskQueue(QObject):
                 self.workers.append(p)
                 self.workers[i].start()
             except:
-                logger.warning('Launching Worker # %d Triggered An Exception' % i)
+                logger.warning('Original Worker # %d Triggered An Exception' % i)
         logger.debug('<<<< Exiting TaskQueue.start')
 
     def restart(self) -> None:
@@ -145,7 +145,7 @@ class TaskQueue(QObject):
                 self.workers.append(p)
                 self.workers[i].start()
             except:
-                logger.warning('Restarting Worker # %d Triggered An Exception' % i)
+                logger.warning('Restart Worker # %d Triggered An Exception' % i)
 
     def end_tasks(self) -> None:
         '''Tell child processes to stop'''
@@ -217,7 +217,6 @@ class TaskQueue(QObject):
                 QApplication.processEvents()
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
-                logger.warning('Collected results from Task_ID %d' % (task_id))
                 logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
                 # logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
