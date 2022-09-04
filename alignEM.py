@@ -47,7 +47,7 @@ import argparse
 # import qtpy
 from PyQt5.QtWidgets import QApplication
 from PyQt5.QtCore import Qt, QCoreApplication
-from src.helpers import print_exception
+from src.helpers import print_exception, check_for_binaries
 from src.ui.main_window import MainWindow
 import src.config as cfg
 
@@ -103,10 +103,10 @@ def main():
     sys.stdout.flush()
     # os.environ['QT_API'] = qtpy.API #0827-
     # os.environ["FORCE_QT_API"] = 'True'
-    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     # logger.info('QT_API: %s' % qtpy.API)
     if args.no_neuroglancer:
         cfg.NO_NEUROGLANCER = True
@@ -124,7 +124,6 @@ def main():
     try:
         app = QApplication(sys.argv)
         app.setStyle('Fusion')
-        logger.info('QApplication Instance Created')
     except:
         print_exception()
         logger.error('Unable to Instantiate QApplication')

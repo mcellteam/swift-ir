@@ -71,9 +71,7 @@ class BackgroundWorker(QRunnable):
         self.args = args
         self.kwargs = kwargs
         self.signals = WorkerSignals()
-        print('self.signals.progress.__hash__():')
         self.signals.progress.__hash__()
-        print('self.signals.progress.__str__():')
         self.signals.progress.__str__()
 
         # Add the callback to our kwargs
@@ -93,7 +91,7 @@ class BackgroundWorker(QRunnable):
             result = self.fn(*self.args, **self.kwargs)
         except:
             print('BackgroundWorker.run traceback:')
-            traceback.print_exc()
+            # traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:

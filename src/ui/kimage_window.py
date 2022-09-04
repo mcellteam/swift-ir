@@ -13,7 +13,7 @@ class KImageWindow(QWidget):
         super().__init__()
         self.parent = parent
         proj_dir = os.path.abspath(cfg.data['data']['destination_path'])
-        path = os.path.join(proj_dir, cfg.data.cur_scale(), 'k_img.tif')
+        path = os.path.join(proj_dir, cfg.data.get_scale(), 'k_img.tif')
         self.lb = QLabel(self)
         self.pixmap = QPixmap(path)
         # lb.resize(self.width(), 100)

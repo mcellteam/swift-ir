@@ -76,15 +76,15 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             f.write("None\n")
     logger.info('Constructing TaskQueue...')
     n_tasks = cfg.data.get_n_images()
-    cfg.main_window.pbar_max(n_tasks)
+    # cfg.main_window.pbar_max(n_tasks)
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     task_queue.tqdm_desc = 'Generating Images'
     cpus = min(psutil.cpu_count(logical=False), 48)
     logger.info('Starting TaskQueue...')
     task_queue.start(cpus)
     path = os.path.split(os.path.realpath(__file__))[0]
-    # apply_affine_job = os.path.join(path, 'job_apply_affine.py')
-    apply_affine_job = os.path.join(path, 'job_mir_apply_affine.py')
+    # apply_affine_job = os.path.join(path, 'job_python_apply_affine.py')
+    apply_affine_job = os.path.join(path, 'job_apply_affine.py')
     logger.info('Job Script: %s' % apply_affine_job)
     alstack = cfg.data['data']['scales'][scale_key]['alignment_stack']
     if num_layers == -1:
@@ -92,7 +92,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     else:
         end_layer = start_layer + num_layers
     logger.info(
-        '\nRunning (Example): python job_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name')
+        '\nRunning (Example): python job_python_apply_affine.py [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name')
     for i, layer in enumerate(alstack[start_layer:end_layer + 1]):
         base_name = layer['images']['base']['filename']
         ref_name = layer['images']['ref']['filename']
@@ -134,6 +134,8 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     except:
         logger.warning('task_queue.collect_results() encountered a problem')
         print_exception()
+    try: task_queue.end_tasks()
+    except: pass
     task_queue.stop()
     del task_queue
 
