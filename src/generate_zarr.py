@@ -24,7 +24,8 @@ logger = logging.getLogger(__name__)
 def generate_zarr(src, out):
     logger.critical('>>>>>>>> Generate Zarr Start <<<<<<<<')
     logger.info('Source Image : %s\nOutput Image : %s' % (src, out))
-    Z_STRIDE = 4
+    # Z_STRIDE = 4
+    Z_STRIDE = 1
     n_imgs = cfg.data.get_n_images()
     n_scales = cfg.data.get_n_scales()
 

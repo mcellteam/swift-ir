@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
+import logging
 import traceback
 from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.QtCore import pyqtSignal as Signal
@@ -8,6 +9,8 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QRunnable
 
 __all__ = ['BackgroundWorker']
+
+logger = logging.getLogger(__name__)
 
 class WorkerSignals(QObject):
     '''
@@ -65,7 +68,6 @@ class BackgroundWorker(QRunnable):
 
     def __init__(self, fn, *args, **kwargs):
         super(BackgroundWorker, self).__init__()
-        print("BackgroundWorker(QRunnable), constructor >>>>>>>>")
         # Store constructor arguments (re-used for processing)
         self.fn = fn
         self.args = args
@@ -78,25 +80,22 @@ class BackgroundWorker(QRunnable):
         '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
         the value -> self.signals.progress'''
         self.kwargs['progress_callback'] = self.signals.progress
-        print("<<<<<<<< BackgroundWorker(QRunnable), constructor")
 
     @Slot()
     def run(self):
         '''
         Initialise the runner functiosn with passed args, kwargs.
         '''
-        print("BackgroundWorker(QRunnable).run >>>>>>>>")
+        logger.info("Running Background Worker...")
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
-            print('BackgroundWorker.run traceback:')
+            # print('BackgroundWorker.run traceback:')
             # traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
-            print("<<<<<<<< BackgroundWorker(QRunnable) emitting result...")
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
             self.signals.finished.emit()  # Done
-            print("<<<<<<<< BackgroundWorker(QRunnable).run")

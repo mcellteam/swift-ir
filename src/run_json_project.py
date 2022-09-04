@@ -780,7 +780,7 @@ class align_ingredient:
                               ' ' + rota_arg + \
                               ' ' + afm_arg
 
-            print('\nSWIM argument string: %s\n' % swim_arg_string)
+            logger.debug('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
             # print('\nSWIM argument string: %s\n' % multi_swim_arg_string)
 

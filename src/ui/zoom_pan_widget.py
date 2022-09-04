@@ -466,7 +466,7 @@ class ZoomPanWidget(QWidget):
                         preload_imgs.add(local_image['filename'])
             except:
                 # print_exception()
-                logger.warning('Failed to load image for role %s' % self.role)
+                logger.debug('No Image to Load for Role %s' % self.role)
         cfg.image_library.make_available(preload_imgs)
         if do_scales_exist():
             cfg.main_window.read_project_data_update_gui()

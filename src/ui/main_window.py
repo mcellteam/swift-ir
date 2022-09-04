@@ -128,7 +128,7 @@ class MainWindow(QMainWindow):
 
         self._unsaved_changes = False
         self._working = False
-        self.up = 0
+        self._up = 0
 
         self.resized.connect(self.center_all_images)
 
@@ -724,9 +724,6 @@ class MainWindow(QMainWindow):
             cur_scale_str = 'Scale: ' + str(get_scale_val(cfg.data.get_scale()))
             self.align_label_cur_scale.setText(cur_scale_str)
 
-        # self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
-
-
     
     @Slot()
     def get_auto_generate_state(self) -> bool:
@@ -872,10 +869,6 @@ class MainWindow(QMainWindow):
         self.jupyter_console.execute_command('clear')
         self.main_panel_bottom_widget.setCurrentIndex(2)
 
-    # def show_img(self, path):
-    #     self.jupyter_console.execute_command(display(Image(filename=path)))
-    #     self.main_panel_bottom_widget.setCurrentIndex(2)
-
     @Slot()
     def back_callback(self):
         logger.info("Returning Home...")
@@ -948,29 +941,29 @@ class MainWindow(QMainWindow):
     def auto_set_user_progress(self):
         '''Set user progress (0 to 3). This is only called when user opens a data.'''
         logger.debug('auto_set_user_progress:')
-        if is_any_scale_aligned_and_generated():
-            self.set_progress_stage_3()
-        elif do_scales_exist():
-            self.set_progress_stage_2()
-        elif is_destination_set():
-            self.set_progress_stage_1()
-        else:
-            self.set_progress_stage_0()
+        if is_any_scale_aligned_and_generated():  self.set_progress_stage_3()
+        elif do_scales_exist():  self.set_progress_stage_2()
+        elif is_destination_set():  self.set_progress_stage_1()
+        else:  self.set_progress_stage_0()
     
     def set_user_progress(self, gb1: bool, gb2: bool, gb3: bool, gb4: bool) -> None:
         logger.debug('set_user_progress:')
         self.images_and_scaling_stack.setCurrentIndex((0, 1)[gb1])
         self.images_and_scaling_stack.setStyleSheet(
-            ("""QGroupBox {border: 2px dotted #455364;}""", open(self.main_stylesheet).read())[gb1])
+            ("""QGroupBox {border: 2px dotted #455364;}""",
+             open(self.main_stylesheet).read())[gb1])
         self.alignment_stack.setCurrentIndex((0, 1)[gb2])
         self.alignment_stack.setStyleSheet(
-            ("""QGroupBox {border: 2px dotted #455364;}""", open(self.main_stylesheet).read())[gb2])
+            ("""QGroupBox {border: 2px dotted #455364;}""",
+             open(self.main_stylesheet).read())[gb2])
         self.postalignment_stack.setCurrentIndex((0, 1)[gb3])
         self.postalignment_stack.setStyleSheet(
-            ("""QGroupBox {border: 2px dotted #455364;}""", open(self.main_stylesheet).read())[gb3])
+            ("""QGroupBox {border: 2px dotted #455364;}""",
+             open(self.main_stylesheet).read())[gb3])
         self.export_and_view_stack.setCurrentIndex((0, 1)[gb4])
         self.export_and_view_stack.setStyleSheet(
-            ("""QGroupBox {border: 2px dotted #455364;}""", open(self.main_stylesheet).read())[gb4])
+            ("""QGroupBox {border: 2px dotted #455364;}""",
+             open(self.main_stylesheet).read())[gb4])
 
     def cycle_user_progress(self):
         self._up += 1
@@ -1008,14 +1001,10 @@ class MainWindow(QMainWindow):
     
     def get_user_progress(self) -> int:
         '''Get user progress (0 to 3)'''
-        if is_any_scale_aligned_and_generated():
-            return int(3)
-        elif do_scales_exist():
-            return int(2)
-        elif is_destination_set():
-            return int(1)
-        else:
-            return int(0)
+        if is_any_scale_aligned_and_generated(): return int(3)
+        elif do_scales_exist(): return int(2)
+        elif is_destination_set(): return int(1)
+        else: return int(0)
     
     @Slot()
     def read_gui_update_project_data(self) -> None:
@@ -1432,7 +1421,7 @@ class MainWindow(QMainWindow):
                     filename = l['images'][role]['filename']
                     if filename != '':
                         l['images'][role]['filename'] = make_relative(filename, cfg.data.destination())
-        logger.info('---- WRITING data TO PROJECT FILE ----')
+        logger.info('---- WRITING DATA TO PROJECT FILE ----')
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         proj_json = jde.encode(data_cp)
         name = cfg.data.destination()
@@ -1507,7 +1496,7 @@ class MainWindow(QMainWindow):
     
     def import_images(self, clear_role=False):
         ''' Import images into data '''
-        logger.info('Importing images..')
+        logger.info('Importing images...')
         self.set_status('Importing...')
         role_to_import = 'base'
         file_name_list = sorted(self.import_images_dialog())
@@ -1612,7 +1601,8 @@ class MainWindow(QMainWindow):
         self.image_panel is a MultiImagePanel object'''
         calledby = inspect.stack()[1].function
         if calledby != 'resizeEvent':
-            logger.info("Called by " + calledby)
+            if calledby != 'main':
+                logger.info("Called by " + calledby)
         self.image_panel.center_all_images(all_images_in_stack=all_images_in_stack)
         self.image_panel.update_multi_self()
     
@@ -1851,8 +1841,7 @@ class MainWindow(QMainWindow):
         '''Callback Function for Skip Image Toggle'''
         self.hud.post("Keep Image Set To: %s" % str(state))
         if are_images_imported():
-            s = cfg.data.get_scale()
-            l = cfg.data.get_layer()
+            s,l = cfg.data.get_scale(), cfg.data.get_layer()
             cfg.data['data']['scales'][s]['alignment_stack'][l]['skip'] = not state
             copy_skips_to_all_scales()
             cfg.data.link_all_stacks()
@@ -1972,14 +1961,6 @@ class MainWindow(QMainWindow):
         self.center_button.setFixedSize(square_button_width, std_height)
         self.center_button.setStyleSheet("font-size: 10px;")
 
-
-
-        # self.print_sanity_check_button = QPushButton("Print\nSanity Check")
-        # self.print_sanity_check_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.print_sanity_check_button.clicked.connect(print_sanity_check)
-        # self.print_sanity_check_button.setFixedSize(square_button_size)
-        # self.print_sanity_check_button.setStyleSheet("font-size: 9px;")
-
         self.plot_snr_button = QPushButton("Plot SNR")
         self.plot_snr_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plot_snr_button.clicked.connect(self.show_snr_plot)
@@ -1990,12 +1971,6 @@ class MainWindow(QMainWindow):
         # self.set_defaults_button.clicked.connect(cfg.data.set_defaults)
         # self.set_defaults_button.setFixedSize(square_button_size)
         # self.set_defaults_button.setStyleSheet("font-size: 10px;")
-
-        # self.k_img_button = QPushButton("K Image")
-        # self.k_img_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.k_img_button.clicked.connect(self.view_k_img)
-        # self.k_img_button.setFixedSize(square_button_size)
-        # # self.plot_snr_button.setStyleSheet("font-size: 9px;")
 
         self.actual_size_button = QPushButton('Actual Size')
         self.actual_size_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2064,7 +2039,6 @@ class MainWindow(QMainWindow):
         self.scale_layout.addWidget(self.generate_scales_button, 0, 2, alignment=Qt.AlignmentFlag.AlignHCenter)
         self.scale_layout.addLayout(self.toggle_reset_hlayout, 1, 0, 1, 3)
         # self.scale_layout.addWidget(self.set_defaults_button, 2, 0)
-        # self.scale_layout.addWidget(self.print_sanity_check_button, 2, 2)
 
         '''-------- PANEL 3: ALIGNMENT --------'''
 
@@ -2161,9 +2135,7 @@ class MainWindow(QMainWindow):
         self.align_all_button = QPushButton(' Align')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('Align This Scale')
-        # self.align_all_button.clicked.connect(self.run_alignment)
         self.align_all_button.clicked.connect(lambda: self.run_alignment(use_scale=cfg.data.get_scale()))
-        # self.align_all_button.setFixedSize(std_button_size)
         self.align_all_button.setFixedSize(square_button_size)
         # self.align_all_button.setIcon(qta.icon("mdi.transfer", color=ICON_COLOR))
         # self.align_all_button.setIcon(qta.icon("ei.indent-left", color=ICON_COLOR))
@@ -2212,7 +2184,6 @@ class MainWindow(QMainWindow):
         # self.alignment_layout.addLayout(self.align_txt_layout_tweak, 3, 0, 1, 3)
 
         '''-------- PANEL 3.5: Post-alignment --------'''
-
 
         tip = 'Polynomial bias (default=None). Affects aligned images including their pixel dimension.'
         wrapped = "\n".join(textwrap.wrap(tip, width=35))
@@ -2431,8 +2402,6 @@ class MainWindow(QMainWindow):
         self.details_banner_layout.addWidget(self.align_label_cur_scale)
         self.details_banner_layout.addStretch(4)
 
-
-
         self.lower_panel_groups_ = QGridLayout()
         self.lower_panel_groups_.setContentsMargins(8,8,8,8)
         self.lower_panel_groups_.addWidget(self.project_functions_stack, 1, 0)
@@ -2462,11 +2431,7 @@ class MainWindow(QMainWindow):
         self.image_panel_vlayout.addWidget(self.details_banner)
         self.image_panel_vlayout.addWidget(self.image_panel)
 
-
         self.snr_plot = SnrPlot()
-        # self.scatter_widget = pg.ScatterPlotWidget()
-        # self.snr_plot = pg.plot()
-
         self.plot_widget_clear_button = QPushButton('Clear Plot')
         self.plot_widget_clear_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plot_widget_clear_button.clicked.connect(self.clear_snr_plot)
@@ -2559,36 +2524,27 @@ class MainWindow(QMainWindow):
         self.bottom_display_area_widget = QWidget()
         self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
 
-        # main_window.splitter.sizes()
-        # Out[20]: [400, 216, 160]
+        # main_window.splitter.sizes() # Out[20]: [400, 216, 160]
         self.splitter = QSplitter(Qt.Orientation.Vertical)
         self.splitter.splitterMoved.connect(self.center_all_images)
         self.splitter.setHandleWidth(4)
-        # main_window.splitter.setHandleWidth(4)
         self.splitter.setContentsMargins(0, 0, 0, 0)
-        # self.splitter.addWidget(self.details_banner)
-        # self.splitter.addWidget(self.image_panel)
         self.splitter.addWidget(self.image_panel_widget)
         self.splitter.addWidget(self.lower_panel_groups)
         self.splitter.addWidget(self.bottom_display_area_widget)
-
 
         self.splitter.setStretchFactor(0, 1)
         self.splitter.setStretchFactor(1, 0)
         self.splitter.setStretchFactor(2, 1)
         self.splitter.setCollapsible(0, False)
-        # self.splitter.setCollapsible(1, False)
         self.splitter.setCollapsible(1, True)
         self.splitter.setCollapsible(2, True)
 
         self.main_panel = QWidget()
         self.main_panel_layout = QGridLayout()
         self.main_panel_layout.setContentsMargins(0,0,0,0)
-        # self.main_panel_layout.setSpacing(2) # this inherits downward
-        # main_window.main_panel_layout.setSpacing(10) # this inherits downward
+        # self.main_panel_layout.setSpacing(2) # inherits downward
         self.main_panel_layout.addWidget(self.splitter, 1, 0)
-
-
 
         '''-------- AUXILIARY PANELS --------'''
 
