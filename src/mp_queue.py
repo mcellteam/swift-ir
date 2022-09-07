@@ -13,6 +13,8 @@ from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QApplication
 # from .LoggingTqdm import logging_tqdm
 # from .TqdmToLogger import tqdm_to_logger
+import src.config as cfg
+
 
 '''SWIM/MIR:
 stdout <- result
@@ -106,7 +108,8 @@ class TaskQueue(QObject):
         logger.debug('self.n_tasks = %d' % self.n_tasks)
         logger.debug('sys.version_info = %s' % str(sys.version_info))
 
-    def start(self, n_workers, retries=1) -> None:
+    # def start(self, n_workers, retries=10) -> None:
+    def start(self, n_workers, retries=3) -> None:
 
         '''type(task_q)= <class 'multiprocessing.queues.JoinableQueue'>
            type(result_q)= <class 'multiprocessing.queues.Queue'>'''
@@ -119,7 +122,7 @@ class TaskQueue(QObject):
         logger.info('Using %d workers to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
 
         for i in range(self.n_workers):
-            sys.stderr.write('Starting Worker %d >>>>>>>>' % i)
+            sys.stderr.write('\nStarting Worker %d >>>>>>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
                 p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
@@ -131,7 +134,7 @@ class TaskQueue(QObject):
         logger.debug('<<<< Exiting TaskQueue.start')
 
     def restart(self) -> None:
-        logger.info('Restarting the Task Queue...')
+        logger.warning('Restarting the Task Queue...')
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
         self.workers = []
@@ -200,25 +203,29 @@ class TaskQueue(QObject):
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
-        retries_tot = 1
+        retries_tot = 0
+        logger.info('self.retries: %s' % self.retries)
+        self.parent.pbar.show()
         while (retries_tot < self.retries + 1) and n_pending:
+            cfg.main_window.center_all_images()
             logger.info('# Tasks Pending: %d' % n_pending)
             retry_list = []
             for j in range(n_pending):
-                if j == 0:
-                    try:
-                        task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
-                        logger.info(task_str)
-                    except:
-                        pass
 
-                self.parent.pbar.show()
+                try:
+                    task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
+                    logger.info(task_str)
+                except:
+                    pass
+
+                # self.parent.pbar.show()
                 self.parent.pbar_max(self.n_tasks)
                 QApplication.processEvents()
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
-                # logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
+                if cfg.LOG_LEVEL < 20:
+                    logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc

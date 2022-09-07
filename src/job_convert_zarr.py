@@ -26,10 +26,11 @@ if __name__ == '__main__':
 
     scale_img = os.path.join(src, scale_str, 'img_aligned', img)
     # im = tifffile.imread(scale_img) # im.dtype =  uint8
-    im = Image.open(scale_img)
+
     # im = np.atleast_3d(im)
     # im = np.expand_dims(im, axis=0)
-    '''Probably want to set data type on array creation'''
+    #Probably want to set data type on array creation
+    im = Image.open(scale_img)
     store = zarr.open(out)
     store[ID,:,:] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]

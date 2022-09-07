@@ -9,11 +9,10 @@ import shutil
 import psutil
 import logging
 import src.config as cfg
-from PyQt5.QtCore import QProcess
 from .mp_queue import TaskQueue
-from .run_json_project import run_json_project
+# from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
-from .helpers import are_images_imported, get_scale_val, print_alignment_layer, print_snr_list, \
+from .helpers import get_scale_val, print_alignment_layer, print_snr_list, \
     remove_aligned, are_aligned_images_generated
 
 
@@ -21,7 +20,6 @@ __all__ = ['compute_affines','rename_layers','remove_aligned']
 
 logger = logging.getLogger(__name__)
 
-# def compute_affines():
 def compute_affines(use_scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
     logger.critical('>>>>>>>> Compute Affines Start <<<<<<<<')
@@ -37,7 +35,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         remove_aligned(use_scale=use_scale, start_layer=start_layer) #0903 Moved into conditional
 
     cfg.data.clear_method_results(scale_key=use_scale)
-    if rename_switch: rename_layers(use_scale=use_scale, alignment_dict=alignment_dict)
+    if rename_switch: rename_layers(use_scale=use_scale, al_dict=alignment_dict)
 
     dm = copy.deepcopy(cfg.data) # Copy the data model for this data to add local fields for SWiFT
     alignment_dict = dm['data']['scales'][use_scale]['alignment_stack']
@@ -46,8 +44,8 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
-        if layer['skip']: n_tasks += 1
-    logger.info('# of tasks: %d' % n_tasks)
+        if not layer['skip']: n_tasks += 1
+    logger.info('# of tasks (after subtracting skips): %d' % n_tasks)
 
     alstack = copy.deepcopy(cfg.data['data']['scales'][use_scale]['alignment_stack'])
     # Write the entire data as a single JSON file with a unique stable name for this run
@@ -59,7 +57,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     cpus = min(psutil.cpu_count(logical=False), 48)
-    cfg.main_window.hud.post("Task Queue is using %d CPUs" % cpus)
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 

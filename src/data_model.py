@@ -132,6 +132,9 @@ class DataModel:
         '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
         return bool(self._data['data']['scales'][self.get_scale()]['null_cafm_trends'])
 
+    def get_al_option(self) -> str:
+        '''Gets the Alignment Option for the Current Scale.'''
+        return cfg.data['data']['scales'][self.get_scale()]['method_data']['alignment_option']
 
     def set_scale(self, x:str) -> None:
         '''Sets the Current Scale.'''
@@ -157,7 +160,7 @@ class DataModel:
 
     def set_bounding_rect(self, b:bool) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.get_scale()]['use_bounding_rect'] = b
+        self._data['data']['scales'][self.get_scale()]['use_bounding_rect'] = bool(b)
 
     def set_poly_order(self, x:int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
@@ -165,7 +168,7 @@ class DataModel:
 
     def set_null_cafm(self, b:bool) -> None:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.get_scale()]['null_cafm_trends'] = b
+        self._data['data']['scales'][self.get_scale()]['null_cafm_trends'] = bool(b)
 
 
     '''
@@ -279,20 +282,28 @@ class DataModel:
 
     def get_aligned_scales_list(self) -> list[str]:
         '''Get aligned scales list.'''
-        l = natural_sort([key for key in self._data['data']['scales'].keys()])
-        # logger.critical('Returning %s ' % str(l))
+        l = []
+        for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
+            r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
+            if r != {}:
+                l.append(s)
+        logger.debug('Aligned Scales List: %s ' % str(l))
         return l
 
     def get_not_aligned_scales_list(self) -> list[str]:
         '''Get not aligned scales list.'''
-        l = natural_sort([key for key in self.get_scales() if key not in set(self.get_aligned_scales_list())])
-        # logger.critical('Returning %s ' % str(l))
+        l = []
+        for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
+            r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
+            if r == {}:
+                l.append(s)
+        logger.debug('Not Aligned Scales List: %s ' % str(l))
         return l
 
     def get_coarsest_scale_key(self) -> str:
         '''Return the coarsest scale key. '''
-        key = natural_sort(list(self._data['data']['scales'].keys()))[-1]
-        return key
+        k = natural_sort(list(self._data['data']['scales'].keys()))[-1]
+        return k
 
     def get_next_coarsest_scale_key(self) -> str:
         if self.get_n_scales() == 1:

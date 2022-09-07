@@ -24,6 +24,8 @@ import os
 import sys
 import logging
 import argparse
+from pathlib import Path
+from functools import partial
 import neuroglancer as ng
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from PyQt5.QtCore import QRunnable, QUrl
@@ -45,13 +47,13 @@ class Server(HTTPServer):
     def __init__(self, server_address):
         HTTPServer.__init__(self, server_address, RequestHandler)
 
-# import http.server
-# import socketserver
-#
-# PORT = 8000
-# DIRECTORY = "web"
-#
-#
+import http.server
+import socketserver
+
+PORT = 8000
+DIRECTORY = "web"
+# #
+# #
 # class Handler(http.server.SimpleHTTPRequestHandler):
 #     def __init__(self, *args, **kwargs):
 #         super().__init__(*args, directory=DIRECTORY, **kwargs)
@@ -59,6 +61,23 @@ class Server(HTTPServer):
 #
 # with socketserver.TCPServer(("", PORT), Handler) as httpd:
 #     print("serving at port", PORT)
+#     httpd.serve_forever()
+
+def handler_from(directory):
+    def _init(self, *args, **kwargs):
+        return http.server.SimpleHTTPRequestHandler.__init__(self, *args, directory=self.directory, **kwargs)
+    return type(f'HandlerFrom<{directory}>',
+                (http.server.SimpleHTTPRequestHandler,),
+                {'__init__': _init, 'directory': directory})
+
+
+
+
+
+# def start_httpd(directory: Path, port: int = 8000):
+#     print(f"serving from {directory}...")
+#     handler = partial(SimpleHTTPRequestHandler, directory=directory)
+#     httpd = HTTPServer(('localhost', port), handler)
 #     httpd.serve_forever()
 
 
@@ -98,6 +117,12 @@ class View3DEM(QRunnable):
         while self.ng_server is None:
             try:
                 self.ng_server = Server((self.bind, self.port))
+
+                # path = Path(self.source)
+                # # self.ng_server = start_httpd(path, port=self.port)
+                # handler = partial(SimpleHTTPRequestHandler, directory=self.source)
+                # self.ng_server = HTTPServer(('localhost', self.port), handler)
+                # self.ng_server.serve_forever()
 
                 # dir = cfg.data.
                 # Handler = functools.partial(
@@ -149,7 +174,8 @@ class View3DEM(QRunnable):
         with self.ng_viewer.txn() as s:
             # s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:" + str(cfg.HTTP_PORT))
             s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:" + str(self.port))
-            s.cross_section_background_color = "#ffffff"
+            # s.cross_section_background_color = "#ffffff"
+            s.cross_section_background_color = "#000000"
             # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
             # s.perspective_zoom = 300
             # s.position = [0, 0, 0]

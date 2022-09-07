@@ -14,11 +14,9 @@ from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_images_list_directly, preallocate_zarr
 import src.config as cfg
 
-
 __all__ = ['generate_zarr']
 
 logger = logging.getLogger(__name__)
-
 
 
 def generate_zarr(src, out):
@@ -42,10 +40,12 @@ def generate_zarr(src, out):
             tasks_.append([ID, img, src, path_out, scale])
 
     tasks=[]
+    logger.critical('foo_list:\n%s' % str(foo_list))
     for x in range(0,Z_STRIDE): #chunk z_dim
         append_list = tasks_[x::Z_STRIDE]
         for t in append_list:
             tasks.append(t)
+    logger.critical('foo:\n%s' % str(foo))
 
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48)

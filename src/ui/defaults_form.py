@@ -114,6 +114,7 @@ class DefaultsForm(QDialog):
         cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
         cfg.DEFAULT_BOUNDING_BOX = float(self.bounding_rectangle_checkbox.isChecked())
         for scale in cfg.data.get_scales():
+            # cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
             cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
             for layer in cfg.data['data']['scales'][scale]['alignment_stack']:
                 layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})

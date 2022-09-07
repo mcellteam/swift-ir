@@ -9,6 +9,7 @@ import src.config as cfg
 from src.helpers import are_images_imported, do_scales_exist
 from src.ui.zoom_pan_widget import ZoomPanWidget
 
+
 __all__ = ['MultiImagePanel']
 
 logger = logging.getLogger(__name__)
@@ -39,22 +40,25 @@ class MultiImagePanel(QWidget):
         # self.border_color = QColor(0, 0, 0, 255)
         self.set_roles(self.roles) #0809+
 
+
+
     #keypress
     def keyPressEvent(self, event):
         logger.info("Key press event: " + str(event.key()))
         layer_delta = 0
-        if event.key() == Qt.Key_Up:
+        '''Settings shortcut keys here and also as QShortcuts might be redundant. Will need to test.'''
+        if event.key() == Qt.Key_Right:
             if are_images_imported():
                 layer_delta = 1
-        if event.key() == Qt.Key_Down:
+        if event.key() == Qt.Key_Left:
             if are_images_imported():
                 layer_delta = -1
-        if event.key() == Qt.Key_Left:
+        if event.key() == Qt.Key_Down:
             if do_scales_exist():
                 if cfg.main_window.prev_scale_button.isEnabled():
                     cfg.main_window.prev_scale_button_callback()
 
-        if event.key() == Qt.Key_Right:
+        if event.key() == Qt.Key_Up:
             if do_scales_exist():
                 if cfg.main_window.next_scale_button.isEnabled():
                     cfg.main_window.next_scale_button_callback()
