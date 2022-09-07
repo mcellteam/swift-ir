@@ -7,6 +7,7 @@ from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import QObject
 from PyQt5.QtCore import QRunnable
+import src.config as cfg
 
 __all__ = ['BackgroundWorker']
 
@@ -87,6 +88,7 @@ class BackgroundWorker(QRunnable):
         Initialise the runner functiosn with passed args, kwargs.
         '''
         logger.info("Running Background Worker...")
+        cfg.main_window._working = True
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
@@ -99,3 +101,4 @@ class BackgroundWorker(QRunnable):
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
             self.signals.finished.emit()  # Done
+            cfg.main_window._working = False

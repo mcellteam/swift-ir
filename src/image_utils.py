@@ -401,7 +401,7 @@ def SetSingleCafm(layer_dict, c_afm, bias_mat=None):
 
 def SetStackCafm(scale_dict, null_biases=False):
     '''Calculate c_afm across the whole stack with optional bias correction'''
-    logger.debug('SetStackCafm:')
+    logger.critical('Setting Stack CAFM...')
     # To perform bias correction, first initialize Cafms without bias correction
     if null_biases == True:
         SetStackCafm(scale_dict, null_biases=False)
@@ -426,8 +426,9 @@ def SetStackCafm(scale_dict, null_biases=False):
 
 
 def BoundingRect(al_stack):
-    '''Determine Bounding Rectangle for a stack of images'''
-    logger.debug('BoundingRect:')
+    '''
+    Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
+    '''
     model_bounds = None
     siz = get_image_size(al_stack[0]['images']['base']['filename'])
     for item in al_stack:
@@ -441,7 +442,7 @@ def BoundingRect(al_stack):
                        model_bounds[:, 0].max() - siz[0],
                        model_bounds[:, 1].max() - siz[0])
     rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[0] + 2 * border_width]
-    logger.info('Returning: %s' % str(rect))
+    logger.info('Bounding Rectangle Dims: %s' % str(rect))
     return rect
 
 

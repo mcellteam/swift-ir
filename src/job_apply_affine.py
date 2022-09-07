@@ -8,9 +8,11 @@ import sys
 import logging
 import platform
 import subprocess as sp
-import argparse
 import numpy as np
-import traceback
+from PIL import Image
+import zarr
+# import tifffile
+
 
 
 
@@ -91,14 +93,19 @@ if (__name__ == '__main__'):
     if (len(sys.argv) < 4):
         print_command_line_syntax(sys.argv)
         exit(1)
-    in_fn = sys.argv[-2] # Input File Name
-    out_fn = sys.argv[-1] # Output File Name
+    # in_fn = sys.argv[-2] # Input File Name
+    # out_fn = sys.argv[-1] # Output File Name
+    in_fn = sys.argv[-4]  # Input File Name
+    out_fn = sys.argv[-3]  # Output File Name
+    zarr_grp = sys.argv[-2]  # Zarr Group
+    ID = int(sys.argv[-1])
     rect = None
     grayBorder = False
 
     # Scan arguments (excluding program name and last 2 file names)
     i = 1
-    while (i < len(sys.argv) - 2):
+    # while (i < len(sys.argv) - 2):
+    while (i < len(sys.argv) - 4):
         logger.info("Processing option " + sys.argv[i])
         if sys.argv[i] == '-afm':
             afm_list = []
@@ -168,6 +175,35 @@ if (__name__ == '__main__'):
     # except Exception:
     #     logger.warning("An Exception Occurred Running 'image_apply_affine'")
     #     logger.warning(traceback.format_exc())
+
+
+    '''
+    im = Image.open('/Users/joelyancey/glanceEM_SWiFT/test_projects/test93/scale_4/img_aligned/R34CA1-BS12.109.tif')
+    /Users/joelyancey/miniconda3/envs/alignENV/lib/python3.9/site-packages/PIL/TiffImagePlugin.py:845: 
+    UserWarning: Corrupt EXIF data.  Expecting to read 4 bytes but only got 0. 
+    
+    '''
+
+    dimx = bb_x
+    dimy = bb_y
+
+    # try:
+    #     im = Image.open(out_fn)
+    # except Exception as e:
+    #     print("Error on image: ", out_fn)
+    #     print(e)
+
+    im = Image.open(out_fn)
+    # im = tifffile.imread(out_fn)
+
+    logger.critical('out_fn = %s' % out_fn)
+
+    store = zarr.open(zarr_grp)
+    # print('ID = %s' % str(ID))
+    # print(store.info)
+
+    store[ID, :, :] = im
+    store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
 
     sys.stdout.close()
     sys.stderr.close()

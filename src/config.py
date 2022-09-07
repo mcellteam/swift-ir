@@ -13,8 +13,10 @@ import os
 import logging
 
 LOG_LEVEL = None
-WIDTH = 1024 #***
-HEIGHT = 768 #***
+# WIDTH = 1024 #***
+WIDTH = 1350
+# HEIGHT = 768 #***
+HEIGHT = 900
 # WIDTH = 1280
 # HEIGHT = 720
 # WIDTH = 1024 #***

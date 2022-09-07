@@ -406,9 +406,10 @@ class alignment_process:
         # logger.critical('init_rot = %f' % init_rot)
         # logger.critical('init_scale = %f' % init_scale)
         # logger.critical('dither_afm: %s' % str(dither_afm))
-        print('init_rot = %f' % init_rot)
-        print('init_scale = %f' % init_scale)
-        print('dither_afm: %s' % str(dither_afm))
+
+        # print('init_rot = %f' % init_rot)
+        # print('init_scale = %f' % init_scale)
+        # print('dither_afm: %s' % str(dither_afm))
 
         # init_rot
         #    Previously hard-coded values for wsf chosen by trial-and-error

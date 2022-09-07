@@ -113,6 +113,9 @@ def main():
     else:
         cfg.NO_NEUROGLANCER = False
 
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
     # if cfg.QT_API in ('pyside2', 'pyside6'): cfg.USES_PYSIDE, cfg.USES_PYQT = True, False
     # if cfg.QT_API in ('pyqt5', 'pyqt6'):     cfg.USES_PYQT, cfg.USES_PYSIDE = True, False
     # if cfg.QT_API in ('pyside2', 'pyqt5'):   cfg.USES_QT5, cfg.USES_QT6 = True, False

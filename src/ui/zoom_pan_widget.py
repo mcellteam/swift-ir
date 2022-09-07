@@ -5,15 +5,16 @@ import sys
 import logging
 import inspect
 # import qtpy
-from PyQt5.QtGui import QPainter, QPen, QColor,QNativeGestureEvent
-from PyQt5.QtWidgets import QWidget, QRubberBand, QSizePolicy
-from PyQt5.QtCore import Qt, QPointF, QRectF, QSize
+from PyQt5.QtGui import QPainter, QPen, QColor, QNativeGestureEvent, QPixmap, QCursor
+from PyQt5.QtWidgets import QWidget, QRubberBand, QSizePolicy, QLabel, QPushButton, QGridLayout, QVBoxLayout
+from PyQt5.QtCore import Qt, QPointF, QRectF, QSize, QPoint
 import src.config as cfg
-from ..helpers import print_exception
-from ..helpers import do_scales_exist
-from ..helpers import are_images_imported
-from ..helpers import is_cur_scale_aligned
-from ..helpers import get_scale_val
+from src.helpers import print_exception
+from src.helpers import do_scales_exist
+from src.helpers import are_images_imported
+from src.helpers import are_aligned_images_generated
+from src.helpers import get_scale_val
+from src.ui.clickable import ClickablePicButton
 
 '''
 Deprecated .delta function
@@ -23,6 +24,7 @@ Deprecated .delta function
 __all__ = ['ZoomPanWidget']
 
 logger = logging.getLogger(__name__)
+
 
 class ZoomPanWidget(QWidget):
     """A widget to display a single annotated image with zooming and panning."""
@@ -36,11 +38,29 @@ class ZoomPanWidget(QWidget):
         self.antialiased = False  # why
         self.wheel_index = 0
         # self.scroll_factor = 1.25 #Critical
-        self.scroll_factor = 1.08 #Critical
+        # self.scroll_factor = 1.08 #Critical
+        self.scroll_factor = 1.09 #Critical
         self.zoom_scale = 1.0
-        self.last_button = Qt.MouseButton.NoButton
+        # self.last_button = Qt.MouseButton.NoButtons #0906-
 
-        # self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0827-
+        if self.role == 'aligned':
+            logger.critical('Initializing ZoomPanWidget for role-=aligned')
+            self.layout = QVBoxLayout()
+            pixmap = QPixmap("src/resources/button_ng.png").scaled(120, 120, Qt.KeepAspectRatio,Qt.SmoothTransformation)
+            self.ng_callback_button = ClickablePicButton(pixmap)
+            # self.ng_callback_button.clicked.connect(self.ng_callback())
+            self.ng_callback_button.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+            self.layout.addWidget(self.ng_callback_button, alignment=Qt.AlignRight | Qt.AlignBottom)
+            self.ng_callback_button.clicked.connect(self.ng_callback)
+            self.ng_callback_button.setCursor(QCursor(Qt.PointingHandCursor))
+            self.setLayout(self.layout)
+            self.ng_callback_button.hide()
+
+
+
+
+
+            # self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding) #0827-
 
         self.mdx = 0  # Mouse Down x (screen x of mouse down at start of drag)
         self.mdy = 0  # Mouse Down y (screen y of mouse down at start of drag)
@@ -82,13 +102,37 @@ class ZoomPanWidget(QWidget):
 
         #0605 following 6 lines were removed
     #     QApplication.instance().focusChanged.connect(self.on_focusChanged)
-    #
-    def on_focusChanged(self):
-        fwidget = QApplication.focusWidget()
-        if fwidget is not None:
-            logger.info("focus widget name = ", fwidget.objectName())
+
+    #0906-
+    # def on_focusChanged(self):
+    #     fwidget = QApplication.focusWidget()
+    #     if fwidget is not None:
+    #         logger.info("focus widget name = ", fwidget.objectName())
+
+    def show_ng_button(self):
+        self.ng_callback_button.show()
+
+    def hide_ng_button(self):
+        self.ng_callback_button.hide()
+
 
     def get_settings(self):
+        '''Role=aligned...
+         {'floatBased': False,
+         'antialiased': False,
+         'wheel_index': -25.5,
+         'scroll_factor': 1.08,
+         'zoom_scale': 0.14601790491291344,
+         'last_button': 1,
+         'mdx': 112,
+         'mdy': 227,
+         'ldx': 28.119276841975243,
+         'ldy': 178.78573115880044,
+         'dx': 0,
+         'dy': 0,
+         'draw_border': False,
+         'draw_annotations': True}'''
+
         settings_dict = {}
         for key in ["floatBased", "antialiased", "wheel_index", "scroll_factor", "zoom_scale", "last_button", "mdx",
                     "mdy", "ldx", "ldy", "dx", "dy", "draw_border", "draw_annotations"]:
@@ -235,7 +279,7 @@ class ZoomPanWidget(QWidget):
             scale_str = 'Scale %d' % get_scale_val(s)
             snr_str = str(cfg.data.get_snr())
             if self.role == 'aligned':
-                if is_cur_scale_aligned():
+                if are_aligned_images_generated():
                     self.setToolTip('%s\n%s [%s]\n%s' % (role_str, scale_str, dim_str, snr_str))
             else:
                 self.setToolTip('%s\n%s [%s]' % (role_str, scale_str, dim_str))
@@ -578,6 +622,11 @@ class ZoomPanWidget(QWidget):
 
         self.update_zpa_self() #Critical
 
+    def ng_callback(self):
+        cfg.main_window.view_neuroglancer()
+
+
+
     def paintEvent(self, event):
         # if self.already_painting:
         #     logger.warning('Painter was already painting!')
@@ -631,6 +680,31 @@ class ZoomPanWidget(QWidget):
                     # Draw the borders of the viewport for each panel to separate panels
                     # painter.setPen(QPen(self.border_color, 4)) #0523
                     # painter.drawRect(painter.viewport()) #0523
+
+                    # painter.setRenderHints(
+                    #     QtGui.QPainter.Antialiasing | QtGui.QPainter.SmoothPixmapTransform
+                    # )
+
+                    # if self.role == 'aligned':
+                    #     self.pixmap_ng = QPixmap('src/resources/button_ng.png')
+                    #     self.label_ng = ClickableLabel()
+                    #     # self.label_ng = QLabel()
+                    #     self.label_ng.setPixmap(self.pixmap_ng)
+                    #     self.label_ng.setFixedSize(self.pixmap_ng.size())
+                    #     # p = self.geometry().bottomRight() - self.label_ng.geometry().bottomRight() - QPoint(100,
+                    #     #                                                                                     100)
+                    #     # self.label_ng.move(p)
+                    #     # self.label_ng.setPixmap(pixmap)
+                    #     self.label_ng.setGeometry(0,0,100,100)
+                    #     self.pixmap_ng = self.pixmap_ng.scaledToHeight(40, Qt.SmoothTransformation)
+                    #
+                    #     self.label_ng.show()
+
+
+                        # painter.drawPixmap(painter.viewport().width()-150, painter.viewport().height()-50, self.label_ng)
+                        # painter.drawPixmap(QPoint(), self.label_ng)
+
+
 
                     if self.draw_annotations and (pixmap != None):
                         if (pixmap.width() > 0) or (pixmap.height() > 0):
@@ -693,6 +767,10 @@ class ZoomPanWidget(QWidget):
                             # x1b, y1b, x2b, y2b = 0, width, height, 0
                             painter.drawLine(x1a, y1a, x2a, y2a)
                             painter.drawLine(x1b, y1b, x2b, y2b)
+
+
+                            # button = QPushButton("Test")
+
                             # painter.setOpacity(0.5)
                             # painter.setOpacity(0)
                             # painter.setBrush(Qt.black)  # Background

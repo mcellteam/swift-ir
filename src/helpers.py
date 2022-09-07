@@ -5,6 +5,7 @@ import re
 import sys
 import copy
 import json
+import time
 import signal
 import imghdr
 import logging
@@ -21,21 +22,26 @@ import shutil
 from numcodecs import Blosc
 # blosc.set_nthreads(8)
 from PIL import Image
+
 try: import src.config as cfg
 except: import config as cfg
+
 try:  import builtins
 except:  pass
 
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['check_for_binaries', 'remove_aligned', 'is_destination_set', 'do_scales_exist', 'make_relative', 'make_absolute',
+from src.image_utils import BoundingRect
+
+__all__ = ['preallocate_zarr', 'print_zarr_info', 'check_for_binaries', 'remove_aligned', 'is_destination_set',
+           'do_scales_exist', 'make_relative', 'make_absolute',
            'is_cur_scale_aligned', 'get_num_aligned', 'are_aligned_images_generated',
            'print_path', 'print_alignment_layer', 'print_dat_files', 'print_sanity_check',
            'copy_skips_to_all_scales', 'are_images_imported', 'is_cur_scale_exported', 'get_images_list_directly',
            'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
            'verify_image_file', 'is_arg_scale_aligned',  'print_snr_list', 'is_any_scale_aligned_and_generated',
-           'preallocate_zarr'
+           'remove_zarr', 'init_zarr'
            ]
 
 logger = logging.getLogger(__name__)
@@ -60,52 +66,141 @@ def check_for_binaries():
         if os.path.isfile(f):  logger.info('%s FOUND' % f)
         else:  logger.warning('%s NOT FOUND' % f)
 
-def preallocate_zarr():
-    src = os.path.abspath(cfg.data.destination())
-    out = os.path.abspath(os.path.join(src, '3dem.zarr'))
+def print_zarr_info() -> None:
+    dest = cfg.data.destination()
+    zarr_path = os.path.join(dest, '3dem.zarr')
+    z = zarr.open(zarr_path)
+    print('List Dir:\n%s' % str(sorted(os.listdir(zarr_path))))
+    print(z.info)
+    print(z.tree())
 
-    cfg.main_window.hud.post('Preallocating Zarr Array...')
-    Z_STRIDE = 4
-    n_imgs = cfg.data.get_n_images()
-    n_scales = cfg.data.get_n_scales()
-    if os.path.isdir(out):
+
+def reorder_tasks(task_list, z_stride) -> list:
+    tasks=[]
+    for x in range(0, z_stride): #chunk z_dim
+        tasks.extend(task_list[x::z_stride])
+        # append_list = task_list[x::z_stride]
+        # for t in append_list:
+        #     tasks.append(t)
+    return tasks
+
+def remove_zarr() -> None:
+    path = os.path.join(cfg.data.destination(), '3dem.zarr')
+    if os.path.isdir(path):
+        logger.critical('Removing Zarr...')
         try:
             with time_limit(15):
-                logger.info('Removing %s...' % out)
-                shutil.rmtree(out, ignore_errors=True)
+                logger.info('Removing %s...' % path)
+                shutil.rmtree(path, ignore_errors=True)
         except TimeoutException as e:
-            print("Timed out!")
-        logger.info('Finished Removing Files')
+            logger.warning("Timed out!")
+        logger.info('Finished Removing Zarr Files')
+
+def init_zarr() -> None:
+    logger.critical('Initializing Zarr...')
+    path = os.path.join(cfg.data.destination(), '3dem.zarr')
+    store = zarr.DirectoryStore(path, dimension_separator='/')  # Create Zarr DirectoryStore
+    root = zarr.group(store=store, overwrite=True)  # Create Root Group (?)
+    # root = zarr.group(store=store, overwrite=True, synchronizer=zarr.ThreadSynchronizer())  # Create Root Group (?)
+    print_zarr_info()
+
+def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16,64,64)):
+
+    cfg.main_window.hud.post('Preallocating Zarr Array...')
+    src = os.path.abspath(cfg.data.destination())
+    n_imgs = cfg.data.get_n_images()
+    # n_scales = cfg.data.get_n_scales()
+    aligned_scales_lst = cfg.data.get_aligned_scales_list()
+
+    zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
+    caller = inspect.stack()[1].function
+    if (use_scale == cfg.data.get_coarsest_scale_key()) or caller == 'generate_zarr':
+        # remove_zarr()
+        init_zarr()
+
+    # name = 's' + str(get_scale_val(use_scale))
+    # zarr_name = os.path.join(zarr_path,name)
+    # synchronizer = zarr.ProcessSynchronizer(zarr_path)
+    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)  # Create Root Group
+    root = zarr.group(store=zarr_path)  # Create Root Group
+    # root = zarr.group(store=zarr_name, overwrite=True)  # Create Root Group
+    # root = zarr.open(store=zarr_path)  # Create Root Group
+    # root = zarr.open(zarr_path, mode='w')
 
     opt_cname = cfg.main_window.cname_combobox.currentText()
     opt_clevel = int(cfg.main_window.clevel_input.text())
-    store = zarr.DirectoryStore(out, dimension_separator='/')  # Create Zarr DirectoryStore
-    root = zarr.group(store=store, overwrite=True)  # Create Root Group
 
+    if use_scale is None:
+        zarr_these_scales = aligned_scales_lst
+    else:
+        zarr_these_scales = [use_scale]
+
+    logger.critical('Preallocating Zarr for Scales: %s' % str(zarr_these_scales))
 
     datasets = []
-    for scale in cfg.data.get_aligned_scales_list():
-        logger.info('Looping Scale: %s' % str(scale))
-        imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
-        width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+    for scale in zarr_these_scales:
+        logger.info('Preallocating Zarr for Scale: %s' % str(scale))
+
+        if bounding_rect is True:
+            rect = BoundingRect(cfg.data['data']['scales'][scale]['alignment_stack'])
+            dimx = rect[2]
+            dimy = rect[3]
+        else:
+            imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
+            dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+
+
         scale_val = get_scale_val(scale)
         name = 's' + str(scale_val)
 
-        shape = (n_imgs, height, width)
-        chunks = (Z_STRIDE, 64, 64)
+        shape = (n_imgs, dimy, dimx)
+        # chunks = (z_stride, 64, 64)
         dtype = 'uint8'
         compressor = Blosc(cname=opt_cname, clevel=opt_clevel) if opt_cname in ('zstd', 'zlib', 'gzip') else None
+        # compressor = Blosc(cname='zstd', clevel=5)
 
-        root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor)  # Preallocate
+        # synchronizer = zarr.ProcessSynchronizer('example.zarr')
+        logger.critical('Zarr Array will have shape: %s' % str(shape))
+        array = root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor, overwrite=True)  # Preallocate
 
-        datasets.append(
-            {
-                "path": name,
-                "coordinateTransformations": [{
-                    "type": "scale",
-                    "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
-            }
-        )
+
+
+        # datasets.append(
+        #     {
+        #         "path": name,
+        #         "coordinateTransformations": [{
+        #             "type": "scale",
+        #             "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
+        #     }
+        # )
+
+        # metadata = {
+        #     "path": name,
+        #     "coordinateTransformations": [{
+        #         "type": "scale",
+        #         "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
+        # }
+        # root.attrs["multiscales"][0]["datasets"].append(metadata)
+
+    write_zarr_metadata()
+
+    # time.sleep(500)
+
+
+def write_zarr_metadata():
+    zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
+    root = zarr.group(store=zarr_path)
+    datasets = []
+    for scale in cfg.data.get_aligned_scales_list():
+        scale_val = get_scale_val(scale)
+        name = 's' + str(scale_val)
+        metadata = {
+            "path": name,
+            "coordinateTransformations": [{
+                "type": "scale",
+                "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
+        }
+        datasets.append(metadata)
 
     axes = [
         {"name": "z", "type": "space", "unit": "nanometer"},
@@ -123,6 +218,7 @@ def preallocate_zarr():
             "type": "gaussian",
         }
     ]
+
 
 class TimeoutException(Exception): pass
 
@@ -571,7 +667,8 @@ def get_num_aligned() -> int:
     return n_aligned
 
 def is_any_scale_aligned_and_generated() -> bool:
-    '''Checks if there exists a set of aligned images at the current scale'''
+    '''Checks if there exists a set of aligned images at the current scale
+    Todo: Sometimes aligned images are generated but do get rendered'''
     files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif*')
     if len(files) > 0:
         return True
