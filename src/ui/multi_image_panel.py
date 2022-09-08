@@ -28,7 +28,7 @@ class MultiImagePanel(QWidget):
         p.setColor(self.backgroundRole(), QColor('black'))
         self.setPalette(p)
         self.setAutoFillBackground(True)
-        self.setStyleSheet("background-color:black;")
+        self.setStyleSheet("background-color: #000000;")
         self.hb_layout = QHBoxLayout()
         self.setLayout(self.hb_layout)
         self.hb_layout.setContentsMargins(0, 0, 0, 0)
@@ -166,3 +166,10 @@ class MultiImagePanel(QWidget):
                 p.update_zpa_self()
                 p.repaint()
         self.repaint()
+
+    def set_style_default(self):
+        self.setStyleSheet("background-color: #000000;")
+
+    def set_style_light(self):
+        self.setStyleSheet("background-color: #FBFAF0;")
+

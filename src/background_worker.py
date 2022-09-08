@@ -89,6 +89,7 @@ class BackgroundWorker(QRunnable):
         '''
         logger.info("Running Background Worker...")
         cfg.main_window._working = True
+        cfg.main_window.pbar.show()
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
@@ -102,3 +103,5 @@ class BackgroundWorker(QRunnable):
         finally:
             self.signals.finished.emit()  # Done
             cfg.main_window._working = False
+            cfg.main_window.pbar.hide()
+            cfg.main_window.set_idle()

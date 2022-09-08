@@ -14,9 +14,9 @@ import logging
 
 LOG_LEVEL = None
 # WIDTH = 1024 #***
-WIDTH = 1350
+WIDTH = 1250
 # HEIGHT = 768 #***
-HEIGHT = 900
+HEIGHT = 800
 # WIDTH = 1280
 # HEIGHT = 720
 # WIDTH = 1024 #***
@@ -45,7 +45,7 @@ defaults_form = None
 panel_list = []
 
 PRELOAD_RANGE = None
-USE_FILE_IO = 1
+USE_FILE_IO = 0
 PARALLEL_MODE = True
 CODE_MODE = 'c'
 HTTP_PORT = 9000
@@ -60,6 +60,7 @@ defaults = ["-0.6800", "0.8125", "0.0000", True]
 # cfg.ICON_COLOR = '#d3dae3'
 # cfg.ICON_COLOR = '#7c7c7c'
 ICON_COLOR = '#455364' # off blue-ish color
+# ICON_COLOR = '#F3F6FB' # snow white
 
 
 

@@ -766,11 +766,26 @@ class align_ingredient:
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
             offy = int(self.psta[1][i] - (wwy_f / 2.0))
             logger.debug("Will run a swim of " + str(self.ww) + " at (" + str(offx) + "," + str(offy) + ")")
+            # swim_arg_string = 'ww_' + swim_ww_arg + \
+            #                   ' -i ' + str(self.iters) + \
+            #                   ' -w ' + str(self.wht) + \
+            #                   ' -x ' + str(offx) + \
+            #                   ' -y ' + str(offy) + \
+            #                   ' ' + karg + \
+            #                   ' ' + self.recipe.im_sta_fn + \
+            #                   ' ' + base_x + \
+            #                   ' ' + base_y + \
+            #                   ' ' + self.recipe.im_mov_fn + \
+            #                   ' ' + adjust_x + \
+            #                   ' ' + adjust_y + \
+            #                   ' ' + rota_arg + \
+            #                   ' ' + afm_arg
             swim_arg_string = 'ww_' + swim_ww_arg + \
                               ' -i ' + str(self.iters) + \
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
+                              ' -f ' + \
                               ' ' + karg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \

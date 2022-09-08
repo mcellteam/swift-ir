@@ -430,6 +430,15 @@ class DataModel:
                 else:
                     layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
+
+    def are_there_any_skips(self) -> bool:
+        if cfg.data.get_skips() == []:
+            return False
+        else:
+            return True
+
+
+
     def set_scales_from_string(self, scale_string: str):
         '''This is not pretty. Needs to be refactored ASAP.
         Two callers: 'new_project', 'prepare_generate_scales_worker'
