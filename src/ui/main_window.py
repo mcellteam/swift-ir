@@ -1085,9 +1085,6 @@ class MainWindow(QMainWindow):
         #     self.toggle_bounding_rect.show()
         #     self.bounding_label.show()
 
-
-
-
         # if cfg.data.get_scale() == 'scale_1':
         #     # self.cname_combobox.show()
         #     # self.cname_label.show()
@@ -2096,7 +2093,6 @@ class MainWindow(QMainWindow):
         self.skip_layout = QHBoxLayout()
         self.skip_layout.addWidget(self.skip_label)
         self.skip_layout.addWidget(self.toggle_skip)
-        # self.skip_layout.addStretch(4)
 
         tip = 'Jump to image #'
         self.jump_label = QLabel("Image #:")
@@ -2179,31 +2175,24 @@ class MainWindow(QMainWindow):
         self.apply_all_layout.addWidget(self.apply_all_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         self.apply_all_layout.addWidget(self.apply_all_button, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
-        # self.next_scale_button = QPushButton('Next Scale ')
         self.next_scale_button = QPushButton()
-        # self.next_scale_button.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         self.next_scale_button.setStyleSheet("font-size: 10px;")
         self.next_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.next_scale_button.setToolTip('Go to the next scale.')
         self.next_scale_button.clicked.connect(self.next_scale_button_callback)
-        # self.next_scale_button.setFixedSize(std_button_size)
         self.next_scale_button.setFixedSize(std_height, std_height)
         self.next_scale_button.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
         self.next_scale_button.setIcon(qta.icon("fa.arrow-up", color=ICON_COLOR))
 
-        # self.prev_scale_button = QPushButton(' Prev Scale')
         self.prev_scale_button = QPushButton()
-        # self.prev_scale_button.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         self.prev_scale_button.setStyleSheet("font-size: 10px;")
         self.prev_scale_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.prev_scale_button.setToolTip('Go to the previous scale.')
         self.prev_scale_button.clicked.connect(self.prev_scale_button_callback)
-        # self.prev_scale_button.setFixedSize(std_button_size)
         self.prev_scale_button.setFixedSize(std_height, std_height)
         self.prev_scale_button.setIcon(qta.icon("fa.arrow-down", color=ICON_COLOR))
 
         self.layer_up_button = QPushButton()
-        # self.layer_up_button.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         self.layer_up_button.setStyleSheet("font-size: 10px;")
         self.layer_up_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.layer_up_button.setToolTip('Go to the next layer.')
@@ -2212,7 +2201,6 @@ class MainWindow(QMainWindow):
         self.layer_up_button.setIcon(qta.icon("fa.arrow-right", color=ICON_COLOR))
 
         self.layer_down_button = QPushButton()
-        # self.layer_down_button.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding))
         self.layer_down_button.setStyleSheet("font-size: 10px;")
         self.layer_down_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.layer_down_button.setToolTip('Go to the previous layer.')
@@ -2220,21 +2208,13 @@ class MainWindow(QMainWindow):
         self.layer_down_button.setFixedSize(std_height, std_height)
         self.layer_down_button.setIcon(qta.icon("fa.arrow-left", color=ICON_COLOR))
 
-
         self.scale_selection_label = QLabel()
-        # self.scale_selection_label.setText("Scale ↕\nLayer ↔")
         self.scale_selection_label.setText("Scale ↕ Layer ↔")
         self.scale_layer_ctrls_layout = QGridLayout()
-        # verticalSpacer = QSpacerItem(5, 5, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        # self.scale_layer_ctrls_layout.addItem(verticalSpacer)
-        # self.scale_layer_ctrls_layout.addWidget(self.prev_scale_button, 0, 0)
-        # self.scale_layer_ctrls_layout.addWidget(self.next_scale_button, 0, 1)
-        # self.scale_layer_ctrls_layout.addStretch(1)
         self.scale_layer_ctrls_layout.addWidget(self.prev_scale_button, 1, 1)
         self.scale_layer_ctrls_layout.addWidget(self.next_scale_button, 0, 1)
         self.scale_layer_ctrls_layout.addWidget(self.layer_up_button, 1, 2)
         self.scale_layer_ctrls_layout.addWidget(self.layer_down_button, 1, 0)
-
 
         self.align_all_button = QPushButton(' Align')
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2390,8 +2370,6 @@ class MainWindow(QMainWindow):
         # self.ng_button.setIcon(qta.icon("mdi.video-3d", color=ICON_COLOR))
         self.ng_button.setStyleSheet("font-size: 9px;")
 
-
-
         self.export_hlayout = QVBoxLayout()
         self.export_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
         self.export_hlayout.addWidget(self.ng_button, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -2404,8 +2382,6 @@ class MainWindow(QMainWindow):
         self.cname_layout = QHBoxLayout()
         self.cname_layout.addWidget(self.cname_label, alignment=Qt.AlignmentFlag.AlignLeft)
         self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignmentFlag.AlignRight)
-
-
 
         self.export_settings_layout = QGridLayout()
         self.export_settings_layout.addLayout(self.clevel_layout, 1, 0)
@@ -2779,15 +2755,8 @@ class MainWindow(QMainWindow):
         self.print_url_ng_button = QPushButton("Print URL")
         self.print_url_ng_button.setFixedSize(std_button_size)
         self.print_url_ng_button.clicked.connect(self.print_url_ng)
-        # self.screenshot_ng_button = QPushButton("Screenshot")
-        # self.screenshot_ng_button.setFixedSize(QSize(100, 28))
-        # self.screenshot_ng_button.clicked.connect(screenshot_ng)
-        # self.blend_ng_button = QPushButton("Blend (b)")
-        # self.blend_ng_button.setFixedSize(QSize(100, 28))
-        # self.blend_ng_button.clicked.connect(blend_ng)
         self.ng_panel = QWidget()
         self.ng_panel_layout = QVBoxLayout()
-        # if not cfg.NO_NEUROGLANCER:
         self.ng_panel_layout.addWidget(self.browser)
         self.ng_panel_controls_layout = QHBoxLayout()
         self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -2800,7 +2769,6 @@ class MainWindow(QMainWindow):
         self.ng_panel.setLayout(self.ng_panel_layout)
 
         self.image_panel_stack_widget.addWidget(self.ng_panel)  #0906
-
 
         self.splash() #0816 refactor
 
