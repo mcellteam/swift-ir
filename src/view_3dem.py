@@ -64,6 +64,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from PyQt5.QtCore import QRunnable, QUrl
 from PyQt5.QtCore import pyqtSlot as Slot
 from src.helpers import print_exception, get_scale_val
+from src.image_utils import get_image_size
 import src.config as cfg
 
 
@@ -172,6 +173,7 @@ class View3DEM(QRunnable):
                 self.port += 1
             except:
                 print_exception()
+
             # finally:
             #     path = os.path.split(os.path.realpath(__file__))[0]
             #     os.chdir(path)
@@ -193,6 +195,7 @@ class View3DEM(QRunnable):
         # MAX_RETRIES = 10
         MAX_RETRIES = 3
         attempt = 0
+        cfg.main_window.disableShortcuts()
         for _ in range(MAX_RETRIES):
             attempt += 1
             logger.info("Trying to serve forever... attempt(" + str(attempt) + ")...")
@@ -204,10 +207,13 @@ class View3DEM(QRunnable):
             else:
                 break
             finally:
+                cfg.main_window.initShortcuts()
+
                 path = os.path.split(os.path.realpath(__file__))[0]
                 os.chdir(path) #0908+
         else:
             logger.error("\nMaximum reconnection attempts reached. Disconnecting...\n")
+            cfg.main_window.initShortcuts()
             self.ng_server.server_close()
             sys.exit(0)
 
@@ -227,6 +233,9 @@ class View3DEM(QRunnable):
 
         cur_layer = cfg.data.get_layer()
 
+
+        al_size = get_image_size(cfg.data.get_al_img_path())
+
         self.ng_viewer = ng.Viewer()
         logger.info('Adding Zarr Image to Viewer...')
         with self.ng_viewer.txn() as s:
@@ -236,7 +245,8 @@ class View3DEM(QRunnable):
             s.cross_section_background_color = "#000000"
             # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
             # s.perspective_zoom = 300
-            s.position = [cur_layer, 0, 0]
+            # s.position = [cur_layer, 0, 0]
+            s.position = [cur_layer, al_size[0] / 2, al_size[1] / 2]
             # s.dimensions = ng.CoordinateSpace(
             #     names=["z", "y", "x"],
             #     # units=["nm", "nm", "nm"],
@@ -287,8 +297,9 @@ class View3DEM(QRunnable):
         while True:
             logger.debug('Still looking for an open port...')
             if self.viewer_url is not None:
-                cfg.main_window.hud.post('Viewer Url: %s' % str(self.viewer_url))
+                logger.debug('An Open Port Was Found')
                 return self.viewer_url
+
     def show_url(self):
         cfg.main_window.hud.post('Viewer Url:\n\n%s' % str(self.viewer_url))
 

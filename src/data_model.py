@@ -136,6 +136,16 @@ class DataModel:
         '''Gets the Alignment Option for the Current Scale.'''
         return cfg.data['data']['scales'][self.get_scale()]['method_data']['alignment_option']
 
+    def get_al_img_path(self) -> str:
+        l = self.get_layer()
+        s = self.get_scale()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename']
+
+    def get_base_img_name(self) -> str:
+        l = self.get_layer()
+        s = self.get_scale()
+        return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+
     def set_scale(self, x:str) -> None:
         '''Sets the Current Scale.'''
         self._data['data']['current_scale'] = x

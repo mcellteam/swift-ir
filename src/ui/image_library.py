@@ -30,7 +30,7 @@ class ImageLibrary:
     def print_load_status(self):
 
         logger.debug("  Library has " + str(len(self._images.keys())) + " images")
-        logger.info("  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])))
+        logger.debug("  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])))
         logger.debug("  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])))
         logger.debug("  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])))
 
@@ -51,7 +51,7 @@ class ImageLibrary:
 
     def get_image_reference(self, file_path):
         '''Called by paintEvent'''
-        logger.info("Getting image reference, arg: %s" % file_path)
+        logger.debug("Getting image reference, arg: %s" % file_path)
         # print_debug(50, "get_image_reference ( " + str(file_path) + " )")
         self.print_load_status()
         image_ref = None
@@ -133,12 +133,12 @@ class ImageLibrary:
         image_dict['image'] = QPixmap(real_norm_path) # no class
         image_dict['loaded'] = True
         image_dict['loading'] = False
-        logger.info("load_image_worker finished for: %s" % str(real_norm_path))
+        logger.debug("load_image_worker finished for: %s" % str(real_norm_path))
         cfg.image_library.print_load_status()
 
     def queue_image_read(self, file_path):
-        logger.info("Caller: %s" % inspect.stack()[1].function)
-        logger.info('file_path = %s' % file_path)
+        logger.debug("Caller: %s" % inspect.stack()[1].function)
+        logger.debug('file_path = %s' % file_path)
         real_norm_path = self.pathkey(file_path)
         logger.debug("  start queue_image_read with: \"" + str(real_norm_path) + "\"")
         self._images[real_norm_path] = {'image': None, 'loaded': False, 'loading': True, 'task': None}
@@ -148,8 +148,8 @@ class ImageLibrary:
         logger.debug("  finished queue_image_read with: \"" + str(real_norm_path) + "\"")
 
     def make_available(self, requested):
-        logger.info('Called by %s' % inspect.stack()[1].function)
-        logger.info('Arg (requested): %s' % str(requested))
+        logger.debug('Called by %s' % inspect.stack()[1].function)
+        logger.debug('Arg (requested): %s' % str(requested))
         """
         SOMETHING TO LOOK AT:
         Note that the threaded loading sometimes loads the same image multiple
@@ -160,7 +160,7 @@ class ImageLibrary:
         earlier request. This may cause images to be loaded multiple times.
         """
 
-        logger.info('Making available %s' % str(sorted([str(s[-7:]) for s in requested])))
+        logger.debug('Making available %s' % str(sorted([str(s[-7:]) for s in requested])))
         already_loaded = set(self._images.keys())
         normalized_requested = set([self.pathkey(f) for f in requested])
         need_to_load = normalized_requested - already_loaded
@@ -189,12 +189,12 @@ class ImageLibrary:
 
 def image_completed_loading(par):
     '''This is called only by SmartImageLibrary'''
-    logger.info('\n' + 100 * '$' + '\n' + 100 * '$')
-    logger.info("Got: " + str(par))
-    logger.info("Image completed loading, check if showing and repaint as needed.")
+    logger.debug('\n' + 100 * '$' + '\n' + 100 * '$')
+    logger.debug("Got: " + str(par))
+    logger.debug("Image completed loading, check if showing and repaint as needed.")
     ## The following is needed to auto repaint, but it crashes instantly.
     ##alignem_swift.main_win.image_panel.refresh_all_images()
-    logger.info('\n' + 100 * '$' + '\n' + 100 * '$')
+    logger.debug('\n' + 100 * '$' + '\n' + 100 * '$')
 
 
 def image_loader(real_norm_path, image_dict):
@@ -203,9 +203,9 @@ def image_loader(real_norm_path, image_dict):
 
     try:
         # Load the image
-        logger.info("  image_loader started with: \"" + str(real_norm_path) + "\"")
+        logger.debug("  image_loader started with: \"" + str(real_norm_path) + "\"")
         m = psutil.virtual_memory() #0526
-        logger.info("   memory available before loading = " + str(m.available))
+        logger.debug("   memory available before loading = " + str(m.available))
 
         image_dict['image'] = QPixmap(real_norm_path) # no class
         image_dict['loaded'] = True
@@ -279,13 +279,13 @@ class SmartImageLibrary:
 
     def queue_image_read(self, file_path):
         '''called by self.make_available, self.get_image_reference, self.update, '''
-        if self.print_switch: logger.info("top of queue_image_read ( " + file_path + ")")
+        if self.print_switch: logger.debug("top of queue_image_read ( " + file_path + ")")
         real_norm_path = self.pathkey(file_path)
         self._images[real_norm_path] = {'image': None, 'loaded': False, 'loading': True, 'task': None}
-        if self.print_switch: logger.info("submit with (" + real_norm_path + ", " + str(self._images[real_norm_path]) + ")")
+        if self.print_switch: logger.debug("submit with (" + real_norm_path + ", " + str(self._images[real_norm_path]) + ")")
         task_future = self.executors.submit(image_loader, real_norm_path, self._images[real_norm_path])
         # task_future.add_done_callback(image_completed_loading) #0701
-        if self.print_switch: logger.info("  task_future: " + str(task_future))
+        if self.print_switch: logger.debug("  task_future: " + str(task_future))
         self._images[real_norm_path]['task'] = task_future
 
     def make_available(self, requested):

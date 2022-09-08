@@ -714,16 +714,17 @@ class MainWindow(QMainWindow):
         img_size = get_image_size(al_stack[0]['images']['base']['filename'])
         method_str = dict[cfg.data['data']['scales'][cfg.data.get_scale()]['method_data']['alignment_option']]
         self.alignment_status_label.setText("Is Aligned? ")
-        self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
+        scale_str = str(get_scale_val(cfg.data.get_scale()))
+        self.align_label_resolution.setText('Scale %s [%sx%spx]' % (scale_str, img_size[0], img_size[1]))
         self.align_label_affine.setText(method_str)
-        self.align_label_scales_remaining.setText('# Scales Unaligned: %d' %
+        self.align_label_scales_remaining.setText('# Unaligned: %d' %
                                                   len(cfg.data.get_not_aligned_scales_list()))
-        if not do_scales_exist():
-            cur_scale_str = 'Scale: n/a'
-            self.align_label_cur_scale.setText(cur_scale_str)
-        else:
-            cur_scale_str = 'Scale: ' + str(get_scale_val(cfg.data.get_scale()))
-            self.align_label_cur_scale.setText(cur_scale_str)
+        # if not do_scales_exist():
+        #     cur_scale_str = 'Scale: n/a'
+        #     self.align_label_cur_scale.setText(cur_scale_str)
+        # else:
+        #     cur_scale_str = 'Scale: ' + str(get_scale_val(cfg.data.get_scale()))
+        #     self.align_label_cur_scale.setText(cur_scale_str)
 
     
     @Slot()
@@ -1754,7 +1755,7 @@ class MainWindow(QMainWindow):
     def remote_view(self):
         self.hud.post("Switching to Remote Neuroglancer Server")
         self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-        self.disableShortcuts()
+        # self.disableShortcuts()
         self.main_widget.setCurrentIndex(3)
 
     def reload_ng(self):
@@ -1874,7 +1875,7 @@ class MainWindow(QMainWindow):
         # else:
         #     logger.info('Exported alignment at this scale exists - Continuing')
 
-        self.disableShortcuts()
+        # self.disableShortcuts()
         proj_path = os.path.abspath(cfg.data['data']['destination_path'])
 
         # if cfg.data.get_scale() != 'scale_1':
@@ -1887,7 +1888,6 @@ class MainWindow(QMainWindow):
         self.hud.post("Loading Neuroglancer Viewer with '%s'" % zarr_path)
         self.ng_worker = View3DEM(source=zarr_path, scale=cfg.data.get_scale())
         self.threadpool.start(self.ng_worker)
-        logger.info('viewer_url: %s' % self.ng_worker.url())
         self.browser.setUrl(QUrl(self.ng_worker.url()))
         self.image_panel_stack_widget.setCurrentIndex(1)
         self.hud.post('Displaying Alignment In Neuroglancer')
@@ -1994,8 +1994,8 @@ class MainWindow(QMainWindow):
         '''Initialize Global Shortcuts'''
         pass
         logger.info('Disabling Global Shortcuts')
-        # self.shortcut_prev_scale.setEnabled(False)
-        # self.shortcut_next_scale.setEnabled(False)
+        ## self.shortcut_prev_scale.setEnabled(False)
+        ## self.shortcut_next_scale.setEnabled(False)
         self.shortcut_layer_up.setEnabled(False)
         self.shortcut_layer_down.setEnabled(False)
 
@@ -2149,7 +2149,7 @@ class MainWindow(QMainWindow):
         self.toggle_skip = ToggleSwitch()
         self.toggle_skip.stateChanged.connect(self.has_unsaved_changes)
         self.toggle_skip.setToolTip(tip)
-        # self.toggle_skip.setChecked(True)  # 0816 #observed #sus #0907-
+        self.toggle_skip.setChecked(True)  # 0816 #observed #sus #0907-
         self.toggle_skip.toggled.connect(self.skip_changed_callback)
         self.skip_label = QLabel("Keep?")
         self.skip_label.setToolTip(tip)
