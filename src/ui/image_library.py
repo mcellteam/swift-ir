@@ -31,8 +31,8 @@ class ImageLibrary:
 
         logger.info("  Library has " + str(len(self._images.keys())) + " images")
         logger.info("  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])))
-        logger.info("  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])))
-        logger.info("  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])))
+        logger.debug("  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])))
+        logger.debug("  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])))
 
 
     def __str__(self):
@@ -89,7 +89,9 @@ class ImageLibrary:
 
     # Caller = paintEvent. Loads each image.
     def get_image_reference_if_loaded(self, file_path):
-        logger.info("Getting image reference if loaded | Caller: " + inspect.stack()[1].function)
+        '''Called by center_image'''
+        logger.info("Caller: " + inspect.stack()[1].function)
+        logger.info("arg: %s" % file_path)
         image_ref = None
         real_norm_path = self.pathkey(file_path)
         if real_norm_path != None:
@@ -246,7 +248,7 @@ class SmartImageLibrary:
         pass
 
     def get_image_reference(self, file_path):
-        ''''image_library.get_image_reference is called by: ZoomPanWidget.center_image, ZoomPanWidget.paintEvent'''
+        ''''Called by: ZoomPanWidget.center_image, ZoomPanWidget.paintEvent'''
         image_ref = None
         real_norm_path = self.pathkey(file_path)
         if real_norm_path != None:
