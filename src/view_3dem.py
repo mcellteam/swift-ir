@@ -19,6 +19,39 @@ https://github.com/spatial-image/multiscale-spatial-image
 /Users/joelyancey/glanceem_swift/test_zarr/test.zarr/0
 
 zarr://http://127.0.0.1:9000
+
+    map.set('keyl', 'recolor');
+    map.set('keyx', 'clear-segments');
+    map.set('keys', 'toggle-show-slices');
+    map.set('keyb', 'toggle-scale-bar');
+    map.set('shift+keyb', 'toggle-default-annotations');
+    map.set('keya', 'toggle-axis-lines');
+    map.set('keyo', 'toggle-orthographic-projection');
+
+        for (let i = 1; i <= 9; ++i) {
+      map.set('digit' + i, 'toggle-layer-' + i);
+      map.set('control+digit' + i, 'select-layer-' + i);
+      map.set('alt+digit' + i, 'toggle-pick-layer-' + i);
+    }
+
+    map.set('keyn', 'add-layer');
+    map.set('keyh', 'help');
+
+    map.set('space', 'toggle-layout');
+    map.set('shift+space', 'toggle-layout-alternative');
+    map.set('backslash', 'toggle-show-statistics');
+
+
+
+import copy
+new_state = copy.deepcopy(viewer.state)
+new_state.layers['segmentation'].segments.add(10625)
+viewer.set_state(new_state)
+
+# https://github.com/google/neuroglancer/blob/ba083071586d20af4b6f23b8c5a971cc0eb2715d/python/examples/jupyter-notebook-demo.ipynb
+
+
+
 """
 import os
 import sys
@@ -30,8 +63,12 @@ import neuroglancer as ng
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from PyQt5.QtCore import QRunnable, QUrl
 from PyQt5.QtCore import pyqtSlot as Slot
-from src.helpers import print_exception
+from src.helpers import print_exception, get_scale_val
 import src.config as cfg
+
+
+# https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
+# https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
 
 __all__ = ['View3DEM']
 
@@ -84,12 +121,13 @@ def handler_from(directory):
 
 class View3DEM(QRunnable):
     #    def __init__(self, fn, *args, **kwargs):
-    def __init__(self, source=None, bind='127.0.0.1', port=9000):
+    def __init__(self, source=None, scale=None, bind='127.0.0.1', port=9000):
         super(View3DEM, self).__init__()
         self.source = source
         self.bind = bind
         self.port = port
         self.viewer_url = None
+        self.scale = scale
         """
         # Store constructor arguments (re-used for processing)
         self.fn = fn
@@ -134,10 +172,14 @@ class View3DEM(QRunnable):
                 self.port += 1
             except:
                 print_exception()
+            # finally:
+            #     path = os.path.split(os.path.realpath(__file__))[0]
+            #     os.chdir(path)
 
         # if not __name__ == '__main__': cfg.HTTP_PORT = self.port
-        if not __name__ == '__main__':
-            self.create_viewer()
+        # if not __name__ == '__main__':
+        #     self.create_viewer()
+        self.create_viewer()
 
         sa = self.ng_server.socket.getsockname()
         logger.info("Serving Data at http://%s:%d" % (sa[0], sa[1]))
@@ -148,7 +190,8 @@ class View3DEM(QRunnable):
         logger.info("Server type                     :%s" % str(self.ng_server.socket_type))
         # print("allow reuse address= ", server.allow_reuse_address)
 
-        MAX_RETRIES = 10
+        # MAX_RETRIES = 10
+        MAX_RETRIES = 3
         attempt = 0
         for _ in range(MAX_RETRIES):
             attempt += 1
@@ -160,35 +203,54 @@ class View3DEM(QRunnable):
                 continue
             else:
                 break
+            finally:
+                path = os.path.split(os.path.realpath(__file__))[0]
+                os.chdir(path) #0908+
         else:
             logger.error("\nMaximum reconnection attempts reached. Disconnecting...\n")
             self.ng_server.server_close()
             sys.exit(0)
 
+
+
+    def my_action(s):
+        print('Got my-action')
+        print('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
+        print('  Layer selected values: %s' % (s.selected_values,))
+
     def create_viewer(self):
 
         # Image.MAX_IMAGE_PIXELS = None #0820-
         res_x, res_y, res_z = 2, 2, 50
+        scale_val = get_scale_val(cfg.data.get_scale())
+        scales = [float(res_z), res_x * float(scale_val), res_y * float(scale_val)]
+
+        cur_layer = cfg.data.get_layer()
+
         self.ng_viewer = ng.Viewer()
         logger.info('Adding Zarr Image to Viewer...')
         with self.ng_viewer.txn() as s:
-            # s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:" + str(cfg.HTTP_PORT))
-            s.layers['multiscale_img'] = ng.ImageLayer(source="zarr://http://localhost:" + str(self.port))
+            # s.layers['layer'] = ng.ImageLayer(source="zarr://http://localhost:" + str(cfg.HTTP_PORT))
+            s.layers['layer'] = ng.ImageLayer(source="zarr://http://localhost:" + str(self.port))
             # s.cross_section_background_color = "#ffffff"
             s.cross_section_background_color = "#000000"
             # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
             # s.perspective_zoom = 300
-            # s.position = [0, 0, 0]
-            s.dimensions = ng.CoordinateSpace(
-                names=["z", "y", "x"],
-                units=["nm", "nm", "nm"],
-                scales=[res_z, res_y, res_x]
-            )
+            s.position = [cur_layer, 0, 0]
+            # s.dimensions = ng.CoordinateSpace(
+            #     names=["z", "y", "x"],
+            #     # units=["nm", "nm", "nm"],
+            #     units="nm",
+            #     # scales=[res_z, res_y, res_x]
+            #     scales=scales
+            # )
+
+
             # layouts: 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'
             s.layout = ng.column_layout(
                 [ng.LayerGroupViewer(
                     layout='4panel',
-                    layers=['multiscale_img'])]
+                    layers=['layer'])]
             )
 
         # logger.info('Loading Neuroglancer Callbacks...')
@@ -201,6 +263,11 @@ class View3DEM(QRunnable):
             s.show_ui_controls = True
             s.show_panel_borders = True
             s.viewer_size = None
+
+            s.input_event_bindings.viewer['keyt'] = 'my-action'
+            s.status_messages['hello'] = "Viewing: %s" % self.source
+
+
 
         self.viewer_url = str(self.ng_viewer)
         # logger.info('viewer_url: %s' % viewer_url)

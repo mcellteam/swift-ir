@@ -84,8 +84,9 @@ def reorder_tasks(task_list, z_stride) -> list:
         #     tasks.append(t)
     return tasks
 
-def remove_zarr() -> None:
-    path = os.path.join(cfg.data.destination(), '3dem.zarr')
+# def remove_zarr() -> None:
+def remove_zarr(path) -> None:
+    # path = os.path.join(cfg.data.destination(), '3dem.zarr')
     if os.path.isdir(path):
         logger.critical('Removing Zarr...')
         try:
@@ -107,6 +108,8 @@ def init_zarr() -> None:
 def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16,64,64)):
 
     cfg.main_window.hud.post('Preallocating Zarr Array...')
+    cur_scale = cfg.data.get_scale()
+    cur_scale_val = get_scale_val(cfg.data.get_scale())
     src = os.path.abspath(cfg.data.destination())
     n_imgs = cfg.data.get_n_images()
     # n_scales = cfg.data.get_n_scales()
@@ -114,9 +117,15 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16
 
     zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
     caller = inspect.stack()[1].function
-    if (use_scale == cfg.data.get_coarsest_scale_key()) or caller == 'generate_zarr':
-        # remove_zarr()
-        init_zarr()
+    # if (use_scale == cfg.data.get_coarsest_scale_key()) or caller == 'generate_zarr':
+    #     # remove_zarr()
+    #     init_zarr()
+
+    out_path = os.path.join(src, '3dem.zarr', 's' + str(cur_scale_val))
+
+    if cfg.data.get_scale() != 'scale_1':
+        if os.path.exists(out_path):
+            remove_zarr(out_path)
 
     # name = 's' + str(get_scale_val(use_scale))
     # zarr_name = os.path.join(zarr_path,name)
@@ -182,7 +191,12 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16
         # }
         # root.attrs["multiscales"][0]["datasets"].append(metadata)
 
-    write_zarr_metadata()
+    # write_zarr_metadata() # write single multiscale zarr for all aligned scale
+
+    if cfg.data.get_scale() == 'scale_1':
+        write_zarr_metadata()
+    else:
+        write_zarr_metadata_cur_scale() # write multiscale zarr for current scale
 
     # time.sleep(500)
 
@@ -201,6 +215,37 @@ def write_zarr_metadata():
                 "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
         }
         datasets.append(metadata)
+
+    axes = [
+        {"name": "z", "type": "space", "unit": "nanometer"},
+        {"name": "y", "type": "space", "unit": "nanometer"},
+        {"name": "x", "type": "space", "unit": "nanometer"}
+    ]
+
+    root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+    root.attrs['multiscales'] = [
+        {
+            "version": "0.4",
+            "name": "my_data",
+            "axes": axes,
+            "datasets": datasets,
+            "type": "gaussian",
+        }
+    ]
+
+def write_zarr_metadata_cur_scale():
+    zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
+    root = zarr.group(store=zarr_path)
+    datasets = []
+    scale_val = get_scale_val(cfg.data.get_scale())
+    name = 's' + str(scale_val)
+    metadata = {
+        "path": name,
+        "coordinateTransformations": [{
+            "type": "scale",
+            "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
+    }
+    datasets.append(metadata)
 
     axes = [
         {"name": "z", "type": "space", "unit": "nanometer"},

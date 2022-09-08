@@ -240,8 +240,8 @@ class MainWindow(QMainWindow):
         self.initUI()
 
         logger.info('Applying Stylesheet')
-        self.main_stylesheet = 'src/styles/default.qss'
-        # self.main_stylesheet = 'src/styles/daylight.qss'
+        self.main_stylesheet = os.path.abspath('src/styles/default.qss')
+        # self.main_stylesheet = os.path.abspath('src/styles/daylight.qss')
         self.setStyleSheet(open(self.main_stylesheet).read())  # must be after QMainWindow.__init__(self)
 
         check_for_binaries()
@@ -514,6 +514,8 @@ class MainWindow(QMainWindow):
             self.image_panel.zpw[2].show_ng_button()
         else:
             self.image_panel.zpw[2].hide_ng_button()
+        if self.image_panel_stack_widget.currentIndex() == 1:
+            self.reload_ng()
     
     @Slot()
     def run_regenerate_alignment(self, use_scale) -> None:
@@ -565,6 +567,8 @@ class MainWindow(QMainWindow):
                 self.image_panel.zpw[2].show_ng_button()
             else:
                 self.image_panel.zpw[2].hide_ng_button()
+            if self.image_panel_stack_widget.currentIndex() == 1:
+                self.reload_ng()
             self.hud.post("Regenerate Complete")
             logger.info('\n\nRegenerate Complete\n')
         else:
@@ -733,6 +737,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def next_scale_button_callback(self) -> None:
+        logger.info('next_scale_button_callback:')
         '''Callback function for the Next Scale button (scales combobox may not be visible but controls the current scale).'''
         if not self.next_scale_button.isEnabled(): return
         if not are_images_imported(): return
@@ -753,6 +758,8 @@ class MainWindow(QMainWindow):
             if self.main_panel_bottom_widget.currentIndex() == 1:
                 # self.plot_widget.clear() #0824
                 self.show_snr_plot()
+            if self.image_panel_stack_widget.currentIndex() == 1:
+                self.reload_ng()
         except:
             print_exception()
         finally:
@@ -760,6 +767,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def prev_scale_button_callback(self) -> None:
+        logger.info('prev_scale_button_callback:')
         '''Callback function for the Previous Scale button (scales combobox may not be visible but controls the current scale).'''
         if not self.prev_scale_button.isEnabled(): return
         if not are_images_imported(): return
@@ -779,6 +787,8 @@ class MainWindow(QMainWindow):
             if self.main_panel_bottom_widget.currentIndex() == 1:
                 self.plot_widget.clear()
                 self.show_snr_plot()
+            if self.image_panel_stack_widget.currentIndex() == 1:
+                self.reload_ng()
             self.hud.post('Viewing Scale Level %d' % get_scale_val(cfg.data.get_scale()))
         except:
             print_exception()
@@ -972,6 +982,7 @@ class MainWindow(QMainWindow):
         elif up == 3:  self.set_progress_stage_0()
     
     def set_progress_stage_0(self):
+        logger.critical(os.getcwd())
         if self.get_user_progress() != 0: self.hud.post('Reverting user progress to Project')
         self.set_user_progress(False, False, False, False)
         self.project_progress = 0
@@ -1168,6 +1179,8 @@ class MainWindow(QMainWindow):
             cfg.data.set_layer(requested_layer)
             self.read_project_data_update_gui()
             self.image_panel.update_multi_self()
+            if self.image_panel_stack_widget.currentIndex() == 1:
+                self.reload_ng()
         except:
             print_exception()
         self.set_idle()
@@ -1270,10 +1283,14 @@ class MainWindow(QMainWindow):
     @Slot()
     def change_layer_up(self):
         self.image_panel.zpw[0].change_layer(1)
+        # if self.image_panel_stack_widget.currentIndex() == 1:
+        #     self.reload_ng()
 
     @Slot()
     def change_layer_down(self):
         self.image_panel.zpw[0].change_layer(-1)
+        # if self.image_panel_stack_widget.currentIndex() == 1:
+        #     self.reload_ng()
     
     @Slot()
     def print_image_library(self):
@@ -1404,6 +1421,33 @@ class MainWindow(QMainWindow):
     def open_project(self):
         logger.info('Opening Project...')
         self.set_status("Project...")
+
+
+        # Going to need something like this here
+        # if self._unsaved_changes:
+        #     self.hud.post('Confirm Exit AlignEM-SWiFT')
+        #     message = "There are unsaved changes.\n\nSave before exiting?"
+        #     msg = QMessageBox(QMessageBox.Warning, "Save Changes", message, parent=self)
+        #     msg.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
+        #     msg.setDefaultButton(QMessageBox.Save)
+        #     msg.setIcon(QMessageBox.Question)
+        #     reply = msg.exec_()
+        #     if reply == QMessageBox.Cancel:
+        #         logger.info('reply=Cancel. Returning control to the app.')
+        #         self.hud.post('Canceling exit application')
+        #         self.set_idle()
+        #         return
+        #     if reply == QMessageBox.Save:
+        #         logger.info('reply=Save')
+        #         self.save_project()
+        #         self.set_status('Wrapping up...')
+        #         logger.info('Project saved. Exiting')
+        #     if reply == QMessageBox.Discard:
+        #         logger.info('reply=Discard Exiting without saving')
+        # else:
+        #     logger.critical('No Unsaved Changes - Exiting')
+
+
         self.main_panel_bottom_widget.setCurrentIndex(0)
         filename = self.open_project_dialog()
         if filename != '':
@@ -1719,8 +1763,12 @@ class MainWindow(QMainWindow):
 
     def exit_ng(self):
         self.hud.post("Exiting Neuroglancer Viewer")
+        self.image_panel_stack_widget.setCurrentIndex(0)  #0906
+        new_layer = int(self.ng_worker.ng_viewer.state.voxel_coordinates[0])
+        self.jump_to(new_layer)
+        self.read_project_data_update_gui() #0908+
+        self.center_all_images() #0908+
         self.main_widget.setCurrentIndex(0)
-        self.image_panel_stack_widget.setCurrentIndex(0)  # 0906
         self.initShortcuts()
         self.set_idle()
 
@@ -1795,9 +1843,8 @@ class MainWindow(QMainWindow):
                          "Typical workflow:\n"
                          "(1) Open a data or import images and save.\n"
                          "(2) Generate a set of scaled images and save.\n"
-                         "--> (3) Align each scale starting with the coarsest.\n"
-                         "--> (4) Export alignment to Zarr format.\n"
-                         "(5) View data in Neuroglancer client")
+                         "--> (3) Align each scale starting with the coarsest."
+                         )
             logger.info(
                 "Warning | This scale must be aligned and exported before viewing in Neuroglancer - Returning")
             self.set_idle()
@@ -1805,29 +1852,36 @@ class MainWindow(QMainWindow):
         else:
             logger.info('Alignment at this scale exists - Continuing')
 
-        if not is_cur_scale_exported():
-            self.hud.post('Alignment must be exported before it can be viewed in Neuroglancer')
-
-            self.show_warning("No Export Found",
-                         "Alignment must be exported before it can be viewed in Neuroglancer.\n\n"
-                         "Typical workflow:\n"
-                         "(1) Open a data or import images and save.\n"
-                         "(2) Generate a set of scaled images and save.\n"
-                         "(3) Align each scale starting with the coarsest.\n"
-                         "--> (4) Export alignment to Zarr format.\n"
-                         "(5) View data in Neuroglancer client")
-            logger.info(
-                "WARNING | Alignment must be exported before it can be viewed in Neuroglancer - Returning")
-            self.set_idle()
-            return
-        else:
-            logger.info('Exported alignment at this scale exists - Continuing')
+        # if not is_cur_scale_exported():
+        #     self.hud.post('Alignment must be exported before it can be viewed in Neuroglancer')
+        #
+        #     self.show_warning("No Export Found",
+        #                  "Alignment must be exported before it can be viewed in Neuroglancer.\n\n"
+        #                  "Typical workflow:\n"
+        #                  "(1) Open a data or import images and save.\n"
+        #                  "(2) Generate a set of scaled images and save.\n"
+        #                  "(3) Align each scale starting with the coarsest.\n"
+        #                  "--> (4) Export alignment to Zarr format.\n"
+        #                  "(5) View data in Neuroglancer client")
+        #     logger.info(
+        #         "WARNING | Alignment must be exported before it can be viewed in Neuroglancer - Returning")
+        #     self.set_idle()
+        #     return
+        # else:
+        #     logger.info('Exported alignment at this scale exists - Continuing')
 
         self.disableShortcuts()
         proj_path = os.path.abspath(cfg.data['data']['destination_path'])
-        zarr_path = os.path.join(proj_path, '3dem.zarr')
+
+        # if cfg.data.get_scale() != 'scale_1':
+        #     s = 's' + str(get_scale_val(cfg.data.get_scale()))
+        #     zarr_path = os.path.join(proj_path, '3dem.zarr', s) # view multiscale
+        # else:
+        #     zarr_path = os.path.join(proj_path, '3dem.zarr')  # view multiscale
+        zarr_path = os.path.join(proj_path, '3dem.zarr')  # view multiscale
+
         self.hud.post("Loading Neuroglancer Viewer with '%s'" % zarr_path)
-        self.ng_worker = View3DEM(source=zarr_path)
+        self.ng_worker = View3DEM(source=zarr_path, scale=cfg.data.get_scale())
         self.threadpool.start(self.ng_worker)
         logger.info('viewer_url: %s' % self.ng_worker.url())
         self.browser.setUrl(QUrl(self.ng_worker.url()))
@@ -1934,9 +1988,10 @@ class MainWindow(QMainWindow):
 
     def disableShortcuts(self):
         '''Initialize Global Shortcuts'''
-        logger.info('Initializing Global Shortcuts')
-        self.shortcut_prev_scale.setEnabled(False)
-        self.shortcut_next_scale.setEnabled(False)
+        pass
+        logger.info('Disabling Global Shortcuts')
+        # self.shortcut_prev_scale.setEnabled(False)
+        # self.shortcut_next_scale.setEnabled(False)
         self.shortcut_layer_up.setEnabled(False)
         self.shortcut_layer_down.setEnabled(False)
 
@@ -1947,6 +2002,10 @@ class MainWindow(QMainWindow):
         self.shortcut_next_scale = QShortcut(QKeySequence(Qt.Key_Up), self)
         self.shortcut_layer_up = QShortcut(QKeySequence(Qt.Key_Right), self)
         self.shortcut_layer_down = QShortcut(QKeySequence(Qt.Key_Left), self)
+        self.shortcut_prev_scale.setEnabled(True)
+        self.shortcut_next_scale.setEnabled(True)
+        self.shortcut_layer_up.setEnabled(True)
+        self.shortcut_layer_down.setEnabled(True)
         self.shortcut_prev_scale.activated.connect(self.prev_scale_button_callback)
         self.shortcut_next_scale.activated.connect(self.next_scale_button_callback)
         self.shortcut_layer_up.activated.connect(self.change_layer_up)

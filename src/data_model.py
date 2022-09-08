@@ -338,10 +338,10 @@ class DataModel:
         # logger.info('next_coarsest_scale_key = %s' % next_coarsest_scale_key)
         # logger.info('  index = %d' % (cur_scale_index + 1))
         if is_arg_scale_aligned(next_coarsest_scale_key):
-            logger.info('Returning True')
+            logger.debug('Returning True')
             return True
         else:
-            logger.info('Returning False')
+            logger.debug('Returning False')
             return False
 
 
