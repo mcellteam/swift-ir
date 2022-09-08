@@ -45,7 +45,7 @@ class ZoomPanWidget(QWidget):
         self.last_button = None
 
         if self.role == 'aligned':
-            logger.critical('Initializing ZoomPanWidget for role-=aligned')
+            logger.critical('Initializing ZoomPanWidget for role aligned')
             self.layout = QVBoxLayout()
             pixmap = QPixmap("src/resources/button_ng.png").scaled(120, 120, Qt.KeepAspectRatio,Qt.SmoothTransformation)
             self.ng_callback_button = ClickablePicButton(pixmap)
@@ -490,8 +490,9 @@ class ZoomPanWidget(QWidget):
         cfg.main_window.set_status('Loading...')
         cfg.main_window.jump_to_worst_ticker = 1
         cfg.main_window.jump_to_best_ticker = 1
-        if do_scales_exist():
-            cfg.main_window.read_gui_update_project_data()
+        # if do_scales_exist():
+        #     cfg.main_window.read_gui_update_project_data()
+        cfg.main_window.read_gui_update_project_data() #0908+
         n_imgs = cfg.data.get_n_images()
         scale = cfg.data.get_scale()
         leaving = cfg.data.get_layer()
@@ -642,6 +643,7 @@ class ZoomPanWidget(QWidget):
         else:
             img_text = 'No Image Loaded'
         if s == '':
+            # pass
             return
         else:
             has_alignment_stack = True if len(cfg.data['data']['scales'][s]['alignment_stack']) > 0 else False

@@ -29,10 +29,10 @@ class ImageLibrary:
 
     def print_load_status(self):
 
-        logger.debug("  Library has " + str(len(self._images.keys())) + " images")
-        logger.debug("  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])))
-        logger.debug("  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])))
-        logger.debug("  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])))
+        logger.info("  Library has " + str(len(self._images.keys())) + " images")
+        logger.info("  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])))
+        logger.info("  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])))
+        logger.info("  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])))
 
 
     def __str__(self):
@@ -50,7 +50,7 @@ class ImageLibrary:
         return (s)
 
     def get_image_reference(self, file_path):
-        # logger.info("Getting image reference | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.get_image_reference")
+        logger.info("Caller: " + inspect.stack()[1].function)
         # print_debug(50, "get_image_reference ( " + str(file_path) + " )")
         self.print_load_status()
         image_ref = None
@@ -89,7 +89,7 @@ class ImageLibrary:
 
     # Caller = paintEvent. Loads each image.
     def get_image_reference_if_loaded(self, file_path):
-        # logger.info("Getting image reference if loaded | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.get_image_reference_if_loaded")
+        logger.info("Getting image reference if loaded | Caller: " + inspect.stack()[1].function)
         image_ref = None
         real_norm_path = self.pathkey(file_path)
         if real_norm_path != None:
@@ -123,11 +123,11 @@ class ImageLibrary:
 
     # Load the image
     def load_image_worker(self, real_norm_path, image_dict):
-        logger.debug("load_image_worker started with:", str(real_norm_path))
+        logger.debug("load_image_worker started with: %s" % str(real_norm_path))
         image_dict['image'] = QPixmap(real_norm_path) # no class
         image_dict['loaded'] = True
         image_dict['loading'] = False
-        logger.debug("load_image_worker finished for:" + str(real_norm_path))
+        logger.info("load_image_worker finished for: %s" % str(real_norm_path))
         cfg.image_library.print_load_status()
 
     def queue_image_read(self, file_path):
@@ -152,7 +152,7 @@ class ImageLibrary:
         earlier request. This may cause images to be loaded multiple times.
         """
 
-        # logger.info('Making available ', str(sorted([str(s[-7:]) for s in requested])))
+        logger.info('Making available %s' % str(sorted([str(s[-7:]) for s in requested])))
         already_loaded = set(self._images.keys())
         normalized_requested = set([self.pathkey(f) for f in requested])
         need_to_load = normalized_requested - already_loaded
@@ -195,16 +195,16 @@ def image_loader(real_norm_path, image_dict):
 
     try:
         # Load the image
-        logger.debug("  image_loader started with: \"" + str(real_norm_path) + "\"")
+        logger.info("  image_loader started with: \"" + str(real_norm_path) + "\"")
         m = psutil.virtual_memory() #0526
-        logger.debug("   memory available before loading = " + str(m.available))
+        logger.info("   memory available before loading = " + str(m.available))
 
         image_dict['image'] = QPixmap(real_norm_path) # no class
         image_dict['loaded'] = True
         logger.debug("  image_loader finished for: \"" + str(real_norm_path) + "\"")
         logger.debug("  memory available after loading = " + str(m.available))
     except:
-        logger.info("Got an exception in image_loader")
+        logger.warning("Got an exception in image_loader")
 
 
 class SmartImageLibrary:
