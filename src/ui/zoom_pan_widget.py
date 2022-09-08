@@ -267,25 +267,30 @@ class ZoomPanWidget(QWidget):
         self.set_tooltips()
 
     def set_tooltips(self):
-        if are_images_imported():
-            s = cfg.data['data']['current_scale']
-            l = cfg.data['data']['current_layer']
-            # n_images = get_num_imported_images()
-            role_dict = {'ref': 'Reference Image', 'base': 'Current Image', 'aligned': 'Alignment'}
-            role_str = role_dict[self.role]
-            try:
-                dim_str = '%sx%spx' % (self.image_w, self.image_h)
-            except:
-                dim_str = ''
-            scale_str = 'Scale %d' % get_scale_val(s)
-            snr_str = str(cfg.data.get_snr())
-            if self.role == 'aligned':
-                if are_aligned_images_generated():
-                    self.setToolTip('%s\n%s [%s]\n%s' % (role_str, scale_str, dim_str, snr_str))
+        try:
+            if are_images_imported():
+                s = cfg.data['data']['current_scale']
+                l = cfg.data['data']['current_layer']
+                l_name = cfg.data['data']['scales'][s]['alignment_stack'][l]['images'][self.role]['filename']
+                l_basename = os.path.basename(l_name)
+                # n_images = get_num_imported_images()
+                role_dict = {'ref': 'Reference Image', 'base': 'Current Image', 'aligned': 'SWiFT-IR Image'}
+                role_str = role_dict[self.role]
+                try:
+                    dim_str = '%sx%spx' % (self.image_w, self.image_h)
+                except:
+                    dim_str = ''
+                scale_str = 'Scale %d' % get_scale_val(s)
+                snr_str = str(cfg.data.get_snr())
+                if self.role == 'aligned':
+                    if are_aligned_images_generated():
+                        self.setToolTip('%s\n%s\n%s [%s]\n%s' % (role_str, l_basename, scale_str, dim_str, snr_str))
+                else:
+                    self.setToolTip('%s\n%s\n%s [%s]' % (role_str, l_basename, scale_str, dim_str))
             else:
-                self.setToolTip('%s\n%s [%s]' % (role_str, scale_str, dim_str))
-        else:
-            self.setToolTip('No Image')
+                self.setToolTip('No Image')
+        except:
+            pass
 
 
     def win_x(self, image_x):
