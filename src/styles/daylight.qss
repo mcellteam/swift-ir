@@ -1,14 +1,8 @@
-
-
 /*
+Derived From:
+
 https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 
-2022-05-10
-- decrease QPushButton corner radius (was 5px)
-
-*/
-
-/*
 Aqua Style Sheet for QT Applications
 Author: Jaime A. Quiroga P.
 Company: GTRONICK
@@ -54,6 +48,8 @@ QTextEdit {
 	border-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(0, 113, 255, 255), stop:1 rgba(91, 171, 252, 255));
 }
 QPlainTextEdit {
+    color: #171d22;
+    background-color: #FFFFE1;
 	border-width: 1px;
 	border-style: solid;
 	border-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(0, 113, 255, 255), stop:1 rgba(91, 171, 252, 255));

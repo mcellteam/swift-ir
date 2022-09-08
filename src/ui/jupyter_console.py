@@ -27,6 +27,7 @@ class JupyterConsole(RichJupyterWidget):
         super(JupyterConsole, self).__init__(*args, **kwargs)
 
         self.set_default_style(colors='linux')
+
         self.prompt_to_top()
 
         if customBanner is not None:
@@ -75,6 +76,13 @@ class JupyterConsole(RichJupyterWidget):
         Execute a command in the frame of the console widget
         """
         self._execute(command, False)
+
+    def set_color_none(self):
+        self.set_default_style(colors='nocolor')
+
+    def set_color_linux(self):
+        self.set_default_style(colors='linux')
+
 
 
 

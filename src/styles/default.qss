@@ -1,24 +1,7 @@
 /*
+Derived From:
 https://github.com/GTRONICK/QSS/blob/master/ManjaroMix.qss
-*/
 
-/*
-ManjaroMix Style Sheet for QT Applications
-Author: Jaime A. Quiroga P.
-Company: GTRONICK
-Last updated: 25/02/2020, 15:42.
-Available at: https://github.com/GTRONICK/QSS/blob/master/ManjaroMix.qss
-*/
-
-
-/* ---------------------------------- */
-/* --- permanent styles ---  */
-
-/*
-https://github.com/GTRONICK/QSS/blob/master/ManjaroMix.qss
-*/
-
-/*
 ManjaroMix Style Sheet for QT Applications
 Author: Jaime A. Quiroga P.
 Company: GTRONICK
@@ -34,7 +17,10 @@ QSplitter::handle {
 */
 
 
-
+hud {
+	background-color: #ffffff;
+	color:#ffe135;
+}
 
 QDialog QLabel {
 	color: #000000;
@@ -88,7 +74,8 @@ QToolTip {
 
 QGroupBox {
   font-weight: bold;
-  border: 2px solid #455364; /* off blue-ish color */
+  /*border: 2px solid #455364;*/ /* off blue-ish color */
+  border: 1px solid #171d22;
   /*border: 2px solid #d3dae3; */
   /*border: 2px solid #151a1e;*/
   border-radius: 5px;
@@ -175,10 +162,16 @@ QPushButton{
 	border-width: 1px;
 	/*border-radius: 5px;*/
 	border-radius: 2px;
-	color: rgb(0,0,0);
+	/*color: rgb(0,0,0);*/
+	/*color: #F3F6FB;*/
+	/*color: #455364;*/
+	color: #171d22;
+	border-color: #171d22;
 	padding: 3px;
 	/* background-color: rgb(255,255,255);*/
 	background-color: #F3F6FB;
+	/*background-color: #171d22;*/
+	/*background-color: #bac5c2;*/
 }
 QPushButton:pressed{
 	border-style: inset;
@@ -227,11 +220,15 @@ QMenuBar::item {
 
 QMenuBar::item:selected { /* when selected using mouse or keyboard */
     background: #a8a8a8;
+
 }
 
 QMenuBar::item:pressed {
     background: #888888;
 }
+
+
+
 QTabWidget {
 	color:rgb(0,0,0);
 	background-color:#000000;

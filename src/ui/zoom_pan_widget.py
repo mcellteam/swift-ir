@@ -42,6 +42,7 @@ class ZoomPanWidget(QWidget):
         self.scroll_factor = 1.09 #Critical
         self.zoom_scale = 1.0
         # self.last_button = Qt.MouseButton.NoButtons #0906-
+        self.last_button = None
 
         if self.role == 'aligned':
             logger.critical('Initializing ZoomPanWidget for role-=aligned')
@@ -345,11 +346,11 @@ class ZoomPanWidget(QWidget):
         self.update_zpa_self()
 
 
-    # def minimumSizeHint(self):
-    #     return QSize(50, 50)
-    #
-    # def sizeHint(self):
-    #     return QSize(180, 180)
+    def minimumSizeHint(self):
+        return QSize(100, 100)
+
+    def sizeHint(self):
+        return QSize(400, 550)
 
 
     def mouse_down_callback(self, role, screen_coords, image_coords, button):

@@ -11,8 +11,6 @@ import subprocess as sp
 import multiprocessing as mp
 from PyQt5.QtCore import QObject
 from PyQt5.QtWidgets import QApplication
-# from .LoggingTqdm import logging_tqdm
-# from .TqdmToLogger import tqdm_to_logger
 import src.config as cfg
 
 
@@ -23,28 +21,8 @@ stderr <- info + errors
 __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
-# logger = logging.getLogger("hud")
-# logger_tqdm = logging_tqdm(logging.getLogger("hud"))
 mpl = mp.log_to_stderr()
 mpl.setLevel(logging.CRITICAL)
-
-class TqdmToLogger(io.StringIO):
-    """
-        Output stream for TQDM which will output to logger module instead of
-        the StdOut.
-    """
-    logger = None
-    level = None
-    buf = ''
-    def __init__(self,logger,level=None):
-        super(TqdmToLogger, self).__init__()
-        self.logger = logger
-        self.level = level or logging.INFO
-    def write(self,buf):
-        self.buf = buf.strip('\r\n\t ')
-    def flush(self):
-        self.logger.log(self.level, self.buf)
-
 
 SENTINEL = 1
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
@@ -80,8 +58,6 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     result_q.close()
     # result_q.join_thread()
     task_q.task_done()
-    # task_q.close() #jy
-    # time.sleep(1)
     logger.debug('<<<< Worker %d Finished' % (worker_id))
 
 
@@ -110,22 +86,19 @@ class TaskQueue(QObject):
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
-
-        '''type(task_q)= <class 'multiprocessing.queues.JoinableQueue'>
-           type(result_q)= <class 'multiprocessing.queues.Queue'>'''
         logger.debug('TaskQueue.start:')
         self.task_id = 0
         self.n_workers = n_workers
         self.retries = retries
         self.task_dict = {}
 
-        logger.info('Using %d workers to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
+        cfg.main_window.hud.post('Using %d workers to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
 
         for i in range(self.n_workers):
             sys.stderr.write('\nStarting Worker %d >>>>>>>>' % i)
             try:
-                # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q, ))
-                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -142,8 +115,8 @@ class TaskQueue(QObject):
         for i in range(self.n_workers):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
             try:
-                # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, self.pbar_q,))
-                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -193,9 +166,6 @@ class TaskQueue(QObject):
         self.task_dict = {}
         self.task_id = 0
 
-    # def count_tasks(self) -> int:
-    #     '''This does not work. It would be nice if it did.'''
-    #     return len(self.task_dict)
 
     def collect_results(self) -> None:
         '''Run All Tasks and Collect Results'''
@@ -205,7 +175,7 @@ class TaskQueue(QObject):
         realtime = n_pending
         retries_tot = 0
         logger.info('self.retries: %s' % self.retries)
-        self.parent.pbar.show()
+        self.parent.pbar_max(self.n_tasks)
         while (retries_tot < self.retries + 1) and n_pending:
             cfg.main_window.center_all_images()
             logger.info('# Tasks Pending: %d' % n_pending)
@@ -218,14 +188,12 @@ class TaskQueue(QObject):
                 except:
                     pass
 
-                # self.parent.pbar.show()
-                self.parent.pbar_max(self.n_tasks)
                 QApplication.processEvents()
                 self.parent.pbar_update(self.n_tasks - realtime)
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
-                if cfg.LOG_LEVEL < 20:
-                    logger.warning('%d%s' % (task_id,errs)) # lots of output for alignment
+                # if cfg.LOG_LEVEL < 20:
+                # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc
@@ -264,7 +232,6 @@ class TaskQueue(QObject):
             logger.error('Retries       : %d' % (retries_tot - 1))
             logger.error('Complete')
 
-        self.parent.pbar.hide()
         self.end_tasks()
         self.work_queue.join()
         self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
@@ -307,31 +274,7 @@ if __name__ == '__main__':
 
 
 '''
-Pickling issues:
-https://stackoverflow.com/questions/32856206/pickling-issue-with-python-pathos?newreg=11b52c7f24714b76b4fa3ad8462dc658
-Gracefully exiting w/ Python multiprocessing:
-https://the-fonz.gitlab.io/posts/python-multiprocessing/
-Mercurial solved this by just removing the __reduce__  method, hah!
-https://hg.python.org/cpython/rev/c2910971eb86
-The process has forked and you cannot use this CoreFoundation functionality safely. You MUST exec().
-Break on __THE_PROCESS_HAS_FORKED_AND_YOU_CANNOT_USE_THIS_COREFOUNDATION_FUNCTIONALITY___YOU_MUST_EXEC__() to debug.
-dill.copy(self.pbar_proc) # <-- debug dill pickling issues
-^^
-TypeError: Pickling an AuthenticationString object is disallowed for security reasons
-RuntimeError: Queue objects should only be shared between processes through inheritance
-run() method is an inbuilt method of the Thread class of the threading module in Python. This method is used to
-represent a thread's activity. It calls the method expressed as the target argument in the Thread object along with
-the positional and keyword arguments taken from the args and kwargs arguments, respectively.
-QProcess Example:
-p = QProcess()
-p.start("python3", ['dummy_script.py'])
-multiprocessing module only
-print('mp_queue.TaskQueue.start | type(self.progress_callback) = ', type(self.progress_callback))
-print('mp_queue.TaskQueue.start | str(self.progress_callback) = ', str(self.progress_callback))
-print('mp_queue.TaskQueue.start | mp.parent_process() = ', mp.parent_process())
-print('mp_queue.TaskQueue.start | mp.get_context() = ', mp.get_context())
-print('mp_queue.TaskQueue.start | mp.get_start_method() = ', mp.get_start_method())
-image_apply_affine task (example)
+
 task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3', 
        '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_python_apply_affine.py', 
        '-gray', 
@@ -344,23 +287,16 @@ task= ['/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3'
        '-49.218610253016884', 
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_src/R34CA1-BS12.105.tif', 
        '/Users/joelyancey/glanceem_swift/test_projects/test1/scale_4/img_aligned/R34CA1-BS12.105.tif']
+    
+    
 generate_scales task (example)
 task = ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src//lib/bin_darwin/iscale2', 
         '+4', 
         'of=/Users/joelyancey/glanceem_swift/test_projects/test16/scale_4/img_src/R34CA1-BS12.117.tif', 
         '/Users/joelyancey/glanceem_swift/test_projects/test16/scale_1/img_src/R34CA1-BS12.117.tif']
-'''
 
 
-#------------------------------------------------------
-'''
-PROBLEMATIC
-INFO:interface:
-Task Error:
-INFO:interface:   CMD:    /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
-INFO:interface:   ARGS:   ['/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_single_alignment.py', '/Users/joelyancey/glanceEM_SWiFT/test_projects/full_volume_josef_2/project_runner_job_file.json', 'init_affine', '4', 'c', '127', '1', '1']
-INFO:interface:   STDERR: /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3: can't open file '/Users/joelyancey/glanceem_swift/alignEM/source/src/src/job_single_alignment.py': [Errno 2] No such file or directory
-What a good single_alignment_job run looks like:
+Good example of a single_alignment_job run:
 project_runner.do_alignment | Starting mp_queue with args:
   /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
   /Users/joelyancey/Downloads/alignEM-joel-dev-pyside6/source/src/src/job_single_alignment.py
@@ -371,91 +307,19 @@ project_runner.do_alignment | Starting mp_queue with args:
   9
   1
   0
-HOW IS ^^ THAT DIFFERENT FROM THIS:
-Starting mp_queue with args:
-  /Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/bin/python3
-  /Users/joelyancey/glanceem_swift/alignEM/source/src/src/src/job_single_alignment.py
-  /Users/joelyancey/glanceEM_SWiFT/test_projects/test94/project_runner_job_file.json
-  init_affine
-  4
-  c
-  14
-  1
-  0
-'''
 
 
+OMP_NUM_THREADS=1 <- turns off OpenMP multi-threading, so each Python process remains single-threaded.
 
-'''
-        An attempt has been made to start a new process before the
-        current process has finished its bootstrapping phase.
-        This probably means that you are not using fork to start your
-        child processes and you have forgotten to use the proper idiom
-        in the main module:
-            if __name__ == '__main__':
-                freeze_support()
-                ...
-        The "freeze_support()" line can be omitted if the program
-        is not going to be frozen to produce an executable.
-'''
-
-
-'''
-p = ctx.Process()
-pickle.dumps(p._config['authkey'])
-Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-  File "/Users/joelyancey/.local/share/virtualenvs/alignEM-AuCIf4YN/lib/python3.9/site-packages/multiprocess/process.py", line 347, in __reduce__
-    raise TypeError(
-TypeError: Pickling an AuthenticationString object is disallowed for security reasons
-'''
-
-
-
-'''class AuthenticationString(bytes):
-    def __reduce__(self):
-        from .context import get_spawning_popen
-        if get_spawning_popen() is None:
-            raise TypeError(
-                'Pickling an AuthenticationString object is '
-                'disallowed for security reasons'
-                )
-        return AuthenticationString, (bytes(self),)'''
-
-
-'''
-consider using:
-PYTHONOPTIMIZE=1 and 
-OMP_NUM_THREADS
-OMP_NUM_THREADS=1 <--  turns off the OpenMP multi-threading, so each of your Python processes remains single-threaded.
-'''
-
-'''
 multiprocess is a fork of multiprocessing. multiprocess extends multiprocessing to provide enhanced serialization, 
 using dill. multiprocess leverages multiprocessing to support the spawning of processes using the API of the python 
 standard library’s threading module. multiprocessing has been distributed as part of the standard library since 
 python 2.6.
-'''
 
-
-'''
-REPLICATE THE AuthenticationString ISSUE:
-from multiprocessing import Process
-import pickle
-p = Process()
-pickle.dumps(p._config['authkey'])
-'''
-
-
-
-'''
-Eyedea
+Local
 SWIM argument string: ww_3328x3328 -i 2 -w -0.68 -x 0 -y 0 -k  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/k_img  /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.101.tif 2048 2048 /Users/joelyancey/glanceEM_SWiFT/test_projects/2imgs_test_2/scale_1/img_src/R34CA1-BS12.102.tif 2048.000000 2048.000000  1.000000 0.000000 -0.000000 1.000000
 
-
 LoneStar6
-
 SWIM argument string: ww_208 -i 2 -w -0.68 -x 128 -y 384 -k keep.JPG -d /Users/joelyancey/glanceEM_SWiFT/test_projects/quik3/scale_4 /Users/joelyancey/glanceEM_SWiFT/test_projects/quik3/scale_4/img_src/R34CA1-BS12.101.tif 512 512 /Users/joelyancey/glanceEM_SWiFT/test_projects/quik3/scale_4/img_src/R34CA1-BS12.102.tif 509.351200 513.196671  1.007430 0.003800 -0.000115 1.050630
-
 
 '''

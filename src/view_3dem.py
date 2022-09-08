@@ -31,7 +31,7 @@ from http.server import HTTPServer, SimpleHTTPRequestHandler
 from PyQt5.QtCore import QRunnable, QUrl
 from PyQt5.QtCore import pyqtSlot as Slot
 from src.helpers import print_exception
-# import src.config as cfg
+import src.config as cfg
 
 __all__ = ['View3DEM']
 
@@ -220,8 +220,13 @@ class View3DEM(QRunnable):
         while True:
             logger.debug('Still looking for an open port...')
             if self.viewer_url is not None:
-                logger.info('Viewer Url: %s' % str(self.viewer_url))
+                cfg.main_window.hud.post('Viewer Url: %s' % str(self.viewer_url))
                 return self.viewer_url
+    def show_url(self):
+        cfg.main_window.hud.post('Viewer Url:\n\n%s' % str(self.viewer_url))
+
+    def show_state(self):
+        cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(self.ng_viewer.state))
 
 
 if __name__ == '__main__':

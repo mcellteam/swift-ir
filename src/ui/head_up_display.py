@@ -9,7 +9,7 @@ https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 import time
 import random
 import logging
-from PyQt5.QtCore import QObject, QThread, Qt
+from PyQt5.QtCore import QObject, QThread, Qt, QSize
 from PyQt5.QtCore import pyqtSignal as Signal
 from PyQt5.QtCore import pyqtSlot as Slot
 from PyQt5.QtGui import QFont, QTextCursor
@@ -67,7 +67,7 @@ class HeadUpDisplay(QWidget):
         super(HeadUpDisplay, self).__init__()
         self.app = app
         self.setFocusPolicy(Qt.NoFocus)
-        self.setMinimumHeight(160)
+        self.setMinimumHeight(140)
         self.textedit = te = QPlainTextEdit(self)
         # Set whatever the default monospace font is for the platform
         f = QFont()
@@ -95,6 +95,13 @@ class HeadUpDisplay(QWidget):
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')
         h.setFormatter(formatter)
         logger.addHandler(h)
+
+        self.setStyleSheet("""QToolTip { 
+                                                background-color: #8ad4ff;
+                                                /*color: white;*/
+                                                color: #000000;
+                                                border: #8ad4ff solid 1px;
+                                                }""")
 
         # Set up to terminate the QThread when we exit
         # app.aboutToQuit.connect(self.force_quit) #0816- (!) This caused error after refactor:
@@ -125,6 +132,12 @@ class HeadUpDisplay(QWidget):
         if self.hud_worker_thread.isRunning():
             self.kill_thread()
 
+    def minimumSizeHint(self):
+        return QSize(50, 50)
+
+    def sizeHint(self):
+        return QSize(500, 140)
+
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):
         color = self.COLORS.get(record.levelno, 'black')
@@ -149,6 +162,40 @@ class HeadUpDisplay(QWidget):
     @Slot()
     def clear_display(self):
         self.textedit.clear()
+
+    def set_theme_default(self):
+        self.textedit.setStyleSheet("""
+            /*background-color: #d3dae3;*/
+            /*background-color:  #f5ffff;*/
+            /*background-color:  #151a1e;*/
+            background-color:  #000000;
+            /*border-style: solid;*/
+            border-style: inset;
+            /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
+            border-color: #d3dae3;     /* light off-white */
+            border-width: 0px;
+            border-radius: 2px;            
+        """)
+
+
+    def set_theme_light(self):
+
+        self.textedit.setStyleSheet("""
+            color: #171d22;
+            /*background-color: #d3dae3;*/
+            /*background-color:  #f5ffff;*/
+            /*background-color:  #151a1e;*/
+            background-color:  #FBFAF0;
+            /*border-style: solid;*/
+            border-style: inset;
+            border-color: #171d22;
+            /*border-color: #455364;*/ /* off-blue-ish color used in qgroupbox border */
+            /*border-color: #d3dae3;*/     /* light off-white */
+            border-width: 2px;
+            border-radius: 2px;            
+        """)
+
+
 
 def ctname():
     '''Return name of the thread'''
