@@ -497,12 +497,15 @@ class MainWindow(QMainWindow):
            self.show_snr_plot()
 
         self.refresh_all_images()
-        self.has_unsaved_changes()
+        # self.has_unsaved_changes() #0908-
         self.read_project_data_update_gui()
         self.center_all_images()
         self.update_panels()  # 0721+
         self.hud.post('Image Generation Complete')
         self.update_win_self()
+
+        self.save_project_to_file() #0908+
+
         # self.image_panel.all_images_actual_size()
         # self.center_all_images()
         # self.image_panel.zpw[2].setFocus()
@@ -578,8 +581,9 @@ class MainWindow(QMainWindow):
             self.set_idle()
             return
         self.update_win_self()
+        self.save_project_to_file() #0908+
         self.shake()
-        self.has_unsaved_changes()
+        # self.has_unsaved_changes() #0908-
 
 
     
