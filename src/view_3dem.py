@@ -195,7 +195,7 @@ class View3DEM(QRunnable):
         # MAX_RETRIES = 10
         MAX_RETRIES = 3
         attempt = 0
-        cfg.main_window.disableShortcuts()
+        # cfg.main_window.disableShortcuts()
         for _ in range(MAX_RETRIES):
             attempt += 1
             logger.info("Trying to serve forever... attempt(" + str(attempt) + ")...")
