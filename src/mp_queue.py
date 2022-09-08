@@ -175,6 +175,7 @@ class TaskQueue(QObject):
         realtime = n_pending
         retries_tot = 0
         logger.info('self.retries: %s' % self.retries)
+        self.parent.pbar.show()
         self.parent.pbar_max(self.n_tasks)
         while (retries_tot < self.retries + 1) and n_pending:
             cfg.main_window.center_all_images()
@@ -232,6 +233,7 @@ class TaskQueue(QObject):
             logger.error('Retries       : %d' % (retries_tot - 1))
             logger.error('Complete')
 
+        self.parent.pbar.hide()
         self.end_tasks()
         self.work_queue.join()
         self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
