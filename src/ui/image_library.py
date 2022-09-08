@@ -29,7 +29,7 @@ class ImageLibrary:
 
     def print_load_status(self):
 
-        logger.info("  Library has " + str(len(self._images.keys())) + " images")
+        logger.debug("  Library has " + str(len(self._images.keys())) + " images")
         logger.info("  Names:   " + str(sorted([str(s[-7:]) for s in self._images.keys()])))
         logger.debug("  Loaded:  " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loaded']])))
         logger.debug("  Loading: " + str(sorted([str(s[-7:]) for s in self._images.keys() if self._images[s]['loading']])))
@@ -50,7 +50,8 @@ class ImageLibrary:
         return (s)
 
     def get_image_reference(self, file_path):
-        logger.info("Caller: " + inspect.stack()[1].function)
+        '''Called by paintEvent'''
+        logger.info("Getting image reference, arg: %s" % file_path)
         # print_debug(50, "get_image_reference ( " + str(file_path) + " )")
         self.print_load_status()
         image_ref = None
@@ -89,9 +90,10 @@ class ImageLibrary:
 
     # Caller = paintEvent. Loads each image.
     def get_image_reference_if_loaded(self, file_path):
-        '''Called by center_image'''
-        logger.info("Caller: " + inspect.stack()[1].function)
-        logger.info("arg: %s" % file_path)
+        '''Called by center_image
+        example arg: /Users/joelyancey/glanceEM_SWiFT/test_projects/'''
+        # logger.info("Caller: " + inspect.stack()[1].function)
+        # logger.info("arg: %s" % file_path)
         image_ref = None
         real_norm_path = self.pathkey(file_path)
         if real_norm_path != None:
@@ -125,6 +127,8 @@ class ImageLibrary:
 
     # Load the image
     def load_image_worker(self, real_norm_path, image_dict):
+        '''Loads An Image for Each Role'''
+
         logger.debug("load_image_worker started with: %s" % str(real_norm_path))
         image_dict['image'] = QPixmap(real_norm_path) # no class
         image_dict['loaded'] = True
@@ -133,7 +137,8 @@ class ImageLibrary:
         cfg.image_library.print_load_status()
 
     def queue_image_read(self, file_path):
-        # logger.info("Queuing image read | Caller: " + inspect.stack()[1].function + " |  ImageLibrary.queue_image_read")
+        logger.info("Caller: %s" % inspect.stack()[1].function)
+        logger.info('file_path = %s' % file_path)
         real_norm_path = self.pathkey(file_path)
         logger.debug("  start queue_image_read with: \"" + str(real_norm_path) + "\"")
         self._images[real_norm_path] = {'image': None, 'loaded': False, 'loading': True, 'task': None}
@@ -143,7 +148,8 @@ class ImageLibrary:
         logger.debug("  finished queue_image_read with: \"" + str(real_norm_path) + "\"")
 
     def make_available(self, requested):
-        # logger.info('  ImageLibrary.make_available called by ' + inspect.stack()[1].function + '...')
+        logger.info('Called by %s' % inspect.stack()[1].function)
+        logger.info('Arg (requested): %s' % str(requested))
         """
         SOMETHING TO LOOK AT:
         Note that the threaded loading sometimes loads the same image multiple
@@ -169,7 +175,7 @@ class ImageLibrary:
         self.print_load_status()
 
     def remove_all_images(self):
-        # logger.info("ImageLibrary is removing all images (called by " + inspect.stack()[1].function + ")...")
+        logger.info("Called by %s" % inspect.stack()[1].function)
         keys = list(self._images.keys())
         for k in keys:
             self.remove_image_reference(k)
