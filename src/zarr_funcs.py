@@ -115,7 +115,7 @@ def tiffs2MultiTiff(directory:str, out:str):
 
 # def remove_zarr() -> None:
 def remove_zarr(path) -> None:
-    # path = os.path.join(cfg.data.dest(), 'alignments.zarr')
+    # path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     if os.path.isdir(path):
         logger.critical('Removing Zarr...')
         try:
@@ -128,7 +128,7 @@ def remove_zarr(path) -> None:
 
 def init_zarr() -> None:
     logger.critical('Initializing Zarr...')
-    path = os.path.join(cfg.data.dest(), 'alignments.zarr')
+    path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     store = zarr.DirectoryStore(path, dimension_separator='/')  # Create Zarr DirectoryStore
     root = zarr.group(store=store, overwrite=True)  # Create Root Group (?)
     # root = zarr.group(store=store, overwrite=True, synchronizer=zarr.ThreadSynchronizer())  # Create Root Group (?)
@@ -143,13 +143,13 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16
     # n_scales = cfg.data.n_scales()
     aligned_scales_lst = cfg.data.aligned_list()
 
-    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr')
+    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     caller = inspect.stack()[1].function
     # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr':
     #     # remove_zarr()
     #     init_zarr()
 
-    out_path = os.path.join(src, 'alignments.zarr', 's' + str(cur_scale_val))
+    out_path = os.path.join(src, 'img_aligned.zarr', 's' + str(cur_scale_val))
 
     if cfg.data.scale() != 'scale_1':
         if os.path.exists(out_path):
@@ -215,7 +215,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16
     # write_zarr_multiscale_metadata() # write single multiscale zarr for all aligned scale
 
     if cfg.data.scale() == 'scale_1':
-        zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr')
+        zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
         write_zarr_multiscale_metadata(path=zarr_path)
     else:
         write_zarr_metadata_cur_scale()  # write multiscale zarr for current scale
@@ -256,7 +256,7 @@ def write_zarr_multiscale_metadata(path):
     ]
 
 def write_zarr_metadata_cur_scale():
-    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr')
+    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     root = zarr.group(store=zarr_path)
     datasets = []
     # scale_factor = scale_val(cfg.data.scale())
@@ -295,10 +295,10 @@ def generate_zarr_scales():
         logger.info('Working On %s' % s)
         tif_files = sorted(glob(os.path.join(dest, s, 'img_src', '*.tif')))
         # zarrurl = os.path.join(dest, s + '.zarr')
-        zarrurl = os.path.join(dest, 'scales.zarr', 's' + str(get_scale_val(s)))
+        zarrurl = os.path.join(dest, 'img_src.zarr', 's' + str(get_scale_val(s)))
         tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
 
-    zarr_path = os.path.join(dest, 'scales.zarr')
+    zarr_path = os.path.join(dest, 'img_src.zarr')
     write_zarr_multiscale_metadata(path=zarr_path)
 
         # scale_factor = cfg.data.scale_val()

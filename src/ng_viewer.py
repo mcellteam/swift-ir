@@ -105,7 +105,7 @@ class NgViewer(QRunnable):
         if viewof == 'ref' or 'base':
             self.path = os.path.join(src, scale + '.zarr')
         if viewof == 'aligned':
-            self.path = os.path.join(src, 'alignments.zarr')
+            self.path = os.path.join(src, 'img_aligned.zarr')
 
     @Slot()
     def run(self):
@@ -188,8 +188,9 @@ class NgViewer(QRunnable):
 
         logger.info('Adding Image Layer to Viewer...')
         addr = "zarr://http://localhost:" + str(self.port)
-        al_path = os.path.join(addr, 'alignments.zarr/s4')
-        unal_path = os.path.join(addr, cfg.data.scale() + '.zarr')
+        scale_str = 's' + str(get_scale_val(cfg.data.scale()))
+        al_path = os.path.join(addr, 'img_aligned.zarr', scale_str)
+        unal_path = os.path.join(addr, 'img_src.zarr', scale_str)
         # addr = "zarr://http://localhost:9000"
         logger.info('Layer Address: %s' % addr)
         cfg.viewer = ng.Viewer()

@@ -245,7 +245,7 @@ class QtImageStackViewer(QWidget):
         self.updateFrame()
 
     def setCurrentIndex(self, index):
-        logger.info('setCurrentIndex:')
+        # logger.info('setCurrentIndex:')
         self._scrollbars[0].setValue(index)
         # for i, index in enumerate(indexes):
         #     self._scrollbars[i].setValue(index)

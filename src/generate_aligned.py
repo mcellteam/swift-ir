@@ -78,8 +78,9 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     null_bias = cfg.data['data']['scales'][use_scale]['null_cafm_trends']
     SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
 
-    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr')
+    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     bounding_rect = cfg.data.bounding_rect()
+    cfg.main_window.hud.done()
     # preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=16, chunks=(16,64,64))
     preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=Z_STRIDE, chunks=CHUNKS)
 
