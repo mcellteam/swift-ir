@@ -39,28 +39,14 @@ To output a string of Mypy CLI args that will reflect the currently selected src
 $ qtpy mypy-args
 
 """
+import os, sys, signal, logging, argparse
 
 
 
-import os
-import qtpy
-os.environ['QT_API'] = 'pyqt5' # This is the settings for qtpy
-# os.environ['PYQTGRAPH_QT_LIB'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyqt6'
 # os.environ['QT_API'] = 'PySide6'
 # os.environ['QT_DRIVER'] = 'PySide6' # necessary for qimage2ndarray
-import sys
-import signal
-import logging
-import argparse
-from PIL import Image
-import neuroglancer
-from qtpy.QtWidgets import QApplication
-from qtpy.QtCore import Qt, QCoreApplication, QTimer
-from src.helpers import print_exception, check_for_binaries
-from src.ui.main_window import MainWindow
-from src.ui.splash import SplashScreen
-import src.config as cfg
+
 
 # import cProfile, pstats, io
 # from pstats import SortKey
@@ -99,12 +85,23 @@ logger.addHandler(ch)
 def main():
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
-    parser.add_argument('-a', '--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
-    parser.add_argument('-d', '--debug', action='store_true', help='Debug Mode')
-    parser.add_argument('-l', '--loglevel', type=int, default=1, help='Logging Level (1-5, default: 2)')
-    parser.add_argument('-p', '--preload', type=int, default=3, help='# Images +/- to Preload')
-    parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
+    parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    parser.add_argument('--debug', action='store_true', help='Debug Mode')
+    parser.add_argument('--loglevel', type=int, default=1, help='Logging Level (1-5, default: 2)')
+    # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
+    import qtpy
+    os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
+    # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+
+    from PIL import Image
+    import neuroglancer
+    from qtpy.QtWidgets import QApplication
+    from qtpy.QtCore import Qt, QCoreApplication, QTimer
+    from src.helpers import print_exception, check_for_binaries
+    from src.ui.main_window import MainWindow
+    import src.config as cfg
+
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
     if args.debug:
         logger.setLevel(logging.DEBUG)
@@ -112,37 +109,20 @@ def main():
         logger.setLevel(LOGLEVELS[args.loglevel])
     cfg.LOG_LEVEL = logger.level
     cfg.QT_API = args.api
-    cfg.PRELOAD_RANGE = args.preload
-    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
-    # logger.info('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.')
-    # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
-    sys.stdout.flush()
 
-
-
-    # os.environ['QT_API'] = qtpy.API #0827-
-    # os.environ["FORCE_QT_API"] = 'True'
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-    # logger.info('QT_API: %s' % qtpy.API)
-
-    if args.no_neuroglancer:
-        cfg.NO_NEUROGLANCER = True
-    else:
-        cfg.NO_NEUROGLANCER = False
+    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
     # Qt5 Only
-    # QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    # QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    if qtpy.QT5:
+        logger.info('Setting Qt.AA_EnableHighDpiScaling and Qt.AA_UseHighDpiPixmaps attributes')
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
+    logger.info('Setting PIL limit on MAX_IMAGE_PIXELS to None')
     Image.MAX_IMAGE_PIXELS = None
-
-    # if cfg.QT_API in ('pyside2', 'pyside6'): cfg.USES_PYSIDE, cfg.USES_PYQT = True, False
-    # if cfg.QT_API in ('pyqt5', 'pyqt6'):     cfg.USES_PYQT, cfg.USES_PYSIDE = True, False
-    # if cfg.QT_API in ('pyside2', 'pyqt5'):   cfg.USES_QT5, cfg.USES_QT6 = True, False
-    # if cfg.QT_API in ('pyside6', 'pyqt6'):   cfg.USES_QT6, cfg.USES_QT5 = True, False
 
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
@@ -154,20 +134,17 @@ def main():
         print_exception()
         logger.error('Unable to Instantiate QApplication')
 
-
     try:
+        logger.info('Initializing MainWindow')
         cfg.main_window = MainWindow(title="AlignEM-SWiFT")
         cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
-        app.aboutToQuit.connect(cfg.main_window.shutdownJupyter)
-        app.aboutToQuit.connect(neuroglancer.server.stop)
+        # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter)
+        # app.aboutToQuit.connect(neuroglancer.server.stop)
         cfg.main_window.show()
         logger.info('Showing AlignEM-SWiFT')
     except:
         print_exception()
         logger.error('Unable to Instantiate MainWindow')
-
-
-
 
     try:
         sys.exit(app.exec())

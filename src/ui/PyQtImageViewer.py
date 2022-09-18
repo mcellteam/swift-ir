@@ -133,9 +133,6 @@ class QtImageViewer(QGraphicsView):
         self.scene = QGraphicsScene()
         self.setScene(self.scene)
 
-        # Better quality pixmap scaling?
-        # self.setRenderHints(QPainter.Antialiasing | QPainter.SmoothPixmapTransform)
-
         # Displayed image pixmap in the QGraphicsScene.
         self._image = None
 
@@ -148,14 +145,15 @@ class QtImageViewer(QGraphicsView):
         self.aspectRatioMode = Qt.AspectRatioMode.KeepAspectRatio #orig
         # self.aspectRatioMode = Qt.AspectRatioMode.KeepAspectRatioByExpanding
 
-        # Scroll bar behaviour.
-        #   Qt.ScrollBarAlwaysOff: Never shows a scroll bar.
-        #   Qt.ScrollBarAlwaysOn: Always shows a scroll bar.
-        #   Qt.ScrollBarAsNeeded: Shows a scroll bar only when zoomed.
+
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+
         # self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         # self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+
+        # self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        # self.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         # Interactions (set buttons to None to disable interactions)
         # !!! Events handled by interactions will NOT emit *MouseButton* signals.
@@ -614,11 +612,13 @@ class QtImageViewer(QGraphicsView):
             del roi
 
     def clearROIs(self):
+        logger.info('Clearing ROIs')
         for roi in self.ROIs:
             self.scene.removeItem(roi)
         del self.ROIs[:]
 
     def roiClicked(self, roi):
+        logger.info('ROI Clicked!')
         for i in range(len(self.ROIs)):
             if roi is self.ROIs[i]:
                 self.roiSelected.emit(i)
@@ -626,6 +626,7 @@ class QtImageViewer(QGraphicsView):
                 break
 
     def setROIsAreMovable(self, tf):
+
         if tf:
             for roi in self.ROIs:
                 roi.setFlags(roi.flags() | QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
@@ -634,6 +635,7 @@ class QtImageViewer(QGraphicsView):
                 roi.setFlags(roi.flags() & ~QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
 
     def addSpots(self, xy, radius):
+        logger.info('Adding Spots...')
         for xy_ in xy:
             x, y = xy_
             spot = EllipseROI(self)
@@ -688,7 +690,7 @@ class QtImageViewer(QGraphicsView):
 
     @Slot()
     def set_transform(self, horz_scroll, vert_scroll, transform, zoom):
-        logger.critical('set_transform:')
+        logger.critical('Setting Transform...')
         # temporary block signals from scroll bars to prevent interference
         horz_blocked = self.horizontalScrollBar().blockSignals(True)
         vert_blocked = self.verticalScrollBar().blockSignals(True)

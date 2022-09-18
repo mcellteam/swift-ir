@@ -61,9 +61,9 @@ class MainWindow(QMainWindow):
 
         app = QApplication.instance()
         self.app = QApplication.instance()
-        if app is None:
-            logger.warning("Creating new QApplication instance.")
-            app = QApplication([])
+        # if app is None:
+        #     logger.warning("Creating new QApplication instance.")
+        #     self.app = QApplication([])
 
         check_for_binaries()
 
@@ -111,7 +111,6 @@ class MainWindow(QMainWindow):
         # self.browser.setPage(CustomWebEnginePage(self)) # Open clicked links in new window
 
         self.aligned_scales = []
-        
         self.panel_list = []
         self.match_point_mode = False
 
@@ -124,8 +123,8 @@ class MainWindow(QMainWindow):
         # self.pbar.setGeometry(30, 40, 200, 25)
         # self.pbar.setStyleSheet("QLineEdit { background-color: yellow }")
         self.statusBar.addPermanentWidget(self.pbar)
-        self.pbar.setMaximumWidth(120)
-        self.pbar.setMaximumHeight(22)
+        self.pbar.setMaximumWidth(140)
+        self.pbar.setMaximumHeight(20)
         self.pbar.hide()
 
         '''Initialize Jupyter Console'''
@@ -136,117 +135,13 @@ class MainWindow(QMainWindow):
         logger.info("Initializing Data Model")
         cfg.data = DataModel()
 
-        '''Initialize Menu'''
-        logger.info('Initializing Menu')
-        self.action_groups = {}
-        self.menu = self.menuBar()
-        self.menu.setFixedHeight(20)
-        self.menu.setCursor(QCursor(Qt.PointingHandCursor))
-        self.menu.setNativeMenuBar(False)  # Fix for non-native menubar on macOS
+        self.resized.connect(self.clear_zoom)
 
         self._unsaved_changes = False
         self._up = 0
-
         self._working = False
 
-        self.resized.connect(self.clear_zoom)
-
-
-        #menu
-        #   0:MenuName
-        #   1:Shortcut-or-None
-        #   2:Action-Function
-        #   3:Checkbox (None,False,True)
-        #   4:Checkbox-Group-Name (None,string),
-        #   5:User-Data
-        ml = [
-            ['&File',
-             [
-                 ['&Home', 'Ctrl+H', self.back_callback, None, None, None],
-                 ['&New Project', 'Ctrl+N', self.new_project, None, None, None],
-                 ['&Open Project', 'Ctrl+O', self.open_project, None, None, None],
-                 ['&Save Project', 'Ctrl+S', self.save_project, None, None, None],
-                 # ['Rename Project', None, self.rename_project, None, None, None],
-                 ['Restart Python Kernel', None, self.restart_python_kernel, None, None, None],
-                 ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
-             ]
-             ],
-
-            ['&View',
-             [
-                 ['Set Normal View', 'None', self.set_normal_view, None, None, None],
-                 ['Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
-                 ['Python Console', None, self.show_python_console, None, None, None],
-                 ['SNR Plot', None, self.show_snr_plot, None, None, None],
-                 ['Splash Screen', None, self.show_splash, None, None, None],
-                 ['Theme',
-                  [
-                      ['Default Theme', None, self.apply_default_style, None, None, None],
-                      ['Daylight Theme', None, self.apply_daylight_style, None, None, None],
-                      ['Moonlit Theme', None, self.apply_moonlit_style, None, None, None],
-                      ['Midnight Theme', None, self.apply_midnight_style, None, None, None],
-                  ]
-                  ],
-             ]
-             ],
-
-            ['&Tools',
-             [
-                 ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
-                 ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
-                 ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
-                 ['Show &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
-                 ['&Write Multipage Tifs', 'None', self.write_paged_tiffs, None, None, None],
-                 ['&Match Point Align Mode',
-                  [
-                      ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
-                      ['&Remove All Match Points', 'Ctrl+R', self.clear_match_points, None, None, None],
-                  ]
-                  ],
-                 ['&Advanced',
-                  [
-                      ['Toggle Zarr Controls', None, self.toggle_zarr_controls, None, None, None],
-                  ]
-                  ],
-             ]
-             ],
-
-
-            ['&Run',
-             [
-                 ['Create Zarr Scales', None, generate_zarr_scales, None, None, None],
-                 ['Remote Neuroglancer Server', None, self.remote_view, None, None, None],
-                 # ['Napari', None, napari_test, None, None, None],
-                 ['Google', None, self.google, None, None, None],
-
-             ]
-             ],
-
-            ['&Debug',
-             [
-                 ['Test WebGL', None, self.webgl2_test, None, None, None],
-                 ['Check GPU Configuration', None, self.gpu_config, None, None, None],
-                 ['Show SNR List', None, self.show_snr_list, None, None, None],
-                 ['Show Zarr Info', None, self.show_zarr_info, None, None, None],
-                 ['Show Environment', None, self.show_run_path, None, None, None],
-                 ['Show Module Search Path', None, self.show_module_search_path, None, None, None],
-                 ['Print Sanity Check', None, print_sanity_check, None, None, None],
-                 ['Print Project Tree', None, print_project_tree, None, None, None],
-                 ['Print Image Library', None, self.print_image_library, None, None, None],
-                 ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
-                 ['Create Multipage TIF', None, create_paged_tiff, None, None, None],
-
-             ]
-             ],
-
-            ['&Help',
-             [
-                 ['AlignEM-SWiFT Documentation', None, self.documentation_view, None, None, None],
-             ]
-             ],
-        ]
-        self.build_menu_from_list(self.menu, ml)
-
+        self.initMenu()
 
         '''Initialize UI'''
         logger.info('Initializing UI')
@@ -267,9 +162,9 @@ class MainWindow(QMainWindow):
         # self.img_panels['ref'].viewChanged.connect(self.img_panels['base'].updateViewer())
         # self.img_panels['base'].viewChanged.connect(self.img_panels['ref'].updateViewer())
 
-        # #orig #0912
-        # bindScrollBars(self.img_panels['ref'].horizontalScrollBar(), self.img_panels['base'].horizontalScrollBar())
-        # bindScrollBars(self.img_panels['ref'].verticalScrollBar(), self.img_panels['base'].verticalScrollBar())
+        #orig #0912
+        bindScrollBars(self.img_panels['ref'].horizontalScrollBar(), self.img_panels['base'].horizontalScrollBar())
+        bindScrollBars(self.img_panels['ref'].verticalScrollBar(), self.img_panels['base'].verticalScrollBar())
 
         self.set_idle()
     
@@ -385,7 +280,7 @@ class MainWindow(QMainWindow):
                 #             except Exception as e:
                 #                 logger.warning('Failed to delete %s. Reason: %s' % (file_path, e))
                 #
-                # zarr_path = os.path.join(proj_path, 'alignments.zarr')
+                # zarr_path = os.path.join(proj_path, 'img_aligned.zarr')
                 # if os.path.exists(zarr_path):
                 #     logger.info('Removing directory %s...' % zarr_path)
                 #     try:
@@ -512,7 +407,7 @@ class MainWindow(QMainWindow):
         if alignment_option == 'init_affine':
             self.hud.post("Initializing Affine Transforms For Scale Factor %d..." % (get_scale_val(use_scale)))
         else:
-            self.hud.post("Refining Affine Transform For Scale Factor d..." % (get_scale_val(use_scale)))
+            self.hud.post("Refining Affine Transform For Scale Factor %d..." % (get_scale_val(use_scale)))
         self.show_hud()
         # self.al_status_checkbox.setChecked(False)
         try:
@@ -633,7 +528,7 @@ class MainWindow(QMainWindow):
         self.set_status('Exporting...')
         self.hud('Generating Neuroglancer-Compatible Zarr...')
         src = os.path.abspath(cfg.data['data']['destination_path'])
-        out = os.path.abspath(os.path.join(src, 'alignments.zarr'))
+        out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
         self.hud('  Compression Level: %s' %  self.clevel_input.text())
         self.hud('  Compression Type: %s' %  self.cname_combobox.currentText())
         try:
@@ -905,7 +800,8 @@ class MainWindow(QMainWindow):
         for p in points:
             p.setPen(clickedPen)
         self.last_snr_click = points
-        self.jump_to_layer(index)
+        # self.jump_to_layer(index)
+        self.jump_to(index)
 
     def show_hud(self):
         self.main_panel_bottom_widget.setCurrentIndex(0)
@@ -1399,7 +1295,7 @@ class MainWindow(QMainWindow):
         try:
             for s in cfg.data.scales():
                 # name = os.path.join(cfg.data.dest(), s + '.zarr')
-                name = os.path.join(cfg.data.dest(), 'scales.zarr', 's' + str(get_scale_val(s)))
+                name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(get_scale_val(s)))
                 dataset_future = get_zarr_tensor(name)
                 self.zarr_scales[s] = dataset_future.result()
         except:
@@ -1410,7 +1306,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def update_unaligned_view(self):
         '''Called by read_project_data_update_gui '''
-        logger.info('update_unaligned_view (called by %s):' % inspect.stack()[1].function)
+        logger.debug('update_unaligned_view (called by %s):' % inspect.stack()[1].function)
         # cfg.image_library.preload_images(cfg.data.layer())
         s, l, dest = cfg.data.scale(), cfg.data.layer(), cfg.data.dest()
         logger.info('s,l,dest = %s, %s, %s' % (cfg.data.scale(), str(cfg.data.layer()), cfg.data.dest()))
@@ -1420,15 +1316,15 @@ class MainWindow(QMainWindow):
             if l != 0:
                 x_ref, x_base = self.zarr_scales[s][l-1, :, :], self.zarr_scales[s][l, :, :]
                 future_ref, future_base = x_ref.read(), x_base.read()
-                logger.info('Setting image ref')
+                logger.debug('Setting image ref')
                 self.img_panels['ref'].setImage(future_ref.result())
-                logger.info('Setting image base')
+                logger.debug('Setting image base')
                 self.img_panels['base'].setImage(future_base.result())
             elif l == 0:
                 self.img_panels['ref'].clearImage()
                 x_base = self.zarr_scales[s][l, :, :]
                 future_base = x_base.read()
-                logger.info('Setting image base')
+                logger.debug('Setting image base')
                 self.img_panels['base'].setImage(future_base.result())
 
         except:
@@ -1441,7 +1337,7 @@ class MainWindow(QMainWindow):
         if is_cur_scale_aligned():
             logger.critical('Current scale is aligned')
             dest = cfg.data.dest()
-            zarr_path = os.path.join(dest, 'alignments.zarr')
+            zarr_path = os.path.join(dest, 'img_aligned.zarr')
             path = os.path.join(zarr_path, 's' + str(cfg.data.scale_val()))
             logger.critical('path is %s' % path)
             # np_data = zarr.load(path)
@@ -1916,13 +1812,12 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def closeEvent(self, event):
-        logger.info("MainWindow.closeEvent:")
-        self.app.quit()
-        sys.exit()
+        logger.info("MainWindow.closeEvent (called by %s):" % inspect.stack()[1].function)
+        self.shutdownInstructions()
 
     @Slot()
     def exit_app(self):
-        logger.info("MainWindow.exit_app:")
+        logger.critical("Exiting The Application...")
         # cfg.pr.disable()
         # s = io.StringIO()
         # sortby = SortKey.CUMULATIVE
@@ -1953,26 +1848,48 @@ class MainWindow(QMainWindow):
                 logger.info('reply=Discard Exiting without saving')
         else:
             logger.critical('No Unsaved Changes - Exiting')
+
+        self.shutdownInstructions()
+
+
+    def shutdownInstructions(self):
+        logger.info('Running Shutdown Instructions...')
+
+        try:
+            logger.info('Shutting down jupyter...')
+            self.shutdownJupyter()
+        except:
+            sys.stdout.flush()
+            logger.warning('Having trouble shutting down neuroglancer')
+
         try:
             self.ng_wrkr.http_server.server_close()
-            self.ng_wrkr.http_server.shutdown()
+            # self.ng_wrkr.http_server.shutdown()
+            logger.info('Shutting down http server...')
         except:
-            pass
+            sys.stdout.flush()
+            logger.warning('Having trouble shutting down http_server')
+
         try:
-            self.ng_wrkr.http_server.server_close()
-            self.ng_wrkr.http_server.shutdown()
+            logger.info('Shutting down neuroglancer...')
+            if neuroglancer.server.is_server_running():
+                logger.info('Stopping Neuroglancer Server')
+                neuroglancer.server.stop()
         except:
-            pass
+            sys.stdout.flush()
+            logger.warning('Having trouble shutting down neuroglancer')
 
-        if neuroglancer.server.is_server_running():
-            logger.info('Stopping Neuroglancer Server')
-            neuroglancer.server.stop()
 
-        threadpool_result = self.threadpool.waitForDone(msecs=500)
-        if threadpool_result: logger.info('All threads were successfully removed from the threadpool')
-        else: logger.warning('Failed to remove all threads from the threadpool')
+        try:
+            logger.info('Shutting down threadpool...')
+            threadpool_result = self.threadpool.waitForDone(msecs=500)
+        except:
+            sys.stdout.flush()
+            logger.warning('Having trouble shutting down threadpool')
         # QApplication.quit()
+        logger.info('Calling app.quit()')
         self.app.quit()
+        logger.info('Calling sys.exit()')
         sys.exit()
 
 
@@ -2010,8 +1927,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_layer(new_cur_layer)
         self.jump_to(new_cur_layer)
         self.read_project_data_update_gui() #0908+
-        self.main_widget.setCurrentIndex(0)
-        self.set_idle()
+        self.set_normal_view()
 
     def exit_docs(self):
         self.main_widget.setCurrentIndex(0)
@@ -2067,12 +1983,13 @@ class MainWindow(QMainWindow):
 
         dest = os.path.abspath(cfg.data['data']['destination_path'])
         s, l = cfg.data.scale(), cfg.data.layer()
-        al_path = os.path.join(dest, 'alignments.zarr')
+        al_path = os.path.join(dest, 'img_aligned.zarr')
         self.hud("Loading '%s' in Neuroglancer" % al_path)
         self.ng_wrkr = NgViewer(src=dest, scale=s, viewof='aligned', port=9000)
         self.threadpool.start(self.ng_wrkr)
         self.browser_ng.setUrl(QUrl(self.ng_wrkr.url()))
         self.image_panel_stack_widget.setCurrentIndex(1)
+        self.image_panel_widget.hide()
         self.hud('Displaying Alignment In Neuroglancer')
         self.set_idle()
 
@@ -2086,6 +2003,7 @@ class MainWindow(QMainWindow):
         self.main_widget.setCurrentIndex(0)
         self.image_panel_stack_widget.setCurrentIndex(0)
         self.main_panel_bottom_widget.setCurrentIndex(0)
+        self.set_idle()
 
 
     def show_splash(self):
@@ -2176,11 +2094,11 @@ class MainWindow(QMainWindow):
     def show_snr_list(self) -> None:
         s = cfg.data.scale_val()
         lst = ' | '.join(map(str, cfg.data.snr_list()))
-        self.hud('\n\nSNR List for Scale %d:\n%s' % (s, lst))
+        self.hud('\n\nSNR List for Scale %d:\n%s\n' % (s, lst.split(' | ')))
 
     def show_zarr_info(self) -> None:
         import zarr
-        z = zarr.open(os.path.join(cfg.data.dest(), 'alignments.zarr'))
+        z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
         self.hud('\n\n' + str(z.tree()) + '\n' + str(z.info))
 
     def disableShortcuts(self):
@@ -2224,6 +2142,109 @@ class MainWindow(QMainWindow):
             self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color=ICON_COLOR))
 
 
+    def initMenu(self):
+        '''Initialize Menu'''
+        logger.info('Initializing Menu')
+        self.action_groups = {}
+        self.menu = self.menuBar()
+        self.menu.setFixedHeight(20)
+        self.menu.setCursor(QCursor(Qt.PointingHandCursor))
+        self.menu.setNativeMenuBar(False)  # Fix for non-native menubar on macOS
+
+        #menu
+        #   0:MenuName
+        #   1:Shortcut-or-None
+        #   2:Action-Function
+        #   3:Checkbox (None,False,True)
+        #   4:Checkbox-Group-Name (None,string),
+        #   5:User-Data
+        ml = [
+            ['&File',
+             [
+                 ['&Home', 'Ctrl+H', self.back_callback, None, None, None],
+                 ['&New Project', 'Ctrl+N', self.new_project, None, None, None],
+                 ['&Open Project', 'Ctrl+O', self.open_project, None, None, None],
+                 ['&Save Project', 'Ctrl+S', self.save_project, None, None, None],
+                 # ['Rename Project', None, self.rename_project, None, None, None],
+                 ['Restart Python Kernel', None, self.restart_python_kernel, None, None, None],
+                 ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
+             ]
+             ],
+
+            ['&View',
+             [
+                 ['Set Normal View', 'None', self.set_normal_view, None, None, None],
+                 ['Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
+                 ['Python Console', None, self.show_python_console, None, None, None],
+                 ['SNR Plot', None, self.show_snr_plot, None, None, None],
+                 ['Splash Screen', None, self.show_splash, None, None, None],
+                 ['Theme',
+                  [
+                      ['Default Theme', None, self.apply_default_style, None, None, None],
+                      ['Daylight Theme', None, self.apply_daylight_style, None, None, None],
+                      ['Moonlit Theme', None, self.apply_moonlit_style, None, None, None],
+                      ['Midnight Theme', None, self.apply_midnight_style, None, None, None],
+                  ]
+                  ],
+             ]
+             ],
+
+            ['&Tools',
+             [
+                 ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
+                 ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
+                 ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
+                 ['Show &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
+                 ['&Write Multipage Tifs', 'None', self.write_paged_tiffs, None, None, None],
+                 ['&Match Point Align Mode',
+                  [
+                      ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
+                      ['&Remove All Match Points', 'Ctrl+R', self.clear_match_points, None, None, None],
+                  ]
+                  ],
+                 ['&Advanced',
+                  [
+                      ['Toggle Zarr Controls', None, self.toggle_zarr_controls, None, None, None],
+                  ]
+                  ],
+             ]
+             ],
+
+
+            ['&Run',
+             [
+                 ['Create Zarr Scales', None, generate_zarr_scales, None, None, None],
+                 ['Remote Neuroglancer Server', None, self.remote_view, None, None, None],
+                 # ['Napari', None, napari_test, None, None, None],
+                 ['Google', None, self.google, None, None, None],
+
+             ]
+             ],
+
+            ['&Debug',
+             [
+                 ['Test WebGL', None, self.webgl2_test, None, None, None],
+                 ['Check GPU Configuration', None, self.gpu_config, None, None, None],
+                 ['Show SNR List', None, self.show_snr_list, None, None, None],
+                 ['Show Zarr Info', None, self.show_zarr_info, None, None, None],
+                 ['Show Environment', None, self.show_run_path, None, None, None],
+                 ['Show Module Search Path', None, self.show_module_search_path, None, None, None],
+                 ['Print Sanity Check', None, print_sanity_check, None, None, None],
+                 ['Print Project Tree', None, print_project_tree, None, None, None],
+                 ['Print Image Library', None, self.print_image_library, None, None, None],
+                 ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
+                 ['Create Multipage TIF', None, create_paged_tiff, None, None, None],
+
+             ]
+             ],
+
+            ['&Help',
+             [
+                 ['AlignEM-SWiFT Documentation', None, self.documentation_view, None, None, None],
+             ]
+             ],
+        ]
+        self.build_menu_from_list(self.menu, ml)
 
 
 
@@ -2253,7 +2274,7 @@ class MainWindow(QMainWindow):
         self.hud = HeadUpDisplay(self.app)
         self.hud.setObjectName('hud')
         self.hud.setContentsMargins(0, 0, 0, 0)
-        self.hud('You are aligning with AlignEM-SWiFT, please report newlybugs to joel@salk.edu', logging.INFO)
+        self.hud('You are aligning with AlignEM-SWiFT.', logging.INFO)
 
         self.new_project_button = QPushButton(" New")
         self.new_project_button.clicked.connect(self.new_project)
@@ -2808,7 +2829,7 @@ class MainWindow(QMainWindow):
         self.plot_controls_layout = QVBoxLayout()
         self.plot_controls_layout.addWidget(self.plot_widget_clear_button)
         self.plot_controls_layout.addWidget(self.plot_widget_back_button)
-        # self.plot_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        self.plot_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self.plot_widget_layout = QHBoxLayout()
         self.plot_widget_layout.addWidget(self.snr_plot)
         self.plot_widget_layout.addLayout(self.plot_controls_layout)
@@ -3039,6 +3060,7 @@ class MainWindow(QMainWindow):
         '''Main Window Stacked Widget & Combobox'''
         self.main_panel = QWidget()
         self.main_panel_layout = QGridLayout()
+        self.main_panel_layout.setSpacing(0) #0918+
         self.main_panel_layout.setContentsMargins(0, 0, 0, 0)
         self.main_panel_layout.addWidget(self.splitter, 1, 0)
 
@@ -3082,6 +3104,7 @@ class MainWindow(QMainWindow):
 
 
 
+
 def bindScrollBars(scrollBar1, scrollBar2):
 
     # syncronizing scrollbars syncrnonously somehow breaks zooming and doesn't work
@@ -3089,6 +3112,11 @@ def bindScrollBars(scrollBar1, scrollBar2):
     # scrollBar2.valueChanged.connect(lambda value: scrollBar1.setValue(value))
 
     # syncronizing scrollbars asyncronously works ok
+    scrollBar1.valueChanged.connect(
+        lambda _: QTimer.singleShot(0, lambda: scrollBar2.setValue(scrollBar1.value())))
+    scrollBar2.valueChanged.connect(
+        lambda _: QTimer.singleShot(0, lambda: scrollBar1.setValue(scrollBar2.value())))
+
     scrollBar1.valueChanged.connect(
         lambda _: QTimer.singleShot(0, lambda: scrollBar2.setValue(scrollBar1.value())))
     scrollBar2.valueChanged.connect(

@@ -4,7 +4,11 @@ from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from IPython.lib import guisupport
 
+import src.config as cfg
 
+from qtconsole.manager import QtKernelManager
+import IPython.lib
+import IPython
 
 '''
 jupyter-console==6.4.4
@@ -42,6 +46,24 @@ class PythonConsole(RichJupyterWidget):
         self.kernel_client.start_channels()
 
         self.setFocusPolicy(Qt.NoFocus)
+
+        self.execute_command('import os, sys, zarr, neuroglancer')
+        self.execute_command('from src.config import *')
+        self.execute_command('from src.config import main_window')
+        self.execute_command('from src.helpers import *')
+        self.execute_command('import src.config as cfg')
+        # self.clear()
+        self.execute('clear')
+        # self.clear_output()
+
+        self.out_prompt = 'AlignEM [<span class="out-prompt-number">%i</span>]: '
+
+        import IPython; IPython.get_ipython().execution_count = 0
+        self.print_text('AlignEM [<span class="out-prompt-number">%i</span>]: ')
+
+
+
+
 
         def stop():
             self.kernel_client.stop_channels()
@@ -82,7 +104,6 @@ class PythonConsole(RichJupyterWidget):
 
     def set_color_linux(self):
         self.set_default_style(colors='linux')
-
 
 
 

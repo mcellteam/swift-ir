@@ -118,18 +118,17 @@ def is_cur_scale_aligned() -> bool:
 
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a data that does not need scales.'''
-    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr', 's' + str(cfg.data.scale_val()))
+    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
     if not os.path.isdir(zarr_path):  return False
     if not os.path.exists(os.path.join(zarr_path, '.zattrs')):  return False
     if not os.path.exists(os.path.join(zarr_path, '.zarray')):  return False
     if not os.path.exists(os.path.join(zarr_path, '0.0.0')):  return False
     return True
 
-
 def is_arg_scale_aligned(scale: str) -> bool:
     '''Returns boolean based on whether arg scale is aligned '''
     # logger.info('called by ', inspect.stack()[1].function)
-    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr', 's' + str(get_scale_val(scale)))
+    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
     if not os.path.isdir(zarr_path):  return False
     if not os.path.exists(os.path.join(zarr_path, '.zattrs')):  return False
     if not os.path.exists(os.path.join(zarr_path, '.zarray')):  return False
@@ -185,12 +184,12 @@ def are_aligned_images_generated() ->bool:
 
 def is_any_alignment_exported() -> bool:
     '''Checks if there exists an exported alignment'''
-    return os.path.isdir(os.path.join(cfg.data['data']['destination_path'], 'alignments.zarr'))
+    return os.path.isdir(os.path.join(cfg.data['data']['destination_path'], 'img_aligned.zarr'))
 
 
 def is_cur_scale_exported() -> bool:
     '''Checks if there exists an exported alignment'''
-    path = os.path.join(cfg.data['data']['destination_path'], 'alignments.zarr')
+    path = os.path.join(cfg.data['data']['destination_path'], 'img_aligned.zarr')
     answer = os.path.isdir(path)
     logger.debug("path: %s" % path)
     logger.debug("response: %s" % str(answer))

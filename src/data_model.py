@@ -189,7 +189,9 @@ class DataModel:
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
 
     def path_al(self) -> str:
+        logger.info('path_al:')
         l, s = self.layer(), self.scale()
+        logger.info('Returning %s' % self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename'])
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename']
 
     def name_base(self) -> str:
@@ -200,7 +202,7 @@ class DataModel:
         l = []
         for s in self.scales():
             # l.append(os.path.join(self._data['data']['destination_path'], s + '.zarr'))
-            l.append(os.path.join(self._data['data']['destination_path'], 'scales.zarr', s + str(get_scale_val(s))))
+            l.append(os.path.join(self._data['data']['destination_path'], 'img_src.zarr', s + str(get_scale_val(s))))
         return l
 
     def roles(self):
