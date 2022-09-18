@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import os
-from PyQt5.QtWidgets import QWidget, QLabel, QVBoxLayout
-from PyQt5.QtGui import QPixmap
+from qtpy.QtWidgets import QWidget, QLabel, QVBoxLayout
+from qtpy.QtGui import QPixmap
 import src.config as cfg
 
 class KImageWindow(QWidget):
@@ -13,7 +13,7 @@ class KImageWindow(QWidget):
         super().__init__()
         self.parent = parent
         proj_dir = os.path.abspath(cfg.data['data']['destination_path'])
-        path = os.path.join(proj_dir, cfg.data.get_scale(), 'k_img.tif')
+        path = os.path.join(proj_dir, cfg.data.scale(), 'k_img.tif')
         self.lb = QLabel(self)
         self.pixmap = QPixmap(path)
         # lb.resize(self.width(), 100)

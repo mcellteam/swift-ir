@@ -1,0 +1,27 @@
+#!/usr/bin/env python3
+
+from qtpy.QtWidgets import QSplashScreen
+from qtpy.QtGui import QMovie, QPainter, QPixmap
+from qtpy.QtCore import Qt
+
+
+class SplashScreen(QSplashScreen):
+
+    def __init__(self, path):
+        self.movie = QMovie(path)
+        self.movie.jumpToFrame(0)
+        pixmap = QPixmap(self.movie.frameRect().size())
+        QSplashScreen.__init__(self, pixmap)
+        self.movie.frameChanged.connect(self.repaint)
+
+    def showEvent(self, event):
+        self.movie.start()
+
+    def hideEvent(self, event):
+        self.movie.stop()
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        pixmap = self.movie.currentPixmap()
+        self.setMask(pixmap.mask())
+        painter.drawPixmap(0, 0, pixmap)

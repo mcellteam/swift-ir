@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 
+'''
+
+https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
+
+https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
+'''
+
 import os
 import re
 import sys
@@ -15,11 +22,19 @@ import traceback
 from glob import glob
 from pathlib import Path
 from contextlib import contextmanager
+from typing import Dict, List, Tuple, Any, Union, Sequence
 import zarr
+from toolz import concat
+import toolz as tz
 import shutil
+import tifffile
+import numpy as np
+from dask import bag
+from dask import delayed
+import dask.array as da
+from shutil import rmtree
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need
-from numcodecs import Blosc
 # blosc.set_nthreads(8)
 from PIL import Image
 
@@ -32,19 +47,156 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-from src.image_utils import BoundingRect
-
-__all__ = ['preallocate_zarr', 'print_zarr_info', 'check_for_binaries', 'remove_aligned', 'is_destination_set',
+__all__ = ['create_paged_tiff', 'check_for_binaries', 'remove_aligned', 'is_destination_set',
            'do_scales_exist', 'make_relative', 'make_absolute',
            'is_cur_scale_aligned', 'get_num_aligned', 'are_aligned_images_generated',
-           'print_path', 'print_alignment_layer', 'print_dat_files', 'print_sanity_check',
+           'print_alignment_layer', 'print_dat_files', 'print_sanity_check',
            'copy_skips_to_all_scales', 'are_images_imported', 'is_cur_scale_exported', 'get_images_list_directly',
            'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
            'verify_image_file', 'is_arg_scale_aligned',  'print_snr_list', 'is_any_scale_aligned_and_generated',
-           'remove_zarr', 'init_zarr'
            ]
 
 logger = logging.getLogger(__name__)
+
+
+def is_destination_set() -> bool:
+    '''Checks if there is a data open'''
+    if cfg.data['data']['destination_path']:
+        return True
+    else:
+        return False
+
+
+def are_images_imported() -> bool:
+    '''Checks if any images have been imported.'''
+    n_imgs = len(cfg.data['data']['scales']['scale_1']['alignment_stack'])
+    if n_imgs > 0:
+        cfg.IMAGES_IMPORTED = True
+        return True
+    else:
+        cfg.IMAGES_IMPORTED = False
+        return False
+
+
+def get_scale_key(scale_val) -> str:
+    '''Create a key like "scale_#" from either an integer or a string'''
+    s = str(scale_val)
+    while s.startswith('scale_'):
+        s = s[len('scale_'):]
+    return 'scale_' + s
+
+
+def get_scale_val(scale_of_any_type) -> int:
+    '''Converts scale key to integer (i.e. 'scale_1' as string -> 1 as int)
+    TODO: move this to glanceem_utils'''
+    scale = scale_of_any_type
+    try:
+        if type(scale) == type(1):
+            return scale
+        else:
+            while scale.startswith('scale_'):
+                scale = scale[len('scale_'):]
+            return int(scale)
+    except:
+        print_exception()
+
+
+def do_scales_exist() -> bool:
+    '''Checks whether any stacks of scaled images exist'''
+    try:
+        if any(d.startswith('scale_') for d in os.listdir(cfg.data['data']['destination_path'])):
+            return True
+        else:
+            return False
+    except:
+        pass
+
+def is_cur_scale_aligned() -> bool:
+    '''Checks if there exists an alignment stack for the current scale
+
+    #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
+
+    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
+    functions even for a data that does not need scales.'''
+    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr', 's' + str(cfg.data.scale_val()))
+    if not os.path.isdir(zarr_path):  return False
+    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):  return False
+    if not os.path.exists(os.path.join(zarr_path, '.zarray')):  return False
+    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):  return False
+    return True
+
+
+def is_arg_scale_aligned(scale: str) -> bool:
+    '''Returns boolean based on whether arg scale is aligned '''
+    # logger.info('called by ', inspect.stack()[1].function)
+    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr', 's' + str(get_scale_val(scale)))
+    if not os.path.isdir(zarr_path):  return False
+    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):  return False
+    if not os.path.exists(os.path.join(zarr_path, '.zarray')):  return False
+    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):  return False
+    return True
+
+def get_num_aligned() -> int:
+    '''Returns the count aligned and generated images for the current scale.'''
+
+    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'img_aligned')
+    # logger.info('get_num_aligned | path=', path)
+    try:
+        n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
+    except:
+        return 0
+    # logger.info('get_num_aligned() | returning:', n_aligned)
+    return n_aligned
+
+def is_any_scale_aligned_and_generated() -> bool:
+    '''Checks if there exists a set of aligned images at the current scale
+    Todo: Sometimes aligned images are generated but do get rendered'''
+    files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif*')
+    if len(files) > 0:
+        return True
+    else:
+        return False
+
+def return_aligned_imgs() -> list:
+    '''Returns the list of paths for aligned images at the current scale, if any exist.'''
+
+    try:
+        files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
+    except:
+        logger.warning('Something went wrong. Check data dictionary - Returning None')
+        return []
+
+    logger.debug('# aligned images found: %d' % len(files))
+    logger.debug('List of aligned imgs: %s' % str(files))
+    return files
+
+
+def are_aligned_images_generated() ->bool:
+    '''Returns True or False dependent on whether aligned images have been generated for the current scale.'''
+    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'img_aligned')
+    files = glob(path + '/*.tif')
+    if len(files) < 1:
+        logger.debug('Zero aligned TIFs were found at this scale - Returning False')
+        return False
+    else:
+        logger.debug('One or more aligned TIFs were found at this scale - Returning True')
+        return True
+
+
+def is_any_alignment_exported() -> bool:
+    '''Checks if there exists an exported alignment'''
+    return os.path.isdir(os.path.join(cfg.data['data']['destination_path'], 'alignments.zarr'))
+
+
+def is_cur_scale_exported() -> bool:
+    '''Checks if there exists an exported alignment'''
+    path = os.path.join(cfg.data['data']['destination_path'], 'alignments.zarr')
+    answer = os.path.isdir(path)
+    logger.debug("path: %s" % path)
+    logger.debug("response: %s" % str(answer))
+    return answer
+
+
 
 def check_for_binaries():
     logger.info("Checking platform-specific path to SWiFT-IR executables...")
@@ -66,14 +218,6 @@ def check_for_binaries():
         if os.path.isfile(f):  logger.info('%s FOUND' % f)
         else:  logger.warning('%s NOT FOUND' % f)
 
-def print_zarr_info() -> None:
-    dest = cfg.data.destination()
-    zarr_path = os.path.join(dest, '3dem.zarr')
-    z = zarr.open(zarr_path)
-    print('List Dir:\n%s' % str(sorted(os.listdir(zarr_path))))
-    print(z.info)
-    print(z.tree())
-
 
 def reorder_tasks(task_list, z_stride) -> list:
     tasks=[]
@@ -84,188 +228,11 @@ def reorder_tasks(task_list, z_stride) -> list:
         #     tasks.append(t)
     return tasks
 
-# def remove_zarr() -> None:
-def remove_zarr(path) -> None:
-    # path = os.path.join(cfg.data.destination(), '3dem.zarr')
-    if os.path.isdir(path):
-        logger.critical('Removing Zarr...')
-        try:
-            with time_limit(15):
-                logger.info('Removing %s...' % path)
-                shutil.rmtree(path, ignore_errors=True)
-        except TimeoutException as e:
-            logger.warning("Timed out!")
-        logger.info('Finished Removing Zarr Files')
-
-def init_zarr() -> None:
-    logger.critical('Initializing Zarr...')
-    path = os.path.join(cfg.data.destination(), '3dem.zarr')
-    store = zarr.DirectoryStore(path, dimension_separator='/')  # Create Zarr DirectoryStore
-    root = zarr.group(store=store, overwrite=True)  # Create Root Group (?)
-    # root = zarr.group(store=store, overwrite=True, synchronizer=zarr.ThreadSynchronizer())  # Create Root Group (?)
-    print_zarr_info()
-
-def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16,64,64)):
-
-    cfg.main_window.hud.post('Preallocating Zarr Array...')
-    cur_scale = cfg.data.get_scale()
-    cur_scale_val = get_scale_val(cfg.data.get_scale())
-    src = os.path.abspath(cfg.data.destination())
-    n_imgs = cfg.data.get_n_images()
-    # n_scales = cfg.data.get_n_scales()
-    aligned_scales_lst = cfg.data.get_aligned_scales_list()
-
-    zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
-    caller = inspect.stack()[1].function
-    # if (use_scale == cfg.data.get_coarsest_scale_key()) or caller == 'generate_zarr':
-    #     # remove_zarr()
-    #     init_zarr()
-
-    out_path = os.path.join(src, '3dem.zarr', 's' + str(cur_scale_val))
-
-    if cfg.data.get_scale() != 'scale_1':
-        if os.path.exists(out_path):
-            remove_zarr(out_path)
-
-    # name = 's' + str(get_scale_val(use_scale))
-    # zarr_name = os.path.join(zarr_path,name)
-    # synchronizer = zarr.ProcessSynchronizer(zarr_path)
-    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)  # Create Root Group
-    root = zarr.group(store=zarr_path)  # Create Root Group
-    # root = zarr.group(store=zarr_name, overwrite=True)  # Create Root Group
-    # root = zarr.open(store=zarr_path)  # Create Root Group
-    # root = zarr.open(zarr_path, mode='w')
-
-    opt_cname = cfg.main_window.cname_combobox.currentText()
-    opt_clevel = int(cfg.main_window.clevel_input.text())
-
-    if use_scale is None:
-        zarr_these_scales = aligned_scales_lst
-    else:
-        zarr_these_scales = [use_scale]
-
-    logger.critical('Preallocating Zarr for Scales: %s' % str(zarr_these_scales))
-
-    datasets = []
-    for scale in zarr_these_scales:
-        logger.info('Preallocating Zarr for Scale: %s' % str(scale))
-
-        if bounding_rect is True:
-            rect = BoundingRect(cfg.data['data']['scales'][scale]['alignment_stack'])
-            dimx = rect[2]
-            dimy = rect[3]
-        else:
-            imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
-            dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+def imgToNumpy(img):
+    '''Proper way to convert between images and numpy arrays as of PIL 1.1.6'''
+    return np.array(img)
 
 
-        scale_val = get_scale_val(scale)
-        name = 's' + str(scale_val)
-
-        shape = (n_imgs, dimy, dimx)
-        # chunks = (z_stride, 64, 64)
-        dtype = 'uint8'
-        compressor = Blosc(cname=opt_cname, clevel=opt_clevel) if opt_cname in ('zstd', 'zlib', 'gzip') else None
-        # compressor = Blosc(cname='zstd', clevel=5)
-
-        # synchronizer = zarr.ProcessSynchronizer('example.zarr')
-        logger.critical('Zarr Array will have shape: %s' % str(shape))
-        array = root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor, overwrite=True)  # Preallocate
-
-
-
-        # datasets.append(
-        #     {
-        #         "path": name,
-        #         "coordinateTransformations": [{
-        #             "type": "scale",
-        #             "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
-        #     }
-        # )
-
-        # metadata = {
-        #     "path": name,
-        #     "coordinateTransformations": [{
-        #         "type": "scale",
-        #         "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
-        # }
-        # root.attrs["multiscales"][0]["datasets"].append(metadata)
-
-    # write_zarr_metadata() # write single multiscale zarr for all aligned scale
-
-    if cfg.data.get_scale() == 'scale_1':
-        write_zarr_metadata()
-    else:
-        write_zarr_metadata_cur_scale() # write multiscale zarr for current scale
-
-    # time.sleep(500)
-
-
-def write_zarr_metadata():
-    zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
-    root = zarr.group(store=zarr_path)
-    datasets = []
-    for scale in cfg.data.get_aligned_scales_list():
-        scale_val = get_scale_val(scale)
-        name = 's' + str(scale_val)
-        metadata = {
-            "path": name,
-            "coordinateTransformations": [{
-                "type": "scale",
-                "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
-        }
-        datasets.append(metadata)
-
-    axes = [
-        {"name": "z", "type": "space", "unit": "nanometer"},
-        {"name": "y", "type": "space", "unit": "nanometer"},
-        {"name": "x", "type": "space", "unit": "nanometer"}
-    ]
-
-    root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-    root.attrs['multiscales'] = [
-        {
-            "version": "0.4",
-            "name": "my_data",
-            "axes": axes,
-            "datasets": datasets,
-            "type": "gaussian",
-        }
-    ]
-
-def write_zarr_metadata_cur_scale():
-    zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
-    root = zarr.group(store=zarr_path)
-    datasets = []
-    scale_val = get_scale_val(cfg.data.get_scale())
-    name = 's' + str(scale_val)
-    metadata = {
-        "path": name,
-        "coordinateTransformations": [{
-            "type": "scale",
-            "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
-    }
-    datasets.append(metadata)
-
-    axes = [
-        {"name": "z", "type": "space", "unit": "nanometer"},
-        {"name": "y", "type": "space", "unit": "nanometer"},
-        {"name": "x", "type": "space", "unit": "nanometer"}
-    ]
-
-    root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-    root.attrs['multiscales'] = [
-        {
-            "version": "0.4",
-            "name": "my_data",
-            "axes": axes,
-            "datasets": datasets,
-            "type": "gaussian",
-        }
-    ]
-
-
-class TimeoutException(Exception): pass
 
 @contextmanager
 def time_limit(seconds):
@@ -277,6 +244,8 @@ def time_limit(seconds):
         yield
     finally:
         signal.alarm(0)
+
+class TimeoutException(Exception): pass
 
 
 def print_exception():
@@ -319,7 +288,7 @@ def remove_aligned(use_scale, start_layer=0):
     :param use_scale: The scale to remove aligned images from.
     :type use_scale: str
 
-    :param project_dict: The data dictionary.
+    :param project_dict: The project data dictionary.
     :type project_dict: dict
 
     :param image_library: The image library.
@@ -402,8 +371,8 @@ def printProjectDetails(project_data: dict) -> None:
     logger.info("  Any Scale Aligned Status  :", is_any_scale_aligned_and_generated())
     logger.info("  Cur Scale Aligned         :", are_aligned_images_generated())
     logger.info("  Any Exported Status       :", is_any_alignment_exported())
-    logger.info("  # Imported Images         :", cfg.data.get_n_images())
-    logger.info("  Current Layer SNR         :", cfg.data.get_snr())
+    logger.info("  # Imported Images         :", cfg.data.n_imgs())
+    logger.info("  Current Layer SNR         :", cfg.data.snr())
 
 
 def is_not_hidden(path):
@@ -417,18 +386,10 @@ def print_project_tree() -> None:
         print(path.displayable())
 
 
-def print_path() -> None:
-    '''Prints the current working directory (os.getcwd), the 'running in' path, and sys.path.'''
-    print('Current directory is...')
-    print('os.getcwd()           : %s' % os.getcwd())
-    print('Running In (__file__) : %s' % os.path.dirname(os.path.realpath(__file__)))
-    print('sys.path              : %s' % sys.path)
-
-
 def print_alignment_layer() -> None:
     '''Prints a single alignment layer (the last layer) for the current scale from the data dictionary.'''
     try:
-        al_layer = cfg.data['data']['scales'][cfg.data.get_scale()]['alignment_stack'][-1]
+        al_layer = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][-1]
         print(json.dumps(al_layer, indent=2))
     except:
         print('No Alignment Layers Found for the Current Scale')
@@ -436,12 +397,12 @@ def print_alignment_layer() -> None:
 
 def print_dat_files() -> None:
     '''Prints the .dat files for the current scale, if they exist .'''
-    bias_data_path = os.path.join(cfg.data['data']['destination_path'], cfg.data.get_scale(), 'bias_data')
+    bias_data_path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'bias_data')
     if are_images_imported():
         logger.info('Printing .dat Files')
         try:
             logger.info("_____________________BIAS DATA_____________________")
-            logger.info("Scale %d____________________________________________" % get_scale_val(cfg.data.get_scale()))
+            logger.info("Scale %d____________________________________________" % get_scale_val(cfg.data.scale()))
             with open(os.path.join(bias_data_path, 'snr_1.dat'), 'r') as f:
                 snr_1 = f.read()
                 logger.info('snr_1               : %s' % snr_1)
@@ -478,7 +439,6 @@ def print_dat_files() -> None:
 
 
 def print_sanity_check():
-    # logging.debug('print_sanity_check | logger is logging')
     logger.info("___________________SANITY CHECK____________________")
     logger.info("Project____________________________________________")
     if cfg.data['data']['source_path']:
@@ -491,7 +451,7 @@ def print_sanity_check():
         print("  Destination path                                 : n/a")
     cur_scale = cfg.data['data']['current_scale']
     try:
-        scale = cfg.data.get_scale()  # logger.info(scale) returns massive wall of text
+        scale = cfg.data.scale()  # logger.info(scale) returns massive wall of text
     except:
         pass
     print("  Current scale                                    :", cur_scale)
@@ -505,18 +465,18 @@ def print_sanity_check():
         print("  Alignment Option                                 : n/a")
     print("Data Selection & Scaling___________________________")
     print("  Are images imported?                             :", are_images_imported())
-    print("  How many images?                                 :", cfg.data.get_n_images())
-    skips = cfg.data.get_skips()
+    print("  How many images?                                 :", cfg.data.n_imgs())
+    skips = cfg.data.skip_list()
     if skips != []:
         print("  Skip list                                        :", skips)
     else:
         print("  Skip list                                        : n/a")
     print("  Is dataset scaled?                               :", do_scales_exist())
     if do_scales_exist():
-        print("  How many scales?                                 :", cfg.data.get_n_scales())
+        print("  How many scales?                                 :", cfg.data.n_scales())
     else:
         print("  How many scales?                                 : n/a")
-    print("  Which scales?                                    :", cfg.data.get_scales())
+    print("  Which scales?                                    :", cfg.data.scales())
 
     print("Alignment__________________________________________")
     print("  Is any scale aligned+generated?                  :", is_any_scale_aligned_and_generated())
@@ -528,7 +488,7 @@ def print_sanity_check():
     except:
         print("  How many aligned at this scale?                  : n/a")
     try:
-        al_scales = cfg.data.get_aligned_scales_list()
+        al_scales = cfg.data.aligned_list()
         if al_scales == []:
             print("  Which scales are aligned?                        : n/a")
         else:
@@ -537,7 +497,7 @@ def print_sanity_check():
         print("  Which scales are aligned?                        : n/a")
 
     print("  alignment_option                                 :",
-          cfg.data['data']['scales'][cfg.data.get_scale()]['method_data']['alignment_option'])
+          cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option'])
     try:
         print("  whitening factor (current layer)                 :",
               scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
@@ -551,14 +511,14 @@ def print_sanity_check():
     except:
         print("  SWIM window (current layer)                      : n/a")
     try:
-        print("  SNR (current layer)                              :", cfg.data.get_snr())
+        print("  SNR (current layer)                              :", cfg.data.snr())
     except:
         print("  SNR (current layer)                              : n/a")
 
 
     print("Post-alignment_____________________________________")
     try:
-        poly_order = cfg.data['data']['scales'][cfg.data.get_scale()]['poly_order']
+        poly_order = cfg.data['data']['scales'][cfg.data.scale()]['poly_order']
         print("  poly_order (all layers)                          :", poly_order)
     except:
         print("  poly_order (all layers)                          : n/a")
@@ -601,174 +561,21 @@ def module_debug() -> None:
     except:
         pass
 
-
-def is_destination_set() -> bool:
-    '''Checks if there is a data open'''
-    if cfg.data['data']['destination_path']:
-        return True
-    else:
-        return False
+def show_process_diagnostics():
+    nthreadpool = cfg.main_window.threadpool.activeThreadCount
 
 
-def are_images_imported() -> bool:
-    '''Checks if any images have been imported.'''
-    n_imgs = len(cfg.data['data']['scales']['scale_1']['alignment_stack'])
-    if n_imgs > 0:
-        cfg.IMAGES_IMPORTED = True
-        return True
-    else:
-        cfg.IMAGES_IMPORTED = False
-        return False
-
-
-def get_scale_key(scale_val):
-    '''Create a key like "scale_#" from either an integer or a string'''
-    s = str(scale_val)
-    while s.startswith('scale_'):
-        s = s[len('scale_'):]
-    return 'scale_' + s
-
-
-def get_scale_val(scale_of_any_type) -> int:
-    '''Converts scale key to integer (i.e. 'scale_1' as string -> 1 as int)
-    TODO: move this to glanceem_utils'''
-    scale = scale_of_any_type
-    try:
-        if type(scale) == type(1):
-            return scale
-        else:
-            while scale.startswith('scale_'):
-                scale = scale[len('scale_'):]
-            return int(scale)
-    except:
-        print_exception()
-
-
-def do_scales_exist() -> bool:
-    '''Checks whether any stacks of scaled images exist'''
-    try:
-        if any(d.startswith('scale_') for d in os.listdir(cfg.data['data']['destination_path'])):
-            return True
-        else:
-            return False
-    except:
-        pass
-
-def is_cur_scale_aligned() -> bool:
-    '''Checks if there exists an alignment stack for the current scale
-
-    #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
-
-    #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
-    functions even for a data that does not need scales.'''
-    try:
-        afm_1_file = os.path.join(cfg.data['data']['destination_path'],
-                                  cfg.data.get_scale(),
-                                  'bias_data',
-                                  'afm_1.dat')
-        # logger.info('afm_1_file = ', afm_1_file)
-        # logger.info('os.path.exists(afm_1_file) = ', os.path.exists(afm_1_file))
-        if os.path.exists(afm_1_file):
-            logger.debug('is_cur_scale_aligned | Returning True')
-            return True
-        else:
-            logger.debug('is_cur_scale_aligned | Returning False')
-            return False
-    except:
-        logger.warning('Unexpected function behavior - Returning False')
-        return False
-
-
-def is_arg_scale_aligned(scale: str) -> bool:
-    '''Returns boolean based on whether arg scale is aligned '''
-    # logger.info('called by ', inspect.stack()[1].function)
-    try:
-        afm_1_file = os.path.join(cfg.data['data']['destination_path'], scale, 'bias_data', 'afm_1.dat')
-        if os.path.exists(afm_1_file):
-            if os.path.getsize(afm_1_file) > 1:
-                # check if file is large than 1 byte
-                # logger.info('is_scale_aligned | Returning True')
-                return True
-            else:
-                return False
-                # logger.info('is_scale_aligned | Returning False (afm_1.dat exists but contains no data)')
-        else:
-            # logger.info('is_scale_aligned | Returning False (afm_1.dat does not exist)')
-            return False
-    except:
-        logger.warning('Unexpected function behavior - Returning False')
-        return False
-
-def get_num_aligned() -> int:
-    '''Returns the count aligned and generated images for the current scale.'''
-
-    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.get_scale(), 'img_aligned')
-    # logger.info('get_num_aligned | path=', path)
-    try:
-        n_aligned = len([name for name in os.listdir(path) if os.path.isfile(os.path.join(path, name))])
-    except:
-        return 0
-    # logger.info('get_num_aligned() | returning:', n_aligned)
-    return n_aligned
-
-def is_any_scale_aligned_and_generated() -> bool:
-    '''Checks if there exists a set of aligned images at the current scale
-    Todo: Sometimes aligned images are generated but do get rendered'''
-    files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif*')
-    if len(files) > 0:
-        return True
-    else:
-        return False
-
-
-def are_aligned_images_generated():
-    '''Returns True or False dependent on whether aligned images have been generated for the current scale.'''
-    path = os.path.join(cfg.data['data']['destination_path'], cfg.data.get_scale(), 'img_aligned')
-    files = glob(path + '/*.tif')
-    if len(files) < 1:
-        logger.debug('Zero aligned TIFs were found at this scale - Returning False')
-        return False
-    else:
-        logger.debug('One or more aligned TIFs were found at this scale - Returning True')
-        return True
-
-
-def return_aligned_imgs() -> list:
-    '''Returns the list of paths for aligned images at the current scale, if any exist.'''
-
-    try:
-        files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
-    except:
-        logger.warning('Something went wrong. Check data dictionary - Returning None')
-        return []
-
-    logger.debug('# aligned images found: %d' % len(files))
-    logger.debug('List of aligned imgs: %s' % str(files))
-    return files
-
-
-def is_any_alignment_exported() -> bool:
-    '''Checks if there exists an exported alignment'''
-    return os.path.isdir(os.path.join(cfg.data['data']['destination_path'], '3dem.zarr'))
-
-
-def is_cur_scale_exported() -> bool:
-    '''Checks if there exists an exported alignment'''
-    path = os.path.join(cfg.data['data']['destination_path'], '3dem.zarr')
-    answer = os.path.isdir(path)
-    logger.debug("path: %s" % path)
-    logger.debug("response: %s" % str(answer))
-    return answer
+    cfg.main_window.hud.post('\n\nmain_window.threadpool Active thread count: %d' % (nthreadpool))
 
 
 def print_snr_list() -> None:
     try:
-        snr_list = cfg.data['data']['scales'][cfg.data.get_scale()]['alignment_stack'][cfg.data.get_layer()][
+        snr_list = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][cfg.data.layer()][
             'align_to_ref_method']['method_results']['snr']
         logger.debug('snr_list:  %s' % str(snr_list))
         mean_snr = sum(snr_list) / len(snr_list)
         logger.debug('mean(snr_list):  %s' % mean_snr)
-        snr_report = cfg.data['data']['scales'][cfg.data.get_scale()]['alignment_stack'][cfg.data.get_layer()][
+        snr_report = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][cfg.data.layer()][
             'align_to_ref_method']['method_results']['snr_report']
         logger.info('snr_report:  %s' % str(snr_report))
         logger.debug('All Mean SNRs for current scale:  %s' % str(cfg.data.snr_list()))
@@ -818,8 +625,8 @@ def copy_skips_to_all_scales():
         if scale_key != source_scale_key:
             for l in range(len(scales[source_scale_key]['alignment_stack'])):
                 if l < len(scales[scale_key]['alignment_stack']):
-                    scales[scale_key]['alignment_stack'][l]['skip'] = \
-                        scales[source_scale_key]['alignment_stack'][l]['skip']  # <----
+                    scales[scale_key]['alignment_stack'][l]['skipped'] = \
+                        scales[source_scale_key]['alignment_stack'][l]['skipped']  # <----
 
 
 def update_skip_annotations():
@@ -836,7 +643,7 @@ def update_skip_annotations():
                 if not 'annotations' in im['metadata']:
                     im['metadata']['annotations'] = []
                 ann = im['metadata']['annotations']
-                if layer['skip']:
+                if layer['skipped']:
                     # Check and set as needed
                     already_skipped = False
                     for a in ann:
@@ -853,9 +660,9 @@ def update_skip_annotations():
                             remove_list.append((sk, layer_num, ik))
                             ann.remove(a)
     # for item in remove_list:
-    #     interface.print_debug(80, "Removed skip from " + str(item))
+    #     interface.print_debug(80, "Removed skipped from " + str(item))
     # for item in add_list:
-    #     interface.print_debug(80, "Added skip to " + str(item))
+    #     interface.print_debug(80, "Added skipped to " + str(item))
 
 class SwiftirException:
     def __init__(self, project_file, message):
@@ -864,6 +671,206 @@ class SwiftirException:
 
     def __str__(self):
         return self.message
+
+
+
+ZARR_AXES_3D = ["z", "y", "x"]
+DEFAULT_ZARR_STORE = zarr.NestedDirectoryStore
+
+
+def get_arrays(obj: Any) -> Tuple[zarr.core.Array]:
+    result = ()
+    if isinstance(obj, zarr.core.Array):
+        result = (obj,)
+    elif isinstance(obj, zarr.hierarchy.Group):
+        if len(tuple(obj.arrays())) > 1:
+            names, arrays = zip(*obj.arrays())
+            result = tuple(concat(map(get_arrays, arrays)))
+    return result
+
+def access_zarr(store: Union[str, Path], path: Union[str, Path], **kwargs) -> Any:
+    if isinstance(store, Path):
+        store = str(store)
+
+    if isinstance(store, str) and kwargs.get("mode") == "w":
+        store = DEFAULT_ZARR_STORE(store)
+
+    if isinstance(path, Path):
+        path = str(path)
+
+    attrs = kwargs.pop("attrs", {})
+
+    # zarr is extremely slow to delete existing directories, so we do it ourselves
+    if kwargs.get("mode") == "w":
+        tmp_kwargs = kwargs.copy()
+        tmp_kwargs["mode"] = "a"
+        tmp = zarr.open(store, path=path, **tmp_kwargs)
+        # todo: move this logic to methods on the stores themselves
+        if isinstance(
+            tmp.store, (zarr.N5Store, zarr.DirectoryStore, zarr.NestedDirectoryStore)
+        ):
+            logger.info(f"Beginning parallel rmdir of {tmp.path}...")
+            pre = time.time()
+            delete_zbranch(tmp)
+            post = time.time()
+            logger.info(f"Completed parallel rmdir of {tmp.path} in {post - pre}s.")
+    array_or_group = zarr.open(store, path=path, **kwargs)
+    if kwargs.get("mode") != "r" and len(attrs) > 0:
+        array_or_group.attrs.update(attrs)
+    return array_or_group
+
+def delete_zbranch(
+    branch: Union[zarr.hierarchy.Group, zarr.core.Array], compute: bool = True
+):
+    """
+    Delete a branch (group or array) from a zarr container
+    """
+    if isinstance(branch, zarr.hierarchy.Group):
+        return delete_zgroup(branch, compute=compute)
+    elif isinstance(branch, zarr.core.Array):
+        return delete_zarray(branch, compute=compute)
+    else:
+        raise TypeError(
+            f"The first argument to this function my be a zarr group or array, not {type(branch)}"
+        )
+
+def delete_zgroup(zgroup: zarr.hierarchy.Group, compute: bool = True):
+    """
+    Delete all arrays in a zarr group
+    """
+    if not isinstance(zgroup, zarr.hierarchy.Group):
+        raise TypeError(
+            f"Cannot use the delete_zgroup function on object of type {type(zgroup)}"
+        )
+
+    arrays = get_arrays(zgroup)
+    to_delete = delayed([delete_zarray(arr, compute=False) for arr in arrays])
+
+    if compute:
+        return to_delete.compute()
+    else:
+        return to_delete
+
+
+def delete_zarray(arr: zarr.core.Array, compute: bool = True):
+    """
+    Delete a zarr array.
+    """
+
+    if not isinstance(arr, zarr.core.Array):
+        raise TypeError(
+            f"Cannot use the delete_zarray function on object of type {type(arr)}"
+        )
+
+    keys = map(lambda v: os.path.join(arr.chunk_store.path, v), arr.chunk_store.keys())
+    key_bag = bag.from_sequence(keys)
+    delete_op = key_bag.map_partitions(lambda v: [os.remove(f) for f in v])
+    if compute:
+        return delete_op.compute()
+    else:
+        return delete_op
+
+def zarr_array_from_dask(arr: Any) -> Any:
+    """
+    Return the zarr array that was used to create a dask array using `da.from_array(zarr_array)`
+    """
+    keys = tuple(arr.dask.keys())
+    return arr.dask[keys[-1]]
+
+# def zarr_to_dask(urlpath: str, chunks: Union[str, Sequence[int]], **kwargs):
+#     store_path, key, _ = split_by_suffix(urlpath, (".zarr",))
+#     arr = access_zarr(store_path, key, mode="r", **kwargs)
+#     if not hasattr(arr, "shape"):
+#         raise ValueError(f"{store_path}/{key} is not a zarr array")
+#     if chunks == "original":
+#         _chunks = arr.chunks
+#     else:
+#         _chunks = chunks
+#     darr = da.from_array(arr, chunks=_chunks, inline_array=True)
+#     return darr
+
+def create_paged_tiff():
+    dest = cfg.data.dest()
+    for scale in cfg.data.scales():
+        path = os.path.join(dest, scale, 'img_src')
+        of = os.path.join(dest, scale + '_img_src.tif')
+        files = glob(path + '/*.tif')
+        image_sequence = tifffile.imread(files)
+    '''
+    image_sequence.shape
+    Out[29]: (34, 4096, 4096)
+    '''
+
+@delayed
+def _rmtree_after_delete_files(path: str, dependency: Any):
+    rmtree(path)
+
+
+def rmtree_parallel(
+    path: Union[str, Path], branch_depth: int = 1, compute: bool = True
+):
+    branches = glob(os.path.join(path, *("*",) * branch_depth))
+    deleter = os.remove
+    files = list_files_parallel(branches)
+    deleted_files = bag.from_sequence(files).map(deleter)
+    result = _rmtree_after_delete_files(path, dependency=deleted_files)
+
+    if compute:
+        return result.compute(scheduler="threads")
+    else:
+        return result
+
+def list_files_parallel(
+    paths: Union[Sequence[Union[str, Path]], str, Path],
+    followlinks=False,
+    compute: bool = True,
+):
+    result = []
+    delf = delayed(lambda p: list_files(p, followlinks=followlinks))
+
+    if isinstance(paths, str) or isinstance(paths, Path):
+        result = bag.from_delayed([delf(paths)])
+    elif isinstance(paths, Sequence):
+        result = bag.from_delayed([delf(p) for p in paths])
+    else:
+        raise TypeError(f"Input must be a string or a sequence, not {type(paths)}")
+
+    if compute:
+        return result.compute(scheduler="threads")
+    else:
+        return result
+
+
+def list_files(
+    paths: Union[Sequence[Union[str, Path]], str, Path], followlinks: bool = False):
+    if isinstance(paths, str) or isinstance(paths, Path):
+        if os.path.isdir(paths):
+            return list(
+                tz.concat(
+                    (os.path.join(dp, f) for f in fn)
+                    for dp, dn, fn in os.walk(paths, followlinks=followlinks)
+                )
+            )
+        elif os.path.isfile(paths):
+            return [paths]
+        else:
+            raise ValueError(f"Input argument {paths} is not a path or a directory")
+
+    elif isinstance(paths, Sequence):
+        sortd = sorted(paths, key=os.path.isdir)
+        files, dirs = tuple(tz.partitionby(os.path.isdir, sortd))
+        return list(tz.concatv(files, *tz.map(list_files, dirs)))
+
+
+
+
+
+
+
+
+
+
+
 
 
 # NOTE: this is called right after importing base images
@@ -876,7 +883,7 @@ class SwiftirException:
 # def update_skips_callback(new_state):
 #     logger.info('Updating skips callback | update_skips_callback...')
 #
-#     # Update all of the annotations based on the skip values
+#     # Update all of the annotations based on the skipped values
 #     copy_skips_to_all_scales()
 #     # update_skip_annotations()  # This could be done via annotations, but it's easier for now to hard-code into main_window.py
 #     logger.info("Exiting update_skips_callback(new_state)")
@@ -902,7 +909,7 @@ class SwiftirException:
 
 # def notyet():
 #     logger.info('notyet() was called')
-#     # interface.print_debug(0, "Function not implemented yet. Skip = " + str(skip.value)) #skip
+#     # interface.print_debug(0, "Function not implemented yet. Skip = " + str(skipped.value)) #skipped
 #     # interface.print_debug(0, "Function not implemented yet. Skip = " + main_window.toggle_skip.isChecked())
 
 # def crop_mode_callback():

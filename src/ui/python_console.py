@@ -1,5 +1,5 @@
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt
+from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import Qt
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
 from IPython.lib import guisupport
@@ -21,13 +21,13 @@ pipenv install jupyter-client==6.1.12
 pipenv lock
 '''
 
-class JupyterConsole(RichJupyterWidget):
+class PythonConsole(RichJupyterWidget):
 
     def __init__(self, customBanner=None, *args, **kwargs):
-        super(JupyterConsole, self).__init__(*args, **kwargs)
+        super(PythonConsole, self).__init__(*args, **kwargs)
 
-        self.set_default_style(colors='linux')
-
+        # self.set_default_style(colors='linux')
+        self.set_default_style(colors='nocolor')
         self.prompt_to_top()
 
         if customBanner is not None:
@@ -88,6 +88,6 @@ class JupyterConsole(RichJupyterWidget):
 
 if __name__ == '__main__':
     app = QApplication([])
-    widget = JupyterConsole()
+    widget = PythonConsole()
     widget.show()
     app.exec_()

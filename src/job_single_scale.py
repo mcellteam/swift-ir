@@ -21,3 +21,5 @@ if __name__ == '__main__':
     saveImage(img, arg_space.outfile)
     sys.stdout.close()
     sys.stderr.close()
+
+

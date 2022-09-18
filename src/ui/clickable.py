@@ -3,10 +3,10 @@
 '''https://stackoverflow.com/questions/2711033/how-code-a-image-button-in-pyqt'''
 
 import logging
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAbstractButton
-from PyQt5.QtCore import Qt
-from PyQt5.QtCore import pyqtSignal as Signal
-from PyQt5.QtGui import QPainter, QPixmap
+from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAbstractButton
+from qtpy.QtCore import Qt
+from qtpy.QtCore import Signal
+from qtpy.QtGui import QPainter, QPixmap
 
 logger = logging.getLogger(__name__)
 
@@ -23,11 +23,6 @@ class ClickablePicButton(QAbstractButton):
 
     def sizeHint(self):
         return self.pixmap.size()
-
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QLabel
-from PyQt5.QtCore import Qt
-from PyQt5.QtCore import pyqtSignal as Signal
-from PyQt5.QtGui import QPainter, QPixmap
 
 class ClickableLabel(QLabel):
     clicked = Signal()

@@ -76,14 +76,14 @@ Set a Destination for Generated Images
 An Alignem SWiFT project should define a location for all of its
 project images (base images, scaled images, aligned images). This
 must be set before any images can be generated (including both
-scaled images and aligned images). Set the destination path with
+scaled images and aligned images). Set the dest path with
 the "File / Set Destination" menu item:
 
 .. image:: ./images/AlignEM_SWiFT_SetDest_Menu.png
 
 This will bring up a dialog box where a directory can be optionally
 created and selected. It's generally a good idea to create the new
-destination directory as a subdirectory where the original images exist.
+dest directory as a subdirectory where the original images exist.
 
 
 ======
@@ -115,7 +115,7 @@ Generate Scaled Images
 
 Even if only a single scale is used (defaults to 1), the images
 must be copied (or linked) from their original location to the
-destination directory structure. This is accomplished with the
+dest directory structure. This is accomplished with the
 "Gen Scales" button next to the "Link Stack" button. Click it
 one time to copy/link/generate the images needed for the project.
 
@@ -126,9 +126,9 @@ Save the Project
 
 It's a good idea to save the project before starting the
 alignment. It's generally a good idea to save the project
-file at the directory directly above the destination directory.
+file at the directory directly above the dest directory.
 Many file names in a project file are stored relative to either
-the project or the destination, so keeping them together makes
+the project or the dest, so keeping them together makes
 this relative path shorter and easier to understand. The project
 can be saved with either the "Save As" (first time) or "Save"
 menu options.

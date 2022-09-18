@@ -2,11 +2,28 @@
 
 import os
 import sys
+import glob
+import time
+import ctypes
 import struct
+import pathlib
 import logging
 import inspect
+import asyncio
+import platform
+import psutil
+import multiprocessing
 import numpy as np
-# import tifffile
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Any, Union, Sequence
+from numpy.compat import asbytes, asstr
+# import imageio
+import imageio.v3 as iio
+from PIL import Image
+import tifffile
+import tensorstore as ts
+try:     from src.helpers import get_images_list_directly
+except:  from helpers import get_images_list_directly
 try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 
@@ -25,6 +42,30 @@ __all__ = [
 debug_level = 0
 
 logger = logging.getLogger(__name__)
+
+def imageio_read_image(img_path:str):
+    '''
+    Load A Single Image Into a Numpy Array
+    :param image_path: Path to image on disk.
+    :type image_path: str
+    :return: The image as a numpy array.
+    :rtype: numpy.ndarray
+    '''
+    return iio.imread(img_path)
+
+def get_size_image_size_imageio(path):
+    '''
+    Returns the size in pixels of the source images
+    :return width: Width of the source images.
+    :rtype width: int
+    :return height: Height of the source images.
+    :rtype height: int
+    '''
+    width, height = imageio_read_image(path).size
+    #Todo finish this function
+    return width, height
+
+
 
 def get_image_size(file_path):
     """
@@ -193,6 +234,8 @@ def get_image_size(file_path):
 
     return width, height
 
+class UnknownImageFormat(Exception):
+  pass
 
 # Return the bias matrix at position x in the stack as given by the bias_funcs
 def BiasMat(x, bias_funcs):
@@ -446,66 +489,430 @@ def BoundingRect(al_stack):
     return rect
 
 
-class UnknownImageFormat(Exception):
-  pass
 
 
-# def loadImage(ifn, stretch=False):
-#   '''LOADIMAGE - Load an image for alignment work
-#   img = LOADIMAGE(ifn) loads the named image, which can then serve as
-#   either the “stationary” or the “moving” image.
-#   Images are always converted to 8 bits. Optional second argument STRETCH
-#   enables contrast stretching. STRETCH may be given as a percentage,
-#   or simply as True, which implies 0.1%.
-#   The current implementation can only read from the local file system.
-#   Backends for http, DVID, etc., would be a useful extension.'''
-#   logger.info('image_utils.loadImage >>>>')
-#   if type(stretch) == bool and stretch:
-#     stretch = 0.1
-#   # img = cv2.imread(ifn, cv2.IMREAD_ANYDEPTH + cv2.IMREAD_GRAYSCALE)
-#   img = tifffile.imread(ifn)  # 0720+
-#   if stretch:
-#     N = img.size
-#     ilo = int(.01 * stretch * N)
-#     ihi = int((1 - .01 * stretch) * N)
-#     vlo = np.partition(img.reshape(N, ), ilo)[ilo]
-#     vhi = np.partition(img.reshape(N, ), ihi)[ihi]
-#     nrm = np.array([255.999 / (vhi - vlo)], dtype='float32')
-#     img[img < vlo] = vlo
-#     img = ((img - vlo) * nrm).astype('uint8')
-#   logger.info('<<<< image_utils.loadImage')
-#   return img
+
+'''
+dataset = ts.open(
+    spec,
+    read=True,
+    # context=context,
+    dtype=ts.uint8,
+    # shape=[5],
+    open=True
+).result()
+
+dataset
+Out[21]: 
+TensorStore({
+  'context': {
+    'cache_pool': {},
+    'data_copy_concurrency': {},
+    'file_io_concurrency': {},
+  },
+  'driver': 'zarr',
+  'dtype': 'uint8',
+  'kvstore': {
+    'driver': 'file',
+    'path': '/Users/joelyancey/glanceem_swift/test_projects/test2_10imgs/scale_4.zarr/',
+  },
+  'metadata': {
+    'chunks': [1, 512, 512],
+    'compressor': {
+      'blocksize': 0,
+      'clevel': 5,
+      'cname': 'lz4',
+      'id': 'blosc',
+      'shuffle': 1,
+    },
+    'dimension_separator': '.',
+    'dtype': '|u1',
+    'fill_value': 0,
+    'filters': None,
+    'order': 'C',
+    'shape': [10, 1024, 1024],
+    'zarr_format': 2,
+  },
+  'transform': {
+    'input_exclusive_max': [[10], [1024], [1024]],
+    'input_inclusive_min': [0, 0, 0],
+  },
+})
+
+
+
+'''
+
+# nicer_array = NicerTensorStore(spec=spec, open_kwargs={"write": True})
+# store_arrays.append(nicer_array)
+
+@dataclass
+class StripNullFields:
+    def asdict(self):
+        result = {}
+        for k, v in self.__dict__.items():
+            if v is not None:
+                if hasattr(v, "asdict"):
+                    result[k] = v.asdict()
+                elif isinstance(v, list):
+                    result[k] = []
+                    for element in v:
+                        if hasattr(element, "asdict"):
+                            result[k].append(element.asdict())
+                        else:
+                            result[k].append(element)
+                else:
+                    result[k] = v
+        return result
+
+
+
 #
+# def _generate_candidate_libs():
+#     # look for likely library files in the following dirs:
+#     lib_dirs = [os.path.dirname(__file__),
+#                 '/lib',
+#                 '/usr/lib',
+#                 '/usr/local/lib',
+#                 '/opt/local/lib',
+#                 os.path.join(sys.prefix, 'lib'),
+#                 os.path.join(sys.prefix, 'DLLs')
+#                 ]
+#     if 'HOME' in os.environ:
+#         lib_dirs.append(os.path.join(os.environ['HOME'], 'lib'))
+#     lib_dirs = [ld for ld in lib_dirs if os.path.exists(ld)]
 #
+#     lib_names = ['libfreeimage', 'freeimage']  # should be lower-case!
+#     # Now attempt to find libraries of that name in the given directory
+#     # (case-insensitive and without regard for extension)
+#     lib_paths = []
+#     for lib_dir in lib_dirs:
+#         for lib_name in lib_names:
+#             files = os.listdir(lib_dir)
+#             lib_paths += [os.path.join(lib_dir, lib) for lib in files
+#                            if lib.lower().startswith(lib_name) and not
+#                            os.path.splitext(lib)[1] in ('.py', '.pyc', '.ini')]
+#     lib_paths = [lp for lp in lib_paths if os.path.exists(lp)]
 #
+#     return lib_dirs, lib_paths
 #
-# def saveImage(img, ofn, qual=None, comp=1):
-#   '''SAVEIMAGE - Save an image
-#   SAVEIMAGE(img, ofn) saves the image IMG to the file named OFN.
-#   Optional third argument specifies jpeg quality as a number between
-#   0 and 100, and must only be given if OFN ends in ".jpg". Default
-#   is 95.'''
-#   logger.info('image_utils.saveImage >>>>')
-#   if qual is None:
-#     ext = os.path.splitext(ofn)[-1]
-#     if (ext == '.tif') or (ext == '.tiff') or (ext == '.TIF') or (ext == '.TIFF'):
-#       if comp != None:
-#         # code 1 means uncompressed tif
-#         # code 5 means LZW compressed tif
-#         # cv2.imwrite(ofn, img, (cv2.IMWRITE_TIFF_COMPRESSION, comp))
-#         tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
-#       else:
-#         # Use default
-#         # cv2.imwrite(ofn, img)
-#         tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
+# def load_freeimage():
+#     if sys.platform == 'win32':
+#         loader = ctypes.windll
+#         functype = ctypes.WINFUNCTYPE
 #     else:
-#       # cv2.imwrite(ofn, img)
-#       tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
-#   else:
-#     # cv2.imwrite(ofn, img, (cv2.IMWRITE_JPEG_QUALITY, qual))
-#     tifffile.imwrite(ofn, img, bigtiff=True, dtype='uint8')
-#   logger.info('<<<< image_utils.saveImage')
+#         loader = ctypes.cdll
+#         functype = ctypes.CFUNCTYPE
+#
+#     freeimage = None
+#     errors = []
+#     # First try a few bare library names that ctypes might be able to find
+#     # in the default locations for each platform. Win DLL names don't need the
+#     # extension, but other platforms do.
+#     bare_libs = ['FreeImage', 'libfreeimage.dylib', 'libfreeimage.so',
+#                 'libfreeimage.so.3']
+#     lib_dirs, lib_paths = _generate_candidate_libs()
+#     lib_paths = bare_libs + lib_paths
+#     for lib in lib_paths:
+#         try:
+#             freeimage = loader.LoadLibrary(lib)
+#             break
+#         except Exception:
+#             if lib not in bare_libs:
+#                 # Don't record errors when it couldn't load the library from
+#                 # a bare name -- this fails often, and doesn't provide any
+#                 # useful debugging information anyway, beyond "couldn't find
+#                 # library..."
+#                 # Get exception instance in Python 2.x/3.x compatible manner
+#                 e_type, e_value, e_tb = sys.exc_info()
+#                 del e_tb
+#                 errors.append((lib, e_value))
+#
+#     if freeimage is None:
+#         if errors:
+#             # No freeimage library loaded, and load-errors reported for some
+#             # candidate libs
+#             err_txt = ['%s:\n%s' % (l, str(e.message)) for l, e in errors]
+#             raise RuntimeError('One or more FreeImage libraries were found, but '
+#                                'could not be loaded due to the following errors:\n'
+#                                '\n\n'.join(err_txt))
+#         else:
+#             # No errors, because no potential libraries found at all!
+#             raise RuntimeError('Could not find a FreeImage library in any of:\n' +
+#                                '\n'.join(lib_dirs))
+#
+#     # FreeImage found
+#     @functype(None, ctypes.c_int, ctypes.c_char_p)
+#     def error_handler(fif, message):
+#         raise RuntimeError('FreeImage error: %s' % message)
+#
+#     freeimage.FreeImage_SetOutputMessage(error_handler)
+#     return freeimage
+#
+# _FI = load_freeimage()
+#
+# def write_multipage(arrays, filename, flags=0):
+#     """Write a list of (height, width) or (height, width, nchannels)
+#     arrays to a multipage greyscale, RGB, or RGBA image, with file type
+#     deduced from the filename.
+#     The `flags` parameter should be one or more values from the IO_FLAGS
+#     class defined in this module, or-ed together with | as appropriate.
+#     (See the source-code comments for more details.)
+#     """
+#
+#     filename = asbytes(filename)
+#     ftype = _FI.FreeImage_GetFIFFromFilename(filename)
+#     if ftype == -1:
+#         raise ValueError('Cannot determine type of file %s' % filename)
+#     create_new = True
+#     read_only = False
+#     keep_cache_in_memory = True
+#     multibitmap = _FI.FreeImage_OpenMultiBitmap(ftype, filename,
+#                                                 create_new, read_only,
+#                                                 keep_cache_in_memory, 0)
+#     if not multibitmap:
+#         raise ValueError('Could not open %s for writing multi-page image.' %
+#                          filename)
+#     try:
+#         for array in arrays:
+#             array = np.asarray(array)
+#             bitmap, fi_type = _array_to_bitmap(array)
+#             _FI.FreeImage_AppendPage(multibitmap, bitmap)
+#     finally:
+#         _FI.FreeImage_CloseMultiBitmap(multibitmap, flags)
+#
+# # 4-byte quads of 0,v,v,v from 0,0,0,0 to 0,255,255,255
+# _GREY_PALETTE = np.arange(0, 0x01000000, 0x00010101, dtype=np.uint32)
 #
 #
-# class UnknownImageFormat(Exception):
-#   pass
+# def _array_to_bitmap(array):
+#     """Allocate a FreeImage bitmap and copy a numpy array into it.
+#     """
+#     shape = array.shape
+#     dtype = array.dtype
+#     r, c = shape[:2]
+#     if len(shape) == 2:
+#         n_channels = 1
+#         w_shape = (c, r)
+#     elif len(shape) == 3:
+#         n_channels = shape[2]
+#         w_shape = (n_channels, c, r)
+#     else:
+#         n_channels = shape[0]
+#     try:
+#         fi_type = FI_TYPES.fi_types[(dtype, n_channels)]
+#     except KeyError:
+#         raise ValueError('Cannot write arrays of given type and shape.')
+#
+#     itemsize = array.dtype.itemsize
+#     bpp = 8 * itemsize * n_channels
+#     bitmap = _FI.FreeImage_AllocateT(fi_type, c, r, bpp, 0, 0, 0)
+#     bitmap = ctypes.c_void_p(bitmap)
+#     if not bitmap:
+#         raise RuntimeError('Could not allocate image for storage')
+#     try:
+#         def n(arr):  # normalise to freeimage's in-memory format
+#             return arr.T[:, ::-1]
+#         wrapped_array = _wrap_bitmap_bits_in_array(bitmap, w_shape, dtype)
+#         # swizzle the color components and flip the scanlines to go to
+#         # FreeImage's BGR[A] and upside-down internal memory format
+#         if len(shape) == 3 and _FI.FreeImage_IsLittleEndian() and \
+#                dtype.type == np.uint8:
+#             wrapped_array[0] = n(array[:, :, 2])
+#             wrapped_array[1] = n(array[:, :, 1])
+#             wrapped_array[2] = n(array[:, :, 0])
+#             if shape[2] == 4:
+#                 wrapped_array[3] = n(array[:, :, 3])
+#         else:
+#             wrapped_array[:] = n(array)
+#         if len(shape) == 2 and dtype.type == np.uint8:
+#             palette = _FI.FreeImage_GetPalette(bitmap)
+#             palette = ctypes.c_void_p(palette)
+#             if not palette:
+#                 raise RuntimeError('Could not get image palette')
+#             ctypes.memmove(palette, _GREY_PALETTE.ctypes.data, 1024)
+#         return bitmap, fi_type
+#     except:
+#         _FI.FreeImage_Unload(bitmap)
+#         raise
+#
+# def _wrap_bitmap_bits_in_array(bitmap, shape, dtype):
+#     """Return an ndarray view on the data in a FreeImage bitmap. Only
+#     valid for as long as the bitmap is loaded (if single page) / locked
+#     in memory (if multipage).
+#     """
+#     pitch = _FI.FreeImage_GetPitch(bitmap)
+#     height = shape[-1]
+#     byte_size = height * pitch
+#     itemsize = dtype.itemsize
+#
+#     if len(shape) == 3:
+#         strides = (itemsize, shape[0] * itemsize, pitch)
+#     else:
+#         strides = (itemsize, pitch)
+#     bits = _FI.FreeImage_GetBits(bitmap)
+#     array = np.ndarray(shape, dtype=dtype,
+#                           buffer=(ctypes.c_char * byte_size).from_address(bits),
+#                           strides=strides)
+#     return array
+#
+#
+# class FI_TYPES(object):
+#     FIT_UNKNOWN = 0
+#     FIT_BITMAP = 1
+#     FIT_UINT16 = 2
+#     FIT_INT16 = 3
+#     FIT_UINT32 = 4
+#     FIT_INT32 = 5
+#     FIT_FLOAT = 6
+#     FIT_DOUBLE = 7
+#     FIT_COMPLEX = 8
+#     FIT_RGB16 = 9
+#     FIT_RGBA16 = 10
+#     FIT_RGBF = 11
+#     FIT_RGBAF = 12
+#
+#     dtypes = {
+#         FIT_BITMAP: np.uint8,
+#         FIT_UINT16: np.uint16,
+#         FIT_INT16: np.int16,
+#         FIT_UINT32: np.uint32,
+#         FIT_INT32: np.int32,
+#         FIT_FLOAT: np.float32,
+#         FIT_DOUBLE: np.float64,
+#         FIT_COMPLEX: np.complex128,
+#         FIT_RGB16: np.uint16,
+#         FIT_RGBA16: np.uint16,
+#         FIT_RGBF: np.float32,
+#         FIT_RGBAF: np.float32
+#         }
+#
+#     fi_types = {
+#         (np.dtype('uint8'), 1): FIT_BITMAP,
+#         (np.dtype('uint8'), 3): FIT_BITMAP,
+#         (np.dtype('uint8'), 4): FIT_BITMAP,
+#         (np.dtype('uint16'), 1): FIT_UINT16,
+#         (np.dtype('int16'), 1): FIT_INT16,
+#         (np.dtype('uint32'), 1): FIT_UINT32,
+#         (np.dtype('int32'), 1): FIT_INT32,
+#         (np.dtype('float32'), 1): FIT_FLOAT,
+#         (np.dtype('float64'), 1): FIT_DOUBLE,
+#         (np.dtype('complex128'), 1): FIT_COMPLEX,
+#         (np.dtype('uint16'), 3): FIT_RGB16,
+#         (np.dtype('uint16'), 4): FIT_RGBA16,
+#         (np.dtype('float32'), 3): FIT_RGBF,
+#         (np.dtype('float32'), 4): FIT_RGBAF
+#         }
+#
+#     extra_dims = {
+#         FIT_UINT16: [],
+#         FIT_INT16: [],
+#         FIT_UINT32: [],
+#         FIT_INT32: [],
+#         FIT_FLOAT: [],
+#         FIT_DOUBLE: [],
+#         FIT_COMPLEX: [],
+#         FIT_RGB16: [3],
+#         FIT_RGBA16: [4],
+#         FIT_RGBF: [3],
+#         FIT_RGBAF: [4]
+#         }
+#
+#     @classmethod
+#     def get_type_and_shape(cls, bitmap):
+#         w = _FI.FreeImage_GetWidth(bitmap)
+#         h = _FI.FreeImage_GetHeight(bitmap)
+#         fi_type = _FI.FreeImage_GetImageType(bitmap)
+#         if not fi_type:
+#             raise ValueError('Unknown image pixel type')
+#         dtype = cls.dtypes[fi_type]
+#         if fi_type == cls.FIT_BITMAP:
+#             bpp = _FI.FreeImage_GetBPP(bitmap)
+#             if bpp == 8:
+#                 extra_dims = []
+#             elif bpp == 24:
+#                 extra_dims = [3]
+#             elif bpp == 32:
+#                 extra_dims = [4]
+#             else:
+#                 raise ValueError('Cannot convert %d BPP bitmap' % bpp)
+#         else:
+#             extra_dims = cls.extra_dims[fi_type]
+#         return np.dtype(dtype), extra_dims + [w, h]
+#
+
+
+
+
+
+# def prepare_tensorstore_from_pyramid(
+#     pyr: Sequence[DataArray],
+#     level_names: Sequence[str],
+#     jpeg_quality: int,
+#     output_chunks: Sequence[int],
+#     root_container_path: Path,
+# ):
+#     store_arrays = []
+#     # sharding = {'@type': 'neuroglancer_uint64_sharded_v1',
+#     #       'preshift_bits': 9,
+#     #        'hash': 'identity',
+#     #        'minishard_index_encoding': 'gzip',
+#     #       'minishard_bits': 6,
+#     #       'shard_bits': 15}
+#
+#     for p, ln in zip(pyr, level_names):
+#         res = [abs(float(p.coords[k][1] - p.coords[k][0])) for k in p.dims]
+#         spec: Dict[str, Any] = {
+#             "driver": "neuroglancer_precomputed",
+#             "kvstore": {
+#                 "driver": "file",
+#                 "path": str(Path(root_container_path).parent),
+#             },
+#             "path": root_container_path.parts[-1],
+#             "scale_metadata": {
+#                 "size": p.shape,
+#                 "resolution": res,
+#                 "encoding": "jpeg",
+#                 "jpeg_quality": jpeg_quality,
+#                 #'sharding': sharding,
+#                 "chunk_size": output_chunks,
+#                 "key": ln,
+#                 "voxel_offset": (0, 0, 0),
+#             },
+#             "multiscale_metadata": {
+#                 "data_type": p.dtype.name,
+#                 "num_channels": 1,
+#                 "type": "image",
+#             },
+#         }
+#         try:
+#             ts.open(spec=spec, open=True).result()
+#         except ValueError:
+#             try:
+#                 ts.open(spec=spec, create=True).result()
+#             except ValueError:
+#                 ts.open(spec=spec, create=True, delete_existing=True).result()
+#
+#         nicer_array = NicerTensorStore(spec=spec, open_kwargs={"write": True})
+#         store_arrays.append(nicer_array)
+#     return store_arrays
+
+
+# @dataclass
+# class NicerTensorStore:
+#     spec: Dict[str, Any]
+#     open_kwargs: Dict[str, Any]
+#
+#     def __getitem__(self, slices):
+#         return ts.open(spec=self.spec, **self.open_kwargs).result()[slices]
+#
+#     def __setitem__(self, slices, values):
+#         ts.open(spec=self.spec, **self.open_kwargs).result()[ts.d["channel"][0]][
+#             slices
+#         ] = values
+#         return None
+
+'''
+https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/tensorstore.py/
+'''
+

@@ -23,7 +23,7 @@ for the central __skip__ images. The _span_ *must* be specified
 on the command line. The _skip_ *may* be given; it defaults to 1. Note
 the asymmetry between _span_, which specifies the half-range, and
 _skip_, which specifies the total number of central images to
-skip. Typically, _skip_ will be odd.
+skipped. Typically, _skip_ will be odd.
 
 The purpose of *remod* is to then align the central image to its
 neighbors with *swim*.

@@ -22,11 +22,11 @@ def generate_scales():
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     proj_path = cfg.data['data']['destination_path']
-    n_tasks = cfg.data.get_n_images() * (cfg.data.get_n_scales() - 1)  #0901 #Refactor
+    n_tasks = cfg.data.n_imgs() * (cfg.data.n_scales() - 1)  #0901 #Refactor
     # cfg.main_window.pbar_max(n_tasks)
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     task_queue.tqdm_desc = 'Scaling Images'
-    cpus = min(psutil.cpu_count(logical=False), 48)
+    cpus = min(psutil.cpu_count(logical=False), 48) - 1
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     my_system = platform.system()
     my_node = platform.node()
@@ -48,16 +48,16 @@ def generate_scales():
         return
 
     cfg.main_window.hud.post("Creating Project Directory Structure...")
-
     try:
         # for scale in sorted(image_scales_to_run):
-        for scale in cfg.data.get_scales():
+        for scale in cfg.data.scales():
             subdir_path = os.path.join(proj_path, scale)
             create_project_structure_directories(subdir_path)
     except:
         print_exception()
-        cfg.main_window.hud.post("There was a problem creating the directory structure", logging.WARNING)
+        cfg.main_window.hud.post("There Was A Problem Creating Directory Structure", logging.WARNING)
         return
+    cfg.main_window.hud.done()
 
     # #0804+
     # if str(image_scales_to_run) == '[1]':
@@ -68,7 +68,7 @@ def generate_scales():
 
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
         logger.debug('Looping, Scale ', scale)
-        cfg.main_window.hud.post("Preparing to Generate Images for Scale %s..." % str(scale))
+        cfg.main_window.hud.post("Preparing to Downsample Images for Scale %s..." % str(scale))
         scale_key = get_scale_key(scale)
         for i, layer in enumerate(cfg.data['data']['scales'][scale_key]['alignment_stack']):
             fn = os.path.abspath(layer['images']['base']['filename'])
@@ -133,6 +133,8 @@ def generate_scales():
                     return
 
             layer['images']['base']['filename'] = ofn  # Update Data Model
+        cfg.main_window.hud.done()
+
 
     ### Join the queue here to ensure that all have been generated before returning
     # task_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
@@ -144,6 +146,7 @@ def generate_scales():
     task_queue.stop()
     del task_queue
     dt = time.time() - t0
+    cfg.main_window.hud.done()
     cfg.main_window.hud.post("Process Completed in %.2f Seconds" % dt)
 
     logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')

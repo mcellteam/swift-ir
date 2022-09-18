@@ -9,9 +9,10 @@ import zarr
 from zarr.util import human_readable_size
 import numpy as np
 from PIL import Image
-from src.image_utils import get_image_size
+from src.image_funcs import get_image_size
 from src.mp_queue import TaskQueue
-from src.helpers import get_scale_val, get_images_list_directly, preallocate_zarr
+from src.helpers import get_scale_val, get_images_list_directly
+from src.zarr_funcs import preallocate_zarr
 import src.config as cfg
 
 __all__ = ['generate_zarr']
@@ -24,16 +25,16 @@ def generate_zarr(src, out):
     logger.info('Source Image : %s\nOutput Image : %s' % (src, out))
     # Z_STRIDE = 4
     Z_STRIDE = 1
-    n_imgs = cfg.data.get_n_images()
-    n_scales = cfg.data.get_n_scales()
+    n_imgs = cfg.data.n_imgs()
+    n_scales = cfg.data.n_scales()
 
     preallocate_zarr()
 
     estimated_n_tasks = n_imgs * n_scales  # TODO this should take into account skips
     tasks_ = []
-    imgs = sorted(get_images_list_directly(os.path.join(src, cfg.data.get_scale(), 'img_aligned')))
+    imgs = sorted(get_images_list_directly(os.path.join(src, cfg.data.scale(), 'img_aligned')))
     for ID, img in enumerate(imgs):
-        for scale in cfg.data.get_aligned_scales_list():
+        for scale in cfg.data.aligned_list():
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))
             width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
@@ -48,7 +49,7 @@ def generate_zarr(src, out):
     logger.critical('foo:\n%s' % str(foo))
 
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
-    cpus = min(psutil.cpu_count(logical=False), 48)
+    cpus = min(psutil.cpu_count(logical=False), 48) - 1
     n_tasks = len(tasks)
     logger.info("Estimated # of tasks: %d" % estimated_n_tasks)
     logger.info('Actual # of tasks: %d' % n_tasks)

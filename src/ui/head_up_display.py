@@ -9,16 +9,16 @@ https://www.oulub.com/en-US/Python/howto.logging-cookbook-a-qt-gui-for-logging
 import time
 import random
 import logging
-from PyQt5.QtCore import QObject, QThread, Qt, QSize
-from PyQt5.QtCore import pyqtSignal as Signal
-from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.QtGui import QFont, QTextCursor
-from PyQt5.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout
+from qtpy.QtCore import QObject, QThread, Qt, QSize
+from qtpy.QtCore import Signal, Slot
+from qtpy.QtGui import QFont, QTextCursor
+from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
 
 __all__ = ['HeadUpDisplay', 'HudWorker']
 
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger("hud")
+
 
 class Signaller(QObject):
     signal = Signal(str, logging.LogRecord)
@@ -69,6 +69,7 @@ class HeadUpDisplay(QWidget):
         self.setFocusPolicy(Qt.NoFocus)
         self.setMinimumHeight(140)
         self.textedit = te = QPlainTextEdit(self)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # Set whatever the default monospace font is for the platform
         f = QFont()
         f.setStyleHint(QFont.Monospace)
@@ -111,6 +112,14 @@ class HeadUpDisplay(QWidget):
         layout.addWidget(te)
         self.start_thread()
 
+    def __call__(self, message, level=logging.INFO):
+        # if cfg.main_window.main_panel_bottom_widget.currentIndex() in (1,2):
+        #     cfg.main_window.main_panel_bottom_widget.setCurrentIndex(0)
+        extra = {'qThreadName': ctname()}
+        logger.log(level, message, extra=extra)
+        self.textedit.moveCursor(QTextCursor.End)
+        QApplication.processEvents()
+
     def start_thread(self):
         self.hud_worker = HudWorker()
         self.hud_worker_thread = QThread()
@@ -132,11 +141,18 @@ class HeadUpDisplay(QWidget):
         if self.hud_worker_thread.isRunning():
             self.kill_thread()
 
-    def minimumSizeHint(self):
-        return QSize(50, 50)
+    # def minimumSizeHint(self):
+    #     return QSize(50, 50)
 
-    def sizeHint(self):
-        return QSize(500, 140)
+    # def sizeHint(self):
+    #     return QSize(500, 200)
+
+    def done(self):
+        txt = self.textedit.toPlainText()
+        self.textedit.undo()
+        last_line = txt.split('[INFO]')[-1].lstrip()
+        self.post(last_line + 'done.')
+
 
     @Slot(str, logging.LogRecord)
     def update_status(self, status, record):
@@ -162,6 +178,10 @@ class HeadUpDisplay(QWidget):
     @Slot()
     def clear_display(self):
         self.textedit.clear()
+
+    @Slot()
+    def rmline(self):
+        self.textedit.undo()
 
     def set_theme_default(self):
         self.textedit.setStyleSheet("""

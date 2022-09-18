@@ -32,14 +32,12 @@ except:  import config as cfg
 try:     import src.swiftir as swiftir
 except:  import swiftir
 
-try:     from src.image_utils import get_image_size
-except:  from image_utils import get_image_size
-
+try:     from src.image_funcs import get_image_size
+except:  from image_funcs import get_image_size
 
 __all__ = ['run_json_project', 'alignment_process']
 
 logger = logging.getLogger(__name__)
-
 
 def run_json_project(project,
                      alignment_option='init_affine',
@@ -82,7 +80,7 @@ def run_json_project(project,
     else:
         # Force scale_tbd to be equal to use_scale
         scale_tbd = use_scale
-        # Set allow_scale_climb according to status of next coarser scale
+        # Set allow_scale_climb according to statusBar of next coarser scale
         scale_tbd_idx = proj_status['defined_scales'].index(scale_tbd)
         if scale_tbd_idx < len(proj_status['defined_scales']) - 1:
             next_scale = proj_status['defined_scales'][scale_tbd_idx + 1]
@@ -140,7 +138,7 @@ def run_json_project(project,
         logger.info("Range limited to: " + str(range_to_process))
         logger.info(80 * "@")
 
-        #   Copy skip, swim, and match point settings
+        #   Copy skipped, swim, and match point settings
         for i in range(len(s_tbd)):
             # fix path for base and ref filenames for scale_tbd
             base_fn = os.path.basename(s_tbd[i]['images']['base']['filename'])
@@ -154,9 +152,9 @@ def run_json_project(project,
             md = atrm['method_data']
 
             # Initialize method_results for skipped or missing method_results
-            logger.info("s_tbd[i]['skip'] = %s" % str(s_tbd[i]['skip']))
+            logger.info("s_tbd[i]['skipped'] = %s" % str(s_tbd[i]['skipped']))
             logger.info("atrm['method_results'] == {} = %s" % str(mr == {}))
-            if s_tbd[i]['skip'] or mr == {}:
+            if s_tbd[i]['skipped'] or mr == {}:
                 mr['affine_matrix'] = ident.tolist()
                 mr['cumulative_afm'] = ident.tolist()
                 mr['snr'] = [0.0]
@@ -211,7 +209,7 @@ def run_json_project(project,
                 raise
 
         for i in range(1, len(s_tbd)):
-            if not s_tbd[i]['skip']:
+            if not s_tbd[i]['skipped']:
                 #        im_sta_fn = s_tbd[i]['images']['ref']['filename']
                 #        im_mov_fn = s_tbd[i]['images']['base']['filename']
                 logger.info('Calling align_alignment_process >>>>')
@@ -1027,7 +1025,7 @@ if __name__ == '__main__':
             args = args[1:]  # Shift out the second file name argument
             if (len(args) > 0) and (not args[0].startswith('-')):
                 out = args[0]
-                args = args[1:]  # Shift out the destination argument
+                args = args[1:]  # Shift out the dest argument
 
     # Now all of the remaining arguments should be optional
     xbias = 0

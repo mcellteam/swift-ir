@@ -66,28 +66,6 @@ def print_command_line_syntax(args):
     logger.debug('  in_file_name        : input image file name (opened for reading only)')
     logger.debug('  out_file_name       : output image file name (opened for writing and overwritten)')
 
-
-'''
-/Users/joelyancey/glanceem_swift/alignEM/src/job_python_apply_affine.py
--gray
--rect
--3
--3
-1030
-1030
--afm
-1.0053000450134277
-0.004926680121570826
--2.3439199924468994
--0.005592479836195707
-1.0550800561904907
-1.5037000179290771
-
-'''
-
-
-
-
 if (__name__ == '__main__'):
     # len(sys.argv) = 16
     if (len(sys.argv) < 4):
@@ -169,6 +147,9 @@ if (__name__ == '__main__'):
 
     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
 
+
+
+
     # Python Implementation
     # try:
     #     image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)
@@ -217,4 +198,20 @@ A 1.0053 0.00492668 -12.65607 -0.00559248 1.05508 11.5037
 RW out_bb.tif
 E
     
+
+/Users/joelyancey/glanceem_swift/alignEM/src/job_python_apply_affine.py
+-gray
+-rect
+-3
+-3
+1030
+1030
+-afm
+1.0053000450134277
+0.004926680121570826
+-2.3439199924468994
+-0.005592479836195707
+1.0550800561904907
+1.5037000179290771
+
 '''

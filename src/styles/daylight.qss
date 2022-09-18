@@ -128,8 +128,28 @@ QProgressBar::chunk {
 	background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(49, 147, 250, 255), stop:1 rgba(34, 142, 255, 255));
 	border-radius: 10px;
 }
+QMenu {
+	border-width: 2px;
+	/*border-radius: 10px;*/
+	/*border-color: rgb(255, 153, 0);*/
+	border-color: #171d22;
+	border-style: outset;
+}
+
 QMenuBar {
-	background-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgba(207, 209, 207, 255), stop:1 rgba(230, 229, 230, 255));
+	background: #F3F6FB;;
+	color: #455364B;
+}
+
+
+QMenuBar::item {
+  	spacing: 3px;
+	padding: 1px 4px;
+  	background: transparent;
+}
+
+QMenuBar::item:selected {
+  	background:rgb(115, 115, 115);
 }
 
 QStatusBar {

@@ -6,10 +6,11 @@ import time
 import psutil
 import logging
 import src.config as cfg
-from .helpers import preallocate_zarr, get_scale_key, get_scale_val, are_aligned_images_generated, \
+from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
-from .mp_queue import TaskQueue
-from .image_utils import SetStackCafm, BoundingRect
+from src.mp_queue import TaskQueue
+from src.image_funcs import SetStackCafm, BoundingRect
+from src.zarr_funcs import preallocate_zarr
 
 '''
 64*64*64  = 262,144
@@ -45,7 +46,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
 
     #TODO Add immediate check if alignment data exists and looks correct
 
-    # image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
+    # image_scales_to_run = [scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     # proj_path = cfg.data['data']['destination_path']
     # for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
     #     print('Loop: scale = ', scale)
@@ -77,8 +78,8 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     null_bias = cfg.data['data']['scales'][use_scale]['null_cafm_trends']
     SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
 
-    zarr_path = os.path.join(cfg.data.destination(), '3dem.zarr')
-    bounding_rect = cfg.data.get_bounding_rect()
+    zarr_path = os.path.join(cfg.data.dest(), 'alignments.zarr')
+    bounding_rect = cfg.data.bounding_rect()
     # preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=16, chunks=(16,64,64))
     preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=Z_STRIDE, chunks=CHUNKS)
 
@@ -92,10 +93,10 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             # Example: rect = [-346, -346, 1716, 1716]  <class 'list'>
         else:
             f.write("None\n")
-    n_tasks = cfg.data.get_n_images()
+    n_tasks = cfg.data.n_imgs()
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     task_queue.tqdm_desc = 'Generating Images'
-    cpus = min(psutil.cpu_count(logical=False), 48)
+    cpus = min(psutil.cpu_count(logical=False), 48) - 1
     logger.info('Starting Task Queue...')
     task_queue.start(cpus)
     logger.info('Job Script: %s' % apply_affine_job)
@@ -166,7 +167,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
         task_queue.collect_results()
         dt = time.time() - t0
         cfg.main_window.hud.post('Image Generation Completed in %.2f seconds. Wrapping up...' % dt)
-        cfg.main_window.center_all_images()
+        cfg.main_window.clear_zoom()
     except:
         logger.warning('task_queue.collect_results() encountered a problem')
         print_exception()

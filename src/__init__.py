@@ -26,9 +26,13 @@ from . import helpers
 from .helpers import *
 __all__.extend(helpers.__all__)
 
-from . import image_utils
-from .image_utils import *
-__all__.extend(image_utils.__all__)
+from . import image_funcs
+from .image_funcs import *
+__all__.extend(image_funcs.__all__)
+
+from . import zarr_funcs
+from .zarr_funcs import *
+__all__.extend(zarr_funcs.__all__)
 
 from . import save_bias_analysis
 from .save_bias_analysis import *

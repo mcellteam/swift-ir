@@ -2,10 +2,10 @@
 import os
 import sys
 import logging
-from PyQt5.QtWidgets import QCheckBox, QApplication, QMainWindow, QWidget, QLabel
-from PyQt5.QtCore import Qt, QSize, QPointF, QPoint, QRectF
-from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter, QIcon
+from qtpy.QtWidgets import QCheckBox, QApplication, QMainWindow, QWidget, QLabel
+from qtpy.QtCore import Qt, QSize, QPointF, QPoint, QRectF
+from qtpy.QtCore import Slot
+from qtpy.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter, QIcon
 import qtawesome as qta
 
 __all__ = ['ToggleSwitch']
@@ -27,6 +27,8 @@ class ToggleSwitch(QCheckBox):
     _green_color = '#588A0E' #darker green
     _black_charcoal_color = QColor('#212121')
     _black_color = QColor('#000000')
+
+    _border_color_pen = QPen(QColor('#171d22;'))
 
     # _red_pen = QPen(QColor('red'))
     _red_color = QColor('#D61529') # deeper red
@@ -113,6 +115,7 @@ class ToggleSwitch(QCheckBox):
         '''Layout of Main Background Area'''
         # p.setPen(self._transparent_pen) # Border around background area
         p.setPen(self._snow_pen) # Border around background area
+        # p.setPen(self._border_color_pen) # Border around background area
         # p.setPen(self._almost_black_pen) # Border around background area
         # p.setPen(self._black_pen)
         # barRect = QRectF(0, 0, self.width - self.handle_radius, 0.40 * self.height)
