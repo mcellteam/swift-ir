@@ -6,8 +6,8 @@ https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/Scat
 '''
 
 import pyqtgraph as pg
-from PyQt5.QtGui import QFont
-from PyQt5.QtCore import Qt
+from qtpy.QtGui import QFont
+from qtpy.QtCore import Qt
 
 
 class SnrPlot(pg.PlotWidget):

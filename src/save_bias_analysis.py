@@ -22,7 +22,7 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
 
     for i in range(len(al_stack)):
 
-        if True or not al_stack[i]['skip']:
+        if True or not al_stack[i]['skipped']:
             try:
                 atrm = al_stack[i]['align_to_ref_method']
                 if i == 1:

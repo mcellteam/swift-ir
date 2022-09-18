@@ -3,6 +3,7 @@
 AlignEm is intended to provide a tool for supporting image alignment
 using any number of technologies.
 """
+from dataclasses import dataclass
 import os
 import json
 import inspect
@@ -16,13 +17,13 @@ __all__ = ['DataModel']
 
 logger = logging.getLogger(__name__)
 
-
 class DataModel:
     """ Encapsulate data model dictionary and wrap with methods for convenience """
 
     def __init__(self, data=None, name=''):
 
         self._current_version = 0.31
+        self.roles = ['ref', 'base', 'aligned']
 
         if data != None:
             self._data = data
@@ -92,59 +93,122 @@ class DataModel:
     def to_dict(self):
         return self._data
 
-    def set_destination(self, s):
-        self._data['data']['destination_path'] = s
-
-    def destination(self):
+    def dest(self):
         return self._data['data']['destination_path']
 
-    def get_scale(self) -> str:
-        '''Returns the Current Scale as a String.'''
-        return self._data['data']['current_scale']
-
-    def get_layer(self) -> int:
+    def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''
         return self._data['data']['current_layer']
 
-    def get_skip(self) -> bool:
-        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
-        return bool(self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()]['skip'])
+    def scale(self) -> str:
+        '''Returns the Current Scale as a String.'''
+        return self._data['data']['current_scale']
 
-    def get_whitening(self) -> float:
+    def scale_val(self) -> int:
+        scale = self.scale()
+        while scale.startswith('scale_'):
+            scale = scale[len('scale_'):]
+        return int(scale)
+
+    def scale_vals_list(self) -> list[int]:
+        return [int(v) for v in sorted([get_scale_val(s) for s in self._data['data']['scales'].keys()])]
+
+    def n_scales(self) -> int:
+        '''Returns the number of scales in scale pyramid'''
+        try:
+            n_scales = len(self._data['data']['scales'].keys())
+            return n_scales
+        except:
+            logger.warning('No Scales Found - Returning 0')
+            return 0
+
+    def n_imgs(self) -> int:
+        '''Returns # of imported images.
+        #TODO Check this for off-by-one bug'''
+        try: n_imgs = len(self._data['data']['scales']['scale_1']['alignment_stack']); return n_imgs
+        except: logger.warning('No Images Found - Returning 0'); return 0
+
+    def scales(self) -> list[str]:
+        '''Get scales list.
+        Faster than O(n*m) performance.
+        Preserves order of scales.'''
+        l = natural_sort([key for key in self._data['data']['scales'].keys()])
+        # logger.critical('Returning %s ' % str(l))
+        return l
+
+    def skipped(self) -> bool:
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        return bool(self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()]['skipped'])
+
+    def skip_list(self) -> list[int]:
+        '''Returns the list of skipped images at the current scale'''
+        l = []
+        try:
+            scale = self.scale()
+            for i in range(self.n_imgs()):
+                if self._data['data']['scales'][scale]['alignment_stack'][i]['skipped'] == True:
+                    l.append(i)
+        except:
+            logger.warning('Unable to To Get Skips');
+            return []
+        else:
+            return l
+
+    def whitening(self) -> float:
         '''Returns the Whitening Factor for the Current Layer.'''
-        return float(self._data['data']['scales'][self.get_scale()]['alignment_stack'][
-                         self.get_layer()]['align_to_ref_method']['method_data']['whitening_factor'])
+        return float(self._data['data']['scales'][self.scale()]['alignment_stack'][
+                         self.layer()]['align_to_ref_method']['method_data']['whitening_factor'])
 
-    def get_swim_window(self) -> float:
+    def swim_window(self) -> float:
         '''Returns the SWIM Window for the Current Layer.'''
-        return float(self._data['data']['scales'][self.get_scale()]['alignment_stack'][
-                         self.get_layer()]['align_to_ref_method']['method_data']['win_scale_factor'])
+        return float(self._data['data']['scales'][self.scale()]['alignment_stack'][
+                         self.layer()]['align_to_ref_method']['method_data']['win_scale_factor'])
 
-    def get_bounding_rect(self) -> bool:
+    def bounding_rect(self) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
-        return bool(self._data['data']['scales'][self.get_scale()]['use_bounding_rect'])
+        return bool(self._data['data']['scales'][self.scale()]['use_bounding_rect'])
 
-    def get_poly_order(self) -> int:
+    def poly_order(self) -> int:
         '''Returns the Polynomial Order for the Current Scale.'''
-        return int(self._data['data']['scales'][self.get_scale()]['poly_order'])
+        return int(self._data['data']['scales'][self.scale()]['poly_order'])
 
-    def get_null_cafm(self) -> bool:
+    def null_cafm(self) -> bool:
         '''Gets the Null Cafm Trends On/Off State for the Current Scale.'''
-        return bool(self._data['data']['scales'][self.get_scale()]['null_cafm_trends'])
+        return bool(self._data['data']['scales'][self.scale()]['null_cafm_trends'])
 
-    def get_al_option(self) -> str:
+    def al_option(self) -> str:
         '''Gets the Alignment Option for the Current Scale.'''
-        return cfg.data['data']['scales'][self.get_scale()]['method_data']['alignment_option']
+        return cfg.data['data']['scales'][self.scale()]['method_data']['alignment_option']
 
-    def get_al_img_path(self) -> str:
-        l = self.get_layer()
-        s = self.get_scale()
+    def path_ref(self) -> str:
+        l, s = self.layer(), self.scale()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename']
+
+    def path_base(self) -> str:
+        l, s = self.layer(), self.scale()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
+
+    def path_al(self) -> str:
+        l, s = self.layer(), self.scale()
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename']
 
-    def get_base_img_name(self) -> str:
-        l = self.get_layer()
-        s = self.get_scale()
+    def name_base(self) -> str:
+        l, s = self.layer(), self.scale()
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+
+    def zarr_scale_paths(self):
+        l = []
+        for s in self.scales():
+            # l.append(os.path.join(self._data['data']['destination_path'], s + '.zarr'))
+            l.append(os.path.join(self._data['data']['destination_path'], 'scales.zarr', s + str(get_scale_val(s))))
+        return l
+
+    def roles(self):
+        l, s = self.layer(), self.scale()
+        return self._data['data']['scales'][s]['alignment_stack'][l]['images'].keys()
+
+    def set_destination(self, s):
+        self._data['data']['destination_path'] = s
 
     def set_scale(self, x:str) -> None:
         '''Sets the Current Scale.'''
@@ -156,51 +220,51 @@ class DataModel:
 
     def set_skip(self, b:bool) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()]['skip'] = b
+        self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()]['skipped'] = b
 
     def set_whitening(self, f:float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
-        self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()][
+        self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['whitening_factor'] = f
 
     def set_swim_window(self, f:float) -> None:
         '''Sets the SWIM Window for the Current Layer.'''
-        self._data['data']['scales'][self.get_scale()]['alignment_stack'][self.get_layer()][
+        self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['win_scale_factor'] = f
 
     def set_bounding_rect(self, b:bool) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.get_scale()]['use_bounding_rect'] = bool(b)
+        self._data['data']['scales'][self.scale()]['use_bounding_rect'] = bool(b)
 
     def set_poly_order(self, x:int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
-        self._data['data']['scales'][self.get_scale()]['poly_order'] = x
+        self._data['data']['scales'][self.scale()]['poly_order'] = x
 
     def set_null_cafm(self, b:bool) -> None:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.get_scale()]['null_cafm_trends'] = bool(b)
+        self._data['data']['scales'][self.scale()]['null_cafm_trends'] = bool(b)
 
+    # def make_absolute(file_path, proj_path):
+    #     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
+    #     return abs_path
 
-    '''
-        @Slot()
-    def get_whitening_input(self) -> float:
-        return float(self.whitening_input.text())
-    
-    @Slot()
-    def get_swim_input(self) -> float:
-        return float(self.swim_input.text())
-    
-    @Slot()
-    def get_bounding_state(self):
-        return self.toggle_bounding_rect.isChecked()
-    
-    @Slot()
-    def get_null_bias_value(self) -> str:
-        return str(self.null_bias_combobox.currentText())
-    '''
+    def set_paths_absolute(self, head):
+        logger.info('Configuring Absolute File Paths...')
+        try:
+            head = os.path.split(head)[0]
+            self.set_destination(os.path.join(head, self.dest()))
+            for s in self._data['data']['scales'].keys():
+                for l in self._data['data']['scales'][s]['alignment_stack']:
+                    for r in l['images'].keys():
+                        # if (not l==0) and (not r=='ref'):
+                        tail = l['images'][r]['filename']
+                        l['images'][r]['filename'] = os.path.join(head, tail)
+                # self._data['data']['scales'][s]['alignment_stack'][0]['images']['ref']['filename'] = None
+        except:
+            logger.warning('Setting Absolute Paths Triggered This Exception')
+            print_exception()
 
-
-    def get_snr(self) -> str:
+    def snr(self) -> str:
         '''TODO This probably shouldn't return a string'''
         if not self._data['data']['current_scale']:
             logger.warning("Can't Get SNR Because Scale is Not Set")
@@ -224,73 +288,40 @@ class DataModel:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
     def snr_list(self):
-        snr_list = []
-        for layer in self._data['data']['scales'][self.get_scale()]['alignment_stack']:
+        snr_lst = []
+        for layer in self._data['data']['scales'][self.scale()]['alignment_stack']:
             try:
                 snr_vals = layer['align_to_ref_method']['method_results']['snr']
                 mean_snr = sum(snr_vals) / len(snr_vals)
-                snr_list.append(mean_snr)
+                snr_lst.append(mean_snr)
             except:
                 pass
-        return snr_list
+        return snr_lst
 
-    def clear_all_skips(self):
-        logger.info('Clearing all skips...')
-        image_scale_keys = [s for s in sorted(self._data['data']['scales'].keys())]
-        for scale in image_scale_keys:
-            scale_key = str(scale)
-            for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
-                layer['skip'] = False
+    '''
+        @Slot()
+    def get_whitening_input(self) -> float:
+        return float(self.whitening_input.text())
+    
+    @Slot()
+    def get_swim_input(self) -> float:
+        return float(self.swim_input.text())
+    
+    @Slot()
+    def get_bounding_state(self):
+        return self.toggle_bounding_rect.isChecked()
+    
+    @Slot()
+    def get_null_bias_value(self) -> str:
+        return str(self.null_bias_combobox.currentText())
+    '''
 
-    # def get_layer(self) -> int:
-    #     '''Returns the Current Layer'''
-    #     return self._data['data']['current_layer']
 
-    def get_n_images(self) -> int:
-        '''Returns # of imported images.
-        #TODO Check this for off-by-one bug'''
-        try:
-            n_imgs = len(self._data['data']['scales']['scale_1']['alignment_stack'])
-            return n_imgs
-        except:
-            logger.warning('No Images Found - Returning 0')
-            return 0  # 0711
+    def aligned_dict(self) -> dict:
+        al_stack = self._data['data']['scales'][self.scale()]['alignment_stack']
+        return al_stack
 
-    def get_skips(self) -> list[int]:
-        '''Returns the list of skipped images at the current scale'''
-        l = []
-        try:
-            scale = self.get_scale()
-            for i in range(self.get_n_images()):
-                if self._data['data']['scales'][scale]['alignment_stack'][i]['skip'] == True:
-                    l.append(i)
-        except:
-            logger.warning('Unable to To Get Skips');
-            return []
-        else:
-            return l
-
-    def get_n_scales(self) -> int:
-        '''Returns the number of scales in scale pyramid'''
-        try:
-            n_scales = len(self._data['data']['scales'].keys())
-            return n_scales
-        except:
-            logger.warning('No Scales Found - Returning 0')
-            return 0
-
-    def get_scales(self) -> list[str]:
-        '''Get scales list.
-        Faster than O(n*m) performance.
-        Preserves order of scales.'''
-        l = natural_sort([key for key in self._data['data']['scales'].keys()])
-        # logger.critical('Returning %s ' % str(l))
-        return l
-
-    def get_scale_vals(self) -> list[int]:
-        return [int(v) for v in sorted([get_scale_val(s) for s in self._data['data']['scales'].keys()])]
-
-    def get_aligned_scales_list(self) -> list[str]:
+    def aligned_list(self) -> list[str]:
         '''Get aligned scales list.'''
         l = []
         for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
@@ -300,7 +331,7 @@ class DataModel:
         logger.debug('Aligned Scales List: %s ' % str(l))
         return l
 
-    def get_not_aligned_scales_list(self) -> list[str]:
+    def not_aligned_list(self) -> list[str]:
         '''Get not aligned scales list.'''
         l = []
         for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
@@ -310,16 +341,16 @@ class DataModel:
         logger.debug('Not Aligned Scales List: %s ' % str(l))
         return l
 
-    def get_coarsest_scale_key(self) -> str:
+    def coarsest_scale_key(self) -> str:
         '''Return the coarsest scale key. '''
         k = natural_sort(list(self._data['data']['scales'].keys()))[-1]
         return k
 
-    def get_next_coarsest_scale_key(self) -> str:
-        if self.get_n_scales() == 1:
-            return self.get_scale()
+    def next_coarsest_scale_key(self) -> str:
+        if self.n_scales() == 1:
+            return self.scale()
         scales_dict = self._data['data']['scales']
-        cur_scale_key = self.get_scale()
+        cur_scale_key = self.scale()
         coarsest_scale = list(scales_dict.keys())[-1]
         if cur_scale_key == coarsest_scale:
             return cur_scale_key
@@ -336,8 +367,8 @@ class DataModel:
         if not are_images_imported():
             # logger.info('Returning False, images not imported')
             return False
-        scales_list = self.get_scales()
-        cur_scale_key = self.get_scale()
+        scales_list = self.scales()
+        cur_scale_key = self.scale()
         coarsest_scale = scales_list[-1]
         if cur_scale_key == coarsest_scale:
             # logger.info('Returning True, current scale is the coarsest scale')
@@ -354,10 +385,13 @@ class DataModel:
             logger.debug('Returning False')
             return False
 
-
-    def al_stack(self) -> dict:
-        al_stack = self._data['data']['scales'][self.get_scale()]['alignment_stack']
-        return al_stack
+    def clear_all_skips(self):
+        logger.info('Clearing all skips...')
+        image_scale_keys = [s for s in sorted(self._data['data']['scales'].keys())]
+        for scale in image_scale_keys:
+            scale_key = str(scale)
+            for layer in self._data['data']['scales'][scale_key]['alignment_stack']:
+                layer['skipped'] = False
 
     def append_layer(self, scale_key):
         self._data['data']['scales'][scale_key]['alignment_stack'].append(
@@ -372,7 +406,7 @@ class DataModel:
                     "method_results": {}
                 },
                 "images": {},
-                "skip": False
+                "skipped": False
             })
         pass
 
@@ -393,8 +427,8 @@ class DataModel:
         logger.info('Updating Data Model...')
         # Load the alignment stack after the alignment has completed
         aln_image_stack = []
-        scale = self.get_scale()
-        for layer in self.al_stack():
+        scale = self.scale()
+        for layer in self.aligned_dict():
             image_name = None
             if 'base' in layer['images'].keys():
                 image_name = layer['images']['base']['filename']
@@ -442,12 +476,10 @@ class DataModel:
 
 
     def are_there_any_skips(self) -> bool:
-        if cfg.data.get_skips() == []:
+        if cfg.data.skip_list() == []:
             return False
         else:
             return True
-
-
 
     def set_scales_from_string(self, scale_string: str):
         '''This is not pretty. Needs to be refactored ASAP.
@@ -524,7 +556,7 @@ class DataModel:
         for scale_key in self._data['data']['scales'].keys():
             skip_list = []
             for layer_index in range(len(self._data['data']['scales'][scale_key]['alignment_stack'])):
-                if self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skip'] == True:
+                if self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skipped'] == True:
                     skip_list.append(layer_index)
                 base_layer = self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]
                 if layer_index == 0:
@@ -684,7 +716,7 @@ class DataModel:
 
 
     # def update_init_rot(self):
-    #     image_scales_to_run = [self.get_scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
+    #     image_scales_to_run = [self.scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
     #     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
     #         scale_key = self.get_scale_key(scale)
     #         for i, layer in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
@@ -692,7 +724,7 @@ class DataModel:
     #     logger.critical('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
     #
     # def update_init_scale(self):
-    #     image_scales_to_run = [self.get_scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
+    #     image_scales_to_run = [self.scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
     #     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
     #         scale_key = self.get_scale_key(scale)
     #         for i, layer in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
@@ -716,6 +748,29 @@ class DataModel:
                 layer['images'][role]['metadata']['match_points'] = []
                 layer['images'][role]['metadata']['annotations'] = []
         cfg.main_window.match_point_mode = False
+
+
+
+
+@dataclass
+class StripNullFields:
+    def asdict(self):
+        result = {}
+        for k, v in self.__dict__.items():
+            if v is not None:
+                if hasattr(v, "asdict"):
+                    result[k] = v.asdict()
+                elif isinstance(v, list):
+                    result[k] = []
+                    for element in v:
+                        if hasattr(element, "asdict"):
+                            result[k].append(element.asdict())
+                        else:
+                            result[k].append(element)
+                else:
+                    result[k] = v
+        return result
+
 
 
 if __name__ == '__main__':

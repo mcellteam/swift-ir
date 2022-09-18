@@ -39,17 +39,33 @@ To output a string of Mypy CLI args that will reflect the currently selected src
 $ qtpy mypy-args
 
 """
+
+
+
 import os
+import qtpy
+os.environ['QT_API'] = 'pyqt5' # This is the settings for qtpy
+# os.environ['PYQTGRAPH_QT_LIB'] = 'pyqt5'
+# os.environ['QT_API'] = 'pyqt6'
+# os.environ['QT_API'] = 'PySide6'
+# os.environ['QT_DRIVER'] = 'PySide6' # necessary for qimage2ndarray
 import sys
 import signal
 import logging
 import argparse
-# import qtpy
-from PyQt5.QtWidgets import QApplication
-from PyQt5.QtCore import Qt, QCoreApplication
+from PIL import Image
+import neuroglancer
+from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import Qt, QCoreApplication, QTimer
 from src.helpers import print_exception, check_for_binaries
 from src.ui.main_window import MainWindow
+from src.ui.splash import SplashScreen
 import src.config as cfg
+
+# import cProfile, pstats, io
+# from pstats import SortKey
+# cfg.pr = cProfile.Profile()
+# cfg.pr.enable()
 
 class CustomFormatter(logging.Formatter):
 
@@ -101,20 +117,27 @@ def main():
     # logger.info('You are aligning with AlignEM-SWiFT, please report any newlybugs to joel@salk.edu.')
     # print('\x1b[6;30;42m' + '--' * 43 + '\x1b[0m')
     sys.stdout.flush()
+
+
+
     # os.environ['QT_API'] = qtpy.API #0827-
     # os.environ["FORCE_QT_API"] = 'True'
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
     # logger.info('QT_API: %s' % qtpy.API)
+
     if args.no_neuroglancer:
         cfg.NO_NEUROGLANCER = True
     else:
         cfg.NO_NEUROGLANCER = False
 
-    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
-    QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+    # Qt5 Only
+    # QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+    # QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
+
+    Image.MAX_IMAGE_PIXELS = None
 
     # if cfg.QT_API in ('pyside2', 'pyside6'): cfg.USES_PYSIDE, cfg.USES_PYQT = True, False
     # if cfg.QT_API in ('pyqt5', 'pyqt6'):     cfg.USES_PYQT, cfg.USES_PYSIDE = True, False
@@ -135,13 +158,16 @@ def main():
     try:
         cfg.main_window = MainWindow(title="AlignEM-SWiFT")
         cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
-        # cfg.main_window.define_roles(['ref', 'base', 'aligned'])
-        app.aboutToQuit.connect(cfg.main_window.shutdown_jupyter_kernel)
+        app.aboutToQuit.connect(cfg.main_window.shutdownJupyter)
+        app.aboutToQuit.connect(neuroglancer.server.stop)
         cfg.main_window.show()
         logger.info('Showing AlignEM-SWiFT')
     except:
         print_exception()
         logger.error('Unable to Instantiate MainWindow')
+
+
+
 
     try:
         sys.exit(app.exec())

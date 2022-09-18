@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''
 Adapted from Qt Documentation:
 https://doc.qt.io/qtforpython/examples/example_widgets_itemviews_jsonmodel.html
@@ -7,8 +8,8 @@ import json
 import sys
 from typing import Any, List, Dict, Union
 
-from PyQt5.QtWidgets import QTreeView, QApplication, QHeaderView
-from PyQt5.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
+from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
+from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
 
 import src.config as cfg
 

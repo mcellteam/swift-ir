@@ -3,10 +3,10 @@
 import sys
 import logging
 import traceback
-from PyQt5.QtCore import pyqtSlot as Slot
-from PyQt5.QtCore import pyqtSignal as Signal
-from PyQt5.QtCore import QObject
-from PyQt5.QtCore import QRunnable
+from qtpy.QtCore import Slot
+from qtpy.QtCore import Signal
+from qtpy.QtCore import QObject
+from qtpy.QtCore import QRunnable
 import src.config as cfg
 
 __all__ = ['BackgroundWorker']

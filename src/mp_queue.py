@@ -9,8 +9,8 @@ import logging
 from tqdm import tqdm
 import subprocess as sp
 import multiprocessing as mp
-from PyQt5.QtCore import QObject
-from PyQt5.QtWidgets import QApplication
+from qtpy.QtCore import QObject
+from qtpy.QtWidgets import QApplication
 import src.config as cfg
 
 
@@ -144,7 +144,7 @@ class TaskQueue(QObject):
         self.task_dict[self.task_id]['stdout'] = None
         self.task_dict[self.task_id]['stderr'] = None
         self.task_dict[self.task_id]['rc'] = None
-        self.task_dict[self.task_id]['status'] = 'queued'
+        self.task_dict[self.task_id]['statusBar'] = 'queued'
         self.task_dict[self.task_id]['retries'] = 0
         self.work_queue.put((self.task_id, task)) # <-- one-by-one calls to 'TaskQueue.add_task' adds each task to the queue
         self.task_id += 1
@@ -157,7 +157,7 @@ class TaskQueue(QObject):
         self.task_dict[task_id]['stdout'] = None
         self.task_dict[task_id]['stderr'] = None
         self.task_dict[task_id]['rc'] = None
-        self.task_dict[task_id]['status'] = 'queued'
+        self.task_dict[task_id]['statusBar'] = 'queued'
         self.task_dict[task_id]['retries'] += 1
         self.work_queue.put((task_id, task))
         logger.debug("<<<<<<<<  TaskQueue.requeue")
@@ -178,7 +178,6 @@ class TaskQueue(QObject):
         self.parent.pbar.show()
         self.parent.pbar_max(self.n_tasks)
         while (retries_tot < self.retries + 1) and n_pending:
-            cfg.main_window.center_all_images()
             logger.info('# Tasks Pending: %d' % n_pending)
             retry_list = []
             for j in range(n_pending):
@@ -199,9 +198,9 @@ class TaskQueue(QObject):
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc
                 if rc == 0:
-                    self.task_dict[task_id]['status'] = 'completed'
+                    self.task_dict[task_id]['statusBar'] = 'completed'
                 else:
-                    self.task_dict[task_id]['status'] = 'task_error'
+                    self.task_dict[task_id]['statusBar'] = 'task_error'
                     retry_list.append(task_id)
                 self.task_dict[task_id]['dt'] = dt
                 realtime -= 1
@@ -269,7 +268,7 @@ if __name__ == '__main__':
                str(tq.task_dict[task_id]['cmd']),
                str(tq.task_dict[task_id]['args']),
                str(tq.task_dict[task_id]['rc']),
-               str(tq.task_dict[task_id]['status']),
+               str(tq.task_dict[task_id]['statusBar']),
                str(tq.task_dict[task_id]['dt'])))
 
         print('\n%s\n' % (tq.task_dict[task_id]['stdout']))

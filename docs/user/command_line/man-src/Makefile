@@ -9,9 +9,9 @@ HTML: ../build/mir.1.html ../build/iscale.1.html ../build/iavg.1.html \
 
 ../build/%.1: %.1.txt
 	a2x --doctype manpage --format manpage --no-xmllint \
-		--destination-dir=../build $<
+		--dest-dir=../build $<
 
 ../build/%.1.html: %.1.txt
 	a2x --doctype manpage --format xhtml --no-xmllint \
-		--destination-dir=../build $<
+		--dest-dir=../build $<
 

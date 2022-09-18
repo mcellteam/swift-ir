@@ -43,6 +43,7 @@ image_library = None
 data_model = None
 defaults_form = None
 panel_list = []
+viewer = None
 
 PRELOAD_RANGE = None
 USE_FILE_IO = 0

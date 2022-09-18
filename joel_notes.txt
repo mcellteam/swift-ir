@@ -14,7 +14,7 @@ To do:
 [] project class
 [x] widgets for controls become hidden or visible as user progresses through project
 [x] make menu bar attached on macOS
-[x] after selecting 'skip', it should not be necessary to re-focus on images widget
+[x] after selecting 'skipped', it should not be necessary to re-focus on images widget
 [] spawn new thread for making Zarr, to not lock up the GUI
 [x] improve affine combo box for intuitive/automatic control flow
 [x] automatically focus back on ZoomPanWidget after adjusting control panel
@@ -28,7 +28,7 @@ To do:
 [] improved robustness in error recovery of task_queue
 [] generate error report logs, save inside project (talk to James about saving log files to remote database/server)
 [] ask to save before exiting
-[x] set project destination instantly upon re-opening a project
+[x] set project dest instantly upon re-opening a project
 [] dim out "#scales" and "clevel" when compression combobox option "none" is selected
 [] cancel Zarr export
 [x] check if aligned images exist before exporting to Zarr. Cancel and display warning otherwise.
@@ -55,7 +55,7 @@ To do:
 [x] remake control panel using more conventional and scalable Python/Qt strategies
 [x] implement QStackedWidget to allow the application to have paging, replete with back buttons, etc.
 [x] apply stylesheet
-[x] replace 'skip' checkbox with toggle button
+[x] replace 'skipped' checkbox with toggle button
 [x] automatically center images after (a) importing images (b) generating scales (c) generating alignments
 [x] move align_all_or_some to its own script
 [x] fix scale combo box text i.e. scale_1 -> Scale 1
@@ -147,9 +147,9 @@ len(project_data['data']['scales']) = 2
 if len(project_data['data']['scales']) > 0:
 
 
-Print/return the number of aligned images in  <project destination>/<current scale>/img_aligned
+Print/return the number of aligned images in  <project dest>/<current scale>/img_aligned
 
-dir = os.path.join(project_data['data']['destination_path'], cfg.project_data.get_scale(), 'img_aligned')
+dir = os.path.join(project_data['data']['destination_path'], cfg.project_data.scale(), 'img_aligned')
 print(len([name for name in os.listdir(dir) if os.path.isfile(os.path.join(dir, name))]))
 
 

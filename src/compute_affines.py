@@ -44,25 +44,25 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         layer['align_to_ref_method']['method_data']['bias_x_per_image'] = 0.0
         layer['align_to_ref_method']['method_data']['bias_y_per_image'] = 0.0
         layer['align_to_ref_method']['selected_method'] = 'Auto Swim Align'
-        if not layer['skip']: n_tasks += 1
+        if not layer['skipped']: n_tasks += 1
     logger.info('# of tasks (after subtracting skips): %d' % n_tasks)
 
     alstack = copy.deepcopy(cfg.data['data']['scales'][use_scale]['alignment_stack'])
     # Write the entire data as a single JSON file with a unique stable name for this run
     logger.info("Writing Project Dictionary to 'project_runner_job_file.json'")
-    run_project_name = os.path.join(cfg.data.destination(), "project_runner_job_file.json")
+    run_project_name = os.path.join(cfg.data.dest(), "project_runner_job_file.json")
     with open(run_project_name, 'w') as f:
         # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.data.to_json()))
         f.write(cfg.data.to_json())
 
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
-    cpus = min(psutil.cpu_count(logical=False), 48)
+    cpus = min(psutil.cpu_count(logical=False), 48) - 1
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 
     for i,layer in enumerate(alstack):
         lnum = alstack.index(layer)
-        if bool(layer['skip']):
+        if bool(layer['skipped']):
             logger.info('Not Adding Task for Layer %s' % str(lnum))
         else:
             task_args = [sys.executable,
@@ -85,6 +85,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     t0 = time.time()
     task_queue.collect_results()
     dt = time.time() - t0
+    cfg.main_window.hud.done()
     cfg.main_window.hud.post('Alignment Completed in %.2f seconds' % (dt))
 
     logger.info('Checking Status of Tasks...')
@@ -92,9 +93,9 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     n_success, n_queued, n_failed = 0, 0, 0
     for k in task_queue.task_dict.keys():
         task_item = task_queue.task_dict[k]
-        if task_item['status'] == 'completed':  n_success += 1
-        elif task_item['status'] == 'queued':  n_queued += 1
-        elif task_item['status'] == 'task_error':  n_failed += 1
+        if task_item['statusBar'] == 'completed':  n_success += 1
+        elif task_item['statusBar'] == 'queued':  n_queued += 1
+        elif task_item['statusBar'] == 'task_error':  n_failed += 1
 
     cfg.main_window.hud.post('%d Alignment Tasks Completed in %.2f seconds' % (n_tasks, dt))
     cfg.main_window.hud.post('  Num Successful:   %d' % n_success)
@@ -144,13 +145,13 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
             al_stack_old[lnum] = al_stack_new[lnum]
 
-            if task_list[tnum]['status'] == 'task_error':
+            if task_list[tnum]['statusBar'] == 'task_error':
                 ref_fn = al_stack_old[lnum]['images']['ref']['filename']
                 base_fn = al_stack_old[lnum]['images']['base']['filename']
                 cfg.main_window.hud.post('Alignment Task Error at: ' + str(task_list[tnum]['cmd']) + " " + str(task_list[tnum]['args']))
                 cfg.main_window.hud.post('Automatically Skipping Layer %d' % (lnum))
                 cfg.main_window.hud.post('ref image: %s   base image: %s' % (ref_fn, base_fn))
-                al_stack_old[lnum]['skip'] = True
+                al_stack_old[lnum]['skipped'] = True
             need_to_write_json = results_dict['need_to_write_json']  # It's not clear how this should be used (many to one)
 
     try: task_queue.end_tasks()

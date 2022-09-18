@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWebEngineWidgets import QWebEnginePage
-from PyQt5.QtCore import QEventLoop
+from qtpy.QtWebEngineWidgets import QWebEngineView
+from qtpy.QtWebEngineWidgets import QWebEnginePage
+from qtpy.QtCore import QEventLoop
 
 __all__ = ['CustomWebEnginePage']
 
