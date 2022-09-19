@@ -217,7 +217,10 @@ class NgViewer(QRunnable):
 
         # addr = "zarr://http://localhost:9000"
         logger.info('Layer Address: %s' % addr)
-        cfg.viewer = ng.Viewer()
+
+        cfg.viewer = ng.Viewer() # Create neuroglancer.Viewer()
+        # cfg.viewer = ng.UnsynchronizedViewer()
+
         cfg.viewer_url = str(cfg.viewer)
 
         scale_factor = cfg.data.scale_val()
@@ -254,38 +257,59 @@ class NgViewer(QRunnable):
             logger.info(al_dataset)
             logger.info(unal_dataset)
 
+
             # src_data = zarr.open(addr, 'r')[src_dataset]
             # al_data = zarr.open(addr, 'r')[al_dataset]
 
-            dimensions = ng.CoordinateSpace(
+            dimensions_ref = ng.CoordinateSpace(
                 names=['z','y','x'],
                 units='nm',
                 scales=scales,
             )
+            dimensions_base = ng.CoordinateSpace(
+                names=['z','y','x'],
+                units='nm',
+                scales=scales,
+            )
+            dimensions_aligned = ng.CoordinateSpace(
+                names=['z','y','x'],
+                units='nm',
+                scales=scales,
+            )
+
+            # from precomputed spec
+            # "voxel_offset": Optional. If specified, must be a 3-element array [x, y, z] of integer values specifying
+            # a translation in voxels of the origin of the data relative to the global coordinate frame. If not
+            # specified, defaults to [0, 0, 0].
 
 
             voxel_size = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
 
             ref_layer = ng.LocalVolume(
                 data=unal_dataset,
-                dimensions=dimensions,
-                # voxel_offset=[-1, 0, 0],
+                dimensions=dimensions_ref,
+                voxel_offset=[1, 0, 0], # voxel offset of 1
                 # voxel_size=voxel_size
             )
+            logger.info('\nal_layer:\n%s\n' % ref_layer.info())
 
             base_layer = ng.LocalVolume(
                 data=unal_dataset,
-                dimensions=dimensions,
-                # voxel_offset=[0, ] * 3,
+                dimensions=dimensions_base,
+                voxel_offset=[0, ] * 3,
                 # voxel_size=voxel_size
             )
+            logger.info('\nal_layer:\n%s\n' % base_layer.info())
 
             al_layer = ng.LocalVolume(
                 data=al_dataset,
-                dimensions=dimensions,
-                # voxel_offset=[0, ] * 3,
+                dimensions=dimensions_aligned,
+                voxel_offset=[0, ] * 3,
                 # voxel_size=voxel_size
             )
+            logger.info('\nal_layer:\n%s\n' % al_layer.info())
+
+
 
 
             s.layers['ref'] = ng.ImageLayer(source=ref_layer)
@@ -336,6 +360,9 @@ class NgViewer(QRunnable):
                     ng.LayerGroupViewer(layers=["ref"], layout='xy'),
                     ng.LayerGroupViewer(layers=["base"], layout='xy'),
                     ng.LayerGroupViewer(layers=["aligned"], layout='xy'),
+                    # ng.LayerGroupViewer(layers=["ref"], layout='4panel'),
+                    # ng.LayerGroupViewer(layers=["base"], layout='4panel'),
+                    # ng.LayerGroupViewer(layers=["aligned"], layout='4panel'),
                 ]
             )
 
@@ -369,7 +396,7 @@ class NgViewer(QRunnable):
 
         if cfg.viewer is not None:
             logger.info('Viewer URL: %s' % cfg.viewer.get_viewer_url())
-            logger.info('Viewer State URL: %s' % ng.to_url(cfg.viewer.state))
+            # logger.info('Viewer State URL: %s' % ng.to_url(cfg.viewer.state))
             logger.info('Viewer Configuration: %s' % str(cfg.viewer.config_state))
 
 
