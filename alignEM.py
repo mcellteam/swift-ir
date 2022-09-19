@@ -147,8 +147,10 @@ def main():
         logger.error('Unable to Instantiate MainWindow')
 
     try:
+        logger.info('Trying sys.exit(app.exec())...')
         sys.exit(app.exec())
     except:
+        logger.info('Trying sys.exit(app.exec_())...')
         sys.exit(app.exec_())
 
 

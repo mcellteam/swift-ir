@@ -667,7 +667,10 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def scale_up_button_callback(self) -> None:
+        if self.image_panel_stack_widget.currentIndex() == 1: return
+
         logger.critical('scale_up_button_callback:')
+
         '''Callback function for the Next Scale button (scales combobox may not be visible but controls the current scale).'''
         if not self.scale_up_button.isEnabled(): return
         if not are_images_imported(): return
@@ -702,7 +705,10 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def scale_down_button_callback(self) -> None:
+        if self.image_panel_stack_widget.currentIndex() == 1: return
+
         logger.critical('scale_down_button_callback:')
+
         '''Callback function for the Previous Scale button (scales combobox may not be visible but controls the current scale).'''
         if not self.scale_down_button.isEnabled(): return
         if not are_images_imported(): return
@@ -822,10 +828,12 @@ class MainWindow(QMainWindow):
     def shutdownJupyter(self):
         logger.info('Shutting Down Jupyter Kernel...')
         try:
-            self.python_console.kernel_client.stop_channels()
+            # self.python_console.kernel_client.stop_channels()
             self.python_console.kernel_manager.shutdown_kernel()
+
         except:
             logger.warning('Unable to Shutdown Jupyter Console Kernel')
+            self.python_console.request_interrupt_kernel()
 
     def restart_python_kernel(self):
         self.hud('Restarting Python Kernel...')
@@ -1231,10 +1239,12 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def change_layer_up(self):
+        if self.image_panel_stack_widget.currentIndex() == 1: return
         self.change_layer(1)
 
     @Slot()
     def change_layer_down(self):
+        if self.image_panel_stack_widget.currentIndex() == 1: return
         self.change_layer(-1)
 
     def change_layer(self, layer_delta):
@@ -1297,10 +1307,11 @@ class MainWindow(QMainWindow):
                 # name = os.path.join(cfg.data.dest(), s + '.zarr')
                 name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(get_scale_val(s)))
                 dataset_future = get_zarr_tensor(name)
-                self.zarr_scales[s] = dataset_future.result()
+                scale_str = 's' + str(get_scale_val(cfg.data.scale()))
+                self.zarr_scales[scale_str] = dataset_future.result()
         except:
-            logger.warning('No Unaligned Zarr Stacks Were Loaded')
             print_exception()
+            logger.warning('Unaligned Zarr Stacks May Not Have Loaded Properly')
 
 
     @Slot()
@@ -1312,9 +1323,12 @@ class MainWindow(QMainWindow):
         logger.info('s,l,dest = %s, %s, %s' % (cfg.data.scale(), str(cfg.data.layer()), cfg.data.dest()))
         image_dict = cfg.data['data']['scales'][s]['alignment_stack'][l]['images']
         is_skipped = cfg.data['data']['scales'][s]['alignment_stack'][l]['skipped']
+        scale_str = 's' + str(get_scale_val(cfg.data.scale()))
+        logger.info('scale_str = %s' % scale_str)
+
         try:
             if l != 0:
-                x_ref, x_base = self.zarr_scales[s][l-1, :, :], self.zarr_scales[s][l, :, :]
+                x_ref, x_base = self.zarr_scales[scale_str][l-1, :, :], self.zarr_scales[scale_str][l, :, :]
                 future_ref, future_base = x_ref.read(), x_base.read()
                 logger.debug('Setting image ref')
                 self.img_panels['ref'].setImage(future_ref.result())
@@ -1322,7 +1336,7 @@ class MainWindow(QMainWindow):
                 self.img_panels['base'].setImage(future_base.result())
             elif l == 0:
                 self.img_panels['ref'].clearImage()
-                x_base = self.zarr_scales[s][l, :, :]
+                x_base = self.zarr_scales[scale_str][l, :, :]
                 future_base = x_base.read()
                 logger.debug('Setting image base')
                 self.img_panels['base'].setImage(future_base.result())
@@ -1884,13 +1898,12 @@ class MainWindow(QMainWindow):
             logger.info('Shutting down threadpool...')
             threadpool_result = self.threadpool.waitForDone(msecs=500)
         except:
-            sys.stdout.flush()
             logger.warning('Having trouble shutting down threadpool')
         # QApplication.quit()
-        logger.info('Calling app.quit()')
-        self.app.quit()
-        logger.info('Calling sys.exit()')
-        sys.exit()
+        # logger.info('Calling app.quit()')
+        # self.app.quit()
+        # logger.info('Calling sys.exit()')
+        # sys.exit() # This might be bad, might need to be called from main thread
 
 
     def documentation_view(self):  # documentationview
@@ -1983,9 +1996,9 @@ class MainWindow(QMainWindow):
 
         dest = os.path.abspath(cfg.data['data']['destination_path'])
         s, l = cfg.data.scale(), cfg.data.layer()
-        al_path = os.path.join(dest, 'img_aligned.zarr')
-        self.hud("Loading '%s' in Neuroglancer" % al_path)
-        self.ng_wrkr = NgViewer(src=dest, scale=s, viewof='aligned', port=9000)
+        # al_path = os.path.join(dest, 'img_aligned.zarr')
+        self.hud("Serving HTTP Path '%s' with Neuroglancer" % dest)
+        self.ng_wrkr = NgViewer(src=dest, scale=s, port=9000)
         self.threadpool.start(self.ng_wrkr)
         self.browser_ng.setUrl(QUrl(self.ng_wrkr.url()))
         self.image_panel_stack_widget.setCurrentIndex(1)

@@ -71,6 +71,9 @@ def get_zarr_tensor(zarr_path):
     '''
     Returns an asynchronous TensorStore future object which provides a view into the Zarr dataset on disk.
 
+    Ref:
+    https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
+
     :param zarr_path:
     :type zarr_path:
     :return: A view into the dataset.
@@ -85,13 +88,14 @@ def get_zarr_tensor(zarr_path):
     else:
         total_bytes_limit = 6_000_000_000
 
-    dataset = ts.open({
+    arr = ts.open({
         'driver': 'zarr',
         'kvstore': { 'driver': 'file', 'path': zarr_path },
         'context': { 'cache_pool': { 'total_bytes_limit': total_bytes_limit} },
         'recheck_cached_data': 'open',
     })
-    return dataset
+
+    return arr
 
 
 # def tiffs2MultiTiff(directory:str, out:str, n_frames:int, width:int, height:int):
@@ -255,8 +259,8 @@ def write_zarr_multiscale_metadata(path):
         }
     ]
 
-def write_zarr_metadata_cur_scale():
-    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
+def write_zarr_metadata_cur_scale(name='img_aligned.zarr'):
+    zarr_path = os.path.join(cfg.data.dest(), name)
     root = zarr.group(store=zarr_path)
     datasets = []
     # scale_factor = scale_val(cfg.data.scale())
@@ -291,25 +295,32 @@ def generate_zarr_scales():
     logger.info('generate_zarr_scales:')
     dest = cfg.data.dest()
     logger.info('scales() = %s' % str(cfg.data.scales()))
+
     for s in cfg.data.scales():
         logger.info('Working On %s' % s)
         tif_files = sorted(glob(os.path.join(dest, s, 'img_src', '*.tif')))
         # zarrurl = os.path.join(dest, s + '.zarr')
         zarrurl = os.path.join(dest, 'img_src.zarr', 's' + str(get_scale_val(s)))
         tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
+        z = zarr.open(zarrurl)
+        # z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+        # z.attrs['offset'] = ["0", "0", "0"]
 
-    zarr_path = os.path.join(dest, 'img_src.zarr')
-    write_zarr_multiscale_metadata(path=zarr_path)
+    # zarr_path = os.path.join(dest, 'img_src.zarr')
+    # write_zarr_multiscale_metadata(path=zarr_path)
+    write_zarr_metadata_cur_scale(name='img_src.zarr')
 
-        # scale_factor = cfg.data.scale_val()
-        # z = zarr.open(zarrurl)
-        # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
-        # z.attrs['offset'] = [ "0", "0", "0" ]
-        # z.attrs['resolution'] = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
+    # scale_factor = cfg.data.scale_val()
 
-        # tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512),synchronizer=zarr.ThreadSynchronizer())
+    # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
+    # z.attrs['offset'] = [ "0", "0", "0" ]
+    # z.attrs['resolution'] = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
+
+    # tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512),synchronizer=zarr.ThreadSynchronizer())
 
     logger.info('Exiting generate_zarr_scales')
+
+
 
     if __name__ == '__main__':
         # parser = argparse.ArgumentParser()

@@ -57,17 +57,25 @@ import os
 import sys
 import http.server
 import atexit
+
 import logging
 import argparse
 from pathlib import Path
 from functools import partial
 import neuroglancer as ng
+from neuroglancer import ScreenshotSaver
+import zarr
+import tensorstore as ts
+
+# ImportError: HTTPFileSystem requires "requests" and "aiohttp" to be installed
+import aiohttp
+import requests
 
 from qtpy.QtCore import QRunnable, QUrl
 from qtpy.QtCore import Slot
 from src.helpers import print_exception, get_scale_val
 from src.image_funcs import get_image_size
-from neuroglancer import ScreenshotSaver
+from src.zarr_funcs import get_zarr_tensor
 import src.config as cfg
 
 
@@ -94,18 +102,18 @@ def keep_running():
 
 class NgViewer(QRunnable):
     #    def __init__(self, fn, *args, **kwargs):
-    def __init__(self, src=None, viewof=None, scale=None, bind='127.0.0.1', port=9000):
+    def __init__(self, src=None, scale=None, bind='127.0.0.1', port=9000):
         super(NgViewer, self).__init__()
         self.src = src
-        self.viewof = viewof
+        # self.viewof = viewof
         self.bind = bind
         self.port = port
         cfg.viewer_url = None
         self.scale = scale
-        if viewof == 'ref' or 'base':
-            self.path = os.path.join(src, scale + '.zarr')
-        if viewof == 'aligned':
-            self.path = os.path.join(src, 'img_aligned.zarr')
+        # if viewof == 'ref' or 'base':
+        #     self.path = os.path.join(src, scale + '.zarr')
+        # if viewof == 'aligned':
+        #     self.path = os.path.join(src, 'img_aligned.zarr')
 
     @Slot()
     def run(self):
@@ -174,6 +182,13 @@ class NgViewer(QRunnable):
     #     print('  Layer selected values: %s' % (s.selected_values,))
 
     def create_viewer(self):
+        logger.info('Creating Neuroglancer Viewer...')
+        '''
+        Note tensorstore appears not to support multiscale metadata yet:
+        However, we do have to deal with issues of rounding. I have been looking into supporting this in tensorstore, 
+        but it is not yet ready.
+        https://github.com/google/neuroglancer/issues/333
+        '''
 
         res_x, res_y, res_z = 2, 2, 50
         scale_val = get_scale_val(cfg.data.scale())
@@ -181,24 +196,105 @@ class NgViewer(QRunnable):
 
         l = cfg.data.layer()
 
-        if self.viewof == 'aligned':
-            img_dim = get_image_size(cfg.data.path_al())
-        else:
-            img_dim = get_image_size(cfg.data.path_base())
+        # if self.viewof == 'aligned':
+        #     logger.critical(cfg.data.path_al())
+        #     img_dim = get_image_size(cfg.data.path_al())
+        # else:
+        #     img_dim = get_image_size(cfg.data.path_base())
+
+        #Todo set different coordinates for the two different datasets. For now use larger dim.
+        img_dim = get_image_size(cfg.data.path_al())
 
         logger.info('Adding Image Layer to Viewer...')
         addr = "zarr://http://localhost:" + str(self.port)
+        # addr = "http://localhost:" + str(self.port) # probably want this addr for TensorStore. 'zarr://' protocol only known to Neuroglancer
         scale_str = 's' + str(get_scale_val(cfg.data.scale()))
-        al_path = os.path.join(addr, 'img_aligned.zarr', scale_str)
-        unal_path = os.path.join(addr, 'img_src.zarr', scale_str)
+        # al_path = os.path.join(addr, 'img_aligned.zarr', scale_str)
+        # unal_path = os.path.join(addr, 'img_src.zarr', scale_str)
+        # al_path = os.path.join(addr, 'img_aligned.zarr')
+        # unal_path = os.path.join(addr, 'img_src.zarr')
+
+
         # addr = "zarr://http://localhost:9000"
         logger.info('Layer Address: %s' % addr)
         cfg.viewer = ng.Viewer()
         cfg.viewer_url = str(cfg.viewer)
 
+        scale_factor = cfg.data.scale_val()
+
+        # src_dataset = 'img_src.zarr/s' + str(scale_factor)
+        # al_dataset = 'img_aligned.zarr/s' + str(scale_factor)
+
+        # This did the trick. Open tensorstore using filesystem path, not http.
+        al_name = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(scale_factor))
+        unal_name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(scale_factor))
+        # al_name = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
+        # unal_name = os.path.join(cfg.data.dest(), 'img_src.zarr')
+
         with cfg.viewer.txn() as s:
-            s.layers['unal_layer'] = ng.ImageLayer(source=unal_path)
-            s.layers['al_layer'] = ng.ImageLayer(source=al_path)
+
+            # src_data = zarr.open(unal_path, 'r')
+            # al_data = zarr.open(al_path, 'r')
+
+            # Need this to be a ts.TensorStore object, not ts.Future. So compute .result()
+
+
+            # al_dataset_future = get_zarr_tensor(al_name)
+            # unal_dataset_future = get_zarr_tensor(unal_name)
+
+            al_dataset = get_zarr_tensor(al_name).result()
+            unal_dataset = get_zarr_tensor(unal_name).result()
+
+            # src_tensor = get_zarr_tensor(unal_path).result()
+            # al_tensor = get_zarr_tensor(al_path).result()
+
+            # src_tensor = get_zarr_tensor(unal_arr).result()
+            # al_tensor = get_zarr_tensor(al_arr).result()
+
+            logger.info(al_dataset)
+            logger.info(unal_dataset)
+
+            # src_data = zarr.open(addr, 'r')[src_dataset]
+            # al_data = zarr.open(addr, 'r')[al_dataset]
+
+            dimensions = ng.CoordinateSpace(
+                names=['z','y','x'],
+                units='nm',
+                scales=scales,
+            )
+
+
+            voxel_size = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
+
+            ref_layer = ng.LocalVolume(
+                data=unal_dataset,
+                dimensions=dimensions,
+                # voxel_offset=[-1, 0, 0],
+                # voxel_size=voxel_size
+            )
+
+            base_layer = ng.LocalVolume(
+                data=unal_dataset,
+                dimensions=dimensions,
+                # voxel_offset=[0, ] * 3,
+                # voxel_size=voxel_size
+            )
+
+            al_layer = ng.LocalVolume(
+                data=al_dataset,
+                dimensions=dimensions,
+                # voxel_offset=[0, ] * 3,
+                # voxel_size=voxel_size
+            )
+
+
+            s.layers['ref'] = ng.ImageLayer(source=ref_layer)
+            s.layers['base'] = ng.ImageLayer(source=base_layer)
+            s.layers['aligned'] = ng.ImageLayer(source=al_layer)
+
+            # s.layers['ref'] = ng.ImageLayer(source=unal_path)
+            # s.layers['base'] = ng.ImageLayer(source=unal_path)
+            # s.layers['aligned'] = ng.ImageLayer(source=al_path)
 
             if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
                 s.cross_section_background_color = "#ffffff"
@@ -237,9 +333,9 @@ class NgViewer(QRunnable):
 
             s.layout = ng.row_layout(
                 [
-                    ng.LayerGroupViewer(layers=["unal_layer"], layout='xy'),
-                    ng.LayerGroupViewer(layers=["unal_layer"], layout='xy'),
-                    ng.LayerGroupViewer(layers=["al_layer"], layout='xy'),
+                    ng.LayerGroupViewer(layers=["ref"], layout='xy'),
+                    ng.LayerGroupViewer(layers=["base"], layout='xy'),
+                    ng.LayerGroupViewer(layers=["aligned"], layout='xy'),
                 ]
             )
 
