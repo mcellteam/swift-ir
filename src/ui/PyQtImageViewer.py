@@ -644,7 +644,7 @@ class QtImageViewer(QGraphicsView):
             self.ROIs.append(spot)
 
     # def ng_callback(self):
-    #     cfg.main_window.view_neuroglancer()
+    #     cfg.main_window.use_neuroglancer_viewer()
     #
     # def show_ng_button(self):
     #     self.ng_callback_button.show()

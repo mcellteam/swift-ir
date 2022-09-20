@@ -41,9 +41,19 @@ data = None
 main_window = None
 image_library = None
 data_model = None
-defaults_form = None
+recipe_form = None
 panel_list = []
 viewer = None
+
+RES_X = 2
+RES_Y = 2
+RES_Z = 50
+
+CNAME = 'zstd'
+CLEVEL = 5
+CHUNK_X = 512
+CHUNK_Y = 512
+CHUNK_Z = 1
 
 PRELOAD_RANGE = None
 USE_FILE_IO = 0
@@ -53,7 +63,7 @@ HTTP_PORT = 9000
 NO_NEUROGLANCER = None
 PROJECT_OPEN = False
 IMAGES_IMPORTED = False
-
+#Todo Fix src.helpers.are_images_imported() function
 
 
 defaults = ["-0.6800", "0.8125", "0.0000", True]

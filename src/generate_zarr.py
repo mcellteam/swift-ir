@@ -41,12 +41,12 @@ def generate_zarr(src, out):
             tasks_.append([ID, img, src, path_out, scale])
 
     tasks=[]
-    logger.critical('foo_list:\n%s' % str(foo_list))
+    # logger.critical('foo_list:\n%s' % str(foo_list))
     for x in range(0,Z_STRIDE): #chunk z_dim
         append_list = tasks_[x::Z_STRIDE]
         for t in append_list:
             tasks.append(t)
-    logger.critical('foo:\n%s' % str(foo))
+    # logger.critical('foo:\n%s' % str(foo))
 
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48) - 1

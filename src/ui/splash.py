@@ -25,3 +25,26 @@ class SplashScreen(QSplashScreen):
         pixmap = self.movie.currentPixmap()
         self.setMask(pixmap.mask())
         painter.drawPixmap(0, 0, pixmap)
+
+
+# class SplashScreen(QSplashScreen):
+#     def __init__(self, filepath, flags=0):
+#         super().__init__(flags=Qt.WindowFlags(flags))
+#         self.movie = QMovie(filepath, parent=self)
+#         self.movie.frameChanged.connect(self.handleFrameChange)
+#         self.movie.start()
+#
+#     def updateProgress(self, count=0):
+#         if count == 0:
+#             message = 'Starting...'
+#         elif count > 0:
+#             message = f'Processing... {count}'
+#         else:
+#             message = 'Finished!'
+#         self.showMessage(
+#             message, Qt.AlignHCenter | Qt.AlignBottom, Qt.white)
+#
+#     def handleFrameChange(self):
+#         pixmap = self.movie.currentPixmap()
+#         self.setPixmap(pixmap)
+#         self.setMask(pixmap.mask())

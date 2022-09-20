@@ -137,7 +137,7 @@ def init_zarr() -> None:
     root = zarr.group(store=store, overwrite=True)  # Create Root Group (?)
     # root = zarr.group(store=store, overwrite=True, synchronizer=zarr.ThreadSynchronizer())  # Create Root Group (?)
 
-def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16, 64, 64)):
+def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1, 512, 512)):
 
     cfg.main_window.hud.post('Preallocating Zarr Array...')
     cur_scale = cfg.data.scale()
@@ -190,8 +190,9 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(16
 
         shape = (n_imgs, dimy, dimx)
         # chunks = (z_stride, 64, 64)
+        chunks = (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
         dtype = 'uint8'
-        compressor = Blosc(cname=opt_cname, clevel=opt_clevel) if opt_cname in ('zstd', 'zlib', 'gzip') else None
+        compressor = Blosc(cname=cfg.CNAME, clevel=cfg.CLEVEL) if opt_cname in ('zstd', 'zlib', 'gzip') else None
         # compressor = Blosc(cname='zstd', clevel=5)
 
         logger.critical('Zarr Array will have shape: %s' % str(shape))
