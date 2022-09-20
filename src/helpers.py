@@ -71,10 +71,10 @@ def are_images_imported() -> bool:
     '''Checks if any images have been imported.'''
     n_imgs = len(cfg.data['data']['scales']['scale_1']['alignment_stack'])
     if n_imgs > 0:
-        cfg.IMAGES_IMPORTED = True
+        # cfg.IMAGES_IMPORTED = True
         return True
     else:
-        cfg.IMAGES_IMPORTED = False
+        # cfg.IMAGES_IMPORTED = False
         return False
 
 
@@ -119,10 +119,20 @@ def is_cur_scale_aligned() -> bool:
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a data that does not need scales.'''
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
-    if not os.path.isdir(zarr_path):  return False
-    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):  return False
-    if not os.path.exists(os.path.join(zarr_path, '.zarray')):  return False
-    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):  return False
+    logger.info('zarr_path = %s' % zarr_path)
+    if not os.path.isdir(zarr_path):
+        logger.info('Failed os.path.isdir(zarr_path)')
+        return False
+    if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
+        logger.info("Failed os.path.exists(os.path.join(zarr_path, '.zattrs')")
+        return False
+    if not os.path.exists(os.path.join(zarr_path, '.zarray')):
+        logger.info("Failed os.path.exists(os.path.join(zarr_path, '.zarray')")
+        return False
+    if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
+        logger.info("Failed os.path.exists(os.path.join(zarr_path, '0.0.0')")
+        return False
+
     return True
 
 def is_arg_scale_aligned(scale: str) -> bool:

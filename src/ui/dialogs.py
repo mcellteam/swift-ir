@@ -6,10 +6,10 @@ import os, sys, copy, json, inspect, logging, textwrap
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
     QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout, QFormLayout, \
-    QCheckBox, QToolButton, QDataWidgetMapper, QInputDialog
+    QCheckBox, QToolButton, QDataWidgetMapper, QInputDialog, QTabWidget
 from qtpy.QtCore import Qt, QAbstractTableModel, QAbstractListModel, QModelIndex
 from qtpy.QtCore import Slot
-from qtpy.QtGui import QDoubleValidator, QFont
+from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator
 
 import src.config as cfg
 from src.helpers import get_scale_key, get_scale_val, do_scales_exist, get_images_list_directly
@@ -46,11 +46,11 @@ https://doc.qt.io/qtforpython/overviews/modelview.html#using-adapters-between-fo
 ***QAbstractListModel*** <-- May need to subclass 
 '''
 
-class DefaultsForm(QDialog):
+class RecipeMaker(QDialog):
 
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         self.parent = parent
-        super(DefaultsForm, self).__init__()
+        super(RecipeMaker, self).__init__()
         # self.setGeometry(400,400,300,260)
         # g = self.geometry()
         # g.moveCenter(self.parent.geometry().center())
@@ -64,7 +64,6 @@ class DefaultsForm(QDialog):
         # print('self.defaults_file = ', str(self.defaults_file))
         # self.defaults = None
 
-        self.initUI()
 
         # self.button_cancel = QPushButton("Cancel")
         # self.button_cancel.clicked.connect(self.on_cancel)
@@ -76,6 +75,21 @@ class DefaultsForm(QDialog):
         self.buttonBox.rejected.connect(self.reject)
         self.buttonBox.clicked.connect(self.on_create_button_clicked)
 
+        self.tab_widget = QTabWidget()
+
+        self.tab1 = QWidget()
+        self.tab2 = QWidget()
+        # self.tab3 = QWidget()
+
+        self.tab_widget.addTab(self.tab1, "Main")
+        self.tab_widget.addTab(self.tab2, "Storage")
+        # self.tab_widget.addTab(self.tab3, "Tab 3")
+
+
+        self.initUI_tab1()
+        self.initUI_tab2()
+        # self.initUI_tab3()
+
 
 
         # self.button_apply_settings = QPushButton("Generate Scales")
@@ -86,12 +100,13 @@ class DefaultsForm(QDialog):
         # button_layout.addWidget(self.button_apply_settings)
 
         main_layout = QVBoxLayout()
-        main_layout.addWidget(self.formGroupBox)
+        # main_layout.addWidget(self.formGroupBox)
+        main_layout.addWidget(self.tab_widget)
         # main_layout.addLayout(button_layout)
         main_layout.addWidget(self.buttonBox)
         self.setLayout(main_layout)
 
-        self.setWindowTitle("Project Form")
+        self.setWindowTitle("Project Configuration")
 
 
         # self.load()
@@ -123,25 +138,40 @@ class DefaultsForm(QDialog):
     #
     # @Slot()
     # def save(self):
-    #     print('DefaultsForm.save was called')
+    #     print('RecipeMaker.save was called')
     #     with open(self.defaults_file, "w") as f:
     #         data = json.dump(self.defaults, f)
     #         # f.write(self.defaults)
 
     def update_project_dict(self):
         # logger.critical('Running update_init_scale:')
-        logger.info('Running update_project_dict:')
+        cfg.main_window.hud('Configuring Project Settings...')
         cfg.data.set_scales_from_string(self.scales_input.text())
         cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
         cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
         cfg.DEFAULT_BOUNDING_BOX = float(self.bounding_rectangle_checkbox.isChecked())
+
+        cfg.RES_X = int(self.res_x_lineedit.text())
+        cfg.RES_Y = int(self.res_y_lineedit.text())
+        cfg.RES_Z = int(self.res_z_lineedit.text())
+        cfg.CHUNK_X = int(self.chunk_x_lineedit.text())
+        cfg.CHUNK_Y = int(self.chunk_y_lineedit.text())
+        cfg.CHUNK_Z = int(self.chunk_z_lineedit.text())
+        cfg.CLEVEL = int(self.clevel_input.text())
+        cfg.CNAME = self.cname_combobox.currentText()
+
         for scale in cfg.data.scales():
             # cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
             cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
             for layer in cfg.data['data']['scales'][scale]['alignment_stack']:
                 layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
                 layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
+                layer['align_to_ref_method']['method_options'].update({'resolution_x': cfg.RES_X})
+                layer['align_to_ref_method']['method_options'].update({'resolution_y': cfg.RES_Y})
+                layer['align_to_ref_method']['method_options'].update({'resolution_z': cfg.RES_Z})
         cfg.main_window.save_project_to_file()
+
+        cfg.main_window.hud.done()
 
     def on_cancel(self):
         self.close()
@@ -152,7 +182,105 @@ class DefaultsForm(QDialog):
         self.update_project_dict()
         self.close()
 
-    def initUI(self):
+    def initUI_tab2(self):
+
+        tip = 'Zarr Compression Level\n(default=5)'
+        self.clevel_label = QLabel('Compression Level (1-9):')
+        self.clevel_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.clevel_input = QLineEdit(self)
+        self.clevel_input.setAlignment(Qt.AlignCenter)
+        self.clevel_input.setText(str(cfg.CLEVEL))
+        self.clevel_input.setFixedWidth(70)
+        self.clevel_valid = QIntValidator(1, 9, self)
+        self.clevel_input.setValidator(self.clevel_valid)
+
+        self.clevel_layout = QHBoxLayout()
+        self.clevel_layout.addWidget(self.clevel_label, alignment=Qt.AlignLeft)
+        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignRight)
+
+        tip = 'Zarr Compression Type\n(default=zstd)'
+        self.cname_label = QLabel('Compression Option:')
+        self.cname_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.cname_combobox = QComboBox(self)
+        self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
+        self.cname_combobox.setCurrentText(cfg.CNAME)
+        self.cname_combobox.setFixedWidth(78)
+
+        self.cname_layout = QHBoxLayout()
+        self.cname_layout.addWidget(self.cname_label, alignment=Qt.AlignLeft)
+        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignRight)
+
+
+        # '''Compression Level (clevel)'''
+        # self.clevel_layout = QHBoxLayout()
+        # self.clevel_layout.setContentsMargins(0, 0, 0, 0)
+        # self.clevel_layout.addWidget(self.clevel_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignmentFlag.AlignRight)
+        #
+        # '''Compression Type (cname)'''
+        # self.cname_layout = QHBoxLayout()
+        # self.cname_layout.addWidget(self.cname_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignmentFlag.AlignRight)
+
+
+        '''Chunk Shape'''
+        self.chunk_shape_label = QLabel("Chunk Shape:")
+        self.chunk_x_label = QLabel("x:")
+        self.chunk_y_label = QLabel("y:")
+        self.chunk_z_label = QLabel("z:")
+        self.chunk_x_lineedit = QLineEdit(self)
+        self.chunk_y_lineedit = QLineEdit(self)
+        self.chunk_z_lineedit = QLineEdit(self)
+        self.chunk_z_lineedit.setEnabled(False)
+        self.chunk_x_lineedit.setFixedWidth(40)
+        self.chunk_y_lineedit.setFixedWidth(40)
+        self.chunk_z_lineedit.setFixedWidth(40)
+        self.chunk_x_lineedit.setText(str(cfg.CHUNK_X))
+        self.chunk_y_lineedit.setText(str(cfg.CHUNK_Y))
+        self.chunk_z_lineedit.setText(str(cfg.CHUNK_Z))
+        self.chunk_x_lineedit.setValidator(QIntValidator())
+        self.chunk_y_lineedit.setValidator(QIntValidator())
+        self.chunk_z_lineedit.setValidator(QIntValidator())
+        self.chunk_x_layout = QHBoxLayout()
+        self.chunk_y_layout = QHBoxLayout()
+        self.chunk_z_layout = QHBoxLayout()
+        self.chunk_x_layout.addWidget(self.chunk_x_label, alignment=Qt.AlignRight)
+        self.chunk_y_layout.addWidget(self.chunk_y_label, alignment=Qt.AlignRight)
+        self.chunk_z_layout.addWidget(self.chunk_z_label, alignment=Qt.AlignRight)
+        self.chunk_x_layout.addWidget(self.chunk_x_lineedit, alignment=Qt.AlignLeft)
+        self.chunk_y_layout.addWidget(self.chunk_y_lineedit, alignment=Qt.AlignLeft)
+        self.chunk_z_layout.addWidget(self.chunk_z_lineedit, alignment=Qt.AlignLeft)
+        self.chunk_shape_layout = QHBoxLayout()
+        self.chunk_shape_layout.addLayout(self.chunk_z_layout)
+        self.chunk_shape_layout.addLayout(self.chunk_y_layout)
+        self.chunk_shape_layout.addLayout(self.chunk_x_layout)
+        self.chunk_shape_widget = QWidget()
+        self.chunk_shape_widget.setLayout(self.chunk_shape_layout)
+
+        self.chunk_layout = QHBoxLayout()
+        self.chunk_layout.addWidget(self.chunk_shape_label, alignment=Qt.AlignLeft)
+        self.chunk_layout.addWidget(self.chunk_shape_widget, alignment=Qt.AlignRight)
+
+
+        txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for rapid viewing of " \
+              "volumetric data in Neuroglancer. These settings determine the way volumetric data is " \
+              "stored and retrieved from disk storage."
+        txt = '\n'.join(textwrap.wrap(txt, width=55))
+        self.storage_info_label = QLabel(txt)
+
+        self.export_settings_layout = QGridLayout()
+        self.export_settings_layout.addLayout(self.cname_layout, 0, 0)
+        self.export_settings_layout.addLayout(self.clevel_layout, 1, 0)
+        self.export_settings_layout.addLayout(self.chunk_layout, 2, 0)
+        self.export_settings_layout.addWidget(self.storage_info_label, 3, 0)
+
+        self.tab2.setLayout(self.export_settings_layout)
+
+
+
+
+
+    def initUI_tab1(self):
 
         # DEFAULT_SWIM_WINDOW = float(0.8125)
         # DEFAULT_WHITENING = float(-0.6800)
@@ -175,7 +303,6 @@ class DefaultsForm(QDialog):
         # self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
 
-
         '''Scales Field'''
         if do_scales_exist():
             scales_lst = [str(v) for v in
@@ -187,41 +314,112 @@ class DefaultsForm(QDialog):
 
         self.scales_label = QLabel("Scale Factors:")
         self.scales_input = QLineEdit(self)
+        self.scales_input.setFixedWidth(130)
         self.scales_input.setText(scales_str)
-        self.scales_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        tip = "Enter scale factors separated by spaces.\nFor example, to generate 1x 2x and 4x scales: 1 2 4"
+        self.scales_input.setAlignment(Qt.AlignCenter)
+        tip = "Scale factors, separated by spaces.\n(example) To generate 1x 2x and 4x scales, type: 1 2 4"
+        self.scale_instructions_label = QLabel(tip)
+        self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_label.setToolTip(tip)
         self.scales_input.setToolTip(tip)
+        self.scales_layout = QHBoxLayout()
+        self.scales_layout.addWidget(self.scales_label, alignment=Qt.AlignLeft)
+        self.scales_layout.addWidget(self.scales_input, alignment=Qt.AlignRight)
+
+        '''Resolution Fields'''
+        tip = "Resolution or size of each voxel (nm)"
+        self.resolution_label = QLabel("Voxel Size (nm):")
+        self.resolution_label.setToolTip(tip)
+        self.res_x_label = QLabel("x:")
+        self.res_x_label.setToolTip('X-dimension of each pixel')
+        self.res_y_label = QLabel("y:")
+        self.res_x_label.setToolTip('Y-dimension of each pixel')
+        self.res_z_label = QLabel("z:")
+        self.res_x_label.setToolTip('Tissue thickness, usually')
+        self.res_x_lineedit = QLineEdit(self)
+        self.res_y_lineedit = QLineEdit(self)
+        self.res_z_lineedit = QLineEdit(self)
+        self.res_x_lineedit.setFixedWidth(40)
+        self.res_y_lineedit.setFixedWidth(40)
+        self.res_z_lineedit.setFixedWidth(40)
+        self.res_x_lineedit.setText(str(cfg.RES_X))
+        self.res_y_lineedit.setText(str(cfg.RES_Y))
+        self.res_z_lineedit.setText(str(cfg.RES_Z))
+        self.res_x_lineedit.setValidator(QIntValidator())
+        self.res_y_lineedit.setValidator(QIntValidator())
+        self.res_z_lineedit.setValidator(QIntValidator())
+        self.res_x_layout = QHBoxLayout()
+        self.res_y_layout = QHBoxLayout()
+        self.res_z_layout = QHBoxLayout()
+        self.res_x_layout.addWidget(self.res_x_label, alignment=Qt.AlignRight)
+        self.res_y_layout.addWidget(self.res_y_label, alignment=Qt.AlignRight)
+        self.res_z_layout.addWidget(self.res_z_label, alignment=Qt.AlignRight)
+        self.res_x_layout.addWidget(self.res_x_lineedit, alignment=Qt.AlignLeft)
+        self.res_y_layout.addWidget(self.res_y_lineedit, alignment=Qt.AlignLeft)
+        self.res_z_layout.addWidget(self.res_z_lineedit, alignment=Qt.AlignLeft)
+
+        self.resolution_layout = QHBoxLayout()
+        self.resolution_layout.addLayout(self.res_x_layout)
+        self.resolution_layout.addLayout(self.res_y_layout)
+        self.resolution_layout.addLayout(self.res_z_layout)
+        self.resolution_widget = QWidget()
+        self.resolution_widget.setToolTip(tip)
+        self.resolution_widget.setLayout(self.resolution_layout)
+        self.resolution_layout = QHBoxLayout()
+        self.resolution_layout.addWidget(self.resolution_label, Qt.AlignLeft)
+        self.resolution_layout.addWidget(self.resolution_widget, Qt.AlignRight)
+
 
         '''Initial Rotation Field'''
         self.initial_rotation_label = QLabel("Initial Rotation:")
+        # self.initial_rotation_label.setAlignment(Qt.AlignLeft)
         self.initial_rotation_input = QLineEdit(self)
+        self.initial_rotation_input.setFixedWidth(70)
         self.initial_rotation_input.setText(str(cfg.DEFAULT_INITIAL_ROTATION))
         self.initial_rotation_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
-        self.initial_rotation_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.initial_rotation_input.setAlignment(Qt.AlignCenter)
+        self.initial_rotation_layout = QHBoxLayout()
+        self.initial_rotation_layout.addWidget(self.initial_rotation_label, alignment=Qt.AlignLeft)
+        self.initial_rotation_layout.addWidget(self.initial_rotation_input, alignment=Qt.AlignRight)
 
         '''Initial Scale Field'''
         self.initial_scale_label = QLabel("Initial Scale:")
         self.initial_scale_input = QLineEdit(self)
+        self.initial_scale_input.setFixedWidth(70)
         self.initial_scale_input.setText(str(cfg.DEFAULT_INITIAL_SCALE))
         self.initial_scale_input.setValidator(QDoubleValidator(0.0000, 5.0000, 4, self))
-        self.initial_scale_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.initial_scale_input.setAlignment(Qt.AlignCenter)
+        self.initial_scale_layout = QHBoxLayout()
+        self.initial_scale_layout.addWidget(self.initial_scale_label, alignment=Qt.AlignLeft)
+        self.initial_scale_layout.addWidget(self.initial_scale_input, alignment=Qt.AlignRight)
 
         '''Bounding Box Field'''
         self.bounding_rectangle_label = QLabel("Bounding Box:")
         self.bounding_rectangle_checkbox = QCheckBox()
         self.bounding_rectangle_checkbox.setChecked(cfg.DEFAULT_BOUNDING_BOX)
+        self.bounding_rectangle_layout = QHBoxLayout()
+        self.bounding_rectangle_layout.addWidget(self.bounding_rectangle_label, alignment=Qt.AlignLeft)
+        self.bounding_rectangle_layout.addWidget(self.bounding_rectangle_checkbox, alignment=Qt.AlignRight)
 
         '''Groupbox QFormLayout'''
-        layout = QFormLayout()
+        # layout = QFormLayout()
+        layout = QGridLayout()
+        # layout.setFormAlignment(Qt.AlignCenter)
+        # layout.setLabelAlignment(Qt.AlignLeft)
+        # layout.setFormAlignment(Qt.AlignRight)
         # layout.addRow(self.whitening_label, self.whitening_input)
         # layout.addRow(self.swim_label, self.swim_input)
-        layout.addRow(self.scales_label, self.scales_input)
-        layout.addRow(self.initial_rotation_label, self.initial_rotation_input)
-        layout.addRow(self.initial_scale_label, self.initial_scale_input)
-        layout.addRow(self.bounding_rectangle_label, self.bounding_rectangle_checkbox)
-        self.formGroupBox = QGroupBox('Configure Recipe')
-        self.formGroupBox.setLayout(layout)
+
+        layout.addLayout(self.scales_layout , 0, 0)
+        layout.addWidget(self.scale_instructions_label , 1, 0)
+        layout.addLayout(self.resolution_layout, 2, 0)
+        layout.addLayout(self.initial_rotation_layout, 3, 0)
+        layout.addLayout(self.initial_scale_layout, 4, 0)
+        layout.addLayout(self.bounding_rectangle_layout, 5, 0)
+        # self.formGroupBox = QGroupBox('Recipe Maker')
+        # self.formGroupBox.setLayout(layout)
+
+        self.tab1.setLayout(layout)
 
         # tip = "Whitening factor used for Signal Whitening Fourier Transform Image Registration (default=-0.68)"
         # self.whitening_label.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
@@ -231,9 +429,8 @@ class DefaultsForm(QDialog):
         # self.swim_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
         tip = "Initial rotation is sometimes needed to prevent alignment from aligning to unseen artifacts (default=0.0000)"
         self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
-        self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+        # self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
 
-        self.formGroupBox.setLayout(layout)
 
 
 class DefaultsModel(QAbstractListModel):

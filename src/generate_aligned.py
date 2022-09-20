@@ -39,7 +39,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     logger.critical('>>>>>>>> Generate Aligned Start <<<<<<<<')
 
     Z_STRIDE = 1
-    CHUNKS   = (1,512,512)
+    chunks   = (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
 
     JOB_FILE = 'job_apply_affine.py'
     # JOB_FILE = 'job_python_apply_affine.py'
@@ -82,7 +82,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     bounding_rect = cfg.data.bounding_rect()
     cfg.main_window.hud.done()
     # preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=16, chunks=(16,64,64))
-    preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=Z_STRIDE, chunks=CHUNKS)
+    preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=Z_STRIDE, chunks=chunks)
 
     ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
     use_bounding_rect = bool(cfg.data['data']['scales'][scale_key]['use_bounding_rect'])

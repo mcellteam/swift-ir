@@ -73,7 +73,7 @@ import requests
 
 from qtpy.QtCore import QRunnable, QUrl
 from qtpy.QtCore import Slot
-from src.helpers import print_exception, get_scale_val
+from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, are_images_imported
 from src.image_funcs import get_image_size
 from src.zarr_funcs import get_zarr_tensor
 import src.config as cfg
@@ -115,6 +115,19 @@ class NgViewer(QRunnable):
         # if viewof == 'aligned':
         #     self.path = os.path.join(src, 'img_aligned.zarr')
 
+    def __del__(self):
+        logger.warning('Garbage Collecting An NgViewer object...')
+        logger.info('Finally: Stopping Neuroglancer...')
+        ng.server.stop()
+        logger.info('Finally: Shutting Down HTTP Server...')
+        self.http_server.shutdown()
+        logger.info('Finally: Closing HTTP Server on port %s...' % str(self.http_server.server_port))
+        self.http_server.server_close()
+
+    def __str__(self):
+        return obj_to_string(self)
+
+
     @Slot()
     def run(self):
         # time.sleep(1)
@@ -143,7 +156,8 @@ class NgViewer(QRunnable):
         sa = self.http_server.socket.getsockname()
         # self.http_server.allow_reuse_address = True
         logger.info("Serving Data at http  : //%s:%d" % (sa[0], sa[1]))
-        logger.info("Neuroglancer Address  : zarr://http://%s:%d" % (sa[0], sa[1]))
+        # self.http_address = "zarr://http://%s:%s" % (str(sa[0]), str(sa[1]))
+        logger.info("Neuroglancer Address  : ")
         logger.info("Protocol Version      : %s" % str(self.http_server.protocol_version))
         logger.info("Server Name           : %s" % str(self.http_server.server_name))
         logger.info("Server Port           : %s" % str(self.http_server.server_port))
@@ -161,9 +175,13 @@ class NgViewer(QRunnable):
             logger.warning("\nServer connection temporarily lost for unknown reason.")
         finally:
             # os.chdir(os.path.split(os.path.realpath(__file__))[0]) #0908+
+            logger.info('Finally: Stopping Neuroglancer...')
             ng.server.stop()
+            logger.info('Finally: Closing HTTP Server on port %s...' % str(self.http_server.server_port))
             self.http_server.server_close()
+            logger.info('Finally: Shutting Down HTTP Server...')
             self.http_server.shutdown()
+            logger.info('Finally: Exiting System...')
             # sys.exit(0)
         # else:
         #     logger.error("\nMaximum reconnection attempts reached. Disconnecting...\n")
@@ -181,6 +199,7 @@ class NgViewer(QRunnable):
     #     print('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
     #     print('  Layer selected values: %s' % (s.selected_values,))
 
+
     def create_viewer(self):
         logger.info('Creating Neuroglancer Viewer...')
         '''
@@ -190,10 +209,14 @@ class NgViewer(QRunnable):
         https://github.com/google/neuroglancer/issues/333
         '''
 
-        res_x, res_y, res_z = 2, 2, 50
-        scale_val = get_scale_val(cfg.data.scale())
-        scales = [float(res_z), res_x * float(scale_val), res_y * float(scale_val)]
+        is_aligned = is_cur_scale_aligned()
+        logger.info('is_aligned: %s' % str(is_aligned))
+        if is_aligned:  logger.info('is_aligned=True')
+        else:           logger.info('is_aligned=False')
 
+        # res_x, res_y, res_z = 2, 2, 50
+        scale_val = get_scale_val(cfg.data.scale())
+        scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
         l = cfg.data.layer()
 
         # if self.viewof == 'aligned':
@@ -202,13 +225,17 @@ class NgViewer(QRunnable):
         # else:
         #     img_dim = get_image_size(cfg.data.path_base())
 
-        #Todo set different coordinates for the two different datasets. For now use larger dim.
-        img_dim = get_image_size(cfg.data.path_al())
+        if not are_images_imported():
+            logger.warning('Nothing To View, Cant Use Neuroglancer - Returning')
+            return
 
-        logger.info('Adding Image Layer to Viewer...')
+        #Todo set different coordinates for the two different datasets. For now use larger dim.
+        if is_aligned: img_dim = get_image_size(cfg.data.path_al())
+        else: img_dim = get_image_size(cfg.data.path_base())
+
+        logger.info('Creating the Neuroglancer Viewer...')
         addr = "zarr://http://localhost:" + str(self.port)
         # addr = "http://localhost:" + str(self.port) # probably want this addr for TensorStore. 'zarr://' protocol only known to Neuroglancer
-        scale_str = 's' + str(get_scale_val(cfg.data.scale()))
         # al_path = os.path.join(addr, 'img_aligned.zarr', scale_str)
         # unal_path = os.path.join(addr, 'img_src.zarr', scale_str)
         # al_path = os.path.join(addr, 'img_aligned.zarr')
@@ -217,12 +244,10 @@ class NgViewer(QRunnable):
 
         # addr = "zarr://http://localhost:9000"
         logger.info('Layer Address: %s' % addr)
-
+        del cfg.viewer
         cfg.viewer = ng.Viewer() # Create neuroglancer.Viewer()
         # cfg.viewer = ng.UnsynchronizedViewer()
-
         cfg.viewer_url = str(cfg.viewer)
-
         scale_factor = cfg.data.scale_val()
 
         # src_dataset = 'img_src.zarr/s' + str(scale_factor)
@@ -233,6 +258,8 @@ class NgViewer(QRunnable):
         unal_name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(scale_factor))
         # al_name = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
         # unal_name = os.path.join(cfg.data.dest(), 'img_src.zarr')
+
+        slug = '_scale' + str(scale_factor)
 
         with cfg.viewer.txn() as s:
 
@@ -245,7 +272,7 @@ class NgViewer(QRunnable):
             # al_dataset_future = get_zarr_tensor(al_name)
             # unal_dataset_future = get_zarr_tensor(unal_name)
 
-            al_dataset = get_zarr_tensor(al_name).result()
+            if is_aligned: al_dataset = get_zarr_tensor(al_name).result()
             unal_dataset = get_zarr_tensor(unal_name).result()
 
             # src_tensor = get_zarr_tensor(unal_path).result()
@@ -254,13 +281,13 @@ class NgViewer(QRunnable):
             # src_tensor = get_zarr_tensor(unal_arr).result()
             # al_tensor = get_zarr_tensor(al_arr).result()
 
-            logger.info(al_dataset)
+            if is_aligned: logger.info(al_dataset)
             logger.info(unal_dataset)
 
 
             # src_data = zarr.open(addr, 'r')[src_dataset]
             # al_data = zarr.open(addr, 'r')[al_dataset]
-
+            logger.info('Creating Coordinate Spaces...')
             dimensions_ref = ng.CoordinateSpace(
                 names=['z','y','x'],
                 units='nm',
@@ -271,20 +298,19 @@ class NgViewer(QRunnable):
                 units='nm',
                 scales=scales,
             )
-            dimensions_aligned = ng.CoordinateSpace(
-                names=['z','y','x'],
-                units='nm',
-                scales=scales,
-            )
+            if is_aligned:
+                dimensions_aligned = ng.CoordinateSpace(
+                    names=['z','y','x'],
+                    units='nm',
+                    scales=scales,
+                )
 
             # from precomputed spec
             # "voxel_offset": Optional. If specified, must be a 3-element array [x, y, z] of integer values specifying
             # a translation in voxels of the origin of the data relative to the global coordinate frame. If not
             # specified, defaults to [0, 0, 0].
 
-
-            voxel_size = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
-
+            logger.info('Creating Local Volumes...')
             ref_layer = ng.LocalVolume(
                 data=unal_dataset,
                 dimensions=dimensions_ref,
@@ -292,6 +318,7 @@ class NgViewer(QRunnable):
                 # voxel_size=voxel_size
             )
             logger.info('\nal_layer:\n%s\n' % ref_layer.info())
+            s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
 
             base_layer = ng.LocalVolume(
                 data=unal_dataset,
@@ -300,21 +327,18 @@ class NgViewer(QRunnable):
                 # voxel_size=voxel_size
             )
             logger.info('\nal_layer:\n%s\n' % base_layer.info())
+            s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
 
-            al_layer = ng.LocalVolume(
-                data=al_dataset,
-                dimensions=dimensions_aligned,
-                voxel_offset=[0, ] * 3,
-                # voxel_size=voxel_size
-            )
-            logger.info('\nal_layer:\n%s\n' % al_layer.info())
+            if is_aligned:
+                al_layer = ng.LocalVolume(
+                    data=al_dataset,
+                    dimensions=dimensions_aligned,
+                    voxel_offset=[0, ] * 3,
+                    # voxel_size=voxel_size
+                )
+                logger.info('\nal_layer:\n%s\n' % al_layer.info())
+                s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
 
-
-
-
-            s.layers['ref'] = ng.ImageLayer(source=ref_layer)
-            s.layers['base'] = ng.ImageLayer(source=base_layer)
-            s.layers['aligned'] = ng.ImageLayer(source=al_layer)
 
             # s.layers['ref'] = ng.ImageLayer(source=unal_path)
             # s.layers['base'] = ng.ImageLayer(source=unal_path)
@@ -327,6 +351,8 @@ class NgViewer(QRunnable):
             # s.projection_orientation = [-0.205, 0.053, -0.0044, 0.97]
             # s.perspective_zoom = 300
             # s.position = [l, 0, 0]
+
+
             s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
             # s.dimensions = ng.CoordinateSpace(
             #     names=["z", "y", "x"],
@@ -336,35 +362,14 @@ class NgViewer(QRunnable):
             #     scales=scales
             # )
 
-
-            # panels=[
-            #     ng.LayerSidePanelState(
-            #         side='left',
-            #         col = 0,
-            #         row = 0,
-            #         tab='render',
-            #         tabs=['source', 'rendering'],
-            #     ),
-            #     ng.LayerSidePanelState(
-            #         side='left',
-            #         col = 0,
-            #         row=1,
-            #         tab='render',
-            #         tabs=['annotations'],
-            #     )
-            # ]
-
-
-            s.layout = ng.row_layout(
-                [
-                    ng.LayerGroupViewer(layers=["ref"], layout='xy'),
-                    ng.LayerGroupViewer(layers=["base"], layout='xy'),
-                    ng.LayerGroupViewer(layers=["aligned"], layout='xy'),
-                    # ng.LayerGroupViewer(layers=["ref"], layout='4panel'),
-                    # ng.LayerGroupViewer(layers=["base"], layout='4panel'),
-                    # ng.LayerGroupViewer(layers=["aligned"], layout='4panel'),
-                ]
-            )
+            logger.info('Setting Layouts...')
+            if is_aligned:
+                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=["ref" + slug], layout='yz'),
+                                          ng.LayerGroupViewer(layers=["base" + slug], layout='yz'),
+                                          ng.LayerGroupViewer(layers=["aligned" + slug], layout='yz')])
+            else:
+                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=["ref" + slug], layout='yz'),
+                                          ng.LayerGroupViewer(layers=["base" + slug], layout='yz')])
 
 
 
@@ -376,9 +381,9 @@ class NgViewer(QRunnable):
             #         layers=['al_layer'])]
             # )
 
+        logger.info('Configuring State Attributes...')
         # logger.info('Loading Neuroglancer Callbacks...')
         # # cfg.viewer.actions.add('unchunk_', unchunk)
-        # # cfg.viewer.actions.add('blend_', blend)
         # # cfg.viewer.actions.add('blend_', blend)
         cfg.viewer.actions.add('screenshot', self.take_screenshot)
         with cfg.viewer.config_state.txn() as s:
@@ -391,7 +396,8 @@ class NgViewer(QRunnable):
             s.viewer_size = None
 
             s.input_event_bindings.viewer['keyt'] = 'my-action'
-            s.status_messages['hello'] = "Viewing: %s" % self.src
+            s.status_messages['hello'] = "Scale: %d Viewer URL: %s  Protocol: %s" % \
+                                         (cfg.data.scale_val(), cfg.viewer.get_viewer_url(), self.http_server.protocol_version)
 
 
         if cfg.viewer is not None:
@@ -415,6 +421,13 @@ class NgViewer(QRunnable):
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(cfg.viewer.state))
 
+
+def obj_to_string(obj, extra='    '):
+    return str(obj.__class__) + '\n' + '\n'.join(
+        (extra + (str(item) + ' = ' +
+                  (obj_to_string(obj.__dict__[item], extra + '    ') if hasattr(obj.__dict__[item], '__dict__') else str(
+                      obj.__dict__[item])))
+         for item in sorted(obj.__dict__)))
 
 if __name__ == '__main__':
     ap = argparse.ArgumentParser()

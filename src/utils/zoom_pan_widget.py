@@ -628,7 +628,7 @@ class ZoomPanWidget(QWidget):
         self.update_zpa_self() #Critical
 
     def ng_callback(self):
-        cfg.main_window.view_neuroglancer()
+        cfg.main_window.use_neuroglancer_viewer()
 
 
 
