@@ -26,9 +26,7 @@ except ImportError:
         raise ImportError("Requires PyQt (version 5 or 6)")
 
 
-from utils.PyQtImageViewer import QtImageViewer
-# from src.ui.PyQtImageViewer_ import QtImageViewer
-
+from src.utils.PyQtImageViewer import QtImageViewer
 import src.config as cfg
 from src.helpers import are_images_imported
 from src.helpers import are_aligned_images_generated
