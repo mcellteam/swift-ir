@@ -31,15 +31,14 @@ from src.generate_zarr import generate_zarr
 from src.ng_host import NgHost
 from src.background_worker import BackgroundWorker
 # from src.napari_test import napari_test
-from src.image_library import ImageLibrary
 from src.ui.headup_display import HeadupDisplay
 from src.ui.toggle_switch import ToggleSwitch
 from src.ui.json_treeview import JsonModel
 from src.ui.kimage_window import KImageWindow
 from src.ui.snr_plot import SnrPlot
 from src.ui.python_console import PythonConsole
-from utils.PyQtImageStackViewer import QtImageStackViewer
-from utils.PyQtImageViewer import QtImageViewer
+from src.utils.PyQtImageStackViewer import QtImageStackViewer
+from src.utils.PyQtImageViewer import QtImageViewer
 from src.ui.splash import SplashScreen
 from src.ui.dialogs import RecipeMaker
 from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor, generate_zarr_scales
@@ -75,7 +74,7 @@ class MainWindow(QMainWindow):
         self.ng_worker = None
 
         logger.info("Initializing Image Library")
-        cfg.image_library = ImageLibrary() # SmartImageLibrary()
+        # cfg.image_library = ImageLibrary() # SmartImageLibrary()
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
         if qtpy.QT6:
