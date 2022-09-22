@@ -30,8 +30,8 @@ logger = logging.getLogger(__name__)
 def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     '''
     This function is currently called by two MainWindow methods:
-    - app.run_alignment
-    - app.run_regenerate_alignment
+    - app.align
+    - app.regenerate
     For now, start_layer is always passed the value 0, and
     num_layers is always passed the value -1.
     '''

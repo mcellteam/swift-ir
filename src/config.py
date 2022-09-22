@@ -39,6 +39,7 @@ USES_QT6 = None
 
 data = None
 main_window = None
+w = main_window
 image_library = None
 data_model = None
 recipe_form = None

@@ -2,9 +2,8 @@
 
 import os
 import logging
-import inspect
 import numpy as np
-from src.helpers import print_exception, print_alignment_layer
+from src.helpers import print_exception
 
 __all__ = ['save_bias_analysis']
 
@@ -18,7 +17,6 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
     :type bias_data_path: str"""
 
     logger.info('Saving Bias Data (.dat) to Path %s' % bias_data_path)
-    logger.debug('Called by %s' % inspect.stack()[1].function)
 
     for i in range(len(al_stack)):
 

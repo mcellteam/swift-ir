@@ -362,11 +362,11 @@ class QtImageViewer(QGraphicsView):
         if event.key() == Qt.Key_Down:
             if do_scales_exist():
                 if cfg.main_window.scale_down_button.isEnabled():
-                    cfg.main_window.scale_down_button_callback()
+                    cfg.main_window.scale_down()
         if event.key() == Qt.Key_Up:
             if do_scales_exist():
                 if cfg.main_window.scale_up_button.isEnabled():
-                    cfg.main_window.scale_up_button_callback()
+                    cfg.main_window.scale_up()
 
 
     def mousePressEvent(self, event):
