@@ -33,6 +33,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     if are_aligned_images_generated():
         cfg.main_window.hud.post('Removing Aligned Images for Scale Level %d...' % get_scale_val(use_scale))
         remove_aligned(use_scale=use_scale, start_layer=start_layer) #0903 Moved into conditional
+        cfg.main_window.hud.done()
 
     cfg.data.clear_method_results(scale_key=use_scale)
     if rename_switch: rename_layers(use_scale=use_scale, al_dict=alignment_dict)

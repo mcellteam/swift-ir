@@ -68,20 +68,16 @@ def get_size_image_size_imageio(path):
 
 
 def get_image_size(file_path):
-    """
-    Return (width, height) for a given img file content - no external
-    dependencies except the os and struct modules from core
-    Name:        get_image_size
-    Purpose:     extract image dimensions given a file path using just
-                 core modules
+    '''Extract image dimensions given a file path using just
+    core modules os and struct
 
-    Author:      Paulo Scardine (based on code from Emmanuel VAISSE)
-                 Tom Bartol (stripped down to bare bones)
-
-    Created:     26/09/2013
-    Copyright:   (c) Paulo Scardine 2013
-    Licence:     MIT
-    """
+    moduleauthor:: Tom Bartol - stripped down to bare bones
+    moduleauthor:: Paulo Scardine - based on code by Emmanuel Vaisse
+    :param file_path: The image to get size of.
+    :type file_path: str.
+    :returns:  (width, height) for a given img file content
+    :rtype: (int, int)
+    '''
     logger.debug('get_image_size:')
     size = os.path.getsize(file_path)
 

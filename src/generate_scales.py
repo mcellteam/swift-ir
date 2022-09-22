@@ -143,7 +143,9 @@ def generate_scales():
     task_queue.collect_results()  # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
     try: task_queue.end_tasks()
     except: pass
+    logger.info('Stopping task queue...')
     task_queue.stop()
+    logger.info('Deleting task queue...')
     del task_queue
     dt = time.time() - t0
     cfg.main_window.hud.done()

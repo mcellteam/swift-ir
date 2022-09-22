@@ -14,7 +14,7 @@ from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
 
-__all__ = ['HeadUpDisplay', 'HudWorker']
+__all__ = ['HeadupDisplay', 'HudWorker']
 
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger("hud")
@@ -39,8 +39,7 @@ class HudWorker(QObject):
         extra = {'qThreadName': ctname()}
         logger.debug('Started work', extra=extra)
         i = 1
-        # Let the thread run until interrupted. This allows reasonably clean
-        # thread termination.
+        # Let the thread run until interrupted. This allows reasonably clean thread termination.
         while not QThread.currentThread().isInterruptionRequested():
             delay = 0.5 + random.random() * 2
             time.sleep(delay)
@@ -48,7 +47,7 @@ class HudWorker(QObject):
             logger.log(level, 'Message after delay of %3.1f: %d', delay, i, extra=extra)
             i += 1
 
-class HeadUpDisplay(QWidget):
+class HeadupDisplay(QWidget):
 
     COLORS = {
         logging.DEBUG: 'black',
@@ -64,7 +63,7 @@ class HeadUpDisplay(QWidget):
     }
 
     def __init__(self, app):
-        super(HeadUpDisplay, self).__init__()
+        super(HeadupDisplay, self).__init__()
         self.app = app
         self.setFocusPolicy(Qt.NoFocus)
         self.setMinimumHeight(140)
@@ -113,8 +112,6 @@ class HeadUpDisplay(QWidget):
         self.start_thread()
 
     def __call__(self, message, level=logging.INFO):
-        # if cfg.main_window.main_panel_bottom_widget.currentIndex() in (1,2):
-        #     cfg.main_window.main_panel_bottom_widget.setCurrentIndex(0)
         extra = {'qThreadName': ctname()}
         logger.log(level, message, extra=extra)
         self.textedit.moveCursor(QTextCursor.End)
@@ -168,8 +165,6 @@ class HeadUpDisplay(QWidget):
 
     @Slot()
     def post(self, message, level=logging.INFO):
-        # if cfg.main_window.main_panel_bottom_widget.currentIndex() in (1,2):
-        #     cfg.main_window.main_panel_bottom_widget.setCurrentIndex(0)
         extra = {'qThreadName': ctname()}
         logger.log(level, message, extra=extra)
         self.textedit.moveCursor(QTextCursor.End)

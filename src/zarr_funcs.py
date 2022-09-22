@@ -48,6 +48,19 @@ def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
             # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
             # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
 
+def tiffs2zarr_(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
+    def imread(filename):
+        with open(filename, 'rb') as fh:
+            data = fh.read()
+        # return first image in TIFF file as numpy array
+        return imagecodecs.tiff_decode(data)
+
+    with tifffile.FileSequence(imread, tif_files) as tifs:
+        with tifs.aszarr() as store:
+            array = da.from_zarr(store)
+            array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
+
+
 def loadTiffsMp(directory:str):
     '''
 
@@ -69,10 +82,11 @@ def loadTiffsMp(directory:str):
 
 def get_zarr_tensor(zarr_path):
     '''
-    Returns an asynchronous TensorStore future object which provides a view into the Zarr dataset on disk.
+    Returns an asynchronous TensorStore future object which is a view
+    into the Zarr image on disk. All TensorStore indexing operations
+    produce lazy views.
 
-    Ref:
-    https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
+    Ref: https://stackoverflow.com/questions/64924224/getting-a-view-of-a-zarr-array-slice
 
     :param zarr_path:
     :type zarr_path:
@@ -154,7 +168,6 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
     #     init_zarr()
 
     out_path = os.path.join(src, 'img_aligned.zarr', 's' + str(cur_scale_val))
-
     if cfg.data.scale() != 'scale_1':
         if os.path.exists(out_path):
             remove_zarr(out_path)

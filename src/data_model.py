@@ -87,6 +87,14 @@ class DataModel:
             setattr(result, k, deepcopy(v, memo))
         return result
 
+    def __len__(self):
+        try:
+            return self.n_imgs()
+        except:
+            logger.warning('No Images Found')
+            return 0
+
+
     def to_json(self):
         return json.dumps(self._data)
 
@@ -126,7 +134,7 @@ class DataModel:
         '''Returns # of imported images.
         #TODO Check this for off-by-one bug'''
         try: n_imgs = len(self._data['data']['scales']['scale_1']['alignment_stack']); return n_imgs
-        except: logger.warning('No Images Found - Returning 0'); return 0
+        except:  logger.warning('No Images Found - Returning 0'); return 0
 
     def scales(self) -> list[str]:
         '''Get scales list.

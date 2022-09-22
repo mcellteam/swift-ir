@@ -6,11 +6,11 @@ import os, sys, copy, json, inspect, logging, textwrap
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
     QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout, QFormLayout, \
-    QCheckBox, QToolButton, QDataWidgetMapper, QInputDialog, QTabWidget
+    QCheckBox, QToolButton, QDataWidgetMapper, QInputDialog, QTabWidget, QMessageBox
 from qtpy.QtCore import Qt, QAbstractTableModel, QAbstractListModel, QModelIndex
 from qtpy.QtCore import Slot
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator
-
+import qtawesome as qta
 import src.config as cfg
 from src.helpers import get_scale_key, get_scale_val, do_scales_exist, get_images_list_directly
 
@@ -430,6 +430,20 @@ class RecipeMaker(QDialog):
         tip = "Initial rotation is sometimes needed to prevent alignment from aligning to unseen artifacts (default=0.0000)"
         self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
         # self.initial_rotation_input.setToolTip("\n".join(textwrap.wrap(tip, width=35)))
+
+
+def show_ng_commands():
+    msgBox = QMessageBox()
+    msgBox.setIcon(QMessageBox.Information)
+    msgBox.setText("Message box pop up window")
+    msgBox.setWindowTitle("QMessageBox Example")
+    # msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
+    msgBox.setStandardButtons(QMessageBox.Ok)
+    # msgBox.buttonClicked.connect(msgButtonClick)
+
+    # returnValue = msgBox.exec()
+    # if returnValue == QMessageBox.Ok:
+    #     print('OK clicked')
 
 
 

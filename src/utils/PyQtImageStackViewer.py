@@ -5,7 +5,6 @@
 
 
 import os.path
-import inspect
 import logging
 import numpy as np
 from PIL import Image
@@ -27,12 +26,10 @@ except ImportError:
         raise ImportError("Requires PyQt (version 5 or 6)")
 
 
-from src.ui.PyQtImageViewer import QtImageViewer
+from utils.PyQtImageViewer import QtImageViewer
 # from src.ui.PyQtImageViewer_ import QtImageViewer
 
 import src.config as cfg
-from src.helpers import print_exception
-from src.helpers import do_scales_exist
 from src.helpers import are_images_imported
 from src.helpers import are_aligned_images_generated
 from src.helpers import get_scale_val

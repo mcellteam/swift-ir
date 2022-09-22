@@ -10,6 +10,11 @@ Last updated: 22/01/2019, 07:55.
 Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
+QWidget {
+
+	color: #000000;
+
+}
 
 QMainWindow {
 	/*background-color:#ececec;*/

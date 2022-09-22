@@ -136,10 +136,10 @@ def main():
 
     try:
         logger.info('Initializing MainWindow')
-        cfg.main_window = MainWindow(title="AlignEM-SWiFT")
+        cfg.main_window = cfg.w = MainWindow(title="AlignEM-SWiFT")
         cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
-        # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter)
-        # app.aboutToQuit.connect(neuroglancer.server.stop)
+        app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+
+        app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
         cfg.main_window.show()
         logger.info('Showing AlignEM-SWiFT')
     except:
@@ -149,9 +149,11 @@ def main():
     try:
         logger.info('Trying sys.exit(app.exec())...')
         sys.exit(app.exec())
+        # sys.exit(app.exec_())
     except:
         logger.info('Trying sys.exit(app.exec_())...')
         sys.exit(app.exec_())
+        # sys.exit(app.exec())
 
 
 if __name__ == "__main__":

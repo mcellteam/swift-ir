@@ -47,11 +47,12 @@ class PythonConsole(RichJupyterWidget):
 
         self.setFocusPolicy(Qt.NoFocus)
 
-        self.execute_command('import os, sys, zarr, neuroglancer')
+        self.execute_command('import src.config as cfg')
         self.execute_command('from src.config import *')
         self.execute_command('from src.config import main_window')
         self.execute_command('from src.helpers import *')
-        self.execute_command('import src.config as cfg')
+        self.execute_command('import os, sys, zarr, neuroglancer')
+
         # self.clear()
         self.execute('clear')
         # self.clear_output()
