@@ -8,7 +8,7 @@ import qtpy
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMessageBox, \
     QComboBox, QGroupBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
-    QShortcut, QGraphicsDropShadowEffect, QGraphicsOpacityEffect
+    QShortcut, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QScrollBar
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication, QKeySequence, QCursor, QImageReader
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, QTimer, Slot, Signal, QEvent
@@ -1424,9 +1424,9 @@ class MainWindow(QMainWindow):
         self.img_panels['aligned'].imageViewer.clearImage()
 
     
-    @Slot()
-    def print_image_library(self):
-        self.hud(str(cfg.image_library))
+    # @Slot()
+    # def print_image_library(self):
+    #     self.hud(str(cfg.image_library))
     
     def new_project(self):
         logger.debug('new_project:')
@@ -1464,7 +1464,7 @@ class MainWindow(QMainWindow):
         self.reset_details_banner()
 
         self.hud('Creating New Project...')
-        cfg.image_library.remove_all_images()
+        # cfg.image_library.remove_all_images()
         self.img_panels['ref'].clearImage()
         self.img_panels['base'].clearImage()
         self.img_panels['aligned'].imageViewer.clearImage()
@@ -2429,7 +2429,6 @@ class MainWindow(QMainWindow):
                  ['Show Module Search Path', None, self.show_module_search_path, None, None, None],
                  ['Print Sanity Check', None, print_sanity_check, None, None, None],
                  ['Print Project Tree', None, print_project_tree, None, None, None],
-                 ['Print Image Library', None, self.print_image_library, None, None, None],
                  ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
                  ['Create Multipage TIF', None, create_paged_tiff, None, None, None],
 
@@ -2571,7 +2570,7 @@ class MainWindow(QMainWindow):
         self.skip_label.setToolTip(tip)
         self.skip_layout = QHBoxLayout()
         self.skip_layout.addWidget(self.skip_label, alignment=Qt.AlignRight)
-        self.skip_layout.addWidget(self.toggle_skip, alignment=Qt.AlignRight)
+        self.skip_layout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft)
 
 
         self.ng_layout_combobox = QComboBox()
@@ -3044,6 +3043,10 @@ class MainWindow(QMainWindow):
         self.snr_plot_label.setStyleSheet('background-color: #ffffff; color: #ffe135;')
         self.snr_plot_layout.addWidget(self.snr_plot_label)
 
+
+        self.snr_plot_h_scroll = QScrollBar(Qt.Horizontal)
+        self.snr_plot_layout.addWidget(self.snr_plot_h_scroll)
+
         self.snr_plot_container.setLayout(self.snr_plot_layout)
 
         # self.plot_widget_back_button = QPushButton('Back')
@@ -3509,9 +3512,7 @@ class MainWindow(QMainWindow):
         snr_list = cfg.data.snr_list()
         max_snr = max(snr_list)
         x_axis = [x for x in range(0, len(snr_list))]
-        pen = pg.mkPen(color=(0, 0, 0), width=5, style=Qt.SolidLine)
-        styles = {'color': '#ffffff', 'font-size': '13px'}
-        # self.plot_widget.setBackground(QColor('#000000'))
+        # pen = pg.mkPen(color=(0, 0, 0), width=5, style=Qt.SolidLine)
         self.snr_points = pg.ScatterPlotItem(
             size=8,
             pen=pg.mkPen(None),
@@ -3537,23 +3538,20 @@ class MainWindow(QMainWindow):
         # self.snr_points.setFocusPolicy(Qt.NoFocus)
         self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
-        self.snr_plot.useOpenGL()
-        self.snr_plot.setAntialiasing(True)
-        # self.snr_plot.setAspectLocked(True)
 
-        # value = self.snr_points.toolTip()
+        max_y = max(snr_list)
+        # self.snr_plot.setXRange(0, max_y, padding=0)
+        self.snr_plot.setYRange(0, max_y)
+
+        value = self.snr_points.toolTip()
+        logger.critical('value = %s' % str(value))
         value = self.snr_points.setToolTip('Test')
-
-
         self.last_snr_click = []
         self.snr_plot.addItem(self.snr_points)
-        # self.snr_plot.showGrid(x=True,y=True, alpha = 200) # alpha: 0-255
-        self.snr_plot.showGrid(x=True,y=True, alpha = 220) # alpha: 0-255
-        self.snr_plot.getPlotItem().enableAutoRange()
         # self.main_panel_bottom_widget.setCurrentIndex(1) #og
 
     def clear_snr_plot(self):
-        self.snr_plot.getPlotItem().enableAutoRange()
+        # self.snr_plot.getPlotItem().enableAutoRange()
         self.snr_plot.clear()
 
     def onSnrClick(self, plot, points):
@@ -3567,10 +3565,12 @@ class MainWindow(QMainWindow):
         # clickedPen = pg.mkPen('#f3f6fb', width=3)
         clickedPen = pg.mkPen({'color': "#f3f6fb", 'width': 3})
         for p in self.last_snr_click:
-            p.resetPen()
+            # p.resetPen()
+            p.resetBrush()
         # print("clicked points", points)
         for p in points:
-            p.setPen(clickedPen)
+            p.setBrush(pg.mkBrush('#f3f6fb'))
+            # p.setPen(clickedPen)
 
         self.last_snr_click = points
         # self.jump_to_layer(index)

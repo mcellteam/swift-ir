@@ -111,10 +111,20 @@ if (__name__ == '__main__'):
             exit(1)
         i += 1  # Increment to get the next option
 
+    # if sys.argv[i] == '-rect':
+    #     bb_x = rect[2]
+    #     bb_y = rect[3]
+    #     offset_x = rect[0]
+    #     offset_y = rect[1]
+    # else:
+    #     offset_x = 0
+    #     offset_y = 0
+
     bb_x = rect[2]
     bb_y = rect[3]
     offset_x = rect[0]
     offset_y = rect[1]
+
     # in_fn
     # out_fn
     a = afm_list[0]
@@ -136,7 +146,6 @@ if (__name__ == '__main__'):
         else:
             mir_c = my_path + '/lib/bin_linux/mir'
 
-    #TODO Use pillow to store median greyscale value for each image in list, for now just use 128
     mir_script = \
         'B %d %d 1\n' \
         'Z 128\n' \
@@ -144,8 +153,27 @@ if (__name__ == '__main__'):
         'A %g %g %g %g %g %g\n' \
         'RW %s\n' \
         'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
-
     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+
+
+    # if sys.argv[i] == '-rect':
+    #     #TODO Use pillow to store median greyscale value for each image in list, for now just use 128
+    #     mir_script = \
+    #         'B %d %d 1\n' \
+    #         'Z 128\n' \
+    #         'F %s\n' \
+    #         'A %g %g %g %g %g %g\n' \
+    #         'RW %s\n' \
+    #         'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
+    #     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+    # else:
+    #     mir_script = \
+    #         'F %s\n' \
+    #         'Z 128\n' \
+    #         'A %g %g %g %g %g %g\n' \
+    #         'RW %s\n' \
+    #         'E' % (in_fn, a, c, e, b, d, f, out_fn)
+    #     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
 
 
 
@@ -165,8 +193,11 @@ if (__name__ == '__main__'):
     
     '''
 
-    dimx = bb_x
-    dimy = bb_y
+
+    # dimx = bb_x
+    # dimy = bb_y
+    dimx = rect[2]
+    dimy = rect[3]
 
     # try:
     #     im = Image.open(out_fn)
@@ -176,9 +207,7 @@ if (__name__ == '__main__'):
 
     im = Image.open(out_fn)
     # im = tifffile.imread(out_fn)
-
     logger.critical('out_fn = %s' % out_fn)
-
     store = zarr.open(zarr_grp)
     # print('ID = %s' % str(ID))
     # print(store.info)

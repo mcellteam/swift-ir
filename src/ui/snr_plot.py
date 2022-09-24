@@ -15,7 +15,15 @@ class SnrPlot(pg.PlotWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        self.hoverSize = 12
+        # self.useOpenGL()
+        self.setAntialiasing(False)
+        self.setAspectLocked(True)
+        self.showGrid(x=True, y=True, alpha=220)  # alpha: 0-255
+        self.getPlotItem().enableAutoRange()
+
+        self.hoverable = True
+
+        self.hoverSize = 10
         self.setFocusPolicy(Qt.NoFocus)
         font = QFont()
         font.setPixelSize(12)
@@ -24,7 +32,7 @@ class SnrPlot(pg.PlotWidget):
         self.getAxis("left").setStyle(tickFont=font)
         self.getAxis("left").setWidth(38)
         # pen = pg.mkPen(color=(255, 0, 0), width=5, style=Qt.SolidLine)
-        style = {'color': '#ffffff', 'font-size': '14px'}
+        style = {'color': '#f3f6fb;', 'font-size': '14px'}
         self.setLabel('left', 'SNR', **style)
         self.setLabel('bottom', 'Layer', **style)
 

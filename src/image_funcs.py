@@ -480,8 +480,11 @@ def BoundingRect(al_stack):
                        0 - model_bounds[:, 1].min(),
                        model_bounds[:, 0].max() - siz[0],
                        model_bounds[:, 1].max() - siz[0])
-    rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[0] + 2 * border_width]
+    # rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[0] + 2 * border_width]
+    rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[1] + 2 * border_width]
+    # rect = [-border_width, -border_width, siz[1] + 2 * border_width, siz[0] + 2 * border_width]
     logger.info('Bounding Rectangle Dims: %s' % str(rect))
+    # [-14, -14, 1052, 540]
     return rect
 
 
