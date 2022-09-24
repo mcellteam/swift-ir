@@ -154,6 +154,9 @@ def init_zarr() -> None:
 def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1, 512, 512)):
 
     cfg.main_window.hud.post('Preallocating Zarr Array...')
+
+    logger.critical('bounding_rect = %s' % str(bounding_rect))
+
     cur_scale = cfg.data.scale()
     cur_scale_val = get_scale_val(cfg.data.scale())
     src = os.path.abspath(cfg.data.dest())
@@ -189,11 +192,14 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
     datasets = []
     for scale in zarr_these_scales:
         logger.info('Preallocating Zarr for Scale: %s' % str(scale))
-
+        logger.info('bounding_rect = %s' % str(bounding_rect))
         if bounding_rect is True:
             rect = BoundingRect(cfg.data['data']['scales'][scale]['alignment_stack'])
             dimx = rect[2]
             dimy = rect[3]
+            logger.critical('dim_x %d' % dimx)
+            logger.critical('dim_y %d' % dimy)
+
         else:
             imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
             dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
@@ -209,8 +215,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
         # compressor = Blosc(cname='zstd', clevel=5)
 
         logger.critical('Zarr Array will have shape: %s' % str(shape))
-        array = root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor,
-                           overwrite=True)
+        array = root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor, overwrite=True)
 
         # datasets.append(
         #     {

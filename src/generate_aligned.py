@@ -9,7 +9,7 @@ import src.config as cfg
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
 from src.mp_queue import TaskQueue
-from src.image_funcs import SetStackCafm, BoundingRect
+from src.image_funcs import SetStackCafm, BoundingRect, get_image_size
 from src.zarr_funcs import preallocate_zarr
 
 '''
@@ -82,6 +82,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     bounding_rect = cfg.data.bounding_rect()
     cfg.main_window.hud.done()
     # preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=16, chunks=(16,64,64))
+    logger.critical('use_bounding_rect = %s' % str(bounding_rect))
     preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=Z_STRIDE, chunks=chunks)
 
     ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
@@ -89,10 +90,14 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     logger.info('Writing Bounding Rectangle Dimensions to bounding_rect.dat...')
     with open(ofn, 'w') as f:
         if use_bounding_rect:
+            logger.critical('Using bounding rect...')
             rect = BoundingRect(cfg.data['data']['scales'][scale_key]['alignment_stack'])
             f.write("%d %d %d %d\n" % (rect[0], rect[1], rect[2], rect[3]))
             # Example: rect = [-346, -346, 1716, 1716]  <class 'list'>
         else:
+            logger.critical('Not using bounding rect...')
+            width, height = get_image_size(cfg.data['data']['scales'][scale_key]['alignment_stack'][0]['images']['base']['filename'])
+            rect = [0, 0, width, height]
             f.write("None\n")
     n_tasks = cfg.data.n_imgs()
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
@@ -135,15 +140,19 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
         cafm = layer['align_to_ref_method']['method_results']['cumulative_afm']
 
         '''New Arguments For Slotting Zarr: ID, zarr_group'''
-        if use_bounding_rect:
-            args = [sys.executable, apply_affine_job, '-gray', '-rect',
-                    str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
-                    str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
-            args.extend(zarr_args)
-        else:
-            args = [sys.executable, apply_affine_job, '-gray', '-afm', str(cafm[0][0]), str(cafm[0][1]),
-                    str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
-            args.extend(zarr_args)
+        args = [sys.executable, apply_affine_job, '-gray', '-rect',
+                str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
+                str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
+        args.extend(zarr_args)
+        # if use_bounding_rect:
+        #     args = [sys.executable, apply_affine_job, '-gray', '-rect',
+        #             str(rect[0]), str(rect[1]), str(rect[2]), str(rect[3]), '-afm', str(cafm[0][0]), str(cafm[0][1]),
+        #             str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
+        #     args.extend(zarr_args)
+        # else:
+        #     args = [sys.executable, apply_affine_job, '-gray', '-afm', str(cafm[0][0]), str(cafm[0][1]),
+        #             str(cafm[0][2]), str(cafm[1][0]), str(cafm[1][1]), str(cafm[1][2]), base_name, al_name]
+        #     args.extend(zarr_args)
         if ID == 1:
             logger.info('\nSecond Layer (Example Arguments):')
             print(*args, sep="\n")

@@ -403,11 +403,7 @@ class alignment_process:
 
         # logger.critical('init_rot = %f' % init_rot)
         # logger.critical('init_scale = %f' % init_scale)
-        # logger.critical('dither_afm: %s' % str(dither_afm))
-
-        # print('init_rot = %f' % init_rot)
-        # print('init_scale = %f' % init_scale)
-        # print('dither_afm: %s' % str(dither_afm))
+        # logger.critical('dither_afm: %sx' % str(dither_afm))
 
         # init_rot
         #    Previously hard-coded values for wsf chosen by trial-and-error
@@ -418,7 +414,6 @@ class alignment_process:
 
         # Set up 1x1 point and window
         pa = np.zeros((2, 1))  # Point Array for one point
-
         wwx_f = siz[0]  # Window Width in x (Full Size)
         wwy_f = siz[1]  # Window Width in y (Full Size)
         wwx = int(wsf * wwx_f)  # Window Width in x Scaled
@@ -429,29 +424,44 @@ class alignment_process:
         pa[1, 0] = cy
         psta_1 = pa
 
+
+
+        # pa = point array
+        # wwx_f = window width x - full
+        # sx = size x
+        # wwy_f = window width y - full
+        # sy = size y
+        # wsf = window scaling factor (example 0.8125)
+        # psta = stationary points (ref image)
+        # sx_2x2 = size of windows for 2x2
+
         # Set up 2x2 points and windows
         nx = 2
         ny = 2
         pa = np.zeros((2, nx * ny))  # Point Array (2x4) points
-        s = int(wwx_f / 2.0)  # Initial Size of each window
+        sx = int(wwx_f / 2.0)  # Initial Size of each window
+        sy = int(wwy_f / 2.0)  # Initial Size of each window
         for x in range(nx):
             for y in range(ny):
-                pa[0, x + nx * y] = int(0.5 * s + s * x)  # Point Array (2x4) points
-                pa[1, x + nx * y] = int(0.5 * s + s * y)  # Point Array (2x4) points
-        s_2x2 = int(wsf * s)
+                pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
+                # pa[1, x + nx * y] = int(0.5 * sx + sx * y)  # Point Array (2x4) points
+                pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
+        sx_2x2 = int(wsf * sx)
+        sy_2x2 = int(wsf * sy)
         psta_2x2 = pa
 
         # Set up 4x4 points and windows
         nx = 4
         ny = 4
         pa = np.zeros((2, nx * ny))
-        s = int(wwx_f / 4.0)  # Initial Size of each window
+        sx = int(wwx_f / 4.0)  # Initial Size of each window
         for x in range(nx):
             for y in range(ny):
-                pa[0, x + nx * y] = int(0.5 * s + s * x)
-                pa[1, x + nx * y] = int(0.5 * s + s * y)
-        s_4x4 = int(wsf * s)
-        #    s_4x4 = int(s)
+                pa[0, x + nx * y] = int(0.5 * sx + sx * x)
+                pa[1, x + nx * y] = int(0.5 * sx + sx * y)
+        sx_4x4 = int(wsf * sx)
+        sy_4x4 = int(wsf * sy)
+        #    sx_4x4 = int(sx)
         psta_4x4 = pa
 
         # Set up a window size for match point alignment (1/32 of x dimension)
@@ -473,7 +483,8 @@ class alignment_process:
             alignment_option = atrm['method_data'].get('alignment_option')
             if alignment_option == 'refine_affine':
                 '''refine_affine'''
-                ingredient_4x4 = align_ingredient(ww=int(s_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
+                # ingredient_4x4 = align_ingredient(ww=int(sx_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
+                ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_4x4)
             elif alignment_option == 'apply_affine':
                 '''apply_affine'''
@@ -486,8 +497,10 @@ class alignment_process:
 
                 ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir)  # 0721-
-                ingredient_2x2 = align_ingredient(ww=s_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
-                ingredient_4x4 = align_ingredient(ww=s_4x4, psta=psta_4x4, wht=wht, ad=self.align_dir)
+                # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
+                ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
+                # ingredient_4x4 = align_ingredient(ww=sx_4x4, psta=psta_4x4, wht=wht, ad=self.align_dir)
+                ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_1)
                 self.recipe.add_ingredient(ingredient_2x2)
                 self.recipe.add_ingredient(ingredient_4x4)
