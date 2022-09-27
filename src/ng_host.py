@@ -298,8 +298,9 @@ class NgHost(QRunnable):
             s.show_panel_borders = True
             s.viewer_size = None
             s.input_event_bindings.viewer['keyt'] = 'my-action'
-            s.status_messages['hello'] = "Scale: %d Viewer URL: %s  Protocol: %s" % \
-                                         (cfg.data.scale_val(), cfg.viewer.get_viewer_url(), self.http_server.protocol_version)
+            # s.status_messages['hello'] = "AlignEM-SWiFT: Scale: %d Viewer URL: %s  Protocol: %s" % \
+            #                              (cfg.data.scale_val(), cfg.viewer.get_viewer_url(), self.http_server.protocol_version)
+            s.status_messages['hello'] = "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"
 
         if cfg.viewer is not None:
             logger.info('Viewer URL: %s' % cfg.viewer.get_viewer_url())
