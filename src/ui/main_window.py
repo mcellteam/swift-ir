@@ -678,17 +678,14 @@ class MainWindow(QMainWindow):
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
 
-            if self.is_neuroglancer_viewer():
-                self.reload_ng()
-            elif self.is_classic_viewer():
-                self.update_2D_viewers()
+            if self.is_neuroglancer_viewer():  self.reload_ng()
+            elif self.is_classic_viewer():  self.update_2D_viewers()
 
             self.update_snr_plot()
 
         except:
             print_exception()
-        # finally:
-        #     self.scales_combobox_switch = 0
+
     
     @Slot()
     def scale_down(self) -> None:
@@ -720,15 +717,11 @@ class MainWindow(QMainWindow):
             # self.plot_widget.clear()
             self.update_snr_plot()
 
-            if self.is_classic_viewer():
-                self.update_aligned_2D_viewer()
-            if self.is_neuroglancer_viewer():
-                self.reload_ng()
+            if self.is_neuroglancer_viewer():  self.reload_ng()
+            elif self.is_classic_viewer():  self.update_2D_viewers()
 
         except:
             print_exception()
-        # finally:
-        #     self.scales_combobox_switch = 0
 
     @Slot()
     def update_skip_toggle(self):
@@ -751,25 +744,28 @@ class MainWindow(QMainWindow):
         logger.info('Changing stylesheet to minimal')
     
     def apply_default_style(self):
+        self.hud('Applying Default Theme')
         self.main_stylesheet = os.path.normpath('src/styles/default.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
-        self.hud('Switching to Default Theme')
         # self.python_console.set_color_linux()
         self.python_console.set_color_none()
         self.hud.set_theme_default()
-
         self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
-        self.image_panel_landing_page.setStyleSheet('background-color: #000000')
         self.scales_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
+        # self.image_panel_stack_widget.setStyleSheet('background-color: #f3f6fb;')
+        self.image_panel_stack_widget.setStyleSheet('background-color: #f3f6fb;')
+        self.image_panel_landing_page.setStyleSheet('background-color: #000000;')
+        # self.details_banner.setStyleSheet("""color: #F3F6FB; font-size: 14px;""")
+        self.details_banner.setStyleSheet("""color: #ffe135; font-size: 14px;""")
         self.reset_groupbox_styles()
     
     def apply_daylight_style(self):
         '''Light stylesheet'''
+        self.hud('Applying Daylight Theme')
         self.main_stylesheet = os.path.normpath('src/styles/daylight.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
-        self.hud('Switching to Daylight Theme')
         self.python_console.set_color_none()
         self.hud.set_theme_light()
         self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
@@ -777,20 +773,20 @@ class MainWindow(QMainWindow):
     
     def apply_moonlit_style(self):
         '''Grey stylesheet'''
+        self.hud('Applying Moonlit Theme')
         self.main_stylesheet = os.path.normpath('src/styles/moonlit.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
-        self.hud('Switching to Moonlit Theme')
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #333333')
         self.reset_groupbox_styles()
     
     def apply_sagittarius_style(self):
+        self.hud('Applying Sagittarius Theme')
         self.main_stylesheet = os.path.normpath('src/styles/sagittarius.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
-        self.hud('Switching to Sagittarius Theme')
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
@@ -840,7 +836,6 @@ class MainWindow(QMainWindow):
         elif up == 3:  self.set_progress_stage_0()
     
     def set_progress_stage_0(self):
-        logger.critical(os.getcwd())
         if self.get_user_progress() != 0: self.hud('Reverting user progress to Project')
         self.set_user_progress(False, False, False, False)
         self.project_progress = 0
@@ -1183,9 +1178,6 @@ class MainWindow(QMainWindow):
         logger.info('change_layer:')
         try:
             self.set_status('Loading...')
-            # if neuroglancer.server.is_server_running():
-            #     logger.warning('Neuroglancer Server Is Running')
-            #     return
             self.jump_to_worst_ticker = 1
             self.jump_to_best_ticker = 1
             self.read_gui_update_project_data() #0908+
@@ -2850,8 +2842,6 @@ class MainWindow(QMainWindow):
         self.details_banner.setContentsMargins(0, 0, 0, 0)
         self.details_banner.setFixedHeight(30)
         # banner_stylesheet = """color: #ffe135; background-color: #000000; font-size: 14px;"""
-        banner_stylesheet = """color: #F3F6FB; font-size: 14px;"""
-        self.details_banner.setStyleSheet(banner_stylesheet)
         self.details_banner_layout = QHBoxLayout()
         self.details_banner.setLayout(self.details_banner_layout)
         self.details_banner_layout.addWidget(self.align_label_resolution)
@@ -3156,11 +3146,8 @@ class MainWindow(QMainWindow):
 
         '''Image Panel Stack Widget'''
         self.image_panel_stack_widget = QStackedWidget()
-        # self.image_panel_stack_widget.setStyleSheet('background-color: #000000;')
-
+        # self.image_panel_stack_widget.setStyleSheet('background-color: #000000;') #can be used to frame viewer
         self.image_panel_landing_page = QWidget()
-        self.image_panel_landing_page.setStyleSheet('background-color: #000000')
-
         self.image_panel_stack_widget.addWidget(self.multi_img_viewer)
         self.image_panel_stack_widget.addWidget(self.ng_panel)
         self.image_panel_stack_widget.addWidget(self.image_panel_landing_page)
