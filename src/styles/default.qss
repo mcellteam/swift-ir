@@ -106,7 +106,7 @@ QGroupBox {
   border: 1px solid #171d22;
   /*border: 2px solid #d3dae3; */
   /*border: 2px solid #151a1e;*/
-  border-radius: 5px;
+  border-radius: 2px;
   /*padding: 2px;*/
   padding: 0px; /* #0529 */
   margin-top: 2px;
@@ -609,7 +609,19 @@ QPushButton:disabled{
 
 
 
-
+#QGroupBox {
+#    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #E0E0E0, stop: 1 #FFFFFF);
+#    border: 2px solid gray;
+#    border-radius: 5px;
+#    margin-top: 1ex; /* leave space at the top for the title */
+#}
+#
+#QGroupBox::title {
+#    subcontrol-origin: margin;
+#    subcontrol-position: top center; /* position at the top center */
+#    padding: 0 3px;
+#    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FF0ECE, stop: 1 #FFFFFF);
+#}
 
 
 

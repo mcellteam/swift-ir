@@ -35,6 +35,7 @@ class NgHost(QRunnable):
         cfg.viewer_url = None
         self.scale = scale
         self.layout = 'yz'
+        # self.layout = 'xy'
 
     def __del__(self):
         logger.warning('Garbage Collecting An NgHost object...')
@@ -136,8 +137,7 @@ class NgHost(QRunnable):
             return
 
         #Todo set different coordinates for the two different datasets. For now use larger dim.
-        if is_aligned: img_dim = get_image_size(cfg.data.path_al())
-        else: img_dim = get_image_size(cfg.data.path_base())
+        img_dim = get_image_size(cfg.data.path_base())
 
         logger.info('Creating the Neuroglancer Viewer...')
         addr = "zarr://http://localhost:" + str(self.port)
@@ -164,52 +164,92 @@ class NgHost(QRunnable):
 
             if is_aligned: logger.info(al_dataset)
             logger.info(unal_dataset)
+            if not is_aligned:
+                logger.info('Creating Local Volumes...')
+                scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
+                ref_layer = ng.LocalVolume(
+                    data=unal_dataset,
+                    dimensions=ng.CoordinateSpace(
+                        names=['z','y','x'],
+                        units='nm',
+                        scales=scales,
+                    ),
+                    voxel_offset=[1, 0, 0], # voxel offset of 1
+                )
+                logger.info('\nref_layer:\n%s\n' % ref_layer.info())
+                s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
 
-            logger.info('Creating Local Volumes...')
-            scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
-            ref_layer = ng.LocalVolume(
-                data=unal_dataset,
-                dimensions=ng.CoordinateSpace(
-                    names=['z','y','x'],
-                    units='nm',
-                    scales=scales,
-                ),
-                voxel_offset=[1, 0, 0], # voxel offset of 1
-            )
-            logger.info('\nal_layer:\n%s\n' % ref_layer.info())
-            s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
-
-            base_layer = ng.LocalVolume(
-                data=unal_dataset,
-                dimensions=ng.CoordinateSpace(
-                    names=['z','y','x'],
-                    units='nm',
-                    scales=scales,
-                ),
-                voxel_offset=[0, ] * 3,
-            )
-            logger.info('\nal_layer:\n%s\n' % base_layer.info())
-            s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
-
-            if is_aligned:
-                al_layer = ng.LocalVolume(
-                    data=al_dataset,
+                base_layer = ng.LocalVolume(
+                    data=unal_dataset,
                     dimensions=ng.CoordinateSpace(
                         names=['z','y','x'],
                         units='nm',
                         scales=scales,
                     ),
                     voxel_offset=[0, ] * 3,
+
                 )
-                logger.info('\nal_layer:\n%s\n' % al_layer.info())
-                s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
+                logger.info('\nbase_layer:\n%s\n' % base_layer.info())
+                s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
 
-            if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
-                s.cross_section_background_color = "#ffffff"
+                s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+
+
             else:
-                s.cross_section_background_color = "#000000"
+                al_img_dim = get_image_size(cfg.data.path_al())
 
-            s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+                x_offset = (al_img_dim[0] - img_dim[0])/2
+                y_offset = (al_img_dim[1] - img_dim[1])/2
+
+                scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
+                ref_layer = ng.LocalVolume(
+                    data=unal_dataset,
+                    dimensions=ng.CoordinateSpace(
+                        names=['z', 'y', 'x'],
+                        units='nm',
+                        scales=scales,
+                    ),
+                    # voxel_offset=[1, 0, 0], # voxel offset of 1
+                    voxel_offset=[1, x_offset, y_offset],  # voxel offset of 1
+                )
+                logger.info('\nref_layer:\n%s\n' % ref_layer.info())
+                s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
+
+                base_layer = ng.LocalVolume(
+                    data=unal_dataset,
+                    dimensions=ng.CoordinateSpace(
+                        names=['z', 'y', 'x'],
+                        units='nm',
+                        scales=scales,
+                    ),
+                    # voxel_offset=[0, ] * 3,
+                    voxel_offset=[0, x_offset, y_offset],  # voxel offset of 1
+
+                )
+                logger.info('\nbase_layer:\n%s\n' % base_layer.info())
+                s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
+
+                if is_aligned:
+                    al_layer = ng.LocalVolume(
+                        data=al_dataset,
+                        dimensions=ng.CoordinateSpace(
+                            names=['z', 'y', 'x'],
+                            units='nm',
+                            scales=scales,
+                        ),
+                        voxel_offset=[0, ] * 3,
+                    )
+                    logger.info('\nal_layer:\n%s\n' % al_layer.info())
+                    s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
+
+                if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
+                    s.cross_section_background_color = "#ffffff"
+                else:
+                    s.cross_section_background_color = "#000000"
+
+                s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+
+
 
             logger.info('Setting Layouts...')
             if is_aligned:
@@ -220,6 +260,15 @@ class NgHost(QRunnable):
                 s.layout = ng.row_layout([ng.LayerGroupViewer(layers=["ref" + slug], layout=self.layout),
                                           ng.LayerGroupViewer(layers=["base" + slug], layout=self.layout)])
 
+
+        # with cfg.viewer.state as s:
+        #     # state = copy.deepcopy(cfg.viewer.state)
+        #     # state = cfg.viewer.state
+        #     # state.position[0] += layer_delta
+        #
+        #     s.crossSectionScale = 15
+        #     # cfg.viewer.set_state(state)
+
         logger.info('Configuring State Attributes...')
         # logger.info('Loading Neuroglancer Callbacks...')
         # # cfg.viewer.actions.add('unchunk_', unchunk)
@@ -229,20 +278,22 @@ class NgHost(QRunnable):
             print('s.position = %s' % str(s.position))
             print('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
             print('  Layer selected values: %s' % (s.selected_values,))
-            s.position[0] = s.position[0] - 1
+            s.position[0] -= 1
 
         def layer_right(s):
             print('Layering right...')
             print('Layering right...%s' % str(s.position))
             print('  Mouse position: %s' % (s.mouse_voxel_coordinates,))
             print('  Layer selected values: %s' % (s.selected_values,))
-            s.position[0] = s.position[0] + 1
+            s.position[0] += 1
 
         cfg.viewer.actions.add('screenshot', self.take_screenshot)
         cfg.viewer.actions.add('layer-right', layer_right)
         cfg.viewer.actions.add('layer-left', layer_left)
         with cfg.viewer.config_state.txn() as s:
             s.input_event_bindings.viewer['keyb'] = 'screenshot'
+            s.input_event_bindings.viewer['keyl'] = 'layer-left'
+            s.input_event_bindings.viewer['keyr'] = 'layer-right'
             s.show_ui_controls = True
             s.show_panel_borders = True
             s.viewer_size = None
@@ -255,15 +306,15 @@ class NgHost(QRunnable):
             logger.info('Viewer Configuration: %s' % str(cfg.viewer.config_state))
 
     # # layouts: 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'
-    def set_layout_yz(self):  self.layout = 'yz'
+    def set_layout_yz(self):  self.layout = 'xy'
 
-    def set_layout_xy(self):  self.layout = 'xy'
+    def set_layout_xy(self):  self.layout = 'yz'
 
     def set_layout_xz(self):  self.layout = 'xz'
 
-    def set_layout_xy_3d(self):  self.layout = 'xy-3d'
+    def set_layout_xy_3d(self):  self.layout = 'yz-3d'
 
-    def set_layout_yz_3d(self):  self.layout = 'yz-3d'
+    def set_layout_yz_3d(self):  self.layout = 'xy-3d'
 
     def set_layout_xz_3d(self):  self.layout = 'xz-3d'
 

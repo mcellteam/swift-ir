@@ -88,8 +88,7 @@ class HeadupDisplay(QWidget):
         """)
         self.handler = h = QtHandler(self.update_status)
         # fs = '%(asctime)s %(qThreadName)-12s %(levelname)-8s %(message)s'
-        # fs = '%(asctime)s %(qThreadName)-15s %(levelname)-8s %(message)s'
-        fs = '%(asctime)s [%(levelname)s] %(qThreadName)-10s | %(message)s'
+        # fs = '%(asctime)s [%(levelname)s] %(qThreadName)-10s | %(message)s'
         fs = '%(asctime)s [%(levelname)s] %(message)s'
         # fs = '%(levelname)-8s %(asctime)s %(qThreadname)-15s %(message)s'
         formatter = logging.Formatter(fs, datefmt='%H:%M:%S')

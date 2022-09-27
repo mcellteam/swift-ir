@@ -322,7 +322,7 @@ def generate_zarr_scales():
         zarrurl = os.path.join(dest, 'img_src.zarr', 's' + str(get_scale_val(s)))
         tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
         z = zarr.open(zarrurl)
-        # z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+        z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
         # z.attrs['offset'] = ["0", "0", "0"]
 
     # zarr_path = os.path.join(dest, 'img_src.zarr')

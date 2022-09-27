@@ -103,7 +103,6 @@ class MainWindow(QMainWindow):
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         # self.browser.setPage(CustomWebEnginePage(self)) # Open clicked links in new window
 
-        self.aligned_scales = []
         self.panel_list = []
         self.match_point_mode = False
 
@@ -161,7 +160,13 @@ class MainWindow(QMainWindow):
 
         self.set_idle()
 
-        self.set_normal_view()
+        # self.set_normal_view() #0925
+        self.image_panel_stack_widget.setCurrentIndex(2)
+
+        timer = QTimer()
+        timer.timeout.connect(self.set_idle)  # execute `display_time`
+        timer.setInterval(1000)  # 1000ms = 1s
+        timer.start()
     
     def build_menu_from_list(self, parent, menu_list):
         for item in menu_list:
@@ -337,9 +342,8 @@ class MainWindow(QMainWindow):
             logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
             print_exception()
 
-        self.aligned_scales = []
         self.load_unaligned_stacks()
-        self.update_unaligned_view()
+        self.update_unaligned_2D_viewer()
         self.read_project_data_update_gui()
         self.set_progress_stage_2()
         self.scales_combobox_switch = 0
@@ -350,7 +354,7 @@ class MainWindow(QMainWindow):
         self.save_project_to_file()
         self.hud.done()
         self.scales_combobox_switch = 1
-        self.set_idle()
+        # self.set_idle()
 
 
     def run_scaling_auto(self):
@@ -380,11 +384,10 @@ class MainWindow(QMainWindow):
         except:
             logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
             print_exception()
-        self.aligned_scales = []
         logger.info('Loading unaligned stacks...')
         self.load_unaligned_stacks()
         logger.info('Updating unaligned view...')
-        self.update_unaligned_view()
+        self.update_unaligned_2D_viewer()
         logger.info('Reading project data...')
         self.read_project_data_update_gui()
         logger.info('Setting user progress...')
@@ -401,7 +404,7 @@ class MainWindow(QMainWindow):
         self.save_project_to_file()
         self.scales_combobox_switch = 1
         self.hud.done()
-        self.set_idle()
+        # self.set_idle()
 
     
     @Slot()
@@ -421,7 +424,8 @@ class MainWindow(QMainWindow):
             self.hud(warning_msg, logging.WARNING)
             return
         self.img_panels['aligned'].imageViewer.clearImage()
-        self.set_status('Aligning Scale %d...' % get_scale_val(use_scale))
+        img_dims = get_image_size(cfg.data.path_base())
+        self.set_status('Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1]))
         alignment_option = cfg.data['data']['scales'][use_scale]['method_data']['alignment_option']
         if alignment_option == 'init_affine':
             self.hud.post("Initializing Affine Transforms For Scale Factor %d..." % (get_scale_val(use_scale)))
@@ -454,7 +458,7 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud('Alignment Succeeded But Image Generation Failed Unexpectedly.'
                           ' Try Re-generating images.',logging.ERROR)
-            self.set_idle()
+            # self.set_idle()
             return
         self.hud.done()
         # if are_aligned_images_generated():
@@ -462,15 +466,10 @@ class MainWindow(QMainWindow):
 
         self.save_project_to_file() #0908+
         self.set_progress_stage_3()
-        if are_aligned_images_generated():
-            self.aligned_scales.append(cfg.data.scale())
-            self.img_panels['aligned'].show_ng_button()
-        else:
-            self.img_panels['aligned'].hide_ng_button()
-        if self.image_panel_stack_widget.currentIndex() == 1:
+        if self.is_neuroglancer_viewer():
             self.reload_ng()
-        if self.image_panel_stack_widget.currentIndex() == 0:
-            self.update_aligned_view()
+        elif self.is_classic_viewer():
+            self.update_aligned_2D_viewer()
     
     @Slot()
     def regenerate(self, use_scale) -> None:
@@ -502,15 +501,11 @@ class MainWindow(QMainWindow):
             logger.info('are_aligned_images_generated() returned True. Setting user progress to stage 3...')
             self.set_progress_stage_3()
             self.read_project_data_update_gui()
-            self.update_aligned_view()
-            if are_aligned_images_generated():
-                # self.img_panels['aligned'].imageViewer.show_ng_button()
-                self.img_panels['aligned'].show_ng_button()
-            else:
-                # self.img_panels['aligned'].imageViewer.hide_ng_button()
-                self.img_panels['aligned'].hide_ng_button()
-            if self.image_panel_stack_widget.currentIndex() == 1:
+            if self.is_neuroglancer_viewer():
                 self.reload_ng()
+            elif self.is_classic_viewer():
+                self.update_aligned_2D_viewer()
+
             self.hud("Regenerate Complete")
         else:
             print_exception()
@@ -627,12 +622,6 @@ class MainWindow(QMainWindow):
                 self.align_all_button.setEnabled(True)
             else:
                 self.align_all_button.setEnabled(False)
-            if are_aligned_images_generated():
-                # self.img_panels['aligned'].imageViewer.show_ng_button()
-                self.img_panels['aligned'].show_ng_button()
-            else:
-                # self.img_panels['aligned'].imageViewer.hide_ng_button()
-                self.img_panels['aligned'].hide_ng_button()
 
             self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
             self.update_alignment_details() #Shoehorn
@@ -705,20 +694,17 @@ class MainWindow(QMainWindow):
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index - 1
             self.scales_combobox.setCurrentIndex(requested_index)  # Changes The Scale
-            # if self.image_panel_stack_widget.currentIndex() == 0:
             self.read_project_data_update_gui()
-
             self.update_scale_controls()
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
 
-            if self.is_classic_viewer():
-                self.update_aligned_view()
             if self.is_neuroglancer_viewer():
                 self.reload_ng()
-            # if self.main_panel_bottom_widget.currentIndex() == 1: #og
-            #     # self.plot_widget.clear() #0824
+            elif self.is_classic_viewer():
+                self.update_2D_viewers()
+
             self.update_snr_plot()
 
         except:
@@ -728,10 +714,7 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def scale_down(self) -> None:
-        # if self.image_panel_stack_widget.currentIndex() == 1: return
-
         logger.info('scale_down:')
-
         '''Callback function for the Previous Scale button (scales combobox may not be visible but controls the current scale).'''
         if not self.scale_down_button.isEnabled(): return
         if not are_images_imported(): return
@@ -749,7 +732,7 @@ class MainWindow(QMainWindow):
             if self.image_panel_stack_widget.currentIndex() == 0:
                 self.read_project_data_update_gui()
 
-            self.update_aligned_view()
+            self.update_aligned_2D_viewer()
             self.update_scale_controls()
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
@@ -760,10 +743,9 @@ class MainWindow(QMainWindow):
             self.update_snr_plot()
 
             if self.is_classic_viewer():
-                self.update_aligned_view()
+                self.update_aligned_2D_viewer()
             if self.is_neuroglancer_viewer():
                 self.reload_ng()
-
 
         except:
             print_exception()
@@ -798,6 +780,8 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_default()
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
+        self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
+        self.image_panel_landing_page.setStyleSheet('background-color: #000000')
         self.reset_groupbox_styles()
     
     def apply_daylight_style(self):
@@ -808,6 +792,7 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_light()
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
+        self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
         self.reset_groupbox_styles()
     
     def apply_moonlit_style(self):
@@ -818,6 +803,7 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_default()
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
+        self.image_panel_landing_page.setStyleSheet('background-color: #333333')
         self.reset_groupbox_styles()
     
     def apply_sagittarius_style(self):
@@ -827,6 +813,7 @@ class MainWindow(QMainWindow):
         self.hud.set_theme_default()
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
+        self.image_panel_landing_page.setStyleSheet('background-color: #000000')
         self.reset_groupbox_styles()
     
     def reset_groupbox_styles(self):
@@ -945,40 +932,32 @@ class MainWindow(QMainWindow):
             logger.warning('No Scaled Images. Nothing To Do (Caller: %s)' % inspect.stack()[1].function)
             return
 
-        try:
-            self.toggle_skip.setChecked(not cfg.data.skipped())
-            # if self.toggle_skip.isChecked():
-            #     self.set_opacity(self.dual_viewer_w_banner, .5)
-            # else:
-            #     self.set_opacity(self.dual_viewer_w_banner, 1)
-        except:
-            logger.warning('Skip Toggle Widget Failed to Update')
+        try:  self.toggle_skip.setChecked(not cfg.data.skipped())
+        except:  logger.warning('Skip Toggle Widget Failed to Update')
 
-        try: self.jump_input.setText(str(cfg.data.layer()))
-        except: logger.warning('Current Layer Widget Failed to Update')
+        try:  self.jump_input.setText(str(cfg.data.layer()))
+        except:  logger.warning('Current Layer Widget Failed to Update')
 
-        try: self.whitening_input.setText(str(cfg.data.whitening()))
-        except: logger.warning('Whitening Input Widget Failed to Update')
+        try:  self.whitening_input.setText(str(cfg.data.whitening()))
+        except:  logger.warning('Whitening Input Widget Failed to Update')
 
-        try: self.swim_input.setText(str(cfg.data.swim_window()))
-        except: logger.warning('Swim Input Widget Failed to Update')
+        try:  self.swim_input.setText(str(cfg.data.swim_window()))
+        except:  logger.warning('Swim Input Widget Failed to Update')
 
         try: self.toggle_bounding_rect.setChecked(cfg.data.bounding_rect())
         except: logger.warning('Bounding Rect Widget Failed to Update')
 
-        if cfg.data.null_cafm() == False:
-            self.null_bias_combobox.setCurrentText('None')
-        else:
-            self.null_bias_combobox.setCurrentText(str(cfg.data.poly_order()))
+        if  cfg.data.null_cafm() == False:  self.null_bias_combobox.setCurrentText('None')
+        else:  self.null_bias_combobox.setCurrentText(str(cfg.data.poly_order()))
 
-        if cfg.data.layer() == 0:
-            self.layer_down_button.setEnabled(False)
-        else:
-            self.layer_down_button.setEnabled(True)
-        if cfg.data.layer() == cfg.data.n_imgs() - 1:
-            self.layer_up_button.setEnabled(False)
-        else:
-            self.layer_up_button.setEnabled(True)
+        if  cfg.data.layer() == 0:  self.layer_down_button.setEnabled(False)
+        else:  self.layer_down_button.setEnabled(True)
+
+        if  cfg.data.layer() == cfg.data.n_imgs() - 1: self.layer_up_button.setEnabled(False)
+        else:  self.layer_up_button.setEnabled(True)
+
+        self.update_alignment_details()
+        self.jump_input.setText(str(cfg.data.layer()))
 
         #0907-
         # alignment_option = cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option']
@@ -1016,7 +995,8 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def set_idle(self) -> None:
-        self.statusBar.showMessage('Idle')
+        if self._working == False:
+            self.statusBar.showMessage('Idle')
 
     @Slot()
     def set_busy(self) -> None:
@@ -1169,7 +1149,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
         self.update_scale_controls()
-        self.update_all_views()
+        self.update_2D_viewers()
 
     @Slot()
     def fn_ng_layout_combobox(self) -> None:
@@ -1179,7 +1159,7 @@ class MainWindow(QMainWindow):
             elif self.ng_layout_combobox.currentText() == 'yz':
                 self.ng_worker.set_layout_yz()
             elif self.ng_layout_combobox.currentText() == 'xz':
-                self.ng_worker.set_layout_xy()
+                self.ng_worker.set_layout_xz()
             elif self.ng_layout_combobox.currentText() == 'xy-3d':
                 self.ng_worker.set_layout_xy_3d()
             elif self.ng_layout_combobox.currentText() == 'yz-3d':
@@ -1209,53 +1189,53 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def change_layer_up(self):
+        logger.info('change_layer_up:')
         # if self.image_panel_stack_widget.currentIndex() == 1: return
         self.change_layer(1)
 
     @Slot()
     def change_layer_down(self):
+        logger.info('change_layer_down:')
         # if self.image_panel_stack_widget.currentIndex() == 1: return
         self.change_layer(-1)
 
     def change_layer(self, layer_delta):
         """This function loads the next or previous layer"""
-        self.set_status('Loading...')
-        # if neuroglancer.server.is_server_running():
-        #     logger.warning('Neuroglancer Server Is Running')
-        #     return
+        logger.info('change_layer:')
+        try:
+            self.set_status('Loading...')
+            # if neuroglancer.server.is_server_running():
+            #     logger.warning('Neuroglancer Server Is Running')
+            #     return
+            self.jump_to_worst_ticker = 1
+            self.jump_to_best_ticker = 1
+            self.read_gui_update_project_data() #0908+
+            n_imgs = cfg.data.n_imgs()
+            requested = cfg.data.layer() + layer_delta
+            if requested in range(n_imgs):
+                pass
+            elif requested < 0:
+                logger.warning('Cant layer down any further!')
+                self.set_idle()
+                return
+            elif requested > n_imgs - 1:
+                logger.warning('Cant layer up any further!')
+                self.set_idle()
+                return
+            logger.info("Changing to layer %s" % requested)
 
-        self.jump_to_worst_ticker = 1
-        self.jump_to_best_ticker = 1
-        self.read_gui_update_project_data() #0908+
-        n_imgs = cfg.data.n_imgs()
-        requested = cfg.data.layer() + layer_delta
-        if requested in range(n_imgs):
-            pass
-        elif requested < 0:
-            logger.warning('Cant layer down any further!')
-            self.set_idle()
-            return
-        elif requested > n_imgs - 1:
-            logger.warning('Cant layer up any further!')
-            self.set_idle()
-            return
-        logger.info("Changing to layer %s" % requested)
-
-        cfg.data.set_layer(requested)
-
-        # self.update_unaligned_view() #0920-
-
-        if self.image_panel_stack_widget.currentIndex() == 1:
-            state = copy.deepcopy(cfg.viewer.state)
-            # state = cfg.viewer.state
-            state.position += layer_delta
-            cfg.viewer.set_state(state)
-            # self.reload_ng()
-
-        if self.image_panel_stack_widget.currentIndex() == 0:
-            if are_aligned_images_generated():
-                self.img_panels['aligned'].setCurrentIndex(requested)
+            cfg.data.set_layer(requested)
             self.read_project_data_update_gui()
+
+            if self.is_neuroglancer_viewer():
+                state = copy.deepcopy(cfg.viewer.state)
+                state.position[0] = requested
+                cfg.viewer.set_state(state)
+
+            if self.is_classic_viewer():
+                if are_aligned_images_generated():
+                    self.img_panels['aligned'].setCurrentIndex(requested)
+                self.update_unaligned_2D_viewer()
 
         # painter = QPainter(self)
         # s, l = cfg.data.scale(), cfg.data.layer()
@@ -1296,35 +1276,11 @@ class MainWindow(QMainWindow):
         #     painter.drawRect(painter.viewport())
         #
         #     # painter.fillRect(rect, QBrush(QColor(128, 128, 255, 128)))
+        except:
+            print_exception()
+        finally:
+            self.set_idle()
 
-
-
-        self.set_idle()
-
-
-        # def get_state(self):
-        #     return cfg.viewer
-
-    # def load_unaligned_stacks(self):
-    #     try:
-    #         self.zarr_scales = {}
-    #         for s in cfg.data.scales():
-    #             name = os.path.join(cfg.data.dest(), s + '.zarr')
-    #             dataset_future = get_zarr_tensor(name)
-    #             # self.zarr_scales[s] = dataset_future.result()
-    #             # dataset = await dataset_future
-    #             import asyncio
-    #             self.zarr_scales[s] = await dataset_future
-    #     except:
-    #         logger.info('No Unaligned Zarr Stacks Were Loaded')
-
-
-    # def run_zarr_benchmark(self):
-    #     zarr_scales = {}
-    #     dest = cfg.data.dest()
-    #     for s in cfg.data.scales():
-    #         name = os.path.join(dest, s + '.zarr')
-    #         zarr_scales[s] = da.from_zarr(name)
 
     def load_unaligned_stacks(self):
         logger.critical('Getting Results of Unaligned TensorStore Objects...')
@@ -1342,80 +1298,89 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def update_unaligned_view(self):
+    def update_unaligned_2D_viewer(self):
         '''Called by read_project_data_update_gui '''
-        logger.debug('update_unaligned_view (called by %s):' % inspect.stack()[1].function)
-        # cfg.image_library.preload_images(cfg.data.layer())
-        s, l, dest = cfg.data.scale(), cfg.data.layer(), cfg.data.dest()
-        logger.info('s,l,dest = %s, %s, %s' % (cfg.data.scale(), str(cfg.data.layer()), cfg.data.dest()))
-        image_dict = cfg.data['data']['scales'][s]['alignment_stack'][l]['images']
-        is_skipped = cfg.data['data']['scales'][s]['alignment_stack'][l]['skipped']
-        scale_str = 's' + str(get_scale_val(cfg.data.scale()))
+        logger.debug('update_unaligned_2D_viewer:')
+        if self.image_panel_stack_widget.currentIndex() == 0:
+            # cfg.image_library.preload_images(cfg.data.layer())
+            s, l, dest = cfg.data.scale(), cfg.data.layer(), cfg.data.dest()
+            logger.info('s,l,dest = %s, %s, %s' % (cfg.data.scale(), str(cfg.data.layer()), cfg.data.dest()))
+            image_dict = cfg.data['data']['scales'][s]['alignment_stack'][l]['images']
+            is_skipped = cfg.data['data']['scales'][s]['alignment_stack'][l]['skipped']
+            scale_str = 's' + str(get_scale_val(cfg.data.scale()))
 
-        try:
-            if l != 0:
-                x_ref, x_base = self.zarr_scales[scale_str][l-1, :, :], self.zarr_scales[scale_str][l, :, :]
-                future_ref, future_base = x_ref.read(), x_base.read()
-                logger.debug('Setting image ref')
-                self.img_panels['ref'].setImage(future_ref.result())
-                logger.debug('Setting image base')
-                self.img_panels['base'].setImage(future_base.result())
-            elif l == 0:
-                self.img_panels['ref'].clearImage()
-                x_base = self.zarr_scales[scale_str][l, :, :]
-                future_base = x_base.read()
-                logger.debug('Setting image base')
-                self.img_panels['base'].setImage(future_base.result())
+            try:
+                if l != 0:
+                    x_ref, x_base = self.zarr_scales[scale_str][l-1, :, :], self.zarr_scales[scale_str][l, :, :]
+                    future_ref, future_base = x_ref.read(), x_base.read()
+                    logger.debug('Setting image ref')
+                    self.img_panels['ref'].setImage(future_ref.result())
+                    logger.debug('Setting image base')
+                    self.img_panels['base'].setImage(future_base.result())
+                elif l == 0:
+                    self.img_panels['ref'].clearImage()
+                    x_base = self.zarr_scales[scale_str][l, :, :]
+                    future_base = x_base.read()
+                    logger.debug('Setting image base')
+                    self.img_panels['base'].setImage(future_base.result())
 
-        except:
-            print_exception()
-            logger.warning('Unable To Render Unaligned Stacks')
-
-
-    def update_aligned_view(self):
-        logger.critical('update_aligned_view:')
-        if is_cur_scale_aligned():
-            dest = cfg.data.dest()
-            zarr_path = os.path.join(dest, 'img_aligned.zarr')
-            path = os.path.join(zarr_path, 's' + str(cfg.data.scale_val()))
-            # np_data = zarr.load(path)
-            # np_data = np.transpose(np_data, axes=[1, 2, 0])
-
-            # zarr_data = da.from_zarr(path, inline_array=True) # <class 'dask.array.core.Array' #orig
-            # zarr_data = np.moveaxis(zarr_data,0,2) # Now has shape (512, 512, 1)
-            dataset_future = get_zarr_tensor(path)
-
-            logger.info('Calling dataset_future.result()')
-            t0 = time.time()
-            dataset = dataset_future.result()
-            dt = time.time() - t0
-            logger.info('dataset_future.result() Finished In %g Seconds' % dt)
-            logger.info('dataset.domain: %s' % dataset.domain)
-            # dataset.domain = { [0, 100*), [0, 1354*), [0, 1354*) }
-
-            # zarr_data = np.asarray(tensor_arr.result())
-            # zarr_data = np.moveaxis(zarr_data, 0, 2)  # Now has shape (512, 512, 1)
-            # self.img_panels['aligned'].setImage(zarr_data)
-            self.img_panels['aligned'].setImage(dataset)
-            self.img_panels['aligned'].setCurrentIndex(cfg.data.layer())
+            except:
+                print_exception()
+                logger.warning('Unable To Render Unaligned Stacks')
         else:
-            self.img_panels['aligned'].imageViewer.clearImage()
-            logger.warning('No Aligned Stack for Current Scale')
+            logger.warning("update_unaligned_2D_viewer was called by '%s' but 2D viewer is not being used" % inspect.stack()[1].function)
 
-        # th_ref = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['ref']['filename']"))
-        # th_base = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['base']['filename']"))
+
+    def update_aligned_2D_viewer(self):
+        logger.critical('update_aligned_2D_viewer:')
+        if self.image_panel_stack_widget.currentIndex() == 0:
+            if is_cur_scale_aligned():
+                dest = cfg.data.dest()
+                zarr_path = os.path.join(dest, 'img_aligned.zarr')
+                path = os.path.join(zarr_path, 's' + str(cfg.data.scale_val()))
+                # np_data = zarr.load(path)
+                # np_data = np.transpose(np_data, axes=[1, 2, 0])
+                # zarr_data = da.from_zarr(path, inline_array=True) # <class 'dask.array.core.Array' #orig
+                # zarr_data = np.moveaxis(zarr_data,0,2) # Now has shape (512, 512, 1)
+                dataset_future = get_zarr_tensor(path)
+
+                logger.info('Calling dataset_future.result()')
+                t0 = time.time()
+                dataset = dataset_future.result()
+                dt = time.time() - t0
+                logger.info('dataset_future.result() Finished In %g Seconds' % dt)
+                logger.info('dataset.domain: %s' % dataset.domain)
+                # dataset.domain = { [0, 100*), [0, 1354*), [0, 1354*) }
+                # zarr_data = np.asarray(tensor_arr.result())
+                # zarr_data = np.moveaxis(zarr_data, 0, 2)  # Now has shape (512, 512, 1)
+                # self.img_panels['aligned'].setImage(zarr_data)
+                self.img_panels['aligned'].setImage(dataset)
+                self.img_panels['aligned'].setCurrentIndex(cfg.data.layer())
+            else:
+                self.img_panels['aligned'].imageViewer.clearImage()
+                logger.warning('No Aligned Stack for Current Scale')
+
+            # th_ref = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['ref']['filename']"))
+            # th_base = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['base']['filename']"))
+        else:
+            logger.warning("update_aligned_2D_viewer was called by '%s' but 2D viewer is not being used" % inspect.stack()[1].function)
 
     @Slot()
-    def update_all_views(self):
-        logger.critical('Called By %s' % inspect.stack()[1].function)
-        if are_images_imported():
-            logger.critical('Images Are Imported')
-            try:     self.update_unaligned_view()
-            except:  logger.warning('An exception occurred while attempting to update unaligned image panels')
-        if cfg.data.scale() in self.aligned_scales:
-            logger.critical('Scale Is Aligned')
-            try:     self.update_aligned_view()
-            except:  logger.warning('An exception occurred while attempting to update aligned image panel')
+    def update_2D_viewers(self):
+        logger.critical('Updating 2D viewers... called By %s' % inspect.stack()[1].function)
+        if self.is_classic_viewer():
+            if are_images_imported():
+                logger.critical('Images Are Imported')
+                try:     self.update_unaligned_2D_viewer()
+                except:  logger.warning('An exception occurred while attempting to update unaligned image panels')
+            # if is_cur_scale_aligned():
+            if are_aligned_images_generated():
+                logger.critical('Scale Is Aligned')
+                try:     self.update_aligned_2D_viewer()
+                except:  logger.warning('An exception occurred while attempting to update aligned image panel')
+        else:
+            logger.warning("update_2D_viewers was called by '%s' but classic viewer is not in use" % inspect.stack()[1].function)
+
 
     @Slot()
     def clear_images(self):
@@ -1459,8 +1424,9 @@ class MainWindow(QMainWindow):
                 self.hud('New Project Canceled', logging.WARNING)
                 self.set_idle()
                 return
+        self.image_panel_stack_widget.setCurrentIndex(2)
+        self.clear_snr_plot()
         self.set_progress_stage_0()
-
         self.reset_details_banner()
 
         self.hud('Creating New Project...')
@@ -1468,7 +1434,6 @@ class MainWindow(QMainWindow):
         self.img_panels['ref'].clearImage()
         self.img_panels['base'].clearImage()
         self.img_panels['aligned'].imageViewer.clearImage()
-        self.aligned_scales = []
         filename = self.new_project_save_as_dialog()
         if filename == '':
             self.hud("Must Provide A Name For The Project.")
@@ -1562,6 +1527,7 @@ class MainWindow(QMainWindow):
     
     def open_project(self):
         self.main_widget.setCurrentIndex(0)
+        self.image_panel_stack_widget.setCurrentIndex(2)
         self.set_status("Open Project...")
         #Todo need something like this here
         # if self._unsaved_changes:
@@ -1597,49 +1563,27 @@ class MainWindow(QMainWindow):
                 self.set_idle()
                 return
             self.hud("Loading Project '%s'..." % filename)
+
             project.set_paths_absolute(head=filename)
             cfg.data = copy.deepcopy(project)  # Replace the current version with the copy
             cfg.data.link_all_stacks()
-
-
+            self.clear_snr_plot()
             if are_images_imported():
-                self.load_unaligned_stacks()
-                self.update_unaligned_view()
-                if are_aligned_images_generated():
-                    logger.info('Aligned Images Are Generated. Updating aligned view.')
-                    self.update_aligned_view()
-                else:
-                    logger.info('Aligned Images Are Not Generated. Not updating aligned view.')
-            if is_any_scale_aligned_and_generated():
-                self.aligned_scales.extend(cfg.data.aligned_list())
+                cfg.IMAGES_IMPORTED = True
+                if self.is_classic_viewer():
+                    self.load_unaligned_stacks()
+                    self.update_2D_viewers()
+            else:
+                cfg.IMAGES_IMPORTED = False
 
             self.read_project_data_update_gui()
             self.auto_set_user_progress()
             self.reload_scales_combobox()
             self.update_scale_controls()
-            # self.multi_img_viewer.setFocus()
+            self.update_snr_plot()
 
-            if is_cur_scale_aligned():
-                self.update_snr_plot()
-
-            if self.is_neuroglancer_viewer():
-                self.use_neuroglancer_viewer()
-
-            if are_images_imported():
-                cfg.IMAGES_IMPORTED = True
-                self.generate_scales_button.setEnabled(True)
-            else:
-                cfg.IMAGES_IMPORTED = False
-                self.generate_scales_button.setEnabled(False)
-
-            if are_aligned_images_generated():
-                # self.img_panels['aligned'].imageViewer.show_ng_button()
-                self.img_panels['aligned'].show_ng_button()
-            else:
-                # self.img_panels['aligned'].imageViewer.hide_ng_button()
-                self.img_panels['aligned'].hide_ng_button()
+            self.use_neuroglancer_viewer() # force neuroglancer viewer (changes stack index)
             self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
-            # self.hud("Project '%s'" % cfg.data.dest())
             self.hud.done()
         else:
             self.hud("No Project File (.json) Selected", logging.WARNING)
@@ -1738,17 +1682,6 @@ class MainWindow(QMainWindow):
             return
         self._unsaved_changes = True
 
-    # @Slot()
-    # def actual_size(self):
-    #     logger.info("MainWindow.actual_size:")
-    #     for p in self.panel_list:
-    #         p.dx = p.mdx = p.ldx = 0
-    #         p.dy = p.mdy = p.ldy = 0
-    #         p.wheel_index = 0
-    #         p.zoom_scale = 1.0
-    #         p.update_zpa_self()
-
-    
     def add_image_to_role(self, image_file_name, role_name):
         logger.debug("Adding Image %s to Role '%s'" % (image_file_name, role_name))
         #### prexisting note: This function is now much closer to empty_into_role and should be merged
@@ -1824,7 +1757,6 @@ class MainWindow(QMainWindow):
         self.hud.done()
         if are_images_imported():
             cfg.IMAGES_IMPORTED = True
-            self.generate_scales_button.setEnabled(True)
             img_size = get_image_size(
                 cfg.data['data']['scales']['scale_1']['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
             cfg.data.link_all_stacks()
@@ -1949,7 +1881,7 @@ class MainWindow(QMainWindow):
         self.app.quit()
         # logger.info('Calling sys.exit()')
         # logger.info('Calling system exit...')
-        # sys.exit() # This might be bad, might need to be called from main thread
+        # sys.exit() # this may need to be called from main thread
 
 
     def documentation_view(self):  # documentationview
@@ -1977,6 +1909,42 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
 
 
+    def use_neuroglancer_viewer(self):  #view_3dem #ngview #neuroglancer
+        '''
+        https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
+        https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
+        '''
+        self.set_status('Loading Viewer...')
+        logger.info("Switching To Neuroglancer Viewer")
+        self.image_panel_stack_widget.setCurrentIndex(1)
+        if not are_images_imported():
+            self.hud('Nothing To View', logging.WARNING)
+            return
+        dest = os.path.abspath(cfg.data['data']['destination_path'])
+        s, l = cfg.data.scale(), cfg.data.layer()
+        self.ng_worker = NgHost(src=dest, scale=s, port=9000)
+        self.threadpool.start(self.ng_worker)
+        self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
+        self.ng_browser.setFocus()
+        self.ng_layout_combobox.setCurrentText('xy')
+        # self.hud('Displaying Alignment In Neuroglancer')
+        self.set_idle()
+
+    def is_neuroglancer_viewer(self) -> bool:
+        if self.image_panel_stack_widget.currentIndex() == 1:
+            return True
+        else:
+            return False
+
+    def use_classic_viewer(self):
+        self.image_panel_stack_widget.setCurrentIndex(0)
+        self.read_project_data_update_gui()
+
+    def is_classic_viewer(self) -> bool:
+        if self.image_panel_stack_widget.currentIndex() == 0:  return True
+        else:  return False
+
+
     def ng_set_layout_yz(self): self.ng_worker.set_layout_yz(); self.reload_ng()
     def ng_set_layout_xy(self): self.ng_worker.set_layout_xy(); self.reload_ng()
     def ng_set_layout_xz(self): self.ng_worker.set_layout_xz(); self.reload_ng()
@@ -1987,14 +1955,13 @@ class MainWindow(QMainWindow):
     def ng_set_layout_3d(self): self.ng_worker.set_layout_3d(); self.reload_ng()
 
 
+
     def reload_remote(self):
         logger.info("Reloading Remote Neuroglancer Server")
         self.remote_view()
 
     def exit_ng(self):
         self.hud("Exiting Neuroglancer Viewer")
-        self.hud('Stopping Neuroglancer Server')
-        # neuroglancer.server.stop()
         self.image_panel_stack_widget.setCurrentIndex(0)  #0906
         new_cur_layer = int(cfg.viewer.state.voxel_coordinates[0])
         cfg.data.set_layer(new_cur_layer)
@@ -2037,7 +2004,7 @@ class MainWindow(QMainWindow):
             # logger.info("Viewer.txn : ", self.viewer.txn)
             # logger.info("Viewer.actions : ", self.viewer.actions)
         except:
-            pass
+            print_exception()
 
 
     def print_ng_state(self):
@@ -2066,9 +2033,6 @@ class MainWindow(QMainWindow):
         except:
             pass
 
-
-
-
     def dump_ng_details(self):
         if not are_images_imported():
             return
@@ -2080,49 +2044,6 @@ class MainWindow(QMainWindow):
 
     def blend_ng(self):
         logger.info("blend_ng():")
-
-
-    def use_classic_viewer(self):
-        self.image_panel_stack_widget.setCurrentIndex(0)
-
-
-    def is_classic_viewer(self) -> bool:
-        if self.image_panel_stack_widget.currentIndex() == 0:
-            return True
-        else:
-            return False
-
-
-    def is_neuroglancer_viewer(self) -> bool:
-        if self.image_panel_stack_widget.currentIndex() == 1:
-            return True
-        else:
-            return False
-
-
-    def use_neuroglancer_viewer(self):  #view_3dem #ngview #neuroglancer
-        '''
-        https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
-        https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
-        '''
-        self.set_status('Busy...')
-        logger.info("Switching To Neuroglancer Viewer")
-        self.image_panel_stack_widget.setCurrentIndex(1)
-        if not are_images_imported():
-            self.hud('Nothing To View', logging.WARNING)
-            return
-        dest = os.path.abspath(cfg.data['data']['destination_path'])
-        s, l = cfg.data.scale(), cfg.data.layer()
-        # al_path = os.path.join(dest, 'img_aligned.zarr')
-        # self.hud("Serving Directory '%s' over HTTP" % dest)
-        self.ng_worker = NgHost(src=dest, scale=s, port=9000)
-        self.threadpool.start(self.ng_worker)
-        self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
-        self.ng_browser.setFocus()
-        self.hud('Displaying Alignment In Neuroglancer')
-        self.set_idle()
-
-
 
 
     def show_splash(self):
@@ -2145,7 +2066,7 @@ class MainWindow(QMainWindow):
             logger.warning('Dialog Did Not Return A Result')
             return
         else:
-            # self.update_unaligned_view() # Can't show image stacks before creating Zarr scales
+            # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
             self.run_scaling_auto()
 
 
@@ -2272,9 +2193,21 @@ class MainWindow(QMainWindow):
         # self.multi_img_viewer.show()
         self.image_panel_stack_widget.show()
         self.main_widget.setCurrentIndex(0)
-        # self.image_panel_stack_widget.setCurrentIndex(1)
-        # self.image_panel_stack_widget.setCurrentIndex(1)
         self.image_panel_stack_widget.setCurrentIndex(1)
+        # self.main_panel_bottom_widget.setCurrentIndex(0)
+        self.set_idle()
+
+    def set_blank_view(self):
+        '''Not Currently In Use - Being Worked On'''
+        # neuroglancer.server.stop()
+        # self.image_panel_widget.show()
+        self.lower_panel_groups.show()
+        # self.multi_img_viewer.show()
+        self.image_panel_stack_widget.show()
+        self.main_widget.setCurrentIndex(0)
+        self.image_panel_stack_widget.setCurrentIndex(1)
+
+        # self.ng_layout_combobox.set
 
         # self.main_panel_bottom_widget.setCurrentIndex(0)
         self.set_idle()
@@ -2286,14 +2219,14 @@ class MainWindow(QMainWindow):
             self.lower_panel_groups.hide()
             self.image_panel_stack_widget.hide()
             self.bottom_display_area_widget.adjustSize()
-            self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-down", color=ICON_COLOR))
+            self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
 
         elif self.image_panel_stack_widget.isHidden():
             # self.multi_img_viewer.show()
             self.dual_viewer_w_banner.show()
             self.lower_panel_groups.show()
             self.image_panel_stack_widget.show()
-            self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color=ICON_COLOR))
+            self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color='#f3f6fb'))
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.KeyPress:
@@ -2341,11 +2274,11 @@ class MainWindow(QMainWindow):
                  ['Reload Neuroglancer', 'None', self.reload_ng, None, None, None],
                  ['Neuroglancer Layout',
                   [
-                      ['yz', None, self.ng_set_layout_yz, None, None, None],
                       ['xy', None, self.ng_set_layout_xy, None, None, None],
                       ['xz', None, self.ng_set_layout_xz, None, None, None],
-                      ['xy-3d', None, self.ng_set_layout_xy_3d, None, None, None],
+                      ['yz', None, self.ng_set_layout_yz, None, None, None],
                       ['yz-3d', None, self.ng_set_layout_yz_3d, None, None, None],
+                      ['xy-3d', None, self.ng_set_layout_xy_3d, None, None, None],
                       ['xz-3d', None, self.ng_set_layout_xz_3d, None, None, None],
                       # ['3d', None, self.ng_set_layout_3d, None, None, None],
                       ['4panel', None, self.ng_set_layout_4panel, None, None, None],
@@ -2370,6 +2303,7 @@ class MainWindow(QMainWindow):
             ['&Tools',
              [
                  ['Project Configuration', None, self.configure_project, None, None, None],
+                 ['Regenerate Zarr Scales', None, generate_zarr_scales, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
                  ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
                  ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
@@ -2471,7 +2405,7 @@ class MainWindow(QMainWindow):
         self.hud = HeadupDisplay(self.app)
         self.hud.setObjectName('hud')
         self.hud.setContentsMargins(0, 0, 0, 0)
-        self.hud('Welcome to Alignment With AlignEM-SWiFT.', logging.INFO)
+        self.hud('Welcome To AlignEM-SWiFT.', logging.INFO)
 
         self.new_project_button = QPushButton(" New")
         self.new_project_button.clicked.connect(self.new_project)
@@ -2549,7 +2483,6 @@ class MainWindow(QMainWindow):
         self.generate_scales_button.setFixedSize(square_button_size)
         self.generate_scales_button.setStyleSheet("font-size: 10px;")
         self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color=ICON_COLOR))
-        self.generate_scales_button.setEnabled(False)
 
         tip = 'Reset skips (keep all)'
         self.clear_all_skips_button = QPushButton('Clear')
@@ -2574,7 +2507,7 @@ class MainWindow(QMainWindow):
 
 
         self.ng_layout_combobox = QComboBox()
-        ng_layouts = ['xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d']
+        ng_layouts = ['','xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d']
         self.ng_layout_combobox.addItems(ng_layouts)
         self.ng_layout_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.ng_layout_combobox.setFixedSize(QSize(76, std_height))
@@ -3094,8 +3027,6 @@ class MainWindow(QMainWindow):
         self.python_console.setAttribute(Qt.WA_TranslucentBackground)
         self.plot_widget_container.setAttribute(Qt.WA_TranslucentBackground)
 
-
-
         self.bottom_panel_splitter.setStretchFactor(0, 3)
         self.bottom_panel_splitter.setStretchFactor(1, 1)
         self.bottom_panel_splitter.setStretchFactor(2, 1)
@@ -3121,11 +3052,15 @@ class MainWindow(QMainWindow):
                                "border-bottom-color: qlineargradient(spread:pad, x1:0.5, y1:1, x2:0.5, y2:0, stop:0 rgb(215, 215, 215), stop:1 rgb(222, 222, 222));" \
                                "border-width: 1px;" \
                                "border-radius: 3px;" \
-                               "color: rgb(0,0,0);" \
-                               "background-color: rgb(255,255,255);" \
+                               "background-color: #004060; color: #f3f6fb;" \
                                "font-size: 10px;"
 
+        # "color: rgb(0,0,0);" \
+            # self.python_console.setStyleSheet('background-color: #35637c; color: #f3f6fb;')
+        self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
 
+        # "background-color: rgb(255,255,255);" \
+        # "background-color: rgb(255,255,255);" \
         '''Lower Right Tool Selection Buttons'''
         tip = 'Expand Bottom Panel'
         self.expand_bottom_panel_button = QPushButton()
@@ -3135,7 +3070,7 @@ class MainWindow(QMainWindow):
         self.expand_bottom_panel_button.clicked.connect(self.expand_bottom_panel_callback)
         # self.expand_bottom_panel_button.setFixedSize(30,15)
         self.expand_bottom_panel_button.setFixedSize(square_button_width,15)
-        self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color=ICON_COLOR))
+        self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color='#f3f6fb'))
 
         self.show_hide_hud_button = QPushButton("Head-up\nDisplay")
         self.show_hide_hud_button.setStyleSheet(lower_controls_style)
@@ -3144,7 +3079,7 @@ class MainWindow(QMainWindow):
         self.show_hide_hud_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.show_hide_hud_button.clicked.connect(self.show_hide_hud)
         self.show_hide_hud_button.setFixedSize(square_button_size)
-        self.show_hide_hud_button.setIcon(qta.icon("mdi.monitor", color=ICON_COLOR))
+        self.show_hide_hud_button.setIcon(qta.icon("mdi.monitor", color='#f3f6fb'))
 
         self.show_hide_python_button = QPushButton("Python\nConsole")
         self.show_hide_python_button.setStyleSheet(lower_controls_style)
@@ -3152,7 +3087,7 @@ class MainWindow(QMainWindow):
         self.show_hide_python_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.show_hide_python_button.clicked.connect(self.show_hide_python)
         self.show_hide_python_button.setFixedSize(square_button_size)
-        self.show_hide_python_button.setIcon(qta.icon("fa.terminal", color=ICON_COLOR))
+        self.show_hide_python_button.setIcon(qta.icon("fa.terminal", color='#f3f6fb'))
 
         self.show_hide_snr = QPushButton(" SNR\n Plot")
         self.show_hide_snr.setStyleSheet(lower_controls_style)
@@ -3161,7 +3096,7 @@ class MainWindow(QMainWindow):
         self.show_hide_snr.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.show_hide_snr.clicked.connect(self.update_snr_plot)
         self.show_hide_snr.setFixedSize(square_button_size)
-        self.show_hide_snr.setIcon(qta.icon("mdi.scatter-plot", color=ICON_COLOR))
+        self.show_hide_snr.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
 
         self.plot_widget_clear_button = QPushButton('Clear Plot')
         self.plot_widget_clear_button.setStyleSheet(lower_controls_style)
@@ -3177,7 +3112,7 @@ class MainWindow(QMainWindow):
         # self.project_view_button.clicked.connect(self.show_hide_json)
         self.project_view_button.setFixedSize(square_button_size)
         # self.project_view_button.setStyleSheet("font-size: 10px;")
-        self.project_view_button.setIcon(qta.icon("mdi.json", color=ICON_COLOR))
+        self.project_view_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
 
         self.main_lwr_vlayout = QVBoxLayout()
         self.main_lwr_vlayout.setContentsMargins(0, 10, 8, 0)
@@ -3247,31 +3182,13 @@ class MainWindow(QMainWindow):
         '''Image Panel Stack Widget'''
         self.image_panel_stack_widget = QStackedWidget()
         # self.image_panel_stack_widget.setStyleSheet('background-color: #000000;')
-        # self.image_panel_stack_widget.addWidget(self.image_panel_widget)
+
+        self.image_panel_landing_page = QWidget()
+        self.image_panel_landing_page.setStyleSheet('background-color: #000000')
+
         self.image_panel_stack_widget.addWidget(self.multi_img_viewer)
-
-        self.stack_widget_placeholder = QLabel()
-        self.stack_widget_placeholder.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.stack_widget_placeholder.setObjectName('stack_widget_placeholder')
-        # pixmap = QPixmap('src/resources/em_guy.png')
-        # self.stack_widget_placeholder.setPixmap(pixmap)
-
-        # rect = r1 = QRect(100, 200, 11, 16)
-
-        # painter = QPainter(self)
-        # br = QBrush(QColor(100, 10, 10, 40))
-        # painter.setBrush(br)
-        # # painter.drawRect(QRect(self.begin, self.end))
-        # painter.drawRect(100, 15, 400, 200)
-        # self.resize(pixmap.width(), pixmap.height())
-        # self.resize(pixmap.width(), pixmap.height())
-        # self.stack_widget_placeholder.setStyleSheet("QLineEdit { background-color: yellow }")
-
-
         self.image_panel_stack_widget.addWidget(self.ng_panel)
-        # self.image_panel_stack_widget.addWidget(self.stack_widget_placeholder)
-        # self.image_panel_stack_widget.addWidget(rect)
-        # self.image_panel_stack_widget.addWidget(self.splash_animation)
+        self.image_panel_stack_widget.addWidget(self.image_panel_landing_page)
 
         self.dual_viewer_w_banner = QWidget()
         self.dual_viewer_w_banner_layout = QVBoxLayout()
@@ -3279,20 +3196,16 @@ class MainWindow(QMainWindow):
         self.dual_viewer_w_banner_layout.addWidget(self.details_banner)
         self.dual_viewer_w_banner_layout.addWidget(self.image_panel_stack_widget)
 
-
         '''Main Splitter'''
         # main_window.splitter.sizes() # Out[20]: [400, 216, 160]
         self.splitter = QSplitter(Qt.Orientation.Vertical)
         self.splitter.splitterMoved.connect(self.clear_zoom)
         self.splitter.setHandleWidth(4)
         self.splitter.setContentsMargins(0, 0, 0, 0)
-        # self.splitter.addWidget(self.image_panel_widget)
-        # self.splitter.addWidget(self.image_panel_stack_widget)
         self.splitter.addWidget(self.dual_viewer_w_banner)
         self.splitter.addWidget(self.lower_panel_groups)
         self.splitter.addWidget(self.bottom_display_area_widget)
-        # self.splitter.setStretchFactor(0, 5)
-        self.splitter.setStretchFactor(0, 3)
+        self.splitter.setStretchFactor(0, 5)
         self.splitter.setStretchFactor(1, 1)
         self.splitter.setStretchFactor(2, 2)
         self.splitter.setCollapsible(0, False)
@@ -3314,20 +3227,17 @@ class MainWindow(QMainWindow):
         self.save_project_project_view_button = QPushButton("Save")
         self.save_project_project_view_button.setFixedSize(std_button_size)
         self.save_project_project_view_button.clicked.connect(self.save_project)
-        self.project_view_panel = QWidget()
-        self.project_view_panel_layout = QVBoxLayout()
-        self.project_view_panel_layout.addWidget(self.project_view)
-        self.project_view_panel_controls_layout = QHBoxLayout()
-        self.project_view_panel_controls_layout.addWidget(self.exit_project_view_button,
-                                                          alignment=Qt.AlignmentFlag.AlignLeft)
-        self.project_view_panel_controls_layout.addWidget(self.refresh_project_view_button,
-                                                          alignment=Qt.AlignmentFlag.AlignLeft)
-        self.project_view_panel_controls_layout.addWidget(self.save_project_project_view_button,
-                                                          alignment=Qt.AlignmentFlag.AlignLeft)
-        self.project_view_panel_controls_layout.addSpacerItem(
+        self.treeview_widget = QWidget()
+        self.treeview_layout = QVBoxLayout()
+        self.treeview_layout.addWidget(self.project_view)
+        self.treeview_ctl_layout = QHBoxLayout()
+        self.treeview_ctl_layout.addWidget(self.exit_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.treeview_ctl_layout.addWidget(self.refresh_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.treeview_ctl_layout.addWidget(self.save_project_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.treeview_ctl_layout.addSpacerItem(
             QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-        self.project_view_panel_layout.addLayout(self.project_view_panel_controls_layout)
-        self.project_view_panel.setLayout(self.project_view_panel_layout)
+        self.treeview_layout.addLayout(self.treeview_ctl_layout)
+        self.treeview_widget.setLayout(self.treeview_layout)
 
         '''Documentation Panel'''
         self.browser_docs = QWebEngineView()
@@ -3397,7 +3307,7 @@ class MainWindow(QMainWindow):
         self.main_widget.addWidget(self.docs_panel)                 # (1) docs_panel
         self.main_widget.addWidget(self.demos_panel)                # (2) demos_panel
         self.main_widget.addWidget(self.remote_viewer_panel)        # (3) remote_viewer_panel
-        self.main_widget.addWidget(self.project_view_panel)         # (4) self.project_view
+        self.main_widget.addWidget(self.treeview_widget)         # (4) self.project_view
         self.main_widget.setCurrentIndex(0)
         self.main_layout = QVBoxLayout()
         self.main_layout.addWidget(self.main_widget)
@@ -3418,8 +3328,6 @@ class MainWindow(QMainWindow):
 
         self.bottom_display_area_widget.setAutoFillBackground(True)
         self.bottom_display_area_widget.setStyleSheet("background-color: #000000;")
-
-        # self.setWindowFlags(Qt.FramelessWindowHint)
 
         self.multi_img_viewer.setStyleSheet('background-color: #000000;')
 
