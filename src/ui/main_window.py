@@ -85,8 +85,8 @@ class MainWindow(QMainWindow):
 
         self.project_progress = 0
         self.project_aligned_scales = []
-        self.scales_combobox_switch = 0
-        # self.scales_combobox_switch = 1
+        # self.scales_combobox_switch = 0
+        self.scales_combobox_switch = 1
         self.jump_to_worst_ticker = 1  # begin iter at 1 b/c first image has no ref
         self.jump_to_best_ticker = 0
         
@@ -140,25 +140,9 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.initShortcuts()
 
-        logger.info('Applying Stylesheet')
-        self.main_stylesheet = os.path.abspath('src/styles/default.qss')
-        # self.main_stylesheet = os.path.abspath('src/styles/daylight.qss')
-        self.setStyleSheet(open(self.main_stylesheet).read())  # must be after QMainWindow.__init__(self)
+        self.apply_default_style()
 
-        # self.img_panels['ref'].scaled.connect(self.img_panels['base'].set_transform)
-        # self.img_panels['base'].scaled.connect(self.img_panels['ref'].set_transform)
-        # 
-        # self.img_panels['ref'].scaled.connect(self.img_panels['base'].set_transform)
-        # self.img_panels['base'].scaled.connect(self.img_panels['ref'].set_transform)
-        
-        # self.img_panels['ref'].viewChanged.connect(self.img_panels['base'].updateViewer())
-        # self.img_panels['base'].viewChanged.connect(self.img_panels['ref'].updateViewer())
-
-        #orig #0912
-        # bindScrollBars(self.img_panels['ref'].horizontalScrollBar(), self.img_panels['base'].horizontalScrollBar())
-        # bindScrollBars(self.img_panels['ref'].verticalScrollBar(), self.img_panels['base'].verticalScrollBar())
-
-        self.set_idle()
+        # self.set_idle()
 
         # self.set_normal_view() #0925
         self.image_panel_stack_widget.setCurrentIndex(2)
@@ -229,7 +213,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def scale(self) -> None:
         logger.info("scale:")
-        self.scales_combobox_switch = 0
+        # self.scales_combobox_switch = 0
         if self._working == True:
             self.hud('Another Process is Already Running', logging.WARNING)
             self.set_idle()
@@ -346,20 +330,17 @@ class MainWindow(QMainWindow):
         self.update_unaligned_2D_viewer()
         self.read_project_data_update_gui()
         self.set_progress_stage_2()
-        self.scales_combobox_switch = 0
         self.reload_scales_combobox()  # 0529 #0713+
-        self.scales_combobox_switch = 1
         self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
         self.update_scale_controls()
         self.save_project_to_file()
         self.hud.done()
-        self.scales_combobox_switch = 1
         # self.set_idle()
 
 
     def run_scaling_auto(self):
         self.set_status("Scaling...")
-        self.scales_combobox_switch = 0
+        # self.scales_combobox_switch = 0
         try:
             self.worker = BackgroundWorker(fn=generate_scales())
             self.threadpool.start(self.worker)
@@ -393,16 +374,13 @@ class MainWindow(QMainWindow):
         logger.info('Setting user progress...')
         self.set_progress_stage_2()
         logger.info('Reloading scales combobox...')
-        self.scales_combobox_switch = 0
         self.reload_scales_combobox()  # 0529 #0713+
-        self.scales_combobox_switch = 1
         logger.info('Settings combobox index...')
         self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
         logger.info('Updating scale controls...')
         self.update_scale_controls()
         logger.info('Saving project to file...')
         self.save_project_to_file()
-        self.scales_combobox_switch = 1
         self.hud.done()
         # self.set_idle()
 
@@ -689,7 +667,7 @@ class MainWindow(QMainWindow):
             return
         try:
             self.clear_images()
-            self.scales_combobox_switch = 1
+            # self.scales_combobox_switch = 1
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index - 1
@@ -724,7 +702,7 @@ class MainWindow(QMainWindow):
         try:
             self.clear_images()
 
-            self.scales_combobox_switch = 1
+            # self.scales_combobox_switch = 1
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index + 1
@@ -773,46 +751,48 @@ class MainWindow(QMainWindow):
         logger.info('Changing stylesheet to minimal')
     
     def apply_default_style(self):
-        self.main_stylesheet = 'src/styles/default.qss'
+        self.main_stylesheet = os.path.normpath('src/styles/default.qss')
+        self.setStyleSheet('')
+        self.setStyleSheet(open(self.main_stylesheet).read())
         self.hud('Switching to Default Theme')
         # self.python_console.set_color_linux()
         self.python_console.set_color_none()
         self.hud.set_theme_default()
-        self.setStyleSheet('')
-        self.setStyleSheet(open(self.main_stylesheet).read())
+
         self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
+        self.scales_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
         self.reset_groupbox_styles()
     
     def apply_daylight_style(self):
         '''Light stylesheet'''
-        self.main_stylesheet = 'src/styles/daylight.qss'
+        self.main_stylesheet = os.path.normpath('src/styles/daylight.qss')
+        self.setStyleSheet('')
+        self.setStyleSheet(open(self.main_stylesheet).read())
         self.hud('Switching to Daylight Theme')
         self.python_console.set_color_none()
         self.hud.set_theme_light()
-        self.setStyleSheet('')
-        self.setStyleSheet(open(self.main_stylesheet).read())
         self.image_panel_landing_page.setStyleSheet('background-color: #fdf3da')
         self.reset_groupbox_styles()
     
     def apply_moonlit_style(self):
         '''Grey stylesheet'''
-        self.main_stylesheet = 'src/styles/moonlit.qss'
+        self.main_stylesheet = os.path.normpath('src/styles/moonlit.qss')
+        self.setStyleSheet('')
+        self.setStyleSheet(open(self.main_stylesheet).read())
         self.hud('Switching to Moonlit Theme')
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
-        self.setStyleSheet('')
-        self.setStyleSheet(open(self.main_stylesheet).read())
         self.image_panel_landing_page.setStyleSheet('background-color: #333333')
         self.reset_groupbox_styles()
     
     def apply_sagittarius_style(self):
-        self.main_stylesheet = 'src/styles/sagittarius.qss'
+        self.main_stylesheet = os.path.normpath('src/styles/sagittarius.qss')
+        self.setStyleSheet('')
+        self.setStyleSheet(open(self.main_stylesheet).read())
         self.hud('Switching to Sagittarius Theme')
         self.python_console.set_color_linux()
         self.hud.set_theme_default()
-        self.setStyleSheet('')
-        self.setStyleSheet(open(self.main_stylesheet).read())
         self.image_panel_landing_page.setStyleSheet('background-color: #000000')
         self.reset_groupbox_styles()
     
@@ -1122,8 +1102,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def reload_scales_combobox(self) -> None:
         logger.debug('Caller: %s' % inspect.stack()[1].function)
-        prev_state = self.scales_combobox_switch
-        # self.scales_combobox_switch = 0
+        self.scales_combobox_switch = 0
         curr_scale = cfg.data.scale()
         image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
         self.scales_combobox.clear()
@@ -1131,7 +1110,7 @@ class MainWindow(QMainWindow):
             self.scales_combobox.addItems(["scale_" + str(scale)])
         index = self.scales_combobox.findText(curr_scale, Qt.MatchFixedString)
         if index >= 0: self.scales_combobox.setCurrentIndex(index)
-        self.scales_combobox_switch = prev_state
+        self.scales_combobox_switch = 1
     
     @Slot()
     def fn_scales_combobox(self) -> None:
@@ -1620,10 +1599,6 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()
 
 
-
-
-
-    
     # def save_project_as(self):
     #     self.set_status("Saving As...")
 
