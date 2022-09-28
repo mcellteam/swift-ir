@@ -174,7 +174,6 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     # print_alignment_layer()
 
     # '''Run the data directly in Serial mode. Does not generate aligned images.'''
-    # logger.info('Calling run_json_project (cfg.PARALLEL_MODE was False)...')
     # updated_model, need_to_write_json = run_json_project(
     #         project=copy.deepcopy(cfg.data.to_dict()),
     #         alignment_option=alignment_option,

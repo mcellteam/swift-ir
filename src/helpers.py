@@ -317,13 +317,10 @@ def remove_aligned(use_scale, start_layer=0):
             except:
                 print_exception()
                 logger.warning("os.remove(%s) Triggered An Exception" % ifn)
-
-            try:
-                cfg.image_library.remove_image_reference(ifn)
-            except:
-                print_exception()
-                logger.warning("image_library.remove_image_reference(%s) Triggered An Exception" % ifn)
-
+            # try:
+            #     cfg.image_library.remove_image_reference(ifn)
+            # except:
+            #     print_exception()
 
 
 def verify_image_file(path: str) -> str:
@@ -869,17 +866,6 @@ def list_files(
         sortd = sorted(paths, key=os.path.isdir)
         files, dirs = tuple(tz.partitionby(os.path.isdir, sortd))
         return list(tz.concatv(files, *tz.map(list_files, dirs)))
-
-
-
-
-
-
-
-
-
-
-
 
 
 # NOTE: this is called right after importing base images
