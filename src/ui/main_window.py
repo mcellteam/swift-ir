@@ -2823,7 +2823,7 @@ class MainWindow(QMainWindow):
         shadow.setOffset(2)
         self.details_banner.setGraphicsEffect(shadow)
         self.details_banner.setContentsMargins(0, 0, 0, 0)
-        self.details_banner.setFixedHeight(30)
+        self.details_banner.setFixedHeight(35)
         # banner_stylesheet = """color: #ffe135; background-color: #000000; font-size: 14px;"""
         self.details_banner_layout = QHBoxLayout()
         self.details_banner.setLayout(self.details_banner_layout)
