@@ -1,6 +1,6 @@
 '''This file is for initializing global config and 'data' the dictionary data state in memory.'''
 
-__all__ = ['data', 'main_window', 'data_model', 'viewer']
+__all__ = ['data', 'main_window', 'viewer']
 
 '''Main Objects'''
 data = None

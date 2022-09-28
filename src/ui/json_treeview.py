@@ -7,7 +7,7 @@ https://doc.qt.io/qtforpython/examples/example_widgets_itemviews_jsonmodel.html
 import json
 import sys
 from typing import Any, List, Dict, Union
-
+import qtpy
 from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
 
@@ -279,7 +279,7 @@ class JsonModel(QAbstractItemModel):
         Return column number. For the model, it always return 2 columns
         """
         return 2
-    if cfg.USES_QT6:
+    if qtpy.QT6:
         def flags(self, index: QModelIndex) -> Qt.ItemFlags:
             """Override from QAbstractItemModel
 
