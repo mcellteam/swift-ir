@@ -107,8 +107,6 @@ def main():
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(LOGLEVELS[args.loglevel])
-    cfg.LOG_LEVEL = logger.level
-    cfg.QT_API = args.api
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'

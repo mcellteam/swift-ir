@@ -103,7 +103,6 @@ class MainWindow(QMainWindow):
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         # self.browser.setPage(CustomWebEnginePage(self)) # Open clicked links in new window
 
-        self.panel_list = []
         self.match_point_mode = False
 
         '''Initialize Status Bar'''
@@ -121,8 +120,6 @@ class MainWindow(QMainWindow):
 
         '''Initialize Jupyter Console'''
         self.initJupyter()
-
-        # cfg.recipe_form = RecipeMaker(parent=self)
 
         logger.info("Initializing Data Model")
         cfg.data = DataModel()
@@ -190,13 +187,6 @@ class MainWindow(QMainWindow):
         dt = time.time() - t0
         logger.info('Exporting Tifs Took %g Seconds' % dt)
 
-
-    def update_panels(self):
-        '''Repaint the viewing port.'''
-        logger.debug("MainWindow.update_panels:")
-        for p in self.panel_list:
-            p.update_zpa_self()
-        self.update_win_self()
     
     @Slot()
     def refresh_all_images(self):
@@ -1716,10 +1706,6 @@ class MainWindow(QMainWindow):
                         self.add_empty_to_role(role_to_import)
                     else:
                         self.add_image_to_role(f, role_to_import)
-                # Draw the panel's ("windows") #0808- #0816+
-                for p in self.panel_list:
-                    p.force_center = True
-                    p.update_zpa_self()
 
         self.hud.done()
         if are_images_imported():
@@ -2040,10 +2026,7 @@ class MainWindow(QMainWindow):
     def configure_project(self):
         recipe_maker = RecipeMaker(parent=self)
         result = recipe_maker.exec_()
-
-        # result =        cfg.recipe_form.exec_() # result = 0 or 1
         if not result:  logger.warning('Dialog Did Not Return A Result')
-
 
 
     def view_k_img(self):

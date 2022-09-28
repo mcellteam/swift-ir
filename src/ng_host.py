@@ -34,8 +34,7 @@ class NgHost(QRunnable):
         self.port = port
         cfg.viewer_url = None
         self.scale = scale
-        self.layout = 'yz'
-        # self.layout = 'xy'
+        self.layout = 'yz' # Note: Maps To 'xy'
 
     def __del__(self):
         logger.warning('Garbage Collecting An NgHost object...')

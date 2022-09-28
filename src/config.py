@@ -1,28 +1,16 @@
-'''
-This file is for initializing global config and 'data' the dictionary data state in memory.
-It is imported by other src files and lives outside of the 'src' directory.
-'''
+'''This file is for initializing global config and 'data' the dictionary data state in memory.'''
 
-__all__ = ['LOG_LEVEL','QT_API','USES_PYSIDE','USES_PYQT','USES_QT5','USES_QT6',
-           'data', 'main_window', 'image_library', 'USE_FILE_IO',
-           'PARALLEL_MODE','CODE_MODE','ICON_COLOR','WIDTH','HEIGHT','DEFAULT_INITIAL_ROTATION',
-           'DEFAULT_INITIAL_SCALE', 'DEFAULT_BOUNDING_BOX','DEFAULT_NULL_BIAS',
-           'DEFAULT_POLY_ORDER','DEFAULT_WHITENING','DEFAULT_SWIM_WINDOW']
+__all__ = ['data', 'main_window', 'data_model', 'viewer']
 
-import os
-import logging
+'''Main Objects'''
+data = None
+main_window = None
+viewer = None
 
-LOG_LEVEL = None
-# WIDTH = 1024 #***
-WIDTH = 1250
-# HEIGHT = 768 #***
-HEIGHT = 800
-# WIDTH = 1280
-# HEIGHT = 720
-# WIDTH = 1024 #***
-# HEIGHT = 820 #***
+'''Default Window Size'''
+WIDTH, HEIGHT = 1250, 800
 
-
+'''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
 DEFAULT_POLY_ORDER        = int(0)
@@ -31,68 +19,26 @@ DEFAULT_BOUNDING_BOX      = bool(True)
 DEFAULT_INITIAL_ROTATION  = float(0.0000)
 DEFAULT_INITIAL_SCALE     = float(1.0000)
 
-QT_API = None
-USES_PYSIDE = None
-USES_PYQT = None
-USES_QT5 = None
-USES_QT6 = None
+'''Default Image Resolution (Voxel Dimensions)'''
+RES_X, RES_Y, RES_Z = 2, 2, 50
 
-data = None
-main_window = None
-w = main_window
-image_library = None
-data_model = None
-recipe_form = None
-panel_list = []
-viewer = None
+'''Default Zarr Chunk Shape'''
+CHUNK_X, CHUNK_Y, CHUNK_Z = 512, 512, 1
 
-RES_X = 2
-RES_Y = 2
-RES_Z = 50
-
+'''Default Compression Parameters'''
 CNAME = 'zstd'
 CLEVEL = 5
-CHUNK_X = 512
-CHUNK_Y = 512
-CHUNK_Z = 1
 
-PRELOAD_RANGE = None
+'''Other Defaults'''
 USE_FILE_IO = 0
-PARALLEL_MODE = True
 CODE_MODE = 'c'
 HTTP_PORT = 9000
-NO_NEUROGLANCER = None
-PROJECT_OPEN = False
 IMAGES_IMPORTED = False
-#Todo Fix src.helpers.are_images_imported() function
-
-
-defaults = ["-0.6800", "0.8125", "0.0000", True]
 
 # cfg.ICON_COLOR = '#d3dae3'
 # cfg.ICON_COLOR = '#7c7c7c'
 ICON_COLOR = '#455364' # off blue-ish color
 # ICON_COLOR = '#F3F6FB' # snow white
-
-
-
-
-# class bcolors:
-#     HEADER = '\033[95m'
-#     OKBLUE = '\033[94m'
-#     OKCYAN = '\033[96m'
-#     OKGREEN = '\033[92m'
-#     WARNING = '\033[93m'
-#     FAIL = '\033[91m'
-#     ENDC = '\033[0m'
-#     BOLD = '\033[1m'
-#     UNDERLINE = '\033[4m'
-
-
-# CSI = "\x1B["
-# print(CSI+"31;40m" + u"\u2588"*20 + CSI + "0m")
-#
-# print('\x1b[6;30;42m' + 'Success!' + '\x1b[0m')
 
 
 
