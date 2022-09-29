@@ -137,6 +137,7 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.initShortcuts()
 
+        self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.apply_default_style()
 
         # self.set_idle()
@@ -734,26 +735,36 @@ class MainWindow(QMainWindow):
         logger.info('Changing stylesheet to minimal')
     
     def apply_default_style(self):
-        self.hud('Applying Default Theme')
-        self.main_stylesheet = os.path.normpath('src/styles/default.qss')
+        '''
+        #colors
+        color: #f3f6fb;  /* snow white */
+        color: #004060;  /* drafting blue */
+        '''
+
+
+        # self.hud('Applying Default Theme')
+        self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         # self.python_console.set_color_linux()
         self.python_console.set_color_none()
         self.hud.set_theme_default()
         self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
+        # drafting blue : #004060
         self.scales_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
-        # self.image_panel_stack_widget.setStyleSheet('background-color: #f3f6fb;')
-        self.image_panel_stack_widget.setStyleSheet('background-color: #f3f6fb;')
+        # self.image_panel_stack_widget.setStyleSheet('background-color: #f3f6fb;') #bg-color= viewer border
+        self.image_panel_stack_widget.setStyleSheet('background-color: #000000;')
         self.image_panel_landing_page.setStyleSheet('background-color: #000000;')
         # self.details_banner.setStyleSheet("""color: #F3F6FB; font-size: 14px;""")
-        self.details_banner.setStyleSheet("""color: #ffe135; font-size: 14px;""")
+        # self.details_banner.setStyleSheet("""color: #ffe135; font-size: 14px;""")
+        # self.details_banner.setStyleSheet("""color: #FFF9A6; font-size: 14px;""")
+        self.details_banner.setStyleSheet("""background-color: #000000; color: #ffe135; font-size: 14px;""")
         self.reset_groupbox_styles()
-    
+
     def apply_daylight_style(self):
         '''Light stylesheet'''
-        self.hud('Applying Daylight Theme')
-        self.main_stylesheet = os.path.normpath('src/styles/daylight.qss')
+        # self.hud('Applying Daylight Theme')
+        self.main_stylesheet = os.path.abspath('src/styles/daylight.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.python_console.set_color_none()
@@ -763,8 +774,8 @@ class MainWindow(QMainWindow):
     
     def apply_moonlit_style(self):
         '''Grey stylesheet'''
-        self.hud('Applying Moonlit Theme')
-        self.main_stylesheet = os.path.normpath('src/styles/moonlit.qss')
+        # self.hud('Applying Moonlit Theme')
+        self.main_stylesheet = os.path.abspath('src/styles/moonlit.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.python_console.set_color_linux()
@@ -773,8 +784,8 @@ class MainWindow(QMainWindow):
         self.reset_groupbox_styles()
     
     def apply_sagittarius_style(self):
-        self.hud('Applying Sagittarius Theme')
-        self.main_stylesheet = os.path.normpath('src/styles/sagittarius.qss')
+        # self.hud('Applying Sagittarius Theme')
+        self.main_stylesheet = os.path.abspath('src/styles/sagittarius.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.python_console.set_color_linux()
@@ -784,11 +795,17 @@ class MainWindow(QMainWindow):
     
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
-        self.project_functions_stack.setStyleSheet(open(self.main_stylesheet).read())
-        self.images_and_scaling_stack.setStyleSheet(open(self.main_stylesheet).read())
-        self.alignment_stack.setStyleSheet(open(self.main_stylesheet).read())
-        self.postalignment_stack.setStyleSheet(open(self.main_stylesheet).read())
-        self.export_and_view_stack.setStyleSheet(open(self.main_stylesheet).read())
+
+        self.images_and_scaling_stack.setStyleSheet("""QGroupBox {border: 1px dotted #171d22;}""")
+        self.alignment_stack.setStyleSheet("""QGroupBox {border: 1px dotted #171d22;}""")
+        self.postalignment_stack.setStyleSheet("""QGroupBox {border: 1px dashed #171d22;}""")
+        self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 1px dashed #171d22;}""")
+
+        # self.project_functions_stack.setStyleSheet(open(self.main_stylesheet).read())
+        # self.images_and_scaling_stack.setStyleSheet(open(self.main_stylesheet).read())
+        # self.alignment_stack.setStyleSheet(open(self.main_stylesheet).read())
+        # self.postalignment_stack.setStyleSheet(open(self.main_stylesheet).read())
+        # self.export_and_view_stack.setStyleSheet(open(self.main_stylesheet).read())
 
     def auto_set_user_progress(self):
         '''Set user progress (0 to 3). This is only called when user opens a data.'''
@@ -810,11 +827,11 @@ class MainWindow(QMainWindow):
              open(self.main_stylesheet).read())[gb2])
         self.postalignment_stack.setCurrentIndex((0, 1)[gb3])
         self.postalignment_stack.setStyleSheet(
-            ("""QGroupBox {border: 1px dotted #171d22;}""",
+            ("""QGroupBox {border: 1px dashed #171d22;}""",
              open(self.main_stylesheet).read())[gb3])
         self.export_and_view_stack.setCurrentIndex((0, 1)[gb4])
         self.export_and_view_stack.setStyleSheet(
-            ("""QGroupBox {border: 1px dotted #171d22;}""",
+            ("""QGroupBox {border: 1px dashed #171d22;}""",
              open(self.main_stylesheet).read())[gb4])
 
     def cycle_user_progress(self):
@@ -1487,9 +1504,10 @@ class MainWindow(QMainWindow):
         return (button == QMessageBox.StandardButton.Yes)
     
     def open_project(self):
+        self.set_status("Open Project...")
+        # is_neuroglancer_viewer = True if self.is_neuroglancer_viewer() else False
         self.main_widget.setCurrentIndex(0)
         self.image_panel_stack_widget.setCurrentIndex(2)
-        self.set_status("Open Project...")
         #Todo need something like this here
         # if self._unsaved_changes:
         #     self.hud('Confirm Exit AlignEM-SWiFT')
@@ -1530,21 +1548,25 @@ class MainWindow(QMainWindow):
             cfg.data.link_all_stacks()
             self.clear_snr_plot()
             if are_images_imported():
+                # if is_neuroglancer_viewer:
+                self.load_unaligned_stacks()
+                self.use_neuroglancer_viewer()  # force neuroglancer viewer (changes stack index)
+                # else:
+                #
+                #     self.update_2D_viewers()
+                # self.image_panel_stack_widget.setCurrentIndex(1)
+                self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
                 cfg.IMAGES_IMPORTED = True
-                if self.is_classic_viewer():
-                    self.load_unaligned_stacks()
-                    self.update_2D_viewers()
             else:
                 cfg.IMAGES_IMPORTED = False
 
             self.read_project_data_update_gui()
             self.auto_set_user_progress()
-            self.reload_scales_combobox()
-            self.update_scale_controls()
+            # self.reload_scales_combobox()
+            # self.update_scale_controls()
             self.update_snr_plot()
 
-            self.use_neuroglancer_viewer() # force neuroglancer viewer (changes stack index)
-            self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
+
             self.hud.done()
         else:
             self.hud("No Project File (.json) Selected", logging.WARNING)
@@ -1748,6 +1770,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         logger.info("MainWindow.closeEvent (called by %s):" % inspect.stack()[1].function)
         self.shutdownInstructions()
+        self.shutdownInstructions()
+        self.shutdownInstructions() # Run Shutdown Instructions 3x
 
     @Slot()
     def exit_app(self):
@@ -1784,7 +1808,8 @@ class MainWindow(QMainWindow):
             logger.critical('No Unsaved Changes - Exiting')
 
         self.shutdownInstructions()
-
+        self.shutdownInstructions()
+        self.shutdownInstructions() # Run Shutdown Instructions 3x
 
     def shutdownInstructions(self):
         logger.info('Running Shutdown Instructions...')
@@ -1819,17 +1844,15 @@ class MainWindow(QMainWindow):
         else:
             logger.info('done')
 
-
         try:
             logger.info('Shutting down threadpool...')
             threadpool_result = self.threadpool.waitForDone(msecs=500)
+            logger.info('threadpool_result = %s' % str(threadpool_result))
         except:
             logger.warning('Having trouble shutting down threadpool')
         else:
             logger.info('done')
 
-        # QApplication.quit()
-        # logger.info('Calling app.quit()')
         logger.info('Quitting app...')
         self.app.quit()
         # logger.info('Calling sys.exit()')
@@ -1850,7 +1873,6 @@ class MainWindow(QMainWindow):
         self.hud("Switching to Remote Neuroglancer Server")
         # self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
-        # self.disableShortcuts()
         self.main_widget.setCurrentIndex(3)
 
     def reload_ng(self):
@@ -1867,12 +1889,12 @@ class MainWindow(QMainWindow):
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
         '''
-        self.set_status('Loading Viewer...')
-        logger.info("Switching To Neuroglancer Viewer")
-        self.image_panel_stack_widget.setCurrentIndex(1)
+        self.set_status('Loading Neuroglancer...')
         if not are_images_imported():
             self.hud('Nothing To View', logging.WARNING)
             return
+        logger.info("Switching To Neuroglancer Viewer")
+        self.image_panel_stack_widget.setCurrentIndex(1)
         dest = os.path.abspath(cfg.data['data']['destination_path'])
         s, l = cfg.data.scale(), cfg.data.layer()
         self.ng_worker = NgHost(src=dest, scale=s, port=9000)
@@ -2111,18 +2133,8 @@ class MainWindow(QMainWindow):
         z = zarr.open(os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
         self.hud('\n\n' + str(z.tree()) + '\n' + str(z.info))
 
-    def disableShortcuts(self):
-        '''Initialize Shortcuts'''
-        pass
-        logger.info('Disabling Shortcuts')
-        ## self.shortcut_prev_scale.setEnabled(False)
-        ## self.shortcut_next_scale.setEnabled(False)
-        self.shortcut_layer_up.setEnabled(False)
-        self.shortcut_layer_down.setEnabled(False)
-
     def initShortcuts(self):
         '''Initialize Shortcuts'''
-
         logger.info('Initializing Shortcuts')
         events = (
             # (QKeySequence.Save, self.save_project),
@@ -2137,28 +2149,12 @@ class MainWindow(QMainWindow):
 
 
     def set_normal_view(self):
-        # neuroglancer.server.stop()
         # self.image_panel_widget.show()
         self.lower_panel_groups.show()
         # self.multi_img_viewer.show()
         self.image_panel_stack_widget.show()
         self.main_widget.setCurrentIndex(0)
         self.image_panel_stack_widget.setCurrentIndex(1)
-        # self.main_panel_bottom_widget.setCurrentIndex(0)
-        self.set_idle()
-
-    def set_blank_view(self):
-        '''Not Currently In Use - Being Worked On'''
-        # neuroglancer.server.stop()
-        # self.image_panel_widget.show()
-        self.lower_panel_groups.show()
-        # self.multi_img_viewer.show()
-        self.image_panel_stack_widget.show()
-        self.main_widget.setCurrentIndex(0)
-        self.image_panel_stack_widget.setCurrentIndex(1)
-
-        # self.ng_layout_combobox.set
-
         # self.main_panel_bottom_widget.setCurrentIndex(0)
         self.set_idle()
 
@@ -2256,7 +2252,7 @@ class MainWindow(QMainWindow):
                  ['Regenerate Zarr Scales', None, generate_zarr_scales, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
                  ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
-                 ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
+                 # ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
                  ['Show &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
                  ['&Write Multipage Tifs', 'None', self.write_paged_tiffs, None, None, None],
                  ['&Match Point Align Mode',
@@ -2332,19 +2328,22 @@ class MainWindow(QMainWindow):
     def initUI(self):
         '''Initialize Main UI'''
 
-        gb_margin = (8, 15, 8, 5)
-        cpanel_height = 115
+        gb_margin = (8, 14, 8, 6)
+        # cpanel_height = 115
+        cpanel_height = 100
         cpanel_1_dims = (260, cpanel_height)
         cpanel_2_dims = (260, cpanel_height)
         cpanel_3_dims = (400, cpanel_height)
         cpanel_4_dims = (120, cpanel_height)
         cpanel_5_dims = (120, cpanel_height)
 
-        std_height = int(22)
+        # std_height = int(22)
+        std_height = int(20)
         std_width = int(96)
         std_button_size = QSize(std_width, std_height)
-        square_button_height = int(30)
-        square_button_width = int(72)
+        # square_button_height = int(30)
+        square_button_height = int(28)
+        square_button_width = int(68)
         square_button_size = QSize(square_button_width, square_button_height)
         std_input_size = int(56)
         small_input_size = int(36)
@@ -2404,7 +2403,7 @@ class MainWindow(QMainWindow):
         self.import_images_button.clicked.connect(self.import_images)
         self.import_images_button.setFixedSize(square_button_size)
         self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=ICON_COLOR))
-        self.import_images_button.setStyleSheet("font-size: 10px;")
+        self.import_images_button.setStyleSheet("font-size: 9px;")
 
         tip = 'Zoom to fit'
         self.clear_zoom_button = QPushButton('Fit Screen')
@@ -2431,16 +2430,16 @@ class MainWindow(QMainWindow):
         self.generate_scales_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.generate_scales_button.clicked.connect(self.scale)
         self.generate_scales_button.setFixedSize(square_button_size)
-        self.generate_scales_button.setStyleSheet("font-size: 10px;")
+        self.generate_scales_button.setStyleSheet("font-size: 9px;")
         self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color=ICON_COLOR))
 
         tip = 'Reset skips (keep all)'
-        self.clear_all_skips_button = QPushButton('Clear')
-        self.clear_all_skips_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.clear_all_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.clear_all_skips_button.clicked.connect(self.clear_skips)
-        self.clear_all_skips_button.setFixedSize(small_button_size)
-        # self.clear_all_skips_button.setIcon(qta.icon("mdi.undo", color=ICON_COLOR))
+        self.clear_skips_button = QPushButton('Clear')
+        self.clear_skips_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.clear_skips_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.clear_skips_button.clicked.connect(self.clear_skips)
+        self.clear_skips_button.setFixedSize(small_button_size)
+        # self.clear_skips_button.setIcon(qta.icon("mdi.undo", color=ICON_COLOR))
 
         tip = 'Use or skipped current image?'
         self.toggle_skip = ToggleSwitch()
@@ -2454,7 +2453,6 @@ class MainWindow(QMainWindow):
         self.skip_layout = QHBoxLayout()
         self.skip_layout.addWidget(self.skip_label, alignment=Qt.AlignRight)
         self.skip_layout.addWidget(self.toggle_skip, alignment=Qt.AlignLeft)
-
 
         self.ng_layout_combobox = QComboBox()
         ng_layouts = ['','xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d']
@@ -2476,7 +2474,7 @@ class MainWindow(QMainWindow):
         self.jump_input.returnPressed.connect(lambda: self.jump_to_layer())
 
         self.toggle_reset_hlayout = QHBoxLayout()
-        self.toggle_reset_hlayout.addWidget(self.clear_all_skips_button)
+        self.toggle_reset_hlayout.addWidget(self.clear_skips_button)
         self.toggle_reset_hlayout.addLayout(self.skip_layout)
         # self.toggle_reset_hlayout.addWidget(self.jump_label, alignment=Qt.AlignmentFlag.AlignRight)
         # self.toggle_reset_hlayout.addWidget(self.jump_input, alignment=Qt.AlignmentFlag.AlignHCenter)
@@ -2738,6 +2736,7 @@ class MainWindow(QMainWindow):
         self.project_functions_groupbox_ = QGroupBox("Project")
         self.project_functions_groupbox.setLayout(self.project_functions_layout)
         self.project_functions_stack = QStackedWidget()
+        self.project_functions_stack.setObjectName('project_functions_stack')
         self.project_functions_stack.setMinimumSize(*cpanel_1_dims)
         self.project_functions_stack.addWidget(self.project_functions_groupbox_)
         self.project_functions_stack.addWidget(self.project_functions_groupbox)
@@ -2748,6 +2747,7 @@ class MainWindow(QMainWindow):
         self.images_and_scaling_groupbox_ = QGroupBox("Data Selection && Scaling")
         self.images_and_scaling_groupbox.setLayout(self.scale_layout)
         self.images_and_scaling_stack = QStackedWidget()
+        self.images_and_scaling_stack.setObjectName('images_and_scaling_stack')
         self.images_and_scaling_stack.setMinimumSize(*cpanel_2_dims)
         self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox_)
         self.images_and_scaling_stack.addWidget(self.images_and_scaling_groupbox)
@@ -2760,6 +2760,7 @@ class MainWindow(QMainWindow):
         self.alignment_groupbox_.setTitle('Alignment')
         self.alignment_groupbox.setLayout(self.alignment_layout)
         self.alignment_stack = QStackedWidget()
+        self.alignment_stack.setObjectName('alignment_stack')
         self.alignment_stack.setMinimumSize(*cpanel_3_dims)
         self.alignment_stack.addWidget(self.alignment_groupbox_)
         self.alignment_stack.addWidget(self.alignment_groupbox)
@@ -2770,6 +2771,7 @@ class MainWindow(QMainWindow):
         self.postalignment_groupbox_ = QGroupBox("Adjust Output")
         self.postalignment_groupbox.setLayout(self.postalignment_layout)
         self.postalignment_stack = QStackedWidget()
+        self.postalignment_stack.setObjectName('postalignment_stack')
         self.postalignment_stack.setMinimumSize(*cpanel_4_dims)
         self.postalignment_stack.addWidget(self.postalignment_groupbox_)
         self.postalignment_stack.addWidget(self.postalignment_groupbox)
@@ -2780,15 +2782,16 @@ class MainWindow(QMainWindow):
         self.export_and_view_groupbox_ = QGroupBox("Neuroglancer")
         self.export_and_view_groupbox.setLayout(self.export_settings_layout)
         self.export_and_view_stack = QStackedWidget()
+        self.export_and_view_stack.setObjectName('export_and_view_stack')
         self.export_and_view_stack.setMinimumSize(*cpanel_5_dims)
         self.export_and_view_stack.addWidget(self.export_and_view_groupbox_)
         self.export_and_view_stack.addWidget(self.export_and_view_groupbox)
         self.export_and_view_stack.setCurrentIndex(0)
 
-        self.images_and_scaling_stack.setStyleSheet("""QGroupBox {border: 1px dotted #171d22;}""")
-        self.alignment_stack.setStyleSheet("""QGroupBox {border: 1px dotted #171d22;}""")
-        self.postalignment_stack.setStyleSheet("""QGroupBox {border: 1px dotted #171d22;}""")
-        self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 1px dotted #171d22;}""")
+        # self.images_and_scaling_stack.setStyleSheet('''border: 1px dotted #171d22;''')
+        # self.alignment_stack.setStyleSheet('''border: 1px dotted #171d22;''')
+        # self.postalignment_stack.setStyleSheet('''border: 1px dotted #171d22;''')
+        # self.export_and_view_stack.setStyleSheet('''border: 1px dotted #171d22;''')
 
         '''Top Details/Labels Banner'''
         self.align_label_resolution = QLabel('Dimensions: n/a')
@@ -2805,7 +2808,7 @@ class MainWindow(QMainWindow):
         self.info_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.info_button.clicked.connect(self.documentation_view)
         self.info_button.setFixedSize(std_height, std_height)
-        self.info_button.setIcon(qta.icon("fa.info", color=cfg.ICON_COLOR))
+        self.info_button.setIcon(qta.icon("fa.info", color='#f3f6fb'))
 
         # self.al_status_checkbox = QRadioButton()
         # self.al_status_checkbox = QCheckBox()
@@ -2819,7 +2822,7 @@ class MainWindow(QMainWindow):
         # self.alignment_status_layout.addWidget(self.al_status_checkbox)
         self.details_banner = QWidget()
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(6)
+        shadow.setBlurRadius(5)
         shadow.setOffset(2)
         self.details_banner.setGraphicsEffect(shadow)
         self.details_banner.setContentsMargins(0, 0, 0, 0)
@@ -2921,7 +2924,7 @@ class MainWindow(QMainWindow):
         self.snr_plot_layout = QVBoxLayout()
         self.snr_plot_layout.addWidget(self.snr_plot)
         self.snr_plot_label = QLabel('Test Label Test Label')
-        self.snr_plot_label.setStyleSheet('background-color: #ffffff; color: #ffe135;')
+        # self.snr_plot_label.setStyleSheet('background-color: #ffffff; color: #ffe135;')
         self.snr_plot_layout.addWidget(self.snr_plot_label)
 
 
@@ -2960,22 +2963,17 @@ class MainWindow(QMainWindow):
         # self.python_console_widget_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) #0917
         # self.python_console_widget_container.setLayout(self.python_console_layout)
 
-
         self.bottom_panel_splitter = QSplitter()
         self.bottom_panel_splitter.setAutoFillBackground(True)
 
-
         self.bottom_panel_splitter.setContentsMargins(0, 0, 0, 0)
+        self.bottom_panel_splitter.setHandleWidth(8)
         self.bottom_panel_splitter.addWidget(self.hud)
         # self.bottom_panel_splitter.addWidget(self.python_console_widget_container)
         self.bottom_panel_splitter.addWidget(self.python_console)
         self.bottom_panel_splitter.addWidget(self.plot_widget_container)
 
-        self.hud.setAttribute(Qt.WA_TranslucentBackground)
-        self.python_console.setAttribute(Qt.WA_TranslucentBackground)
-        self.plot_widget_container.setAttribute(Qt.WA_TranslucentBackground)
-
-        self.bottom_panel_splitter.setStretchFactor(0, 3)
+        self.bottom_panel_splitter.setStretchFactor(0, 2)
         self.bottom_panel_splitter.setStretchFactor(1, 1)
         self.bottom_panel_splitter.setStretchFactor(2, 1)
         self.bottom_panel_splitter.setCollapsible(0, True)
@@ -3063,7 +3061,7 @@ class MainWindow(QMainWindow):
         self.project_view_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
 
         self.main_lwr_vlayout = QVBoxLayout()
-        self.main_lwr_vlayout.setContentsMargins(0, 10, 8, 0)
+        self.main_lwr_vlayout.setContentsMargins(2, 2, 2, 0)
         self.main_lwr_vlayout.addWidget(self.expand_bottom_panel_button, alignment=Qt.AlignRight)
         self.main_lwr_vlayout.addWidget(self.show_hide_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
         self.main_lwr_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignmentFlag.AlignTop)
@@ -3145,7 +3143,7 @@ class MainWindow(QMainWindow):
         # main_window.splitter.sizes() # Out[20]: [400, 216, 160]
         self.splitter = QSplitter(Qt.Orientation.Vertical)
         self.splitter.splitterMoved.connect(self.clear_zoom)
-        self.splitter.setHandleWidth(4)
+        self.splitter.setHandleWidth(8)
         self.splitter.setContentsMargins(0, 0, 0, 0)
         self.splitter.addWidget(self.dual_viewer_w_banner)
         self.splitter.addWidget(self.lower_panel_groups)
@@ -3272,9 +3270,9 @@ class MainWindow(QMainWindow):
         self.set_idle()
 
         self.bottom_display_area_widget.setAutoFillBackground(True)
-        self.bottom_display_area_widget.setStyleSheet("background-color: #000000;")
+        self.bottom_display_area_widget.setStyleSheet('''background-color: #000000;''')
 
-        self.multi_img_viewer.setStyleSheet('background-color: #000000;')
+        self.multi_img_viewer.setStyleSheet('''background-color: #000000;''')
 
 
 
