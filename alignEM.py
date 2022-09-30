@@ -40,6 +40,7 @@ $ qtpy mypy-args
 
 """
 import os, sys, signal, logging, argparse
+import src.config as cfg
 
 
 
@@ -87,7 +88,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
-    parser.add_argument('--loglevel', type=int, default=1, help='Logging Level (1-5, default: 2)')
+    parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     import qtpy
@@ -100,7 +101,7 @@ def main():
     from qtpy.QtCore import Qt, QCoreApplication, QTimer
     from src.helpers import print_exception, check_for_binaries
     from src.ui.main_window import MainWindow
-    import src.config as cfg
+
 
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
     if args.debug:
