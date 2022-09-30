@@ -24,14 +24,13 @@ from pathlib import Path
 from contextlib import contextmanager
 from typing import Dict, List, Tuple, Any, Union, Sequence
 import zarr
-from toolz import concat
-import toolz as tz
+# from toolz import concat
+# import toolz as tz
 import shutil
 import tifffile
 import numpy as np
 from dask import bag
 from dask import delayed
-import dask.array as da
 from shutil import rmtree
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need
