@@ -9,7 +9,7 @@ import zarr
 from zarr.util import human_readable_size
 import numpy as np
 from PIL import Image
-from src.image_funcs import get_image_size
+from src.image_funcs import ImageSize
 from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_images_list_directly
 from src.zarr_funcs import preallocate_zarr

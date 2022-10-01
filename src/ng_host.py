@@ -13,7 +13,7 @@ import neuroglancer as ng
 from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, Slot
 from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, are_images_imported
-from src.image_funcs import get_image_size
+from src.image_funcs import ImageSize, BoundingRect
 from src.zarr_funcs import get_zarr_tensor
 import src.config as cfg
 
@@ -126,9 +126,8 @@ class NgHost(QRunnable):
         https://github.com/google/neuroglancer/issues/333
         '''
         is_aligned = is_cur_scale_aligned()
-        logger.info('is_aligned: %s' % str(is_aligned))
-        if is_aligned:  logger.info('is_aligned=True')
-        else:           logger.info('is_aligned=False')
+        # if is_aligned:  logger.info('is_aligned=True')
+        # else:           logger.info('is_aligned=False')
         scale_val = get_scale_val(cfg.data.scale())
         l = cfg.data.layer()
         if not are_images_imported():
@@ -136,7 +135,7 @@ class NgHost(QRunnable):
             return
 
         #Todo set different coordinates for the two different datasets. For now use larger dim.
-        img_dim = get_image_size(cfg.data.path_base())
+        img_dim = ImageSize(cfg.data.path_base())
 
         logger.info('Creating the Neuroglancer Viewer...')
         addr = "zarr://http://localhost:" + str(self.port)
@@ -191,11 +190,12 @@ class NgHost(QRunnable):
                 logger.info('\nbase_layer:\n%s\n' % base_layer.info())
                 s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
 
-                s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+                # s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+                s.position = [l, img_dim[1] / 2, img_dim[0] / 2]
 
 
             else:
-                al_img_dim = get_image_size(cfg.data.path_al())
+                al_img_dim = ImageSize(cfg.data.path_al())
 
                 x_offset = (al_img_dim[0] - img_dim[0])/2
                 y_offset = (al_img_dim[1] - img_dim[1])/2
@@ -244,10 +244,12 @@ class NgHost(QRunnable):
                 if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
                     s.cross_section_background_color = "#ffffff"
                 else:
-                    s.cross_section_background_color = "#000000"
+                    # s.cross_section_background_color = "#000000"
+                    s.cross_section_background_color = "#004060"
 
-                s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
-                s.crossSectionScale = 2.0
+                rect = BoundingRect(cfg.data.aligned_dict())
+                # s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+                s.position = [l, rect[3] / 2, rect[2] / 2]
 
 
 
@@ -260,7 +262,7 @@ class NgHost(QRunnable):
                 s.layout = ng.row_layout([ng.LayerGroupViewer(layers=["ref" + slug], layout=self.layout),
                                           ng.LayerGroupViewer(layers=["base" + slug], layout=self.layout)])
 
-            s.cross_section_scale = 2
+            # s.cross_section_scale = 2
 
 
         # with cfg.viewer.state as s:
@@ -327,9 +329,11 @@ class NgHost(QRunnable):
             s.input_event_bindings.viewer['keyb'] = 'screenshot'
             s.input_event_bindings.viewer['keyl'] = 'layer-left'
             s.input_event_bindings.viewer['keyr'] = 'layer-right'
-            s.show_ui_controls = True
-            s.show_panel_borders = True
-            s.viewer_size = None
+            # s.show_ui_controls = True
+            s.show_ui_controls = False
+            # s.show_panel_borders = True
+            s.show_panel_borders = False
+            # s.viewer_size = None
             s.input_event_bindings.viewer['keyt'] = 'my-action'
             # s.status_messages['hello'] = "AlignEM-SWiFT: Scale: %d Viewer URL: %s  Protocol: %s" % \
             #                              (cfg.data.scale_val(), cfg.viewer.get_viewer_url(), self.http_server.protocol_version)

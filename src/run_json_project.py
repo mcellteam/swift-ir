@@ -32,8 +32,8 @@ except:  import config as cfg
 try:     import src.swiftir as swiftir
 except:  import swiftir
 
-try:     from src.image_funcs import get_image_size
-except:  from image_funcs import get_image_size
+try:     from src.image_funcs import ImageSize
+except:  from image_funcs import ImageSize
 
 __all__ = ['run_json_project', 'alignment_process']
 
@@ -387,7 +387,7 @@ class alignment_process:
 
     def auto_swim_align(self, c_afm, save=True):
         logger.info('Running align_alignment_process.auto_swim_align...')
-        siz = get_image_size(self.im_sta_fn)
+        siz = ImageSize(self.im_sta_fn)
         atrm = self.layer_dict['align_to_ref_method']
         wsf = atrm['method_data']['win_scale_factor']  # window size scale factor
         # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
@@ -599,7 +599,7 @@ class align_recipe:
         self.im_mov_fn = im_mov_fn
         self.afm = swiftir.identityAffine()
         self.swiftir_mode = cfg.CODE_MODE
-        self.siz = get_image_size(self.im_sta_fn)
+        self.siz = ImageSize(self.im_sta_fn)
 
         logger.info('<<<< align_recipe (constructor)')
 

@@ -28,7 +28,7 @@ try:     from src.swiftir import composeAffine, identityAffine, invertAffine, mo
 except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 
 __all__ = [
-    'get_image_size',
+    'ImageSize',
     'BiasMat',
     'BiasFuncs',
     'ApplyBiasFuncs',
@@ -67,7 +67,7 @@ def get_size_image_size_imageio(path):
 
 
 
-def get_image_size(file_path):
+def ImageSize(file_path):
     '''Extract image dimensions given a file path using just
     core modules os and struct
 
@@ -78,7 +78,7 @@ def get_image_size(file_path):
     :returns:  (width, height) for a given img file content
     :rtype: (int, int)
     '''
-    logger.debug('get_image_size:')
+    logger.debug('ImageSize:')
     size = os.path.getsize(file_path)
 
     with open(file_path, 'rb') as input:
@@ -469,7 +469,7 @@ def BoundingRect(al_stack):
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
 
     To get result for current scale, in the main process, use:
-    from src.image_funcs import BoundingRect, get_image_size
+    from src.image_funcs import BoundingRect, ImageSize
     BoundingRect(cfg.data.aligned_dict())
 
     model_bounds example:
@@ -503,7 +503,7 @@ array([[   0,    0],
     # model_bounds = None
     # al_stack = cfg.data.aligned_dict()
     model_bounds = [[0,0]] #Todo initialize this better
-    siz = get_image_size(al_stack[0]['images']['base']['filename'])
+    siz = ImageSize(al_stack[0]['images']['base']['filename'])
     for item in al_stack:
         c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
         model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)

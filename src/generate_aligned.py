@@ -9,7 +9,7 @@ import src.config as cfg
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
 from src.mp_queue import TaskQueue
-from src.image_funcs import SetStackCafm, BoundingRect, get_image_size
+from src.image_funcs import SetStackCafm, BoundingRect, ImageSize
 from src.zarr_funcs import preallocate_zarr
 
 '''
@@ -96,7 +96,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             # Example: rect = [-346, -346, 1716, 1716]  <class 'list'>
         else:
             logger.critical('Not using bounding rect...')
-            width, height = get_image_size(cfg.data['data']['scales'][scale_key]['alignment_stack'][0]['images']['base']['filename'])
+            width, height = ImageSize(cfg.data['data']['scales'][scale_key]['alignment_stack'][0]['images']['base']['filename'])
             rect = [0, 0, width, height]
             f.write("None\n")
     n_tasks = cfg.data.n_imgs()
