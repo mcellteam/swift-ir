@@ -467,24 +467,52 @@ def SetStackCafm(scale_dict, null_biases=False):
 def BoundingRect(al_stack):
     '''
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
+
+    To get result for current scale, in the main process, use:
+    from src.image_funcs import BoundingRect, get_image_size
+    BoundingRect(cfg.data.aligned_dict())
+
+    model_bounds example:
+AlignEM [29]:
+array([[   0,    0],
+       [1024,  512],
+       [  -5,   -5],
+       [1026,  495],
+       [  -9,   14],
+       [1008,  508],
+       [ -14,   29],
+       [1006,  523],
+       [  -6,   35],
+       [1012,  532],
+       [  -7,   37],
+        ...
+       [1022,  569],
+       [   1,   76],
+       [1014,  565],
+       [  -2,   77],
+       [1011,  565],
+       [   9,   85],
+       [1011,  570],
+       [   6,   76],
+       [1003,  561],
+       [   6,   79],
+       [ 994,  576],
+       [   9,   80],
+       [ 997,  580]], dtype=int32)
     '''
-    model_bounds = None
+    # model_bounds = None
+    # al_stack = cfg.data.aligned_dict()
+    model_bounds = [[0,0]] #Todo initialize this better
     siz = get_image_size(al_stack[0]['images']['base']['filename'])
     for item in al_stack:
         c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
-        if type(model_bounds) == type(None):
-            model_bounds = modelBounds2(c_afm, siz)
-        else:
-            model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
-    border_width = max(0 - model_bounds[:, 0].min(),
-                       0 - model_bounds[:, 1].min(),
-                       model_bounds[:, 0].max() - siz[0],
-                       model_bounds[:, 1].max() - siz[0])
-    # rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[0] + 2 * border_width]
-    rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[1] + 2 * border_width]
-    # rect = [-border_width, -border_width, siz[1] + 2 * border_width, siz[0] + 2 * border_width]
+        model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
+    border_width_x = max(0 - model_bounds[:, 0].min(), model_bounds[:, 0].max() - siz[0])
+    border_width_y = max(0 - model_bounds[:, 1].min(), model_bounds[:, 1].max() - siz[1])
+    rect = [-border_width_x, -border_width_y, siz[0] + 2 * border_width_x, siz[1] + 2 * border_width_y]
     logger.info('Bounding Rectangle Dims: %s' % str(rect))
-    # [-14, -14, 1052, 540]
+    # AlignEM[2]: [-14, -14, 1052, 540]
+    # AlignEM[2]: [-14, -76, 1052, 664]
     return rect
 
 

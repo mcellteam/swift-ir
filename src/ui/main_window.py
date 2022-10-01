@@ -1261,7 +1261,7 @@ class MainWindow(QMainWindow):
 
 
     def load_unaligned_stacks(self):
-        logger.critical('Getting Results of Unaligned TensorStore Objects...')
+        # logger.critical('Getting Results of Unaligned TensorStore Objects...')
         self.zarr_scales = {}
         try:
             for s in cfg.data.scales():
@@ -2338,11 +2338,11 @@ class MainWindow(QMainWindow):
         cpanel_5_dims = (120, cpanel_height)
 
         # std_height = int(22)
-        std_height = int(20)
+        std_height = int(22)
         std_width = int(96)
         std_button_size = QSize(std_width, std_height)
         # square_button_height = int(30)
-        square_button_height = int(28)
+        square_button_height = int(30)
         square_button_width = int(68)
         square_button_size = QSize(square_button_width, square_button_height)
         std_input_size = int(56)
@@ -3394,8 +3394,8 @@ class MainWindow(QMainWindow):
         # self.snr_plot.setXRange(0, max_y, padding=0)
         self.snr_plot.setYRange(0, max_y)
 
-        value = self.snr_points.toolTip()
-        logger.critical('value = %s' % str(value))
+        value = "test"
+        logger.critical('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         value = self.snr_points.setToolTip('Test')
         self.last_snr_click = []
         self.snr_plot.addItem(self.snr_points)
