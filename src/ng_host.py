@@ -247,6 +247,7 @@ class NgHost(QRunnable):
                     s.cross_section_background_color = "#000000"
 
                 s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+                s.crossSectionScale = 2.0
 
 
 
@@ -259,6 +260,8 @@ class NgHost(QRunnable):
                 s.layout = ng.row_layout([ng.LayerGroupViewer(layers=["ref" + slug], layout=self.layout),
                                           ng.LayerGroupViewer(layers=["base" + slug], layout=self.layout)])
 
+            s.cross_section_scale = 2
+
 
         # with cfg.viewer.state as s:
         #     # state = copy.deepcopy(cfg.viewer.state)
@@ -267,6 +270,37 @@ class NgHost(QRunnable):
         #
         #     s.crossSectionScale = 15
         #     # cfg.viewer.set_state(state)
+
+
+        # If changes are made to a neuroglancer layer through custom actions, the
+        # layer needs to be re-rendered for the changes to be visible in the
+        # viewer. To re-render a layer simply call the invalidate() function on a
+        # LocalVolume object
+        #
+        # # assume a viewer with is already created
+        # mesh_volume = neuroglancer.LocalVolume(
+        #         data=data, dimensions=res)
+        # with viewer.txn() as s:
+        #     s.layers['mesh'] = neuroglancer.SegmentationLayer(
+        #     source=mesh_volume)
+        #
+        # # do something ...
+        #
+        # # re-renders the 'mesh' layer in viewer
+        # mesh_volume.invalidate()
+        # https://connectomics.readthedocs.io/en/latest/external/neuroglancer.html
+
+        # Ref, Text annotations:
+        # https://github.com/google/neuroglancer/issues/199
+
+        # with cfg.viewer.state as s:
+        #     # state = copy.deepcopy(cfg.viewer.state)
+        #     # state = cfg.viewer.state
+        #     # state.position[0] += layer_delta
+        #
+        #     s.crossSectionScale = 2
+        #     # cfg.viewer.set_state(state)
+
 
         logger.info('Configuring State Attributes...')
         # logger.info('Loading Neuroglancer Callbacks...')

@@ -2,7 +2,7 @@
 
 __all__ = ['data', 'main_window', 'viewer']
 
-LOG_LEVEL = 3
+LOG_LEVEL = 1
 
 '''Main Objects'''
 data = None
