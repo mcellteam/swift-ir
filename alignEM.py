@@ -137,8 +137,8 @@ def main():
         logger.info('Initializing MainWindow')
         cfg.main_window = cfg.w = MainWindow(title="AlignEM-SWiFT")
         cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
-        app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+
-        app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
+        # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+ #Todo use app.aboutToQuit
+        # app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
         cfg.main_window.show()
         logger.info('Showing AlignEM-SWiFT')
     except:

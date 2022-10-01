@@ -112,6 +112,9 @@ class DataModel:
         '''Returns the Current Scale as a String.'''
         return self._data['data']['current_scale']
 
+    def scale_pretty(self) -> str:
+        return 'Scale %d' % self.scale_val()
+
     def scale_val(self) -> int:
         scale = self.scale()
         while scale.startswith('scale_'):

@@ -85,7 +85,7 @@ from .run_json_project import *
 # from .compute_affines import compute_affines
 # from .generate_aligned import generate_aligned
 # from .generate_scales import generate_scales
-# from .get_image_size import get_image_size
+# from .ImageSize import ImageSize
 #
 #
 #
