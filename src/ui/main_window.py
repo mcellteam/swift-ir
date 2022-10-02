@@ -1938,7 +1938,7 @@ class MainWindow(QMainWindow):
         self.menu.show()
         # self.bottom_display_area_widget.setMaximumHeight(1000)
         self.bottom_display_area_controls.setMaximumHeight(1000)
-        self.control_panel.setMinimumHeight(90)
+        self.control_panel.setMinimumHeight(100)
 
         self.new_project_button.setMinimumSize(1, 1)
         self.open_project_button.setMinimumSize(1, 1)
@@ -2577,7 +2577,7 @@ class MainWindow(QMainWindow):
         normal_button_height = int(30)
         normal_button_size = QSize(normal_button_width, normal_button_height)
 
-        slim_button_height = int(24)
+        slim_button_height = int(22)
         slim_button_size = QSize(normal_button_width, slim_button_height)
 
         small_button_width = int(48)
