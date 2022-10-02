@@ -516,9 +516,6 @@ array([[   0,    0],
     return rect
 
 
-
-
-
 '''
 dataset = ts.open(
     spec,

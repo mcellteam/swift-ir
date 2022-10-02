@@ -8,10 +8,12 @@ import qtpy
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMessageBox, \
     QComboBox, QGroupBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
-    QShortcut, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QScrollBar
+    QShortcut, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QScrollBar, QDialog, QDesktopWidget
+# from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication, QKeySequence, QCursor, QImageReader
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, QTimer, Slot, Signal, QEvent
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, QTimer, Slot, Signal, QEvent, QSortFilterProxyModel, \
+    QModelIndex, QPoint
 from qtpy.QtWebEngineWidgets import *
 import qtawesome as qta
 import pyqtgraph as pg
@@ -51,7 +53,7 @@ class MainWindow(QMainWindow):
     resized = Signal()
     def __init__(self, title="AlignEM-SWiFT"):
 
-        app = QApplication.instance()
+        # app = QApplication.instance()
         self.app = QApplication.instance()
         # if app is None:
         #     logger.warning("Creating new QApplication instance.")
@@ -61,6 +63,10 @@ class MainWindow(QMainWindow):
 
         logger.info('Initializing Main Window')
         QMainWindow.__init__(self)
+
+        self.center()
+        self.oldPos = self.pos()
+
         self.setWindowTitle(title)
         self.setWindowIcon(QIcon(QPixmap('sims.png')))
         self.init_dir = os.getcwd()
@@ -73,6 +79,8 @@ class MainWindow(QMainWindow):
         self.threadpool.setExpiryTimeout(3000) # ms
         self.ng_worker = None
 
+        self._splash = True
+
         logger.info("Initializing Image Library")
         # cfg.image_library = ImageLibrary() # SmartImageLibrary()
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
@@ -83,7 +91,8 @@ class MainWindow(QMainWindow):
         self.context = QOpenGLContext(self)
         self.context.setFormat(QSurfaceFormat())
 
-        self.project_progress = 0
+        # self.project_progress = 0
+        self.project_progress = None
         self.project_aligned_scales = []
         # self.scales_combobox_switch = 0
         self.scales_combobox_switch = 1
@@ -124,7 +133,7 @@ class MainWindow(QMainWindow):
         logger.info("Initializing Data Model")
         cfg.data = DataModel()
 
-        self.resized.connect(self.clear_zoom)
+        # self.resized.connect(self.clear_zoom)
 
         self._unsaved_changes = False
         # self._up = 0
@@ -136,6 +145,7 @@ class MainWindow(QMainWindow):
         logger.info('Initializing UI')
         self.initUI()
         self.initShortcuts()
+
 
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.apply_default_style()
@@ -149,6 +159,22 @@ class MainWindow(QMainWindow):
         timer.timeout.connect(self.set_idle)  # execute `display_time`
         timer.setInterval(1000)  # 1000ms = 1s
         timer.start()
+
+        self.set_splash_controls()
+
+    def center(self):
+        frame = self.frameGeometry()
+        center = QDesktopWidget().availableGeometry().center()
+        frame.moveCenter(center)
+        self.move(frame.topLeft())
+
+    def mousePressEvent(self, event):
+        self.oldPos = event.globalPos()
+
+    def mouseMoveEvent(self, event):
+        delta = QPoint (event.globalPos() - self.oldPos)
+        self.move(self.x() + delta.x(), self.y() + delta.y())
+        self.oldPos = event.globalPos()
     
     def build_menu_from_list(self, parent, menu_list):
         for item in menu_list:
@@ -227,7 +253,7 @@ class MainWindow(QMainWindow):
                                          QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
             if reply == QMessageBox.Yes:
                 self.hud('Continuing With Rescaling...')
-                self.clear_images()
+                # self.clear_images()
                 #
                 # # for scale in scales():
                 # #     scale_path = os.path.join(proj_path, scale, 'img')
@@ -320,7 +346,7 @@ class MainWindow(QMainWindow):
             print_exception()
 
         self.load_unaligned_stacks()
-        self.update_unaligned_2D_viewer()
+        # self.update_unaligned_2D_viewer()
         self.read_project_data_update_gui()
         # self.set_progress_stage_2()
         self.reload_scales_combobox()  # 0529 #0713+
@@ -340,10 +366,7 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             logger.warning('Autoscaling Triggered An Exception')
-        self.hud('inside autoscale', logging.WARNING)
         self.hud('Generating Zarr Scales...')
-        self.hud('Generating Zarr Scales...')
-        logger.warning('Generating Zarr Scales...') #Imp
         logger.info('linking the stacks...')
         cfg.data.link_all_stacks()
         logger.info('setting defaults...')
@@ -360,8 +383,8 @@ class MainWindow(QMainWindow):
             print_exception()
         logger.info('Loading unaligned stacks...')
         self.load_unaligned_stacks()
-        logger.info('Updating unaligned view...')
-        self.update_unaligned_2D_viewer()
+        # logger.info('Updating unaligned view...')
+        # self.update_unaligned_2D_viewer()
         logger.info('Reading project data...')
         self.read_project_data_update_gui()
         # logger.info('Setting user progress...')
@@ -394,7 +417,7 @@ class MainWindow(QMainWindow):
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
             self.hud(warning_msg, logging.WARNING)
             return
-        self.img_panels['aligned'].imageViewer.clearImage()
+        # self.img_panels['aligned'].imageViewer.clearImage()
         img_dims = ImageSize(cfg.data.path_base())
         self.set_status('Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1]))
         alignment_option = cfg.data['data']['scales'][use_scale]['method_data']['alignment_option']
@@ -437,10 +460,11 @@ class MainWindow(QMainWindow):
 
         self.save_project_to_file() #0908+
         # self.set_progress_stage_3()
-        if self.is_neuroglancer_viewer():
-            self.reload_ng()
-        elif self.is_classic_viewer():
-            self.update_aligned_2D_viewer()
+
+        # if self.is_neuroglancer_viewer():
+        self.reload_ng()
+        # elif self.is_classic_viewer():
+        #     self.update_aligned_2D_viewer()
     
     @Slot()
     def regenerate(self, use_scale) -> None:
@@ -455,7 +479,7 @@ class MainWindow(QMainWindow):
             self.hud('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
             self.set_idle()
             return
-        self.img_panels['aligned'].imageViewer.clearImage()
+        # self.img_panels['aligned'].imageViewer.clearImage()
         self.set_busy()
         self.hud('Generating Aligned Images...')
         try:
@@ -472,10 +496,9 @@ class MainWindow(QMainWindow):
             logger.info('are_aligned_images_generated() returned True. Setting user progress to stage 3...')
             # self.set_progress_stage_3()
             self.read_project_data_update_gui()
-            if self.is_neuroglancer_viewer():
-                self.reload_ng()
-            elif self.is_classic_viewer():
-                self.update_aligned_2D_viewer()
+            # if self.is_neuroglancer_viewer():
+            self.reload_ng()
+
 
             self.hud("Regenerate Complete")
         else:
@@ -511,8 +534,8 @@ class MainWindow(QMainWindow):
         self.hud('Generating Neuroglancer-Compatible Zarr...')
         src = os.path.abspath(cfg.data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
-        self.hud('  Compression Level: %s' %  str(self.clevel_input.text()))
-        self.hud('  Compression Type: %s' %  self.cname_combobox.currentText())
+        self.hud('  Compression Level: %s' %  cfg.CLEVEL)
+        self.hud('  Compression Type: %s' %  cfg.CNAME)
         try:
             self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out))
             self.threadpool.start(self.worker)
@@ -573,29 +596,29 @@ class MainWindow(QMainWindow):
         (2) Set the enabled/disabled state of the align-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
         logger.info('Updating Scale Controls (Called by %s)...' % inspect.stack()[1].function)
-        if self.project_progress >= 2:
-            if cfg.data.n_scales() == 1:
-                self.scale_down_button.setEnabled(False)
+        # if self.project_progress >= 2:
+        if cfg.data.n_scales() == 1:
+            self.scale_down_button.setEnabled(False)
+            self.scale_up_button.setEnabled(False)
+            self.align_all_button.setEnabled(True)
+        else:
+            cur_index = self.scales_combobox.currentIndex()
+            if cur_index == 0:
                 self.scale_up_button.setEnabled(False)
-                self.align_all_button.setEnabled(True)
+                self.scale_down_button.setEnabled(True)
+            elif cfg.data.n_scales() == cur_index + 1:
+                self.scale_up_button.setEnabled(True)
+                self.scale_down_button.setEnabled(False)
             else:
-                cur_index = self.scales_combobox.currentIndex()
-                if cur_index == 0:
-                    self.scale_up_button.setEnabled(False)
-                    self.scale_down_button.setEnabled(True)
-                elif cfg.data.n_scales() == cur_index + 1:
-                    self.scale_up_button.setEnabled(True)
-                    self.scale_down_button.setEnabled(False)
-                else:
-                    self.scale_up_button.setEnabled(True)
-                    self.scale_down_button.setEnabled(True)
-            if cfg.data.is_alignable():
-                self.align_all_button.setEnabled(True)
-            else:
-                self.align_all_button.setEnabled(False)
+                self.scale_up_button.setEnabled(True)
+                self.scale_down_button.setEnabled(True)
+        if cfg.data.is_alignable():
+            self.align_all_button.setEnabled(True)
+        else:
+            self.align_all_button.setEnabled(False)
 
-            self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
-            self.update_alignment_details() #Shoehorn
+        self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
+        self.update_alignment_details() #Shoehorn
     
     @Slot()
     def update_alignment_details(self) -> None:
@@ -606,25 +629,43 @@ class MainWindow(QMainWindow):
         # self.al_status_checkbox.setChecked(is_cur_scale_aligned())
         dict = {'init_affine':'Initialize Affine','refine_affine':'Refine Affine','apply_affine':'Apply Affine'}
         method_str = dict[cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option']]
+        font = QFont()
+        font.setBold(True)
+        self.alignment_status_label.setFont(font)
         if is_cur_scale_aligned():
-            self.alignment_status_label.setText("Is Aligned? Yes")
+            self.alignment_status_label.setText("Aligned")
+            self.alignment_status_label.setStyleSheet('color: #41FF00;')
         else:
-            self.alignment_status_label.setText("Is Aligned? No")
+            self.alignment_status_label.setText("Not Aligned")
+            self.alignment_status_label.setStyleSheet('color: red;')
         scale_str = str(get_scale_val(cfg.data.scale()))
-        if cfg.data.skipped():
-            self.align_label_is_skipped.setText('Is Skipped? Yes')
-        else:
-            self.align_label_is_skipped.setText('Is Skipped? No')
+        # if cfg.data.skipped():
+        #     self.align_label_is_skipped.setText('Is Skipped? Yes')
+        # else:
+        #     self.align_label_is_skipped.setText('Is Skipped? No')
 
         try:
             img_size = ImageSize(al_stack[0]['images']['base']['filename'])
-            self.align_label_resolution.setText('Scale %s [%sx%spx]' % (scale_str, img_size[0], img_size[1]))
+            self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
         except:
             logger.warning('Unable To Determine Image Sizes. Project was likely renamed.')
         #Todo fix renaming bug where files are not relinked
-        self.align_label_affine.setText(method_str)
-        self.align_label_scales_remaining.setText('# Unaligned: %d' %
-                                                  len(cfg.data.not_aligned_list()))
+        # self.align_label_affine.setText(method_str)
+        num_unaligned = len(cfg.data.not_aligned_list())
+        if num_unaligned == 0:
+            font = QFont()
+            font.setBold(True)
+            self.alignment_status_label.setFont(font)
+            self.align_label_scales_remaining.setText('All Scales Aligned')
+            self.align_label_scales_remaining.setStyleSheet('color: #41FF00;')
+        else:
+            font = QFont()
+            font.setBold(False)
+            self.alignment_status_label.setFont(font)
+            self.align_label_scales_remaining.setText('# Unaligned: %d' % num_unaligned)
+            self.align_label_scales_remaining.setStyleSheet('color: #f3f6fb;')
+
+
         # if not do_scales_exist():
         #     cur_scale_str = 'Scale: n/a'
         #     self.align_label_cur_scale.setText(cur_scale_str)
@@ -659,7 +700,7 @@ class MainWindow(QMainWindow):
             self.hud('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
-            self.clear_images()
+            # self.clear_images()
             # self.scales_combobox_switch = 1
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
@@ -671,8 +712,10 @@ class MainWindow(QMainWindow):
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
 
-            if self.is_neuroglancer_viewer():  self.reload_ng()
-            elif self.is_classic_viewer():  self.update_2D_viewers()
+            # if self.is_neuroglancer_viewer():
+            self.reload_ng()
+            # elif self.is_classic_viewer():
+            #     self.update_2D_viewers()
 
             self.update_snr_plot()
 
@@ -690,17 +733,16 @@ class MainWindow(QMainWindow):
             self.hud('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
-            self.clear_images()
+            # self.clear_images()
 
             # self.scales_combobox_switch = 1
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index + 1
             self.scales_combobox.setCurrentIndex(requested_index)  # changes scale
-            if self.image_panel_stack_widget.currentIndex() == 0:
-                self.read_project_data_update_gui()
+            self.read_project_data_update_gui()
 
-            self.update_aligned_2D_viewer()
+            # self.update_aligned_2D_viewer()
             self.update_scale_controls()
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
@@ -710,8 +752,10 @@ class MainWindow(QMainWindow):
             # self.plot_widget.clear()
             self.update_snr_plot()
 
-            if self.is_neuroglancer_viewer():  self.reload_ng()
-            elif self.is_classic_viewer():  self.update_2D_viewers()
+            # if self.is_neuroglancer_viewer():
+            self.reload_ng()
+            # elif self.is_classic_viewer():
+            #     self.update_2D_viewers()
 
         except:
             print_exception()
@@ -722,10 +766,10 @@ class MainWindow(QMainWindow):
         scale = cfg.data['data']['scales'][cfg.data['data']['current_scale']]
         logger.info("cfg.data.skipped() = ", cfg.data.skipped())
         self.toggle_skip.setChecked(not cfg.data.skipped())
-        if cfg.data.skipped():
-            self.align_label_is_skipped.setText('Is Skipped? Yes')
-        else:
-            self.align_label_is_skipped.setText('Is Skipped? No')
+        # if cfg.data.skipped():
+        #     self.align_label_is_skipped.setText('Is Skipped? Yes')
+        # else:
+        #     self.align_label_is_skipped.setText('Is Skipped? No')
 
 
     @Slot()
@@ -746,7 +790,7 @@ class MainWindow(QMainWindow):
 
         # self.hud('Applying Default Theme')
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
-        self.setStyleSheet('')
+        # self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         # self.python_console.set_color_linux()
         self.python_console.set_color_none()
@@ -755,12 +799,14 @@ class MainWindow(QMainWindow):
         # drafting blue : #004060
         self.scales_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
         # self.image_panel_stack_widget.setStyleSheet('background-color: #f3f6fb;') #bg-color= viewer border
-        self.image_panel_stack_widget.setStyleSheet('background-color: #000000;')
-        self.image_panel_landing_page.setStyleSheet('background-color: #000000;')
+        # self.image_panel_stack_widget.setStyleSheet('background-color: #000000;')
+        # self.image_panel_stack_widget.setStyleSheet('background-color: #004060;')
+        self.image_panel_landing_page.setStyleSheet('background-color: #004060;')
         # self.details_banner.setStyleSheet("""color: #F3F6FB; font-size: 14px;""")
         # self.details_banner.setStyleSheet("""color: #ffe135; font-size: 14px;""")
         # self.details_banner.setStyleSheet("""color: #FFF9A6; font-size: 14px;""")
-        self.details_banner.setStyleSheet("""background-color: #000000; color: #ffe135; font-size: 14px;""")
+        # self.details_banner.setStyleSheet("""background-color: #000000; color: #ffe135; font-size: 14px;""")
+        self.details_banner.setStyleSheet("""background-color: #000000; color: #f3f6fb; font-size: 14px;""")
         # self.reset_groupbox_styles()
 
     def apply_daylight_style(self):
@@ -898,10 +944,8 @@ class MainWindow(QMainWindow):
         except: logger.warning('Unable to Update Project Dictionary with SWIM Window')
 
 
-        cfg.CNAME = self.cname_combobox.currentText()
-        cfg.CLEVEL = int(self.clevel_input.text())
-
-
+        # cfg.CNAME = self.cname_combobox.currentText()
+        # cfg.CLEVEL = int(self.clevel_input.text())
 
     
     @Slot()
@@ -1013,8 +1057,8 @@ class MainWindow(QMainWindow):
             requested_layer = 0
         cfg.data['data']['current_layer'] = int(requested_layer)
         self.read_project_data_update_gui()
-        if self.image_panel_stack_widget.currentIndex() == 1:
-            self.reload_ng()
+        # if self.image_panel_stack_widget.currentIndex() == 1:
+        self.reload_ng()
 
     
     @Slot()
@@ -1034,8 +1078,8 @@ class MainWindow(QMainWindow):
                 requested_layer = 0
             cfg.data.set_layer(requested_layer)
             self.read_project_data_update_gui()
-            if self.image_panel_stack_widget.currentIndex() == 1:
-                self.reload_ng()
+            # if self.image_panel_stack_widget.currentIndex() == 1:
+            self.reload_ng()
         except:
             print_exception()
         self.set_idle()
@@ -1127,13 +1171,13 @@ class MainWindow(QMainWindow):
         if self._working:
             logger.warning('fn_scales_combobox was called but _working is True -> ignoring the signal')
             return None
-        if self.image_panel_stack_widget.currentIndex() == 1:
-            self.reload_ng()
+        # if self.image_panel_stack_widget.currentIndex() == 1:
+        self.reload_ng()
 
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
         self.update_scale_controls()
-        self.update_2D_viewers()
+        # self.update_2D_viewers()
 
     @Slot()
     def fn_ng_layout_combobox(self) -> None:
@@ -1208,15 +1252,15 @@ class MainWindow(QMainWindow):
             cfg.data.set_layer(requested)
             self.read_project_data_update_gui()
 
-            if self.is_neuroglancer_viewer():
-                state = copy.deepcopy(cfg.viewer.state)
-                state.position[0] = requested
-                cfg.viewer.set_state(state)
+            # if self.is_neuroglancer_viewer():
+            state = copy.deepcopy(cfg.viewer.state)
+            state.position[0] = requested
+            cfg.viewer.set_state(state)
 
-            if self.is_classic_viewer():
-                if are_aligned_images_generated():
-                    self.img_panels['aligned'].setCurrentIndex(requested)
-                self.update_unaligned_2D_viewer()
+            # if self.is_classic_viewer():
+            #     if are_aligned_images_generated():
+            #         self.img_panels['aligned'].setCurrentIndex(requested)
+            #     self.update_unaligned_2D_viewer()
 
         # painter = QPainter(self)
         # s, l = cfg.data.scale(), cfg.data.layer()
@@ -1278,96 +1322,96 @@ class MainWindow(QMainWindow):
             logger.warning('Unaligned Zarr Stacks May Not Have Loaded Properly')
 
 
-    @Slot()
-    def update_unaligned_2D_viewer(self):
-        '''Called by read_project_data_update_gui '''
-        logger.debug('update_unaligned_2D_viewer:')
-        if self.image_panel_stack_widget.currentIndex() == 0:
-            # cfg.image_library.preload_images(cfg.data.layer())
-            s, l, dest = cfg.data.scale(), cfg.data.layer(), cfg.data.dest()
-            logger.info('s,l,dest = %s, %s, %s' % (cfg.data.scale(), str(cfg.data.layer()), cfg.data.dest()))
-            image_dict = cfg.data['data']['scales'][s]['alignment_stack'][l]['images']
-            is_skipped = cfg.data['data']['scales'][s]['alignment_stack'][l]['skipped']
-            scale_str = 's' + str(get_scale_val(cfg.data.scale()))
-
-            try:
-                if l != 0:
-                    x_ref, x_base = self.zarr_scales[scale_str][l-1, :, :], self.zarr_scales[scale_str][l, :, :]
-                    future_ref, future_base = x_ref.read(), x_base.read()
-                    logger.debug('Setting image ref')
-                    self.img_panels['ref'].setImage(future_ref.result())
-                    logger.debug('Setting image base')
-                    self.img_panels['base'].setImage(future_base.result())
-                elif l == 0:
-                    self.img_panels['ref'].clearImage()
-                    x_base = self.zarr_scales[scale_str][l, :, :]
-                    future_base = x_base.read()
-                    logger.debug('Setting image base')
-                    self.img_panels['base'].setImage(future_base.result())
-
-            except:
-                print_exception()
-                logger.warning('Unable To Render Unaligned Stacks')
-        else:
-            logger.warning("update_unaligned_2D_viewer was called by '%s' but 2D viewer is not being used" % inspect.stack()[1].function)
-
-
-    def update_aligned_2D_viewer(self):
-        logger.critical('update_aligned_2D_viewer:')
-        if self.image_panel_stack_widget.currentIndex() == 0:
-            if is_cur_scale_aligned():
-                dest = cfg.data.dest()
-                zarr_path = os.path.join(dest, 'img_aligned.zarr')
-                path = os.path.join(zarr_path, 's' + str(cfg.data.scale_val()))
-                # np_data = zarr.load(path)
-                # np_data = np.transpose(np_data, axes=[1, 2, 0])
-                # zarr_data = da.from_zarr(path, inline_array=True) # <class 'dask.array.core.Array' #orig
-                # zarr_data = np.moveaxis(zarr_data,0,2) # Now has shape (512, 512, 1)
-                dataset_future = get_zarr_tensor(path)
-
-                logger.info('Calling dataset_future.result()')
-                t0 = time.time()
-                dataset = dataset_future.result()
-                dt = time.time() - t0
-                logger.info('dataset_future.result() Finished In %g Seconds' % dt)
-                logger.info('dataset.domain: %s' % dataset.domain)
-                # dataset.domain = { [0, 100*), [0, 1354*), [0, 1354*) }
-                # zarr_data = np.asarray(tensor_arr.result())
-                # zarr_data = np.moveaxis(zarr_data, 0, 2)  # Now has shape (512, 512, 1)
-                # self.img_panels['aligned'].setImage(zarr_data)
-                self.img_panels['aligned'].setImage(dataset)
-                self.img_panels['aligned'].setCurrentIndex(cfg.data.layer())
-            else:
-                self.img_panels['aligned'].imageViewer.clearImage()
-                logger.warning('No Aligned Stack for Current Scale')
-
-            # th_ref = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['ref']['filename']"))
-            # th_base = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['base']['filename']"))
-        else:
-            logger.warning("update_aligned_2D_viewer was called by '%s' but 2D viewer is not being used" % inspect.stack()[1].function)
-
-    @Slot()
-    def update_2D_viewers(self):
-        logger.critical('Updating 2D viewers... called By %s' % inspect.stack()[1].function)
-        if self.is_classic_viewer():
-            if are_images_imported():
-                logger.critical('Images Are Imported')
-                try:     self.update_unaligned_2D_viewer()
-                except:  logger.warning('An exception occurred while attempting to update unaligned image panels')
-            # if is_cur_scale_aligned():
-            if are_aligned_images_generated():
-                logger.critical('Scale Is Aligned')
-                try:     self.update_aligned_2D_viewer()
-                except:  logger.warning('An exception occurred while attempting to update aligned image panel')
-        else:
-            logger.warning("update_2D_viewers was called by '%s' but classic viewer is not in use" % inspect.stack()[1].function)
+    # @Slot()
+    # def update_unaligned_2D_viewer(self):
+    #     '''Called by read_project_data_update_gui '''
+    #     logger.debug('update_unaligned_2D_viewer:')
+    #     if self.image_panel_stack_widget.currentIndex() == 0:
+    #         # cfg.image_library.preload_images(cfg.data.layer())
+    #         s, l, dest = cfg.data.scale(), cfg.data.layer(), cfg.data.dest()
+    #         logger.info('s,l,dest = %s, %s, %s' % (cfg.data.scale(), str(cfg.data.layer()), cfg.data.dest()))
+    #         image_dict = cfg.data['data']['scales'][s]['alignment_stack'][l]['images']
+    #         is_skipped = cfg.data['data']['scales'][s]['alignment_stack'][l]['skipped']
+    #         scale_str = 's' + str(get_scale_val(cfg.data.scale()))
+    #
+    #         try:
+    #             if l != 0:
+    #                 x_ref, x_base = self.zarr_scales[scale_str][l-1, :, :], self.zarr_scales[scale_str][l, :, :]
+    #                 future_ref, future_base = x_ref.read(), x_base.read()
+    #                 logger.debug('Setting image ref')
+    #                 self.img_panels['ref'].setImage(future_ref.result())
+    #                 logger.debug('Setting image base')
+    #                 self.img_panels['base'].setImage(future_base.result())
+    #             elif l == 0:
+    #                 self.img_panels['ref'].clearImage()
+    #                 x_base = self.zarr_scales[scale_str][l, :, :]
+    #                 future_base = x_base.read()
+    #                 logger.debug('Setting image base')
+    #                 self.img_panels['base'].setImage(future_base.result())
+    #
+    #         except:
+    #             print_exception()
+    #             logger.warning('Unable To Render Unaligned Stacks')
+    #     else:
+    #         logger.warning("update_unaligned_2D_viewer was called by '%s' but 2D viewer is not being used" % inspect.stack()[1].function)
 
 
-    @Slot()
-    def clear_images(self):
-        self.img_panels['ref'].clearImage()
-        self.img_panels['base'].clearImage()
-        self.img_panels['aligned'].imageViewer.clearImage()
+    # def update_aligned_2D_viewer(self):
+    #     logger.critical('update_aligned_2D_viewer:')
+    #     if self.image_panel_stack_widget.currentIndex() == 0:
+    #         if is_cur_scale_aligned():
+    #             dest = cfg.data.dest()
+    #             zarr_path = os.path.join(dest, 'img_aligned.zarr')
+    #             path = os.path.join(zarr_path, 's' + str(cfg.data.scale_val()))
+    #             # np_data = zarr.load(path)
+    #             # np_data = np.transpose(np_data, axes=[1, 2, 0])
+    #             # zarr_data = da.from_zarr(path, inline_array=True) # <class 'dask.array.core.Array' #orig
+    #             # zarr_data = np.moveaxis(zarr_data,0,2) # Now has shape (512, 512, 1)
+    #             dataset_future = get_zarr_tensor(path)
+    #
+    #             logger.info('Calling dataset_future.result()')
+    #             t0 = time.time()
+    #             dataset = dataset_future.result()
+    #             dt = time.time() - t0
+    #             logger.info('dataset_future.result() Finished In %g Seconds' % dt)
+    #             logger.info('dataset.domain: %s' % dataset.domain)
+    #             # dataset.domain = { [0, 100*), [0, 1354*), [0, 1354*) }
+    #             # zarr_data = np.asarray(tensor_arr.result())
+    #             # zarr_data = np.moveaxis(zarr_data, 0, 2)  # Now has shape (512, 512, 1)
+    #             # self.img_panels['aligned'].setImage(zarr_data)
+    #             self.img_panels['aligned'].setImage(dataset)
+    #             self.img_panels['aligned'].setCurrentIndex(cfg.data.layer())
+    #         else:
+    #             self.img_panels['aligned'].imageViewer.clearImage()
+    #             logger.warning('No Aligned Stack for Current Scale')
+    #
+    #         # th_ref = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['ref']['filename']"))
+    #         # th_base = threading.Thread(target=cfg.image_library.get_image_reference, args=("image_dict['base']['filename']"))
+    #     else:
+    #         logger.warning("update_aligned_2D_viewer was called by '%s' but 2D viewer is not being used" % inspect.stack()[1].function)
+
+    # @Slot()
+    # def update_2D_viewers(self):
+    #     logger.critical('Updating 2D viewers... called By %s' % inspect.stack()[1].function)
+    #     if self.is_classic_viewer():
+    #         if are_images_imported():
+    #             logger.critical('Images Are Imported')
+    #             try:     self.update_unaligned_2D_viewer()
+    #             except:  logger.warning('An exception occurred while attempting to update unaligned image panels')
+    #         # if is_cur_scale_aligned():
+    #         # if are_aligned_images_generated():
+    #         #     logger.critical('Scale Is Aligned')
+    #         #     try:     self.update_aligned_2D_viewer()
+    #         #     except:  logger.warning('An exception occurred while attempting to update aligned image panel')
+    #     else:
+    #         logger.warning("update_2D_viewers was called by '%s' but classic viewer is not in use" % inspect.stack()[1].function)
+
+
+    # @Slot()
+    # def clear_images(self):
+    #     self.img_panels['ref'].clearImage()
+    #     self.img_panels['base'].clearImage()
+    #     self.img_panels['aligned'].imageViewer.clearImage()
 
     
     # @Slot()
@@ -1377,19 +1421,17 @@ class MainWindow(QMainWindow):
     def new_project(self):
         logger.debug('new_project:')
         self.set_status("New Project...")
-        self.set_normal_view()
-        cfg.w.ng_browser.back() # create the effect of resetting the browser
+        # cfg.w.ng_browser.back() # create the effect of resetting the browser
         if is_destination_set():
             logger.info('Asking user to confirm new data')
             msg = QMessageBox(QMessageBox.Warning,
                               'Confirm New Project',
-                              'Please confirm create new data.',
+                              'Please confirm create new project.',
                               buttons=QMessageBox.Cancel | QMessageBox.Ok)
             msg.setIcon(QMessageBox.Question)
             button_cancel = msg.button(QMessageBox.Cancel)
             button_cancel.setText('Cancel')
             button_ok = msg.button(QMessageBox.Ok)
-            button_ok.setText('New Project')
             msg.setDefaultButton(QMessageBox.Cancel)
             reply = msg.exec_()
             if reply == QMessageBox.Ok:
@@ -1405,23 +1447,30 @@ class MainWindow(QMainWindow):
                 self.hud('New Project Canceled', logging.WARNING)
                 self.set_idle()
                 return
-        self.image_panel_stack_widget.setCurrentIndex(2)
+        # self.image_panel_stack_widget.setCurrentIndex(2)
         self.clear_snr_plot()
+        # self.set_normal_view()
+
+
+        # self.set_splash_controls()
+
+
+
         # self.set_progress_stage_0()
         self.reset_details_banner()
 
-        self.hud('Creating New Project...')
+        self.hud('Creating A Project...')
         # cfg.image_library.remove_all_images()
-        self.img_panels['ref'].clearImage()
-        self.img_panels['base'].clearImage()
-        self.img_panels['aligned'].imageViewer.clearImage()
+        # self.img_panels['ref'].clearImage()
+        # self.img_panels['base'].clearImage()
+        # self.img_panels['aligned'].imageViewer.clearImage()
         filename = self.new_project_save_as_dialog()
         if filename == '':
-            self.hud("Must Provide A Name For The Project.")
+            self.hud("Project Canceled.")
             self.set_idle()
             return
 
-        self.clear_images()
+        # self.clear_images()
         logger.info("Overwriting Project Data In Memory With New Template")
         if not filename.endswith('.json'):
             filename += ".json"
@@ -1440,32 +1489,45 @@ class MainWindow(QMainWindow):
     
     def import_images_dialog(self):
         '''Dialog for importing images. Returns list of filenames.'''
-        caption = "Import Images"
-        # filter = "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)"
-        # filter = "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif .bmp)"
-        filter = "Images (*.tif *.tiff)"
-        # if qtpy.QT5:
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
-        response = QFileDialog.getOpenFileNames(
-            parent=self,
-            caption=caption,
-            filter=filter,
-            options=options,
-            # options=options
-        )
+        # caption = "Import Images"
+        # # filter = "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif);;All Files (*)"
+        # # filter = "Images (*.jpg *.jpeg *.png *.tif *.tiff *.gif .bmp)"
+        # filter = 'Images (*.tif *.tiff)'
+        # # if qtpy.QT5:
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
+        # response = QFileDialog.getOpenFileNames(
+        #     parent=self,
+        #     caption=caption,
+        #     filter=filter,
+        #     options=options,
+        #     # options=options
+        # )
         # dlg = QFileDialog()
         # dlg.setFileMode(QFileDialog.AnyFile)
         # dlg.setFilter("Text files (*.txt)")
 
-
-
-        return response[0]
+        dialog = QFileDialog()
+        dialog.setOption(QFileDialog.DontUseNativeDialog)
+        # dialog.setProxyModel(FileFilterProxyModel())
+        dialog.setWindowTitle('Import Images')
+        dialog.setNameFilter('Images (*.tif *.tiff)')
+        dialog.setFileMode(QFileDialog.ExistingFiles)
+        # response = dialog.exec()
+        logger.info(dialog.selectedFiles())
+        logger.info('dialog.Accepted = %s' % dialog.Accepted)
+        if dialog.exec_() == QDialog.Accepted:
+            self.set_project_controls()
+            self.set_normal_view()
+            self.show_all_controls()
+            return dialog.selectedFiles()
+        else:
+            self.import_images_button.show()
     
     def open_project_dialog(self) -> str:
         '''Dialog for opening a data. Returns 'filename'.'''
         caption = "Open Project (.json)"
-        filter = "Projects (*.json)"
+        filter = "JSON (*.json)"
         # if qtpy.QT5:
         options = QFileDialog.Options()
         options |= QFileDialog.DontUseNativeDialog
@@ -1475,15 +1537,23 @@ class MainWindow(QMainWindow):
             filter=filter,
             options=options,
         )
+        # dialog = QFileDialog()
+        # dialog.setOption(QFileDialog.DontUseNativeDialog)
+        # # dialog.setProxyModel(FileFilterProxyModel())
+        # dialog.setWindowTitle('Open Project (.json)')
+        # dialog.setNameFilter("Text Files (*.json)")
+        # dialog.exec()
+
         return response[0]
-    
+        # return dialog.selectedFiles()[0]
+
     def save_project_dialog(self) -> str:
         '''Dialog for saving a data. Returns 'filename'.'''
         caption = "Save Project"
-        filter = "Projects (*.json)"
-        if qtpy.QT5:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
+        filter = "JSON (*.json)"
+        # if qtpy.QT5:
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
         response = QFileDialog.getSaveFileName(
             parent=self,
             caption=caption,
@@ -1495,10 +1565,10 @@ class MainWindow(QMainWindow):
     def new_project_save_as_dialog(self) -> str:
         '''Dialog for saving a data. Returns 'filename'.'''
         caption = "New Project Save As..."
-        filter = "Projects (*.json)"
-        if qtpy.QT5:
-            options = QFileDialog.Options()
-            options |= QFileDialog.DontUseNativeDialog
+        filter = "JSON (*.json)"
+        # if qtpy.QT5:
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
         response = QFileDialog.getSaveFileName(
             parent=self,
             caption=caption,
@@ -1556,6 +1626,9 @@ class MainWindow(QMainWindow):
                 return
             self.hud("Loading Project '%s'..." % filename)
 
+            self.set_project_controls()
+            self.set_normal_view()
+
             project.set_paths_absolute(head=filename)
             cfg.data = copy.deepcopy(project)  # Replace the current version with the copy
             cfg.data.link_all_stacks()
@@ -1565,7 +1638,6 @@ class MainWindow(QMainWindow):
                 self.load_unaligned_stacks()
                 self.use_neuroglancer_viewer()  # force neuroglancer viewer (changes stack index)
                 # else:
-                #
                 #     self.update_2D_viewers()
                 # self.image_panel_stack_widget.setCurrentIndex(1)
                 self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
@@ -1587,6 +1659,9 @@ class MainWindow(QMainWindow):
         self.set_idle()
 
     def save_project(self):
+        if self._splash:
+            logger.info('Nothing To Save')
+            return
         self.set_status("Saving...")
         self.hud('Saving Project...')
         # self.main_panel_bottom_widget.setCurrentIndex(0) #og
@@ -1594,7 +1669,7 @@ class MainWindow(QMainWindow):
             self.save_project_to_file()
             self.hud.done()
             self._unsaved_changes = False
-            self.hud("Project File Location: %s" % cfg.data.dest() + ".json")
+            self.hud("Project File Location:\n%s" % cfg.data.dest() + ".json")
         except:
             self.hud('Nothing To Save', logging.WARNING)
         finally:
@@ -1725,7 +1800,12 @@ class MainWindow(QMainWindow):
         role_to_import = 'base'
         # need_to_scale = not are_images_imported()
         # filenames = sorted(self.import_images_dialog())
-        filenames = natural_sort(self.import_images_dialog())
+        try:
+            filenames = natural_sort(self.import_images_dialog())
+        except:
+            logger.warning('No images were selected.')
+            self.set_idle()
+            return
         logger.debug('filenames = %s' % str(filenames))
         if clear_role:
             for layer in cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack']:
@@ -1759,24 +1839,156 @@ class MainWindow(QMainWindow):
         # self.scales_combobox_switch = 1
         self.set_idle()
 
+    def run_after_import(self):
+
+        print('\n\n\n\nrun_after_import\n\n\n\n')
+        recipe_maker = RecipeMaker(parent=self)
+        result = recipe_maker.exec_()  # result = 0 or 1
+        print('\n\n\n\n\n\n')
+        print(str(result))
+        if not result:
+            logger.warning('Dialog Did Not Return A Result')
+            return
+        else:
+            # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
+            self.autoscale()
+
+
+
+    def set_splash_controls(self):
+        logger.info('Setting Splash Controls...')
+        self._splash = True
+
+
+        self.title_label.show()
+        self.subtitle_label.show()
+
+        # self.bottom_display_area_widget.hide()
+        self.hud.hide()
+        self.snr_plot.hide()
+        self.bottom_display_area_controls.hide()
+        self.dual_viewer_w_banner.hide()
+
+        self.menu.hide()
+
+        self.control_panel.setStyleSheet('background-color: #f3f6fb;')
+        self.main_splitter.setAutoFillBackground(True)
+
+        # self.bottom_display_area_widget.setMaximumHeight(200)
+        self.bottom_display_area_controls.setMaximumHeight(200)
+
+        self.resize(200,200)
+
+        self.control_panel.setMaximumHeight(130)
+
+        # self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint))
+
+        button_h, button_w = 100, 40
+        self.image_panel_stack_widget.setCurrentIndex(2)
+        self.new_project_button.setMinimumSize(button_h, button_w)
+        self.open_project_button.setMinimumSize(button_h, button_w)
+        self.save_project_button.setMinimumSize(button_h, button_w)
+        self.exit_app_button.setMinimumSize(button_h, button_w)
+        self.documentation_button.setMinimumSize(button_h, button_w)
+        self.remote_viewer_button.setMinimumSize(button_h, button_w)
+        self.import_images_button.setMinimumSize(button_h, button_w)
+        try:
+            self.alignment_widget.hide()
+        except:
+            pass
+        font_size = 16
+        self.import_images_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.new_project_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.open_project_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.save_project_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.remote_viewer_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.documentation_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.exit_app_button.setStyleSheet('font-size: %spx;' % font_size)
+
+        icon_size = 24
+        self.import_images_button.setIconSize(QSize(icon_size, icon_size))
+        self.new_project_button.setIconSize(QSize(icon_size, icon_size))
+        self.open_project_button.setIconSize(QSize(icon_size, icon_size))
+        self.save_project_button.setIconSize(QSize(icon_size, icon_size))
+        self.remote_viewer_button.setIconSize(QSize(icon_size, icon_size))
+        self.documentation_button.setIconSize(QSize(icon_size, icon_size))
+        self.exit_app_button.setIconSize(QSize(icon_size, icon_size))
+
+
+    def set_project_controls(self):
+        logger.info('Setting Project Controls...')
+
+        self._splash = False
+
+        self.title_label.hide()
+        self.subtitle_label.hide()
+
+        self.hud.show()
+        self.snr_plot.show()
+
+
+        self.bottom_display_area_controls.show() # <- culprit
+
+        self.dual_viewer_w_banner.show()
+
+        # self.image_panel_stack_widget.setCurrentIndex(1)
+
+
+        self.alignment_widget.show()
+        self.menu.show()
+        # self.bottom_display_area_widget.setMaximumHeight(1000)
+        self.bottom_display_area_controls.setMaximumHeight(1000)
+        self.control_panel.setMinimumHeight(90)
+
+        self.new_project_button.setMinimumSize(1, 1)
+        self.open_project_button.setMinimumSize(1, 1)
+        self.save_project_button.setMinimumSize(1, 1)
+        self.exit_app_button.setMinimumSize(1, 1)
+        self.documentation_button.setMinimumSize(1, 1)
+        self.remote_viewer_button.setMinimumSize(1, 1)
+        self.import_images_button.setMinimumSize(1, 1)
+
+        font_size = 12
+        self.import_images_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.new_project_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.open_project_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.save_project_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.remote_viewer_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.documentation_button.setStyleSheet('font-size: %spx;' % font_size)
+        self.exit_app_button.setStyleSheet('font-size: %spx;' % font_size)
+
+        icon_size = 12
+        self.import_images_button.setIconSize(QSize(icon_size, icon_size))
+        self.new_project_button.setIconSize(QSize(icon_size, icon_size))
+        self.open_project_button.setIconSize(QSize(icon_size, icon_size))
+        self.save_project_button.setIconSize(QSize(icon_size, icon_size))
+        self.remote_viewer_button.setIconSize(QSize(icon_size, icon_size))
+        self.documentation_button.setIconSize(QSize(icon_size, icon_size))
+        self.exit_app_button.setIconSize(QSize(icon_size, icon_size))
+
+        self.adjustSize()
+
+
+
+
     # @Slot()
     # def actual_size_callback(self):
     #     logger.info('MainWindow.actual_size_callback:')
     #     # self.image_panel.all_images_actual_size()
 
-    @Slot()
-    def clear_zoom(self, all_images_in_stack=True):
-        '''
-        self.image_panel is a MultiImagePanel object'''
-        # logger.info('Called By %s' % inspect.stack()[1].function)
-        try:
-            if are_images_imported():
-                self.img_panels['ref'].clearZoom()
-                self.img_panels['base'].clearZoom()
-                if is_cur_scale_aligned():
-                    self.img_panels['aligned'].imageViewer.clearZoom()
-        except:
-            logger.warning('Centering All Images Raised An Exception')
+    # @Slot()
+    # def clear_zoom(self, all_images_in_stack=True):
+    #     '''
+    #     self.image_panel is a MultiImagePanel object'''
+    #     # logger.info('Called By %s' % inspect.stack()[1].function)
+    #     try:
+    #         if are_images_imported():
+    #             self.img_panels['ref'].clearZoom()
+    #             self.img_panels['base'].clearZoom()
+    #             if is_cur_scale_aligned():
+    #                 self.img_panels['aligned'].imageViewer.clearZoom()
+    #     except:
+    #         logger.warning('Centering All Images Raised An Exception')
 
 
 
@@ -1784,8 +1996,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         logger.info("MainWindow.closeEvent (called by %s):" % inspect.stack()[1].function)
         self.shutdownInstructions()
-        self.shutdownInstructions()
-        self.shutdownInstructions() # Run Shutdown Instructions 3x
+        logger.info('Running shutdown instructions again...')
+        self.shutdownInstructions() # Run Shutdown Instructions 2x
 
     @Slot()
     def exit_app(self):
@@ -1822,8 +2034,9 @@ class MainWindow(QMainWindow):
             logger.critical('No Unsaved Changes - Exiting')
 
         self.shutdownInstructions()
-        self.shutdownInstructions()
-        self.shutdownInstructions() # Run Shutdown Instructions 3x
+        logger.info('Running shutdown instructions again...')
+        self.shutdownInstructions() # Run Shutdown Instructions 2x
+
 
     def shutdownInstructions(self):
         logger.info('Running Shutdown Instructions...')
@@ -1833,7 +2046,7 @@ class MainWindow(QMainWindow):
             self.shutdownJupyter()
         except:
             sys.stdout.flush()
-            logger.warning('Having trouble shutting down jupyter')
+            logger.info('Having trouble shutting down jupyter')
         else:
             logger.info('done')
 
@@ -1844,7 +2057,7 @@ class MainWindow(QMainWindow):
             logger.info('Closing http server on port %s...' % str(self.ng_worker.http_server.server_port))
         except:
             sys.stdout.flush()
-            logger.warning('Having trouble closing http_server')
+            logger.info('Having trouble closing http_server')
         else:
             logger.info('done')
 
@@ -1951,11 +2164,11 @@ class MainWindow(QMainWindow):
 
     def exit_ng(self):
         self.hud("Exiting Neuroglancer Viewer")
-        self.image_panel_stack_widget.setCurrentIndex(0)  #0906
-        new_cur_layer = int(cfg.viewer.state.voxel_coordinates[0])
-        cfg.data.set_layer(new_cur_layer)
-        self.jump_to(new_cur_layer)
-        self.read_project_data_update_gui() #0908+
+        # self.image_panel_stack_widget.setCurrentIndex(0)  #0906
+        # new_cur_layer = int(cfg.viewer.state.voxel_coordinates[0])
+        # cfg.data.set_layer(new_cur_layer)
+        # self.jump_to(new_cur_layer)
+        # self.read_project_data_update_gui() #0908+
         self.set_normal_view()
 
     def exit_docs(self):
@@ -2048,18 +2261,8 @@ class MainWindow(QMainWindow):
         # form = MainWindow()
 
 
-    def run_after_import(self):
-        recipe_maker = RecipeMaker(parent=self)
-        result = recipe_maker.exec_()  # result = 0 or 1
-        if not result:
-            logger.warning('Dialog Did Not Return A Result')
-            return
-        else:
-            # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
-            self.autoscale()
-
-
     def configure_project(self):
+        logger.info('Showing configure project dialog...')
         recipe_maker = RecipeMaker(parent=self)
         result = recipe_maker.exec_()
         if not result:  logger.warning('Dialog Did Not Return A Result')
@@ -2070,12 +2273,19 @@ class MainWindow(QMainWindow):
         self.w.show()
 
     def reset_details_banner(self):
-        self.align_label_resolution.setText('Dimensions: n/a')
-        self.align_label_affine.setText('Initialize Affine')
-        self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
-        self.alignment_status_label.setText('Is Scale Aligned: n/a')
-        self.align_label_is_skipped.setText('Is Skipped? n/a')
+        # self.align_label_resolution.setText('Dimensions: n/a')
+        # # self.align_label_affine.setText('Initialize Affine')
+        # self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
+        # self.align_label_is_skipped.setText('Is Skipped? n/a')
+        # self.alignment_status_label.setText('Is Scale Aligned: n/a')
 
+
+        # self.align_label_resolution.setText('Dimensions: n/a')
+        # # self.align_label_affine.setText('Initialize Affine')
+        # self.align_label_scales_remaining.setText('# Scales Unaligned: n/a')
+        # self.align_label_is_skipped.setText('Is Skipped? n/a')
+        # self.alignment_status_label.setText('Is Scale Aligned: n/a')
+        pass
 
     def bounding_rect_changed_callback(self, state):
         if inspect.stack()[1].function == 'read_project_data_update_gui': return
@@ -2167,8 +2377,14 @@ class MainWindow(QMainWindow):
         self.control_panel.show()
         # self.multi_img_viewer.show()
         self.image_panel_stack_widget.show()
-        self.main_widget.setCurrentIndex(0)
         self.image_panel_stack_widget.setCurrentIndex(1)
+        self.main_widget.setCurrentIndex(0)
+        self.python_console.show()
+        self.snr_plot.show()
+        self.clear_snr_plot()
+        self.hud.show()
+        self.import_images_button.hide()
+
         # self.main_panel_bottom_widget.setCurrentIndex(0)
         self.set_idle()
 
@@ -2266,6 +2482,7 @@ class MainWindow(QMainWindow):
                  ['Regenerate Zarr Scales', None, generate_zarr_scales, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
                  ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
+                 ['Toggle Autogenerate Callback', None, self.toggle_auto_generate_callback, True, None, None],
                  # ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
                  ['Show &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
                  ['&Write Multipage Tifs', 'None', self.write_paged_tiffs, None, None, None],
@@ -2360,7 +2577,7 @@ class MainWindow(QMainWindow):
         normal_button_height = int(30)
         normal_button_size = QSize(normal_button_width, normal_button_height)
 
-        slim_button_height = int(20)
+        slim_button_height = int(24)
         slim_button_size = QSize(normal_button_width, slim_button_height)
 
         small_button_width = int(48)
@@ -2392,6 +2609,7 @@ class MainWindow(QMainWindow):
         self.hud('Welcome To AlignEM-SWiFT.', logging.INFO)
 
         self.new_project_button = QPushButton(" New")
+        self.new_project_button.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.new_project_button.clicked.connect(self.new_project)
         self.new_project_button.setFixedSize(slim_button_size)
         self.new_project_button.setIcon(qta.icon("fa.plus", color=ICON_COLOR))
@@ -2422,6 +2640,14 @@ class MainWindow(QMainWindow):
         self.remote_viewer_button.setFixedSize(slim_button_size)
         self.remote_viewer_button.setStyleSheet("font-size: 11px;")
 
+        self.import_images_button = QPushButton(" Import\n Images")
+        self.import_images_button.setToolTip('Import Images.')
+        self.import_images_button.clicked.connect(self.import_images)
+        self.import_images_button.setFixedSize(normal_button_size)
+        self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=ICON_COLOR))
+        self.import_images_button.setStyleSheet("font-size: 11px;")
+        self.import_images_button.hide()
+
         # self.project_functions_layout = QGridLayout()
         # self.project_functions_layout.setContentsMargins(*gb_margin)
         # self.project_functions_layout.addWidget(self.new_project_button, 0, 0)
@@ -2433,24 +2659,21 @@ class MainWindow(QMainWindow):
 
         self.project_functions_layout = QHBoxLayout()
         self.project_functions_layout.setContentsMargins(0, 0, 0, 0)
+        self.project_functions_layout.addWidget(self.import_images_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.new_project_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.open_project_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.save_project_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.remote_viewer_button, alignment=Qt.AlignLeft)
-        self.project_functions_layout.addWidget(self.exit_app_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.documentation_button, alignment=Qt.AlignLeft)
+        self.project_functions_layout.addWidget(self.exit_app_button, alignment=Qt.AlignLeft)
+
         # self.spacer_item_project_funcs = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
         self.project_functions_layout.addStretch()
 
         '''GroupBox 2 Data Selection & Scaling'''
 
-        # self.import_images_button = QPushButton(" Import\n Images")
-        # self.import_images_button.setToolTip('Import Images.')
-        # self.import_images_button.clicked.connect(self.import_images)
-        # self.import_images_button.setFixedSize(normal_button_size)
-        # self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=ICON_COLOR))
-        # self.import_images_button.setStyleSheet("font-size: 9px;")
-        #
+
+
         # tip = 'Zoom to fit'
         # self.clear_zoom_button = QPushButton('Fit Screen')
         # self.clear_zoom_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -2476,7 +2699,7 @@ class MainWindow(QMainWindow):
         self.generate_scales_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.generate_scales_button.clicked.connect(self.scale)
         self.generate_scales_button.setFixedSize(normal_button_size)
-        self.generate_scales_button.setStyleSheet("font-size: 9px;")
+        self.generate_scales_button.setStyleSheet("font-size: 10px;")
         self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color=ICON_COLOR))
 
         tip = 'Reset (Use Everything)'
@@ -2745,69 +2968,67 @@ class MainWindow(QMainWindow):
         self.alignment_layout.addWidget(self.align_all_button)
         self.alignment_layout.addStretch()
 
-
-
         self.alignment_widget = QWidget()
         self.alignment_widget.setLayout(self.alignment_layout)
 
         '''GroupBox 4 Export & View'''
-
-        tip = 'Zarr Compression Level\n(default=5)'
-        self.clevel_label = QLabel('clevel (1-9):')
-        self.clevel_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.clevel_input = QLineEdit(self)
-        self.clevel_input.textEdited.connect(self.has_unsaved_changes)
-        self.clevel_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.clevel_input.setText(str(cfg.CLEVEL))
-        self.clevel_input.setFixedWidth(small_input_size)
-        self.clevel_input.setFixedHeight(std_height)
-        self.clevel_valid = QIntValidator(1, 9, self)
-        self.clevel_input.setValidator(self.clevel_valid)
-
-        tip = 'Zarr Compression Type\n(default=zstd)'
-        self.cname_label = QLabel('cname:')
-        self.cname_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.cname_combobox = QComboBox(self)
-        self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
-        self.cname_combobox.setFixedSize(72, std_height)
-        self.export_and_view_hbox = QHBoxLayout()
-        self.export_zarr_button = QPushButton(" Remake\n Zarr")
-        tip = "This function creates a scale pyramid from the full scale aligned images and then converts them " \
-              "into the chunked and compressed multiscale Zarr format that can be viewed as a contiguous " \
-              "volumetric dataset in Neuroglancer."
-        wrapped = '\n'.join(textwrap.wrap(tip, width=35))
-        self.export_zarr_button.setToolTip(wrapped)
-        self.export_zarr_button.clicked.connect(self.export)
-        self.export_zarr_button.setFixedSize(normal_button_size)
-        self.export_zarr_button.setStyleSheet("font-size: 11px;")
-        # self.export_zarr_button.setIcon(qta.icon("fa5s.file-export", color=ICON_COLOR))
-        self.export_zarr_button.setIcon(qta.icon("fa5s.cubes", color=ICON_COLOR))
-
-        tip = 'View Zarr export in Neuroglancer.'
-        self.ng_button = QPushButton("View In\nNeuroglancer")
-        self.ng_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.ng_button.clicked.connect(self.use_neuroglancer_viewer)
-        self.ng_button.setFixedSize(normal_button_size)
-        # self.ng_button.setIcon(qta.icon("mdi.video-3d", color=ICON_COLOR))
-        self.ng_button.setStyleSheet("font-size: 9px;")
-
-        self.export_hlayout = QVBoxLayout()
-        self.export_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
-        self.export_hlayout.addWidget(self.ng_button, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        self.clevel_layout = QHBoxLayout()
-        self.clevel_layout.setContentsMargins(0, 0, 0, 0)
-        self.clevel_layout.addWidget(self.clevel_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignmentFlag.AlignRight)
-
-        self.cname_layout = QHBoxLayout()
-        self.cname_layout.addWidget(self.cname_label, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignmentFlag.AlignRight)
-
-        self.export_settings_layout = QHBoxLayout()
-        self.export_settings_layout.addLayout(self.clevel_layout)
-        self.export_settings_layout.addLayout(self.cname_layout)
-        self.export_settings_layout.addLayout(self.export_hlayout)
+        #
+        # tip = 'Zarr Compression Level\n(default=5)'
+        # self.clevel_label = QLabel('clevel (1-9):')
+        # self.clevel_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        # self.clevel_input = QLineEdit(self)
+        # self.clevel_input.textEdited.connect(self.has_unsaved_changes)
+        # self.clevel_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # self.clevel_input.setText(str(cfg.CLEVEL))
+        # self.clevel_input.setFixedWidth(small_input_size)
+        # self.clevel_input.setFixedHeight(std_height)
+        # self.clevel_valid = QIntValidator(1, 9, self)
+        # self.clevel_input.setValidator(self.clevel_valid)
+        #
+        # tip = 'Zarr Compression Type\n(default=zstd)'
+        # self.cname_label = QLabel('cname:')
+        # self.cname_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        # self.cname_combobox = QComboBox(self)
+        # self.cname_combobox.addItems(["zstd", "zlib", "gzip", "none"])
+        # self.cname_combobox.setFixedSize(72, std_height)
+        # self.export_and_view_hbox = QHBoxLayout()
+        # self.export_zarr_button = QPushButton(" Remake\n Zarr")
+        # tip = "This function creates a scale pyramid from the full scale aligned images and then converts them " \
+        #       "into the chunked and compressed multiscale Zarr format that can be viewed as a contiguous " \
+        #       "volumetric dataset in Neuroglancer."
+        # wrapped = '\n'.join(textwrap.wrap(tip, width=35))
+        # self.export_zarr_button.setToolTip(wrapped)
+        # self.export_zarr_button.clicked.connect(self.export)
+        # self.export_zarr_button.setFixedSize(normal_button_size)
+        # self.export_zarr_button.setStyleSheet("font-size: 11px;")
+        # # self.export_zarr_button.setIcon(qta.icon("fa5s.file-export", color=ICON_COLOR))
+        # self.export_zarr_button.setIcon(qta.icon("fa5s.cubes", color=ICON_COLOR))
+        #
+        # tip = 'View Zarr export in Neuroglancer.'
+        # self.ng_button = QPushButton("View In\nNeuroglancer")
+        # self.ng_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        # self.ng_button.clicked.connect(self.use_neuroglancer_viewer)
+        # self.ng_button.setFixedSize(normal_button_size)
+        # # self.ng_button.setIcon(qta.icon("mdi.video-3d", color=ICON_COLOR))
+        # self.ng_button.setStyleSheet("font-size: 9px;")
+        #
+        # self.export_hlayout = QVBoxLayout()
+        # self.export_hlayout.addWidget(self.export_zarr_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.export_hlayout.addWidget(self.ng_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        #
+        # self.clevel_layout = QHBoxLayout()
+        # self.clevel_layout.setContentsMargins(0, 0, 0, 0)
+        # self.clevel_layout.addWidget(self.clevel_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.clevel_layout.addWidget(self.clevel_input, alignment=Qt.AlignmentFlag.AlignRight)
+        #
+        # self.cname_layout = QHBoxLayout()
+        # self.cname_layout.addWidget(self.cname_label, alignment=Qt.AlignmentFlag.AlignLeft)
+        # self.cname_layout.addWidget(self.cname_combobox, alignment=Qt.AlignmentFlag.AlignRight)
+        #
+        # self.export_settings_layout = QHBoxLayout()
+        # self.export_settings_layout.addLayout(self.clevel_layout)
+        # self.export_settings_layout.addLayout(self.cname_layout)
+        # self.export_settings_layout.addLayout(self.export_hlayout)
 
         # '''Project GroupBox'''
         # # self.project_functions_groupbox = QGroupBox("Project")
@@ -2866,32 +3087,39 @@ class MainWindow(QMainWindow):
         # self.lwr_groups_layout.setHorizontalSpacing(16)
 
         self.control_panel_inner_layout = QHBoxLayout()
+        self.alignment_widget.hide()
+
         self.control_panel_inner_layout.addWidget(self.alignment_widget)
         # self.control_panel_inner_layout.addWidget(self.post_alignment_widget)
         # self.control_panel_inner_layout.addWidget(self.align_all_button)
 
         self.control_panel_outter_layout = QVBoxLayout()
         self.control_panel_outter_layout.setContentsMargins(8, 4, 8, 4)
+        self.title_label = QLabel('AlignEM-SWiFT')
+        self.title_label.setStyleSheet("font-size: 24px; color: #004060;")
+        self.subtitle_label = QLabel('for Aligning Electron Micrographs using Signal Whitening Fourier Transforms')
+        self.subtitle_label.setStyleSheet("font-size: 14px; color: #004060;")
+        self.control_panel_outter_layout.addWidget(self.title_label)
+        self.control_panel_outter_layout.addWidget(self.subtitle_label)
         self.control_panel_outter_layout.addLayout(self.project_functions_layout)
         self.control_panel_outter_layout.addLayout(self.control_panel_inner_layout)
 
-
         self.control_panel = QWidget()
-        self.control_panel.setFixedHeight(cpanel_height + 10)
+        self.control_panel.setContentsMargins(4, 0, 4, 12)
+
+        # self.control_panel.setFixedHeight(cpanel_height + 10)
         self.control_panel.setLayout(self.control_panel_outter_layout)
-
-
 
         # self.alignment_stack.setStyleSheet('''border: 1px dotted #171d22;''')
         # self.postalignment_stack.setStyleSheet('''border: 1px dotted #171d22;''')
         # self.export_and_view_stack.setStyleSheet('''border: 1px dotted #171d22;''')
 
         '''Top Details/Labels Banner'''
-        self.align_label_resolution = QLabel('Dimensions: n/a')
-        self.align_label_affine = QLabel('Initialize Affine')
-        self.align_label_scales_remaining = QLabel('# Scales Unaligned: n/a')
-        self.alignment_status_label = QLabel('Is Scale Aligned: n/a')
-        self.align_label_is_skipped = QLabel('Is Skipped? n/a')
+        self.align_label_resolution = QLabel('')
+        # self.align_label_affine = QLabel('Initialize Affine')
+        self.align_label_scales_remaining = QLabel('')
+        # self.align_label_is_skipped = QLabel('')
+        self.alignment_status_label = QLabel('')
         self.reset_details_banner()
 
         tip = 'Show Neuroglancer key bindings.'
@@ -2909,10 +3137,6 @@ class MainWindow(QMainWindow):
         #                                       "QCheckBox::indicator:checked {background-color: #ffe135;}")
         # self.al_status_checkbox.setEnabled(False)
         # self.al_status_checkbox.setToolTip('Alignment statusBar')
-        self.alignment_status_layout = QHBoxLayout()
-        self.alignment_status_layout.addWidget(self.alignment_status_label)
-        self.alignment_status_layout.addWidget(self.align_label_is_skipped)
-        # self.alignment_status_layout.addWidget(self.al_status_checkbox)
         self.details_banner = QWidget()
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(5)
@@ -2922,20 +3146,16 @@ class MainWindow(QMainWindow):
         self.details_banner.setFixedHeight(35)
         # banner_stylesheet = """color: #ffe135; background-color: #000000; font-size: 14px;"""
         self.details_banner_layout = QHBoxLayout()
-        self.details_banner.setLayout(self.details_banner_layout)
         self.details_banner_layout.addWidget(self.align_label_resolution)
         self.details_banner_layout.addStretch(1)
-        self.details_banner_layout.addWidget(self.align_label_affine)
-        self.details_banner_layout.addStretch(1)
-        self.details_banner_layout.addLayout(self.alignment_status_layout)
+        # self.details_banner_layout.addWidget(self.align_label_affine)
+        self.details_banner_layout.addWidget(self.alignment_status_label)
         self.details_banner_layout.addStretch(1)
         self.details_banner_layout.addWidget(self.align_label_scales_remaining)
         self.details_banner_layout.addStretch(1)
         # self.details_banner_layout.addWidget(self.align_label_cur_scale)
-        self.details_banner_layout.addWidget(self.align_label_is_skipped)
+        # self.details_banner_layout.addWidget(self.align_label_is_skipped)
         self.details_banner_layout.addStretch(6)
-        self.details_banner_layout.addStretch(1)
-        self.details_banner_layout.addWidget(self.info_button)
         self.details_banner_layout.addWidget(QLabel('View: '), alignment=Qt.AlignVCenter)
         self.details_banner_layout.addWidget(self.ng_layout_combobox)
         self.details_banner_layout.addWidget(QLabel('Image #: '), alignment=Qt.AlignVCenter)
@@ -2943,6 +3163,7 @@ class MainWindow(QMainWindow):
         self.details_banner_layout.addWidget(QLabel('Scale: '), alignment=Qt.AlignVCenter)
         self.details_banner_layout.addWidget(self.scales_combobox)
         self.details_banner_layout.addWidget(self.info_button)
+        self.details_banner.setLayout(self.details_banner_layout)
 
         # '''Multi Image Panel'''
         # self.image_panel = MultiImagePanel()
@@ -2970,10 +3191,6 @@ class MainWindow(QMainWindow):
         self.print_url_ng_button = QPushButton("Print URL")
         self.print_url_ng_button.setFixedSize(std_button_size)
         self.print_url_ng_button.clicked.connect(self.print_url_ng)
-        self.ng_panel = QWidget()
-
-
-        self.ng_panel_layout = QVBoxLayout()
 
         self.browser = QWebEngineView()
         # self.browser_al = QWebEngineView()
@@ -2981,9 +3198,11 @@ class MainWindow(QMainWindow):
         self.ng_browser = QWebEngineView()
         # self.ng_browser.setFocusPolicy(Qt.StrongFocus)
 
+        self.ng_panel = QWidget()
+        self.ng_panel_layout = QVBoxLayout()
+
         self.ng_multipanel_layout = QHBoxLayout()
         self.ng_multipanel_layout.addWidget(self.ng_browser)
-
 
         self.ng_panel_controls_layout = QHBoxLayout()
         self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
@@ -3000,26 +3219,29 @@ class MainWindow(QMainWindow):
         '''SNR Plot & Controls'''
 
         self.snr_plot = SnrPlot()
-        self.snr_plot_container = QWidget()
-        self.snr_plot_layout = QVBoxLayout()
-        self.snr_plot_layout.addWidget(self.snr_plot)
-        self.snr_plot_label = QLabel('Test Label Test Label')
+        # self.snr_plot_container = QWidget()
+        # self.snr_plot_layout = QGridLayout()
+        # self.snr_plot_layout.addWidget(self.snr_plot, 0, 0)
+        # self.snr_plot_label = QLabel('Test Label Test Label')
+        # self.snr_plot_label.setParent(self.snr_plot)
         # self.snr_plot_label.setStyleSheet('background-color: #ffffff; color: #ffe135;')
-        self.snr_plot_layout.addWidget(self.snr_plot_label)
+        # self.snr_plot_layout.addWidget(self.snr_plot_label, 0, 0, alignment=Qt.AlignLeft | Qt.AlignBottom)
 
 
-        self.snr_plot_h_scroll = QScrollBar(Qt.Horizontal)
-        self.snr_plot_layout.addWidget(self.snr_plot_h_scroll)
-        self.snr_plot_container.setLayout(self.snr_plot_layout)
+        # self.snr_plot_h_scroll = QScrollBar(Qt.Horizontal)
+        # self.snr_plot_layout.addWidget(self.snr_plot_h_scroll)
+        # self.snr_plot_container.setLayout(self.snr_plot_layout)
 
         self.plot_widget_update_button = QPushButton('Update')
-        self.plot_widget_update_button.setStyleSheet("font-size: 9px; font-weight: bold;")
+        self.plot_widget_update_button.setParent(self.snr_plot)
+        self.plot_widget_update_button.setStyleSheet("font-size: 9px;")
         self.plot_widget_update_button.setStyleSheet(lower_controls_style)
         self.plot_widget_update_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plot_widget_update_button.clicked.connect(self.update_snr_plot)
         self.plot_widget_update_button.setFixedSize(small_button_size)
 
         self.plot_widget_clear_button = QPushButton('Clear')
+        self.plot_widget_clear_button.setParent(self.snr_plot)
         self.plot_widget_clear_button.setStyleSheet("font-size: 9px; font-weight: bold;")
         self.plot_widget_clear_button.setStyleSheet(lower_controls_style)
         self.plot_widget_clear_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3033,12 +3255,12 @@ class MainWindow(QMainWindow):
         self.plot_controls_layout.addStretch()
         # self.plot_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
-        self.plot_widget_layout = QVBoxLayout()
-        self.plot_widget_layout.setContentsMargins(0, 0, 0, 0)
-        self.plot_widget_layout.addWidget(self.snr_plot)
-        self.plot_widget_layout.addLayout(self.plot_controls_layout)
-        self.snr_plot_widget = QWidget()
-        self.snr_plot_widget.setLayout(self.plot_widget_layout)
+        # self.plot_widget_layout = QVBoxLayout()
+        # self.plot_widget_layout.setContentsMargins(0, 0, 0, 0)
+        # self.plot_widget_layout.addWidget(self.snr_plot)
+        # self.plot_widget_layout.addLayout(self.plot_controls_layout)
+        # self.snr_plot_widget = QWidget()
+        # self.snr_plot_widget.setLayout(self.plot_widget_layout)
 
         '''Python Console & Controls'''
         # self.python_console_back_button = QPushButton('Back')
@@ -3062,11 +3284,12 @@ class MainWindow(QMainWindow):
         self.bottom_panel_splitter.addWidget(self.hud)
         # self.bottom_panel_splitter.addWidget(self.python_console_widget_container)
         self.bottom_panel_splitter.addWidget(self.python_console)
-        self.bottom_panel_splitter.addWidget(self.snr_plot_widget)
+        # self.bottom_panel_splitter.addWidget(self.snr_plot_widget)
+        self.bottom_panel_splitter.addWidget(self.snr_plot)
 
-        self.bottom_panel_splitter.setStretchFactor(0, 3)
+        self.bottom_panel_splitter.setStretchFactor(0, 4)
         self.bottom_panel_splitter.setStretchFactor(1, 1)
-        self.bottom_panel_splitter.setStretchFactor(2, 1)
+        self.bottom_panel_splitter.setStretchFactor(2, 2)
         self.bottom_panel_splitter.setCollapsible(0, True)
         self.bottom_panel_splitter.setCollapsible(1, True)
         self.bottom_panel_splitter.setCollapsible(2, True)
@@ -3079,7 +3302,7 @@ class MainWindow(QMainWindow):
         # self.main_panel_bottom_widget.setCurrentIndex(0)
 
         self.hud.setContentsMargins(0, 0, 0, 0) #0823
-        self.snr_plot_widget.setContentsMargins(0, 0, 0, 0) #0823
+        # self.snr_plot_widget.setContentsMargins(0, 0, 0, 0) #0823
         # self.python_console_widget_container.setContentsMargins(0, 0, 0, 0) #0823
 
         # "color: rgb(0,0,0);" \
@@ -3125,8 +3348,6 @@ class MainWindow(QMainWindow):
         self.show_hide_snr.setFixedSize(normal_button_size)
         self.show_hide_snr.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
 
-
-
         self.project_view_button = QPushButton('View\nJSON')
         self.project_view_button.setStyleSheet(lower_controls_style)
         self.project_view_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3148,33 +3369,38 @@ class MainWindow(QMainWindow):
         # self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
+
         self.bottom_display_area_hlayout = QHBoxLayout()
         self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
-        self.bottom_display_area_hlayout.setSpacing(2)
+        self.bottom_display_area_hlayout.setSpacing(4)
         # self.bottom_display_area_hlayout.addWidget(self.main_panel_bottom_widget)
         self.bottom_display_area_hlayout.addWidget(self.bottom_panel_splitter)
-        self.bottom_display_area_hlayout.addLayout(self.main_lwr_vlayout)
-        self.bottom_display_area_widget = QWidget()
-        self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
+        self.bottom_display_area_controls = QWidget()
+        self.bottom_display_area_controls.setLayout(self.bottom_display_area_hlayout)
+        # self.bottom_display_area_hlayout.addLayout(self.main_lwr_vlayout)
+        # self.bottom_display_area_hlayout.addWidget(self.bottom_display_area_controls)
+        # self.bottom_display_area_widget = QWidget()
+        # self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
         # self.bottom_display_area_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         '''Image Panels'''
-        self.img_panels = {}
-        # self.img_panels['ref'] = QtImageStackViewer(role='ref')
-        # self.img_panels['base'] = QtImageStackViewer(role='base')
-        self.img_panels['aligned'] = QtImageStackViewer(role='aligned', parent=self)
-        self.img_panels['ref'] = QtImageViewer(role='ref', parent=self)
-        self.img_panels['base'] = QtImageViewer(role='base', parent=self)
+        # self.img_panels = {}
+        # # self.img_panels['ref'] = QtImageStackViewer(role='ref')
+        # # self.img_panels['base'] = QtImageStackViewer(role='base')
+        # self.img_panels['aligned'] = QtImageStackViewer(role='aligned', parent=self)
+        # self.img_panels['ref'] = QtImageViewer(role='ref', parent=self)
+        # self.img_panels['base'] = QtImageViewer(role='base', parent=self)
         # self.img_panels['aligned'] = QtImageViewer(role='aligned')
         self.image_view_hlayout = QHBoxLayout()
-        self.image_view_hlayout.addWidget(self.img_panels['ref'])
-        self.image_view_hlayout.addWidget(self.img_panels['base'])
-        self.image_view_hlayout.addWidget(self.img_panels['aligned'])
+        # self.image_view_hlayout.addWidget(self.img_panels['ref'])
+        # self.image_view_hlayout.addWidget(self.img_panels['base'])
+        # self.image_view_hlayout.addWidget(self.img_panels['aligned'])
         self.image_view_hlayout.setSpacing(0)
         self.multi_img_viewer = QWidget()
+        self.multi_img_viewer.setMinimumHeight(256)
         self.multi_img_viewer.setContentsMargins(0,0,0,0)
         self.multi_img_viewer.setLayout(self.image_view_hlayout)
-        # self.splitter.addWidget(self.multi_img_viewer)
+        # self.main_splitter.addWidget(self.multi_img_viewer)
 
 
         # self.splash_animation = SplashScreen(path='src/resources/alignem_animation.gif')
@@ -3217,20 +3443,21 @@ class MainWindow(QMainWindow):
         self.dual_viewer_w_banner_layout.addWidget(self.image_panel_stack_widget)
 
         '''Main Splitter'''
-        # main_window.splitter.sizes() # Out[20]: [400, 216, 160]
-        self.splitter = QSplitter(Qt.Orientation.Vertical)
-        self.splitter.splitterMoved.connect(self.clear_zoom)
-        self.splitter.setHandleWidth(8)
-        self.splitter.setContentsMargins(0, 0, 0, 0)
-        self.splitter.addWidget(self.dual_viewer_w_banner)
-        self.splitter.addWidget(self.control_panel)
-        self.splitter.addWidget(self.bottom_display_area_widget)
-        self.splitter.setStretchFactor(0, 5)
-        self.splitter.setStretchFactor(1, 1)
-        self.splitter.setStretchFactor(2, 2)
-        self.splitter.setCollapsible(0, False)
-        self.splitter.setCollapsible(1, True)
-        self.splitter.setCollapsible(2, True)
+        # main_window.main_splitter.sizes() # Out[20]: [400, 216, 160]
+        self.main_splitter = QSplitter(Qt.Orientation.Vertical)
+        # self.main_splitter.splitterMoved.connect(self.clear_zoom)
+        self.main_splitter.setHandleWidth(8)
+        self.main_splitter.setContentsMargins(0, 0, 0, 0)
+        self.main_splitter.addWidget(self.dual_viewer_w_banner)
+        self.main_splitter.addWidget(self.control_panel)
+        # self.main_splitter.addWidget(self.bottom_display_area_widget)
+        self.main_splitter.addWidget(self.bottom_display_area_controls)
+        self.main_splitter.setStretchFactor(0, 5)
+        self.main_splitter.setStretchFactor(1, 2)
+        self.main_splitter.setStretchFactor(2, 2)
+        self.main_splitter.setCollapsible(0, False)
+        self.main_splitter.setCollapsible(1, True)
+        self.main_splitter.setCollapsible(2, True)
 
         '''JSON Project View'''
         self.project_view = QTreeView()
@@ -3319,7 +3546,7 @@ class MainWindow(QMainWindow):
         self.main_panel_layout = QGridLayout()
         self.main_panel_layout.setSpacing(0) #0918+
         self.main_panel_layout.setContentsMargins(0, 0, 0, 0)
-        self.main_panel_layout.addWidget(self.splitter, 1, 0)
+        self.main_panel_layout.addWidget(self.main_splitter, 1, 0)
 
         self.main_widget = QStackedWidget(self)
         self.main_widget.addWidget(self.main_panel)                 # (0) main_panel
@@ -3346,14 +3573,13 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.set_idle()
 
-        self.bottom_display_area_widget.setAutoFillBackground(True)
-        self.bottom_display_area_widget.setStyleSheet('''background-color: #000000;''')
+        # self.bottom_display_area_widget.setAutoFillBackground(True)
+        # self.bottom_display_area_widget.setStyleSheet('''background-color: #000000;''')
+        self.bottom_display_area_controls.setAutoFillBackground(True)
+        self.bottom_display_area_controls.setStyleSheet('''background-color: #000000;''')
 
         # self.multi_img_viewer.setStyleSheet('''background-color: #000000;''')
         self.multi_img_viewer.setStyleSheet('''background-color: #004060;''')
-
-
-
 
         # hbar1 = self.img_panels['ref'].horizontalScrollBar()
         # hbar2 = self.img_panels['base'].horizontalScrollBar()
@@ -3392,11 +3618,11 @@ class MainWindow(QMainWindow):
         # # self.label_bot.setText(textbot)
 
 
-    def __exit__(self, type, value, traceback):
-        if self.killed:
-            sys.exit(0)
-        signal.signal(signal.SIGINT, self.old_sigint)
-        signal.signal(signal.SIGTERM, self.old_sigterm)
+    # def __exit__(self, type, value, traceback):
+    #     if self.killed:
+    #         sys.exit(0)
+    #     signal.signal(signal.SIGINT, self.old_sigint)
+    #     signal.signal(signal.SIGTERM, self.old_sigterm)
 
 
 
@@ -3427,18 +3653,14 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def update_snr_plot(self):
-        if self.image_panel_stack_widget != 1:
-            logger.info('Not Updating SNR Plot Because Neuroglancer Is Not In View')
-            return
-
         self.main_widget.setCurrentIndex(0)
         if not are_images_imported():
             self.hud('No SNRs To View.', logging.WARNING)
-            self.back_callback()
+            # self.back_callback()
             return
         if not is_cur_scale_aligned():
             self.hud('No SNRs To View. Current Scale Is Not Aligned Yet.', logging.WARNING)
-            self.back_callback()
+            # self.back_callback()
             return
         # self.clear_snr_plot()
         snr_list = cfg.data.snr_list()
@@ -3476,7 +3698,7 @@ class MainWindow(QMainWindow):
         self.snr_plot.setYRange(0, max_y)
 
         value = "test"
-        logger.critical('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
+        # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())
         value = self.snr_points.setToolTip('Test')
         self.last_snr_click = []
         self.snr_plot.addItem(self.snr_points)
@@ -3532,7 +3754,7 @@ class MainWindow(QMainWindow):
             self.python_console.kernel_manager.shutdown_kernel()
 
         except:
-            logger.warning('Unable to Shutdown Jupyter Console Kernel')
+            logger.warning('Having trouble shutting down Jupyter Console Kernel')
             self.python_console.request_interrupt_kernel()
 
     def restart_python_kernel(self):

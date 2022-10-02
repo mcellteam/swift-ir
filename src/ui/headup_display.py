@@ -13,6 +13,7 @@ from qtpy.QtCore import QObject, QThread, Qt, QSize
 from qtpy.QtCore import Signal, Slot
 from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
+import src.config as cfg
 
 __all__ = ['HeadupDisplay', 'HudWorker']
 
@@ -110,7 +111,7 @@ class HeadupDisplay(QWidget):
         layout.addWidget(te)
         self.start_thread()
 
-    def __call__(self, message, level=logging.INFO):
+    def __call__(self, message, level=cfg.LOG_LEVEL):
         extra = {'qThreadName': ctname()}
         logger.log(level, message, extra=extra)
         self.textedit.moveCursor(QTextCursor.End)

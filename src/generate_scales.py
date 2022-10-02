@@ -68,7 +68,7 @@ def generate_scales():
 
     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
         logger.debug('Looping, Scale ', scale)
-        cfg.main_window.hud.post("Preparing to Downsample Images for Scale %s..." % str(scale))
+        cfg.main_window.hud.post("Preparing to Downsample Scale %s..." % str(scale))
         scale_key = get_scale_key(scale)
         for i, layer in enumerate(cfg.data['data']['scales'][scale_key]['alignment_stack']):
             fn = os.path.abspath(layer['images']['base']['filename'])

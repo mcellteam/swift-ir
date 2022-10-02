@@ -1,4 +1,6 @@
 
+
+
 hud {
 	background-color: #ffffff;
 	color:#ffe135;
@@ -88,7 +90,10 @@ QMainWindow {
 QLabel {
 	/*color: #d3dae3;*/
 	/*color: #ffffff;*/
-	color: #F3F6FB;
+
+
+	/*color: #F3F6FB;*/
+	color: #151a1e;
 
 }
 
@@ -134,14 +139,16 @@ QTextEdit {
 	border-style: solid;
 	border-color: #4fa08b;
 	background-color: #222b2e;
-	color: #d3dae3;
+	/*color: #d3dae3;*/
+	color: #151a1e;
 }
 QPlainTextEdit {
 	border-width: 1px;
 	border-style: solid;
 	border-color: #4fa08b;
 	background-color: #222b2e;
-	color: #d3dae3;
+	/*color: #d3dae3;*/
+	color: #151a1e;
 }
 QToolButton {
 	border-style: solid;
@@ -218,7 +225,8 @@ QLineEdit {
 	/*border-color: #ffe135;*/
 	/*background-color: #222b2e;*/
 	background-color: #151a1e;
-	color: #d3dae3;
+	/*color: #d3dae3;*/
+	color: #151a1e;
 }
 
 QLCDNumber {
@@ -393,14 +401,16 @@ QDateEdit {
 	border-color: #4fa08b;
 }
 QFontComboBox {
-	color: #d3dae3;
+	/*color: #d3dae3;*/
+	color: #151a1e;
 	background-color: #222b2e;
 	border-width: 1px;
 	border-style: solid;
 	border-color: #4fa08b;
 }
 QComboBox {
-	color: #d3dae3;
+	/*color: #d3dae3;*/
+	color: #151a1e;
 	/* background-color: #222b2e; */ /* light */
 	background-color: #151a1e; /* dark */
 

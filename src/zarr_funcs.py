@@ -181,8 +181,8 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
     root = zarr.group(store=zarr_path)  # Create Root Group
     # root = zarr.group(store=zarr_name, overwrite=True)  # Create Root Group
 
-    opt_cname = cfg.main_window.cname_combobox.currentText()
-    opt_clevel = int(cfg.main_window.clevel_input.text())
+    # opt_cname = cfg.main_window.cname_combobox.currentText()
+    # opt_clevel = int(cfg.main_window.clevel_input.text())
 
     if use_scale is None:
         zarr_these_scales = aligned_scales_lst
@@ -211,7 +211,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
         # chunks = (z_stride, 64, 64)
         chunks = (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
         dtype = 'uint8'
-        compressor = Blosc(cname=cfg.CNAME, clevel=cfg.CLEVEL) if opt_cname in ('zstd', 'zlib', 'gzip') else None
+        compressor = Blosc(cname=cfg.CNAME, clevel=cfg.CLEVEL) if cfg.CNAME in ('zstd', 'zlib', 'gzip') else None
         # compressor = Blosc(cname='zstd', clevel=5)
 
         logger.critical('Zarr Array will have shape: %s' % str(shape))
