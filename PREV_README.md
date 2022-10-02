@@ -47,7 +47,7 @@ Version 3.7+ (minimum)
 
     # Or, Install Dependencies Directly In Base Environment:
     python3 -m pip install numpy psutil opencv-python-headless pillow zarr tifffile imagecodecs neuroglancer
-    python3 -m pip install qtpy qtconsole qtawesome pyqtgraph tqdm
+    python3 -m pip install qtpy qtconsole qtawesome pyqtgraph
     python3 -m pip install PyQt5 PyQtWebEngine        # Compatible Python-QT5 APIs: PySide2, PyQt5
     python3 -m pip install PyQt6 PyQt6-WebEngine-Qt6  # Compatible Python-QT5 APIs: PySide6, PyQt6
     python3 alignEm.py

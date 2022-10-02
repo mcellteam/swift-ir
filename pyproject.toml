@@ -32,7 +32,6 @@ dependencies = [
             'qtpy',
             'qtawesome',
             'pyqtgraph',
-            'tqdm'
 ]
 
 

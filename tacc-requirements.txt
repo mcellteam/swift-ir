@@ -34,7 +34,6 @@ setuptools=61.2.0=py39h06a4308_0
 six=1.16.0=pyhd3eb1b0_1
 sqlite=3.38.2=hc218d9a_0
 tk=8.6.11=h1ccaba5_0
-tqdm=4.63.0=pyhd3eb1b0_0
 tzdata=2022a=hda174b7_0
 urllib3=1.26.8=pyhd3eb1b0_0
 wheel=0.37.1=pyhd3eb1b0_0
