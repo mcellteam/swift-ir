@@ -1,3 +1,7 @@
+# INSTRUCTIONS TO RUN AlignEM-SWiFT ON Lonestar6 AT TACC
+# (DEPLOYMENT BY CONDA ENVIRONMENT STRATEGY)
+# CONNECT TO Lonestar6 USING A DCV SESSION
+
 # INSTALL MINICONDA
 wget https://docs.conda.io/en/latest/miniconda.html#linux-installers
 bash Miniconda3-latest-Linux-x86_64.sh #correct the path
