@@ -39,8 +39,8 @@ from src.ui.json_treeview import JsonModel
 from src.ui.kimage_window import KImageWindow
 from src.ui.snr_plot import SnrPlot
 from src.ui.python_console import PythonConsole
-from src.utils.PyQtImageStackViewer import QtImageStackViewer
-from src.utils.PyQtImageViewer import QtImageViewer
+# from src.utils.PyQtImageStackViewer import QtImageStackViewer
+# from src.utils.PyQtImageViewer import QtImageViewer
 from src.ui.splash import SplashScreen
 from src.ui.dialogs import RecipeMaker
 from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor, generate_zarr_scales
