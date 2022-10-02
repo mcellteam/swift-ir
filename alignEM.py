@@ -126,33 +126,29 @@ def main():
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
 
-    try:
-        app = QApplication(sys.argv)
-        app.setStyle('Fusion')
-    except:
-        print_exception()
-        logger.error('Unable to Instantiate QApplication')
+    app = QApplication(sys.argv)
+    app.setStyle('Fusion')
 
-    try:
-        logger.info('Initializing MainWindow')
-        cfg.main_window = cfg.w = MainWindow(title="AlignEM-SWiFT")
-        cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
-        # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+ #Todo use app.aboutToQuit
-        # app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
-        cfg.main_window.show()
-        logger.info('Showing AlignEM-SWiFT')
-    except:
-        print_exception()
-        logger.error('Unable to Instantiate MainWindow')
+    logger.info('Initializing MainWindow')
+    cfg.main_window = cfg.w = MainWindow(title="AlignEM-SWiFT")
+    # cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
+    # cfg.main_window.setGeometry(100,100, 20, 20)
+    # app.aboutToQuit.connect(cfg.main_window.shutdownJupyter) #0921+ #Todo use app.aboutToQuit
+    # app.aboutToQuit.connect(neuroglancer.server.stop) #0921+
+    cfg.main_window.show()
+    logger.info('Showing AlignEM-SWiFT')
 
-    try:
-        logger.info('Trying sys.exit(app.exec())...')
-        sys.exit(app.exec())
-        # sys.exit(app.exec_())
-    except:
-        logger.info('Trying sys.exit(app.exec_())...')
-        sys.exit(app.exec_())
-        # sys.exit(app.exec())
+    logger.info('Running sys.exit(app.exec())...')
+    sys.exit(app.exec())
+
+    # try:
+    #     logger.info('Trying sys.exit(app.exec())...')
+    #     sys.exit(app.exec())
+    #     # sys.exit(app.exec_())
+    # except:
+    #     logger.info('Trying sys.exit(app.exec_())...')
+    #     sys.exit(app.exec_())
+    #     # sys.exit(app.exec())
 
 
 if __name__ == "__main__":

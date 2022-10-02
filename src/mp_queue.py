@@ -92,7 +92,7 @@ class TaskQueue(QObject):
         self.retries = retries
         self.task_dict = {}
 
-        cfg.main_window.hud.post('Using %d workers to process a batch of %d tasks' % (self.n_workers, self.n_tasks))
+        cfg.main_window.hud.post('%d Workers Are Processing %d tasks' % (self.n_workers, self.n_tasks))
 
         for i in range(self.n_workers):
             sys.stderr.write('\nStarting Worker %d >>>>>>>>' % i)

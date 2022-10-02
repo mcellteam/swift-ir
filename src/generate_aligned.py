@@ -177,7 +177,6 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
         task_queue.collect_results()
         dt = time.time() - t0
         cfg.main_window.hud.post('Image Generation Completed in %.2f seconds. Wrapping up...' % dt)
-        cfg.main_window.clear_zoom()
     except:
         logger.warning('task_queue.collect_results() encountered a problem')
         print_exception()
