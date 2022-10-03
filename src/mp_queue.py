@@ -12,6 +12,7 @@ import multiprocessing as mp
 from qtpy.QtCore import QObject
 from qtpy.QtWidgets import QApplication
 import src.config as cfg
+from src.helpers import print_exception
 
 
 '''SWIM/MIR:
@@ -22,7 +23,7 @@ __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
 mpl = mp.log_to_stderr()
-mpl.setLevel(logging.CRITICAL)
+mpl.setLevel(logging.INFO)
 
 SENTINEL = 1
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
@@ -188,8 +189,11 @@ class TaskQueue(QObject):
                 except:
                     pass
 
-                QApplication.processEvents()
-                self.parent.pbar_update(self.n_tasks - realtime)
+                # QApplication.processEvents()
+                try:
+                    self.parent.pbar_update(self.n_tasks - realtime)
+                except:
+                    print_exception()
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 # logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
                 # if cfg.LOG_LEVEL < 20:
@@ -232,7 +236,7 @@ class TaskQueue(QObject):
             logger.error('Retries       : %d' % (retries_tot - 1))
             logger.error('Complete')
 
-        self.parent.pbar.hide()
+
         self.end_tasks()
         self.work_queue.join()
         self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage

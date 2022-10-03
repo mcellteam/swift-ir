@@ -355,6 +355,7 @@ class MainWindow(QMainWindow):
         self.save_project_to_file()
         self.hud.done()
         # self.set_idle()
+        self.pbar.hide()
 
 
     def autoscale(self):
@@ -395,10 +396,11 @@ class MainWindow(QMainWindow):
         self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
         logger.info('Updating scale controls...')
         self.update_scale_controls()
-        logger.info('Saving project to file...')
-        self.save_project_to_file()
-        self.hud.done()
+        # logger.info('Saving project to file...')
+        # self.save_project_to_file() #1002
+        # self.hud.done()
         # self.set_idle()
+        logger.info('Exiting main_window.autoscale')
 
     
     @Slot()
@@ -465,6 +467,8 @@ class MainWindow(QMainWindow):
         self.reload_ng()
         # elif self.is_classic_viewer():
         #     self.update_aligned_2D_viewer()
+
+        self.pbar.hide()
     
     @Slot()
     def regenerate(self, use_scale) -> None:
@@ -509,6 +513,7 @@ class MainWindow(QMainWindow):
         self.update_win_self()
         self.save_project_to_file() #0908+
         # self.has_unsaved_changes() #0908-
+        self.pbar.hide()
     
     def export(self):
         logger.info('Exporting to Zarr format...')
@@ -624,6 +629,7 @@ class MainWindow(QMainWindow):
     def update_alignment_details(self) -> None:
         '''Piggy-backs its updating with 'update_scale_controls'
         Update alignment details in the Alignment control panel group box.'''
+        logger.debug("Called by " + inspect.stack()[1].function)   
         # logger.info('Updating Alignment Banner Details')
         al_stack = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack']
         # self.al_status_checkbox.setChecked(is_cur_scale_aligned())
@@ -672,6 +678,7 @@ class MainWindow(QMainWindow):
         # else:
         #     cur_scale_str = 'Scale: ' + str(scale_val(cfg.data.scale()))
         #     self.align_label_cur_scale.setText(cur_scale_str)
+        logger.info('Exiting update_alignment_details')
 
     
     @Slot()
@@ -1449,6 +1456,10 @@ class MainWindow(QMainWindow):
                 return
         # self.image_panel_stack_widget.setCurrentIndex(2)
         self.clear_snr_plot()
+
+
+
+
         # self.set_normal_view()
 
 
@@ -1476,6 +1487,7 @@ class MainWindow(QMainWindow):
             filename += ".json"
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path)
+        self.image_panel_stack_widget.setCurrentIndex(2)
         makedirs_exist_ok(cfg.data['data']['destination_path'], exist_ok=True)
         self.hud.done()
         self.setWindowTitle("Project: " + os.path.split(cfg.data.dest())[-1])
@@ -1485,6 +1497,7 @@ class MainWindow(QMainWindow):
         # self.run_after_import()
         cfg.IMAGES_IMPORTED = False
         self.import_images()
+        self.use_neuroglancer_viewer()
         self.set_idle()
     
     def import_images_dialog(self):
@@ -1659,21 +1672,32 @@ class MainWindow(QMainWindow):
         self.set_idle()
 
     def save_project(self):
+        logger.info('Entering save_project...')
         if self._splash:
             logger.info('Nothing To Save')
             return
+        logger.info('About to call self.set_status()...')
         self.set_status("Saving...")
-        self.hud('Saving Project...')
+        logger.info('About to write to HUD...')
+        self.hud.post('Saving Project...')
         # self.main_panel_bottom_widget.setCurrentIndex(0) #og
+        logger.info('Trying...')
         try:
+            logger.info('About to save_project_to_file...')
             self.save_project_to_file()
-            self.hud.done()
+            logger.info('About to write done to HUD...')
+            # self.hud.done()
+            logger.info('Setting self._unsaved_changes = False...')
             self._unsaved_changes = False
-            self.hud("Project File Location:\n%s" % cfg.data.dest() + ".json")
+            self.hud.post("Project File Location:\n%s" % str(cfg.data.dest() + ".json"))
         except:
-            self.hud('Nothing To Save', logging.WARNING)
+            print_exception()
+            self.hud.post('Nothing To Save', logging.WARNING)
         finally:
+            logger.info('Doing the finally...')
             self.set_idle()
+        logger.info('Exiting save_project')
+
 
     def rename_project(self):
         new_name, ok = QInputDialog.getText(self, 'Input Dialog', 'Project Name:')
@@ -1717,7 +1741,7 @@ class MainWindow(QMainWindow):
     #     dest = shutil.move(dest_orig, dest_new)
 
     def save_project_to_file(self, saveas=None):
-        logger.debug('Saving Project To File')
+        logger.info("Called by " + inspect.stack()[1].function)
         if saveas is not None:
             cfg.data.set_destination(saveas)
         if self.get_user_progress() > 1: #0801+
@@ -1732,7 +1756,7 @@ class MainWindow(QMainWindow):
                     filename = l['images'][role]['filename']
                     if filename != '':
                         l['images'][role]['filename'] = make_relative(filename, cfg.data.dest())
-        logger.info('---- WRITING DATA TO PROJECT FILE ----')
+        logger.info('---- SAVING DATA TO PROJECT FILE ----')
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         proj_json = jde.encode(data_cp)
         name = cfg.data.dest()
@@ -1740,6 +1764,7 @@ class MainWindow(QMainWindow):
             name += ".json"
         with open(name, 'w') as f:
             f.write(proj_json)
+        logger.info('Exiting save_project_to_file...')
 
     @Slot()
     def has_unsaved_changes(self):
@@ -1830,21 +1855,26 @@ class MainWindow(QMainWindow):
                 cfg.data['data']['scales']['scale_1']['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
             cfg.data.link_all_stacks()
             self.run_after_import()
-            self.save_project()
-            self.hud('%d Images Imported' % cfg.data.n_imgs())
-            self.hud('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
+            # logger.info('About to call self.save_project()')
+            # self.save_project()
+            logger.info('About to post some things to the HUD...')
+            self.hud.post('%d Images Imported' % cfg.data.n_imgs())
+            # self.hud.post('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
         else:
-            self.hud('No Images Were Imported', logging.WARNING)
+            self.hud.post('No Images Were Imported', logging.WARNING)
+        logger.info('about to call use_neuroglancer_viewer...')
+        sys.stdout.flush()
         self.use_neuroglancer_viewer()
         # self.scales_combobox_switch = 1
         self.set_idle()
+        logger.info('Exiting import_images')
 
     def run_after_import(self):
 
-        print('\n\n\n\nrun_after_import\n\n\n\n')
+        print('\nrun_after_import\n')
         recipe_maker = RecipeMaker(parent=self)
         result = recipe_maker.exec_()  # result = 0 or 1
-        print('\n\n\n\n\n\n')
+        print('\n')
         print(str(result))
         if not result:
             logger.warning('Dialog Did Not Return A Result')
@@ -1852,6 +1882,13 @@ class MainWindow(QMainWindow):
         else:
             # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
             self.autoscale()
+
+
+        self.pbar.hide()
+        # self.save_project_to_file() #1002
+
+        logger.info('Exiting autoscale')
+
 
 
 
@@ -2116,9 +2153,11 @@ class MainWindow(QMainWindow):
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
         '''
+        logger.info('Entering use_neuroglancver_viewer()...')
+        sys.stdout.flush()
         self.set_status('Loading Neuroglancer...')
         if not are_images_imported():
-            self.hud('Nothing To View', logging.WARNING)
+            self.hud.post('Nothing To View', logging.WARNING)
             return
         logger.info("Switching To Neuroglancer Viewer")
         self.image_panel_stack_widget.setCurrentIndex(1)
