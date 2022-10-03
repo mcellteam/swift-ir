@@ -22,7 +22,7 @@ git checkout development_ng  # use 'git status' to check that you are on the cor
 
 # (3) CREATE CONDA ENVIRONMENT
 module purge  # purge modules before creating the environment (!)
-conda env create --name=TACC01 --file-tacc.yml python=3.9
+conda env create --name=TACC01 --file tacc.yml python=3.9
 
 #######################################
 DO EVERY TIME
