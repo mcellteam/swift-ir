@@ -148,8 +148,8 @@ def generate_scales():
     logger.info('Deleting task queue...')
     del task_queue
     dt = time.time() - t0
-    cfg.main_window.hud.done()
-    cfg.main_window.hud.post("Process Completed in %.2f Seconds" % dt)
+    # cfg.main_window.hud.done()
+    cfg.main_window.hud.post("Process generate_scales Completed in %.2f Seconds" % dt)
 
     logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')
 

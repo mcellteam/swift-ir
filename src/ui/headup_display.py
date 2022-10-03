@@ -165,8 +165,9 @@ class HeadupDisplay(QWidget):
 
     @Slot()
     def post(self, message, level=logging.INFO):
-        extra = {'qThreadName': ctname()}
-        logger.log(level, message, extra=extra)
+        # extra = {'qThreadName': ctname()}
+        # logger.log(level, message, extra=extra)
+        logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
         QApplication.processEvents()
 

@@ -34,7 +34,7 @@ def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
     '''Convert Tiffs to Zarr with implicit dask array
     Ref: https://forum.image.sc/t/store-many-tiffs-into-equal-sized-tiff-stacks-for-hdf5-zarr-chunks-using-ome-tiff-format/61055
     '''
-    print('tiffs2zarr:')
+    print('Converting Tiff To Zarr...')
     def imread(filename):
         with open(filename, 'rb') as fh:
             data = fh.read()
