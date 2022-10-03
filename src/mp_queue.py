@@ -10,7 +10,6 @@ import logging
 import subprocess as sp
 import multiprocessing as mp
 from qtpy.QtCore import QObject
-from qtpy.QtWidgets import QApplication
 import src.config as cfg
 from src.helpers import print_exception
 
@@ -176,8 +175,11 @@ class TaskQueue(QObject):
         realtime = n_pending
         retries_tot = 0
         logger.info('self.retries: %s' % self.retries)
-        self.parent.pbar.show()
-        self.parent.pbar_max(self.n_tasks)
+        try:
+            self.parent.pbar_max(self.n_tasks)
+            self.parent.pbar.show()
+        except:
+            print_exception()
         while (retries_tot < self.retries + 1) and n_pending:
             logger.info('# Tasks Pending: %d' % n_pending)
             retry_list = []
@@ -189,7 +191,6 @@ class TaskQueue(QObject):
                 except:
                     pass
 
-                # QApplication.processEvents()
                 try:
                     self.parent.pbar_update(self.n_tasks - realtime)
                 except:
