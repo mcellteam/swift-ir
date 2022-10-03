@@ -330,7 +330,7 @@ class NgHost(QRunnable):
             s.input_event_bindings.viewer['keyl'] = 'layer-left'
             s.input_event_bindings.viewer['keyr'] = 'layer-right'
             # s.show_ui_controls = True
-            s.show_ui_controls = False
+            s.show_ui_controls = True
             # s.show_panel_borders = True
             s.show_panel_borders = False
             # s.viewer_size = None

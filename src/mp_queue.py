@@ -236,7 +236,6 @@ class TaskQueue(QObject):
             logger.error('Retries       : %d' % (retries_tot - 1))
             logger.error('Complete')
 
-
         self.end_tasks()
         self.work_queue.join()
         self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
