@@ -1,6 +1,7 @@
-name: demo
+name: TACC01
 channels:
   - defaults
+  - conda-forge
 dependencies:
   - _libgcc_mutex=0.1=main
   - _openmp_mutex=5.1=1_gnu
@@ -130,6 +131,7 @@ dependencies:
   - tifffile=2021.7.2=pyhd3eb1b0_2
   - tk=8.6.12=h1ccaba5_0
   - toolz=0.11.2=pyhd3eb1b0_0
+  - tornado=6.2=py39h5eee18b_0
   - tqdm=4.64.0=py39h06a4308_0
   - traitlets=5.1.1=pyhd3eb1b0_0
   - tzdata=2022a=hda174b7_0
@@ -162,6 +164,6 @@ dependencies:
     - pyqtwebengine-qt5==5.15.2
     - requests==2.28.1
     - rsa==4.9
-    - tornado==6.2
+    - tensorstore==0.1.26
     - urllib3==1.26.12
-prefix: /work/08507/joely/ls6/Miniconda3/envs/demo
+prefix: /work/08507/joely/ls6/Conda/envs/TACC01
