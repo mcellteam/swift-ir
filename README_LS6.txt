@@ -10,7 +10,7 @@ DO ONCE
 #######################################
 # (1) INSTALL+INITIALIZE MINICONDA
 wget https://docs.conda.io/en/latest/miniconda.html#linux-installers
-bash Miniconda3-latest-Linux-x86_64.sh #correct the path
+bash Miniforge3-Linux-x86_64.sh #correct the path
 source ~/.bashrc
 conda config --set auto_activate_base false  # prevents automatic activation of conda base env (interferes with DCV)
 
