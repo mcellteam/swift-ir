@@ -496,8 +496,7 @@ class MainWindow(QMainWindow):
             self.hud.post("Refining Affine Transform For Scale Factor %d..." % (get_scale_val(use_scale)))
         # self.al_status_checkbox.setChecked(False)
         try:
-            self.worker = BackgroundWorker(fn=compute_affines(
-                use_scale=use_scale, start_layer=0, num_layers=-1))
+            self.worker = BackgroundWorker(fn=compute_affines(use_scale=use_scale, start_layer=cfg.data.layer(), num_layers=num_layers))
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -1248,12 +1247,13 @@ class MainWindow(QMainWindow):
             logger.warning('fn_scales_combobox was called but _working is True -> ignoring the signal')
             return None
         # if self.image_panel_stack_widget.currentIndex() == 1:
-        self.reload_ng()
+
 
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
         self.update_scale_controls()
         # self.update_2D_viewers()
+        self.reload_ng()
 
     @Slot()
     def fn_ng_layout_combobox(self) -> None:
@@ -1705,7 +1705,8 @@ class MainWindow(QMainWindow):
             project.set_paths_absolute(head=filename)
             cfg.data = copy.deepcopy(project)  # Replace the current version with the copy
             cfg.data.link_all_stacks()
-            self.clear_snr_plot()
+
+            self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
             if are_images_imported():
                 # if is_neuroglancer_viewer:
                 self.load_unaligned_stacks()
@@ -1713,19 +1714,18 @@ class MainWindow(QMainWindow):
                 # else:
                 #     self.update_2D_viewers()
                 # self.image_panel_stack_widget.setCurrentIndex(1)
-                self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
+
                 cfg.IMAGES_IMPORTED = True
             else:
                 cfg.IMAGES_IMPORTED = False
             self.read_project_data_update_gui()
+            self.clear_snr_plot()
+            self.update_snr_plot()
+            self.update_snr_plot()
             # self.auto_set_user_progress()
             # self.set_user_progress(gb1=True, gb3=True,gb4=True) #1001
             self.reload_scales_combobox()
             self.update_scale_controls()
-            self.update_snr_plot()
-
-
-            self.hud.done()
         else:
             self.hud("No Project File (.json) Selected", logging.WARNING)
         self.set_idle()
@@ -1949,24 +1949,24 @@ class MainWindow(QMainWindow):
 
         self.title_label.show()
         self.subtitle_label.show()
-
         # self.bottom_display_area_widget.hide()
         self.hud.hide()
         self.snr_plot.hide()
-        self.bottom_display_area_controls.hide()
+        # self.bottom_display_area_controls.hide()
+        self.bottom_widget.hide()
         self.dual_viewer_w_banner.hide()
-
         self.menu.hide()
 
         self.control_panel.setStyleSheet('background-color: #f3f6fb;')
         self.main_splitter.setAutoFillBackground(True)
 
         # self.bottom_display_area_widget.setMaximumHeight(200)
-        self.bottom_display_area_controls.setMaximumHeight(200)
+        # self.bottom_display_area_controls.setMaximumHeight(200)
+        self.bottom_widget.setMaximumHeight(200)
 
-        self.resize(200,200)
+        self.resize(100,100)
 
-        self.control_panel.setMaximumHeight(130)
+        self.control_panel.setMaximumHeight(140)
 
         # self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint))
 
@@ -2013,9 +2013,8 @@ class MainWindow(QMainWindow):
         self.hud.show()
         self.snr_plot.show()
 
-
-        self.bottom_display_area_controls.show() # <- culprit
-
+        # self.bottom_display_area_controls.show() # <- culprit
+        self.bottom_widget.show() # <- culprit
         self.dual_viewer_w_banner.show()
 
         # self.image_panel_stack_widget.setCurrentIndex(1)
@@ -2024,7 +2023,8 @@ class MainWindow(QMainWindow):
         self.alignment_widget.show()
         self.menu.show()
         # self.bottom_display_area_widget.setMaximumHeight(1000)
-        self.bottom_display_area_controls.setMaximumHeight(1000)
+        # self.bottom_display_area_controls.setMaximumHeight(1000)
+        self.bottom_widget.setMaximumHeight(1200)
         self.control_panel.setMinimumHeight(100)
 
         self.new_project_button.setMinimumSize(1, 1)
@@ -2483,7 +2483,8 @@ class MainWindow(QMainWindow):
             self.dual_viewer_w_banner.hide()
             self.control_panel.hide()
             self.image_panel_stack_widget.hide()
-            self.bottom_display_area_widget.adjustSize()
+            # self.bottom_display_area_widget.adjustSize()
+            self.bottom_widget.adjustSize()
             self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
 
         elif self.image_panel_stack_widget.isHidden():
@@ -2509,7 +2510,7 @@ class MainWindow(QMainWindow):
         logger.info('Initializing Menu')
         self.action_groups = {}
         self.menu = self.menuBar()
-        self.menu.setFixedHeight(20)
+        # self.menu.setFixedHeight(20)
         self.menu.setCursor(QCursor(Qt.PointingHandCursor))
         self.menu.setNativeMenuBar(False)  # Fix for non-native menubar on macOS
 
@@ -2880,7 +2881,7 @@ class MainWindow(QMainWindow):
         self.swim_grid.addWidget(self.swim_label, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
         self.swim_grid.addWidget(self.swim_input, 0, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
-        tip = 'Apply these settings to the entire data.'
+        tip = 'Apply SWIM Window and Whitening Factor settings to entire dataset.'
         # self.apply_all_label = QLabel("Apply All:")
         self.apply_all_button = QPushButton("Apply To All")
         self.apply_all_button.setStyleSheet("font-size: 9px;")
@@ -3042,6 +3043,7 @@ class MainWindow(QMainWindow):
         self.alignment_layout.addLayout(self.skip_layout)
         self.alignment_layout.addLayout(self.swim_grid)
         self.alignment_layout.addLayout(self.whitening_grid)
+        self.alignment_layout.addWidget(self.apply_all_button)
         # self.alignment_layout.addWidget(self.scale_selection_label, 0, 5, alignment=Qt.AlignmentFlag.AlignLeft)
         # self.alignment_layout.addLayout(self.scale_layer_ctrls_outer_layout, 1, 5, 2, 1, alignment=Qt.AlignmentFlag.AlignCenter)
         # self.alignment_layout.addWidget(self.layer_select_label, 1, 5, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -3246,7 +3248,7 @@ class MainWindow(QMainWindow):
         self.details_banner_layout.addWidget(self.alignment_snr_label)
         # self.details_banner_layout.addWidget(self.align_label_cur_scale)
         # self.details_banner_layout.addWidget(self.align_label_is_skipped)
-        self.details_banner_layout.addStretch(4)
+        self.details_banner_layout.addStretch(7)
         self.details_banner_layout.addWidget(QLabel('View: '), alignment=Qt.AlignVCenter)
         self.details_banner_layout.addWidget(self.ng_layout_combobox)
         self.details_banner_layout.addWidget(QLabel('Image #: '), alignment=Qt.AlignVCenter)
@@ -3310,6 +3312,9 @@ class MainWindow(QMainWindow):
         '''SNR Plot & Controls'''
 
         self.snr_plot = SnrPlot()
+        # self.snr_lineplot = pg.plot()
+        l = pg.GraphicsLayout()
+        l.layout.setContentsMargins(0, 0, 0, 0)
         # self.snr_plot_container = QWidget()
         # self.snr_plot_layout = QGridLayout()
         # self.snr_plot_layout.addWidget(self.snr_plot, 0, 0)
@@ -3329,7 +3334,7 @@ class MainWindow(QMainWindow):
         self.plot_widget_update_button.setStyleSheet(lower_controls_style)
         self.plot_widget_update_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plot_widget_update_button.clicked.connect(self.update_snr_plot)
-        self.plot_widget_update_button.setFixedSize(QSize(48,16))
+        self.plot_widget_update_button.setFixedSize(QSize(48,18))
 
         self.plot_widget_clear_button = QPushButton('Clear')
         # self.plot_widget_clear_button.setParent(self.snr_plot)
@@ -3337,7 +3342,7 @@ class MainWindow(QMainWindow):
         self.plot_widget_clear_button.setStyleSheet(lower_controls_style)
         self.plot_widget_clear_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.plot_widget_clear_button.clicked.connect(self.clear_snr_plot)
-        self.plot_widget_clear_button.setFixedSize(QSize(48,16))
+        self.plot_widget_clear_button.setFixedSize(QSize(48,18))
 
         self.plot_controls_layout = QHBoxLayout()
         self.plot_controls_layout.setAlignment(Qt.AlignBottom)
@@ -3391,7 +3396,7 @@ class MainWindow(QMainWindow):
         self.bottom_panel_splitter.addWidget(self.snr_plot_and_control)
 
         self.bottom_panel_splitter.setStretchFactor(0, 4)
-        self.bottom_panel_splitter.setStretchFactor(1, 1)
+        self.bottom_panel_splitter.setStretchFactor(1, 2)
         self.bottom_panel_splitter.setStretchFactor(2, 2)
         self.bottom_panel_splitter.setCollapsible(0, True)
         self.bottom_panel_splitter.setCollapsible(1, True)
@@ -3475,12 +3480,11 @@ class MainWindow(QMainWindow):
 
         self.bottom_display_area_hlayout = QHBoxLayout()
         self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
-        self.bottom_display_area_hlayout.setSpacing(4)
-        # self.bottom_display_area_hlayout.addWidget(self.main_panel_bottom_widget)
         self.bottom_display_area_hlayout.addWidget(self.bottom_panel_splitter)
-        self.bottom_display_area_controls = QWidget()
-        self.bottom_display_area_controls.setLayout(self.bottom_display_area_hlayout)
-        # self.bottom_display_area_hlayout.addLayout(self.main_lwr_vlayout)
+        self.bottom_display_area_hlayout.addLayout(self.main_lwr_vlayout)
+        self.bottom_display_area_hlayout.setSpacing(2)
+        self.bottom_widget = QWidget()
+        self.bottom_widget.setLayout(self.bottom_display_area_hlayout)
         # self.bottom_display_area_hlayout.addWidget(self.bottom_display_area_controls)
         # self.bottom_display_area_widget = QWidget()
         # self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
@@ -3500,7 +3504,7 @@ class MainWindow(QMainWindow):
         # self.image_view_hlayout.addWidget(self.img_panels['aligned'])
         self.image_view_hlayout.setSpacing(0)
         self.multi_img_viewer = QWidget()
-        self.multi_img_viewer.setMinimumHeight(256)
+        self.multi_img_viewer.setMinimumHeight(300)
         self.multi_img_viewer.setContentsMargins(0,0,0,0)
         self.multi_img_viewer.setLayout(self.image_view_hlayout)
         # self.main_splitter.addWidget(self.multi_img_viewer)
@@ -3554,7 +3558,8 @@ class MainWindow(QMainWindow):
         self.main_splitter.addWidget(self.dual_viewer_w_banner)
         self.main_splitter.addWidget(self.control_panel)
         # self.main_splitter.addWidget(self.bottom_display_area_widget)
-        self.main_splitter.addWidget(self.bottom_display_area_controls)
+        # self.main_splitter.addWidget(self.bottom_display_area_controls)
+        self.main_splitter.addWidget(self.bottom_widget)
         self.main_splitter.setStretchFactor(0, 5)
         self.main_splitter.setStretchFactor(1, 2)
         self.main_splitter.setStretchFactor(2, 2)
@@ -3676,10 +3681,10 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(self.main_widget)
         self.set_idle()
 
-        # self.bottom_display_area_widget.setAutoFillBackground(True)
-        # self.bottom_display_area_widget.setStyleSheet('''background-color: #000000;''')
-        self.bottom_display_area_controls.setAutoFillBackground(True)
-        self.bottom_display_area_controls.setStyleSheet('''background-color: #000000;''')
+        self.bottom_widget.setAutoFillBackground(True)
+        self.bottom_widget.setStyleSheet('''background-color: #000000;''')
+        # self.bottom_display_area_controls.setAutoFillBackground(True)
+        # self.bottom_display_area_controls.setStyleSheet('''background-color: #000000;''')
 
         # self.multi_img_viewer.setStyleSheet('''background-color: #000000;''')
         self.multi_img_viewer.setStyleSheet('''background-color: #004060;''')
@@ -3767,6 +3772,7 @@ class MainWindow(QMainWindow):
             return
         # self.clear_snr_plot()
         snr_list = cfg.data.snr_list()
+        pg.setConfigOptions(antialias=True)
         max_snr = max(snr_list)
         x_axis = [x for x in range(0, len(snr_list))]
         # pen = pg.mkPen(color=(0, 0, 0), width=5, style=Qt.SolidLine)
@@ -3785,6 +3791,7 @@ class MainWindow(QMainWindow):
             hoverSize=10,
             # hoverPen=pg.mkPen('r', width=2),
             hoverBrush=pg.mkBrush('#f3f6fb'),
+            # pxMode=False #allow spots to transform with the view
         )
         ##41FF00 <- good green color
 
@@ -3797,8 +3804,11 @@ class MainWindow(QMainWindow):
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
 
         max_y = max(snr_list)
-        # self.snr_plot.setXRange(0, max_y, padding=0)
-        self.snr_plot.setYRange(0, max_y)
+        self.snr_plot.setXRange(0, max_y, padding=0)
+
+
+        self.snr_plot.autoRange()
+        # self.snr_plot.setYRange(0, max_y)
 
         value = "test"
         # logger.info('self.snr_points.toolTip() = %s' % self.snr_points.toolTip())

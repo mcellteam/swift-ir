@@ -7,7 +7,9 @@ hud {
 }
 
 QDialog QLabel {
-	color: #151a1e;
+	/*color: #151a1e;*/
+	/%color: #f3f6fb;*/
+	color: #000000;
 }
 
 
@@ -224,9 +226,10 @@ QLineEdit {
 	border-color: #4fa08b;
 	/*border-color: #ffe135;*/
 	/*background-color: #222b2e;*/
-	background-color: #151a1e;
+	/*background-color: #151a1e;*/
 	/*color: #d3dae3;*/
 	color: #151a1e;
+	/*color: #f3f6fb;*/
 }
 
 QLCDNumber {
