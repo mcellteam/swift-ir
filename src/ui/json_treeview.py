@@ -279,7 +279,7 @@ class JsonModel(QAbstractItemModel):
         Return column number. For the model, it always return 2 columns
         """
         return 2
-    if qtpy.QT6:
+    if qtpy.PYSIDE6:
         def flags(self, index: QModelIndex) -> Qt.ItemFlags:
             """Override from QAbstractItemModel
 

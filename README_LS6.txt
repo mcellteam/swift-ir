@@ -9,7 +9,7 @@
 DO ONCE
 #######################################
 # (1) INSTALL+INITIALIZE MINICONDA
-wget https://docs.conda.io/en/latest/miniconda.html#linux-installers
+wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
 bash Miniforge3-Linux-x86_64.sh #correct the path
 source ~/.bashrc
 conda config --set auto_activate_base false  # prevents automatic activation of conda base env (interferes with DCV)
@@ -38,7 +38,7 @@ git fetch
 git pull
 
 # (3) LOAD THE NECESSARY MODULES (ONLY AFTER ACTIVATING CONDA ENV)
-ml gcc/11.2.0  impi/19.0.9 fftw3/3.3.10 python_cacher/1.2  # 'ml' is a TACC alias for 'module load'
+ml gcc/11.2.0  impi/19.0.9 fftw3/3.3.10 # 'ml' is a TACC alias for 'module load'
 
 # (4) RUN THE APP ('alignEM.py' is the entry point to AlignEM-SWiFT)
 python3 alignEM.py
