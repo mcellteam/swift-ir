@@ -8,7 +8,7 @@ import qtpy
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMessageBox, \
     QComboBox, QGroupBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
-    QShortcut, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QScrollBar, QDialog, QDesktopWidget
+    QShortcut, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QScrollBar, QDialog, QStyle
 # from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication, QKeySequence, QCursor, QImageReader
@@ -64,7 +64,16 @@ class MainWindow(QMainWindow):
         logger.info('Initializing Main Window')
         QMainWindow.__init__(self)
 
-        self.center()
+
+        window = self.window()
+        window.setGeometry(
+            QStyle.alignedRect(
+                Qt.LeftToRight,
+                Qt.AlignCenter,
+                window.size(),
+                QGuiApplication.primaryScreen().availableGeometry(),
+            ),
+        )
         self.oldPos = self.pos()
 
         self.setWindowTitle(title)
@@ -85,8 +94,10 @@ class MainWindow(QMainWindow):
         # cfg.image_library = ImageLibrary() # SmartImageLibrary()
         os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
-        if qtpy.QT6:
-            QImageReader.setAllocationLimit(4000) #PySide6
+        if qtpy.PYSIDE6:
+            QImageReader.setAllocationLimit(0) #PySide6
+        elif qtpy.PYQT6:
+            os.environ['QT_IMAGEIO_MAXALLOC'] = "1000000000000000" #PyQt6
 
         self.context = QOpenGLContext(self)
         self.context.setFormat(QSurfaceFormat())
@@ -103,7 +114,7 @@ class MainWindow(QMainWindow):
         logger.info("Initializing Qt WebEngine")
         self.view = QWebEngineView()
         # PySide6-Only Options:
-        if qtpy.QT6:
+        if qtpy.PYSIDE6:
             logger.info('Setting Qt6-specific browser settings')
             self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
             self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
@@ -162,11 +173,6 @@ class MainWindow(QMainWindow):
 
         self.set_splash_controls()
 
-    def center(self):
-        frame = self.frameGeometry()
-        center = QDesktopWidget().availableGeometry().center()
-        frame.moveCenter(center)
-        self.move(frame.topLeft())
 
     def mousePressEvent(self, event):
         self.oldPos = event.globalPos()

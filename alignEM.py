@@ -39,6 +39,10 @@ To output a string of Mypy CLI args that will reflect the currently selected src
 $ qtpy mypy-args
 
 """
+import qtpy
+import os
+os.environ['QT_API'] = 'pyqt6'
+
 import os, sys, signal, logging, argparse
 import src.config as cfg
 
@@ -86,12 +90,11 @@ logger.addHandler(ch)
 def main():
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    parser.add_argument('--api', default='pyqt6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
-    import qtpy
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
@@ -112,7 +115,10 @@ def main():
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    # os.environ['QT_API'] = 'pyqt6'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+
+    logger.info('QT API (qtpy): %s' % qtpy.API)
 
     # Qt5 Only
     if qtpy.QT5:
