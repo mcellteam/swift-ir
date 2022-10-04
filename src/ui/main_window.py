@@ -2,7 +2,7 @@
 """
 GlanceEM-SWiFT - A software tool for image alignment that is under active development.
 """
-import os, sys, copy, json, inspect, logging, textwrap, operator, signal
+import os, sys, copy, json, inspect, logging, textwrap, operator, signal, platform
 from pathlib import Path
 import qtpy
 from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayout, QVBoxLayout, QSizePolicy, \
@@ -13,7 +13,7 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication, QKeySequence, QCursor, QImageReader
 from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, QTimer, Slot, Signal, QEvent, QSortFilterProxyModel, \
-    QModelIndex, QPoint
+    QModelIndex, QPoint, QDir
 from qtpy.QtWebEngineWidgets import *
 import qtawesome as qta
 import pyqtgraph as pg
@@ -1586,12 +1586,24 @@ class MainWindow(QMainWindow):
         # dlg.setFileMode(QFileDialog.AnyFile)
         # dlg.setFilter("Text files (*.txt)")
 
+
+
+
+
         dialog = QFileDialog()
         dialog.setOption(QFileDialog.DontUseNativeDialog)
         # dialog.setProxyModel(FileFilterProxyModel())
         dialog.setWindowTitle('Import Images')
         dialog.setNameFilter('Images (*.tif *.tiff)')
         dialog.setFileMode(QFileDialog.ExistingFiles)
+
+        urls = []
+        urls.append(QUrl.fromLocalFile(QDir.homePath()))
+        if '.tacc.utexas.edu' in platform.node():
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+        dialog.setSidebarUrls(urls)
+
         # response = dialog.exec()
         logger.info(dialog.selectedFiles())
         logger.info('dialog.Accepted = %s' % dialog.Accepted)
