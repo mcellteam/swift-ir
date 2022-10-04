@@ -172,6 +172,7 @@ class MainWindow(QMainWindow):
         timer.start()
 
         self.set_splash_controls()
+        # self.set_project_controls()
 
     if qtpy.QT5:
         def mousePressEvent(self, event):
@@ -1944,7 +1945,6 @@ class MainWindow(QMainWindow):
             self.hud.post('No Images Were Imported', logging.WARNING)
         logger.info('about to call use_neuroglancer_viewer...')
         sys.stdout.flush()
-        self.use_neuroglancer_viewer()
         # self.scales_combobox_switch = 1
         self.set_idle()
         logger.info('Exiting import_images')
@@ -2001,13 +2001,13 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setMinimumSize(button_h, button_w)
         self.documentation_button.setMinimumSize(button_h, button_w)
         self.remote_viewer_button.setMinimumSize(button_h, button_w)
-        self.import_images_button.setMinimumSize(button_h, button_w)
+        # self.import_images_button.setMinimumSize(button_h, button_w)
         try:
             self.alignment_widget.hide()
         except:
             pass
         font_size = 16
-        self.import_images_button.setStyleSheet('font-size: %spx;' % font_size)
+        # self.import_images_button.setStyleSheet('font-size: %spx;' % font_size)
         self.new_project_button.setStyleSheet('font-size: %spx;' % font_size)
         self.open_project_button.setStyleSheet('font-size: %spx;' % font_size)
         self.save_project_button.setStyleSheet('font-size: %spx;' % font_size)
@@ -2016,7 +2016,7 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setStyleSheet('font-size: %spx;' % font_size)
 
         icon_size = 24
-        self.import_images_button.setIconSize(QSize(icon_size, icon_size))
+        # self.import_images_button.setIconSize(QSize(icon_size, icon_size))
         self.new_project_button.setIconSize(QSize(icon_size, icon_size))
         self.open_project_button.setIconSize(QSize(icon_size, icon_size))
         self.save_project_button.setIconSize(QSize(icon_size, icon_size))
@@ -2056,10 +2056,10 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setMinimumSize(1, 1)
         self.documentation_button.setMinimumSize(1, 1)
         self.remote_viewer_button.setMinimumSize(1, 1)
-        self.import_images_button.setMinimumSize(1, 1)
+        # self.import_images_button.setMinimumSize(1, 1)
 
         font_size = 12
-        self.import_images_button.setStyleSheet('font-size: %spx;' % font_size)
+        # self.import_images_button.setStyleSheet('font-size: %spx;' % font_size)
         self.new_project_button.setStyleSheet('font-size: %spx;' % font_size)
         self.open_project_button.setStyleSheet('font-size: %spx;' % font_size)
         self.save_project_button.setStyleSheet('font-size: %spx;' % font_size)
@@ -2068,7 +2068,7 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setStyleSheet('font-size: %spx;' % font_size)
 
         icon_size = 12
-        self.import_images_button.setIconSize(QSize(icon_size, icon_size))
+        # self.import_images_button.setIconSize(QSize(icon_size, icon_size))
         self.new_project_button.setIconSize(QSize(icon_size, icon_size))
         self.open_project_button.setIconSize(QSize(icon_size, icon_size))
         self.save_project_button.setIconSize(QSize(icon_size, icon_size))
@@ -2495,7 +2495,7 @@ class MainWindow(QMainWindow):
         self.snr_plot.show()
         self.clear_snr_plot()
         self.hud.show()
-        self.import_images_button.hide()
+        # self.import_images_button.hide()
 
         # self.main_panel_bottom_widget.setCurrentIndex(0)
         self.set_idle()
@@ -2753,13 +2753,13 @@ class MainWindow(QMainWindow):
         self.remote_viewer_button.setFixedSize(slim_button_size)
         self.remote_viewer_button.setStyleSheet("font-size: 11px;")
 
-        self.import_images_button = QPushButton(" Import\n Images")
-        self.import_images_button.setToolTip('Import Images.')
-        self.import_images_button.clicked.connect(self.import_images)
-        self.import_images_button.setFixedSize(normal_button_size)
-        self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=ICON_COLOR))
-        self.import_images_button.setStyleSheet("font-size: 11px;")
-        self.import_images_button.hide()
+        # self.import_images_button = QPushButton(" Import\n Images")
+        # self.import_images_button.setToolTip('Import Images.')
+        # self.import_images_button.clicked.connect(self.import_images)
+        # self.import_images_button.setFixedSize(normal_button_size)
+        # self.import_images_button.setIcon(qta.icon("fa5s.file-import", color=ICON_COLOR))
+        # self.import_images_button.setStyleSheet("font-size: 11px;")
+        # self.import_images_button.hide()
 
         # self.project_functions_layout = QGridLayout()
         # self.project_functions_layout.setContentsMargins(*gb_margin)
@@ -2772,7 +2772,7 @@ class MainWindow(QMainWindow):
 
         self.project_functions_layout = QHBoxLayout()
         self.project_functions_layout.setContentsMargins(0, 0, 0, 0)
-        self.project_functions_layout.addWidget(self.import_images_button, alignment=Qt.AlignLeft)
+        # self.project_functions_layout.addWidget(self.import_images_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.new_project_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.open_project_button, alignment=Qt.AlignLeft)
         self.project_functions_layout.addWidget(self.save_project_button, alignment=Qt.AlignLeft)
