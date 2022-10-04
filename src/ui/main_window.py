@@ -1586,10 +1586,6 @@ class MainWindow(QMainWindow):
         # dlg.setFileMode(QFileDialog.AnyFile)
         # dlg.setFilter("Text files (*.txt)")
 
-
-
-
-
         dialog = QFileDialog()
         dialog.setOption(QFileDialog.DontUseNativeDialog)
         # dialog.setProxyModel(FileFilterProxyModel())
@@ -1613,20 +1609,25 @@ class MainWindow(QMainWindow):
             self.show_all_controls()
             return dialog.selectedFiles()
         else:
-            self.import_images_button.show()
+            if dialog.exec_() == QDialog.Accepted:
+                self.set_project_controls()
+                self.set_normal_view()
+                self.show_all_controls()
+                return dialog.selectedFiles()
+
     
     def open_project_dialog(self) -> str:
         '''Dialog for opening a data. Returns 'filename'.'''
         caption = "Open Project (.json)"
         filter = "JSON (*.json)"
         # if qtpy.QT5:
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
         response = QFileDialog.getOpenFileName(
             parent=self,
             caption=caption,
             filter=filter,
-            options=options,
+            # options=options,
         )
         # dialog = QFileDialog()
         # dialog.setOption(QFileDialog.DontUseNativeDialog)
@@ -1643,8 +1644,8 @@ class MainWindow(QMainWindow):
         caption = "Save Project"
         filter = "JSON (*.json)"
         # if qtpy.QT5:
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
+        # options = QFileDialog.Options()
+        # options |= QFileDialog.DontUseNativeDialog
         response = QFileDialog.getSaveFileName(
             parent=self,
             caption=caption,
@@ -1658,8 +1659,8 @@ class MainWindow(QMainWindow):
         caption = "New Project Save As..."
         filter = "JSON (*.json)"
         # if qtpy.QT5:
-        options = QFileDialog.Options()
-        options |= QFileDialog.DontUseNativeDialog
+        #     options = QFileDialog.Options()
+        #     options |= QFileDialog.DontUseNativeDialog
         response = QFileDialog.getSaveFileName(
             parent=self,
             caption=caption,
