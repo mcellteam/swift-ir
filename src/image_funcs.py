@@ -19,9 +19,9 @@ from typing import Dict, List, Tuple, Any, Union, Sequence
 from numpy.compat import asbytes, asstr
 # import imageio
 import imageio.v3 as iio
-from PIL import Image
-import tifffile
-import tensorstore as ts
+# from PIL import Image
+# import tifffile
+# import tensorstore as ts
 try:     from src.helpers import get_images_list_directly
 except:  from helpers import get_images_list_directly
 try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2

@@ -12,6 +12,7 @@ from qtpy.QtCore import Slot
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator
 import qtawesome as qta
 import src.config as cfg
+from src.image_funcs import ImageSize
 from src.helpers import get_scale_key, get_scale_val, do_scales_exist, get_images_list_directly
 
 logger = logging.getLogger(__name__)
@@ -303,12 +304,27 @@ class RecipeMaker(QDialog):
         # self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
 
+
+
+
+
         '''Scales Field'''
         if do_scales_exist():
             scales_lst = [str(v) for v in
                               sorted([get_scale_val(s) for s in cfg.data['data']['scales'].keys()])]
         else:
-            scales_lst = ['1 2 4']
+            width, height = ImageSize(cfg.data.path_base())
+            if (width*height) > 400_000_000:
+                scales_lst = ['24 6 2 1']
+            elif (width*height) > 200_000_000:
+                scales_lst = ['16 6 2 1']
+            elif (width * height) > 100_000_000:
+                scales_lst = ['8 2 1']
+            elif (width * height) > 10_000_000:
+                scales_lst = ['4 2 1']
+            else:
+                scales_lst = ['4 1']
+
         scales_str = ' '.join(scales_lst)
 
 
@@ -317,7 +333,7 @@ class RecipeMaker(QDialog):
         self.scales_input.setFixedWidth(130)
         self.scales_input.setText(scales_str)
         self.scales_input.setAlignment(Qt.AlignCenter)
-        tip = "Scale factors, separated by spaces.\n(example) To generate 1x 2x and 4x scales, type: 1 2 4"
+        tip = "Scale factors, separated by spaces.\n(example) To generate 4x 2x and 1x/full scales, type: 4 2 1"
         self.scale_instructions_label = QLabel(tip)
         self.scale_instructions_label.setStyleSheet("font-size: 11px;")
         self.scales_label.setToolTip(tip)
