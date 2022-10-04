@@ -22,6 +22,8 @@ if __name__ == '__main__':
     out          = sys.argv[4] #*
     scale_str    = sys.argv[5] #*
 
+    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+
     scale_img = os.path.join(src, scale_str, 'img_aligned', img)
     im = Image.open(scale_img)
     store = zarr.open(out)

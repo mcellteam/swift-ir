@@ -80,6 +80,8 @@ if (__name__ == '__main__'):
     rect = None
     grayBorder = False
 
+    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+
     # Scan arguments (excluding program name and last 2 file names)
     i = 1
     # while (i < len(sys.argv) - 2):

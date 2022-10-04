@@ -325,7 +325,7 @@ if __name__ == "__main__":
 
     view.setModel(model)
 
-    json_path = QFileInfo(__file__).absoluteDir().filePath("example.json")
+    json_path = QFileInfo(__file__).absoluteDir().filePath("example.proj")
 
     with open(json_path) as file:
         document = json.load(file)

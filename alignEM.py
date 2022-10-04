@@ -127,7 +127,10 @@ def main():
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     logger.info('Setting PIL limit on MAX_IMAGE_PIXELS to None')
-    Image.MAX_IMAGE_PIXELS = None
+    # PIL.Image.DecompressionBombError: Image size (605799240 pixels) exceeds limit of 178956970 pixels,
+    # could be decompression bomb DOS attack.
+    # Image.MAX_IMAGE_PIXELS = None
+    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
