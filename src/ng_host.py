@@ -157,7 +157,8 @@ class NgHost(QRunnable):
 
         with cfg.viewer.txn() as s:
 
-            if is_aligned: al_dataset = get_zarr_tensor(al_name).result()
+            if is_aligned:
+                al_dataset = get_zarr_tensor(al_name).result()
             unal_dataset = get_zarr_tensor(unal_name).result()
 
             if is_aligned: logger.info(al_dataset)

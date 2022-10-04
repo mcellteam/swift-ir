@@ -262,7 +262,6 @@ class RecipeMaker(QDialog):
         self.chunk_layout.addWidget(self.chunk_shape_label, alignment=Qt.AlignLeft)
         self.chunk_layout.addWidget(self.chunk_shape_widget, alignment=Qt.AlignRight)
 
-
         txt = "AlignEM-SWiFT uses a chunked and compressed N-dimensional file format called Zarr for rapid viewing of " \
               "volumetric data in Neuroglancer. These settings determine the way volumetric data is " \
               "stored and retrieved from disk storage."
@@ -276,9 +275,6 @@ class RecipeMaker(QDialog):
         self.export_settings_layout.addWidget(self.storage_info_label, 3, 0)
 
         self.tab2.setLayout(self.export_settings_layout)
-
-
-
 
 
     def initUI_tab1(self):
@@ -302,10 +298,6 @@ class RecipeMaker(QDialog):
         # self.swim_input.setText(str(cfg.DEFAULT_SWIM_WINDOW))
         # self.swim_input.setValidator(QDoubleValidator(0.0000, 1.0000, 4, self))
         # self.swim_input.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-
-
-
 
 
         '''Scales Field'''

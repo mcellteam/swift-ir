@@ -173,14 +173,14 @@ class MainWindow(QMainWindow):
 
         self.set_splash_controls()
 
+    if qtpy.QT5:
+        def mousePressEvent(self, event):
+            self.oldPos = event.globalPos()
 
-    def mousePressEvent(self, event):
-        self.oldPos = event.globalPos()
-
-    def mouseMoveEvent(self, event):
-        delta = QPoint (event.globalPos() - self.oldPos)
-        self.move(self.x() + delta.x(), self.y() + delta.y())
-        self.oldPos = event.globalPos()
+        def mouseMoveEvent(self, event):
+            delta = QPoint (event.globalPos() - self.oldPos)
+            self.move(self.x() + delta.x(), self.y() + delta.y())
+            self.oldPos = event.globalPos()
     
     def build_menu_from_list(self, parent, menu_list):
         for item in menu_list:
@@ -365,6 +365,7 @@ class MainWindow(QMainWindow):
 
 
     def autoscale(self):
+        logger.critical('>>>>>>>> Autoscaling Start <<<<<<<<')
         self.set_status("Scaling...")
         # self.scales_combobox_switch = 0
         try:
@@ -410,7 +411,8 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def align(self, use_scale=None) -> None:
-        logger.info('align:')
+        logger.critical('>>>>>>>> Align Start <<<<<<<<')
+
         if self._working == True:
             self.hud('Another Process is Already Running', logging.WARNING)
             return
@@ -478,7 +480,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def align_forward(self, use_scale=None, num_layers=1) -> None:
-        logger.info('align:')
+        logger.critical('>>>>>>>> Align Forward Start <<<<<<<<')
         if self._working == True:
             self.hud('Another Process is Already Running', logging.WARNING)
             return
@@ -1501,7 +1503,7 @@ class MainWindow(QMainWindow):
     #     self.hud(str(cfg.image_library))
     
     def new_project(self):
-        logger.debug('new_project:')
+        logger.critical('>>>>>>>> New Project Start <<<<<<<<')
         self.set_status("New Project...")
         # cfg.w.ng_browser.back() # create the effect of resetting the browser
         if is_destination_set():
@@ -1548,8 +1550,8 @@ class MainWindow(QMainWindow):
 
         # self.clear_images()
         logger.info("Overwriting Project Data In Memory With New Template")
-        if not filename.endswith('.json'):
-            filename += ".json"
+        if not filename.endswith('.proj'):
+            filename += ".proj"
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path)
         self.image_panel_stack_widget.setCurrentIndex(2)
@@ -1618,8 +1620,8 @@ class MainWindow(QMainWindow):
     
     def open_project_dialog(self) -> str:
         '''Dialog for opening a data. Returns 'filename'.'''
-        caption = "Open Project (.json)"
-        filter = "JSON (*.json)"
+        caption = "Open Project (.proj)"
+        filter = "Project (*.proj)"
         # if qtpy.QT5:
         # options = QFileDialog.Options()
         # options |= QFileDialog.DontUseNativeDialog
@@ -1642,7 +1644,7 @@ class MainWindow(QMainWindow):
     def save_project_dialog(self) -> str:
         '''Dialog for saving a data. Returns 'filename'.'''
         caption = "Save Project"
-        filter = "JSON (*.json)"
+        filter = "Project (*.proj)"
         # if qtpy.QT5:
         # options = QFileDialog.Options()
         # options |= QFileDialog.DontUseNativeDialog
@@ -1657,7 +1659,7 @@ class MainWindow(QMainWindow):
     def new_project_save_as_dialog(self) -> str:
         '''Dialog for saving a data. Returns 'filename'.'''
         caption = "New Project Save As..."
-        filter = "JSON (*.json)"
+        filter = "Project (*.proj)"
         # if qtpy.QT5:
         #     options = QFileDialog.Options()
         #     options |= QFileDialog.DontUseNativeDialog
@@ -1679,6 +1681,7 @@ class MainWindow(QMainWindow):
         return (button == QMessageBox.StandardButton.Yes)
     
     def open_project(self):
+        logger.critical('>>>>>>>> Open Project Start <<<<<<<<')
         self.set_status("Open Project...")
         # is_neuroglancer_viewer = True if self.is_neuroglancer_viewer() else False
         self.main_widget.setCurrentIndex(0)
@@ -1740,13 +1743,13 @@ class MainWindow(QMainWindow):
             self.read_project_data_update_gui()
             self.clear_snr_plot()
             self.update_snr_plot()
-            self.update_snr_plot()
+            # self.update_snr_plot()
             # self.auto_set_user_progress()
             # self.set_user_progress(gb1=True, gb3=True,gb4=True) #1001
             self.reload_scales_combobox()
             self.update_scale_controls()
         else:
-            self.hud("No Project File (.json) Selected", logging.WARNING)
+            self.hud("No Project File (.proj) Selected", logging.WARNING)
         self.set_idle()
 
     def save_project(self):
@@ -1767,7 +1770,7 @@ class MainWindow(QMainWindow):
             # self.hud.done()
             logger.info('Setting self._unsaved_changes = False...')
             self._unsaved_changes = False
-            self.hud.post("Project File Location:\n%s" % str(cfg.data.dest() + ".json"))
+            self.hud.post("Project File Location:\n%s" % str(cfg.data.dest() + ".proj"))
         except:
             print_exception()
             self.hud.post('Nothing To Save', logging.WARNING)
@@ -1838,8 +1841,8 @@ class MainWindow(QMainWindow):
         jde = json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True)
         proj_json = jde.encode(data_cp)
         name = cfg.data.dest()
-        if not name.endswith('.json'): #0818-
-            name += ".json"
+        if not name.endswith('.proj'): #0818-
+            name += ".proj"
         with open(name, 'w') as f:
             f.write(proj_json)
         logger.info('Exiting save_project_to_file...')
@@ -1899,6 +1902,7 @@ class MainWindow(QMainWindow):
     
     def import_images(self, clear_role=False):
         ''' Import images into data '''
+        logger.critical('>>>>>>>> Import Images Start <<<<<<<<')
         self.set_status('Import Images...')
         role_to_import = 'base'
         # need_to_scale = not are_images_imported()
@@ -3754,10 +3758,10 @@ class MainWindow(QMainWindow):
 
 
     def show_hide_snr_plot(self):
-        if self.snr_plot_container.isHidden():
-            self.snr_plot_container.setHidden(False)
+        if self.snr_plot_and_control.isHidden():
+            self.snr_plot_and_control.setHidden(False)
         else:
-            self.snr_plot_container.setHidden(True)
+            self.snr_plot_and_control.setHidden(True)
 
     def show_hide_hud(self):
         if self.hud.isHidden():
