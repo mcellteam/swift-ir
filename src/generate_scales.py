@@ -28,6 +28,7 @@ def generate_scales():
     task_queue.tqdm_desc = 'Scaling Images'
     cpus = min(psutil.cpu_count(logical=False), 48) - 1
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+    logger.critical('my_path is %s' % my_path)
     my_system = platform.system()
     my_node = platform.node()
     '''TODO: Check for SWiFT-IR executables at startup'''
@@ -124,8 +125,8 @@ def generate_scales():
                         # task_queue.add_task (cmd=iscale2_c, args=[scale_arg, outfile_arg, infile_arg], wd='.')
                         task_queue.add_task([iscale2_c, scale_arg, outfile_arg, infile_arg])
                         # if i == 1:
-                        #     logger.debug('\ntask_queue Parameters (Example):\n1: %s\n2: %s\n3: %s\n4: %s' %
-                        #                 (iscale2_c, scale_arg, outfile_arg, infile_arg))
+                        logger.info('\ntask_queue Parameters (Example):\n1: %s\n2: %s\n3: %s\n4: %s' %
+                                     (iscale2_c, scale_arg, outfile_arg, infile_arg))
 
                 except:
                     cfg.main_window.hud.post("Error adding tasks to the task queue - Canceling", logging.ERROR)

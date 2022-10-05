@@ -134,7 +134,7 @@ def main():
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    # os.environ['QT_API'] = 'pyqt6'
+    os.environ['QT_API'] = 'pyqt6'
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
 
