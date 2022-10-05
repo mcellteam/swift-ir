@@ -42,7 +42,7 @@ from src.ui.python_console import PythonConsole
 # from src.utils.PyQtImageStackViewer import QtImageStackViewer
 # from src.utils.PyQtImageViewer import QtImageViewer
 from src.ui.splash import SplashScreen
-from src.ui.dialogs import RecipeMaker
+from src.ui.dialogs import ConfigDialog
 from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor, generate_zarr_scales
 
 __all__ = ['MainWindow']
@@ -352,7 +352,7 @@ class MainWindow(QMainWindow):
             logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
             print_exception()
 
-        self.load_unaligned_stacks()
+        # self.load_unaligned_stacks() #1004 #debugging
         # self.update_unaligned_2D_viewer()
         self.read_project_data_update_gui()
         # self.set_progress_stage_2()
@@ -390,7 +390,9 @@ class MainWindow(QMainWindow):
             logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
             print_exception()
         logger.info('Loading unaligned stacks...')
-        self.load_unaligned_stacks()
+
+        # self.load_unaligned_stacks() #1004 #debugging
+
         # logger.info('Updating unaligned view...')
         # self.update_unaligned_2D_viewer()
         logger.info('Reading project data...')
@@ -1391,20 +1393,21 @@ class MainWindow(QMainWindow):
         finally:
             self.set_idle()
 
+    #1004 #debugging
+    # def load_unaligned_stacks(self):
+    #     # logger.critical('Getting Results of Unaligned TensorStore Objects...')
+    #     self.zarr_scales = {}
+    #     try:
+    #         for s in cfg.data.scales():
+    #             # name = os.path.join(cfg.data.dest(), s + '.zarr')
+    #             name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(get_scale_val(s)))
+    #             dataset_future = get_zarr_tensor(name)
+    #             scale_str = 's' + str(get_scale_val(s))
+    #             self.zarr_scales[scale_str] = dataset_future.result()
+    #     except:
+    #         print_exception()
+    #         logger.warning('Unaligned Zarr Stacks May Not Have Loaded Properly')
 
-    def load_unaligned_stacks(self):
-        # logger.critical('Getting Results of Unaligned TensorStore Objects...')
-        self.zarr_scales = {}
-        try:
-            for s in cfg.data.scales():
-                # name = os.path.join(cfg.data.dest(), s + '.zarr')
-                name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(get_scale_val(s)))
-                dataset_future = get_zarr_tensor(name)
-                scale_str = 's' + str(get_scale_val(s))
-                self.zarr_scales[scale_str] = dataset_future.result()
-        except:
-            print_exception()
-            logger.warning('Unaligned Zarr Stacks May Not Have Loaded Properly')
 
 
     # @Slot()
@@ -1592,7 +1595,7 @@ class MainWindow(QMainWindow):
         dialog = QFileDialog()
         dialog.setOption(QFileDialog.DontUseNativeDialog)
         # dialog.setProxyModel(FileFilterProxyModel())
-        dialog.setWindowTitle('Import Images')
+        dialog.setWindowTitle('Import Images To %s' % cfg.data.name())
         dialog.setNameFilter('Images (*.tif *.tiff)')
         dialog.setFileMode(QFileDialog.ExistingFiles)
 
@@ -1732,7 +1735,9 @@ class MainWindow(QMainWindow):
             self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
             if are_images_imported():
                 # if is_neuroglancer_viewer:
-                self.load_unaligned_stacks()
+
+                # self.load_unaligned_stacks() #1004 #debugging
+
                 self.use_neuroglancer_viewer()  # force neuroglancer viewer (changes stack index)
                 # else:
                 #     self.update_2D_viewers()
@@ -1937,21 +1942,17 @@ class MainWindow(QMainWindow):
             img_size = ImageSize(
                 cfg.data['data']['scales']['scale_1']['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
             cfg.data.link_all_stacks()
-
             self.save_project_to_file()
             self.hud.post('%d Images Imported' % cfg.data.n_imgs())
             self.hud.post('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
-        logger.info('about to call use_neuroglancer_viewer...')
-        sys.stdout.flush()
-        # self.scales_combobox_switch = 1
         self.set_idle()
         logger.info('Exiting import_images')
 
     def run_after_import(self):
         logger.info('run_after_import:')
-        recipe_maker = RecipeMaker(parent=self)
+        recipe_maker = ConfigDialog(parent=self)
         result = recipe_maker.exec_()  # result = 0 or 1
         if not result:
             logger.warning('Dialog Did Not Return A Result')
@@ -2375,7 +2376,7 @@ class MainWindow(QMainWindow):
 
     def configure_project(self):
         logger.info('Showing configure project dialog...')
-        recipe_maker = RecipeMaker(parent=self)
+        recipe_maker = ConfigDialog(parent=self)
         result = recipe_maker.exec_()
         if not result:  logger.warning('Dialog Did Not Return A Result')
 

@@ -47,11 +47,12 @@ https://doc.qt.io/qtforpython/overviews/modelview.html#using-adapters-between-fo
 ***QAbstractListModel*** <-- May need to subclass 
 '''
 
-class RecipeMaker(QDialog):
+class ConfigDialog(QDialog):
 
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         self.parent = parent
-        super(RecipeMaker, self).__init__()
+        super(ConfigDialog, self).__init__()
+        logger.critical('>>>>>>>> Config Dialog Start <<<<<<<<')
         # self.setGeometry(400,400,300,260)
         # g = self.geometry()
         # g.moveCenter(self.parent.geometry().center())
@@ -139,7 +140,7 @@ class RecipeMaker(QDialog):
     #
     # @Slot()
     # def save(self):
-    #     print('RecipeMaker.save was called')
+    #     print('ConfigDialog.save was called')
     #     with open(self.defaults_file, "w") as f:
     #         data = json.dump(self.defaults, f)
     #         # f.write(self.defaults)
