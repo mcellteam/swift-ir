@@ -2238,7 +2238,7 @@ class MainWindow(QMainWindow):
         dest = os.path.abspath(cfg.data['data']['destination_path'])
         s, l = cfg.data.scale(), cfg.data.layer()
         # self.ng_worker = NgHost(src=dest, scale=s, port=9000)
-        self.ng_worker = NgHost(src=dest, scale=s, port=self.ng_worker.port)
+        self.ng_worker = NgHost(src=dest, scale=s)
         self.threadpool.start(self.ng_worker)
         self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
         self.ng_browser.setFocus()
