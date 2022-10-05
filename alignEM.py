@@ -53,6 +53,8 @@ from qtpy import QtCore
 
 
 
+
+
 # os.environ['QT_API'] = 'pyqt6'
 # os.environ['QT_API'] = 'PySide6'
 # os.environ['QT_DRIVER'] = 'PySide6' # necessary for qimage2ndarray
@@ -90,6 +92,9 @@ ch = logging.StreamHandler()
 ch.setLevel(logging.INFO)
 ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
+
+fh = logging.FileHandler('messages.log')
+logger.addHandler(fh)
 
 
 def main():
