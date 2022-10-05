@@ -187,3 +187,68 @@ Traceback (most recent call last):
     sys.exit(app.exec_())
 SystemExit: 0
 
+QtCore.__version__ = 5.15.2
+qtpy.PYSIDE_VERSION = None
+qtpy.PYQT_VERSION = 5.15.7
+Setting Qt.AA_EnableHighDpiScaling and Qt.AA_UseHighDpiPixmaps attributes
+Setting PIL limit on MAX_IMAGE_PIXELS to 1_000_000_000_000
+QtCore.__version__ = 5.15.2
+qtpy.PYSIDE_VERSION = None
+qtpy.PYQT_VERSION = 5.15.7
+Setting Qt.AA_EnableHighDpiScaling and Qt.AA_UseHighDpiPixmaps attributes
+Setting PIL limit on MAX_IMAGE_PIXELS to 1_000_000_000_000
+Initializing MainWindow
+Checking platform-specific path to SWiFT-IR executables...
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iavg FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2 FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/mir FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/remod FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/swim FOUND
+Initializing Main Window
+Initializing Thread Pool
+Initializing Image Library
+Initializing Qt WebEngine
+Initializing Status Bar
+Initializing Jupyter Console
+Initializing Data Model
+Initializing Menu
+Initializing UI
+Welcome To AlignEM-SWiFT.
+Initializing Shortcuts
+Setting Splash Controls...
+Showing AlignEM-SWiFT
+Running sys.exit(app.exec())...
+Trying sys.exit(app.exec())...
+MainWindow.closeEvent (called by main):
+Running Shutdown Instructions...
+Shutting down jupyter...
+Shutting Down Jupyter Kernel...
+done
+Having trouble closing http_server
+done
+Shutting down threadpool...
+threadpool_result = True
+done
+Quitting app...
+Running shutdown instructions again...
+Running Shutdown Instructions...
+Shutting down jupyter...
+Shutting Down Jupyter Kernel...
+Having trouble shutting down Jupyter Console Kernel
+done
+Having trouble closing http_server
+done
+Shutting down threadpool...
+threadpool_result = True
+done
+Quitting app...
+  Exception type = <class 'SystemExit'>
+  Exception value = 0
+  Exception trace = <traceback object at 0x1b2914a00>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/alignEM.py", line 173, in main
+    sys.exit(app.exec())
+SystemExit: 0
+
+Trying sys.exit(app.exec_())...
