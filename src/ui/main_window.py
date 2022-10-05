@@ -1625,7 +1625,7 @@ class MainWindow(QMainWindow):
     def open_project_dialog(self) -> str:
         '''Dialog for opening a data. Returns 'filename'.'''
         caption = "Open Project (.proj)"
-        filter = "Project (*.proj)"
+        filter = "Project (*.proj *.json)"
         # if qtpy.QT5:
         # options = QFileDialog.Options()
         # options |= QFileDialog.DontUseNativeDialog
