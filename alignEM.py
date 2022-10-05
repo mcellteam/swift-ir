@@ -93,16 +93,15 @@ def main():
     parser.add_argument('--api', default='pyqt6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
+    parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
     from PIL import Image
-    import neuroglancer
     from qtpy.QtWidgets import QApplication
     from qtpy.QtCore import Qt, QCoreApplication, QTimer
-    from src.helpers import print_exception, check_for_binaries
     from src.ui.main_window import MainWindow
 
 
@@ -111,6 +110,12 @@ def main():
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(LOGLEVELS[args.loglevel])
+
+    if args.no_tensorstore:
+        cfg.USE_TENSORSTORE = False
+    else:
+        cfg.USE_TENSORSTORE = True
+
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
@@ -126,7 +131,7 @@ def main():
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    logger.info('Setting PIL limit on MAX_IMAGE_PIXELS to None')
+    logger.info('Setting PIL limit on MAX_IMAGE_PIXELS to 1_000_000_000_000')
     # PIL.Image.DecompressionBombError: Image size (605799240 pixels) exceeds limit of 178956970 pixels,
     # could be decompression bomb DOS attack.
     # Image.MAX_IMAGE_PIXELS = None
