@@ -110,10 +110,10 @@ class NgHost(QRunnable):
         #     self.http_server.shutdown()
         #     sys.exit(0)
 
-    def take_screenshot(self):
-        dir = cfg.data.dest()
-        ss = ScreenshotSaver(viewer=cfg.viewer, directory=dir)
-        ss.capture()
+    # def take_screenshot(self):
+    #     dir = cfg.data.dest()
+    #     ss = ScreenshotSaver(viewer=cfg.viewer, directory=dir)
+    #     ss.capture()
 
 
     def create_viewer(self):
@@ -281,11 +281,11 @@ class NgHost(QRunnable):
             print('  Layer selected values: %s' % (s.selected_values,))
             s.position[0] += 1
 
-        cfg.viewer.actions.add('screenshot', self.take_screenshot)
+        # cfg.viewer.actions.add('screenshot', self.take_screenshot)
         cfg.viewer.actions.add('layer-right', layer_right)
         cfg.viewer.actions.add('layer-left', layer_left)
         with cfg.viewer.config_state.txn() as s:
-            s.input_event_bindings.viewer['keyb'] = 'screenshot'
+            # s.input_event_bindings.viewer['keyb'] = 'screenshot'
             s.input_event_bindings.viewer['keyl'] = 'layer-left'
             s.input_event_bindings.viewer['keyr'] = 'layer-right'
             # s.show_ui_controls = True
@@ -293,7 +293,7 @@ class NgHost(QRunnable):
             # s.show_panel_borders = True
             s.show_panel_borders = False
             # s.viewer_size = None
-            s.input_event_bindings.viewer['keyt'] = 'my-action'
+            # s.input_event_bindings.viewer['keyt'] = 'my-action'
             # s.status_messages['hello'] = "AlignEM-SWiFT: Scale: %d Viewer URL: %s  Protocol: %s" % \
             #                              (cfg.data.scale_val(), cfg.viewer.get_viewer_url(), self.http_server.protocol_version)
             s.status_messages['hello'] = "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"
