@@ -121,16 +121,16 @@ def is_cur_scale_aligned() -> bool:
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
     # logger.info('zarr_path = %s' % zarr_path)
     if not os.path.isdir(zarr_path):
-        logger.info('Failed os.path.isdir(zarr_path)')
+        logger.info('Returning False due to os.path.isdir(zarr_path)')
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-        logger.info("Failed os.path.exists(os.path.join(zarr_path, '.zattrs')")
+        logger.info("Returning False due to os.path.exists(os.path.join(zarr_path, '.zattrs')")
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zarray')):
-        logger.info("Failed os.path.exists(os.path.join(zarr_path, '.zarray')")
+        logger.info("Returning False due to os.path.exists(os.path.join(zarr_path, '.zarray')")
         return False
     if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-        logger.info("Failed os.path.exists(os.path.join(zarr_path, '0.0.0')")
+        logger.info("Returning False due to os.path.exists(os.path.join(zarr_path, '0.0.0')")
         return False
 
     return True

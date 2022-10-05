@@ -1826,7 +1826,7 @@ class MainWindow(QMainWindow):
     #     dest_new = Path(filename).parents[0]
     #     import shutil
     #     dest = shutil.move(dest_orig, dest_new)
-
+    logging.
     def save_project_to_file(self, saveas=None):
         logger.info("Called by " + inspect.stack()[1].function)
         if saveas is not None:
