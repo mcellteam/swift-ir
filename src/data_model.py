@@ -572,8 +572,11 @@ class DataModel:
         for scale_key in self._data['data']['scales'].keys():
             skip_list = []
             for layer_index in range(len(self._data['data']['scales'][scale_key]['alignment_stack'])):
-                if self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skipped'] == True:
-                    skip_list.append(layer_index)
+                try:
+                    if self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]['skipped'] == True:
+                        skip_list.append(layer_index)
+                except:
+                    print_exception()
                 base_layer = self._data['data']['scales'][scale_key]['alignment_stack'][layer_index]
                 if layer_index == 0:
                     if 'ref' not in base_layer['images'].keys():
