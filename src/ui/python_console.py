@@ -52,6 +52,7 @@ class PythonConsole(RichJupyterWidget):
         self.execute_command('from src.config import main_window')
         self.execute_command('from src.helpers import *')
         self.execute_command('import os, sys, zarr, neuroglancer')
+        self.execute_command('from qtpy.QtCore import QUrl')
 
         # self.clear()
         self.execute('clear')
