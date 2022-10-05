@@ -101,8 +101,11 @@ class DataModel:
     def to_dict(self):
         return self._data
 
-    def dest(self):
+    def dest(self) -> str:
         return self._data['data']['destination_path']
+
+    def name(self) -> str:
+        return os.path.split(cfg.data.dest())[-1]
 
     def layer(self) -> int:
         '''Returns the Current Layer as an Integer.'''

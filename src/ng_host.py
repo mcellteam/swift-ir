@@ -160,8 +160,12 @@ class NgHost(QRunnable):
             if is_aligned:
                 al_dataset = get_zarr_tensor(al_name).result()
             unal_dataset = get_zarr_tensor(unal_name).result()
+            # if is_aligned:
+            #     al_dataset = al_name
+            # unal_dataset = unal_name
 
-            if is_aligned: logger.info(al_dataset)
+            if is_aligned:
+                logger.info(al_dataset)
             logger.info(unal_dataset)
             if not is_aligned:
                 logger.info('Creating Local Volumes...')
