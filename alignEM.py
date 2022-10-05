@@ -41,7 +41,8 @@ $ qtpy mypy-args
 """
 import qtpy
 import os
-os.environ['QT_API'] = 'pyqt6'
+# os.environ['QT_API'] = 'pyqt6'
+os.environ['QT_API'] = 'pyqt5'
 
 import os, sys, signal, logging, argparse
 import src.config as cfg
