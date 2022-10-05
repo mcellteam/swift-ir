@@ -1569,7 +1569,7 @@ class MainWindow(QMainWindow):
         self.import_images()
         self.run_after_import()
         self.save_project_to_file()
-        self.use_neuroglancer_viewer()
+        self.init_neuroglancer_client()
         self.set_idle()
     
     def import_images_dialog(self):
@@ -1738,7 +1738,7 @@ class MainWindow(QMainWindow):
 
                 # self.load_unaligned_stacks() #1004 #debugging
 
-                self.use_neuroglancer_viewer()  # force neuroglancer viewer (changes stack index)
+                self.init_neuroglancer_client()  # force neuroglancer viewer (changes stack index)
                 # else:
                 #     self.update_2D_viewers()
                 # self.image_panel_stack_widget.setCurrentIndex(1)
@@ -2215,14 +2215,14 @@ class MainWindow(QMainWindow):
 
     def reload_ng(self):
         logger.info("Reloading Neuroglancer Viewer...")
-        # self.use_neuroglancer_viewer()
+        # self.init_neuroglancer_client()
         self.ng_worker.create_viewer()
         self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
         self.ng_browser.setFocus()
         self.read_project_data_update_gui()
 
 
-    def use_neuroglancer_viewer(self):  #view_3dem #ngview #neuroglancer
+    def init_neuroglancer_client(self):  #view_3dem #ngview #neuroglancer
         '''
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
@@ -2237,7 +2237,8 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.setCurrentIndex(1)
         dest = os.path.abspath(cfg.data['data']['destination_path'])
         s, l = cfg.data.scale(), cfg.data.layer()
-        self.ng_worker = NgHost(src=dest, scale=s, port=9000)
+        # self.ng_worker = NgHost(src=dest, scale=s, port=9000)
+        self.ng_worker = NgHost(src=dest, scale=s, port=self.ng_worker.port)
         self.threadpool.start(self.ng_worker)
         self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
         self.ng_browser.setFocus()
@@ -2560,8 +2561,9 @@ class MainWindow(QMainWindow):
             ['&View',
              [
                  # ['Classic Viewer', 'None', self.use_classic_viewer, None, None, None],
-                 # ['Neuroglancer Viewer', 'None', self.use_neuroglancer_viewer, None, None, None],
+                 # ['Neuroglancer Viewer', 'None', self.init_neuroglancer_client, None, None, None],
                  ['Reload Neuroglancer', 'None', self.reload_ng, None, None, None],
+                 ['Init Neuroglancer Client', 'None', self.init_neuroglancer_client, None, None, None],
                  ['Neuroglancer Layout',
                   [
                       ['xy', None, self.ng_set_layout_xy, None, None, None],
@@ -2636,7 +2638,7 @@ class MainWindow(QMainWindow):
                  ['Neuroglancer',
                    [
                       ['Reload State', None, self.reload_ng, None, None, None],
-                      ['Reload Server', None, self.use_neuroglancer_viewer, None, None, None],
+                      ['Reload Server', None, self.init_neuroglancer_client, None, None, None],
                       ['Show Neuroglancer URL', None, self.print_url_ng, None, None, None],
                       ['Show Neuroglancer State URL', None, self.print_ng_state_url, None, None, None],
                       ['Show Neuroglancer State', None, self.print_ng_state, None, None, None],
@@ -3122,7 +3124,7 @@ class MainWindow(QMainWindow):
         # tip = 'View Zarr export in Neuroglancer.'
         # self.ng_button = QPushButton("View In\nNeuroglancer")
         # self.ng_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        # self.ng_button.clicked.connect(self.use_neuroglancer_viewer)
+        # self.ng_button.clicked.connect(self.init_neuroglancer_client)
         # self.ng_button.setFixedSize(normal_button_size)
         # # self.ng_button.setIcon(qta.icon("mdi.video-3d", color=ICON_COLOR))
         # self.ng_button.setStyleSheet("font-size: 9px;")
