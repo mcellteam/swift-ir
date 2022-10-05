@@ -45,6 +45,7 @@ os.environ['QT_API'] = 'pyqt6'
 
 import os, sys, signal, logging, argparse
 import src.config as cfg
+from src.helpers import print_exception
 
 
 
@@ -153,16 +154,19 @@ def main():
     logger.info('Showing AlignEM-SWiFT')
 
     logger.info('Running sys.exit(app.exec())...')
-    sys.exit(app.exec())
+    # sys.exit(app.exec())
 
-    # try:
-    #     logger.info('Trying sys.exit(app.exec())...')
-    #     sys.exit(app.exec())
-    #     # sys.exit(app.exec_())
-    # except:
-    #     logger.info('Trying sys.exit(app.exec_())...')
-    #     sys.exit(app.exec_())
-    #     # sys.exit(app.exec())
+    try:
+        logger.info('Trying sys.exit(app.exec())...')
+        sys.exit(app.exec())
+        # sys.exit(app.exec_())
+    except:
+        print_exception()
+        logger.info('Trying sys.exit(app.exec_())...')
+        sys.exit(app.exec_())
+        # sys.exit(app.exec())
+    finally:
+        print_exception()
 
 
 if __name__ == "__main__":
