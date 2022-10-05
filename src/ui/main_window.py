@@ -2221,6 +2221,17 @@ class MainWindow(QMainWindow):
         self.ng_browser.setFocus()
         self.read_project_data_update_gui()
 
+    def reload_ng_arg(self, arg:str) -> None:
+        logger.info("Reloading Neuroglancer Viewer...")
+        # self.init_neuroglancer_client()
+        self.ng_worker.create_viewer()
+        self.ng_browser.setUrl(QUrl(arg))
+        self.ng_browser.setFocus()
+        self.read_project_data_update_gui()
+
+    def set_url(self, text:str) -> None:
+        self.ng_browser.setUrl(QUrl(text))
+
 
     def init_neuroglancer_client(self):  #view_3dem #ngview #neuroglancer
         '''
@@ -2310,7 +2321,6 @@ class MainWindow(QMainWindow):
     def gpu_config(self):
         self.browser_docs.setUrl(QUrl('chrome://gpu'))
         self.main_widget.setCurrentIndex(1)
-
 
     def print_ng_state_url(self):
         try:
