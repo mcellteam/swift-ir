@@ -14,7 +14,6 @@ from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, Slot
 from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, are_images_imported
 from src.image_funcs import ImageSize, BoundingRect
-from src.zarr_funcs import get_zarr_tensor
 import src.config as cfg
 
 __all__ = ['NgHost']
@@ -149,123 +148,78 @@ class NgHost(QRunnable):
         cfg.viewer_url = str(cfg.viewer)
         scale_factor = cfg.data.scale_val()
 
+        aligned_url = os.path.join('img_aligned.zarr', 's' + str(scale_factor))
+        src_url = os.path.join('img_src.zarr', 's' + str(scale_factor))
+
         # This did the trick. Open tensorstore using filesystem path, not http.
-        al_name = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(scale_factor))
-        unal_name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(scale_factor))
+        al_name = os.path.join(cfg.data.dest(), aligned_url)
+        unal_name = os.path.join(cfg.data.dest(), src_url)
 
         slug = '_scale' + str(scale_factor)
 
+
+        if not is_aligned:
+            x_offset = 0
+            y_offset = 0
+        else:
+            al_img_dim = ImageSize(cfg.data.path_al())
+            x_offset = (al_img_dim[0] - img_dim[0]) / 2
+            y_offset = (al_img_dim[1] - img_dim[1]) / 2
+
+        scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
+
         with cfg.viewer.txn() as s:
 
-            if is_aligned:
-                al_dataset = get_zarr_tensor(al_name).result()
-            unal_dataset = get_zarr_tensor(unal_name).result()
-            # if is_aligned:
-            #     al_dataset = al_name
-            # unal_dataset = unal_name
+            '''NOTE: call .info on layer for tensor details'''
 
-            if is_aligned:
-                logger.info(al_dataset)
-            logger.info(unal_dataset)
-            if not is_aligned:
-                logger.info('Creating Local Volumes...')
-                scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
+            logger.info('Creating Local Volumes...')
+            if cfg.USE_TENSORSTORE:
+                from src.zarr_funcs import get_zarr_tensor_from_path
+                unal_dataset = get_zarr_tensor_from_path(unal_name).result()
                 ref_layer = ng.LocalVolume(
                     data=unal_dataset,
-                    dimensions=ng.CoordinateSpace(
-                        names=['z','y','x'],
-                        units='nm',
-                        scales=scales,
-                    ),
-                    voxel_offset=[1, 0, 0], # voxel offset of 1
+                    dimensions=ng.CoordinateSpace(names=['z','y','x'], units='nm', scales=scales,),
+                    voxel_offset=[1, x_offset, y_offset], # voxel offset of 1
                 )
-                logger.info('\nref_layer:\n%s\n' % ref_layer.info())
-                s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
-
                 base_layer = ng.LocalVolume(
                     data=unal_dataset,
-                    dimensions=ng.CoordinateSpace(
-                        names=['z','y','x'],
-                        units='nm',
-                        scales=scales,
-                    ),
-                    voxel_offset=[0, ] * 3,
-
+                    dimensions=ng.CoordinateSpace(names=['z', 'y', 'x'], units='nm', scales=scales, ),
+                    voxel_offset=[0, x_offset, y_offset]
                 )
-                logger.info('\nbase_layer:\n%s\n' % base_layer.info())
-                s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
-
-                # s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
-                s.position = [l, img_dim[1] / 2, img_dim[0] / 2]
-
-
-            else:
-                al_img_dim = ImageSize(cfg.data.path_al())
-
-                x_offset = (al_img_dim[0] - img_dim[0])/2
-                y_offset = (al_img_dim[1] - img_dim[1])/2
-
-                scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
-                ref_layer = ng.LocalVolume(
-                    data=unal_dataset,
-                    dimensions=ng.CoordinateSpace(
-                        names=['z', 'y', 'x'],
-                        units='nm',
-                        scales=scales,
-                    ),
-                    # voxel_offset=[1, 0, 0], # voxel offset of 1
-                    voxel_offset=[1, x_offset, y_offset],  # voxel offset of 1
-                )
-                logger.info('\nref_layer:\n%s\n' % ref_layer.info())
-                s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
-
-                base_layer = ng.LocalVolume(
-                    data=unal_dataset,
-                    dimensions=ng.CoordinateSpace(
-                        names=['z', 'y', 'x'],
-                        units='nm',
-                        scales=scales,
-                    ),
-                    # voxel_offset=[0, ] * 3,
-                    voxel_offset=[0, x_offset, y_offset],  # voxel offset of 1
-
-                )
-                logger.info('\nbase_layer:\n%s\n' % base_layer.info())
-                s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
-
                 if is_aligned:
+                    al_dataset = get_zarr_tensor_from_path(al_name).result()
                     al_layer = ng.LocalVolume(
                         data=al_dataset,
-                        dimensions=ng.CoordinateSpace(
-                            names=['z', 'y', 'x'],
-                            units='nm',
-                            scales=scales,
-                        ),
+                        dimensions=ng.CoordinateSpace(names=['z','y','x'], units='nm', scales=scales, ),
                         voxel_offset=[0, ] * 3,
                     )
-                    logger.info('\nal_layer:\n%s\n' % al_layer.info())
-                    s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
-
-                if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
-                    s.cross_section_background_color = "#ffffff"
-                else:
-                    # s.cross_section_background_color = "#000000"
-                    s.cross_section_background_color = "#004060"
-
-                rect = BoundingRect(cfg.data.aligned_dict())
-                # s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
-                s.position = [l, rect[3] / 2, rect[2] / 2]
-
-
-
-            logger.info('Setting Layouts...')
-            if is_aligned:
-                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=["ref" + slug], layout=self.layout),
-                                          ng.LayerGroupViewer(layers=["base" + slug], layout=self.layout),
-                                          ng.LayerGroupViewer(layers=["aligned" + slug], layout=self.layout)])
             else:
-                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=["ref" + slug], layout=self.layout),
-                                          ng.LayerGroupViewer(layers=["base" + slug], layout=self.layout)])
+                ref_layer = 'zarr://http://localhost:' + str(self.port) + '/' + src_url
+                base_layer = 'zarr://http://localhost:' + str(self.port) + '/' + src_url
+                if is_aligned:  al_layer = 'zarr://http://localhost:' + str(self.port) + '/' + aligned_url
+
+            s.layers['reference'] = ng.ImageLayer(source=ref_layer)
+            s.layers['base'] = ng.ImageLayer(source=base_layer)
+            if is_aligned:  s.layers['aligned'] = ng.ImageLayer(source=al_layer)
+
+            logger.info('Setting ng.LayerGroupViewer Layouts...')
+            if is_aligned:
+                rect = BoundingRect(cfg.data.aligned_dict())
+                s.position = [l, rect[3] / 2, rect[2] / 2]
+                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['reference'], layout=self.layout),
+                                          ng.LayerGroupViewer(layers=['base'], layout=self.layout),
+                                          ng.LayerGroupViewer(layers=['aligned'], layout=self.layout)])
+            else:
+                # s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
+                s.position = [l, img_dim[1] / 2, img_dim[0] / 2]
+                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['reference'], layout=self.layout),
+                                          ng.LayerGroupViewer(layers=['base'], layout=self.layout)])
+
+            if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
+                s.cross_section_background_color = "#ffffff"
+            else:
+                # s.cross_section_background_color = "#000000"
+                s.cross_section_background_color = "#004060"
 
             # s.cross_section_scale = 2
 

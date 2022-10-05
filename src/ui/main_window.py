@@ -43,7 +43,7 @@ from src.ui.python_console import PythonConsole
 # from src.utils.PyQtImageViewer import QtImageViewer
 from src.ui.splash import SplashScreen
 from src.ui.dialogs import ConfigDialog
-from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor, generate_zarr_scales
+from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor_from_path, generate_zarr_scales
 
 __all__ = ['MainWindow']
 
@@ -1401,7 +1401,7 @@ class MainWindow(QMainWindow):
     #         for s in cfg.data.scales():
     #             # name = os.path.join(cfg.data.dest(), s + '.zarr')
     #             name = os.path.join(cfg.data.dest(), 'img_src.zarr', 's' + str(get_scale_val(s)))
-    #             dataset_future = get_zarr_tensor(name)
+    #             dataset_future = get_zarr_tensor_from_path(name)
     #             scale_str = 's' + str(get_scale_val(s))
     #             self.zarr_scales[scale_str] = dataset_future.result()
     #     except:
@@ -1455,7 +1455,7 @@ class MainWindow(QMainWindow):
     #             # np_data = np.transpose(np_data, axes=[1, 2, 0])
     #             # zarr_data = da.from_zarr(path, inline_array=True) # <class 'dask.array.core.Array' #orig
     #             # zarr_data = np.moveaxis(zarr_data,0,2) # Now has shape (512, 512, 1)
-    #             dataset_future = get_zarr_tensor(path)
+    #             dataset_future = get_zarr_tensor_from_path(path)
     #
     #             logger.info('Calling dataset_future.result()')
     #             t0 = time.time()
@@ -1595,7 +1595,7 @@ class MainWindow(QMainWindow):
         dialog = QFileDialog()
         dialog.setOption(QFileDialog.DontUseNativeDialog)
         # dialog.setProxyModel(FileFilterProxyModel())
-        dialog.setWindowTitle('Import Images To %s' % cfg.data.name())
+        dialog.setWindowTitle('Import Images - %s' % cfg.data.name())
         dialog.setNameFilter('Images (*.tif *.tiff)')
         dialog.setFileMode(QFileDialog.ExistingFiles)
 

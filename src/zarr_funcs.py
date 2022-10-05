@@ -20,13 +20,12 @@ import zarr
 import tifffile
 import imagecodecs
 import dask.array as da
-import tensorstore as ts
 import src.config as cfg
 from src.helpers import get_scale_val, time_limit
 from src.image_funcs import BoundingRect, imageio_read_image
 from src.helpers import get_images_list_directly
 
-__all__ = ['get_zarr_tensor', 'preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
+__all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
 
 logger = logging.getLogger(__name__)
 
@@ -80,7 +79,7 @@ def loadTiffsMp(directory:str):
     return image_arrays
 
 
-def get_zarr_tensor(zarr_path):
+def get_zarr_tensor_from_path(zarr_path):
     '''
     Returns an asynchronous TensorStore future object which is a view
     into the Zarr image on disk. All TensorStore indexing operations
@@ -93,6 +92,9 @@ def get_zarr_tensor(zarr_path):
     :return: A view into the dataset.
     :rtype: tensorstore.Future
     '''
+
+    import tensorstore as ts
+
     system = platform.system()
     node = platform.node()
 
