@@ -41,12 +41,15 @@ $ qtpy mypy-args
 """
 import qtpy
 import os
+
 # os.environ['QT_API'] = 'pyqt6'
-os.environ['QT_API'] = 'pyqt5'
+# os.environ['QT_API'] = 'pyqt5'
+# os.environ['QT_API'] = 'pyside2'
 
 import os, sys, signal, logging, argparse
 import src.config as cfg
 from src.helpers import print_exception
+from qtpy import QtCore
 
 
 
@@ -98,8 +101,12 @@ def main():
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
-    os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
+    # os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+
+    logger.critical('QtCore.__version__ = %s' % QtCore.__version__)
+    logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
+    logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
 
     from PIL import Image
     from qtpy.QtWidgets import QApplication
@@ -121,11 +128,10 @@ def main():
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
-    os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
+    # os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
     # os.environ['QT_API'] = 'pyqt6'
-    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
-    logger.info('QT API (qtpy): %s' % qtpy.API)
 
     # Qt5 Only
     if qtpy.QT5:
