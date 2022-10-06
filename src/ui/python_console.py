@@ -26,7 +26,7 @@ class PythonConsole(qtconsole.rich_jupyter_widget.RichJupyterWidget):
         self.execute_command('from src.config import main_window')
         self.execute_command('from src.helpers import *')
         self.execute_command('import os, sys, zarr, neuroglancer')
-        self.execute_command('from qtpy.QtCore import QUrl')s
+        self.execute_command('from qtpy.QtCore import QUrl')
         self.execute('clear')
         self.out_prompt = 'AlignEM [<span class="out-prompt-number">%i</span>]: '
 
