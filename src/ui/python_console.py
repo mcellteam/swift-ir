@@ -1,9 +1,11 @@
 import qtconsole
 from IPython.lib import guisupport
+from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtconsole.inprocess import QtInProcessKernelManager
 from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt
 
-class PythonConsole(qtconsole.rich_jupyter_widget.RichJupyterWidget):
+class PythonConsole(RichJupyterWidget):
 
     def __init__(self, customBanner=None, *args, **kwargs):
         super(PythonConsole, self).__init__(*args, **kwargs)
@@ -15,7 +17,7 @@ class PythonConsole(qtconsole.rich_jupyter_widget.RichJupyterWidget):
 
         # self.font_size = 6
         # self.font_size = 4
-        self.kernel_manager = qtconsole.inprocess.QtInProcessKernelManager()
+        self.kernel_manager = QtInProcessKernelManager()
         self.kernel_manager.start_kernel(show_banner=False)
         self.kernel_manager.kernel.gui = 'qt'
         self.kernel_client = self._kernel_manager.client()
