@@ -1624,26 +1624,26 @@ class MainWindow(QMainWindow):
     
     def open_project_dialog(self) -> str:
         '''Dialog for opening a data. Returns 'filename'.'''
-        caption = "Open Project (.proj)"
-        filter = "Project (*.proj *.json)"
-        # if qtpy.QT5:
-        # options = QFileDialog.Options()
-        # options |= QFileDialog.DontUseNativeDialog
-        response = QFileDialog.getOpenFileName(
-            parent=self,
-            caption=caption,
-            filter=filter,
-            # options=options,
-        )
-        # dialog = QFileDialog()
-        # dialog.setOption(QFileDialog.DontUseNativeDialog)
-        # # dialog.setProxyModel(FileFilterProxyModel())
-        # dialog.setWindowTitle('Open Project (.json)')
-        # dialog.setNameFilter("Text Files (*.json)")
-        # dialog.exec()
+        # caption = "Open Project (.proj)"
+        # filter = "Project (*.proj *.json)"
+        # # if qtpy.QT5:
+        # # options = QFileDialog.Options()
+        # # options |= QFileDialog.DontUseNativeDialog
+        # response = QFileDialog.getOpenFileName(
+        #     parent=self,
+        #     caption=caption,
+        #     filter=filter,
+        #     # options=options,
+        # )
+        dialog = QFileDialog()
+        dialog.setOption(QFileDialog.DontUseNativeDialog)
+        # dialog.setProxyModel(FileFilterProxyModel())
+        dialog.setWindowTitle('Open Project (*.proj *.json)')
+        dialog.setNameFilter("Text Files (*.proj *.json)")
+        dialog.exec()
 
-        return response[0]
-        # return dialog.selectedFiles()[0]
+        # return response[0]
+        return dialog.selectedFiles()[0]
 
     def save_project_dialog(self) -> str:
         '''Dialog for saving a data. Returns 'filename'.'''
@@ -1970,16 +1970,21 @@ class MainWindow(QMainWindow):
         logger.info('Setting Splash Controls...')
         self._splash = True
 
+        # self.bottom_widget.hide()
+
+        self.python_console.show()
+
+        self.snr_plot_and_control.hide()
+        self.hud.hide()
 
         self.title_label.show()
         self.subtitle_label.show()
         # self.bottom_display_area_widget.hide()
-        self.hud.hide()
-        self.snr_plot.hide()
-        # self.bottom_display_area_controls.hide()
-        self.bottom_widget.hide()
+        self.bottom_panel_controls.hide()
+
         self.dual_viewer_w_banner.hide()
         self.menu.hide()
+
 
         self.control_panel.setStyleSheet('background-color: #f3f6fb;')
         self.main_splitter.setAutoFillBackground(True)
@@ -2031,14 +2036,19 @@ class MainWindow(QMainWindow):
 
         self._splash = False
 
+        # self.bottom_widget.show() # <- culprit
+
+        self.snr_plot_and_control.show()
+        self.hud.show()
+
         self.title_label.hide()
         self.subtitle_label.hide()
 
         self.hud.show()
         self.snr_plot.show()
 
-        # self.bottom_display_area_controls.show() # <- culprit
-        self.bottom_widget.show() # <- culprit
+        self.bottom_panel_controls.show() # <- culprit
+
         self.dual_viewer_w_banner.show()
 
         # self.image_panel_stack_widget.setCurrentIndex(1)
@@ -3513,11 +3523,14 @@ class MainWindow(QMainWindow):
         # self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
+        self.bottom_panel_controls = QWidget()
+        self.bottom_panel_controls.setLayout(self.main_lwr_vlayout)
 
         self.bottom_display_area_hlayout = QHBoxLayout()
         self.bottom_display_area_hlayout.setContentsMargins(0, 0, 0, 0)
         self.bottom_display_area_hlayout.addWidget(self.bottom_panel_splitter)
-        self.bottom_display_area_hlayout.addLayout(self.main_lwr_vlayout)
+        # self.bottom_display_area_hlayout.addLayout(self.main_lwr_vlayout)
+        self.bottom_display_area_hlayout.addWidget(self.bottom_panel_controls)
         self.bottom_display_area_hlayout.setSpacing(2)
         self.bottom_widget = QWidget()
         self.bottom_widget.setLayout(self.bottom_display_area_hlayout)
