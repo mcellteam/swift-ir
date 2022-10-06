@@ -210,7 +210,6 @@ dependencies:
     - pyqt6==6.4.0
     - pyqt6-qt6==6.4.0
     - pyqt6-sip==13.4.0
-    - pyqt6-webengine==6.4.0
     - pyqt6-webengine-qt6==6.4.0
     - pyqtchart==5.12
     - pyqtwebengine==5.12.1
