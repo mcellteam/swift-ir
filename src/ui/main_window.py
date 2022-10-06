@@ -1972,6 +1972,15 @@ class MainWindow(QMainWindow):
 
         # self.bottom_widget.hide()
 
+        self.new_project_button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.open_project_button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.save_project_button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.remote_viewer_button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.documentation_button.setCursor(QCursor(Qt.PointingHandCursor))
+        self.exit_app_button.setCursor(QCursor(Qt.PointingHandCursor))
+
+
+
         self.python_console.show()
 
         self.snr_plot_and_control.hide()
@@ -2035,6 +2044,13 @@ class MainWindow(QMainWindow):
         logger.info('Setting Project Controls...')
 
         self._splash = False
+
+        self.new_project_button.setCursor(QCursor(Qt.ArrowCursor))
+        self.open_project_button.setCursor(QCursor(Qt.ArrowCursor))
+        self.save_project_button.setCursor(QCursor(Qt.ArrowCursor))
+        self.remote_viewer_button.setCursor(QCursor(Qt.ArrowCursor))
+        self.documentation_button.setCursor(QCursor(Qt.ArrowCursor))
+        self.exit_app_button.setCursor(QCursor(Qt.ArrowCursor))
 
         # self.bottom_widget.show() # <- culprit
 
