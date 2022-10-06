@@ -23,7 +23,7 @@ import dask.array as da
 import src.config as cfg
 from src.helpers import get_scale_val, time_limit
 from src.image_funcs import BoundingRect, imageio_read_image
-from src.helpers import get_images_list_directly
+from src.helpers import get_images_list_directly, print_exception
 
 __all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
 
@@ -33,32 +33,23 @@ def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
     '''Convert Tiffs to Zarr with implicit dask array
     Ref: https://forum.image.sc/t/store-many-tiffs-into-equal-sized-tiff-stacks-for-hdf5-zarr-chunks-using-ome-tiff-format/61055
     '''
-    print('Converting Tiff To Zarr...')
+    logger.info('Converting Tiff To Zarr...')
+    logger.info(str(tif_files))
+
     def imread(filename):
         with open(filename, 'rb') as fh:
             data = fh.read()
         return imagecodecs.tiff_decode(data) # return first image in TIFF file as numpy array
-
-    with tifffile.FileSequence(imread, tif_files) as tifs:
-        with tifs.aszarr() as store:
-            array = da.from_zarr(store)
-            #array.visualize(filename='_dask_visualize.png') # print dask task graph to file
-            array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
-            # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
-            # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
-
-def tiffs2zarr_(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
-    def imread(filename):
-        with open(filename, 'rb') as fh:
-            data = fh.read()
-        # return first image in TIFF file as numpy array
-        return imagecodecs.tiff_decode(data)
-
-    with tifffile.FileSequence(imread, tif_files) as tifs:
-        with tifs.aszarr() as store:
-            array = da.from_zarr(store)
-            array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
-
+    try:
+        with tifffile.FileSequence(imread, tif_files) as tifs:
+            with tifs.aszarr() as store:
+                array = da.from_zarr(store)
+                #array.visualize(filename='_dask_visualize.png') # print dask task graph to file
+                array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
+                # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
+                # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
+    except:
+        print_exception()
 
 def loadTiffsMp(directory:str):
     '''
