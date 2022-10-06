@@ -20,7 +20,13 @@ wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge
 echo "Running Miniforge (conda) installer w/ default options..."
 curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
 sh $WORK/Miniforge3-Linux-x86_64.sh -b
-$WORiK/miniforge3/condabin/conda init
+$WORK/miniforge3/condabin/conda init
+
+echo "Installing a recent version of nvm..."
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+nvm install stable
+
+echo
 
 echo "Sourcing .bashrc..."
 source ~/.bashrc
