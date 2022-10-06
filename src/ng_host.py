@@ -151,6 +151,8 @@ class NgHost(QRunnable):
         aligned_url = os.path.join('img_aligned.zarr', 's' + str(scale_factor))
         src_url = os.path.join('img_src.zarr', 's' + str(scale_factor))
 
+        slug = '_scale' + str(scale_factor)
+
         # This did the trick. Open tensorstore using filesystem path, not http.
         al_name = os.path.join(cfg.data.dest(), aligned_url)
         unal_name = os.path.join(cfg.data.dest(), src_url)
@@ -195,22 +197,22 @@ class NgHost(QRunnable):
                 base_layer = 'zarr://http://localhost:' + str(self.port) + '/' + src_url
                 if is_aligned:  al_layer = 'zarr://http://localhost:' + str(self.port) + '/' + aligned_url
 
-            s.layers['reference'] = ng.ImageLayer(source=ref_layer)
-            s.layers['base'] = ng.ImageLayer(source=base_layer)
-            if is_aligned:  s.layers['aligned'] = ng.ImageLayer(source=al_layer)
+            s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
+            s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
+            if is_aligned:  s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
 
             logger.info('Setting ng.LayerGroupViewer Layouts...')
             if is_aligned:
                 rect = BoundingRect(cfg.data.aligned_dict())
                 s.position = [l, rect[3] / 2, rect[2] / 2]
-                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['reference'], layout=self.layout),
-                                          ng.LayerGroupViewer(layers=['base'], layout=self.layout),
-                                          ng.LayerGroupViewer(layers=['aligned'], layout=self.layout)])
+                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
+                                          ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout),
+                                          ng.LayerGroupViewer(layers=['aligned' + slug], layout=self.layout)])
             else:
                 # s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
                 s.position = [l, img_dim[1] / 2, img_dim[0] / 2]
-                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['reference'], layout=self.layout),
-                                          ng.LayerGroupViewer(layers=['base'], layout=self.layout)])
+                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
+                                          ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout)])
 
             if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
                 s.cross_section_background_color = "#ffffff"
