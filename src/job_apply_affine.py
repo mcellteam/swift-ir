@@ -13,9 +13,6 @@ from PIL import Image
 import zarr
 # import tifffile
 
-
-
-
 logger = logging.getLogger(__name__)
 
 def run_command(cmd, arg_list=None, cmd_input=None):

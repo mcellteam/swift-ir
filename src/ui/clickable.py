@@ -3,10 +3,9 @@
 '''https://stackoverflow.com/questions/2711033/how-code-a-image-button-in-pyqt'''
 
 import logging
-from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QAbstractButton
-from qtpy.QtCore import Qt
-from qtpy.QtCore import Signal
+from qtpy.QtCore import Qt, Signal
 from qtpy.QtGui import QPainter, QPixmap
+from qtpy.QtWidgets import QLabel, QAbstractButton
 
 logger = logging.getLogger(__name__)
 
