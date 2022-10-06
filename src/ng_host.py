@@ -134,7 +134,7 @@ class NgHost(QRunnable):
             return
 
         #Todo set different coordinates for the two different datasets. For now use larger dim.
-        # img_dim = ImageSize(cfg.data.path_base())
+        img_dim = ImageSize(cfg.data.path_base())
 
         logger.info('Creating the Neuroglancer Viewer...')
         addr = "zarr://http://localhost:" + str(self.port)
@@ -161,9 +161,9 @@ class NgHost(QRunnable):
             x_offset = 0
             y_offset = 0
         else:
-            # al_img_dim = ImageSize(cfg.data.path_al())
-            # x_offset = (al_img_dim[0] - img_dim[0]) / 2
-            # y_offset = (al_img_dim[1] - img_dim[1]) / 2
+            al_img_dim = ImageSize(cfg.data.path_al())
+            x_offset = (al_img_dim[0] - img_dim[0]) / 2
+            y_offset = (al_img_dim[1] - img_dim[1]) / 2
 
             x_offset = 0
             y_offset = 0
@@ -213,7 +213,7 @@ class NgHost(QRunnable):
                                           ng.LayerGroupViewer(layers=['aligned' + slug], layout=self.layout)])
             else:
                 # s.position = [l, img_dim[0] / 2, img_dim[1] / 2]
-                # s.position = [l, img_dim[1] / 2, img_dim[0] / 2]
+                s.position = [l, img_dim[1] / 2, img_dim[0] / 2]
                 s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
                                           ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout)])
 
