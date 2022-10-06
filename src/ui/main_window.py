@@ -1603,7 +1603,8 @@ class MainWindow(QMainWindow):
         urls.append(QUrl.fromLocalFile(QDir.homePath()))
         if '.tacc.utexas.edu' in platform.node():
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
-            urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+            urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
         dialog.setSidebarUrls(urls)
 
         # response = dialog.exec()
@@ -1640,6 +1641,15 @@ class MainWindow(QMainWindow):
         # dialog.setProxyModel(FileFilterProxyModel())
         dialog.setWindowTitle('Open Project (*.proj *.json)')
         dialog.setNameFilter("Text Files (*.proj *.json)")
+
+        urls = []
+        urls.append(QUrl.fromLocalFile(QDir.homePath()))
+        if '.tacc.utexas.edu' in platform.node():
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
+        dialog.setSidebarUrls(urls)
+
         dialog.exec()
 
         # return response[0]
