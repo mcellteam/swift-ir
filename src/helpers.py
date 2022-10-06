@@ -571,7 +571,7 @@ def show_process_diagnostics():
     nthreadpool = cfg.main_window.threadpool.activeThreadCount
 
 
-    cfg.main_window.hud.post('\n\nmain_window.threadpool Active thread count: %d' % (nthreadpool))
+    cfg.main_window.hud.post('\n\nmain_window.threadpool Active thread count: %d' % nthreadpool)
 
 
 def print_snr_list() -> None:
