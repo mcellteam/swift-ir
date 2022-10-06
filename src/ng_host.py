@@ -155,9 +155,6 @@ class NgHost(QRunnable):
         al_name = os.path.join(cfg.data.dest(), aligned_url)
         unal_name = os.path.join(cfg.data.dest(), src_url)
 
-        slug = '_scale' + str(scale_factor)
-
-
         if not is_aligned:
             x_offset = 0
             y_offset = 0
