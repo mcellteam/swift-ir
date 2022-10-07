@@ -8,8 +8,8 @@ import os.path
 import logging
 import numpy as np
 # from PIL import Image
-import dask
-import dask.array
+# import dask
+# import dask.array
 import tensorstore as ts
 
 try:

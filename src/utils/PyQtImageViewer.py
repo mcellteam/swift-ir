@@ -11,7 +11,7 @@ pip install qimage2ndarray
 import os.path
 import logging
 logger = logging.getLogger(__name__)
-import dask
+# import dask
 
 try:
     from qtpy.QtCore import Qt, QRectF, QPoint, QPointF, Signal, QEvent, QSize, QTimer

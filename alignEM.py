@@ -41,6 +41,7 @@ $ qtpy mypy-args
 """
 import qtpy
 import os
+import time
 
 os.environ['QT_API'] = 'pyside6'
 # os.environ['QT_API'] = 'pyqt5'

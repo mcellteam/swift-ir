@@ -10,7 +10,8 @@ main_window = None
 viewer = None
 
 '''Default Window Size'''
-WIDTH, HEIGHT = 1250, 800
+# WIDTH, HEIGHT = 1250, 800
+WIDTH, HEIGHT = 1050, 700
 
 '''Default Alignment Params'''
 DEFAULT_SWIM_WINDOW       = float(0.8125)

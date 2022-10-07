@@ -29,8 +29,8 @@ import zarr
 import shutil
 import tifffile
 import numpy as np
-from dask import bag
-from dask import delayed
+# from dask import bag
+# from dask import delayed
 from shutil import rmtree
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need
