@@ -5,18 +5,15 @@
 #     CONNECT TO Lonestar6 THROUGH THE VIS PORTAL. CHOOSE DCV SESSION.
 #     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
 
-
-
-
-========================== THE EASY WAY ======
+========================== ALIGNEM-SWIFT THE EASY WAY ======
 
 
 Do Once --------------------------------------
 
-cdw                                                          # change directory to 'work' partition
-git clone https://github.com/mcellteam/swift-ir.git          # clone the AlignEM-SWiFT source code
-cd swift-ir/                                                 # change directory to top-level of application
-git checkout development_ng                                  # Note: 'git status' will tell you your current branch
+cdw
+git clone https://github.com/mcellteam/swift-ir.git
+cd swift-ir/
+git checkout development_ng
 source tacc_runonce
 
 Do Every Time --------------------------------
@@ -27,7 +24,7 @@ align
 
 
 
-========================== THE HARD WAY ======
+========================== ALIGNEM-SWIFT THE HARD WAY ======
 
 Do Once --------------------------------------
 
