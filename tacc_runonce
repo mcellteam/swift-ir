@@ -1,3 +1,4 @@
+#!/bin/bash
 # INSTRUCTIONS TO RUN AlignEM-SWiFT ON Lonestar6 AT TACC
 # (DEPLOYMENT BY CONDA ENVIRONMENT STRATEGY)
 
@@ -14,14 +15,18 @@ echo "Setting things up..."
 echo "Changing directory to WORK directory..."
 cd $WORK
 
-echo "Checking if Miniforge (conda) is installed..."
+echo "Checking if miniforge (conda) is installed..."
 if [ ! -d "$HOME/miniforge3" ]; then
-  echo "Getting Miniforge (conda) installer..."
+  echo "Setting Miniforge (conda) installer..."
   wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
   echo "$HOME/miniforge3 does not exist - Installing miniforge..."
   curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
   sh $WORK/Miniforge3-Linux-x86_64.sh -b
   $WORK/miniforge3/condabin/conda init
+fi
+
+if [ ! -d "$HOME/miniforge3" ]; then
+  echo "not installed"
 fi
 
 echo "Installing a recent version of nvm..."
@@ -34,14 +39,19 @@ source ~/.bashrc
 echo "Turning off annoying conda base environment so DCV will work..."
 conda config --set auto_activate_base false
 
-echo "Cloning AlignEM-SWiFT..."
-git clone https://github.com/mcellteam/swift-ir.git
+
+echo "Checking if swift-ir exists in $WORK..."
+if [ ! -d "$WORK/swift-ir" ]; then
+  echo "Cloning AlignEM-SWiFT..."
+  git clone https://github.com/mcellteam/swift-ir.git
+fi
 
 echo "Changing directory to swift-ir..."
 cd swift-ir/
 
 echo "Checking out development_ng branch..."
 git checkout development_ng
+git pull
 
 echo "Purging modules..."
 module purge
