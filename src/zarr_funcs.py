@@ -19,7 +19,7 @@ import imageio.v3 as iio
 import zarr
 import tifffile
 import imagecodecs
-import dask.array as da
+# import dask.array as da
 import src.config as cfg
 from src.helpers import get_scale_val, time_limit
 from src.image_funcs import BoundingRect, imageio_read_image

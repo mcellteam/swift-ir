@@ -198,7 +198,7 @@ class TaskQueue(QObject):
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
                 # if cfg.LOG_LEVEL < 20:
-                # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
+                logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc
