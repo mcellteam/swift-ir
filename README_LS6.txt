@@ -21,8 +21,9 @@ cd swift-ir/                                                 # change directory 
 git checkout development_ng                                  # Note: 'git status' will tell you your current branch
 
 (3) CREATE CONDA ENVIRONMENT
-module purge                                                 # purge modules before creating the environment
-conda env create --name=alignTACC  --file tacc.yml python=3.9    # create the environment described in 'tacc.yml'
+module purge
+conda env remove -n alignTACC                                # remove the env if created previously
+conda env create --name=alignTACC --file tacc.yml python=3.9 # create the environment described in 'tacc.yml'
 
 #######################################
 DO EVERY TIME
@@ -35,6 +36,12 @@ conda activate alignTACC                                        # activate the e
 cd $WORK/swift-ir                                            # change to top-level of application directory
 git pull                                                     # set your version to the most up-to-date version
 
-(3) RUN AlignEM-SWiFT
-python3 alignEM.py
+(3) SET QT API
+export QT_API=pyside6
+
+(4) LOAD MODULES
+ml intel/19.1.1 swr/21.2.5 python_cacher
+
+(5) RUN THE APPLICATION
+swr numactl --preferred=1 python3 alignEM.py
 
