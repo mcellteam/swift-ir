@@ -49,8 +49,8 @@ module purge
 echo "Creating Conda environment from tacc.yml..."
 conda env create --name=TACC01 --file tacc.yml python=3.9
 
-echo "Adding alignEM.py to PATH in .bashrc..."
-echo 'export PATH="$PATH:$WORK/swift-ir/alignEM.py"' >> ~/.bashrc
+#echo "Adding alignEM.py to PATH in .bashrc..."
+#echo 'export PATH="$PATH:$WORK/swift-ir/alignEM.py"' >> ~/.bashrc
 
 echo "Adding QT_API=pyside6 to .bashrc..."
 echo  'export QT_API=pyside6' >> ~/.bashrc
