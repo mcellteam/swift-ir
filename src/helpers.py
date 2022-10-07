@@ -683,105 +683,105 @@ class SwiftirException:
 ZARR_AXES_3D = ["z", "y", "x"]
 DEFAULT_ZARR_STORE = zarr.NestedDirectoryStore
 
-
-def get_arrays(obj: Any) -> Tuple[zarr.core.Array]:
-    result = ()
-    if isinstance(obj, zarr.core.Array):
-        result = (obj,)
-    elif isinstance(obj, zarr.hierarchy.Group):
-        if len(tuple(obj.arrays())) > 1:
-            names, arrays = zip(*obj.arrays())
-            result = tuple(concat(map(get_arrays, arrays)))
-    return result
-
-def access_zarr(store: Union[str, Path], path: Union[str, Path], **kwargs) -> Any:
-    if isinstance(store, Path):
-        store = str(store)
-
-    if isinstance(store, str) and kwargs.get("mode") == "w":
-        store = DEFAULT_ZARR_STORE(store)
-
-    if isinstance(path, Path):
-        path = str(path)
-
-    attrs = kwargs.pop("attrs", {})
-
-    # zarr is extremely slow to delete existing directories, so we do it ourselves
-    if kwargs.get("mode") == "w":
-        tmp_kwargs = kwargs.copy()
-        tmp_kwargs["mode"] = "a"
-        tmp = zarr.open(store, path=path, **tmp_kwargs)
-        # todo: move this logic to methods on the stores themselves
-        if isinstance(
-            tmp.store, (zarr.N5Store, zarr.DirectoryStore, zarr.NestedDirectoryStore)
-        ):
-            logger.info(f"Beginning parallel rmdir of {tmp.path}...")
-            pre = time.time()
-            delete_zbranch(tmp)
-            post = time.time()
-            logger.info(f"Completed parallel rmdir of {tmp.path} in {post - pre}s.")
-    array_or_group = zarr.open(store, path=path, **kwargs)
-    if kwargs.get("mode") != "r" and len(attrs) > 0:
-        array_or_group.attrs.update(attrs)
-    return array_or_group
-
-def delete_zbranch(
-    branch: Union[zarr.hierarchy.Group, zarr.core.Array], compute: bool = True
-):
-    """
-    Delete a branch (group or array) from a zarr container
-    """
-    if isinstance(branch, zarr.hierarchy.Group):
-        return delete_zgroup(branch, compute=compute)
-    elif isinstance(branch, zarr.core.Array):
-        return delete_zarray(branch, compute=compute)
-    else:
-        raise TypeError(
-            f"The first argument to this function my be a zarr group or array, not {type(branch)}"
-        )
-
-def delete_zgroup(zgroup: zarr.hierarchy.Group, compute: bool = True):
-    """
-    Delete all arrays in a zarr group
-    """
-    if not isinstance(zgroup, zarr.hierarchy.Group):
-        raise TypeError(
-            f"Cannot use the delete_zgroup function on object of type {type(zgroup)}"
-        )
-
-    arrays = get_arrays(zgroup)
-    to_delete = delayed([delete_zarray(arr, compute=False) for arr in arrays])
-
-    if compute:
-        return to_delete.compute()
-    else:
-        return to_delete
-
-
-def delete_zarray(arr: zarr.core.Array, compute: bool = True):
-    """
-    Delete a zarr array.
-    """
-
-    if not isinstance(arr, zarr.core.Array):
-        raise TypeError(
-            f"Cannot use the delete_zarray function on object of type {type(arr)}"
-        )
-
-    keys = map(lambda v: os.path.join(arr.chunk_store.path, v), arr.chunk_store.keys())
-    key_bag = bag.from_sequence(keys)
-    delete_op = key_bag.map_partitions(lambda v: [os.remove(f) for f in v])
-    if compute:
-        return delete_op.compute()
-    else:
-        return delete_op
-
-def zarr_array_from_dask(arr: Any) -> Any:
-    """
-    Return the zarr array that was used to create a dask array using `da.from_array(zarr_array)`
-    """
-    keys = tuple(arr.dask.keys())
-    return arr.dask[keys[-1]]
+#
+# def get_arrays(obj: Any) -> Tuple[zarr.core.Array]:
+#     result = ()
+#     if isinstance(obj, zarr.core.Array):
+#         result = (obj,)
+#     elif isinstance(obj, zarr.hierarchy.Group):
+#         if len(tuple(obj.arrays())) > 1:
+#             names, arrays = zip(*obj.arrays())
+#             result = tuple(concat(map(get_arrays, arrays)))
+#     return result
+#
+# def access_zarr(store: Union[str, Path], path: Union[str, Path], **kwargs) -> Any:
+#     if isinstance(store, Path):
+#         store = str(store)
+#
+#     if isinstance(store, str) and kwargs.get("mode") == "w":
+#         store = DEFAULT_ZARR_STORE(store)
+#
+#     if isinstance(path, Path):
+#         path = str(path)
+#
+#     attrs = kwargs.pop("attrs", {})
+#
+#     # zarr is extremely slow to delete existing directories, so we do it ourselves
+#     if kwargs.get("mode") == "w":
+#         tmp_kwargs = kwargs.copy()
+#         tmp_kwargs["mode"] = "a"
+#         tmp = zarr.open(store, path=path, **tmp_kwargs)
+#         # todo: move this logic to methods on the stores themselves
+#         if isinstance(
+#             tmp.store, (zarr.N5Store, zarr.DirectoryStore, zarr.NestedDirectoryStore)
+#         ):
+#             logger.info(f"Beginning parallel rmdir of {tmp.path}...")
+#             pre = time.time()
+#             delete_zbranch(tmp)
+#             post = time.time()
+#             logger.info(f"Completed parallel rmdir of {tmp.path} in {post - pre}s.")
+#     array_or_group = zarr.open(store, path=path, **kwargs)
+#     if kwargs.get("mode") != "r" and len(attrs) > 0:
+#         array_or_group.attrs.update(attrs)
+#     return array_or_group
+#
+# def delete_zbranch(
+#     branch: Union[zarr.hierarchy.Group, zarr.core.Array], compute: bool = True
+# ):
+#     """
+#     Delete a branch (group or array) from a zarr container
+#     """
+#     if isinstance(branch, zarr.hierarchy.Group):
+#         return delete_zgroup(branch, compute=compute)
+#     elif isinstance(branch, zarr.core.Array):
+#         return delete_zarray(branch, compute=compute)
+#     else:
+#         raise TypeError(
+#             f"The first argument to this function my be a zarr group or array, not {type(branch)}"
+#         )
+#
+# def delete_zgroup(zgroup: zarr.hierarchy.Group, compute: bool = True):
+#     """
+#     Delete all arrays in a zarr group
+#     """
+#     if not isinstance(zgroup, zarr.hierarchy.Group):
+#         raise TypeError(
+#             f"Cannot use the delete_zgroup function on object of type {type(zgroup)}"
+#         )
+#
+#     arrays = get_arrays(zgroup)
+#     to_delete = delayed([delete_zarray(arr, compute=False) for arr in arrays])
+#
+#     if compute:
+#         return to_delete.compute()
+#     else:
+#         return to_delete
+#
+#
+# def delete_zarray(arr: zarr.core.Array, compute: bool = True):
+#     """
+#     Delete a zarr array.
+#     """
+#
+#     if not isinstance(arr, zarr.core.Array):
+#         raise TypeError(
+#             f"Cannot use the delete_zarray function on object of type {type(arr)}"
+#         )
+#
+#     keys = map(lambda v: os.path.join(arr.chunk_store.path, v), arr.chunk_store.keys())
+#     key_bag = bag.from_sequence(keys)
+#     delete_op = key_bag.map_partitions(lambda v: [os.remove(f) for f in v])
+#     if compute:
+#         return delete_op.compute()
+#     else:
+#         return delete_op
+#
+# def zarr_array_from_dask(arr: Any) -> Any:
+#     """
+#     Return the zarr array that was used to create a dask array using `da.from_array(zarr_array)`
+#     """
+#     keys = tuple(arr.dask.keys())
+#     return arr.dask[keys[-1]]
 
 # def zarr_to_dask(urlpath: str, chunks: Union[str, Sequence[int]], **kwargs):
 #     store_path, key, _ = split_by_suffix(urlpath, (".zarr",))
@@ -806,66 +806,66 @@ def create_paged_tiff():
     image_sequence.shape
     Out[29]: (34, 4096, 4096)
     '''
-
-@delayed
-def _rmtree_after_delete_files(path: str, dependency: Any):
-    rmtree(path)
-
-
-def rmtree_parallel(
-    path: Union[str, Path], branch_depth: int = 1, compute: bool = True
-):
-    branches = glob(os.path.join(path, *("*",) * branch_depth))
-    deleter = os.remove
-    files = list_files_parallel(branches)
-    deleted_files = bag.from_sequence(files).map(deleter)
-    result = _rmtree_after_delete_files(path, dependency=deleted_files)
-
-    if compute:
-        return result.compute(scheduler="threads")
-    else:
-        return result
-
-def list_files_parallel(
-    paths: Union[Sequence[Union[str, Path]], str, Path],
-    followlinks=False,
-    compute: bool = True,
-):
-    result = []
-    delf = delayed(lambda p: list_files(p, followlinks=followlinks))
-
-    if isinstance(paths, str) or isinstance(paths, Path):
-        result = bag.from_delayed([delf(paths)])
-    elif isinstance(paths, Sequence):
-        result = bag.from_delayed([delf(p) for p in paths])
-    else:
-        raise TypeError(f"Input must be a string or a sequence, not {type(paths)}")
-
-    if compute:
-        return result.compute(scheduler="threads")
-    else:
-        return result
-
-
-def list_files(
-    paths: Union[Sequence[Union[str, Path]], str, Path], followlinks: bool = False):
-    if isinstance(paths, str) or isinstance(paths, Path):
-        if os.path.isdir(paths):
-            return list(
-                tz.concat(
-                    (os.path.join(dp, f) for f in fn)
-                    for dp, dn, fn in os.walk(paths, followlinks=followlinks)
-                )
-            )
-        elif os.path.isfile(paths):
-            return [paths]
-        else:
-            raise ValueError(f"Input argument {paths} is not a path or a directory")
-
-    elif isinstance(paths, Sequence):
-        sortd = sorted(paths, key=os.path.isdir)
-        files, dirs = tuple(tz.partitionby(os.path.isdir, sortd))
-        return list(tz.concatv(files, *tz.map(list_files, dirs)))
+#
+# # @delayed
+# def _rmtree_after_delete_files(path: str, dependency: Any):
+#     rmtree(path)
+#
+#
+# def rmtree_parallel(
+#     path: Union[str, Path], branch_depth: int = 1, compute: bool = True
+# ):
+#     branches = glob(os.path.join(path, *("*",) * branch_depth))
+#     deleter = os.remove
+#     files = list_files_parallel(branches)
+#     deleted_files = bag.from_sequence(files).map(deleter)
+#     result = _rmtree_after_delete_files(path, dependency=deleted_files)
+#
+#     if compute:
+#         return result.compute(scheduler="threads")
+#     else:
+#         return result
+#
+# def list_files_parallel(
+#     paths: Union[Sequence[Union[str, Path]], str, Path],
+#     followlinks=False,
+#     compute: bool = True,
+# ):
+#     result = []
+#     delf = delayed(lambda p: list_files(p, followlinks=followlinks))
+#
+#     if isinstance(paths, str) or isinstance(paths, Path):
+#         result = bag.from_delayed([delf(paths)])
+#     elif isinstance(paths, Sequence):
+#         result = bag.from_delayed([delf(p) for p in paths])
+#     else:
+#         raise TypeError(f"Input must be a string or a sequence, not {type(paths)}")
+#
+#     if compute:
+#         return result.compute(scheduler="threads")
+#     else:
+#         return result
+#
+#
+# def list_files(
+#     paths: Union[Sequence[Union[str, Path]], str, Path], followlinks: bool = False):
+#     if isinstance(paths, str) or isinstance(paths, Path):
+#         if os.path.isdir(paths):
+#             return list(
+#                 tz.concat(
+#                     (os.path.join(dp, f) for f in fn)
+#                     for dp, dn, fn in os.walk(paths, followlinks=followlinks)
+#                 )
+#             )
+#         elif os.path.isfile(paths):
+#             return [paths]
+#         else:
+#             raise ValueError(f"Input argument {paths} is not a path or a directory")
+#
+#     elif isinstance(paths, Sequence):
+#         sortd = sorted(paths, key=os.path.isdir)
+#         files, dirs = tuple(tz.partitionby(os.path.isdir, sortd))
+#         return list(tz.concatv(files, *tz.map(list_files, dirs)))
 
 
 # NOTE: this is called right after importing base images
