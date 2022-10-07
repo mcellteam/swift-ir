@@ -5,9 +5,32 @@
 #     CONNECT TO Lonestar6 THROUGH THE VIS PORTAL. CHOOSE DCV SESSION.
 #     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
 
-#######################################
-DO ONCE
-#######################################
+
+
+
+========================== THE EASY WAY ======
+
+
+Do Once --------------------------------------
+
+cdw                                                          # change directory to 'work' partition
+git clone https://github.com/mcellteam/swift-ir.git          # clone the AlignEM-SWiFT source code
+cd swift-ir/                                                 # change directory to top-level of application
+git checkout development_ng                                  # Note: 'git status' will tell you your current branch
+source tacc_runonce
+
+Do Every Time --------------------------------
+
+cd $WORK/swift-ir
+source tacc_runalways
+align
+
+
+
+========================== THE HARD WAY ======
+
+Do Once --------------------------------------
+
 (1) INSTALL+INITIALIZE MINICONDA
 wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
 bash Miniforge3-Linux-x86_64.sh                              # Adds special conda instructions to '.bashrc'
@@ -25,9 +48,9 @@ module purge
 conda env remove -n alignTACC                                # remove the env if created previously
 conda env create --name=alignTACC --file tacc.yml python=3.9 # create the environment described in 'tacc.yml'
 
-#######################################
-DO EVERY TIME
-#######################################
+
+Do Every Time --------------------------------
+
 (1) ACTIVATE THE CONDA ENVIRONMENT
 module purge                                                 # purge modules before activating the environment
 conda activate alignTACC                                        # activate the environment
