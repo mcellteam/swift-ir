@@ -29,9 +29,9 @@ if [ ! -d "$HOME/miniforge3" ]; then
   echo "not installed"
 fi
 
-echo "Installing a recent version of nvm..."
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
-nvm install stable
+#echo "Installing a recent version of nvm..."
+#curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
+#nvm install stable
 
 echo "Sourcing .bashrc..."
 source ~/.bashrc
