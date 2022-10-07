@@ -147,7 +147,7 @@ def main():
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
-    logger.info('Setting PIL limit on MAX_IMAGE_PIXELS to 1_000_000_000_000')
+    # logger.info('Setting limit on MAX_IMAGE_PIXELS to 1_000_000_000_000')
     # PIL.Image.DecompressionBombError: Image size (605799240 pixels) exceeds limit of 178956970 pixels,
     # could be decompression bomb DOS attack.
     # Image.MAX_IMAGE_PIXELS = None
