@@ -91,7 +91,7 @@ ch.setLevel(logging.INFO)
 ch.setFormatter(CustomFormatter())
 logger.addHandler(ch)
 
-fh = logging.FileHandler('../messages.log')
+fh = logging.FileHandler('$HOME/messages.log')
 logger.addHandler(fh)
 
 
