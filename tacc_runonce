@@ -6,7 +6,7 @@
 #     PURGE MODULES (HAVE NO MODULES LOADED) WHEN CREATING OR ACTIVATING A CONDA ENV
 
 #######################################
-# DO ONCE
+# RUN ONCE
 #######################################
 
 echo "Setting things up..."
@@ -28,8 +28,6 @@ fi
 echo "Installing a recent version of nvm..."
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
 nvm install stable
-
-echo
 
 echo "Sourcing .bashrc..."
 source ~/.bashrc
