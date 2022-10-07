@@ -22,14 +22,14 @@ git checkout development_ng                                  # Note: 'git status
 
 (3) CREATE CONDA ENVIRONMENT
 module purge                                                 # purge modules before creating the environment
-conda env create --name=TACC01 --file tacc.yml python=3.9    # create the environment described in 'tacc.yml'
+conda env create --name=alignTACC  --file tacc.yml python=3.9    # create the environment described in 'tacc.yml'
 
 #######################################
 DO EVERY TIME
 #######################################
 (1) ACTIVATE THE CONDA ENVIRONMENT
 module purge                                                 # purge modules before activating the environment
-conda activate TACC01                                        # activate the environment
+conda activate alignTACC                                        # activate the environment
 
 (2) FETCH & PULL THE LATEST AlignEM-SWiFT
 cd $WORK/swift-ir                                            # change to top-level of application directory

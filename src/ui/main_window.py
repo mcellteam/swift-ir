@@ -2251,6 +2251,7 @@ class MainWindow(QMainWindow):
 
     def reload_ng(self):
         logger.info("Reloading Neuroglancer Viewer...")
+        self.image_panel_stack_widget.setCurrentIndex(1)
         # self.init_neuroglancer_client()
         self.ng_worker.create_viewer()
         self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
@@ -2259,6 +2260,7 @@ class MainWindow(QMainWindow):
 
     def reload_ng_arg(self, arg:str) -> None:
         logger.info("Reloading Neuroglancer Viewer...")
+        self.image_panel_stack_widget.setCurrentIndex(1)
         # self.init_neuroglancer_client()
         self.ng_worker.create_viewer()
         self.ng_browser.setUrl(QUrl(arg))
@@ -2266,6 +2268,7 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
 
     def set_url(self, text:str) -> None:
+        self.image_panel_stack_widget.setCurrentIndex(1)
         self.ng_browser.setUrl(QUrl(text))
 
 
@@ -2608,6 +2611,7 @@ class MainWindow(QMainWindow):
              [
                  # ['Classic Viewer', 'None', self.use_classic_viewer, None, None, None],
                  # ['Neuroglancer Viewer', 'None', self.init_neuroglancer_client, None, None, None],
+                 ['Normal View', 'None', self.set_normal_view, None, None, None],
                  ['Reload Neuroglancer', 'None', self.reload_ng, None, None, None],
                  ['Init Neuroglancer Client', 'None', self.init_neuroglancer_client, None, None, None],
                  ['Neuroglancer Layout',
@@ -3540,6 +3544,7 @@ class MainWindow(QMainWindow):
 
         self.main_lwr_vlayout = QVBoxLayout()
         self.main_lwr_vlayout.setContentsMargins(2, 2, 2, 0)
+        self.main_lwr_vlayout.setSpacing(2)
         self.main_lwr_vlayout.addWidget(self.expand_bottom_panel_button, alignment=Qt.AlignRight)
         self.main_lwr_vlayout.addWidget(self.show_hide_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
         self.main_lwr_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignmentFlag.AlignTop)
