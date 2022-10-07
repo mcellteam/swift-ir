@@ -106,9 +106,7 @@ def main():
     # os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
-    logger.critical('QtCore.__version__ = %s' % QtCore.__version__)
-    logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
-    logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
+
 
     from PIL import Image
     from qtpy.QtWidgets import QApplication
@@ -134,10 +132,16 @@ def main():
     logger.info('Disabling Web Security...')
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
-    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
-
-
     os.environ['OPENBLAS_NUM_THREADS'] = '1'
+
+    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+
+    logger.critical('QtCore.__version__ = %s' % QtCore.__version__)
+    logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
+    logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
+
+
+
     # Ref: https://github.com/numpy/numpy/issues/14474
 
     # Qt5 Only
