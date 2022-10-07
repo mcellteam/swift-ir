@@ -55,9 +55,18 @@ conda env create --name=alignTACC --file tacc.yml python=3.9
 #echo "Adding alignEM.py to PATH in .bashrc..."
 #echo 'export PATH="$PATH:$WORK/swift-ir/alignEM.py"' >> ~/.bashrc
 
-echo "Adding QT_API=pyside6 to .bashrc..."
-echo  'export QT_API=pyside6' >> ~/.bashrc
+if [[ -z "${QT_API}" ]]; then
+  echo "QT_API environment variable already exists - continuing..."
+else
+  echo "Adding QT_API=pyside6 to .bashrc..."
+  'export QT_API=pyside6' >> ~/.bashrc
+fi
 
+if alias align >/dev/null 2>&1; then
+  echo "align alias already exists - continuing..."
+else
+  echo "alias align='swr numactl --preferred=1 python3 $WORK/swift-ir/alignEM.py'" >> ~/.bashrc
+fi
 
-echo "alias align='swr numactl --preferred=1 python3 $WORK/alignEM.py'" >> ~/.bashrc
+echo "Complete."
 
