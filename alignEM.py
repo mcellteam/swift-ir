@@ -42,7 +42,7 @@ $ qtpy mypy-args
 import qtpy
 import os
 
-# os.environ['QT_API'] = 'pyqt6'
+os.environ['QT_API'] = 'pyside6'
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyside2'
 
@@ -54,7 +54,7 @@ from qtpy import QtCore
 
 # os.environ['QT_API'] = 'pyqt6'
 # os.environ['QT_API'] = 'PySide6'
-# os.environ['QT_DRIVER'] = 'PySide6' # necessary for qimage2ndarray
+os.environ['QT_DRIVER'] = 'PySide6' # necessary for qimage2ndarray
 
 
 # import cProfile, pstats, io
@@ -125,7 +125,7 @@ def main():
     else:
         cfg.USE_TENSORSTORE = True
 
-    os.environ['QT_API'] = args.api
+    # os.environ['QT_API'] = args.api
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     logger.info('Turning On Fork Safety...')
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
