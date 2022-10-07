@@ -33,6 +33,8 @@ CLEVEL = 5
 
 '''Other Defaults'''
 USE_TENSORSTORE = True
+NO_EMBED_NG = False
+
 USE_FILE_IO = 0
 CODE_MODE = 'c'
 HTTP_PORT = 9000
