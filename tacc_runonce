@@ -11,14 +11,13 @@
 
 echo "Setting things up..."
 
-echo "Changing to WORK directory..."
+echo "Changing directory to WORK directory..."
 cd $WORK
 
-echo "Getting Miniforge (conda) installer..."
-wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-
-echo "Checking if Miniforge is installed..."
+echo "Checking if Miniforge (conda) is installed..."
 if [ ! -d "$HOME/miniforge3" ]; then
+  echo "Getting Miniforge (conda) installer..."
+  wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
   echo "$HOME/miniforge3 does not exist - Installing miniforge..."
   curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
   sh $WORK/Miniforge3-Linux-x86_64.sh -b
