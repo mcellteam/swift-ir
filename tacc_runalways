@@ -2,13 +2,14 @@ echo "Sourcing .bashrc..."
 source ~/.bashrc
 
 echo "Purging modules..."
-module purge                                                 # purge modules before activating the environment
+module purge
+
 echo "Activating 'alignTACC' conda env..."
-conda activate alignTACC                                        # activate the environment
+conda activate alignTACC
 
 echo "cd'ing to swift-ir and pulling changes..."
-cd $WORK/swift-ir                                            # change to top-level of application directory
-git pull                                                     # set your version to the most up-to-date version
+cd $WORK/swift-ir
+git pull
 
 echo "Setting QT API environment flag..."
 export QT_API=pyside6
@@ -18,5 +19,3 @@ ml intel/19.1.1 swr/21.2.5
 
 echo "Loading python_cacher module..."
 ml python_cacher
-
-
