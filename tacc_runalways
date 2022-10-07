@@ -1,3 +1,6 @@
+echo "Sourcing .bashrc..."
+source ~/.bashrc
+
 echo "Purging modules..."
 module purge                                                 # purge modules before activating the environment
 echo "Activating 'alignTACC' conda env..."
