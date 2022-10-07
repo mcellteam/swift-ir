@@ -10,7 +10,7 @@ import http.server
 import logging
 import argparse
 import neuroglancer as ng
-from neuroglancer import ScreenshotSaver
+# from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, Slot
 from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, are_images_imported
 from src.image_funcs import ImageSize, BoundingRect
@@ -31,7 +31,7 @@ class NgHost(QRunnable):
         self.src = src
         self.bind = bind
         self.port = port
-        cfg.viewer_url = None
+        self.viewer_url = None
         self.scale = scale
         self.layout = 'yz' # Note: Maps To 'xy'
 
@@ -145,7 +145,7 @@ class NgHost(QRunnable):
         del cfg.viewer
         cfg.viewer = ng.Viewer()
         # cfg.viewer = ng.UnsynchronizedViewer()
-        cfg.viewer_url = str(cfg.viewer)
+        self.viewer_url = str(cfg.viewer)
         scale_factor = cfg.data.scale_val()
 
         aligned_url = os.path.join('img_aligned.zarr', 's' + str(scale_factor))
@@ -324,12 +324,12 @@ class NgHost(QRunnable):
     def url(self):
         while True:
             logger.debug('Still looking for an open port...')
-            if cfg.viewer_url is not None:
+            if self.viewer_url is not None:
                 logger.debug('An Open Port Was Found')
-                return cfg.viewer_url
+                return self.viewer_url
 
     def show_url(self):
-        cfg.main_window.hud.post('Viewer Url:\n\n%s' % str(cfg.viewer_url))
+        cfg.main_window.hud.post('Viewer Url:\n\n%s' % str(self.viewer_url))
 
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(cfg.viewer.state))
