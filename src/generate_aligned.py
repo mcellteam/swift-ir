@@ -83,7 +83,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     cfg.main_window.hud.done()
     # preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=16, chunks=(16,64,64))
     logger.critical('use_bounding_rect = %s' % str(bounding_rect))
-    preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=Z_STRIDE, chunks=chunks)
+    preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, name='img_aligned.zarr', z_stride=Z_STRIDE, chunks=chunks)
 
     ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
     use_bounding_rect = bool(cfg.data['data']['scales'][scale_key]['use_bounding_rect'])

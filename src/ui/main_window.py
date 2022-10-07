@@ -43,7 +43,7 @@ from src.ui.python_console import PythonConsole
 # from src.utils.PyQtImageViewer import QtImageViewer
 from src.ui.splash import SplashScreen
 from src.ui.dialogs import ConfigDialog
-from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor_from_path, generate_zarr_scales
+from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor_from_path, generate_zarr_scales, preallocate_zarr
 
 __all__ = ['MainWindow']
 
@@ -382,16 +382,33 @@ class MainWindow(QMainWindow):
         cfg.data.set_defaults()
         logger.info('Determining the coarsest scale...')
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
-        try:
-            logger.info('generating scales...')
-            generate_zarr_scales()
-            logger.info('exiting _zarr gracefully...')
-            # cfg.image_library.set_zarr_refs()
-        except:
-            logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
-            print_exception()
-        logger.info('Loading unaligned stacks...')
+        # try:
+        #     logger.info('generating scales...')
+        #     generate_zarr_scales()
+        #     logger.info('exiting _zarr gracefully...')
+        #     # cfg.image_library.set_zarr_refs()
+        # except:
+        #     logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
+        #     print_exception()
 
+        src = os.path.abspath(cfg.data['data']['destination_path'])
+        out = os.path.abspath(os.path.join(src, 'img_src.zarr'))
+        for scale in cfg.data.scales():
+            self.set_busy()
+            try:
+                preallocate_zarr(use_scale=scale, bounding_rect=False, name='img_src.zarr', is_alignment=False)
+                self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale))
+                self.threadpool.start(self.worker)
+                self.pbar.hide()
+            except:
+                print_exception()
+                logger.error('Zarr Export Failed')
+                self.pbar.hide()
+                return
+
+
+
+        # logger.info('Loading unaligned stacks...')
         # self.load_unaligned_stacks() #1004 #debugging
 
         # logger.info('Updating unaligned view...')

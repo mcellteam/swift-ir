@@ -11,7 +11,7 @@ import subprocess as sp
 import numpy as np
 # from PIL import Image
 import zarr
-# import tifffile
+import tifffile
 
 logger = logging.getLogger(__name__)
 
@@ -204,7 +204,7 @@ if (__name__ == '__main__'):
     #     print("Error on image: ", out_fn)
     #     print(e)
 
-    import tifffile
+
     im = tifffile.imread(out_fn)
     # im = Image.open(out_fn)
     # im = tifffile.imread(out_fn)
