@@ -35,7 +35,7 @@ from shutil import rmtree
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need
 # blosc.set_nthreads(8)
-from PIL import Image
+# from PIL import Image
 
 try: import src.config as cfg
 except: import config as cfg

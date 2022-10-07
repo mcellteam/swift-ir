@@ -9,7 +9,7 @@ import logging
 import platform
 import subprocess as sp
 import numpy as np
-from PIL import Image
+# from PIL import Image
 import zarr
 # import tifffile
 
@@ -77,7 +77,7 @@ if (__name__ == '__main__'):
     rect = None
     grayBorder = False
 
-    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+    # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
     # Scan arguments (excluding program name and last 2 file names)
     i = 1
@@ -204,7 +204,9 @@ if (__name__ == '__main__'):
     #     print("Error on image: ", out_fn)
     #     print(e)
 
-    im = Image.open(out_fn)
+    import tifffile
+    im = tifffile.imread(out_fn)
+    # im = Image.open(out_fn)
     # im = tifffile.imread(out_fn)
     logger.critical('out_fn = %s' % out_fn)
     store = zarr.open(zarr_grp)

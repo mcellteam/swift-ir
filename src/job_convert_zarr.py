@@ -11,7 +11,8 @@ Joel Yancey 2022-08-15
 import os
 import sys
 import zarr
-from PIL import Image
+# from PIL import Image
+import tifffile
 
 if __name__ == '__main__':
 
@@ -22,10 +23,11 @@ if __name__ == '__main__':
     out          = sys.argv[4] #*
     scale_str    = sys.argv[5] #*
 
-    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+    # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
     scale_img = os.path.join(src, scale_str, 'img_aligned', img)
-    im = Image.open(scale_img)
+    # im = Image.open(scale_img)
+    im = tifffile.imread(ifn)
     store = zarr.open(out)
     store[ID,:,:] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
