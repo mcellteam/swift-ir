@@ -363,6 +363,7 @@ class MainWindow(QMainWindow):
         self.hud.done()
         # self.set_idle()
         self.pbar.hide()
+        self.ng_worker.show_url()
 
 
     def autoscale(self):
@@ -410,6 +411,8 @@ class MainWindow(QMainWindow):
         # self.hud.done()
         self.set_idle()
         logger.info('Exiting main_window.autoscale')
+        self.init_neuroglancer_client()
+        self.ng_worker.show_url()
 
     
     @Slot()
@@ -478,6 +481,7 @@ class MainWindow(QMainWindow):
         # elif self.is_classic_viewer():
         #     self.update_aligned_2D_viewer()
         self.pbar.hide()
+        self.ng_worker.show_url()
 
 
 
@@ -546,6 +550,7 @@ class MainWindow(QMainWindow):
         # elif self.is_classic_viewer():
         #     self.update_aligned_2D_viewer()
         self.pbar.hide()
+        self.ng_worker.show_url()
     
     @Slot()
     def regenerate(self, use_scale) -> None:
@@ -591,6 +596,7 @@ class MainWindow(QMainWindow):
         self.save_project_to_file() #0908+
         # self.has_unsaved_changes() #0908-
         self.pbar.hide()
+        self.ng_worker.show_url()
     
     def export(self):
         logger.info('Exporting to Zarr format...')
@@ -804,6 +810,7 @@ class MainWindow(QMainWindow):
             #     self.update_2D_viewers()
 
             self.update_snr_plot()
+            self.ng_worker.show_url()
 
         except:
             print_exception()
@@ -842,6 +849,7 @@ class MainWindow(QMainWindow):
             self.reload_ng()
             # elif self.is_classic_viewer():
             #     self.update_2D_viewers()
+            self.ng_worker.show_url()
 
         except:
             print_exception()
@@ -1146,7 +1154,7 @@ class MainWindow(QMainWindow):
         # if self.image_panel_stack_widget.currentIndex() == 1:
         self.reload_ng()
 
-    
+
     @Slot()
     def jump_to_layer(self) -> None:
         self.set_status('Busy...')
@@ -2250,12 +2258,14 @@ class MainWindow(QMainWindow):
         self.main_widget.setCurrentIndex(3)
 
     def reload_ng(self):
+        logger.info('Normally, noeuroglancer would be reloaded here')
         logger.info("Reloading Neuroglancer Viewer...")
         self.image_panel_stack_widget.setCurrentIndex(1)
         # self.init_neuroglancer_client()
         self.ng_worker.create_viewer()
-        self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
-        self.ng_browser.setFocus()
+        if not cfg.NO_EMBED_NG:
+            self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
+            self.ng_browser.setFocus()
         self.read_project_data_update_gui()
 
     def reload_ng_arg(self, arg:str) -> None:
@@ -2263,8 +2273,9 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.setCurrentIndex(1)
         # self.init_neuroglancer_client()
         self.ng_worker.create_viewer()
-        self.ng_browser.setUrl(QUrl(arg))
-        self.ng_browser.setFocus()
+        if not cfg.NO_EMBED_NG:
+            self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
+            self.ng_browser.setFocus()
         self.read_project_data_update_gui()
 
     def set_url(self, text:str) -> None:
@@ -2277,7 +2288,6 @@ class MainWindow(QMainWindow):
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
         '''
-        logger.info('Entering use_neuroglancver_viewer()...')
         sys.stdout.flush()
         self.set_status('Loading Neuroglancer...')
         if not are_images_imported():
@@ -2289,9 +2299,14 @@ class MainWindow(QMainWindow):
         s, l = cfg.data.scale(), cfg.data.layer()
         # self.ng_worker = NgHost(src=dest, scale=s, port=9000)
         self.ng_worker = NgHost(src=dest, scale=s)
+
+
         self.threadpool.start(self.ng_worker)
-        self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
-        self.ng_browser.setFocus()
+
+        if not cfg.NO_EMBED_NG:
+            self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
+            self.ng_browser.setFocus()
+
         self.ng_layout_combobox.setCurrentText('xy')
         # self.hud('Displaying Alignment In Neuroglancer')
         self.set_idle()

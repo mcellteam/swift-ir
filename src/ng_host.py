@@ -85,6 +85,8 @@ class NgHost(QRunnable):
         logger.info("Server Type           : %s" % str(self.http_server.socket_type))
         logger.info("Server Address        : %s" % str(self.http_server.server_address))
         logger.info("Server Socket         : %s" % str(self.http_server.socket))
+        self.show_url()
+
 
         try:
             while keep_running():

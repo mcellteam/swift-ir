@@ -101,6 +101,7 @@ def main():
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
+    parser.add_argument('--no_embed_ng', action='store_true', help='Do not embed the neuroglancer browser if True')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     # os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
@@ -124,6 +125,11 @@ def main():
         cfg.USE_TENSORSTORE = False
     else:
         cfg.USE_TENSORSTORE = True
+
+    if args.no_embed_ng:
+        cfg.NO_EMBED_NG = True
+    else:
+        cfg.NO_EMBED_NG = False
 
     # os.environ['QT_API'] = args.api
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
