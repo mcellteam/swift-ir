@@ -46,7 +46,7 @@ git checkout development_ng
 echo "Purging modules..."
 module purge
 
-echo "Removing tacc.yml..."
+echo "Removing alignTACC env if it exists..."
 conda env remove -n alignTACC
 
 echo "Creating Conda environment from tacc.yml..."
