@@ -33,12 +33,8 @@ conda activate TACC01                                        # activate the envi
 
 (2) FETCH & PULL THE LATEST AlignEM-SWiFT
 cd $WORK/swift-ir                                            # change to top-level of application directory
-git fetch                                                    # fetch the latest AlignEM-SWiFT changes
 git pull                                                     # set your version to the most up-to-date version
 
-(3) LOAD THE NECESSARY TACC MODULES
-ml gcc/11.2.0  impi/19.0.9 fftw3/3.3.10                      # 'ml' is a TACC alias for 'module load'
-
-(4) RUN AlignEM-SWiFT
+(3) RUN AlignEM-SWiFT
 python3 alignEM.py
 
