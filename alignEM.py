@@ -52,9 +52,6 @@ from src.helpers import print_exception
 from qtpy import QtCore
 
 
-
-
-
 # os.environ['QT_API'] = 'pyqt6'
 # os.environ['QT_API'] = 'PySide6'
 # os.environ['QT_DRIVER'] = 'PySide6' # necessary for qimage2ndarray
@@ -100,7 +97,7 @@ logger.addHandler(fh)
 def main():
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--api', default='pyqt6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    parser.add_argument('--api', default='pyside6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
@@ -130,11 +127,13 @@ def main():
     else:
         cfg.USE_TENSORSTORE = True
 
-
+    os.environ['QT_API'] = args.api
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    logger.info('Turning On Fork Safety...')
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    logger.info('Disabling Web Security...')
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
-    os.environ['QT_API'] = 'pyqt6'
+
     # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
 
