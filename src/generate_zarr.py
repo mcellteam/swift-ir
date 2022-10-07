@@ -5,11 +5,11 @@ import sys
 import psutil
 import logging
 import argparse
-import zarr
-from zarr.util import human_readable_size
-import numpy as np
-from PIL import Image
-from src.image_funcs import ImageSize
+# import zarr
+# from zarr.util import human_readable_size
+# import numpy as np
+# from PIL import Image
+# from src.image_funcs import ImageSize
 from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_images_list_directly
 from src.zarr_funcs import preallocate_zarr
@@ -37,7 +37,9 @@ def generate_zarr(src, out):
         for scale in cfg.data.aligned_list():
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))
-            width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+            # width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+            # import tifffile
+            # width, height = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
             tasks_.append([ID, img, src, path_out, scale])
 
     tasks=[]

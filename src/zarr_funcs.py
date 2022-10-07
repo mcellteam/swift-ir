@@ -15,7 +15,7 @@ from pathlib import Path
 import multiprocessing as mp
 from numcodecs import Blosc
 import imageio.v3 as iio
-from PIL import Image
+# from PIL import Image
 import zarr
 import tifffile
 import imagecodecs
@@ -194,7 +194,9 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
 
         else:
             imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
-            dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+            # dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+            dimx, dimy = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+
 
         scale_val = get_scale_val(scale)
         name = 's' + str(scale_val)
