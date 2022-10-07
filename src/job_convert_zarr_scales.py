@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-'''Job Script for Generating Neuroglancer-Compatible
+'''Job Script for Generating Neuroglancer-Compatible MULTISCALE
 Zarr from Alignment Output Using Multiple Processors. Tasks
 are queued by the script 'generate_zarr.py'. Group level
 attributes for multiscale data are stored in the .zattrs file
@@ -25,7 +25,7 @@ if __name__ == '__main__':
 
     # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
-    scale_img = os.path.join(src, scale_str, 'img_src', img)
+    scale_img = os.path.join(src, scale_str, 'img_aligned', img)
     # im = Image.open(scale_img)
     im = tifffile.imread(scale_img)
     store = zarr.open(out)

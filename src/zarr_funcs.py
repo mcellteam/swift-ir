@@ -143,7 +143,7 @@ def init_zarr() -> None:
     root = zarr.group(store=store, overwrite=True)  # Create Root Group (?)
     # root = zarr.group(store=store, overwrite=True, synchronizer=zarr.ThreadSynchronizer())  # Create Root Group (?)
 
-def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1, 512, 512)):
+def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stride=16, chunks=(1, 512, 512), is_alignment=True):
 
     cfg.main_window.hud.post('Preallocating Zarr Array...')
 
@@ -156,13 +156,12 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
     # n_scales = cfg.data.n_scales()
     aligned_scales_lst = cfg.data.aligned_list()
 
-    zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
-    caller = inspect.stack()[1].function
+    zarr_path = os.path.join(cfg.data.dest(), name)
     # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr':
     #     # remove_zarr()
     #     init_zarr()
 
-    out_path = os.path.join(src, 'img_aligned.zarr', 's' + str(cur_scale_val))
+    out_path = os.path.join(src, name, 's' + str(cur_scale_val))
     if cfg.data.scale() != 'scale_1':
         if os.path.exists(out_path):
             remove_zarr(out_path)
@@ -195,7 +194,14 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, z_stride=16, chunks=(1,
         else:
             imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
             # dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
-            dimx, dimy = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+            if is_alignment:
+                dimx, dimy = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+            else:
+                from src.image_funcs import ImageSize
+                path = os.path.join(src, scale, 'img_src', imgs[0])
+                logger.info('path = %s' % path)
+                dimx, dimy = ImageSize(path)
+
 
 
         scale_val = get_scale_val(scale)

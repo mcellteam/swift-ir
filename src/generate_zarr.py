@@ -20,7 +20,7 @@ __all__ = ['generate_zarr']
 logger = logging.getLogger(__name__)
 
 
-def generate_zarr(src, out):
+def generate_zarr(src, out, no_scales=False, scale=None):
     logger.critical('>>>>>>>> Generate Zarr Start <<<<<<<<')
     logger.info('Source Image : %s\nOutput Image : %s' % (src, out))
     # Z_STRIDE = 4
@@ -28,13 +28,34 @@ def generate_zarr(src, out):
     n_imgs = cfg.data.n_imgs()
     n_scales = cfg.data.n_scales()
 
-    preallocate_zarr()
+    # preallocate_zarr()
 
-    estimated_n_tasks = n_imgs * n_scales  # TODO this should take into account skips
+    if not no_scales:
+        estimated_n_tasks = n_imgs * n_scales  # TODO this should take into account skips
+    else:
+        estimated_n_tasks = n_imgs
+
     tasks_ = []
-    imgs = sorted(get_images_list_directly(os.path.join(src, cfg.data.scale(), 'img_aligned')))
-    for ID, img in enumerate(imgs):
-        for scale in cfg.data.aligned_list():
+    if not no_scales:
+        imgs = sorted(get_images_list_directly(os.path.join(src, cfg.data.scale(), 'img_aligned')))
+    else:
+        imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
+
+    if not no_scales:
+        for ID, img in enumerate(imgs):
+            for scale in cfg.data.aligned_list():
+                scale_val = get_scale_val(scale)
+                path_out = os.path.join(out, 's' + str(scale_val))
+                # width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+                # import tifffile
+                # width, height = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+                tasks_.append([ID, img, src, path_out, scale])
+    else:
+        logger.info('# images: %d' % len(imgs))
+        for ID, img in enumerate(imgs):
+            logger.info('ID  = %d' % ID)
+            logger.info('img  = %s' % img)
+
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))
             # width, height = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
@@ -42,13 +63,19 @@ def generate_zarr(src, out):
             # width, height = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
             tasks_.append([ID, img, src, path_out, scale])
 
-    tasks=[]
-    # logger.critical('foo_list:\n%s' % str(foo_list))
-    for x in range(0,Z_STRIDE): #chunk z_dim
-        append_list = tasks_[x::Z_STRIDE]
-        for t in append_list:
-            tasks.append(t)
-    # logger.critical('foo:\n%s' % str(foo))
+    logger.info('# tasks: %d' % len(tasks_))
+
+    if not no_scales:
+        tasks=[]
+        # logger.critical('foo_list:\n%s' % str(foo_list))
+        for x in range(0,Z_STRIDE): #chunk z_dim
+            append_list = tasks_[x::Z_STRIDE]
+            for t in append_list:
+                tasks.append(t)
+        # logger.critical('foo:\n%s' % str(foo))
+    else:
+        tasks = tasks_
+
 
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), 48) - 1
@@ -60,8 +87,14 @@ def generate_zarr(src, out):
     task_queue.tqdm_desc = 'Exporting Zarr'
     task_queue.start(cpus)
     for task in tasks:
+        if not no_scales:
+            script = 'src/job_convert_zarr_scales.py'
+        else:
+            script = 'src/job_convert_zarr.py'
+
+
         task_args = [sys.executable,
-                     'src/job_convert_zarr.py',
+                     script,
                      str(task[0]),          # ID
                      str(task[1]),          # img
                      str(task[2]),          # src
