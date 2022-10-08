@@ -13,6 +13,7 @@ cd $WORK/swift-ir
 git pull
 
 echo "Setting QT API environment flag..."
+unset QT_API
 export QT_API=pyqt6
 
 echo "Loading swr module..."
