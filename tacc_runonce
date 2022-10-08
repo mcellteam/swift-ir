@@ -57,10 +57,10 @@ echo "Purging modules..."
 module purge
 
 echo "Removing alignTACC env if it exists..."
-conda env remove -n alignTACC
+conda env remove -n alignPYQT
 
 echo "Creating Conda environment from tacc.yml..."
-conda env create --name=alignTACC --file tacc.yml python=3.9
+conda env create --name=alignPYQT --file tacc.yml python=3.9
 
 #echo "Adding alignEM.py to PATH in .bashrc..."
 #echo 'export PATH="$PATH:$WORK/swift-ir/alignEM.py"' >> ~/.bashrc
@@ -68,8 +68,8 @@ conda env create --name=alignTACC --file tacc.yml python=3.9
 if [[ -z "${QT_API}" ]]; then
   echo "QT_API environment variable already exists - continuing..."
 else
-  echo "Adding QT_API=pyside6 to .bashrc..."
-  'export QT_API=pyside6' >> ~/.bashrc
+  echo "Adding QT_API=pyqt6 to .bashrc..."
+  'export QT_API=pyqt6' >> ~/.bashrc
 fi
 
 if alias align >/dev/null 2>&1; then
