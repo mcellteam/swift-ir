@@ -56,7 +56,7 @@ git pull
 echo "Purging modules..."
 module purge
 
-echo "Removing alignTACC env if it exists..."
+echo "Removing alignment environment if it exists..."
 conda env remove -n alignPYQT
 
 echo "Creating Conda environment from tacc.yml..."

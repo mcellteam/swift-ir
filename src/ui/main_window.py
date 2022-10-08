@@ -166,10 +166,10 @@ class MainWindow(QMainWindow):
         # self.set_normal_view() #0925
         self.image_panel_stack_widget.setCurrentIndex(2)
 
-        timer = QTimer()
-        timer.timeout.connect(self.set_idle)  # execute `display_time`
-        timer.setInterval(1000)  # 1000ms = 1s
-        timer.start()
+        # timer = QTimer()
+        # timer.timeout.connect(self.set_idle)  # execute `display_time`
+        # timer.setInterval(1000)  # 1000ms = 1s
+        # timer.start()
 
         self.set_splash_controls()
         # self.set_project_controls()
@@ -3998,20 +3998,20 @@ class MainWindow(QMainWindow):
 
 
 
-def bindScrollBars(scrollBar1, scrollBar2):
-
-    # syncronizing scrollbars syncrnonously somehow breaks zooming and doesn't work
-    # scrollBar1.valueChanged.connect(lambda value: scrollBar2.setValue(value))
-    # scrollBar2.valueChanged.connect(lambda value: scrollBar1.setValue(value))
-
-    # syncronizing scrollbars asyncronously works ok
-    scrollBar1.valueChanged.connect(
-        lambda _: QTimer.singleShot(0, lambda: scrollBar2.setValue(scrollBar1.value())))
-    scrollBar2.valueChanged.connect(
-        lambda _: QTimer.singleShot(0, lambda: scrollBar1.setValue(scrollBar2.value())))
-
-    scrollBar1.valueChanged.connect(
-        lambda _: QTimer.singleShot(0, lambda: scrollBar2.setValue(scrollBar1.value())))
-    scrollBar2.valueChanged.connect(
-        lambda _: QTimer.singleShot(0, lambda: scrollBar1.setValue(scrollBar2.value())))
+# def bindScrollBars(scrollBar1, scrollBar2):
+#
+#     # syncronizing scrollbars syncrnonously somehow breaks zooming and doesn't work
+#     # scrollBar1.valueChanged.connect(lambda value: scrollBar2.setValue(value))
+#     # scrollBar2.valueChanged.connect(lambda value: scrollBar1.setValue(value))
+#
+#     # syncronizing scrollbars asyncronously works ok
+#     scrollBar1.valueChanged.connect(
+#         lambda _: QTimer.singleShot(0, lambda: scrollBar2.setValue(scrollBar1.value())))
+#     scrollBar2.valueChanged.connect(
+#         lambda _: QTimer.singleShot(0, lambda: scrollBar1.setValue(scrollBar2.value())))
+#
+#     scrollBar1.valueChanged.connect(
+#         lambda _: QTimer.singleShot(0, lambda: scrollBar2.setValue(scrollBar1.value())))
+#     scrollBar2.valueChanged.connect(
+#         lambda _: QTimer.singleShot(0, lambda: scrollBar1.setValue(scrollBar2.value())))
 
