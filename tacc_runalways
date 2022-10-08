@@ -6,14 +6,14 @@ echo "Purging modules..."
 module purge
 
 echo "Activating 'alignTACC' conda env..."
-conda activate alignTACC
+conda activate alignPYQT
 
 echo "cd'ing to swift-ir and pulling changes..."
 cd $WORK/swift-ir
 git pull
 
 echo "Setting QT API environment flag..."
-export QT_API=pyside6
+export QT_API=pyqt6
 
 echo "Loading swr module..."
 ml intel/19.1.1 swr/21.2.5

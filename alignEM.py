@@ -43,7 +43,7 @@ import qtpy
 import os
 import time
 
-os.environ['QT_API'] = 'pyside6'
+os.environ['QT_API'] = 'pyqt6'
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyside2'
 
@@ -55,7 +55,7 @@ from qtpy import QtCore
 
 # os.environ['QT_API'] = 'pyqt6'
 # os.environ['QT_API'] = 'PySide6'
-os.environ['QT_DRIVER'] = 'PySide6' # necessary for qimage2ndarray
+# os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
 
 # import cProfile, pstats, io
@@ -98,7 +98,8 @@ logger.addHandler(fh)
 def main():
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
-    parser.add_argument('--api', default='pyside6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    # parser.add_argument('--api', default='pyside6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    parser.add_argument('--api', default='pyqt6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
