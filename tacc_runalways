@@ -21,5 +21,5 @@ ml intel/19.1.1 swr/21.2.5
 
 #ml gcc/11.2.0  impi/19.0.9 fftw3/3.3.10
 
-echo "Loading python_cacher module..."
-ml python_cacher
+#echo "Loading python_cacher module..."
+#ml python_cacher
