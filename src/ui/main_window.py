@@ -426,10 +426,10 @@ class MainWindow(QMainWindow):
         # logger.info('Saving project to file...')
         # self.save_project_to_file() #1002
         # self.hud.done()
-        self.set_idle()
         logger.info('Exiting main_window.autoscale')
         self.init_neuroglancer_client()
         self.ng_worker.show_url()
+        self.set_idle()
 
     
     @Slot()
@@ -1345,8 +1345,9 @@ class MainWindow(QMainWindow):
     def change_layer(self, layer_delta):
         """This function loads the next or previous layer"""
         # logger.info('change_layer:')
+        self.set_status('Loading...')
         try:
-            self.set_status('Loading...')
+
             self.jump_to_worst_ticker = 1
             self.jump_to_best_ticker = 1
             self.read_gui_update_project_data() #0908+
@@ -1356,11 +1357,9 @@ class MainWindow(QMainWindow):
                 pass
             elif requested < 0:
                 logger.warning('Cant layer down any further!')
-                self.set_idle()
                 return
             elif requested > n_imgs - 1:
                 logger.warning('Cant layer up any further!')
-                self.set_idle()
                 return
             logger.info("Changing to layer %s" % requested)
 
@@ -1536,7 +1535,7 @@ class MainWindow(QMainWindow):
     
     def new_project(self):
         logger.critical('>>>>>>>> New Project Start <<<<<<<<')
-        self.set_status("New Project...")
+        # self.set_status("New Project...")
         # cfg.w.ng_browser.back() # create the effect of resetting the browser
         if is_destination_set():
             logger.info('Asking user to confirm new data')
@@ -1556,12 +1555,10 @@ class MainWindow(QMainWindow):
             else:
                 logger.info("Response was not 'OK' - Returning")
                 self.hud('New Project Canceled', logging.WARNING)
-                self.set_idle()
                 return
             if reply == QMessageBox.Cancel:
                 logger.info("Response was 'Cancel'")
                 self.hud('New Project Canceled', logging.WARNING)
-                self.set_idle()
                 return
         # self.image_panel_stack_widget.setCurrentIndex(2)
         self.clear_snr_plot()
@@ -1598,8 +1595,7 @@ class MainWindow(QMainWindow):
         self.run_after_import()
         self.save_project_to_file()
         self.init_neuroglancer_client()
-        self.set_idle()
-    
+
     def import_images_dialog(self):
         '''Dialog for importing images. Returns list of filenames.'''
         # caption = "Import Images"
@@ -1724,7 +1720,7 @@ class MainWindow(QMainWindow):
     
     def open_project(self):
         logger.critical('>>>>>>>> Open Project Start <<<<<<<<')
-        self.set_status("Open Project...")
+        # self.set_status("Open Project...")
         # is_neuroglancer_viewer = True if self.is_neuroglancer_viewer() else False
         self.main_widget.setCurrentIndex(0)
         self.image_panel_stack_widget.setCurrentIndex(2)
@@ -1759,7 +1755,6 @@ class MainWindow(QMainWindow):
             if type(project) == type('abc'):
                 self.hud('There Was a Problem Loading the Project File', logging.ERROR)
                 logger.warning("Project Type is Abstract Base Class - Unable to Load!")
-                self.set_idle()
                 return
             self.hud("Loading Project '%s'..." % filename)
 
@@ -1794,7 +1789,6 @@ class MainWindow(QMainWindow):
             self.update_scale_controls()
         else:
             self.hud("No Project File (.proj) Selected", logging.WARNING)
-        self.set_idle()
 
     def save_project(self):
         logger.info('Entering save_project...')
@@ -1947,7 +1941,7 @@ class MainWindow(QMainWindow):
     def import_images(self, clear_role=False):
         ''' Import images into data '''
         logger.critical('>>>>>>>> Import Images Start <<<<<<<<')
-        self.set_status('Import Images...')
+        # self.set_status('Import Images...')
         role_to_import = 'base'
         # need_to_scale = not are_images_imported()
         # filenames = sorted(self.import_images_dialog())
@@ -1955,7 +1949,7 @@ class MainWindow(QMainWindow):
             filenames = natural_sort(self.import_images_dialog())
         except:
             logger.warning('No images were selected.')
-            self.set_idle()
+            # self.set_idle()
             return
         logger.debug('filenames = %s' % str(filenames))
         if clear_role:
@@ -1985,7 +1979,7 @@ class MainWindow(QMainWindow):
             self.hud.post('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
-        self.set_idle()
+        # self.set_idle()
         logger.info('Exiting import_images')
 
     def run_after_import(self):
@@ -2196,7 +2190,6 @@ class MainWindow(QMainWindow):
             if reply == QMessageBox.Cancel:
                 logger.info('reply=Cancel. Returning control to the app.')
                 self.hud('Canceling exit application')
-                self.set_idle()
                 return
             if reply == QMessageBox.Save:
                 logger.info('reply=Save')
@@ -2309,7 +2302,7 @@ class MainWindow(QMainWindow):
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
         '''
         sys.stdout.flush()
-        self.set_status('Loading Neuroglancer...')
+        # self.set_status('Loading Neuroglancer...')
         if not are_images_imported():
             self.hud.post('Nothing To View', logging.WARNING)
             return
@@ -2329,7 +2322,6 @@ class MainWindow(QMainWindow):
 
         self.ng_layout_combobox.setCurrentText('xy')
         # self.hud('Displaying Alignment In Neuroglancer')
-        self.set_idle()
 
     def is_neuroglancer_viewer(self) -> bool:
         if self.image_panel_stack_widget.currentIndex() == 1:
@@ -2584,7 +2576,6 @@ class MainWindow(QMainWindow):
         # self.import_images_button.hide()
 
         # self.main_panel_bottom_widget.setCurrentIndex(0)
-        self.set_idle()
 
     def expand_bottom_panel_callback(self):
         if not self.image_panel_stack_widget.isHidden():
@@ -3794,7 +3785,7 @@ class MainWindow(QMainWindow):
 
         self.main_panel.setLayout(self.main_panel_layout)
         self.setCentralWidget(self.main_widget)
-        self.set_idle()
+
 
         self.bottom_widget.setAutoFillBackground(True)
         self.bottom_widget.setStyleSheet('''background-color: #000000;''')
@@ -3803,6 +3794,8 @@ class MainWindow(QMainWindow):
 
         # self.multi_img_viewer.setStyleSheet('''background-color: #000000;''')
         self.multi_img_viewer.setStyleSheet('''background-color: #004060;''')
+
+        self.set_idle()
 
         # hbar1 = self.img_panels['ref'].horizontalScrollBar()
         # hbar2 = self.img_panels['base'].horizontalScrollBar()
