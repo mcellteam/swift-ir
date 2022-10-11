@@ -1193,7 +1193,8 @@ class MainWindow(QMainWindow):
             self.reload_ng()
         except:
             print_exception()
-        self.set_idle()
+        finally:
+            self.set_idle()
     
     @Slot()
     def jump_to_worst_snr(self) -> None:
@@ -1223,7 +1224,8 @@ class MainWindow(QMainWindow):
         except:
             self.jump_to_worst_ticker = 1
             print_exception()
-        self.set_idle()
+        finally:
+            self.set_idle()
 
     @Slot()
     def jump_to_best_snr(self) -> None:
@@ -1254,7 +1256,8 @@ class MainWindow(QMainWindow):
         except:
             self.jump_to_best_ticker = 0
             print_exception()
-        self.set_idle()
+        finally:
+            self.set_idle()
 
 
 
