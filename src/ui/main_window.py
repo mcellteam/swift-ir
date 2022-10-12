@@ -325,11 +325,14 @@ class MainWindow(QMainWindow):
         ########
         self.hud('Generating Scale Image Hierarchy For Levels %s...' % input_val)
         try:
-            self.worker = BackgroundWorker(fn=generate_scales(), status='Scaling...')
+            self.set_status('Scaling...')
+            self.worker = BackgroundWorker(fn=generate_scales())
             self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud('Generating Scales Triggered an Exception - Returning', logging.ERROR)
+        finally:
+            self.set_idle()
 
         cfg.data.link_all_stacks()
         cfg.data.set_defaults()
@@ -358,11 +361,14 @@ class MainWindow(QMainWindow):
         logger.critical('>>>>>>>> Autoscaling Start <<<<<<<<')
         # self.scales_combobox_switch = 0
         try:
-            self.worker = BackgroundWorker(fn=generate_scales(), status='Scaling...')
+            self.set_status('Scaling...')
+            self.worker = BackgroundWorker(fn=generate_scales())
             self.threadpool.start(self.worker)
         except:
             print_exception()
             logger.warning('Autoscaling Triggered An Exception')
+        finally:
+            pass
         self.hud('Generating Zarr Scales...')
         logger.info('linking stacks...')
         cfg.data.link_all_stacks()
@@ -391,13 +397,14 @@ class MainWindow(QMainWindow):
                 self.set_idle()
             status = 'Converting Zarr (Scale %d)...' % get_scale_val(scale)
             try:
-
-                self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale),
-                                               status=status)
+                self.set_status(status)
+                self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale))
                 self.threadpool.start(self.worker)
             except:
                 print_exception()
                 logger.error('Zarr Export Failed')
+            finally:
+                self.set_idle()
 
         self.read_project_data_update_gui()
         self.reload_scales_combobox()  # 0529 #0713+
@@ -434,34 +441,33 @@ class MainWindow(QMainWindow):
             self.hud.post("Refining Affine Transform For Scale Factor %d..." % (get_scale_val(use_scale)))
         try:
             status = 'Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1])
-            self.worker = BackgroundWorker(fn=compute_affines(use_scale=use_scale, start_layer=0, num_layers=-1),
-                                           status=status)
+            self.set_status(status)
+            self.worker = BackgroundWorker(fn=compute_affines(use_scale=use_scale, start_layer=0, num_layers=-1))
             self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud('An Exception Was Raised During Alignment.', logging.ERROR)
-            return
+        finally:
+            self.set_idle()
 
         self.update_alignment_details()
         self.hud.done()
-        self.set_status('Generating Alignment...')
         self.hud('Generating Aligned Images...')
         try:
+            self.set_status('Generating Alignment...')
             self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1))
             self.threadpool.start(self.worker)
         except:
-
             print_exception()
-            self.hud('Alignment Succeeded But Image Generation Failed Unexpectedly.'
-                          ' Try Re-generating images.',logging.ERROR)
-            # self.set_idle()
-            return
+            self.hud('Alignment Succeeded But Image Generation Failed Unexpectedly. '
+                     'Try Re-generating images.', logging.ERROR)
+        finally:
+            self.set_idle()
         self.hud.done()
         self.update_snr_plot()
         self.save_project_to_file() #0908+
         self.reload_ng()
         self.ng_worker.show_url()
-
 
 
     @Slot()
@@ -482,7 +488,6 @@ class MainWindow(QMainWindow):
             return
         # self.img_panels['aligned'].imageViewer.clearImage()
         img_dims = ImageSize(cfg.data.path_base())
-        self.set_status('Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1]))
         alignment_option = cfg.data['data']['scales'][use_scale]['method_data']['alignment_option']
         if alignment_option == 'init_affine':
             self.hud.post("Initializing Affine Transforms For Scale Factor %d..." % (get_scale_val(use_scale)))
@@ -490,28 +495,30 @@ class MainWindow(QMainWindow):
             self.hud.post("Refining Affine Transform For Scale Factor %d..." % (get_scale_val(use_scale)))
         # self.al_status_checkbox.setChecked(False)
         try:
+            status = 'Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1])
+            self.set_status(status)
             self.worker = BackgroundWorker(fn=compute_affines(use_scale=use_scale, start_layer=cfg.data.layer(), num_layers=num_layers))
             self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud('An Exception Was Raised During Alignment.', logging.ERROR)
-            return
-
+        finally:
+            pass
         self.update_alignment_details()
         self.hud.done()
-        self.set_status('Generating Alignment...')
         self.hud('Generating Aligned Images...')
         try:
             cur_layer = cfg.data.layer()
             self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=cur_layer, num_layers=num_layers))
             self.threadpool.start(self.worker)
-        except:
 
+        except:
             print_exception()
             self.hud('Alignment Succeeded But Image Generation Failed Unexpectedly.'
                           ' Try Re-generating images.',logging.ERROR)
-            return
-        self.hud.done()
+        finally:
+            self.set_idle()
+
         self.update_snr_plot()
         self.save_project_to_file() #0908+
         self.reload_ng()
@@ -530,15 +537,17 @@ class MainWindow(QMainWindow):
             return
         self.hud('Generating Aligned Images...')
         try:
+            self.set_status('Regenerating Alignment...')
             self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1),
-                                           status='Regenerating Alignment...')
+                                           parent=self)
             self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud('Something Went Wrong During Image Generation.', logging.ERROR)
             return
+        finally:
+            self.set_idle()
         self.hud.done()
-        # self.hud('Image Generation Complete')
 
 
         if are_aligned_images_generated():
@@ -572,15 +581,15 @@ class MainWindow(QMainWindow):
                                          '--> (3) Align each scale starting with the coarsest.'
                                          )
             return
-        
-        self.set_status('Exporting...')
         self.hud('Generating Neuroglancer-Compatible Zarr...')
         src = os.path.abspath(cfg.data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, 'img_aligned.zarr'))
         self.hud('  Compression Level: %s' %  cfg.CLEVEL)
         self.hud('  Compression Type: %s' %  cfg.CNAME)
         try:
-            self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out))
+            self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out),
+                                           parent=self,
+                                           status='Exporting...')
             self.threadpool.start(self.worker)
         except:
 

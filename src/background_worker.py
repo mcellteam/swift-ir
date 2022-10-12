@@ -3,10 +3,8 @@
 import sys
 import logging
 import traceback
-from qtpy.QtCore import Slot
-from qtpy.QtCore import Signal
-from qtpy.QtCore import QObject
-from qtpy.QtCore import QRunnable
+from qtpy.QtCore import Slot, Signal, QObject, QRunnable
+from qtpy.QtWidgets import QApplication
 import src.config as cfg
 from src.helpers import print_exception
 
@@ -68,7 +66,7 @@ class BackgroundWorker(QRunnable):
 
     '''
 
-    def __init__(self, fn, status=None, *args, **kwargs):
+    def __init__(self, fn, parent=None, status=None, *args, **kwargs):
         super(BackgroundWorker, self).__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
@@ -78,6 +76,7 @@ class BackgroundWorker(QRunnable):
         self.signals.progress.__hash__()
         self.signals.progress.__str__()
         self.status=status
+        self.parent=parent
 
         # Add the callback to our kwargs
         '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
@@ -91,11 +90,16 @@ class BackgroundWorker(QRunnable):
         '''
         logger.info("Running Background Worker...")
 
-        if self.status != None:
-            cfg.main_window.set_status(self.status)
+        logger.critical('self.status = %s' % str(self.status))
 
-        cfg.main_window._working = True
-        cfg.main_window.pbar.show()
+        if self.status != None:
+            self.parent.set_status(self.status)
+        else:
+            logger.critical('self.status equals None')
+
+        self.parent._working = True
+        self.parent.pbar.show()
+        QApplication.processEvents()
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
@@ -111,3 +115,4 @@ class BackgroundWorker(QRunnable):
             cfg.main_window._working = False
             cfg.main_window.pbar.hide()
             cfg.main_window.set_idle()
+            QApplication.processEvents()
