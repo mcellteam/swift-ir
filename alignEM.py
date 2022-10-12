@@ -58,6 +58,7 @@ from qtpy.QtCore import Qt, QCoreApplication, QTimer
 from src.ui.main_window import MainWindow
 
 from qtpy.QtGui import QOpenGLContext, QOpenGLDebugLogger, QOpenGLDebugMessage
+from qtpy import QtWebEngineCore
 
 
 # os.environ['QT_API'] = 'pyqt6'
@@ -126,8 +127,8 @@ def main():
     else:  cfg.NO_EMBED_NG = False
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
-    logger.info('Turning On Fork Safety...')
-    os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
+    # logger.info('Turning On Fork Safety...')
+    # os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     logger.info('Disabling Web Security...')
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
@@ -137,6 +138,9 @@ def main():
     logger.critical('QtCore.__version__ = %s' % QtCore.__version__)
     logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
     logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
+
+    logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
+    logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
 
     # cfg.opengllogger = QOpenGLDebugLogger()
     # cfg.opengllogger.initialize()
@@ -159,10 +163,10 @@ def main():
     # Image.MAX_IMAGE_PIXELS = None
     # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
-    # logger.info('Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...')
-    # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
+    logger.info('Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...')
+    QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
 
-    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
+    # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
 
