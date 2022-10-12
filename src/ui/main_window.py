@@ -3476,23 +3476,9 @@ class MainWindow(QMainWindow):
         self.bottom_display_area_hlayout.setSpacing(2)
         self.bottom_widget = QWidget()
         self.bottom_widget.setLayout(self.bottom_display_area_hlayout)
-        # self.bottom_display_area_hlayout.addWidget(self.bottom_display_area_controls)
-        # self.bottom_display_area_widget = QWidget()
-        # self.bottom_display_area_widget.setLayout(self.bottom_display_area_hlayout)
-        # self.bottom_display_area_widget.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
 
         '''Image Panels'''
-        # self.img_panels = {}
-        # # self.img_panels['ref'] = QtImageStackViewer(role='ref')
-        # # self.img_panels['base'] = QtImageStackViewer(role='base')
-        # self.img_panels['aligned'] = QtImageStackViewer(role='aligned', parent=self)
-        # self.img_panels['ref'] = QtImageViewer(role='ref', parent=self)
-        # self.img_panels['base'] = QtImageViewer(role='base', parent=self)
-        # self.img_panels['aligned'] = QtImageViewer(role='aligned')
         self.image_view_hlayout = QHBoxLayout()
-        # self.image_view_hlayout.addWidget(self.img_panels['ref'])
-        # self.image_view_hlayout.addWidget(self.img_panels['base'])
-        # self.image_view_hlayout.addWidget(self.img_panels['aligned'])
         self.image_view_hlayout.setSpacing(0)
         self.multi_img_viewer = QWidget()
         self.multi_img_viewer.setMinimumHeight(300)
