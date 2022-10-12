@@ -150,9 +150,10 @@ def main():
     # Image.MAX_IMAGE_PIXELS = None
     # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
-    logger.info('Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...')
-
+    # logger.info('Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...')
     # QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
+
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)  # graceful exit on ctrl+c
 
