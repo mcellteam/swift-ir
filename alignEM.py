@@ -100,13 +100,6 @@ logger.addHandler(ch)
 fh = logging.FileHandler('messages.log')
 logger.addHandler(fh)
 
-def handleLoggedMassage(self, message):
-#       This three really annoyng and brings no useful info =\
-    if not (message.message().find('Use glDrawRangeElements() to avoid this.') > -1 or
-            message.message().find('CPU mapping a busy miptree') > -1 or
-            message.message().find('Flushing before mapping a referenced bo.') > -1
-            ):
-        print(message.message().strip())
 
 
 def main():
@@ -144,11 +137,11 @@ def main():
     logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
     logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
 
-    cfg.opengllogger = QOpenGLDebugLogger()
-    cfg.opengllogger.initialize()
-    cfg.opengllogger.loggedMessages()
-    cfg.opengllogger.messageLogged.connect(cfg.opengllogger.handleLoggedMassage)
-    cfg.opengllogger.startLogging()
+    # cfg.opengllogger = QOpenGLDebugLogger()
+    # cfg.opengllogger.initialize()
+    # cfg.opengllogger.loggedMessages()
+    # cfg.opengllogger.messageLogged.connect(cfg.opengllogger.handleLoggedMassage)
+    # cfg.opengllogger.startLogging()
 
 
     # Ref: https://github.com/numpy/numpy/issues/14474
