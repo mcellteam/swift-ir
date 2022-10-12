@@ -69,7 +69,7 @@ conda env create --name=alignPYQT --file tacc_pyside.yml python=3.9
 if alias align >/dev/null 2>&1; then
   echo "align alias already exists - continuing..."
 else
-  echo "alias align='swr -t 200 numactl --preferred=1 python3 $WORK/swift-ir/alignEM.py'" >> ~/.bashrc
+  echo "alias align='swr numactl --preferred=1 python3 $WORK/swift-ir/alignEM.py'" >> ~/.bashrc
 fi
 
 echo "Complete."
