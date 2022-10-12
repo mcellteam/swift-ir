@@ -44,6 +44,7 @@ import os
 import time
 
 os.environ['QT_API'] = 'pyqt6'
+os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt6'
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyside6'
 # os.environ['QT_API'] = 'pyside2'
@@ -114,7 +115,7 @@ def main():
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
-    # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+    os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
     if args.debug:  logger.setLevel(logging.DEBUG)
