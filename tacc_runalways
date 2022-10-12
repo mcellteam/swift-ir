@@ -10,7 +10,7 @@ conda activate alignPYQT
 
 echo "cd'ing to swift-ir and pulling changes..."
 cd $WORK/swift-ir
-git pull
+git pull --ff-only
 
 echo "Setting QT API environment flag..."
 unset QT_API
