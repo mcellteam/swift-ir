@@ -42,7 +42,7 @@ class WorkerSignals(QObject):
     progress = Signal(int, name='progressSignal')
 
 
-class BackgroundWorker(QRunnable, status=None):
+class BackgroundWorker(QRunnable):
     '''
     BackgroundWorker thread
     Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
@@ -68,7 +68,7 @@ class BackgroundWorker(QRunnable, status=None):
 
     '''
 
-    def __init__(self, fn, *args, **kwargs):
+    def __init__(self, fn, status=None, *args, **kwargs):
         super(BackgroundWorker, self).__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
@@ -77,6 +77,7 @@ class BackgroundWorker(QRunnable, status=None):
         self.signals = WorkerSignals()
         self.signals.progress.__hash__()
         self.signals.progress.__str__()
+        self.status=status
 
         # Add the callback to our kwargs
         '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
