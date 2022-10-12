@@ -185,7 +185,7 @@ def main():
         sys.exit(app.exec())
         # sys.exit(app.exec_())
     except:
-        print_exception()
+        # print_exception()
         logger.info('Trying sys.exit(app.exec_())...')
         sys.exit(app.exec_())
         # sys.exit(app.exec())
