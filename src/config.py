@@ -8,6 +8,7 @@ LOG_LEVEL = 1
 data = None
 main_window = None
 viewer = None
+opengllogger=None
 
 '''Default Window Size'''
 # WIDTH, HEIGHT = 1250, 800
