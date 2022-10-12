@@ -48,6 +48,7 @@ os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt6'
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyside6'
 # os.environ['QT_API'] = 'pyside2'
+# os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
 import os, sys, signal, logging, argparse
 import src.config as cfg
@@ -59,12 +60,6 @@ from src.ui.main_window import MainWindow
 
 from qtpy.QtGui import QOpenGLContext, QOpenGLDebugLogger, QOpenGLDebugMessage
 from qtpy import QtWebEngineCore
-
-
-# os.environ['QT_API'] = 'pyqt6'
-os.environ['QT_API'] = 'PySide6'
-# os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
-
 
 # import cProfile, pstats, io
 # from pstats import SortKey
