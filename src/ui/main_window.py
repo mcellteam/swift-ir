@@ -3795,8 +3795,8 @@ class MainWindow(QMainWindow):
         self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
 
-        max_y = max(snr_list)
-        self.snr_plot.setXRange(0, max_y, padding=0)
+        # max_y = max(snr_list)
+        # self.snr_plot.setXRange(0, max_y, padding=0)
 
 
         self.snr_plot.autoRange()
