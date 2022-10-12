@@ -121,7 +121,7 @@ def main():
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     else:  cfg.NO_EMBED_NG = False
 
-    os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
+    # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     logger.info('Turning On Fork Safety...')
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     logger.info('Disabling Web Security...')
