@@ -373,17 +373,7 @@ class MainWindow(QMainWindow):
         logger.info('linking stacks...')
         cfg.data.link_all_stacks()
         cfg.data.set_defaults()
-        logger.info('Determining the coarsest scale...')
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
-        # try:
-        #     logger.info('generating scales...')
-        #     generate_zarr_scales()
-        #     logger.info('exiting _zarr gracefully...')
-        #     # cfg.image_library.set_zarr_refs()
-        # except:
-        #     logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
-        #     print_exception()
-
         src = os.path.abspath(cfg.data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, 'img_src.zarr'))
         for scale in cfg.data.scales():
@@ -395,8 +385,9 @@ class MainWindow(QMainWindow):
                 print_exception()
             finally:
                 self.set_idle()
-            status = 'Converting Zarr (Scale %d)...' % get_scale_val(scale)
+
             try:
+                status = 'Converting Zarr (Scale %d)...' % get_scale_val(scale)
                 self.set_status(status)
                 self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale))
                 self.threadpool.start(self.worker)
@@ -419,12 +410,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def align(self, use_scale=None) -> None:
         logger.critical('>>>>>>>> Align Start <<<<<<<<')
-
-        if self._working == True:
-            self.hud('Another Process is Already Running', logging.WARNING)
-            return
-        else:
-            pass
+        if self._working == True: self.hud('Another Process is Already Running', logging.WARNING); return
 
         if use_scale == None: use_scale = cfg.data.scale()
         # self.main_panel_bottom_widget.setCurrentIndex(0) #og
@@ -538,8 +524,7 @@ class MainWindow(QMainWindow):
         self.hud('Generating Aligned Images...')
         try:
             self.set_status('Regenerating Alignment...')
-            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1),
-                                           parent=self)
+            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1))
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -587,15 +572,14 @@ class MainWindow(QMainWindow):
         self.hud('  Compression Level: %s' %  cfg.CLEVEL)
         self.hud('  Compression Type: %s' %  cfg.CNAME)
         try:
-            self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out),
-                                           parent=self,
-                                           status='Exporting...')
+            self.set_status('Exporting...')
+            self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out))
             self.threadpool.start(self.worker)
         except:
-
             print_exception()
-            logger.error('Zarr Export Failed')
-            return
+            logger.error('Zarr Export Encountered an Exception')
+        finally:
+            self.set_idle()
         self.has_unsaved_changes()
         self.hud('Process Finished')
 
@@ -1494,22 +1478,12 @@ class MainWindow(QMainWindow):
                 logger.info("Response was 'Cancel'")
                 self.hud('New Project Canceled', logging.WARNING)
                 return
-        # self.image_panel_stack_widget.setCurrentIndex(2)
         self.clear_snr_plot()
-        # self.set_normal_view()
-        # self.set_splash_controls()
-        # self.set_progress_stage_0()
         self.reset_details_banner()
         self.hud('Creating A Project...')
-        # cfg.image_library.remove_all_images()
-        # self.img_panels['ref'].clearImage()
-        # self.img_panels['base'].clearImage()
-        # self.img_panels['aligned'].imageViewer.clearImage()
         filename = self.new_project_save_as_dialog()
         if filename == '':
             self.hud("Project Canceled.")
-
-        # self.clear_images()
         logger.info("Overwriting Project Data In Memory With New Template")
         if not filename.endswith('.proj'):
             filename += ".proj"
@@ -1520,7 +1494,6 @@ class MainWindow(QMainWindow):
         self.hud.done()
         self.setWindowTitle("Project: " + os.path.split(cfg.data.dest())[-1])
         self.save_project()
-        # self.set_progress_stage_1()
         self.scales_combobox.clear()  # why? #0528
         cfg.IMAGES_IMPORTED = False
         self.import_images()
@@ -1699,24 +1672,13 @@ class MainWindow(QMainWindow):
 
             self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
             if are_images_imported():
-                # if is_neuroglancer_viewer:
-
-                # self.load_unaligned_stacks() #1004 #debugging
-
                 self.init_neuroglancer_client()  # force neuroglancer viewer (changes stack index)
-                # else:
-                #     self.update_2D_viewers()
-                # self.image_panel_stack_widget.setCurrentIndex(1)
-
                 cfg.IMAGES_IMPORTED = True
             else:
                 cfg.IMAGES_IMPORTED = False
             self.read_project_data_update_gui()
             self.clear_snr_plot()
             self.update_snr_plot()
-            # self.update_snr_plot()
-            # self.auto_set_user_progress()
-            # self.set_user_progress(gb1=True, gb3=True,gb4=True) #1001
             self.reload_scales_combobox()
             self.update_scale_controls()
         else:
@@ -1731,13 +1693,11 @@ class MainWindow(QMainWindow):
         self.set_status("Saving...")
         logger.info('About to write to HUD...')
         self.hud.post('Saving Project...')
-        # self.main_panel_bottom_widget.setCurrentIndex(0) #og
         logger.info('Trying...')
         try:
             logger.info('About to save_project_to_file...')
             self.save_project_to_file()
             logger.info('About to write done to HUD...')
-            # self.hud.done()
             logger.info('Setting self._unsaved_changes = False...')
             self._unsaved_changes = False
             self.hud.post("Project File Location:\n%s" % str(cfg.data.dest() + ".proj"))
