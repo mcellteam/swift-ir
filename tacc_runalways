@@ -2,29 +2,57 @@
 echo "Sourcing .bashrc..."
 source ~/.bashrc
 
-echo "Purging modules..."
-module purge
 
-echo "Activating alignment conda env..."
-conda activate alignPYQT
 
-echo "cd'ing to swift-ir and pulling changes..."
-cd $WORK/swift-ir
-git stash
-git pull --ff-only
+
 
 echo "Setting QT API environment flag..."
 unset QT_API
 export QT_API=pyqt6
 
 
-echo "Setting QT API environment flag..."
-unset MAX_NUM_THREADS
-export MAX_NUM_THREADS=128
 
-echo "Loading swr and fftw3 modules..."
-ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+
+
 #ml intel/19.1.1 impi/19.0.9
+
+hostname=$(hostname)
+
+if [[ $hostname == *"tacc.utexas.edu"* ]]; then
+  echo "This process is running on TACC system..."
+
+  echo "Purging modules..."
+  module purge
+
+  echo "cd'ing to swift-ir and pulling changes..."
+  cd $WORK/swift-ir
+  git stash
+  git pull --ff-only
+
+  echo "Activating alignment conda env..."
+  conda activate alignPYQT
+
+  echo "Setting MAX_NUM_THREADS flag..."
+  unset MAX_NUM_THREADS
+  export MAX_NUM_THREADS=128
+
+  echo "Loading TACC swr and fftw3 modules..."
+  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+
+  node=$(hostname --alias)
+  domain=$(hostname--domain)
+  echo "Hostname: $hostname"
+  echo "Node: $node"
+
+  swr glxinfo -B
+
+else
+  echo "This process is not running on TACC... falling back to local environment..."
+  glxinfo -B
+fi
+
+
+
 
 #echo "Loading python_cacher module..."
 #ml python_cacher
