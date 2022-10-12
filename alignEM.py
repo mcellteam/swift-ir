@@ -45,6 +45,7 @@ import time
 
 os.environ['QT_API'] = 'pyqt6'
 # os.environ['QT_API'] = 'pyqt5'
+# os.environ['QT_API'] = 'pyside6'
 # os.environ['QT_API'] = 'pyside2'
 
 import os, sys, signal, logging, argparse
@@ -55,9 +56,11 @@ from qtpy.QtWidgets import QApplication
 from qtpy.QtCore import Qt, QCoreApplication, QTimer
 from src.ui.main_window import MainWindow
 
+from qtpy.QtGui import QOpenGLContext, QOpenGLDebugLogger, QOpenGLDebugMessage
+
 
 # os.environ['QT_API'] = 'pyqt6'
-# os.environ['QT_API'] = 'PySide6'
+os.environ['QT_API'] = 'PySide6'
 # os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
 
@@ -97,6 +100,14 @@ logger.addHandler(ch)
 fh = logging.FileHandler('messages.log')
 logger.addHandler(fh)
 
+def handleLoggedMassage(self, message):
+#       This three really annoyng and brings no useful info =\
+    if not (message.message().find('Use glDrawRangeElements() to avoid this.') > -1 or
+            message.message().find('CPU mapping a busy miptree') > -1 or
+            message.message().find('Flushing before mapping a referenced bo.') > -1
+            ):
+        print(message.message().strip())
+
 
 def main():
     logger.info('Running ' + __file__ + '.__main__()')
@@ -109,7 +120,7 @@ def main():
     parser.add_argument('--no_embed_ng', action='store_true', help='Do not embed the neuroglancer browser if True')
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
-    # os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
+    os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
@@ -120,7 +131,6 @@ def main():
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     else:  cfg.NO_EMBED_NG = False
 
-    # os.environ['QT_API'] = args.api
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     logger.info('Turning On Fork Safety...')
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
@@ -134,6 +144,11 @@ def main():
     logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
     logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
 
+    cfg.opengllogger = QOpenGLDebugLogger()
+    cfg.openglloggerr.initialize()
+    cfg.opengllogger.loggedMessages()
+    cfg.opengllogger.messageLogged.connect(cfg.opengllogger.handleLoggedMassage)
+    cfg.opengllogger.startLogging()
 
 
     # Ref: https://github.com/numpy/numpy/issues/14474
