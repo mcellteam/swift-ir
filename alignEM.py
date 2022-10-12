@@ -145,7 +145,7 @@ def main():
     logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
 
     cfg.opengllogger = QOpenGLDebugLogger()
-    cfg.openglloggerr.initialize()
+    cfg.opengllogger.initialize()
     cfg.opengllogger.loggedMessages()
     cfg.opengllogger.messageLogged.connect(cfg.opengllogger.handleLoggedMassage)
     cfg.opengllogger.startLogging()
