@@ -252,3 +252,2081 @@ Traceback (most recent call last):
 SystemExit: 0
 
 Trying sys.exit(app.exec_())...
+Turning On Fork Safety...
+Disabling Web Security...
+QtCore.__version__ = 6.4.0
+qtpy.PYSIDE_VERSION = None
+qtpy.PYQT_VERSION = 6.4.0
+Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...
+Initializing MainWindow
+Checking platform-specific path to SWiFT-IR executables...
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iavg FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2 FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/mir FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/remod FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/swim FOUND
+Initializing Main Window
+Initializing Thread Pool
+Initializing Image Library
+Initializing Qt WebEngine
+Initializing Status Bar
+Initializing Jupyter Console
+Initializing Data Model
+Initializing Menu
+Initializing UI
+Welcome To AlignEM-SWiFT.
+Initializing Shortcuts
+Setting Splash Controls...
+Showing AlignEM-SWiFT
+Running sys.exit(app.exec())...
+Trying sys.exit(app.exec())...
+>>>>>>>> New Project Start <<<<<<<<
+Overwriting Project Data In Memory With New Template
+Welcome To AlignEM-SWiFT.done.
+Entering save_project...
+Nothing To Save
+>>>>>>>> Import Images Start <<<<<<<<
+[]
+dialog.Accepted = DialogCode.Accepted
+No images were selected.
+run_after_import:
+>>>>>>>> Config Dialog Start <<<<<<<<
+MainWindow.closeEvent (called by main):
+Running Shutdown Instructions...
+Shutting down jupyter...
+Shutting Down Jupyter Kernel...
+done
+Having trouble closing http_server
+done
+Shutting down threadpool...
+threadpool_result = True
+done
+Quitting app...
+Running shutdown instructions again...
+Running Shutdown Instructions...
+Shutting down jupyter...
+Shutting Down Jupyter Kernel...
+Having trouble shutting down Jupyter Console Kernel
+done
+Having trouble closing http_server
+done
+Shutting down threadpool...
+threadpool_result = True
+done
+Quitting app...
+  Exception type = <class 'SystemExit'>
+  Exception value = 0
+  Exception trace = <traceback object at 0x1b6783f80>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/alignEM.py", line 189, in main
+    sys.exit(app.exec())
+SystemExit: 0
+
+Trying sys.exit(app.exec_())...
+Turning On Fork Safety...
+Disabling Web Security...
+QtCore.__version__ = 6.4.0
+qtpy.PYSIDE_VERSION = None
+qtpy.PYQT_VERSION = 6.4.0
+Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...
+Initializing MainWindow
+Checking platform-specific path to SWiFT-IR executables...
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iavg FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2 FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/mir FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/remod FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/swim FOUND
+Initializing Main Window
+Initializing Thread Pool
+Initializing Image Library
+Initializing Qt WebEngine
+Initializing Status Bar
+Initializing Jupyter Console
+Initializing Data Model
+Initializing Menu
+Initializing UI
+Welcome To AlignEM-SWiFT.
+Initializing Shortcuts
+Setting Splash Controls...
+Showing AlignEM-SWiFT
+Running sys.exit(app.exec())...
+Trying sys.exit(app.exec())...
+>>>>>>>> New Project Start <<<<<<<<
+Overwriting Project Data In Memory With New Template
+Welcome To AlignEM-SWiFT.done.
+Entering save_project...
+Nothing To Save
+>>>>>>>> Import Images Start <<<<<<<<
+[]
+dialog.Accepted = DialogCode.Accepted
+No images were selected.
+run_after_import:
+>>>>>>>> Config Dialog Start <<<<<<<<
+>>>>>>>> New Project Start <<<<<<<<
+Asking user to confirm new data
+Response was 'OK'
+Overwriting Project Data In Memory With New Template
+Welcome To AlignEM-SWiFT.done.done.
+Entering save_project...
+Nothing To Save
+>>>>>>>> Import Images Start <<<<<<<<
+[]
+dialog.Accepted = DialogCode.Accepted
+Setting Project Controls...
+Welcome To AlignEM-SWiFT.done.done.done.
+link_all_stacks (called by import_images):
+Ensuring Proper Data Structure (Called By link_all_stacks)
+Called by import_images
+---- SAVING DATA TO PROJECT FILE ----
+Exiting save_project_to_file...
+25 Images Imported
+Image Dimensions: 4096x4096 pixels
+Exiting import_images
+run_after_import:
+>>>>>>>> Config Dialog Start <<<<<<<<
+on_create_button_clicked:
+Called by update_project_dict
+---- SAVING DATA TO PROJECT FILE ----
+Exiting save_project_to_file...
+Image Dimensions: 4096x4096 pixelsdone.
+>>>>>>>> Autoscaling Start <<<<<<<<
+>>>>>>>> Generate Scales Start <<<<<<<<
+Scale Factors : [1, 2, 4]
+my_path is /Users/joelyancey/glanceem_swift/alignEM/src/
+Creating Project Directory Structure...
+Creating Project Directory Structure...done.
+7 Workers Are Processing 50 tasks
+Preparing to Downsample Scale 1...
+Preparing to Downsample Scale 1...done.
+Preparing to Downsample Scale 2...
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.101.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.101.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.102.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.102.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.103.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.103.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.104.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.104.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.105.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.106.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.106.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.107.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.107.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.108.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.108.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.109.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.109.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.110.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.110.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.111.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.111.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.112.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.112.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.113.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.113.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.114.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.114.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.115.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.115.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.116.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.116.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.117.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.117.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.118.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.118.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.119.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.119.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.120.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.120.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.121.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.121.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.122.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.122.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.123.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.123.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.124.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.124.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.125.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.125.tif
+Preparing to Downsample Scale 2...done.
+Preparing to Downsample Scale 4...
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.101.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.101.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.102.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.102.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.103.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.103.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.104.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.104.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.105.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.106.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.106.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.107.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.107.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.108.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.108.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.109.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.109.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.110.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.110.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.111.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.111.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.112.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.112.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.113.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.113.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.114.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.114.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.115.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.115.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.116.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.116.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.117.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.117.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.118.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.118.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.119.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.119.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.120.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.120.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.121.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.121.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.122.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.122.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.123.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.123.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.124.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.124.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.125.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.125.tif
+Preparing to Downsample Scale 4...done.
+Generating Scale Hierarchy...
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 50
+Task ID (outs): 3
+
+3
+Task ID (outs): 2
+
+2
+Task ID (outs): 0
+
+0
+Task ID (outs): 5
+
+5
+Task ID (outs): 1
+
+1
+Task ID (outs): 4
+
+4
+Task ID (outs): 6
+
+6
+Task ID (outs): 7
+
+7
+Task ID (outs): 8
+
+8
+Task ID (outs): 9
+
+9
+Task ID (outs): 10
+
+10
+Task ID (outs): 11
+
+11
+Task ID (outs): 13
+
+13
+Task ID (outs): 12
+
+12
+Task ID (outs): 15
+
+15
+Task ID (outs): 14
+
+14
+Task ID (outs): 16
+
+16
+Task ID (outs): 17
+
+17
+Task ID (outs): 18
+
+18
+Task ID (outs): 19
+
+19
+Task ID (outs): 20
+
+20
+Task ID (outs): 25
+
+25
+Task ID (outs): 26
+
+26
+Task ID (outs): 27
+
+27
+Task ID (outs): 28
+
+28
+Task ID (outs): 29
+
+29
+Task ID (outs): 30
+
+30
+Task ID (outs): 21
+
+21
+Task ID (outs): 22
+
+22
+Task ID (outs): 23
+
+23
+Task ID (outs): 31
+
+31
+Task ID (outs): 24
+
+24
+Task ID (outs): 32
+
+32
+Task ID (outs): 33
+
+33
+Task ID (outs): 34
+
+34
+Task ID (outs): 35
+
+35
+Task ID (outs): 36
+
+36
+Task ID (outs): 38
+
+38
+Task ID (outs): 37
+
+37
+Task ID (outs): 40
+
+40
+Task ID (outs): 39
+
+39
+Task ID (outs): 41
+
+41
+Task ID (outs): 42
+
+42
+Task ID (outs): 43
+
+43
+Task ID (outs): 44
+
+44
+Task ID (outs): 45
+
+45
+Task ID (outs): 46
+
+46
+Task ID (outs): 47
+
+47
+Task ID (outs): 48
+
+48
+Task ID (outs): 49
+
+49
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+Stopping task queue...
+Deleting task queue...
+Process generate_scales Completed in 3.02 Seconds
+>>>>>>>> Generate Scales End <<<<<<<<
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b3379500>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+linking stacks...
+link_all_stacks (called by autoscale):
+Ensuring Proper Data Structure (Called By link_all_stacks)
+set_defaults:
+Determining the coarsest scale...
+Preallocating Zarr Array...
+bounding_rect = False
+Preallocating Zarr for Scale: scale_1
+bounding_rect = False
+path = /Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_1/img_src/R34CA1-BS12.101.tif
+Zarr Array will have shape: (25, 4096, 4096)
+Preallocating Zarr Array...done.
+>>>>>>>> Generate Zarr Start <<<<<<<<
+Source Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_1
+Output Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_1/img_src.zarr
+# images: 25
+ID  = 0
+img  = R34CA1-BS12.101.tif
+ID  = 1
+img  = R34CA1-BS12.102.tif
+ID  = 2
+img  = R34CA1-BS12.103.tif
+ID  = 3
+img  = R34CA1-BS12.104.tif
+ID  = 4
+img  = R34CA1-BS12.105.tif
+ID  = 5
+img  = R34CA1-BS12.106.tif
+ID  = 6
+img  = R34CA1-BS12.107.tif
+ID  = 7
+img  = R34CA1-BS12.108.tif
+ID  = 8
+img  = R34CA1-BS12.109.tif
+ID  = 9
+img  = R34CA1-BS12.110.tif
+ID  = 10
+img  = R34CA1-BS12.111.tif
+ID  = 11
+img  = R34CA1-BS12.112.tif
+ID  = 12
+img  = R34CA1-BS12.113.tif
+ID  = 13
+img  = R34CA1-BS12.114.tif
+ID  = 14
+img  = R34CA1-BS12.115.tif
+ID  = 15
+img  = R34CA1-BS12.116.tif
+ID  = 16
+img  = R34CA1-BS12.117.tif
+ID  = 17
+img  = R34CA1-BS12.118.tif
+ID  = 18
+img  = R34CA1-BS12.119.tif
+ID  = 19
+img  = R34CA1-BS12.120.tif
+ID  = 20
+img  = R34CA1-BS12.121.tif
+ID  = 21
+img  = R34CA1-BS12.122.tif
+ID  = 22
+img  = R34CA1-BS12.123.tif
+ID  = 23
+img  = R34CA1-BS12.124.tif
+ID  = 24
+img  = R34CA1-BS12.125.tif
+# tasks: 25
+
+Example Task:
+[0, 'R34CA1-BS12.101.tif', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_1', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/img_src.zarr/s1', 'scale_1']
+Estimated # of tasks: 25
+Actual # of tasks: 25
+7 Workers Are Processing 25 tasks
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 25
+Task ID (outs): 1
+
+1
+Task ID (outs): 0
+
+0
+Task ID (outs): 6
+
+6
+Task ID (outs): 5
+
+5
+Task ID (outs): 2
+
+2
+Task ID (outs): 3
+
+3
+Task ID (outs): 4
+
+4
+Task ID (outs): 7
+
+7
+Task ID (outs): 10
+
+10
+Task ID (outs): 9
+
+9
+Task ID (outs): 12
+
+12
+Task ID (outs): 11
+
+11
+Task ID (outs): 13
+
+13
+Task ID (outs): 8
+
+8
+Task ID (outs): 16
+
+16
+Task ID (outs): 14
+
+14
+Task ID (outs): 15
+
+15
+Task ID (outs): 18
+
+18
+Task ID (outs): 17
+
+17
+Task ID (outs): 19
+
+19
+Task ID (outs): 20
+
+20
+Task ID (outs): 21
+
+21
+Task ID (outs): 22
+
+22
+Task ID (outs): 24
+
+24
+Task ID (outs): 23
+
+23
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+>>>>>>>> Generate Zarr End <<<<<<<<
+Preallocating Zarr Array...
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b3378640>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+bounding_rect = False
+Preallocating Zarr for Scale: scale_2
+bounding_rect = False
+path = /Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_2/img_src/R34CA1-BS12.101.tif
+Zarr Array will have shape: (25, 2048, 2048)
+Preallocating Zarr Array...done.
+>>>>>>>> Generate Zarr Start <<<<<<<<
+Source Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_1
+Output Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_1/img_src.zarr
+# images: 25
+ID  = 0
+img  = R34CA1-BS12.101.tif
+ID  = 1
+img  = R34CA1-BS12.102.tif
+ID  = 2
+img  = R34CA1-BS12.103.tif
+ID  = 3
+img  = R34CA1-BS12.104.tif
+ID  = 4
+img  = R34CA1-BS12.105.tif
+ID  = 5
+img  = R34CA1-BS12.106.tif
+ID  = 6
+img  = R34CA1-BS12.107.tif
+ID  = 7
+img  = R34CA1-BS12.108.tif
+ID  = 8
+img  = R34CA1-BS12.109.tif
+ID  = 9
+img  = R34CA1-BS12.110.tif
+ID  = 10
+img  = R34CA1-BS12.111.tif
+ID  = 11
+img  = R34CA1-BS12.112.tif
+ID  = 12
+img  = R34CA1-BS12.113.tif
+ID  = 13
+img  = R34CA1-BS12.114.tif
+ID  = 14
+img  = R34CA1-BS12.115.tif
+ID  = 15
+img  = R34CA1-BS12.116.tif
+ID  = 16
+img  = R34CA1-BS12.117.tif
+ID  = 17
+img  = R34CA1-BS12.118.tif
+ID  = 18
+img  = R34CA1-BS12.119.tif
+ID  = 19
+img  = R34CA1-BS12.120.tif
+ID  = 20
+img  = R34CA1-BS12.121.tif
+ID  = 21
+img  = R34CA1-BS12.122.tif
+ID  = 22
+img  = R34CA1-BS12.123.tif
+ID  = 23
+img  = R34CA1-BS12.124.tif
+ID  = 24
+img  = R34CA1-BS12.125.tif
+# tasks: 25
+
+Example Task:
+[0, 'R34CA1-BS12.101.tif', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_1', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/img_src.zarr/s2', 'scale_2']
+Estimated # of tasks: 25
+Actual # of tasks: 25
+7 Workers Are Processing 25 tasks
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 25
+Task ID (outs): 1
+
+1<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 4
+
+4<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 5
+
+5<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 6
+
+6<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 3
+
+3<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 0
+
+0<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 2
+
+2<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 10
+
+10<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 9
+
+9<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 11
+
+11<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 7
+
+7<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 13
+
+13<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 8
+
+8<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 12
+
+12<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 16
+
+16<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 14
+
+14<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 15
+
+15<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 18
+
+18<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 17
+
+17<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 19
+
+19<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 20
+
+20<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 21
+
+21<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 22
+
+22<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 23
+
+23<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 24
+
+24<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+>>>>>>>> Generate Zarr End <<<<<<<<
+Preallocating Zarr Array...
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b338a400>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+bounding_rect = False
+Preallocating Zarr for Scale: scale_4
+bounding_rect = False
+path = /Users/joelyancey/glanceem_swift/test_projects/test_1011_1/scale_4/img_src/R34CA1-BS12.101.tif
+Zarr Array will have shape: (25, 1024, 1024)
+Preallocating Zarr Array...done.
+>>>>>>>> Generate Zarr Start <<<<<<<<
+Source Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_1
+Output Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_1/img_src.zarr
+# images: 25
+ID  = 0
+img  = R34CA1-BS12.101.tif
+ID  = 1
+img  = R34CA1-BS12.102.tif
+ID  = 2
+img  = R34CA1-BS12.103.tif
+ID  = 3
+img  = R34CA1-BS12.104.tif
+ID  = 4
+img  = R34CA1-BS12.105.tif
+ID  = 5
+img  = R34CA1-BS12.106.tif
+ID  = 6
+img  = R34CA1-BS12.107.tif
+ID  = 7
+img  = R34CA1-BS12.108.tif
+ID  = 8
+img  = R34CA1-BS12.109.tif
+ID  = 9
+img  = R34CA1-BS12.110.tif
+ID  = 10
+img  = R34CA1-BS12.111.tif
+ID  = 11
+img  = R34CA1-BS12.112.tif
+ID  = 12
+img  = R34CA1-BS12.113.tif
+ID  = 13
+img  = R34CA1-BS12.114.tif
+ID  = 14
+img  = R34CA1-BS12.115.tif
+ID  = 15
+img  = R34CA1-BS12.116.tif
+ID  = 16
+img  = R34CA1-BS12.117.tif
+ID  = 17
+img  = R34CA1-BS12.118.tif
+ID  = 18
+img  = R34CA1-BS12.119.tif
+ID  = 19
+img  = R34CA1-BS12.120.tif
+ID  = 20
+img  = R34CA1-BS12.121.tif
+ID  = 21
+img  = R34CA1-BS12.122.tif
+ID  = 22
+img  = R34CA1-BS12.123.tif
+ID  = 23
+img  = R34CA1-BS12.124.tif
+ID  = 24
+img  = R34CA1-BS12.125.tif
+# tasks: 25
+
+Example Task:
+[0, 'R34CA1-BS12.101.tif', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_1', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_1/img_src.zarr/s4', 'scale_4']
+Estimated # of tasks: 25
+Actual # of tasks: 25
+7 Workers Are Processing 25 tasks
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 25
+Task ID (outs): 0
+
+0<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 6
+
+6<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 5
+
+5<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 3
+
+3<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 4
+
+4<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 1
+
+1<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 2
+
+2<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 7
+
+7<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 9
+
+9<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 10
+
+10<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 8
+
+8<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 12
+
+12<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 13
+
+13<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 11
+
+11<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 14
+
+14<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 16
+
+16<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 15
+
+15<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 17
+
+17<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 18
+
+18<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 19
+
+19<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 20
+
+20<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 21
+
+21<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 22
+
+22<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 24
+
+24<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 23
+
+23<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+>>>>>>>> Generate Zarr End <<<<<<<<
+Reading project data...
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b7a2d140>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+Called by update_alignment_details
+Returning False due to os.path.isdir(zarr_path)
+Exiting update_alignment_details
+Reloading scales combobox...
+Reloading Scale Combobox...
+fn_scales_combobox
+self.scales_combobox_switch = 0
+Unnecessary Function Call Switch Disabled: reload_scales_combobox
+fn_scales_combobox
+self.scales_combobox_switch = 0
+Unnecessary Function Call Switch Disabled: reload_scales_combobox
+Settings combobox index...
+Updating scale controls...
+Updating Scale Controls (Called by autoscale)...
+Called by update_alignment_details
+Returning False due to os.path.isdir(zarr_path)
+Exiting update_alignment_details
+Exiting main_window.autoscale
+Switching To Neuroglancer Viewer
+Starting HTTP Server...
+Creating Neuroglancer Viewer...
+Called by create_viewer
+Returning False due to os.path.isdir(zarr_path)
+Creating the Neuroglancer Viewer...
+Layer Address: zarr://http://localhost:9000
+Creating Local Volumes...
+Normally, noeuroglancer would be reloaded here
+Reloading Neuroglancer Viewer...
+Creating Neuroglancer Viewer...
+Setting ng.LayerGroupViewer Layouts...
+Configuring State Attributes...
+Viewer URL: http://127.0.0.1:59395/v/25440f28596beb1aee3b97fffbe988c8790f8f2d/
+Viewer Configuration: TrackableState(ConfigState({"actions": ["screenshotStatistics", "layer-right", "screenshot", "layer-left"], "inputEventBindings": {"viewer": {"keyl": "layer-left", "keyr": "layer-right"}}, "showUIControls": true, "showPanelBorders": false, "statusMessages": {"hello": "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"}}))
+Serving Data at http  : //127.0.0.1:9000
+Neuroglancer Address  : 
+Protocol Version      : HTTP/1.1
+Server Name           : 1.0.0.127.in-addr.arpa
+Server Port           : 9000
+Server Type           : SocketKind.SOCK_STREAM
+Server Address        : ('127.0.0.1', 9000)
+Server Socket         : <socket.socket fd=75, family=AddressFamily.AF_INET, type=SocketKind.SOCK_STREAM, proto=0, laddr=('127.0.0.1', 9000)>
+Viewer Url:
+
+http://127.0.0.1:59395/v/25440f28596beb1aee3b97fffbe988c8790f8f2d/
+Called by create_viewer
+Returning False due to os.path.isdir(zarr_path)
+Creating the Neuroglancer Viewer...
+Layer Address: zarr://http://localhost:9000
+Creating Local Volumes...
+Setting ng.LayerGroupViewer Layouts...
+Configuring State Attributes...
+Viewer URL: http://127.0.0.1:59395/v/1215962297014de71d1e8606710c7122c6d40471/
+Viewer Configuration: TrackableState(ConfigState({"actions": ["screenshotStatistics", "layer-right", "screenshot", "layer-left"], "inputEventBindings": {"viewer": {"keyl": "layer-left", "keyr": "layer-right"}}, "showUIControls": true, "showPanelBorders": false, "statusMessages": {"hello": "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"}}))
+Called by update_alignment_details
+Returning False due to os.path.isdir(zarr_path)
+Exiting update_alignment_details
+Viewer Url:
+
+http://127.0.0.1:59395/v/1215962297014de71d1e8606710c7122c6d40471/
+Exiting autoscale
+Called by new_project
+---- SAVING DATA TO PROJECT FILE ----
+Exiting save_project_to_file...
+Switching To Neuroglancer Viewer
+Starting HTTP Server...
+Port 9000 already in use. Trying Another port...
+port now is 9001
+Creating Neuroglancer Viewer...
+Called by create_viewer
+Returning False due to os.path.isdir(zarr_path)
+Creating the Neuroglancer Viewer...
+Layer Address: zarr://http://localhost:9001
+Creating Local Volumes...
+Setting ng.LayerGroupViewer Layouts...
+Configuring State Attributes...
+Viewer URL: http://127.0.0.1:59395/v/30f7ef18ddb0cf7d9be9375a8d143e774ba9b372/
+Viewer Configuration: TrackableState(ConfigState({"actions": ["screenshotStatistics", "layer-right", "screenshot", "layer-left"], "inputEventBindings": {"viewer": {"keyl": "layer-left", "keyr": "layer-right"}}, "showUIControls": true, "showPanelBorders": false, "statusMessages": {"hello": "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"}}))
+Serving Data at http  : //127.0.0.1:9001
+Neuroglancer Address  : 
+Protocol Version      : HTTP/1.1
+Server Name           : 1.0.0.127.in-addr.arpa
+Server Port           : 9001
+Server Type           : SocketKind.SOCK_STREAM
+Server Address        : ('127.0.0.1', 9001)
+Server Socket         : <socket.socket fd=82, family=AddressFamily.AF_INET, type=SocketKind.SOCK_STREAM, proto=0, laddr=('127.0.0.1', 9001)>
+Viewer Url:
+
+http://127.0.0.1:59395/v/30f7ef18ddb0cf7d9be9375a8d143e774ba9b372/
+Turning On Fork Safety...
+Disabling Web Security...
+QtCore.__version__ = 6.4.0
+qtpy.PYSIDE_VERSION = None
+qtpy.PYQT_VERSION = 6.4.0
+Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...
+Initializing MainWindow
+Checking platform-specific path to SWiFT-IR executables...
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iavg FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2 FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/mir FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/remod FOUND
+/Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/swim FOUND
+Initializing Main Window
+Initializing Thread Pool
+Initializing Image Library
+Initializing Qt WebEngine
+Initializing Status Bar
+Initializing Jupyter Console
+Initializing Data Model
+Initializing Menu
+Initializing UI
+Welcome To AlignEM-SWiFT.
+Initializing Shortcuts
+Setting Splash Controls...
+Showing AlignEM-SWiFT
+Running sys.exit(app.exec())...
+Trying sys.exit(app.exec())...
+>>>>>>>> New Project Start <<<<<<<<
+Overwriting Project Data In Memory With New Template
+Welcome To AlignEM-SWiFT.done.
+Entering save_project...
+Nothing To Save
+>>>>>>>> Import Images Start <<<<<<<<
+[]
+dialog.Accepted = DialogCode.Accepted
+No images were selected.
+run_after_import:
+>>>>>>>> Config Dialog Start <<<<<<<<
+>>>>>>>> New Project Start <<<<<<<<
+Asking user to confirm new data
+Response was 'OK'
+Overwriting Project Data In Memory With New Template
+Welcome To AlignEM-SWiFT.done.done.
+Entering save_project...
+Nothing To Save
+>>>>>>>> Import Images Start <<<<<<<<
+[]
+dialog.Accepted = DialogCode.Accepted
+Setting Project Controls...
+Welcome To AlignEM-SWiFT.done.done.done.
+link_all_stacks (called by import_images):
+Ensuring Proper Data Structure (Called By link_all_stacks)
+Called by import_images
+---- SAVING DATA TO PROJECT FILE ----
+Exiting save_project_to_file...
+15 Images Imported
+Image Dimensions: 4096x4096 pixels
+Exiting import_images
+run_after_import:
+>>>>>>>> Config Dialog Start <<<<<<<<
+on_create_button_clicked:
+Called by update_project_dict
+---- SAVING DATA TO PROJECT FILE ----
+Exiting save_project_to_file...
+Image Dimensions: 4096x4096 pixelsdone.
+>>>>>>>> Autoscaling Start <<<<<<<<
+>>>>>>>> Generate Scales Start <<<<<<<<
+Scale Factors : [1, 2, 4]
+my_path is /Users/joelyancey/glanceem_swift/alignEM/src/
+Creating Project Directory Structure...
+Creating Project Directory Structure...done.
+7 Workers Are Processing 30 tasks
+Preparing to Downsample Scale 1...
+Preparing to Downsample Scale 1...done.
+Preparing to Downsample Scale 2...
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.101.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.101.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.102.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.102.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.103.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.103.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.104.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.104.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.105.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.106.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.106.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.107.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.107.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.108.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.108.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.109.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.109.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.110.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.110.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.111.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.111.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.112.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.112.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.113.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.113.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.114.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.114.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +2
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.115.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.115.tif
+Preparing to Downsample Scale 2...done.
+Preparing to Downsample Scale 4...
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.101.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.101.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.102.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.102.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.103.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.103.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.104.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.104.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.105.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.105.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.106.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.106.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.107.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.107.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.108.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.108.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.109.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.109.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.110.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.110.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.111.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.111.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.112.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.112.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.113.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.113.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.114.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.114.tif
+
+task_queue Parameters (Example):
+1: /Users/joelyancey/glanceem_swift/alignEM/src/lib/bin_darwin/iscale2
+2: +4
+3: of=/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.115.tif
+4: /Users/joelyancey/glanceem_swift/test_images/r34_tifs/R34CA1-BS12.115.tif
+Preparing to Downsample Scale 4...done.
+Generating Scale Hierarchy...
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 30
+Task ID (outs): 1
+
+1
+Task ID (outs): 4
+
+4
+Task ID (outs): 3
+
+3
+Task ID (outs): 6
+
+6
+Task ID (outs): 2
+
+2
+Task ID (outs): 5
+
+5
+Task ID (outs): 0
+
+0
+Task ID (outs): 8
+
+8
+Task ID (outs): 11
+
+11
+Task ID (outs): 7
+
+7
+Task ID (outs): 10
+
+10
+Task ID (outs): 13
+
+13
+Task ID (outs): 9
+
+9
+Task ID (outs): 12
+
+12
+Task ID (outs): 15
+
+15
+Task ID (outs): 16
+
+16
+Task ID (outs): 17
+
+17
+Task ID (outs): 18
+
+18
+Task ID (outs): 19
+
+19
+Task ID (outs): 20
+
+20
+Task ID (outs): 22
+
+22
+Task ID (outs): 21
+
+21
+Task ID (outs): 23
+
+23
+Task ID (outs): 24
+
+24
+Task ID (outs): 26
+
+26
+Task ID (outs): 25
+
+25
+Task ID (outs): 14
+
+14
+Task ID (outs): 27
+
+27
+Task ID (outs): 28
+
+28
+Task ID (outs): 29
+
+29
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+Stopping task queue...
+Deleting task queue...
+Process generate_scales Completed in 2.76 Seconds
+>>>>>>>> Generate Scales End <<<<<<<<
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b13594c0>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+linking stacks...
+link_all_stacks (called by autoscale):
+Ensuring Proper Data Structure (Called By link_all_stacks)
+set_defaults:
+Determining the coarsest scale...
+Preallocating Zarr Array...
+bounding_rect = False
+Preallocating Zarr for Scale: scale_1
+bounding_rect = False
+path = /Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_1/img_src/R34CA1-BS12.101.tif
+Zarr Array will have shape: (15, 4096, 4096)
+Preallocating Zarr Array...done.
+>>>>>>>> Generate Zarr Start <<<<<<<<
+Source Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_2
+Output Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_2/img_src.zarr
+# images: 15
+ID  = 0
+img  = R34CA1-BS12.101.tif
+ID  = 1
+img  = R34CA1-BS12.102.tif
+ID  = 2
+img  = R34CA1-BS12.103.tif
+ID  = 3
+img  = R34CA1-BS12.104.tif
+ID  = 4
+img  = R34CA1-BS12.105.tif
+ID  = 5
+img  = R34CA1-BS12.106.tif
+ID  = 6
+img  = R34CA1-BS12.107.tif
+ID  = 7
+img  = R34CA1-BS12.108.tif
+ID  = 8
+img  = R34CA1-BS12.109.tif
+ID  = 9
+img  = R34CA1-BS12.110.tif
+ID  = 10
+img  = R34CA1-BS12.111.tif
+ID  = 11
+img  = R34CA1-BS12.112.tif
+ID  = 12
+img  = R34CA1-BS12.113.tif
+ID  = 13
+img  = R34CA1-BS12.114.tif
+ID  = 14
+img  = R34CA1-BS12.115.tif
+# tasks: 15
+
+Example Task:
+[0, 'R34CA1-BS12.101.tif', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_2', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/img_src.zarr/s1', 'scale_1']
+Estimated # of tasks: 15
+Actual # of tasks: 15
+7 Workers Are Processing 15 tasks
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 15
+Task ID (outs): 1
+
+1
+Task ID (outs): 5
+
+5
+Task ID (outs): 4
+
+4
+Task ID (outs): 3
+
+3
+Task ID (outs): 6
+
+6
+Task ID (outs): 2
+
+2
+Task ID (outs): 0
+
+0
+Task ID (outs): 9
+
+9
+Task ID (outs): 7
+
+7
+Task ID (outs): 10
+
+10
+Task ID (outs): 13
+
+13
+Task ID (outs): 11
+
+11
+Task ID (outs): 12
+
+12
+Task ID (outs): 8
+
+8
+Task ID (outs): 14
+
+14
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+>>>>>>>> Generate Zarr End <<<<<<<<
+Preallocating Zarr Array...
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b16b7e80>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+bounding_rect = False
+Preallocating Zarr for Scale: scale_2
+bounding_rect = False
+path = /Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_2/img_src/R34CA1-BS12.101.tif
+Zarr Array will have shape: (15, 2048, 2048)
+Preallocating Zarr Array...done.
+>>>>>>>> Generate Zarr Start <<<<<<<<
+Source Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_2
+Output Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_2/img_src.zarr
+# images: 15
+ID  = 0
+img  = R34CA1-BS12.101.tif
+ID  = 1
+img  = R34CA1-BS12.102.tif
+ID  = 2
+img  = R34CA1-BS12.103.tif
+ID  = 3
+img  = R34CA1-BS12.104.tif
+ID  = 4
+img  = R34CA1-BS12.105.tif
+ID  = 5
+img  = R34CA1-BS12.106.tif
+ID  = 6
+img  = R34CA1-BS12.107.tif
+ID  = 7
+img  = R34CA1-BS12.108.tif
+ID  = 8
+img  = R34CA1-BS12.109.tif
+ID  = 9
+img  = R34CA1-BS12.110.tif
+ID  = 10
+img  = R34CA1-BS12.111.tif
+ID  = 11
+img  = R34CA1-BS12.112.tif
+ID  = 12
+img  = R34CA1-BS12.113.tif
+ID  = 13
+img  = R34CA1-BS12.114.tif
+ID  = 14
+img  = R34CA1-BS12.115.tif
+# tasks: 15
+
+Example Task:
+[0, 'R34CA1-BS12.101.tif', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_2', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/img_src.zarr/s2', 'scale_2']
+Estimated # of tasks: 15
+Actual # of tasks: 15
+7 Workers Are Processing 15 tasks
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 15
+Task ID (outs): 1
+
+1<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 4
+
+4<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 5
+
+5<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 6
+
+6<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 3
+
+3<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 0
+
+0<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 2
+
+2<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 7
+
+7<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 10
+
+10<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 9
+
+9<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 8
+
+8<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 11
+
+11<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 12
+
+12<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 13
+
+13<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Task ID (outs): 14
+
+14<tifffile.TiffPages @4194312> invalid offset to page 2 @4194398
+
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+>>>>>>>> Generate Zarr End <<<<<<<<
+Preallocating Zarr Array...
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b16bea00>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+bounding_rect = False
+Preallocating Zarr for Scale: scale_4
+bounding_rect = False
+path = /Users/joelyancey/glanceem_swift/test_projects/test_1011_2/scale_4/img_src/R34CA1-BS12.101.tif
+Zarr Array will have shape: (15, 1024, 1024)
+Preallocating Zarr Array...done.
+>>>>>>>> Generate Zarr Start <<<<<<<<
+Source Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_2
+Output Image : /Users/joelyancey/glanceem_swift/test_projects/test_1011_2/img_src.zarr
+# images: 15
+ID  = 0
+img  = R34CA1-BS12.101.tif
+ID  = 1
+img  = R34CA1-BS12.102.tif
+ID  = 2
+img  = R34CA1-BS12.103.tif
+ID  = 3
+img  = R34CA1-BS12.104.tif
+ID  = 4
+img  = R34CA1-BS12.105.tif
+ID  = 5
+img  = R34CA1-BS12.106.tif
+ID  = 6
+img  = R34CA1-BS12.107.tif
+ID  = 7
+img  = R34CA1-BS12.108.tif
+ID  = 8
+img  = R34CA1-BS12.109.tif
+ID  = 9
+img  = R34CA1-BS12.110.tif
+ID  = 10
+img  = R34CA1-BS12.111.tif
+ID  = 11
+img  = R34CA1-BS12.112.tif
+ID  = 12
+img  = R34CA1-BS12.113.tif
+ID  = 13
+img  = R34CA1-BS12.114.tif
+ID  = 14
+img  = R34CA1-BS12.115.tif
+# tasks: 15
+
+Example Task:
+[0, 'R34CA1-BS12.101.tif', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_2', '/Users/joelyancey/glanceem_swift/test_projects/test_1011_2/img_src.zarr/s4', 'scale_4']
+Estimated # of tasks: 15
+Actual # of tasks: 15
+7 Workers Are Processing 15 tasks
+TaskQueue.collect_results  >>>>
+self.retries: 3
+# Tasks Pending: 15
+Task ID (outs): 0
+
+0<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 6
+
+6<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 3
+
+3<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 5
+
+5<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 4
+
+4<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 2
+
+2<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 1
+
+1<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 9
+
+9<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 8
+
+8<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 10
+
+10<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 7
+
+7<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 12
+
+12<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 11
+
+11<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 13
+
+13<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Task ID (outs): 14
+
+14<tifffile.TiffPages @1048584> invalid offset to page 2 @1048670
+
+Failed Tasks   : 0
+Retries        : 0
+Complete
+<<<<  TaskQueue.collect_results
+>>>>>>>> Generate Zarr End <<<<<<<<
+Reading project data...
+Running Background Worker...
+  Exception type = <class 'TypeError'>
+  Exception value = 'NoneType' object is not callable
+  Exception trace = <traceback object at 0x1b16e0480>
+  Exception traceback:
+Traceback (most recent call last):
+  File "/Users/joelyancey/glanceem_swift/alignEM/src/background_worker.py", line 96, in run
+    result = self.fn(*self.args, **self.kwargs)
+TypeError: 'NoneType' object is not callable
+
+Called by update_alignment_details
+Returning False due to os.path.isdir(zarr_path)
+Exiting update_alignment_details
+Reloading scales combobox...
+Reloading Scale Combobox...
+fn_scales_combobox
+self.scales_combobox_switch = 0
+Unnecessary Function Call Switch Disabled: reload_scales_combobox
+fn_scales_combobox
+self.scales_combobox_switch = 0
+Unnecessary Function Call Switch Disabled: reload_scales_combobox
+Settings combobox index...
+Updating scale controls...
+Updating Scale Controls (Called by autoscale)...
+Called by update_alignment_details
+Returning False due to os.path.isdir(zarr_path)
+Exiting update_alignment_details
+Exiting main_window.autoscale
+Switching To Neuroglancer Viewer
+Starting HTTP Server...
+Creating Neuroglancer Viewer...
+Called by create_viewer
+Returning False due to os.path.isdir(zarr_path)
+Creating the Neuroglancer Viewer...
+Layer Address: zarr://http://localhost:9000
+Creating Local Volumes...
+Normally, noeuroglancer would be reloaded here
+Reloading Neuroglancer Viewer...
+Creating Neuroglancer Viewer...
+Setting ng.LayerGroupViewer Layouts...
+Configuring State Attributes...
+Viewer URL: http://127.0.0.1:59622/v/eaf1d62d0355d355cf6a45f095611195641237d7/
+Viewer Configuration: TrackableState(ConfigState({"actions": ["screenshot", "screenshotStatistics", "layer-left", "layer-right"], "inputEventBindings": {"viewer": {"keyl": "layer-left", "keyr": "layer-right"}}, "showUIControls": true, "showPanelBorders": false, "statusMessages": {"hello": "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"}}))
+Serving Data at http  : //127.0.0.1:9000
+Neuroglancer Address  : 
+Protocol Version      : HTTP/1.1
+Server Name           : 1.0.0.127.in-addr.arpa
+Server Port           : 9000
+Server Type           : SocketKind.SOCK_STREAM
+Server Address        : ('127.0.0.1', 9000)
+Server Socket         : <socket.socket fd=77, family=AddressFamily.AF_INET, type=SocketKind.SOCK_STREAM, proto=0, laddr=('127.0.0.1', 9000)>
+Viewer Url:
+
+http://127.0.0.1:59622/v/eaf1d62d0355d355cf6a45f095611195641237d7/
+Called by create_viewer
+Returning False due to os.path.isdir(zarr_path)
+Creating the Neuroglancer Viewer...
+Layer Address: zarr://http://localhost:9000
+Creating Local Volumes...
+Setting ng.LayerGroupViewer Layouts...
+Configuring State Attributes...
+Viewer URL: http://127.0.0.1:59622/v/9d4472e939ea460d74c1be4868c7c8cd51f56cb6/
+Viewer Configuration: TrackableState(ConfigState({"actions": ["screenshot", "screenshotStatistics", "layer-left", "layer-right"], "inputEventBindings": {"viewer": {"keyl": "layer-left", "keyr": "layer-right"}}, "showUIControls": true, "showPanelBorders": false, "statusMessages": {"hello": "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"}}))
+Called by update_alignment_details
+Returning False due to os.path.isdir(zarr_path)
+Exiting update_alignment_details
+Viewer Url:
+
+http://127.0.0.1:59622/v/9d4472e939ea460d74c1be4868c7c8cd51f56cb6/
+Exiting autoscale
+Called by new_project
+---- SAVING DATA TO PROJECT FILE ----
+Exiting save_project_to_file...
+Switching To Neuroglancer Viewer
+Starting HTTP Server...
+Port 9000 already in use. Trying Another port...
+port now is 9001
+Creating Neuroglancer Viewer...
+Called by create_viewer
+Returning False due to os.path.isdir(zarr_path)
+Creating the Neuroglancer Viewer...
+Layer Address: zarr://http://localhost:9001
+Creating Local Volumes...
+Setting ng.LayerGroupViewer Layouts...
+Configuring State Attributes...
+Viewer URL: http://127.0.0.1:59622/v/a9f2b4a73eaf9738fec1906a731c46fd3631b037/
+Viewer Configuration: TrackableState(ConfigState({"actions": ["screenshot", "screenshotStatistics", "layer-left", "layer-right"], "inputEventBindings": {"viewer": {"keyl": "layer-left", "keyr": "layer-right"}}, "showUIControls": true, "showPanelBorders": false, "statusMessages": {"hello": "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"}}))
+Serving Data at http  : //127.0.0.1:9001
+Neuroglancer Address  : 
+Protocol Version      : HTTP/1.1
+Server Name           : 1.0.0.127.in-addr.arpa
+Server Port           : 9001
+Server Type           : SocketKind.SOCK_STREAM
+Server Address        : ('127.0.0.1', 9001)
+Server Socket         : <socket.socket fd=84, family=AddressFamily.AF_INET, type=SocketKind.SOCK_STREAM, proto=0, laddr=('127.0.0.1', 9001)>
+Viewer Url:
+
+http://127.0.0.1:59622/v/a9f2b4a73eaf9738fec1906a731c46fd3631b037/

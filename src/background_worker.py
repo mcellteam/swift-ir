@@ -8,6 +8,7 @@ from qtpy.QtCore import Signal
 from qtpy.QtCore import QObject
 from qtpy.QtCore import QRunnable
 import src.config as cfg
+from src.helpers import print_exception
 
 __all__ = ['BackgroundWorker']
 
@@ -41,7 +42,7 @@ class WorkerSignals(QObject):
     progress = Signal(int, name='progressSignal')
 
 
-class BackgroundWorker(QRunnable):
+class BackgroundWorker(QRunnable, status=None):
     '''
     BackgroundWorker thread
     Inherits from QRunnable to handler worker thread setup, signals and wrap-up.
@@ -88,6 +89,10 @@ class BackgroundWorker(QRunnable):
         Initialise the runner functiosn with passed args, kwargs.
         '''
         logger.info("Running Background Worker...")
+
+        if self.status != None:
+            cfg.main_window.set_status(self.status)
+
         cfg.main_window._working = True
         cfg.main_window.pbar.show()
         # Retrieve args/kwargs here; and fire processing using them
@@ -95,13 +100,13 @@ class BackgroundWorker(QRunnable):
             result = self.fn(*self.args, **self.kwargs)
         except:
             # print('BackgroundWorker.run traceback:')
-            # traceback.print_exc()
+            print_exception()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
-            self.signals.finished.emit()  # Done
+            self.signals.finished.emit()
             cfg.main_window._working = False
             cfg.main_window.pbar.hide()
             cfg.main_window.set_idle()
