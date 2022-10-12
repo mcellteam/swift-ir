@@ -161,18 +161,13 @@ class MainWindow(QMainWindow):
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.apply_default_style()
 
-        # self.set_idle()
-
         # self.set_normal_view() #0925
         self.image_panel_stack_widget.setCurrentIndex(2)
 
-        # timer = QTimer()
-        # timer.timeout.connect(self.set_idle)  # execute `display_time`
-        # timer.setInterval(1000)  # 1000ms = 1s
-        # timer.start()
-
         self.set_splash_controls()
         # self.set_project_controls()
+
+        self.set_idle()
 
     if qtpy.QT5:
         def mousePressEvent(self, event):
@@ -242,7 +237,6 @@ class MainWindow(QMainWindow):
         # self.scales_combobox_switch = 0
         if self._working == True:
             self.hud('Another Process is Already Running', logging.WARNING)
-            self.set_idle()
             return
         else:
             pass
@@ -305,7 +299,6 @@ class MainWindow(QMainWindow):
 
             else:
                 self.hud('Rescaling canceled.')
-                self.set_idle()
                 return
 
         if do_scales_exist():
@@ -321,21 +314,18 @@ class MainWindow(QMainWindow):
         
         if not ok:
             self.hud('Scaling Canceled. Scales Must Be Generated Before Aligning', logging.WARNING)
-            self.set_idle()
             return
         
         if input_val == '':
             self.hud('Input Was Empty, Please Provide Scaling Factors', logging.WARNING)
-            self.set_idle()
             logger.info('<<<< scale')
             return
         cfg.data.set_scales_from_string(input_val)
 
         ########
         self.hud('Generating Scale Image Hierarchy For Levels %s...' % input_val)
-        self.set_status("Scaling...")
         try:
-            self.worker = BackgroundWorker(fn=generate_scales())
+            self.worker = BackgroundWorker(fn=generate_scales(), status='Scaling...')
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -361,17 +351,14 @@ class MainWindow(QMainWindow):
         self.update_scale_controls()
         self.save_project_to_file()
         self.hud.done()
-        # self.set_idle()
-        self.pbar.hide()
         self.ng_worker.show_url()
 
 
     def autoscale(self):
         logger.critical('>>>>>>>> Autoscaling Start <<<<<<<<')
-        self.set_status("Scaling...")
         # self.scales_combobox_switch = 0
         try:
-            self.worker = BackgroundWorker(fn=generate_scales())
+            self.worker = BackgroundWorker(fn=generate_scales(), status='Scaling...')
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -394,41 +381,32 @@ class MainWindow(QMainWindow):
         src = os.path.abspath(cfg.data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, 'img_src.zarr'))
         for scale in cfg.data.scales():
-            self.set_status('Converting Scale %d...' % get_scale_val(scale))
+
             try:
+                self.set_status('Preallocating...')
                 preallocate_zarr(use_scale=scale, bounding_rect=False, name='img_src.zarr', is_alignment=False)
-                self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale))
+            except:
+                print_exception()
+            finally:
+                self.set_idle()
+            status = 'Converting Zarr (Scale %d)...' % get_scale_val(scale)
+            try:
+
+                self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale),
+                                               status=status)
                 self.threadpool.start(self.worker)
             except:
                 print_exception()
                 logger.error('Zarr Export Failed')
-            # finally:
-            #     self.pbar.hide()
 
-
-
-        # logger.info('Loading unaligned stacks...')
-        # self.load_unaligned_stacks() #1004 #debugging
-
-        # logger.info('Updating unaligned view...')
-        # self.update_unaligned_2D_viewer()
-        logger.info('Reading project data...')
         self.read_project_data_update_gui()
-        # logger.info('Setting user progress...')
-        # self.set_progress_stage_2()
-        logger.info('Reloading scales combobox...')
         self.reload_scales_combobox()  # 0529 #0713+
         logger.info('Settings combobox index...')
         self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
-        logger.info('Updating scale controls...')
         self.update_scale_controls()
-        # logger.info('Saving project to file...')
-        # self.save_project_to_file() #1002
-        # self.hud.done()
-        logger.info('Exiting main_window.autoscale')
         self.init_neuroglancer_client()
         self.ng_worker.show_url()
-        self.set_idle()
+        logger.info('Exiting main_window.autoscale')
 
     
     @Slot()
@@ -448,30 +426,23 @@ class MainWindow(QMainWindow):
             warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
             self.hud(warning_msg, logging.WARNING)
             return
-        # self.img_panels['aligned'].imageViewer.clearImage()
         img_dims = ImageSize(cfg.data.path_base())
-        self.set_status('Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1]))
         alignment_option = cfg.data['data']['scales'][use_scale]['method_data']['alignment_option']
         if alignment_option == 'init_affine':
             self.hud.post("Initializing Affine Transforms For Scale Factor %d..." % (get_scale_val(use_scale)))
         else:
             self.hud.post("Refining Affine Transform For Scale Factor %d..." % (get_scale_val(use_scale)))
-        # self.al_status_checkbox.setChecked(False)
         try:
-            self.worker = BackgroundWorker(fn=compute_affines(
-                use_scale=use_scale, start_layer=0, num_layers=-1))
+            status = 'Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1])
+            self.worker = BackgroundWorker(fn=compute_affines(use_scale=use_scale, start_layer=0, num_layers=-1),
+                                           status=status)
             self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud('An Exception Was Raised During Alignment.', logging.ERROR)
             return
 
-        # if not is_cur_scale_aligned():
-        #     self.hud('Current Scale Was Not Aligned.', logging.ERROR)
-        #     self.set_idle()
-        #     return
         self.update_alignment_details()
-        # self.hud('Alignment Succeeded.')
         self.hud.done()
         self.set_status('Generating Alignment...')
         self.hud('Generating Aligned Images...')
@@ -486,17 +457,9 @@ class MainWindow(QMainWindow):
             # self.set_idle()
             return
         self.hud.done()
-        # if are_aligned_images_generated():
         self.update_snr_plot()
-
         self.save_project_to_file() #0908+
-        # self.set_progress_stage_3()
-
-        # if self.is_neuroglancer_viewer():
         self.reload_ng()
-        # elif self.is_classic_viewer():
-        #     self.update_aligned_2D_viewer()
-        self.pbar.hide()
         self.ng_worker.show_url()
 
 
@@ -534,12 +497,7 @@ class MainWindow(QMainWindow):
             self.hud('An Exception Was Raised During Alignment.', logging.ERROR)
             return
 
-        # if not is_cur_scale_aligned():
-        #     self.hud('Current Scale Was Not Aligned.', logging.ERROR)
-        #     self.set_idle()
-        #     return
         self.update_alignment_details()
-        # self.hud('Alignment Succeeded.')
         self.hud.done()
         self.set_status('Generating Alignment...')
         self.hud('Generating Aligned Images...')
@@ -552,19 +510,11 @@ class MainWindow(QMainWindow):
             print_exception()
             self.hud('Alignment Succeeded But Image Generation Failed Unexpectedly.'
                           ' Try Re-generating images.',logging.ERROR)
-            # self.set_idle()
             return
         self.hud.done()
-        # if are_aligned_images_generated():
         self.update_snr_plot()
-
         self.save_project_to_file() #0908+
-        # self.set_progress_stage_3()
-
-        # if self.is_neuroglancer_viewer():
         self.reload_ng()
-        # elif self.is_classic_viewer():
-        #     self.update_aligned_2D_viewer()
         self.pbar.hide()
         self.ng_worker.show_url()
     
@@ -573,52 +523,42 @@ class MainWindow(QMainWindow):
         logger.info('regenerate:')
         if self._working == True:
             self.hud('Another Process is Already Running', logging.WARNING)
-            self.set_idle()
             return
-        # self.main_panel_bottom_widget.setCurrentIndex(0) #og
         self.read_gui_update_project_data()
         if not is_cur_scale_aligned():
             self.hud('Scale Must Be Aligned Before Images Can Be Generated.', logging.WARNING)
-            self.set_idle()
             return
-        # self.img_panels['aligned'].imageViewer.clearImage()
-        self.set_busy()
         self.hud('Generating Aligned Images...')
         try:
-            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1))
+            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1),
+                                           status='Regenerating Alignment...')
             self.threadpool.start(self.worker)
         except:
             print_exception()
             self.hud('Something Went Wrong During Image Generation.', logging.ERROR)
-            self.set_idle()
             return
         self.hud.done()
         # self.hud('Image Generation Complete')
+
+
         if are_aligned_images_generated():
             logger.info('are_aligned_images_generated() returned True. Setting user progress to stage 3...')
-            # self.set_progress_stage_3()
             self.read_project_data_update_gui()
-            # if self.is_neuroglancer_viewer():
             self.reload_ng()
-
-
             self.hud("Regenerate Complete")
         else:
             print_exception()
             self.hud('Image Generation Failed Unexpectedly. Try Re-aligning.', logging.ERROR)
-            self.set_idle()
             return
         self.update_win_self()
         self.save_project_to_file() #0908+
         # self.has_unsaved_changes() #0908-
-        self.pbar.hide()
         self.ng_worker.show_url()
     
     def export(self):
         logger.info('Exporting to Zarr format...')
         if self._working == True:
            self.hud('Another Process is Already Running', logging.WARNING)
-           self.set_idle()
            return
 
         self.hud('Exporting...')
@@ -631,7 +571,6 @@ class MainWindow(QMainWindow):
                                          '(2) Generate a set of scaled images and save.\n'
                                          '--> (3) Align each scale starting with the coarsest.'
                                          )
-            self.set_idle()
             return
         
         self.set_status('Exporting...')
@@ -647,10 +586,8 @@ class MainWindow(QMainWindow):
 
             print_exception()
             logger.error('Zarr Export Failed')
-            self.set_idle()
             return
         self.has_unsaved_changes()
-        self.set_idle()
         self.hud('Process Finished')
 
     @Slot()
@@ -1192,19 +1129,15 @@ class MainWindow(QMainWindow):
             self.reload_ng()
         except:
             print_exception()
-        finally:
-            self.set_idle()
     
     @Slot()
     def jump_to_worst_snr(self) -> None:
         self.set_status('Busy...')
         if not are_images_imported():
             self.hud("Images Must Be Imported First", logging.WARNING)
-            self.set_idle()
             return
         if not are_aligned_images_generated():
             self.hud("Current Scale Must Be Aligned First", logging.WARNING)
-            self.set_idle()
             return
         try:
             self.read_gui_update_project_data()
@@ -1223,19 +1156,16 @@ class MainWindow(QMainWindow):
         except:
             self.jump_to_worst_ticker = 1
             print_exception()
-        finally:
-            self.set_idle()
+
 
     @Slot()
     def jump_to_best_snr(self) -> None:
         self.set_status('Busy...')
         if not are_images_imported():
             self.hud("You Must Import Some Images First!")
-            self.set_idle()
             return
         if not are_aligned_images_generated():
             self.hud("You Must Align This Scale First!")
-            self.set_idle()
             return
         try:
             self.read_gui_update_project_data()
@@ -1255,8 +1185,6 @@ class MainWindow(QMainWindow):
         except:
             self.jump_to_best_ticker = 0
             print_exception()
-        finally:
-            self.set_idle()
 
 
 
@@ -1416,8 +1344,6 @@ class MainWindow(QMainWindow):
         #     # painter.fillRect(rect, QBrush(QColor(128, 128, 255, 128)))
         except:
             print_exception()
-        finally:
-            self.set_idle()
 
     #1004 #debugging
     # def load_unaligned_stacks(self):
@@ -1573,8 +1499,6 @@ class MainWindow(QMainWindow):
         filename = self.new_project_save_as_dialog()
         if filename == '':
             self.hud("Project Canceled.")
-            self.set_idle()
-            return
 
         # self.clear_images()
         logger.info("Overwriting Project Data In Memory With New Template")
@@ -1813,7 +1737,6 @@ class MainWindow(QMainWindow):
             self.hud.post('Nothing To Save', logging.WARNING)
         finally:
             logger.info('Doing the finally...')
-            self.set_idle()
         logger.info('Exiting save_project')
 
 
@@ -1948,7 +1871,6 @@ class MainWindow(QMainWindow):
             filenames = natural_sort(self.import_images_dialog())
         except:
             logger.warning('No images were selected.')
-            # self.set_idle()
             return
         logger.debug('filenames = %s' % str(filenames))
         if clear_role:
@@ -1978,7 +1900,6 @@ class MainWindow(QMainWindow):
             self.hud.post('Image Dimensions: ' + str(img_size[0]) + 'x' + str(img_size[1]) + ' pixels')
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
-        # self.set_idle()
         logger.info('Exiting import_images')
 
     def run_after_import(self):
@@ -1991,7 +1912,6 @@ class MainWindow(QMainWindow):
         else:
             # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
             self.autoscale()
-        self.pbar.hide()
         logger.info('Exiting autoscale')
 
 
@@ -2363,15 +2283,12 @@ class MainWindow(QMainWindow):
 
     def exit_docs(self):
         self.main_widget.setCurrentIndex(0)
-        self.set_idle()
 
     def exit_remote(self):
         self.main_widget.setCurrentIndex(0)
-        self.set_idle()
 
     def exit_demos(self):
         self.main_widget.setCurrentIndex(0)
-        self.set_idle()
 
     def webgl2_test(self):
         '''https://www.khronos.org/files/webgl20-reference-guide.pdf'''
@@ -3794,7 +3711,6 @@ class MainWindow(QMainWindow):
         # self.multi_img_viewer.setStyleSheet('''background-color: #000000;''')
         self.multi_img_viewer.setStyleSheet('''background-color: #004060;''')
 
-        self.set_idle()
 
         # hbar1 = self.img_panels['ref'].horizontalScrollBar()
         # hbar2 = self.img_panels['base'].horizontalScrollBar()
@@ -3989,7 +3905,6 @@ class MainWindow(QMainWindow):
         self.main_widget.setCurrentIndex(0)
         self.image_panel_stack_widget.setCurrentIndex(1)
         # self.main_panel_bottom_widget.setCurrentIndex(0) #og
-        self.set_idle()
 
 
 
