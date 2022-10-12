@@ -50,6 +50,7 @@ os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt6'
 # os.environ['QT_API'] = 'pyside2'
 # os.environ['QT_DRIVER'] = 'PyQt6' # necessary for qimage2ndarray
 
+
 import os, sys, signal, logging, argparse
 import src.config as cfg
 from src.helpers import print_exception
@@ -111,7 +112,7 @@ def main():
     # parser.add_argument('-n', '--no_neuroglancer', action='store_true', default=False, help='Debug Mode')
     args = parser.parse_args()
     os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
-    os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
+    # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
     if args.debug:  logger.setLevel(logging.DEBUG)
@@ -121,7 +122,6 @@ def main():
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     else:  cfg.NO_EMBED_NG = False
 
-    # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
     logger.info('Turning On Fork Safety...')
     os.environ['OBJC_DISABLE_INITIALIZE_FORK_SAFETY'] = 'YES'
     logger.info('Disabling Web Security...')

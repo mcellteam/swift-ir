@@ -2,17 +2,9 @@
 echo "Sourcing .bashrc..."
 source ~/.bashrc
 
-
-
-
-
 echo "Setting QT API environment flag..."
 unset QT_API
 export QT_API=pyqt6
-
-
-
-
 
 #ml intel/19.1.1 impi/19.0.9
 
