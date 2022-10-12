@@ -64,7 +64,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     for i,layer in enumerate(alstack):
         lnum = alstack.index(layer)
         if bool(layer['skipped']):
-            logger.info('Not Adding Task for Layer %s' % str(lnum))
+            logger.info('Skipping Layer %s' % str(lnum))
         else:
             task_args = [sys.executable,
                          align_job,                          # Python program to run (single_alignment_job)
@@ -76,9 +76,9 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
                          str(1),                             # Number of layers to run
                          str(cfg.USE_FILE_IO)                # Use File IO instead of Pipe
                          ]
-            if i == 0:
-                example = [str(p) for p in task_args]
-                logger.info("Starting mp_queue with args (First Layer Only, Example):\n%s\n" % "\n".join(example))
+            # if i == 0:
+            #     example = [str(p) for p in task_args]
+            #     logger.info("Starting mp_queue with args (First Layer Only, Example):\n%s\n" % "\n".join(example))
             task_queue.add_task(task_args)
 
     # task_queue.work_q.join()

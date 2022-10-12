@@ -51,6 +51,9 @@ import os, sys, signal, logging, argparse
 import src.config as cfg
 from src.helpers import print_exception
 from qtpy import QtCore
+from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import Qt, QCoreApplication, QTimer
+from src.ui.main_window import MainWindow
 
 
 # os.environ['QT_API'] = 'pyqt6'
@@ -109,29 +112,13 @@ def main():
     # os.environ['QT_API'] = args.api  # This env setting is ingested by qtpy
     # os.environ['PYQTGRAPH_QT_LIB'] = args.api #do not set!
 
-
-
-    # from PIL import Image
-    from qtpy.QtWidgets import QApplication
-    from qtpy.QtCore import Qt, QCoreApplication, QTimer
-    from src.ui.main_window import MainWindow
-
-
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
-    if args.debug:
-        logger.setLevel(logging.DEBUG)
-    else:
-        logger.setLevel(LOGLEVELS[args.loglevel])
-
-    if args.no_tensorstore:
-        cfg.USE_TENSORSTORE = False
-    else:
-        cfg.USE_TENSORSTORE = True
-
-    if args.no_embed_ng:
-        cfg.NO_EMBED_NG = True
-    else:
-        cfg.NO_EMBED_NG = False
+    if args.debug:  logger.setLevel(logging.DEBUG)
+    else:  logger.setLevel(LOGLEVELS[args.loglevel])
+    if args.no_tensorstore:  cfg.USE_TENSORSTORE = False
+    else:  cfg.USE_TENSORSTORE = True
+    if args.no_embed_ng:  cfg.NO_EMBED_NG = True
+    else:  cfg.NO_EMBED_NG = False
 
     # os.environ['QT_API'] = args.api
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'

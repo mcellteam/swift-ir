@@ -4,8 +4,6 @@ import sys
 import logging
 import traceback
 from qtpy.QtCore import Slot, Signal, QObject, QRunnable
-from qtpy.QtWidgets import QApplication
-import src.config as cfg
 from src.helpers import print_exception
 
 __all__ = ['BackgroundWorker']
@@ -66,7 +64,7 @@ class BackgroundWorker(QRunnable):
 
     '''
 
-    def __init__(self, fn, parent=None, status=None, *args, **kwargs):
+    def __init__(self, fn, *args, **kwargs):
         super(BackgroundWorker, self).__init__()
         # Store constructor arguments (re-used for processing)
         self.fn = fn
@@ -74,9 +72,7 @@ class BackgroundWorker(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
         self.signals.progress.__hash__()
-        self.signals.progress.__str__()
-        self.status=status
-        self.parent=parent
+        self.signals.progress.__str__()\
 
         # Add the callback to our kwargs
         '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
@@ -92,14 +88,14 @@ class BackgroundWorker(QRunnable):
 
         logger.critical('self.status = %s' % str(self.status))
 
-        if self.status != None:
-            self.parent.set_status(self.status)
-        else:
-            logger.critical('self.status equals None')
+        # if self.status != None:
+        #     self.parent.set_status(self.status)
+        #     # QApplication.processEvents()
+        # else:
+        #     logger.critical('self.status equals None')
+        # cfg.main_window._working = True
+        # cfg.main_window.pbar.show()
 
-        self.parent._working = True
-        self.parent.pbar.show()
-        QApplication.processEvents()
         # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
@@ -112,7 +108,10 @@ class BackgroundWorker(QRunnable):
             self.signals.result.emit(result)  # Return the result of the processing
         finally:
             self.signals.finished.emit()
-            cfg.main_window._working = False
-            cfg.main_window.pbar.hide()
-            cfg.main_window.set_idle()
-            QApplication.processEvents()
+            # cfg.main_window._working = False
+            # cfg.main_window.pbar.hide()
+            # cfg.main_window.set_idle()
+            # cfg.main_window._working = False
+            # cfg.main_window.pbar.hide()
+            # cfg.main_window.set_idle()
+            # QApplication.processEvents()
