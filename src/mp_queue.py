@@ -186,8 +186,9 @@ class TaskQueue(QObject):
             for j in range(n_pending):
 
                 try:
-                    task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
-                    logger.info(task_str)
+                    pass
+                    # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
+                    # logger.info(task_str)
                 except:
                     pass
 
