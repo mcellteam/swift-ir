@@ -394,17 +394,16 @@ class MainWindow(QMainWindow):
         src = os.path.abspath(cfg.data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, 'img_src.zarr'))
         for scale in cfg.data.scales():
-            self.set_busy()
+            self.set_status('Converting Scale %d...' % get_scale_val(scale))
             try:
                 preallocate_zarr(use_scale=scale, bounding_rect=False, name='img_src.zarr', is_alignment=False)
                 self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale))
                 self.threadpool.start(self.worker)
-                self.pbar.hide()
             except:
                 print_exception()
                 logger.error('Zarr Export Failed')
-                self.pbar.hide()
-                return
+            # finally:
+            #     self.pbar.hide()
 
 
 
