@@ -43,7 +43,7 @@ import qtpy
 import os
 import time
 
-os.environ['OPENBLAS_NUM_THREADS'] = '1'
+# os.environ['OPENBLAS_NUM_THREADS'] = '1'
 # Recommended fix for: Original error was: PyCapsule_Import could not import module "datetime"
 # https://github.com/numpy/numpy/issues/14474
 
