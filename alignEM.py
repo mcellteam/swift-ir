@@ -118,7 +118,6 @@ def main():
     if args.debug:  logger.setLevel(logging.DEBUG)
     else:  logger.setLevel(LOGLEVELS[args.loglevel])
     if args.no_tensorstore:  cfg.USE_TENSORSTORE = False
-    else:  cfg.USE_TENSORSTORE = True
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
     else:  cfg.NO_EMBED_NG = False
 

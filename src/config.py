@@ -34,7 +34,8 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
-USE_TENSORSTORE = True
+# USE_TENSORSTORE = True
+USE_TENSORSTORE = False
 NO_EMBED_NG = False
 
 MULTIVIEW=True
