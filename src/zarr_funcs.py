@@ -83,7 +83,8 @@ def get_zarr_tensor_from_path(zarr_path):
     :return: A view into the dataset.
     :rtype: tensorstore.Future
     '''
-    import tensorstore as ts
+    if cfg.USE_TENSORSTORE:
+        import tensorstore as ts
 
     system = platform.system()
     node = platform.node()
