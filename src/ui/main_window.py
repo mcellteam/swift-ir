@@ -43,7 +43,8 @@ from src.ui.python_console import PythonConsole
 # from src.utils.PyQtImageViewer import QtImageViewer
 from src.ui.splash import SplashScreen
 from src.ui.dialogs import ConfigDialog
-from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor_from_path, generate_zarr_scales_da, preallocate_zarr
+from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor_from_path, preallocate_zarr
+# from src.zarr_funcs import generate_zarr_scales_da
 
 __all__ = ['MainWindow']
 
@@ -231,130 +232,130 @@ class MainWindow(QMainWindow):
         self.project_view.show()
         self.main_widget.setCurrentIndex(4)
 
-    @Slot()
-    def scale(self) -> None:
-        logger.info("scale:")
-        # self.scales_combobox_switch = 0
-        if self._working == True:
-            self.hud('Another Process is Already Running', logging.WARNING)
-            return
-        else:
-            pass
-
-        self.set_status("Busy...")
-        # self.main_panel_bottom_widget.setCurrentIndex(0) #og
-        self.hud('Requesting scale factors from user')
-
-        if do_scales_exist():
-            self.hud('This data was scaled already. Re-scaling now resets alignment progress.',
-                          logging.WARNING)
-            reply = QMessageBox.question(self, 'Verify Regenerate Scales',
-                                         'Regenerating scales now will reset progress.\n\n'
-                                         'Continue with rescaling?',
-                                         QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
-            if reply == QMessageBox.Yes:
-                self.hud('Continuing With Rescaling...')
-                # self.clear_images()
-                #
-                # # for scale in scales():
-                # #     scale_path = os.path.join(proj_path, scale, 'img')
-                # #     try:
-                # #         shutil.rmtree()
-                #
-                # self.hud('Removing Previously Generated Images...')
-                # proj_path = cfg.data['data']['destination_path']
-                # for scale in get_scales_list():
-                #     if scale != 'scale_1':
-                #         logger.info('Removing directory %s...' % scale)
-                #         rm_dir = os.path.join(proj_path, scale)
-                #         try:
-                #             shutil.rmtree(rm_dir)
-                #         except Exception as e:
-                #             logger.warning('Failed to delete %s. Reason: %s' % (rm_dir, e))
-                #
-                #     elif scale == 1:
-                #         clear_dir = os.path.join(proj_path, scale, 'img_aligned')
-                #         logger.info('Clearing directory %s...' % clear_dir)
-                #         for filename in os.listdir(clear_dir):
-                #             file_path = os.path.join(clear_dir, filename)
-                #             try:
-                #                 if os.path.isfile(file_path) or os.path.islink(file_path):
-                #                     os.unlink(file_path)
-                #                 elif os.path.isdir(file_path):
-                #                     shutil.rmtree(file_path)
-                #             except Exception as e:
-                #                 logger.warning('Failed to delete %s. Reason: %s' % (file_path, e))
-                #
-                # zarr_path = os.path.join(proj_path, 'img_aligned.zarr')
-                # if os.path.exists(zarr_path):
-                #     logger.info('Removing directory %s...' % zarr_path)
-                #     try:
-                #         shutil.rmtree(zarr_path)
-                #     except Exception as e:
-                #         logger.warning('Failed to delete %s. Reason: %s' % (zarr_path, e))
-                #
-                # self.update_panels() #!!
-                # self.update_win_self()
-                # self.hud('Done')
-
-            else:
-                self.hud('Rescaling canceled.')
-                return
-
-        if do_scales_exist():
-            default_scales = map(str, cfg.data.scale_vals_list())
-        else:
-            default_scales = ['1']
-        input_val, ok = QInputDialog().getText(None, "Define Scales",
-                                               "Please enter your scaling factors separated by spaces." \
-                                               "\n\nFor example, to generate 1x 2x and 4x scale datasets: 1 2 4\n\n"
-                                               "Your current scales: " + str(' '.join(default_scales)),
-                                               echo=QLineEdit.Normal,
-                                               text=' '.join(default_scales))
-        
-        if not ok:
-            self.hud('Scaling Canceled. Scales Must Be Generated Before Aligning', logging.WARNING)
-            return
-        
-        if input_val == '':
-            self.hud('Input Was Empty, Please Provide Scaling Factors', logging.WARNING)
-            logger.info('<<<< scale')
-            return
-        cfg.data.set_scales_from_string(input_val)
-
-        ########
-        self.hud('Generating Scale Image Hierarchy For Levels %s...' % input_val)
-        try:
-            self.set_status('Scaling...')
-            self.worker = BackgroundWorker(fn=generate_scales())
-            self.threadpool.start(self.worker)
-        except:
-            print_exception()
-            self.hud('Generating Scales Triggered an Exception - Returning', logging.ERROR)
-        finally:
-            self.set_idle()
-
-        cfg.data.link_all_stacks()
-        cfg.data.set_defaults()
-        cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
-        self.set_status('Creating Zarr Arrays...')
-        try:
-            generate_zarr_scales_da()
-            # cfg.image_library.set_zarr_refs()
-        except:
-            logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
-            print_exception()
-
-        # self.load_unaligned_stacks() #1004 #debugging
-        # self.update_unaligned_2D_viewer()
-        self.read_project_data_update_gui()
-        # self.set_progress_stage_2()
-        self.reload_scales_combobox()  # 0529 #0713+
-        self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
-        self.update_scale_controls()
-        self.save_project_to_file()
-        self.hud.done()
-        self.ng_worker.show_url()
+    # @Slot()
+    # def scale(self) -> None:
+    #     logger.info("scale:")
+    #     # self.scales_combobox_switch = 0
+    #     if self._working == True:
+    #         self.hud('Another Process is Already Running', logging.WARNING)
+    #         return
+    #     else:
+    #         pass
+    #
+    #     self.set_status("Busy...")
+    #     # self.main_panel_bottom_widget.setCurrentIndex(0) #og
+    #     self.hud('Requesting scale factors from user')
+    #
+    #     if do_scales_exist():
+    #         self.hud('This data was scaled already. Re-scaling now resets alignment progress.',
+    #                       logging.WARNING)
+    #         reply = QMessageBox.question(self, 'Verify Regenerate Scales',
+    #                                      'Regenerating scales now will reset progress.\n\n'
+    #                                      'Continue with rescaling?',
+    #                                      QMessageBox.Yes | QMessageBox.Cancel, QMessageBox.Cancel)
+    #         if reply == QMessageBox.Yes:
+    #             self.hud('Continuing With Rescaling...')
+    #             # self.clear_images()
+    #             #
+    #             # # for scale in scales():
+    #             # #     scale_path = os.path.join(proj_path, scale, 'img')
+    #             # #     try:
+    #             # #         shutil.rmtree()
+    #             #
+    #             # self.hud('Removing Previously Generated Images...')
+    #             # proj_path = cfg.data['data']['destination_path']
+    #             # for scale in get_scales_list():
+    #             #     if scale != 'scale_1':
+    #             #         logger.info('Removing directory %s...' % scale)
+    #             #         rm_dir = os.path.join(proj_path, scale)
+    #             #         try:
+    #             #             shutil.rmtree(rm_dir)
+    #             #         except Exception as e:
+    #             #             logger.warning('Failed to delete %s. Reason: %s' % (rm_dir, e))
+    #             #
+    #             #     elif scale == 1:
+    #             #         clear_dir = os.path.join(proj_path, scale, 'img_aligned')
+    #             #         logger.info('Clearing directory %s...' % clear_dir)
+    #             #         for filename in os.listdir(clear_dir):
+    #             #             file_path = os.path.join(clear_dir, filename)
+    #             #             try:
+    #             #                 if os.path.isfile(file_path) or os.path.islink(file_path):
+    #             #                     os.unlink(file_path)
+    #             #                 elif os.path.isdir(file_path):
+    #             #                     shutil.rmtree(file_path)
+    #             #             except Exception as e:
+    #             #                 logger.warning('Failed to delete %s. Reason: %s' % (file_path, e))
+    #             #
+    #             # zarr_path = os.path.join(proj_path, 'img_aligned.zarr')
+    #             # if os.path.exists(zarr_path):
+    #             #     logger.info('Removing directory %s...' % zarr_path)
+    #             #     try:
+    #             #         shutil.rmtree(zarr_path)
+    #             #     except Exception as e:
+    #             #         logger.warning('Failed to delete %s. Reason: %s' % (zarr_path, e))
+    #             #
+    #             # self.update_panels() #!!
+    #             # self.update_win_self()
+    #             # self.hud('Done')
+    #
+    #         else:
+    #             self.hud('Rescaling canceled.')
+    #             return
+    #
+    #     if do_scales_exist():
+    #         default_scales = map(str, cfg.data.scale_vals_list())
+    #     else:
+    #         default_scales = ['1']
+    #     input_val, ok = QInputDialog().getText(None, "Define Scales",
+    #                                            "Please enter your scaling factors separated by spaces." \
+    #                                            "\n\nFor example, to generate 1x 2x and 4x scale datasets: 1 2 4\n\n"
+    #                                            "Your current scales: " + str(' '.join(default_scales)),
+    #                                            echo=QLineEdit.Normal,
+    #                                            text=' '.join(default_scales))
+    #
+    #     if not ok:
+    #         self.hud('Scaling Canceled. Scales Must Be Generated Before Aligning', logging.WARNING)
+    #         return
+    #
+    #     if input_val == '':
+    #         self.hud('Input Was Empty, Please Provide Scaling Factors', logging.WARNING)
+    #         logger.info('<<<< scale')
+    #         return
+    #     cfg.data.set_scales_from_string(input_val)
+    #
+    #     ########
+    #     self.hud('Generating Scale Image Hierarchy For Levels %s...' % input_val)
+    #     try:
+    #         self.set_status('Scaling...')
+    #         self.worker = BackgroundWorker(fn=generate_scales())
+    #         self.threadpool.start(self.worker)
+    #     except:
+    #         print_exception()
+    #         self.hud('Generating Scales Triggered an Exception - Returning', logging.ERROR)
+    #     finally:
+    #         self.set_idle()
+    #
+    #     cfg.data.link_all_stacks()
+    #     cfg.data.set_defaults()
+    #     cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
+    #     self.set_status('Creating Zarr Arrays...')
+    #     try:
+    #         generate_zarr_scales_da()
+    #         # cfg.image_library.set_zarr_refs()
+    #     except:
+    #         logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
+    #         print_exception()
+    #
+    #     # self.load_unaligned_stacks() #1004 #debugging
+    #     # self.update_unaligned_2D_viewer()
+    #     self.read_project_data_update_gui()
+    #     # self.set_progress_stage_2()
+    #     self.reload_scales_combobox()  # 0529 #0713+
+    #     self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
+    #     self.update_scale_controls()
+    #     self.save_project_to_file()
+    #     self.hud.done()
+    #     self.ng_worker.show_url()
 
 
     def autoscale(self):
@@ -2556,7 +2557,7 @@ class MainWindow(QMainWindow):
             ['&Tools',
              [
                  ['Project Configuration', None, self.configure_project, None, None, None],
-                 ['Regenerate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
+                 # ['Regenerate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
                  ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
                  ['Toggle Autogenerate Callback', None, self.toggle_auto_generate_callback, True, None, None],
