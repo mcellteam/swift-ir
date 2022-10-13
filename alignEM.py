@@ -47,8 +47,10 @@ os.environ['OPENBLAS_NUM_THREADS'] = '1'
 # Fix for Error: PyCapsule_Import could not import module "datetime"
 # https://github.com/numpy/numpy/issues/14474
 
-os.environ['QT_API'] = 'pyqt6'
-os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt6'
+os.environ['QT_API'] = 'pyqt5'
+# os.environ['QT_API'] = 'pyqt6'
+os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt6'
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyside6'
 # os.environ['QT_API'] = 'pyside2'
@@ -108,7 +110,7 @@ def main():
     logger.info('Running ' + __file__ + '.__main__()')
     parser = argparse.ArgumentParser()
     # parser.add_argument('--api', default='pyside6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
-    parser.add_argument('--api', default='pyqt6', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
+    parser.add_argument('--api', default='pyqt5', help='Python-Qt API (pyqt6|pyqt5|pyside6|pyside2)')
     parser.add_argument('--debug', action='store_true', help='Debug Mode')
     parser.add_argument('--loglevel', type=int, default=cfg.LOG_LEVEL, help='Logging Level (1-5)')
     parser.add_argument('--no_tensorstore', action='store_true', help='Does not use Tensorstore if True')
@@ -137,8 +139,9 @@ def main():
     logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
     logger.critical('qtpy.PYQT_VERSION = %s' % qtpy.PYQT_VERSION)
 
-    logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
-    logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
+    if qtpy.QT6:
+        logger.info('Chromium Version: %s' % QtWebEngineCore.qWebEngineChromiumVersion())
+        logger.info('PyQtWebEngine Version: %s' % QtWebEngineCore.PYQT_WEBENGINE_VERSION_STR)
 
     # cfg.opengllogger = QOpenGLDebugLogger()
     # cfg.opengllogger.initialize()
