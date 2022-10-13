@@ -85,9 +85,6 @@ class BackgroundWorker(QRunnable):
         Initialise the runner functiosn with passed args, kwargs.
         '''
         logger.info("Running Background Worker...")
-
-        logger.critical('self.status = %s' % str(self.status))
-
         # if self.status != None:
         #     self.parent.set_status(self.status)
         #     # QApplication.processEvents()
@@ -100,7 +97,6 @@ class BackgroundWorker(QRunnable):
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
-            # print('BackgroundWorker.run traceback:')
             print_exception()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
