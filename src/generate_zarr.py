@@ -12,7 +12,6 @@ import argparse
 # from src.image_funcs import ImageSize
 from src.mp_queue import TaskQueue
 from src.helpers import get_scale_val, get_images_list_directly
-from src.zarr_funcs import preallocate_zarr
 import src.config as cfg
 
 __all__ = ['generate_zarr']
