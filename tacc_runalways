@@ -34,6 +34,9 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
   echo "Setting GALLIUM_DRIVER=swr..."
   export GALLIUM_DRIVER=swr
 
+  echo "Setting MESA_DEBUG..."
+  export MESA_DEBUG=flush,incomplete_tex,incomplete_fbo,context
+
   node=$(hostname --alias)
   domain=$(hostname--domain)
   echo "Hostname: $hostname"
