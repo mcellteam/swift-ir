@@ -22,7 +22,7 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
   git pull --ff-only
 
   echo "Activating alignment conda env..."
-  conda activate alignPYQT
+  conda activate $WORK/Conda/envs/alignPYQT
 
   # echo "Setting MAX_NUM_THREADS flag..."
   # unset MAX_NUM_THREADS
