@@ -177,6 +177,7 @@ class NgHost(QRunnable):
 
             logger.info('Creating Local Volumes...')
             if cfg.USE_TENSORSTORE:
+                ''' USE_TENSORSTORE is ON, so point Neuroglancer to TensorStore Object. '''
                 from src.zarr_funcs import get_zarr_tensor_from_path
 
                 if cfg.MULTIVIEW:
@@ -216,6 +217,7 @@ class NgHost(QRunnable):
 
 
             else:
+                ''' USE_TENSORSTORE is OFF, so point Neuroglancer to local Zarr directly. '''
                 if cfg.MULTIVIEW:
                     ref_layer = 'zarr://http://localhost:' + str(self.port) + '/' + src_url
                     base_layer = 'zarr://http://localhost:' + str(self.port) + '/' + src_url

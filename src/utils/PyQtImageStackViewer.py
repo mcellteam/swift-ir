@@ -10,7 +10,10 @@ import numpy as np
 # from PIL import Image
 # import dask
 # import dask.array
-import tensorstore as ts
+from src.config import USE_TENSORSTORE
+
+if USE_TENSORSTORE:
+    import tensorstore as ts
 
 try:
     from qtpy.QtCore import Qt, QSize
