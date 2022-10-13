@@ -2583,7 +2583,7 @@ class MainWindow(QMainWindow):
              [
                  # ['&Align', 'Ctrl+A', self.align(lambda : cfg.data.scale()), None, None, None],
                  ['&Regenerate', None, self.regenerate, None, None, None],
-                 ['Generate Scales', None, self.scale, None, None, None],
+                 # ['Generate Scales', None, self.scale, None, None, None],
                  # ['Generate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
                  ['Remote Neuroglancer Server', None, self.remote_view, None, None, None],
                  # ['Napari', None, napari_test, None, None, None],
