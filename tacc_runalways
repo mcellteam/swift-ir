@@ -34,9 +34,8 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
   echo "Setting GALLIUM_DRIVER=swr..."
   export GALLIUM_DRIVER=swr
 
-  #echo "Setting OPENBLAS_NUM_THREADS=1"
-  #export OPENBLAS_NUM_THREADS=1
-
+  echo "Setting OPENBLAS_NUM_THREADS=1"
+  export OPENBLAS_NUM_THREADS=1
 
   echo "Setting MESA_DEBUG..."
   export MESA_DEBUG=flush,incomplete_tex,incomplete_fbo,context
