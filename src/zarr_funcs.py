@@ -29,27 +29,6 @@ __all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadat
 
 logger = logging.getLogger(__name__)
 
-def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
-    '''Convert Tiffs to Zarr with implicit dask array
-    Ref: https://forum.image.sc/t/store-many-tiffs-into-equal-sized-tiff-stacks-for-hdf5-zarr-chunks-using-ome-tiff-format/61055
-    '''
-    logger.info('Converting Tiff To Zarr...')
-    logger.info(str(tif_files))
-
-    def imread(filename):
-        with open(filename, 'rb') as fh:
-            data = fh.read()
-        return imagecodecs.tiff_decode(data) # return first image in TIFF file as numpy array
-    try:
-        with tifffile.FileSequence(imread, tif_files) as tifs:
-            with tifs.aszarr() as store:
-                array = da.from_zarr(store)
-                #array.visualize(filename='_dask_visualize.png') # print dask task graph to file
-                array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
-                # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
-                # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
-    except:
-        print_exception()
 
 def loadTiffsMp(directory:str):
     '''
@@ -148,8 +127,6 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
 
     cfg.main_window.hud.post('Preallocating Zarr Array...')
 
-    logger.critical('bounding_rect = %s' % str(bounding_rect))
-
     cur_scale = cfg.data.scale()
     cur_scale_val = get_scale_val(cfg.data.scale())
     src = os.path.abspath(cfg.data.dest())
@@ -187,10 +164,8 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
         logger.info('bounding_rect = %s' % str(bounding_rect))
         if bounding_rect is True:
             rect = BoundingRect(cfg.data['data']['scales'][scale]['alignment_stack'])
-            dimx = rect[2]
-            dimy = rect[3]
-            logger.critical('dim_x %d' % dimx)
-            logger.critical('dim_y %d' % dimy)
+            dimx, dimy = rect[2], rect[3]
+            logger.info('dim_x=%d, dim_y=%d' % (dimx, dimy))
 
         else:
             imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
@@ -215,7 +190,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
         compressor = Blosc(cname=cfg.CNAME, clevel=cfg.CLEVEL) if cfg.CNAME in ('zstd', 'zlib', 'gzip') else None
         # compressor = Blosc(cname='zstd', clevel=5)
 
-        logger.critical('Zarr Array will have shape: %s' % str(shape))
+        logger.info('Zarr Array will have shape: %s' % str(shape))
         array = root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor, overwrite=True)
 
         # datasets.append(
@@ -311,35 +286,58 @@ def write_zarr_metadata_cur_scale(name='img_aligned.zarr'):
         }
     ]
 
-def generate_zarr_scales():
-    logger.info('generate_zarr_scales:')
-    dest = cfg.data.dest()
-    logger.info('scales() = %s' % str(cfg.data.scales()))
+# def generate_zarr_scales_da():
+#     logger.info('generate_zarr_scales_da:')
+#     dest = cfg.data.dest()
+#     logger.info('scales() = %s' % str(cfg.data.scales()))
+#
+#     for s in cfg.data.scales():
+#         logger.info('Working On %s' % s)
+#         tif_files = sorted(glob(os.path.join(dest, s, 'img_src', '*.tif')))
+#         # zarrurl = os.path.join(dest, s + '.zarr')
+#         zarrurl = os.path.join(dest, 'img_src.zarr', 's' + str(get_scale_val(s)))
+#         tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
+#         z = zarr.open(zarrurl)
+#         z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
+#         # z.attrs['offset'] = ["0", "0", "0"]
+#
+#     # zarr_path = os.path.join(dest, 'img_src.zarr')
+#     # write_zarr_multiscale_metadata(path=zarr_path)
+#     write_zarr_metadata_cur_scale(name='img_src.zarr')
+#
+#     # scale_factor = cfg.data.scale_val()
+#
+#     # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
+#     # z.attrs['offset'] = [ "0", "0", "0" ]
+#     # z.attrs['resolution'] = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
+#
+#     # tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512),synchronizer=zarr.ThreadSynchronizer())
+#
+#     logger.info('Exiting generate_zarr_scales_da')
 
-    for s in cfg.data.scales():
-        logger.info('Working On %s' % s)
-        tif_files = sorted(glob(os.path.join(dest, s, 'img_src', '*.tif')))
-        # zarrurl = os.path.join(dest, s + '.zarr')
-        zarrurl = os.path.join(dest, 'img_src.zarr', 's' + str(get_scale_val(s)))
-        tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512))
-        z = zarr.open(zarrurl)
-        z.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-        # z.attrs['offset'] = ["0", "0", "0"]
 
-    # zarr_path = os.path.join(dest, 'img_src.zarr')
-    # write_zarr_multiscale_metadata(path=zarr_path)
-    write_zarr_metadata_cur_scale(name='img_src.zarr')
 
-    # scale_factor = cfg.data.scale_val()
-
-    # z.attrs['_ARRAY_DIMENSIONS'] = [ "z", "y", "x" ]
-    # z.attrs['offset'] = [ "0", "0", "0" ]
-    # z.attrs['resolution'] = [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]
-
-    # tiffs2zarr(tif_files=tif_files, zarrurl=zarrurl, chunkshape=(1, 512, 512),synchronizer=zarr.ThreadSynchronizer())
-
-    logger.info('Exiting generate_zarr_scales')
-
+    # def tiffs2zarr(tif_files, zarrurl, chunkshape, overwrite=True, **kwargs):
+    #     '''Convert Tiffs to Zarr with implicit dask array
+    #     Ref: https://forum.image.sc/t/store-many-tiffs-into-equal-sized-tiff-stacks-for-hdf5-zarr-chunks-using-ome-tiff-format/61055
+    #     '''
+    #     logger.info('Converting Tiff To Zarr...')
+    #     logger.info(str(tif_files))
+    #
+    #     def imread(filename):
+    #         with open(filename, 'rb') as fh:
+    #             data = fh.read()
+    #         return imagecodecs.tiff_decode(data) # return first image in TIFF file as numpy array
+    #     try:
+    #         with tifffile.FileSequence(imread, tif_files) as tifs:
+    #             with tifs.aszarr() as store:
+    #                 array = da.from_zarr(store)
+    #                 #array.visualize(filename='_dask_visualize.png') # print dask task graph to file
+    #                 array.rechunk(chunkshape).to_zarr(zarrurl, overwrite=True, **kwargs)
+    #                 # NOTE **kwargs is passed to Passed to the zarr.creation.create() function, e.g., compression options.
+    #                 # https://zarr.readthedocs.io/en/latest/api/creation.html#zarr.creation.create
+    #     except:
+    #         print_exception()
 
 
     if __name__ == '__main__':
@@ -409,3 +407,6 @@ def generate_zarr_scales():
 
         sys.stdout.close()
         sys.stderr.close()
+
+
+

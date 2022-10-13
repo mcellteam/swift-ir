@@ -43,7 +43,7 @@ from src.ui.python_console import PythonConsole
 # from src.utils.PyQtImageViewer import QtImageViewer
 from src.ui.splash import SplashScreen
 from src.ui.dialogs import ConfigDialog
-from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor_from_path, generate_zarr_scales, preallocate_zarr
+from src.zarr_funcs import tiffs2MultiTiff, get_zarr_tensor_from_path, generate_zarr_scales_da, preallocate_zarr
 
 __all__ = ['MainWindow']
 
@@ -339,7 +339,7 @@ class MainWindow(QMainWindow):
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
         self.set_status('Creating Zarr Arrays...')
         try:
-            generate_zarr_scales()
+            generate_zarr_scales_da()
             # cfg.image_library.set_zarr_refs()
         except:
             logger.warning('An Exception Was Raised While Creating Scaled Zarr Arrays')
@@ -2556,7 +2556,7 @@ class MainWindow(QMainWindow):
             ['&Tools',
              [
                  ['Project Configuration', None, self.configure_project, None, None, None],
-                 ['Regenerate Zarr Scales', None, generate_zarr_scales, None, None, None],
+                 ['Regenerate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
                  ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
                  ['Toggle Autogenerate Callback', None, self.toggle_auto_generate_callback, True, None, None],
@@ -2583,7 +2583,7 @@ class MainWindow(QMainWindow):
                  # ['&Align', 'Ctrl+A', self.align(lambda : cfg.data.scale()), None, None, None],
                  ['&Regenerate', None, self.regenerate, None, None, None],
                  ['Generate Scales', None, self.scale, None, None, None],
-                 # ['Generate Zarr Scales', None, generate_zarr_scales, None, None, None],
+                 # ['Generate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
                  ['Remote Neuroglancer Server', None, self.remote_view, None, None, None],
                  # ['Napari', None, napari_test, None, None, None],
                  ['Google', None, self.google, None, None, None],
