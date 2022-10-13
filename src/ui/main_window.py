@@ -91,9 +91,9 @@ class MainWindow(QMainWindow):
 
         self._splash = True
 
-        logger.info("Initializing Image Library")
+        # logger.info("Initializing Image Library")
         # cfg.image_library = ImageLibrary() # SmartImageLibrary()
-        os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
+        # os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
         if qtpy.PYSIDE6:
             QImageReader.setAllocationLimit(0) #PySide6
@@ -123,6 +123,13 @@ class MainWindow(QMainWindow):
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
             self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         # self.browser.setPage(CustomWebEnginePage(self)) # Open clicked links in new window
+
+        self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+
 
         self.match_point_mode = False
 
