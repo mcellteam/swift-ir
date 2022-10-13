@@ -2772,13 +2772,13 @@ class MainWindow(QMainWindow):
         # self.size_buttons_vlayout.addWidget(self.clear_zoom_button)
         # self.size_buttons_vlayout.addWidget(self.actual_size_button)
 
-        tip = 'Generate scale pyramid with chosen # of levels.'
-        self.generate_scales_button = QPushButton('Generate\nScales')
-        self.generate_scales_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.generate_scales_button.clicked.connect(self.scale)
-        self.generate_scales_button.setFixedSize(normal_button_size)
-        self.generate_scales_button.setStyleSheet("font-size: 10px;")
-        self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color=ICON_COLOR))
+        # tip = 'Generate scale pyramid with chosen # of levels.'
+        # self.generate_scales_button = QPushButton('Generate\nScales')
+        # self.generate_scales_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        # self.generate_scales_button.clicked.connect(self.scale)
+        # self.generate_scales_button.setFixedSize(normal_button_size)
+        # self.generate_scales_button.setStyleSheet("font-size: 10px;")
+        # self.generate_scales_button.setIcon(qta.icon("mdi.image-size-select-small", color=ICON_COLOR))
 
         tip = 'Reset (Use Everything)'
         self.clear_skips_button = QPushButton('Use All')
