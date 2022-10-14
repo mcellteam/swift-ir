@@ -26,7 +26,7 @@ def generate_scales():
     # cfg.main_window.pbar_max(n_tasks)
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
     task_queue.tqdm_desc = 'Scaling Images'
-    cpus = min(psutil.cpu_count(logical=False), 48) - 1
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 1
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     logger.critical('my_path is %s' % my_path)
     my_system = platform.system()

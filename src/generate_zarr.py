@@ -77,7 +77,7 @@ def generate_zarr(src, out, no_scales=False, scale=None):
 
 
     logger.info('\nExample Task:\n%s' % str(tasks[0]))
-    cpus = min(psutil.cpu_count(logical=False), 48) - 1
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 1
     n_tasks = len(tasks)
     logger.info("Estimated # of tasks: %d" % estimated_n_tasks)
     logger.info('Actual # of tasks: %d' % n_tasks)
