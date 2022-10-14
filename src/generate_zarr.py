@@ -52,8 +52,8 @@ def generate_zarr(src, out, no_scales=False, scale=None):
     else:
         logger.info('# images: %d' % len(imgs))
         for ID, img in enumerate(imgs):
-            logger.info('ID  = %d' % ID)
-            logger.info('img  = %s' % img)
+            # logger.info('ID  = %d' % ID)
+            # logger.info('img  = %s' % img)
 
             scale_val = get_scale_val(scale)
             path_out = os.path.join(out, 's' + str(scale_val))

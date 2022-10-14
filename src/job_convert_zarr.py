@@ -12,7 +12,8 @@ import os
 import sys
 import zarr
 # from PIL import Image
-import tifffile
+# import tifffile
+import imageio.v3 as iio
 
 if __name__ == '__main__':
 
@@ -27,7 +28,8 @@ if __name__ == '__main__':
 
     scale_img = os.path.join(src, scale_str, 'img_src', img)
     # im = Image.open(scale_img)
-    im = tifffile.imread(scale_img)
+    # im = tifffile.imread(scale_img)
+    im = iio.imread(scale_img)
     store = zarr.open(out)
     store[ID,:,:] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
