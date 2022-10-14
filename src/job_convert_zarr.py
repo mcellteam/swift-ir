@@ -11,9 +11,9 @@ Joel Yancey 2022-08-15
 import os
 import sys
 import zarr
-# from PIL import Image
+from PIL import Image
 # import tifffile
-import imageio.v3 as iio
+# import imageio.v3 as iio
 
 if __name__ == '__main__':
 
@@ -24,12 +24,12 @@ if __name__ == '__main__':
     out          = sys.argv[4] #*
     scale_str    = sys.argv[5] #*
 
-    # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
     scale_img = os.path.join(src, scale_str, 'img_src', img)
-    # im = Image.open(scale_img)
+    im = Image.open(scale_img)
     # im = tifffile.imread(scale_img)
-    im = iio.imread(scale_img)
+    # im = iio.imread(scale_img)
     store = zarr.open(out)
     store[ID,:,:] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
