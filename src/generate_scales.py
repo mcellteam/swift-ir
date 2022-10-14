@@ -6,6 +6,7 @@ import shutil
 import platform
 import psutil
 import time
+import glob
 import logging
 import src.config as cfg
 from src.helpers import print_exception, get_scale_val, get_scale_key, \
@@ -137,6 +138,7 @@ def generate_scales():
         cfg.main_window.hud.done()
 
 
+
     ### Join the queue here to ensure that all have been generated before returning
     # task_queue.work_q.join() # It might be better to have a TaskQueue.join method to avoid knowing "inside details" of class
     cfg.main_window.hud.post('Generating Scale Hierarchy...')
@@ -151,6 +153,15 @@ def generate_scales():
     dt = time.time() - t0
     # cfg.main_window.hud.done()
     cfg.main_window.hud.post("Process generate_scales Completed in %.2f Seconds" % dt)
+
+    for scale in cfg.data.scales():
+        logger.info('Setting permissions on generated images for scale %s...' % scale)
+        path = os.path.join(cfg.data.dest(), scale, 'img_src')
+        for dirpath, dirnames, filenames in os.walk(path):
+            for filename in filenames:
+                logger.info('path = %s' % path)
+                path = os.path.join(dirpath, filename)
+                os.chmod(path, 0o766)
 
     logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')
 
