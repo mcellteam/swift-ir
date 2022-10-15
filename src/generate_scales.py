@@ -47,7 +47,8 @@ def generate_scales():
             if scale == 1:
                 '''Scale 1 Only'''
                 if get_best_path(fn) != get_best_path(ofn):
-                    os.unlink(ofn)
+                    try:    os.unlink(ofn)
+                    except: pass
                     try:
                         os.symlink(fn, ofn)
                     except:
