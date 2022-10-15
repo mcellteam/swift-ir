@@ -72,19 +72,14 @@ class BackgroundWorker(QRunnable):
         self.kwargs = kwargs
         self.signals = WorkerSignals()
         self.signals.progress.__hash__()
-        self.signals.progress.__str__()\
-
-        # Add the callback to our kwargs
+        self.signals.progress.__str__()
         '''If 'progress_callback' is provided as a parameter of the function passed into BackgroundWorker, it will be assigned
         the value -> self.signals.progress'''
         self.kwargs['progress_callback'] = self.signals.progress
 
     @Slot()
     def run(self):
-        '''
-        Initialise the runner functiosn with passed args, kwargs.
-        '''
-        logger.info("Running Background Worker...")
+        logger.info("Running A Background Worker...")
         # if self.status != None:
         #     self.parent.set_status(self.status)
         #     # QApplication.processEvents()
@@ -93,11 +88,11 @@ class BackgroundWorker(QRunnable):
         # cfg.main_window._working = True
         # cfg.main_window.pbar.show()
 
-        # Retrieve args/kwargs here; and fire processing using them
         try:
             result = self.fn(*self.args, **self.kwargs)
         except:
-            print_exception()
+            logger.info('BackgroundWorker.run traceback:')
+            traceback.print_exc()
             exctype, value = sys.exc_info()[:2]
             self.signals.error.emit((exctype, value, traceback.format_exc()))
         else:
