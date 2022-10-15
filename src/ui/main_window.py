@@ -9,11 +9,9 @@ from qtpy.QtWidgets import QApplication, QMainWindow, QWidget, QLabel, QHBoxLayo
     QStackedWidget, QGridLayout, QFileDialog, QInputDialog, QLineEdit, QPushButton, QSpacerItem, QMessageBox, \
     QComboBox, QGroupBox, QSplitter, QTreeView, QHeaderView, QAction, QActionGroup, QProgressBar, \
     QShortcut, QGraphicsDropShadowEffect, QGraphicsOpacityEffect, QScrollBar, QDialog, QStyle
-# from qtpy.QtWidgets import QApplication
 from qtpy.QtGui import QPixmap, QIntValidator, QDoubleValidator, QIcon, QSurfaceFormat, QOpenGLContext, QFont, \
     QGuiApplication, QKeySequence, QCursor, QImageReader
-from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, QTimer, Slot, Signal, QEvent, QSortFilterProxyModel, \
-    QModelIndex, QPoint, QDir
+from qtpy.QtCore import Qt, QSize, QUrl, QThreadPool, QTimer, Slot, Signal, QEvent, QPoint, QDir
 from qtpy.QtWebEngineWidgets import *
 import qtawesome as qta
 import pyqtgraph as pg
@@ -53,18 +51,11 @@ logger = logging.getLogger(__name__)
 class MainWindow(QMainWindow):
     resized = Signal()
     def __init__(self, title="AlignEM-SWiFT"):
-
-        # app = QApplication.instance()
+        QMainWindow.__init__(self)
+        logger.info('Initializing Main Window')
         self.app = QApplication.instance()
-        # if app is None:
-        #     logger.warning("Creating new QApplication instance.")
-        #     self.app = QApplication([])
 
         check_for_binaries()
-
-        logger.info('Initializing Main Window')
-        QMainWindow.__init__(self)
-
 
         window = self.window()
         window.setGeometry(
@@ -88,12 +79,7 @@ class MainWindow(QMainWindow):
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
         self.threadpool.setExpiryTimeout(3000) # ms
         self.ng_worker = None
-
         self._splash = True
-
-        # logger.info("Initializing Image Library")
-        # cfg.image_library = ImageLibrary() # SmartImageLibrary()
-        # os.environ["OBJC_DISABLE_INITIALIZE_FORK_SAFETY"] = "YES"
 
         if qtpy.PYSIDE6:
             QImageReader.setAllocationLimit(0) #PySide6
@@ -106,15 +92,13 @@ class MainWindow(QMainWindow):
         # self.project_progress = 0
         self.project_progress = None
         self.project_aligned_scales = []
-        # self.scales_combobox_switch = 0
         self.scales_combobox_switch = 1
         self.jump_to_worst_ticker = 1  # begin iter at 1 b/c first image has no ref
         self.jump_to_best_ticker = 0
         
-        # PySide6 Only
         logger.info("Initializing Qt WebEngine")
         self.view = QWebEngineView()
-        # PySide6-Only Options:
+
         if qtpy.PYSIDE6:
             logger.info('Setting Qt6-specific browser settings')
             self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -1881,7 +1865,10 @@ class MainWindow(QMainWindow):
 
     def run_after_import(self):
         logger.info('run_after_import:')
-        recipe_maker = ConfigDialog(parent=self)
+        try:
+            recipe_maker = ConfigDialog(parent=self)
+        except:
+            logger.warning('ConfigDialog Was Exited')
         result = recipe_maker.exec_()  # result = 0 or 1
         if not result:
             logger.warning('Dialog Did Not Return A Result')
@@ -1890,8 +1877,6 @@ class MainWindow(QMainWindow):
             # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
             self.autoscale()
         logger.info('Exiting autoscale')
-
-
 
 
     def set_splash_controls(self):

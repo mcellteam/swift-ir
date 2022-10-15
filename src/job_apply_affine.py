@@ -11,7 +11,11 @@ import numpy as np
 # from PIL import Image
 import zarr
 import tifffile
-from src.helpers import is_tacc, is_linux, is_mac
+try:
+    from helpers import is_tacc, is_linux, is_mac
+except ImportError:
+    from src.helpers import is_tacc, is_linux, is_mac
+
 
 logger = logging.getLogger(__name__)
 
