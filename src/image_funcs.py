@@ -22,8 +22,8 @@ import imageio.v3 as iio
 # from PIL import Image
 # import tifffile
 # import tensorstore as ts
-try:     from src.helpers import get_images_list_directly
-except:  from helpers import get_images_list_directly
+try:     from src.helpers import get_img_filenames
+except:  from helpers import get_img_filenames
 try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 

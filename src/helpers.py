@@ -46,17 +46,35 @@ except:  pass
 try: from src.utils.treeview import Treeview
 except: from utils.treeview import Treeview
 
-__all__ = ['create_paged_tiff', 'check_for_binaries', 'remove_aligned', 'is_destination_set',
-           'do_scales_exist', 'make_relative', 'make_absolute',
-           'is_cur_scale_aligned', 'get_num_aligned', 'are_aligned_images_generated',
-           'print_alignment_layer', 'print_dat_files', 'print_sanity_check',
-           'copy_skips_to_all_scales', 'are_images_imported', 'is_cur_scale_exported', 'get_images_list_directly',
-           'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok', 'print_project_tree',
-           'verify_image_file', 'is_arg_scale_aligned',  'print_snr_list', 'is_any_scale_aligned_and_generated',
+__all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'remove_aligned',
+           'is_destination_set','do_scales_exist', 'make_relative', 'make_absolute','is_cur_scale_aligned',
+           'get_num_aligned', 'are_aligned_images_generated', 'print_alignment_layer', 'print_dat_files',
+           'print_sanity_check','copy_skips_to_all_scales', 'are_images_imported', 'is_cur_scale_exported',
+           'get_img_filenames', 'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok',
+           'print_project_tree','verify_image_file', 'is_arg_scale_aligned', 'print_snr_list',
+           'is_any_scale_aligned_and_generated',
            ]
 
 logger = logging.getLogger(__name__)
 
+
+def is_tacc() -> bool:
+    '''Checks if the program is running on a computer at TACC. Returns a boolean.'''
+    node = platform.node()
+    if '.tacc.utexas.edu' in node:  return True
+    else:                           return False
+
+def is_linux() -> bool:
+    '''Checks if the program is running on a Linux OS. Returns a boolean.'''
+    system = platform.system()
+    if system == 'Linux':  return True
+    else:                  return False
+
+def is_mac() -> bool:
+    '''Checks if the program is running on macOS. Returns a boolean.'''
+    system = platform.system()
+    if system == 'Darwin':  return True
+    else:                   return False
 
 def is_destination_set() -> bool:
     '''Checks if there is a data open'''
@@ -274,8 +292,8 @@ def natural_sort(l):
     return sorted(l, key=alphanum_key)
 
 
-def get_images_list_directly(path) -> list[str]:
-    logger.debug('get_images_list_directly:')
+def get_img_filenames(path) -> list[str]:
+    logger.debug('get_img_filenames:')
     logger.debug('Searching in Path: %s ' % path)
     imgs = [x for x in os.listdir(path) if os.path.splitext(x)[1] in (
         '.tif',
@@ -351,7 +369,9 @@ def make_absolute(file_path, proj_path):
     return abs_path
 
 
-def create_project_structure_directories(subdir_path) -> None:
+def create_project_structure_directories(scale_key:str) -> None:
+    subdir_path = os.path.join(cfg.data.dest(), scale_key)
+    cfg.main_window.hud.post('Creating Project Directory Structure for Scale %s...' % scale_key)
     src_path = os.path.join(subdir_path, 'img_src')
     aligned_path = os.path.join(subdir_path, 'img_aligned')
     bias_data_path = os.path.join(subdir_path, 'bias_data')
@@ -361,7 +381,9 @@ def create_project_structure_directories(subdir_path) -> None:
         os.mkdir(aligned_path)
         os.mkdir(bias_data_path)
     except:
-        pass
+        print_exception()
+        logger.warning('There Was A Problem Creating Directory Structure')
+    cfg.main_window.hud.done()
 
 
 def printProjectDetails(project_data: dict) -> None:

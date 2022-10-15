@@ -13,7 +13,7 @@ from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator
 import qtawesome as qta
 import src.config as cfg
 from src.image_funcs import ImageSize
-from src.helpers import get_scale_key, get_scale_val, do_scales_exist, get_images_list_directly
+from src.helpers import get_scale_key, get_scale_val, do_scales_exist, get_img_filenames
 
 logger = logging.getLogger(__name__)
 

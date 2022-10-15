@@ -32,12 +32,9 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     for task_id, task in iter(task_q.get, 'END_TASKS'):
         # QApplication.processEvents()
 
-        logger.debug('worker_id %d    task_id %d    n_tasks %d    n_workers %d :' % (worker_id, task_id, n_tasks, n_workers))
+        logger.debug('worker_id %d  task_id %d  n_tasks %d  n_workers %d' % (worker_id, task_id, n_tasks, n_workers))
         logger.debug('task: %s' % str(task))
         t0 = time.time()
-        outs = ''
-        errs = ''
-        rc = 1
         try:
             task_proc = sp.Popen(task, bufsize=-1, shell=False, stdout=sp.PIPE, stderr=sp.PIPE)
             # task_proc = sp.Popen(task, shell=False, stdout=sys.stdout, stderr=sys.stderr, bufsize=1)
@@ -76,7 +73,6 @@ class TaskQueue(QObject):
         self.logging_handler = logging_handler
         self.work_queue = self.ctx.JoinableQueue()
         self.result_queue = self.ctx.Queue()
-        self.tqdm_desc = ''
 
         logger.debug('TaskQueue Initialization')
         logger.debug('self.start_method = %s' % self.start_method)
@@ -184,31 +180,20 @@ class TaskQueue(QObject):
             logger.info('# Tasks Pending: %d' % n_pending)
             retry_list = []
             for j in range(n_pending):
-
-                try:
-                    pass
-                    # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
-                    # logger.info(task_str)
-                except:
-                    pass
-
-                try:
-                    self.parent.pbar_update(self.n_tasks - realtime)
-                except:
-                    print_exception()
+                # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
+                # logger.info(task_str)
+                try:     self.parent.pbar_update(self.n_tasks - realtime)
+                except:  print_exception()
                 task_id, outs, errs, rc, dt = self.result_queue.get()
                 # logger.warning('Task ID (outs): %d\n%s' % (task_id,outs))
-                # if cfg.LOG_LEVEL < 20:
                 # logger.warning('%d%s' % (task_id,errs))  # *** lots of output for alignment
                 self.task_dict[task_id]['stdout'] = outs
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc
-                if rc == 0:
-                    self.task_dict[task_id]['statusBar'] = 'completed'
-                else:
-                    self.task_dict[task_id]['statusBar'] = 'task_error'
-                    retry_list.append(task_id)
+                self.task_dict[task_id]['statusBar'] = 'completed' if rc == 0 else 'task_error'
                 self.task_dict[task_id]['dt'] = dt
+                if rc == 0:
+                    retry_list.append(task_id)
                 realtime -= 1
 
             '''Restart Queue and Requeue failed tasks'''

@@ -29,7 +29,7 @@ from src.image_funcs import ImageSize
 from src.compute_affines import compute_affines
 from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
-from src.generate_zarr import generate_zarr
+from src.generate_zarr_flat import generate_zarr_flat
 from src.ng_host import NgHost
 from src.background_worker import BackgroundWorker
 # from src.napari_test import napari_test
@@ -397,7 +397,7 @@ class MainWindow(QMainWindow):
             try:
                 status = 'Converting Zarr (Scale %d)...' % get_scale_val(scale)
                 self.set_status(status)
-                self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out, no_scales=True, scale=scale))
+                self.worker = BackgroundWorker(fn=generate_zarr_flat(src=src, out=out, scale=scale))
                 self.threadpool.start(self.worker)
             except:
                 print_exception()
@@ -581,7 +581,7 @@ class MainWindow(QMainWindow):
         self.hud('  Compression Type: %s' %  cfg.CNAME)
         try:
             self.set_status('Exporting...')
-            self.worker = BackgroundWorker(fn=generate_zarr(src=src, out=out))
+            self.worker = BackgroundWorker(fn=generate_zarr_flat(src=src, out=out))
             self.threadpool.start(self.worker)
         except:
             print_exception()

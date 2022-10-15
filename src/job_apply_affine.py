@@ -6,12 +6,12 @@ the affine transformation)
 import os
 import sys
 import logging
-import platform
 import subprocess as sp
 import numpy as np
 # from PIL import Image
 import zarr
 import tifffile
+from src.helpers import is_tacc, is_linux, is_mac
 
 logger = logging.getLogger(__name__)
 
@@ -68,8 +68,6 @@ if (__name__ == '__main__'):
     if (len(sys.argv) < 4):
         print_command_line_syntax(sys.argv)
         exit(1)
-    # in_fn = sys.argv[-2] # Input File Name
-    # out_fn = sys.argv[-1] # Output File Name
     in_fn = sys.argv[-4]  # Input File Name
     out_fn = sys.argv[-3]  # Output File Name
     zarr_grp = sys.argv[-2]  # Zarr Group
@@ -135,16 +133,11 @@ if (__name__ == '__main__'):
 
     my_path = os.path.split(os.path.realpath(__file__))[0]
 
-    system = platform.system()
-    node = platform.node()
-    if system == 'Darwin':
-        mir_c = my_path + '/lib/bin_darwin/mir'
-    elif system == 'Linux':
-        if '.tacc.utexas.edu' in node:
-            mir_c = my_path + '/lib/bin_tacc/mir'
-        else:
-            mir_c = my_path + '/lib/bin_linux/mir'
+    if is_tacc():   mir_c = my_path + '/lib/bin_tacc/mir'
+    elif is_mac():  mir_c = my_path + '/lib/bin_darwin/mir'
+    else:           mir_c = my_path + '/lib/bin_linux/mir'
 
+    # TODO Use pillow to store median greyscale value for each image in list, for now just use 128
     mir_script = \
         'B %d %d 1\n' \
         'Z 128\n' \
@@ -153,27 +146,6 @@ if (__name__ == '__main__'):
         'RW %s\n' \
         'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
-
-
-    # if sys.argv[i] == '-rect':
-    #     #TODO Use pillow to store median greyscale value for each image in list, for now just use 128
-    #     mir_script = \
-    #         'B %d %d 1\n' \
-    #         'Z 128\n' \
-    #         'F %s\n' \
-    #         'A %g %g %g %g %g %g\n' \
-    #         'RW %s\n' \
-    #         'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
-    #     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
-    # else:
-    #     mir_script = \
-    #         'F %s\n' \
-    #         'Z 128\n' \
-    #         'A %g %g %g %g %g %g\n' \
-    #         'RW %s\n' \
-    #         'E' % (in_fn, a, c, e, b, d, f, out_fn)
-    #     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
-
 
 
 
@@ -185,40 +157,21 @@ if (__name__ == '__main__'):
     #     logger.warning(traceback.format_exc())
 
 
-    '''
-    im = Image.open('/Users/joelyancey/glanceEM_SWiFT/test_projects/test93/scale_4/img_aligned/R34CA1-BS12.109.tif')
-    /Users/joelyancey/miniconda3/envs/alignENV/lib/python3.9/site-packages/PIL/TiffImagePlugin.py:845: 
-    UserWarning: Corrupt EXIF data.  Expecting to read 4 bytes but only got 0. 
-    
-    '''
-
-
-    # dimx = bb_x
-    # dimy = bb_y
-    dimx = rect[2]
-    dimy = rect[3]
-
-    # try:
-    #     im = Image.open(out_fn)
-    # except Exception as e:
-    #     print("Error on image: ", out_fn)
-    #     print(e)
-
-
+    dimx, dimy = rect[2], rect[3]
     im = tifffile.imread(out_fn)
     # im = Image.open(out_fn)
-    # im = tifffile.imread(out_fn)
     logger.critical('out_fn = %s' % out_fn)
     store = zarr.open(zarr_grp)
-    # print('ID = %s' % str(ID))
     # print(store.info)
-
     store[ID, :, :] = im
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
-
     sys.stdout.close()
     sys.stderr.close()
 
+# Todo ask Art about this...
+# im = Image.open('/Users/joelyancey/glanceEM_SWiFT/test_projects/test93/scale_4/img_aligned/R34CA1-BS12.109.tif')
+# /Users/joelyancey/miniconda3/envs/alignENV/lib/python3.9/site-packages/PIL/TiffImagePlugin.py:845:
+# UserWarning: Corrupt EXIF data.  Expecting to read 4 bytes but only got 0.
 
 '''
 B 1044 1044 1
@@ -234,6 +187,7 @@ E
 -rect
 -3
 -3
+-3
 1030
 1030
 -afm
@@ -243,5 +197,5 @@ E
 -0.005592479836195707
 1.0550800561904907
 1.5037000179290771
-
 '''
+
