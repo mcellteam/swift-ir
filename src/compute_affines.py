@@ -57,7 +57,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         f.write(cfg.data.to_json())
 
     task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 1
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 

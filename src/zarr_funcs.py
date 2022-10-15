@@ -23,7 +23,7 @@ import imagecodecs
 import src.config as cfg
 from src.helpers import get_scale_val, time_limit
 from src.image_funcs import BoundingRect, imageio_read_image
-from src.helpers import get_images_list_directly, print_exception
+from src.helpers import get_img_filenames, print_exception
 
 __all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
 
@@ -39,7 +39,7 @@ def loadTiffsMp(directory:str):
     :rtype: list[numpy.ndarray]
     '''
     tifs = glob.glob(os.path.join(directory, '*.tif'))
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 1
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     pool = mp.Pool(processes=cpus)
     start = time.time()
     image_arrays = pool.map(imageio_read_image, tifs)
@@ -135,7 +135,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
     aligned_scales_lst = cfg.data.aligned_list()
 
     zarr_path = os.path.join(cfg.data.dest(), name)
-    # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr':
+    # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr_flat':
     #     # remove_zarr()
     #     init_zarr()
 
@@ -168,7 +168,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
             logger.info('dim_x=%d, dim_y=%d' % (dimx, dimy))
 
         else:
-            imgs = sorted(get_images_list_directly(os.path.join(src, scale, 'img_src')))
+            imgs = sorted(get_img_filenames(os.path.join(src, scale, 'img_src')))
             # dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
             if is_alignment:
                 dimx, dimy = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size

@@ -46,7 +46,7 @@ from . import run_json_project
 from .run_json_project import *
 # __all__.extend(run_json_project.__all__)
 
-# __all__.extend(generate_zarr.__all__)
+# __all__.extend(generate_zarr_flat.__all__)
 
 # from . import align_swiftir
 # from src.align_swiftir import *
