@@ -6,10 +6,10 @@ import time
 import psutil
 import inspect
 import logging
-# from tqdm import tqdm
 import subprocess as sp
 import multiprocessing as mp
 from qtpy.QtCore import QObject
+from qtpy.QtWidgets import QApplication
 import src.config as cfg
 from src.helpers import print_exception
 
@@ -30,7 +30,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
     time.sleep(.1)
 
     for task_id, task in iter(task_q.get, 'END_TASKS'):
-        # QApplication.processEvents()
+        QApplication.processEvents()
 
         logger.debug('worker_id %d  task_id %d  n_tasks %d  n_workers %d' % (worker_id, task_id, n_tasks, n_workers))
         logger.debug('task: %s' % str(task))
@@ -191,9 +191,9 @@ class TaskQueue(QObject):
                 self.task_dict[task_id]['stderr'] = errs
                 self.task_dict[task_id]['rc'] = rc
                 self.task_dict[task_id]['statusBar'] = 'completed' if rc == 0 else 'task_error'
+                if rc != 0:  retry_list.append(task_id)
                 self.task_dict[task_id]['dt'] = dt
-                if rc == 0:
-                    retry_list.append(task_id)
+
                 realtime -= 1
 
             '''Restart Queue and Requeue failed tasks'''
