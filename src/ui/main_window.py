@@ -3738,7 +3738,7 @@ class MainWindow(QMainWindow):
             # self.back_callback()
             return
         if not is_cur_scale_aligned():
-            self.hud('No SNRs To View. Current Scale Is Not Aligned Yet.', logging.WARNING)
+            self.hud('No SNRs To View. Current Scale Is Not Aligned Yet.')
             # self.back_callback()
             return
         # self.clear_snr_plot()
@@ -3838,7 +3838,7 @@ class MainWindow(QMainWindow):
             self.python_console.kernel_manager.shutdown_kernel()
 
         except:
-            logger.warning('Having trouble shutting down Jupyter Console Kernel')
+            logger.info('Having trouble shutting down Jupyter Console Kernel')
             self.python_console.request_interrupt_kernel()
 
     def restart_python_kernel(self):

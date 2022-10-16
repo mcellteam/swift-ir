@@ -8,9 +8,9 @@ import sys
 import logging
 import subprocess as sp
 import numpy as np
-# from PIL import Image
+from PIL import Image
 import zarr
-import tifffile
+# import tifffile
 try:
     from helpers import is_tacc, is_linux, is_mac
 except ImportError:
@@ -78,8 +78,6 @@ if (__name__ == '__main__'):
     ID = int(sys.argv[-1])
     rect = None
     grayBorder = False
-
-    # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
     # Scan arguments (excluding program name and last 2 file names)
     i = 1
@@ -162,8 +160,9 @@ if (__name__ == '__main__'):
 
 
     dimx, dimy = rect[2], rect[3]
-    im = tifffile.imread(out_fn)
-    # im = Image.open(out_fn)
+    # im = tifffile.imread(out_fn)
+    Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
+    im = Image.open(out_fn)
     logger.critical('out_fn = %s' % out_fn)
     store = zarr.open(zarr_grp)
     # print(store.info)

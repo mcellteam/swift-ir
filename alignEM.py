@@ -196,8 +196,8 @@ def main():
         logger.info('Trying sys.exit(app.exec_())...')
         sys.exit(app.exec_())
         # sys.exit(app.exec())
-    finally:
-        print_exception()
+    # finally:
+    #     print_exception()
 
 
 if __name__ == "__main__":
