@@ -34,8 +34,8 @@ CNAME = 'zstd'
 CLEVEL = 5
 
 '''Other Defaults'''
-# USE_TENSORSTORE = True
-USE_TENSORSTORE = False
+USE_TENSORSTORE = True
+# USE_TENSORSTORE = False
 NO_EMBED_NG = False
 TACC_MAX_CPUS = 128  # 128 hardware cores/node on Lonestar6
 

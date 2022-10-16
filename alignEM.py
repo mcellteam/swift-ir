@@ -123,7 +123,7 @@ def main():
     LOGLEVELS = [ logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL ]
     if args.debug:  logger.setLevel(logging.DEBUG)
     else:  logger.setLevel(LOGLEVELS[args.loglevel])
-    if args.no_tensorstore:  cfg.USE_TENSORSTORE = False
+    if args.no_tensorstore: cfg.USE_TENSORSTORE = False
     if args.no_embed_ng:  cfg.NO_EMBED_NG = True
 
     # os.environ['MESA_GL_VERSION_OVERRIDE'] = '4.5'
