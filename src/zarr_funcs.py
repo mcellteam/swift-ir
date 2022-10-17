@@ -140,25 +140,28 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
     #     init_zarr()
 
     if name == 'img_aligned.zarr':
-        aligned_scales_lst = cfg.data.aligned_list()
-        zarr_these_scales = aligned_scales_lst
+        zarr_these_scales = [use_scale]
     elif name == 'img_src.zarr':
         zarr_these_scales = cfg.data.scales()
     else:
         zarr_these_scales = [use_scale]
 
-
-
     logger.info('Zarring these scales: %s' % str(zarr_these_scales))
 
-    if cfg.PROJECT_OPEN:
+    if cfg.PROJECT_OPEN & (name == 'img_src.zarr'):
         logger.critical('Removing Preexisting Zarrs...')
-        remove_zarr(zarr_path)
+        # remove_zarr(zarr_path)
         #1017 TRYING REMOVE ZARR AT ROOT
-        # for scale in zarr_these_scales:
-        #     out_path = os.path.join(src, name, 's' + str(get_scale_val(scale)))
-        #     if os.path.exists(out_path):
-        #         remove_zarr(out_path)
+        for scale in zarr_these_scales:
+            out_path = os.path.join(src, name, 's' + str(get_scale_val(scale)))
+            if os.path.exists(out_path):
+                remove_zarr(out_path)
+
+    if name == 'img_aligned.zarr':
+        logger.critical('Removing Preexisting Zarrs...')
+        out_path = os.path.join(src, name, 's' + str(get_scale_val(use_scale)))
+        if os.path.exists(out_path):
+            remove_zarr(out_path)
 
 
     # name = 's' + str(scale_val(use_scale))
