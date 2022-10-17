@@ -47,9 +47,9 @@ import time
 # Fix for Error: PyCapsule_Import could not import module "datetime"
 # https://github.com/numpy/numpy/issues/14474
 
-# os.environ['QT_API'] = 'pyqt5'
+os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyqt6'
-# os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
+os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt5'
 # os.environ['PYQTGRAPH_QT_LIB'] = 'PyQt6'
 # os.environ['QT_API'] = 'pyqt5'
 # os.environ['QT_API'] = 'pyside6'
