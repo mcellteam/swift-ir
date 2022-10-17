@@ -36,7 +36,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     num_layers is always passed the value -1.
     '''
 
-    logger.critical('>>>>>>>> Generate Aligned Start <<<<<<<<')
+    logger.critical('>>>> Generate Aligned <<<<')
 
     Z_STRIDE = 1
     chunks   = (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
@@ -185,7 +185,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     task_queue.stop()
     del task_queue
 
-    logger.critical('>>>>>>>> Generate Aligned End <<<<<<<<')
+    logger.critical('>>>> Generate Aligned End <<<<')
 
 
 def create_align_directories(scale_key):

@@ -22,7 +22,7 @@ import imagecodecs
 # import dask.array as da
 import src.config as cfg
 from src.helpers import get_scale_val, time_limit
-from src.image_funcs import BoundingRect, imageio_read_image
+from src.image_funcs import ImageSize, BoundingRect, imageio_read_image
 from src.helpers import get_img_filenames, print_exception
 
 __all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
@@ -70,7 +70,8 @@ def get_zarr_tensor_from_path(zarr_path):
 
     if '.tacc.utexas.edu' in node:
         # Lonestar6: 256 GB (3200 MT/s) DDR4
-        total_bytes_limit = 200_000_000_000
+        # total_bytes_limit = 200_000_000_000
+        total_bytes_limit = 200_000_000_000_000
     else:
         total_bytes_limit = 6_000_000_000
 
@@ -126,6 +127,7 @@ def init_zarr() -> None:
 def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stride=16, chunks=(1, 512, 512), is_alignment=True):
 
     cfg.main_window.hud.post('Preallocating Zarr Array...')
+    logger.critical('Preallocating Zarr Array For Scale %d' % get_scale_val(use_scale))
 
     cur_scale = cfg.data.scale()
     cur_scale_val = get_scale_val(cfg.data.scale())
@@ -135,14 +137,14 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
     aligned_scales_lst = cfg.data.aligned_list()
 
     zarr_path = os.path.join(cfg.data.dest(), name)
-    # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr_flat':
+    # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr_scales':
     #     # remove_zarr()
     #     init_zarr()
 
     out_path = os.path.join(src, name, 's' + str(cur_scale_val))
-    if cfg.data.scale() != 'scale_1':
-        if os.path.exists(out_path):
-            remove_zarr(out_path)
+    # if cfg.data.scale() != 'scale_1':
+    #     if os.path.exists(out_path):
+    #         remove_zarr(out_path)
 
     # name = 's' + str(scale_val(use_scale))
     # zarr_name = os.path.join(zarr_path,name)
@@ -173,7 +175,6 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
             if is_alignment:
                 dimx, dimy = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
             else:
-                from src.image_funcs import ImageSize
                 path = os.path.join(src, scale, 'img_src', imgs[0])
                 logger.info('path = %s' % path)
                 dimx, dimy = ImageSize(path)

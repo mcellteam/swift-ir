@@ -44,7 +44,6 @@ MULTIVIEW=True
 USE_FILE_IO = 0
 CODE_MODE = 'c'
 HTTP_PORT = 9000
-IMAGES_IMPORTED = False
 
 # cfg.ICON_COLOR = '#d3dae3'
 # cfg.ICON_COLOR = '#7c7c7c'

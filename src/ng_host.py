@@ -14,6 +14,7 @@ import neuroglancer as ng
 from qtpy.QtCore import QRunnable, Slot
 from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, are_images_imported
 from src.image_funcs import ImageSize, BoundingRect
+from src.zarr_funcs import get_zarr_tensor_from_path
 import src.config as cfg
 
 __all__ = ['NgHost']
@@ -178,7 +179,6 @@ class NgHost(QRunnable):
             logger.info('Creating Local Volumes...')
             if cfg.USE_TENSORSTORE:
                 ''' USE_TENSORSTORE is ON, so point Neuroglancer to TensorStore Object. '''
-                from src.zarr_funcs import get_zarr_tensor_from_path
 
                 if cfg.MULTIVIEW:
                     unal_dataset = get_zarr_tensor_from_path(unal_name).result()

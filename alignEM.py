@@ -155,8 +155,9 @@ def main():
 
     # Qt5 Only
     if qtpy.QT5:
-        logger.info('Setting Qt.AA_EnableHighDpiScaling and Qt.AA_UseHighDpiPixmaps attributes')
+        logger.info('Setting Qt.AA_EnableHighDpiScaling')
         QApplication.setAttribute(Qt.AA_EnableHighDpiScaling, True)
+        logger.info('Setting Qt.AA_UseHighDpiPixmaps')
         QApplication.setAttribute(Qt.AA_UseHighDpiPixmaps, True)
 
     # logger.info('Setting limit on MAX_IMAGE_PIXELS to 1_000_000_000_000')
@@ -165,7 +166,7 @@ def main():
     # Image.MAX_IMAGE_PIXELS = None
     # Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
-    logger.info('Setting QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts)...')
+    logger.info('Setting Qt.AA_ShareOpenGLContexts...')
     QCoreApplication.setAttribute(Qt.AA_ShareOpenGLContexts) # must be set before QCoreApplication is created.
 
     # QApplication.setAttribute(Qt.ApplicationAttribute.AA_UseDesktopOpenGL)
@@ -175,7 +176,6 @@ def main():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
 
-    logger.info('Initializing MainWindow')
     cfg.main_window = cfg.w = MainWindow(title="AlignEM-SWiFT")
     # cfg.main_window.setGeometry(100,100, cfg.WIDTH, cfg.HEIGHT)
     # cfg.main_window.setGeometry(100,100, 20, 20)

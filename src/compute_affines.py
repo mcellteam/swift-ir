@@ -12,8 +12,7 @@ import src.config as cfg
 from .mp_queue import TaskQueue
 # from .run_json_project import run_json_project
 from .save_bias_analysis import save_bias_analysis
-from .helpers import get_scale_val, print_alignment_layer, print_snr_list, \
-    remove_aligned, are_aligned_images_generated
+from .helpers import get_scale_val, remove_aligned, are_aligned_images_generated
 
 
 __all__ = ['compute_affines','rename_layers','remove_aligned']
@@ -22,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def compute_affines(use_scale, start_layer=0, num_layers=-1):
     '''Compute the python_swiftir transformation matrices for the current scale stack of images according to Recipe1.'''
-    logger.critical('>>>>>>>> Compute Affines Start <<<<<<<<')
+    logger.critical('>>>> Compute Affines <<<<')
 
     rename_switch = False
     alignment_dict = cfg.data['data']['scales'][use_scale]['alignment_stack']
@@ -188,7 +187,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     #     cfg.data.update_datamodel(updated_model)
     #     # cfg.main_window.refresh_all_images()
 
-    logger.critical('>>>>>>>> Compute Affines End <<<<<<<<')
+    logger.critical('>>>> Compute Affines End <<<<')
 
 def rename_layers(use_scale, al_dict):
     source_dir = os.path.join(cfg.data['data']['destination_path'], use_scale, "img_src")

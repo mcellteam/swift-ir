@@ -88,10 +88,8 @@ def are_images_imported() -> bool:
     '''Checks if any images have been imported.'''
     n_imgs = len(cfg.data['data']['scales']['scale_1']['alignment_stack'])
     if n_imgs > 0:
-        # cfg.IMAGES_IMPORTED = True
         return True
     else:
-        # cfg.IMAGES_IMPORTED = False
         return False
 
 
@@ -226,7 +224,7 @@ def is_cur_scale_exported() -> bool:
 
 
 def check_for_binaries():
-    logger.info("Checking platform-specific path to SWiFT-IR executables...")
+    print("Checking platform-specific path to SWiFT-IR executables...")
     path = os.path.split(os.path.realpath(__file__))[0]
     if platform.system() == 'Darwin':
         bindir = os.path.join(path, 'lib', 'bin_darwin')
@@ -242,7 +240,7 @@ def check_for_binaries():
                os.path.join(bindir, 'swim')
                ]
     for f in bin_lst:
-        if os.path.isfile(f):  logger.info('%s FOUND' % f)
+        if os.path.isfile(f):  print('%s FOUND' % f)
         else:  logger.warning('%s NOT FOUND' % f)
 
 
