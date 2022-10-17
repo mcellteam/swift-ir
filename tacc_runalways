@@ -22,16 +22,17 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
   git pull --ff-only
 
   echo "Activating alignment conda env..."
-  conda activate $WORK/miniconda3/envs/alignPYQT
+#  conda activate $WORK/miniconda3/envs/alignPYQT
+  conda activate alignPYQT
 
   # echo "Setting MAX_NUM_THREADS flag..."
   # unset MAX_NUM_THREADS
   # export MAX_NUM_THREADS=128
 
   echo "Loading TACC swr and fftw3 modules..."
-  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+#  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
 #  ml intel/19.1.1 impi/19.0.9 fftw3/3.3.10
-#  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
+  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
 
   echo "Setting GALLIUM_DRIVER=swr..."
   export GALLIUM_DRIVER=swr
