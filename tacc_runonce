@@ -38,6 +38,7 @@ source ~/.bashrc
 
 echo "Turning off annoying conda base environment so DCV will work..."
 conda config --set auto_activate_base false
+conda update conda
 
 
 echo "Checking if swift-ir exists in $WORK..."
