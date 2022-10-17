@@ -20,5 +20,5 @@ Do Every Time --------------------------------
 
 cd $WORK/swift-ir
 source tacc_runalways
-align
+python3 alignEM.py
 
