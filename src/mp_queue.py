@@ -91,7 +91,8 @@ class TaskQueue(QObject):
         cfg.main_window.hud.post('%d Workers Are Processing %d tasks' % (self.n_workers, self.n_tasks))
 
         for i in range(self.n_workers):
-            sys.stderr.write('\nStarting Worker %d >>>>>>>>' % i)
+            if i is not 0: sys.stderr.write('\n')
+            sys.stderr.write('Starting Worker %d >>>>>>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
@@ -178,6 +179,9 @@ class TaskQueue(QObject):
             print_exception()
         while (retries_tot < self.retries + 1) and n_pending:
             logger.info('# Tasks Pending: %d' % n_pending)
+            # self.end_tasks()
+            # self.work_queue.join()
+            # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
             retry_list = []
             for j in range(n_pending):
                 # task_str = self.task_dict[task_id]['cmd'] + self.task_dict[task_id]['args']
@@ -223,9 +227,9 @@ class TaskQueue(QObject):
             logger.error('Retries       : %d' % (retries_tot - 1))
             logger.error('Complete')
 
-        self.end_tasks()
-        self.work_queue.join()
-        self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
+        # self.end_tasks()
+        # self.work_queue.join()
+        # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
         self.parent.pbar.hide()
 
         logger.info('<<<<  TaskQueue.collect_results')

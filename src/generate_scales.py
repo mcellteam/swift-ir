@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_scales():
-    logger.critical('>>>>>>>> Generate Scales Start <<<<<<<<')
+    logger.critical('>>>> Generate Scales <<<<')
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     n_tasks = cfg.data.n_imgs() * (cfg.data.n_scales() - 1)  #0901 #Refactor
@@ -95,7 +95,7 @@ def generate_scales():
                 path = os.path.join(dirpath, filename)
                 os.chmod(path, 0o766)
 
-    logger.critical('>>>>>>>> Generate Scales End <<<<<<<<')
+    logger.critical('>>>> Generate Scales End <<<<')
 
     '''
     ____task_queue Parameters (Example)____

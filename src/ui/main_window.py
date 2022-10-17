@@ -27,7 +27,7 @@ from src.image_funcs import ImageSize
 from src.compute_affines import compute_affines
 from src.generate_aligned import generate_aligned
 from src.generate_scales import generate_scales
-from src.generate_zarr_flat import generate_zarr_flat
+from src.generate_zarr_scales import generate_zarr_scales
 from src.ng_host import NgHost
 from src.background_worker import BackgroundWorker
 # from src.napari_test import napari_test
@@ -350,7 +350,7 @@ class MainWindow(QMainWindow):
 
 
     def autoscale(self):
-        logger.critical('>>>>>>>> Autoscaling Start <<<<<<<<')
+        logger.critical('>>>> Autoscale <<<<')
         # self.scales_combobox_switch = 0
         self.image_panel_stack_widget.setCurrentIndex(2)
         try:
@@ -363,46 +363,36 @@ class MainWindow(QMainWindow):
         finally:
             pass
         self.hud('Generating Zarr Scales...')
-        logger.info('linking stacks...')
         cfg.data.link_all_stacks()
         cfg.data.set_defaults()
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
-        src = os.path.abspath(cfg.data['data']['destination_path'])
-        out = os.path.abspath(os.path.join(src, 'img_src.zarr'))
         for scale in cfg.data.scales()[::-1]:
-
             try:
-                self.set_status('Preallocating...')
                 preallocate_zarr(use_scale=scale, bounding_rect=False, name='img_src.zarr', is_alignment=False)
             except:
                 print_exception()
-            finally:
-                self.set_idle()
 
-            try:
-                status = 'Converting Zarr (Scale %d)...' % get_scale_val(scale)
-                self.set_status(status)
-                self.worker = BackgroundWorker(fn=generate_zarr_flat(src=src, out=out, scale=scale))
-                self.threadpool.start(self.worker)
-            except:
-                print_exception()
-                logger.error('Zarr Export Failed')
-            finally:
-                self.set_idle()
-        self.image_panel_stack_widget.setCurrentIndex(1)
-        self.read_project_data_update_gui()
-        self.reload_scales_combobox()  # 0529 #0713+
-        logger.info('Settings combobox index...')
-        self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
-        self.update_scale_controls()
-        self.init_neuroglancer_client()
-        self.ng_worker.show_url()
-        logger.info('Exiting main_window.autoscale')
+        self.set_status('Converting To Zarr...')
+        try:
+            self.worker = BackgroundWorker(fn=generate_zarr_scales())
+            self.threadpool.start(self.worker)
+            self.read_project_data_update_gui()
+            self.reload_scales_combobox()  # 0529 #0713+
+            self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
+            self.update_scale_controls()
+            logger.info('Exiting main_window.autoscale')
+        except:
+            print_exception()
+            logger.error('Zarr Export Failed')
+        finally:
+            self.set_idle()
+
+
 
     
     @Slot()
     def align(self, use_scale=None) -> None:
-        logger.critical('>>>>>>>> Align Start <<<<<<<<')
+        logger.critical('>>>> Align <<<<')
         if self._working == True: self.hud('Another Process is Already Running', logging.WARNING); return
 
         if use_scale == None: use_scale = cfg.data.scale()
@@ -451,7 +441,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def align_forward(self, use_scale=None, num_layers=1) -> None:
-        logger.critical('>>>>>>>> Align Forward Start <<<<<<<<')
+        logger.critical('>>>> Align Forward <<<<')
         if self._working == True:
             self.hud('Another Process is Already Running', logging.WARNING)
             return
@@ -566,7 +556,7 @@ class MainWindow(QMainWindow):
         self.hud('  Compression Type: %s' %  cfg.CNAME)
         try:
             self.set_status('Exporting...')
-            self.worker = BackgroundWorker(fn=generate_zarr_flat(src=src, out=out))
+            self.worker = BackgroundWorker(fn=generate_zarr_scales(src=src, out=out))
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -622,7 +612,7 @@ class MainWindow(QMainWindow):
         (1) Update the visibility of next/prev scale buttons depending on current scale.
         (2) Set the enabled/disabled state of the align-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
-        logger.info('Updating Scale Controls (Called by %s)...' % inspect.stack()[1].function)
+        logger.info('Updating Scale Controls...')
         # if self.project_progress >= 2:
         if cfg.data.n_scales() == 1:
             self.scale_down_button.setEnabled(False)
@@ -1437,9 +1427,7 @@ class MainWindow(QMainWindow):
     #     self.hud(str(cfg.image_library))
     
     def new_project(self):
-        logger.critical('>>>>>>>> New Project Start <<<<<<<<')
-        # self.set_status("New Project...")
-        # cfg.w.ng_browser.back() # create the effect of resetting the browser
+        logger.critical('>>>> New Project <<<<')
         if is_destination_set():
             logger.info('Asking user to confirm new data')
             msg = QMessageBox(QMessageBox.Warning,
@@ -1469,6 +1457,7 @@ class MainWindow(QMainWindow):
         filename = self.new_project_save_as_dialog()
         if filename == '':
             self.hud("Project Canceled.")
+            return 0
         logger.info("Overwriting Project Data In Memory With New Template")
         if not filename.endswith('.proj'):
             filename += ".proj"
@@ -1480,11 +1469,32 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Project: " + os.path.split(cfg.data.dest())[-1])
         self.save_project()
         self.scales_combobox.clear()  # why? #0528
-        cfg.IMAGES_IMPORTED = False
-        self.import_images()
-        self.run_after_import()
+        try:
+            self.import_images()
+        except:
+            logger.warning('import_images Was Canceled')
+            return
+        try:
+            recipe_maker = ConfigDialog(parent=self)
+        except:
+            logger.warning('Configuration Dialog Was Exited')
+            return
+        result = recipe_maker.exec_()  # result = 0 or 1
+        if not result:
+            logger.warning('Configuration Dialog Did Not Return A Result')
+            return
+        else:
+            # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
+            self.autoscale()
+        logger.info('Exiting autoscale')
         self.save_project_to_file()
-        self.init_neuroglancer_client()
+        try:
+            self.init_neuroglancer_client()
+            self.image_panel_stack_widget.setCurrentIndex(1)
+            self.ng_worker.show_url()
+        except:
+            print_exception()
+            logger.warning('Unable To Initialize Neuroglancer Client')
 
     def import_images_dialog(self):
         '''Dialog for importing images. Returns list of filenames.'''
@@ -1609,7 +1619,7 @@ class MainWindow(QMainWindow):
         return (button == QMessageBox.StandardButton.Yes)
     
     def open_project(self):
-        logger.critical('>>>>>>>> Open Project Start <<<<<<<<')
+        logger.critical('>>>> Open Project <<<<')
         # self.set_status("Open Project...")
         # is_neuroglancer_viewer = True if self.is_neuroglancer_viewer() else False
         self.main_widget.setCurrentIndex(0)
@@ -1639,35 +1649,38 @@ class MainWindow(QMainWindow):
         #     logger.critical('No Unsaved Changes - Exiting')
         # self.main_panel_bottom_widget.setCurrentIndex(0)
         filename = self.open_project_dialog()
-        if filename != '':
-            with open(filename, 'r') as f:
-                project = DataModel(json.load(f))
-            if type(project) == type('abc'):
-                self.hud('There Was a Problem Loading the Project File', logging.ERROR)
-                logger.warning("Project Type is Abstract Base Class - Unable to Load!")
-                return
-            self.hud("Loading Project '%s'..." % filename)
-
-            self.set_project_controls()
-            self.set_normal_view()
-
-            project.set_paths_absolute(head=filename)
-            cfg.data = copy.deepcopy(project)  # Replace the current version with the copy
-            cfg.data.link_all_stacks()
-
-            self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
-            if are_images_imported():
-                self.init_neuroglancer_client()  # force neuroglancer viewer (changes stack index)
-                cfg.IMAGES_IMPORTED = True
-            else:
-                cfg.IMAGES_IMPORTED = False
-            self.read_project_data_update_gui()
-            self.clear_snr_plot()
-            self.update_snr_plot()
-            self.reload_scales_combobox()
-            self.update_scale_controls()
-        else:
+        if os.path.isdir(filename):
+            self.hud('Selected path is a directory', logging.WARNING)
+            return
+        if filename == '':
             self.hud("No Project File (.proj) Selected", logging.WARNING)
+            return
+
+        with open(filename, 'r') as f:
+            project = DataModel(json.load(f))
+        if type(project) == type('abc'):
+            self.hud('There Was a Problem Loading the Project File', logging.ERROR)
+            logger.warning("Project Type is Abstract Base Class - Unable to Load!")
+            return
+        self.hud("Loading Project '%s'..." % filename)
+
+        self.set_project_controls()
+        self.set_normal_view()
+
+        project.set_paths_absolute(head=filename)
+        cfg.data = copy.deepcopy(project)  # Replace the current version with the copy
+        cfg.data.link_all_stacks()
+
+        self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
+        if are_images_imported():
+            self.init_neuroglancer_client()  # force neuroglancer viewer (changes stack index)
+        self.read_project_data_update_gui()
+        self.clear_snr_plot()
+        self.update_snr_plot()
+        self.reload_scales_combobox()
+        self.update_scale_controls()
+
+
 
     def save_project(self):
         logger.info('Entering save_project...')
@@ -1816,7 +1829,7 @@ class MainWindow(QMainWindow):
     
     def import_images(self, clear_role=False):
         ''' Import images into data '''
-        logger.critical('>>>>>>>> Import Images Start <<<<<<<<')
+        logger.critical('>>>> Import Images <<<<')
         # self.set_status('Import Images...')
         role_to_import = 'base'
         # need_to_scale = not are_images_imported()
@@ -1825,7 +1838,7 @@ class MainWindow(QMainWindow):
             filenames = natural_sort(self.import_images_dialog())
         except:
             logger.warning('No images were selected.')
-            return
+            return 0
         logger.debug('filenames = %s' % str(filenames))
         if clear_role:
             for layer in cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack']:
@@ -1855,21 +1868,7 @@ class MainWindow(QMainWindow):
         else:
             self.hud.post('No Images Were Imported', logging.WARNING)
         logger.info('Exiting import_images')
-
-    def run_after_import(self):
-        logger.info('run_after_import:')
-        try:
-            recipe_maker = ConfigDialog(parent=self)
-        except:
-            logger.warning('ConfigDialog Was Exited')
-        result = recipe_maker.exec_()  # result = 0 or 1
-        if not result:
-            logger.warning('Dialog Did Not Return A Result')
-            return
-        else:
-            # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
-            self.autoscale()
-        logger.info('Exiting autoscale')
+        return 1
 
 
     def set_splash_controls(self):
@@ -2160,25 +2159,23 @@ class MainWindow(QMainWindow):
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
         '''
         sys.stdout.flush()
-        # self.set_status('Loading Neuroglancer...')
+        logger.critical('>>>> Loading Neuroglancer <<<<')
         if not are_images_imported():
             self.hud.post('Nothing To View', logging.WARNING)
             return
         logger.info("Switching To Neuroglancer Viewer")
-        self.image_panel_stack_widget.setCurrentIndex(1)
+
         dest = os.path.abspath(cfg.data['data']['destination_path'])
         s, l = cfg.data.scale(), cfg.data.layer()
         # self.ng_worker = NgHost(src=dest, scale=s, port=9000)
         self.ng_worker = NgHost(src=dest, scale=s)
-
-
         self.threadpool.start(self.ng_worker)
-
         if not cfg.NO_EMBED_NG:
             self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
             self.ng_browser.setFocus()
 
         self.ng_layout_combobox.setCurrentText('xy')
+        self.image_panel_stack_widget.setCurrentIndex(1)
         # self.hud('Displaying Alignment In Neuroglancer')
 
     def is_neuroglancer_viewer(self) -> bool:

@@ -2,7 +2,7 @@
 
 '''Job Script for Generating Neuroglancer-Compatible MULTISCALE
 Zarr from Alignment Output Using Multiple Processors. Tasks
-are queued by the script 'generate_zarr_flat.py'. Group level
+are queued by the script 'generate_zarr_scales.py'. Group level
 attributes for multiscale data are stored in the .zattrs file
 at the image level. NGFF Spec: https://ngff.openmicroscopy.org/latest/
 Joel Yancey 2022-08-15
