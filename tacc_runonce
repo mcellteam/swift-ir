@@ -15,19 +15,21 @@ echo "Setting things up..."
 echo "Changing directory to WORK directory..."
 cd $WORK
 
-echo "Checking if miniforge (conda) is installed..."
-if [ ! -d "$HOME/miniforge3" ]; then
-  echo "Setting Miniforge (conda) installer..."
-  wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-  echo "$HOME/miniforge3 does not exist - Installing miniforge..."
-  curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
-  sh $WORK/Miniforge3-Linux-x86_64.sh -b
-  $WORK/miniforge3/condabin/conda init
+echo "Checking if miniconda3 is installed..."
+if [ ! -d "$WORK/miniconda3" ]; then
+#  echo "Setting Miniforge (conda) installer..."
+#  wget https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+#  echo "$HOME/miniforge3 does not exist - Installing miniforge..."
+#  curl -LO https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-x86_64.sh
+#  sh $WORK/Miniforge3-Linux-x86_64.sh -b
+#  $WORK/miniforge3/condabin/conda init
+  mkdir -p $WORK/miniconda3
+  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $WORK/miniconda3/miniconda.sh
+  bash $WORK/miniconda3/miniconda.sh -b -u -p $WORK/miniconda3
+  rm -rf $WORK/miniconda3/miniconda.sh
+  $WORK/miniconda3/bin/conda init bash
 fi
 
-if [ ! -d "$HOME/miniforge3" ]; then
-  echo "not installed"
-fi
 
 #echo "Installing a recent version of nvm..."
 #curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
