@@ -27,9 +27,10 @@ if [ ! -d "$WORK/miniconda3" ]; then
   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O $WORK/miniconda3/miniconda.sh
   bash $WORK/miniconda3/miniconda.sh -b -u -p $WORK/miniconda3
   rm -rf $WORK/miniconda3/miniconda.sh
-  $WORK/miniconda3/bin/conda init bash
-fi
 
+fi
+echo "Initializing conda..."
+$WORK/miniconda3/bin/conda init bash
 
 #echo "Installing a recent version of nvm..."
 #curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.1/install.sh | bash
