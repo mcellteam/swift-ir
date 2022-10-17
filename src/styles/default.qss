@@ -1,5 +1,16 @@
 
 
+#ImagePanel {
+    color: #333;
+    border: 2px solid #555;
+    border-radius: 7px;
+    padding: 5px;
+    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4,
+    radius: 1.35, stop: 0 #fff, stop: 1 #888);
+    min-width: 20px;
+    opacity: .8;
+}
+
 
 hud {
 	background-color: #ffffff;
