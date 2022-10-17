@@ -352,6 +352,7 @@ class MainWindow(QMainWindow):
     def autoscale(self):
         logger.critical('>>>>>>>> Autoscaling Start <<<<<<<<')
         # self.scales_combobox_switch = 0
+        self.image_panel_stack_widget.setCurrentIndex(2)
         try:
             self.set_status('Scaling...')
             self.worker = BackgroundWorker(fn=generate_scales())
@@ -368,7 +369,7 @@ class MainWindow(QMainWindow):
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
         src = os.path.abspath(cfg.data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, 'img_src.zarr'))
-        for scale in cfg.data.scales():
+        for scale in cfg.data.scales().reverse():
 
             try:
                 self.set_status('Preallocating...')
@@ -388,7 +389,7 @@ class MainWindow(QMainWindow):
                 logger.error('Zarr Export Failed')
             finally:
                 self.set_idle()
-
+        self.image_panel_stack_widget.setCurrentIndex(1)
         self.read_project_data_update_gui()
         self.reload_scales_combobox()  # 0529 #0713+
         logger.info('Settings combobox index...')
@@ -1209,26 +1210,17 @@ class MainWindow(QMainWindow):
     @Slot()
     def fn_ng_layout_combobox(self) -> None:
         try:
-            if self.ng_layout_combobox.currentText() == 'xy':
-                self.ng_worker.set_layout_xy()
-            elif self.ng_layout_combobox.currentText() == 'yz':
-                self.ng_worker.set_layout_yz()
-            elif self.ng_layout_combobox.currentText() == 'xz':
-                self.ng_worker.set_layout_xz()
-            elif self.ng_layout_combobox.currentText() == 'xy-3d':
-                self.ng_worker.set_layout_xy_3d()
-            elif self.ng_layout_combobox.currentText() == 'yz-3d':
-                self.ng_worker.set_layout_yz_3d()
-            elif self.ng_layout_combobox.currentText() == 'xz-3d':
-                self.ng_worker.set_layout_xz_3d()
-            elif self.ng_layout_combobox.currentText() == '3d':
-                self.ng_worker.set_layout_3d()
-            elif self.ng_layout_combobox.currentText() == '4panel':
-                self.ng_worker.set_layout_4panel()
+            if self.ng_layout_combobox.currentText() == 'xy':        self.ng_worker.set_layout_xy()
+            elif self.ng_layout_combobox.currentText() == 'yz':      self.ng_worker.set_layout_yz()
+            elif self.ng_layout_combobox.currentText() == 'xz':      self.ng_worker.set_layout_xz()
+            elif self.ng_layout_combobox.currentText() == 'xy-3d':   self.ng_worker.set_layout_xy_3d()
+            elif self.ng_layout_combobox.currentText() == 'yz-3d':   self.ng_worker.set_layout_yz_3d()
+            elif self.ng_layout_combobox.currentText() == 'xz-3d':   self.ng_worker.set_layout_xz_3d()
+            elif self.ng_layout_combobox.currentText() == '3d':      self.ng_worker.set_layout_3d()
+            elif self.ng_layout_combobox.currentText() == '4panel':  self.ng_worker.set_layout_4panel()
             self.reload_ng()
         except:
             logger.warning('Cannot Change Neuroglancer Layout At This Time')
-
 
 
     @Slot()
@@ -1892,34 +1884,25 @@ class MainWindow(QMainWindow):
         self.documentation_button.setCursor(QCursor(Qt.PointingHandCursor))
         self.exit_app_button.setCursor(QCursor(Qt.PointingHandCursor))
 
-
-
-        self.python_console.show()
-
+        self.dual_viewer_w_banner.hide()
+        self.bottom_panel_controls.hide()
         self.snr_plot_and_control.hide()
         self.hud.hide()
-
-        self.title_label.show()
-        self.subtitle_label.show()
-        # self.bottom_display_area_widget.hide()
-        self.bottom_panel_controls.hide()
-
-        self.dual_viewer_w_banner.hide()
         self.menu.hide()
 
+        self.python_console.show()
+        self.title_label.show()
+        self.subtitle_label.show()
 
         self.control_panel.setStyleSheet('background-color: #f3f6fb;')
         self.main_splitter.setAutoFillBackground(True)
 
         # self.bottom_display_area_widget.setMaximumHeight(200)
         # self.bottom_display_area_controls.setMaximumHeight(200)
-        self.bottom_widget.setMaximumHeight(200)
 
         self.resize(100,100)
-
+        self.bottom_widget.setMaximumHeight(200)
         self.control_panel.setMaximumHeight(140)
-
-        # self.setWindowFlags(Qt.WindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint))
 
         button_h, button_w = 100, 40
         self.image_panel_stack_widget.setCurrentIndex(2)
@@ -1967,24 +1950,20 @@ class MainWindow(QMainWindow):
 
         # self.bottom_widget.show() # <- culprit
 
-        self.snr_plot_and_control.show()
-        self.hud.show()
-
         self.title_label.hide()
         self.subtitle_label.hide()
 
         self.hud.show()
         self.snr_plot.show()
-
+        self.snr_plot_and_control.show()
         self.bottom_panel_controls.show() # <- culprit
-
         self.dual_viewer_w_banner.show()
+        self.alignment_widget.show()
+        self.menu.show()
 
         # self.image_panel_stack_widget.setCurrentIndex(1)
 
 
-        self.alignment_widget.show()
-        self.menu.show()
         # self.bottom_display_area_widget.setMaximumHeight(1000)
         # self.bottom_display_area_controls.setMaximumHeight(1000)
         self.bottom_widget.setMaximumHeight(1200)
@@ -2017,9 +1996,6 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setIconSize(QSize(icon_size, icon_size))
 
         self.adjustSize()
-
-
-
 
     # @Slot()
     # def actual_size_callback(self):

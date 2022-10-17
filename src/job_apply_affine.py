@@ -16,7 +16,6 @@ try:
 except ImportError:
     from src.helpers import is_tacc, is_linux, is_mac
 
-
 logger = logging.getLogger(__name__)
 
 def run_command(cmd, arg_list=None, cmd_input=None):
@@ -110,22 +109,9 @@ if (__name__ == '__main__'):
             exit(1)
         i += 1  # Increment to get the next option
 
-    # if sys.argv[i] == '-rect':
-    #     bb_x = rect[2]
-    #     bb_y = rect[3]
-    #     offset_x = rect[0]
-    #     offset_y = rect[1]
-    # else:
-    #     offset_x = 0
-    #     offset_y = 0
+    bb_x, bb_y = rect[2], rect[3]
+    offset_x, offset_y = rect[0], rect[1]
 
-    bb_x = rect[2]
-    bb_y = rect[3]
-    offset_x = rect[0]
-    offset_y = rect[1]
-
-    # in_fn
-    # out_fn
     a = afm_list[0]
     c = afm_list[1]
     e = afm_list[2] + offset_x
@@ -149,15 +135,12 @@ if (__name__ == '__main__'):
         'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
 
-
-
     # Python Implementation
     # try:
     #     image_apply_affine(in_fn=in_fn, out_fn=out_fn, afm=afm, rect=rect, grayBorder=grayBorder)
     # except Exception:
     #     logger.warning("An Exception Occurred Running 'image_apply_affine'")
     #     logger.warning(traceback.format_exc())
-
 
     dimx, dimy = rect[2], rect[3]
     # im = tifffile.imread(out_fn)
