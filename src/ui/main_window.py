@@ -369,7 +369,7 @@ class MainWindow(QMainWindow):
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
         src = os.path.abspath(cfg.data['data']['destination_path'])
         out = os.path.abspath(os.path.join(src, 'img_src.zarr'))
-        for scale in cfg.data.scales().reverse():
+        for scale in cfg.data.scales()[::-1]:
 
             try:
                 self.set_status('Preallocating...')
@@ -653,7 +653,7 @@ class MainWindow(QMainWindow):
         Update alignment details in the Alignment control panel group box.'''
         logger.debug("Called by " + inspect.stack()[1].function)   
         # logger.info('Updating Alignment Banner Details')
-        al_stack = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack']
+
         # self.al_status_checkbox.setChecked(is_cur_scale_aligned())
         dict = {'init_affine':'Initialize Affine','refine_affine':'Refine Affine','apply_affine':'Apply Affine'}
         method_str = dict[cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option']]
@@ -675,10 +675,11 @@ class MainWindow(QMainWindow):
         #     self.align_label_is_skipped.setText('Is Skipped? No')
 
         try:
-            img_size = ImageSize(al_stack[0]['images']['base']['filename'])
+            img_size = ImageSize(cfg.data.path_base())
             self.align_label_resolution.setText('%sx%spx' % (img_size[0], img_size[1]))
         except:
-            logger.warning('Unable To Determine Image Sizes. Project was likely renamed.')
+            self.align_label_resolution.setText('')
+            logger.warning('Unable To Determine Image Size.')
         #Todo fix renaming bug where files are not relinked
         # self.align_label_affine.setText(method_str)
         num_unaligned = len(cfg.data.not_aligned_list())
