@@ -51,7 +51,7 @@ if [ ! -d "$WORK/swift-ir" ]; then
 fi
 
 echo "Changing directory to swift-ir..."
-cd swift-ir/
+cd $WORK/swift-ir
 
 echo "Checking out development_ng branch..."
 git checkout development_ng
