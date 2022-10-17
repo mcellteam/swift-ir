@@ -159,6 +159,8 @@ class MainWindow(QMainWindow):
         self.set_splash_controls()
         # self.set_project_controls()
 
+
+
         self.set_idle()
 
     if qtpy.QT5:
@@ -366,11 +368,15 @@ class MainWindow(QMainWindow):
         cfg.data.link_all_stacks()
         cfg.data.set_defaults()
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
-        for scale in cfg.data.scales()[::-1]:
-            try:
-                preallocate_zarr(use_scale=scale, bounding_rect=False, name='img_src.zarr', is_alignment=False)
-            except:
-                print_exception()
+        # for scale in cfg.data.scales()[::-1]:
+        #     try:
+        #         preallocate_zarr(use_scale=scale, bounding_rect=False, name='img_src.zarr', is_alignment=False)
+        #     except:
+        #         print_exception()
+        try:
+            preallocate_zarr(bounding_rect=False, name='img_src.zarr', is_alignment=False)
+        except:
+            print_exception()
 
         self.set_status('Converting To Zarr...')
         try:
@@ -1428,6 +1434,12 @@ class MainWindow(QMainWindow):
     
     def new_project(self):
         logger.critical('>>>> New Project <<<<')
+        self.scales_combobox_switch = 0
+
+        # logger.critical(os.path.realpath(__file__))
+        app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        logger.info('app_dir = %s' % app_dir)
+        os.chdir(app_dir)
         if is_destination_set():
             logger.info('Asking user to confirm new data')
             msg = QMessageBox(QMessageBox.Warning,
@@ -1446,10 +1458,12 @@ class MainWindow(QMainWindow):
             else:
                 logger.info("Response was not 'OK' - Returning")
                 self.hud('New Project Canceled', logging.WARNING)
+                self.set_idle()
                 return
             if reply == QMessageBox.Cancel:
                 logger.info("Response was 'Cancel'")
                 self.hud('New Project Canceled', logging.WARNING)
+                self.set_idle()
                 return
         self.clear_snr_plot()
         self.reset_details_banner()
@@ -1457,6 +1471,7 @@ class MainWindow(QMainWindow):
         filename = self.new_project_save_as_dialog()
         if filename == '':
             self.hud("Project Canceled.")
+            self.set_idle()
             return 0
         logger.info("Overwriting Project Data In Memory With New Template")
         if not filename.endswith('.proj'):
@@ -1478,10 +1493,12 @@ class MainWindow(QMainWindow):
             recipe_maker = ConfigDialog(parent=self)
         except:
             logger.warning('Configuration Dialog Was Exited')
+            self.set_idle()
             return
         result = recipe_maker.exec_()  # result = 0 or 1
         if not result:
             logger.warning('Configuration Dialog Did Not Return A Result')
+            self.set_idle()
             return
         else:
             # self.update_unaligned_2D_viewer() # Can't show image stacks before creating Zarr scales
@@ -1495,6 +1512,9 @@ class MainWindow(QMainWindow):
         except:
             print_exception()
             logger.warning('Unable To Initialize Neuroglancer Client')
+        cfg.PROJECT_OPEN=True
+        self.scales_combobox_switch = 1
+
 
     def import_images_dialog(self):
         '''Dialog for importing images. Returns list of filenames.'''
@@ -1679,6 +1699,7 @@ class MainWindow(QMainWindow):
         self.update_snr_plot()
         self.reload_scales_combobox()
         self.update_scale_controls()
+        cfg.PROJECT_OPEN = True
 
 
 
@@ -2130,7 +2151,7 @@ class MainWindow(QMainWindow):
     def reload_ng(self):
         logger.info('Normally, noeuroglancer would be reloaded here')
         logger.info("Reloading Neuroglancer Viewer...")
-        self.image_panel_stack_widget.setCurrentIndex(1)
+        # self.image_panel_stack_widget.setCurrentIndex(1)
         # self.init_neuroglancer_client()
         self.ng_worker.create_viewer()
         if not cfg.NO_EMBED_NG:
@@ -2140,7 +2161,7 @@ class MainWindow(QMainWindow):
 
     def reload_ng_arg(self, arg:str) -> None:
         logger.info("Reloading Neuroglancer Viewer...")
-        self.image_panel_stack_widget.setCurrentIndex(1)
+        # self.image_panel_stack_widget.setCurrentIndex(1)
         # self.init_neuroglancer_client()
         self.ng_worker.create_viewer()
         if not cfg.NO_EMBED_NG:
@@ -2149,7 +2170,7 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
 
     def set_url(self, text:str) -> None:
-        self.image_panel_stack_widget.setCurrentIndex(1)
+        # self.image_panel_stack_widget.setCurrentIndex(1)
         self.ng_browser.setUrl(QUrl(text))
 
 
@@ -2419,7 +2440,6 @@ class MainWindow(QMainWindow):
         self.control_panel.show()
         # self.multi_img_viewer.show()
         self.image_panel_stack_widget.show()
-        self.image_panel_stack_widget.setCurrentIndex(1)
         self.main_widget.setCurrentIndex(0)
         self.python_console.show()
         self.snr_plot.show()
@@ -3481,6 +3501,19 @@ class MainWindow(QMainWindow):
 
         '''Image Panel Stack Widget'''
         self.image_panel_stack_widget = QStackedWidget()
+        self.image_panel_stack_widget.setObjectName('ImagePanel')
+        # cfg.main_window.image_panel_stack_widget.setStyleSheet('''
+        # color: #333;
+        # border: 2px solid #555;
+        # border-radius: 11px;
+        # padding: 5px;
+        # background: qradialgradient(cx: 0.3, cy: -0.4,
+        # fx: 0.3, fy: -0.4,
+        # radius: 1.35, stop: 0 #fff, stop: 1 #888);
+        # min-width: 80px;
+        # opacity: .8;
+        # ''')
+
         # self.image_panel_stack_widget.setStyleSheet('background-color: #000000;') #can be used to frame viewer
         self.image_panel_landing_page = QWidget()
         self.image_panel_stack_widget.addWidget(self.multi_img_viewer)

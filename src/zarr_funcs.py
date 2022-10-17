@@ -108,7 +108,7 @@ def tiffs2MultiTiff(directory:str, out:str):
 def remove_zarr(path) -> None:
     # path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     if os.path.isdir(path):
-        logger.critical('Removing Zarr...')
+        logger.critical('Removing Zarr Located at %s...' % path)
         try:
             with time_limit(15):
                 logger.info('Removing %s...' % path)
@@ -125,43 +125,59 @@ def init_zarr() -> None:
     # root = zarr.group(store=store, overwrite=True, synchronizer=zarr.ThreadSynchronizer())  # Create Root Group (?)
 
 def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stride=16, chunks=(1, 512, 512), is_alignment=True):
-
+    logger.critical('>>>> Preallocating Zarrs <<<<')
     cfg.main_window.hud.post('Preallocating Zarr Array...')
-    logger.critical('Preallocating Zarr Array For Scale %d' % get_scale_val(use_scale))
-
     cur_scale = cfg.data.scale()
     cur_scale_val = get_scale_val(cfg.data.scale())
     src = os.path.abspath(cfg.data.dest())
     n_imgs = cfg.data.n_imgs()
     # n_scales = cfg.data.n_scales()
-    aligned_scales_lst = cfg.data.aligned_list()
+
 
     zarr_path = os.path.join(cfg.data.dest(), name)
     # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr_scales':
     #     # remove_zarr()
     #     init_zarr()
 
-    out_path = os.path.join(src, name, 's' + str(cur_scale_val))
-    # if cfg.data.scale() != 'scale_1':
-    #     if os.path.exists(out_path):
-    #         remove_zarr(out_path)
+    if name == 'img_aligned.zarr':
+        aligned_scales_lst = cfg.data.aligned_list()
+        zarr_these_scales = aligned_scales_lst
+    elif name == 'img_src.zarr':
+        zarr_these_scales = cfg.data.scales()
+    else:
+        zarr_these_scales = [use_scale]
+
+
+
+    logger.info('Zarring these scales: %s' % str(zarr_these_scales))
+
+    if cfg.PROJECT_OPEN:
+        logger.critical('Removing Preexisting Zarrs...')
+        remove_zarr(zarr_path)
+        #1017 TRYING REMOVE ZARR AT ROOT
+        # for scale in zarr_these_scales:
+        #     out_path = os.path.join(src, name, 's' + str(get_scale_val(scale)))
+        #     if os.path.exists(out_path):
+        #         remove_zarr(out_path)
+
 
     # name = 's' + str(scale_val(use_scale))
     # zarr_name = os.path.join(zarr_path,name)
     # root = zarr.group(store=zarr_path, synchronizer=synchronizer)  # Create Root Group
     root = zarr.group(store=zarr_path)  # Create Root Group
+    logger.info('Zarr Root is %s' % zarr_path)
     # root = zarr.group(store=zarr_name, overwrite=True)  # Create Root Group
 
     # opt_cname = cfg.main_window.cname_combobox.currentText()
     # opt_clevel = int(cfg.main_window.clevel_input.text())
 
-    if use_scale is None:
-        zarr_these_scales = aligned_scales_lst
-    else:
-        zarr_these_scales = [use_scale]
+
+
 
     datasets = []
     for scale in zarr_these_scales:
+        logger.info('Zarring scale %s' % scale)
+
         logger.info('Preallocating Zarr for Scale: %s' % str(scale))
         logger.info('bounding_rect = %s' % str(bounding_rect))
         if bounding_rect is True:
@@ -181,8 +197,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
 
 
 
-        scale_val = get_scale_val(scale)
-        name = 's' + str(scale_val)
+        name = 's' + str(get_scale_val(scale))
 
         shape = (n_imgs, dimy, dimx)
         # chunks = (z_stride, 64, 64)
