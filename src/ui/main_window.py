@@ -653,22 +653,27 @@ class MainWindow(QMainWindow):
         # self.al_status_checkbox.setChecked(is_cur_scale_aligned())
         dict = {'init_affine':'Initialize Affine','refine_affine':'Refine Affine','apply_affine':'Apply Affine'}
         method_str = dict[cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option']]
-        font = QFont()
-        font.setBold(True)
-        self.alignment_status_label.setFont(font)
+
         if is_cur_scale_aligned():
+            font = QFont()
+            font.setBold(True)
+            self.alignment_status_label.setFont(font)
             self.alignment_status_label.setText("Aligned")
             self.alignment_status_label.setStyleSheet('color: #41FF00;')
             self.alignment_snr_label.setText(cfg.data.snr())
         else:
             self.alignment_status_label.setText("Not Aligned")
-            self.alignment_status_label.setStyleSheet('color: red;')
+            self.alignment_status_label.setStyleSheet('color: #FF0000;')
             self.alignment_snr_label.setText('')
-        scale_str = str(get_scale_val(cfg.data.scale()))
-        # if cfg.data.skipped():
-        #     self.align_label_is_skipped.setText('Is Skipped? Yes')
-        # else:
-        #     self.align_label_is_skipped.setText('Is Skipped? No')
+        # scale_str = str(get_scale_val(cfg.data.scale()))
+        if cfg.data.skipped():
+            font = QFont()
+            font.setBold(True)
+            self.align_label_is_skipped.setFont(font)
+            self.align_label_is_skipped.setStyleSheet('color: #FF0000;')
+            self.align_label_is_skipped.setText('SKIP')
+        else:
+            self.align_label_is_skipped.setText('')
 
         try:
             img_size = ImageSize(cfg.data.path_base())
@@ -682,7 +687,7 @@ class MainWindow(QMainWindow):
         if num_unaligned == 0:
             font = QFont()
             font.setBold(True)
-            self.alignment_status_label.setFont(font)
+            self.align_label_scales_remaining.setFont(font)
             self.align_label_scales_remaining.setText('All Scales Aligned')
             self.align_label_scales_remaining.setStyleSheet('color: #41FF00;')
         else:
@@ -692,6 +697,10 @@ class MainWindow(QMainWindow):
             self.align_label_scales_remaining.setText('# Unaligned: %d' % num_unaligned)
             self.align_label_scales_remaining.setStyleSheet('color: #f3f6fb;')
 
+        if cfg.data.skipped():
+            self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+        else:
+            self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 0.0);')
 
         # if not do_scales_exist():
         #     cur_scale_str = 'Scale: n/a'
@@ -792,10 +801,17 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def update_skip_toggle(self):
+        #Todo is this being called?
         logger.info('update_skip_toggle:')
         scale = cfg.data['data']['scales'][cfg.data['data']['current_scale']]
         logger.info("cfg.data.skipped() = ", cfg.data.skipped())
         self.toggle_skip.setChecked(not cfg.data.skipped())
+        if cfg.data.skipped():
+            self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+            self.browser_overlay_text.setText('SKIPPED')
+        else:
+            self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 0.0);')
+            self.browser_overlay_text.setText('')
         # if cfg.data.skipped():
         #     self.align_label_is_skipped.setText('Is Skipped? Yes')
         # else:
@@ -1013,6 +1029,11 @@ class MainWindow(QMainWindow):
         self.update_alignment_details()
         self.jump_input.setText(str(cfg.data.layer()))
 
+        # if cfg.data.skipped():
+        #     self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
+        # else:
+        #     self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 0.0);')
+
         # self.skip_label.setText('Use Image #%d?' % cfg.data.layer())
 
         self.align_all_button.setText('Align\n%s' % cfg.data.scale_pretty())
@@ -1173,8 +1194,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        logger.info('Reloading Scale Combobox...')
-        logger.debug('Caller: %s' % inspect.stack()[1].function)
+        logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
         self.scales_combobox_switch = 0
         curr_scale = cfg.data.scale()
         image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
@@ -1190,7 +1210,8 @@ class MainWindow(QMainWindow):
         logger.info('fn_scales_combobox')
         logger.info('self.scales_combobox_switch = %s' % self.scales_combobox_switch)
         if self.scales_combobox_switch == 0:
-            logger.warning('Unnecessary Function Call Switch Disabled: %s' % inspect.stack()[1].function)
+            if inspect.stack()[1].function != 'reload_scales_combobox':
+                logger.warning('Unnecessary Function Call Switch Disabled: %s' % inspect.stack()[1].function)
             return None
         if self._working:
             logger.warning('fn_scales_combobox was called but _working is True -> ignoring the signal')
@@ -1318,6 +1339,8 @@ class MainWindow(QMainWindow):
         #     # painter.fillRect(rect, QBrush(QColor(128, 128, 255, 128)))
         except:
             print_exception()
+        finally:
+            self.set_idle()
 
     #1004 #debugging
     # def load_unaligned_stacks(self):
@@ -3183,7 +3206,7 @@ class MainWindow(QMainWindow):
         self.align_label_resolution = QLabel('')
         # self.align_label_affine = QLabel('Initialize Affine')
         self.align_label_scales_remaining = QLabel('')
-        # self.align_label_is_skipped = QLabel('')
+        self.align_label_is_skipped = QLabel('')
         self.alignment_status_label = QLabel('')
         self.alignment_snr_label = QLabel('')
         self.reset_details_banner()
@@ -3221,7 +3244,7 @@ class MainWindow(QMainWindow):
         self.details_banner_layout.addStretch(1)
         self.details_banner_layout.addWidget(self.alignment_snr_label)
         # self.details_banner_layout.addWidget(self.align_label_cur_scale)
-        # self.details_banner_layout.addWidget(self.align_label_is_skipped)
+        self.details_banner_layout.addWidget(self.align_label_is_skipped)
         self.details_banner_layout.addStretch(7)
         self.details_banner_layout.addWidget(QLabel('View: '), alignment=Qt.AlignVCenter)
         self.details_banner_layout.addWidget(self.ng_layout_combobox)
@@ -3262,14 +3285,30 @@ class MainWindow(QMainWindow):
         self.browser = QWebEngineView()
         # self.browser_al = QWebEngineView()
         # self.browser_unal = QWebEngineView()
+
+        self.ng_browser_container = QWidget()
+
         self.ng_browser = QWebEngineView()
-        # self.ng_browser.setFocusPolicy(Qt.StrongFocus)
+
+        self.ng_browser_layout = QGridLayout()
+        self.ng_browser_layout.setSpacing(0)
+        self.ng_browser_layout.addWidget(self.ng_browser, 0, 0)
+        self.browser_overlay_widget = QWidget()
+        self.browser_overlay_widget.setAttribute(Qt.WA_TransparentForMouseEvents)
+        self.ng_browser_layout.addWidget(self.browser_overlay_widget, 0, 0)
+        self.browser_overlay_text = QLabel('')
+        self.ng_browser_layout.addWidget(self.browser_overlay_text, 0, 0)
+        self.ng_browser_container.setLayout(self.ng_browser_layout)
+
+        self.ng_browser.setFocusPolicy(Qt.StrongFocus)
 
         self.ng_panel = QWidget()
         self.ng_panel_layout = QVBoxLayout()
 
         self.ng_multipanel_layout = QHBoxLayout()
-        self.ng_multipanel_layout.addWidget(self.ng_browser)
+        # self.ng_multipanel_layout.addWidget(self.ng_browser)
+        self.ng_multipanel_layout.addWidget(self.ng_browser_container)
+
 
         self.ng_panel_controls_layout = QHBoxLayout()
         self.ng_panel_controls_layout.addWidget(self.exit_ng_button, alignment=Qt.AlignmentFlag.AlignLeft)
