@@ -7,30 +7,15 @@ https://gist.github.com/jbms/1ec1192c34ec816c2c517a3b51a8ed6c
 https://programtalk.com/vs4/python/janelia-cosem/fibsem-tools/src/fibsem_tools/io/zarr.py/
 '''
 
-import os
-import re
-import sys
-import copy
-import json
-import time
-import signal
-import imghdr
-import logging
-import inspect
-import platform
-import traceback
+import os, re, sys, copy, json, time, signal, logging, inspect, platform, traceback, shutil
+from typing import Dict, List, Tuple, Any, Union, Sequence
 from glob import glob
 from pathlib import Path
 from contextlib import contextmanager
-from typing import Dict, List, Tuple, Any, Union, Sequence
 import zarr
-# from toolz import concat
-# import toolz as tz
-import shutil
+import imghdr
 import tifffile
 import numpy as np
-# from dask import bag
-# from dask import delayed
 from shutil import rmtree
 # import numcodecs
 # numcodecs.blosc.use_threads = False #may need

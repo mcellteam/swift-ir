@@ -26,12 +26,10 @@ def generate_scales():
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     for s in cfg.data.scales():
         create_project_structure_directories(s)
-
     if is_tacc():     bindir = 'bin_tacc'
     elif is_mac():    bindir = 'bin_darwin'
     elif is_linux():  bindir = 'bin_linux'
     else:             logger.error("Operating System Could Not Be Resolved"); return
-
     iscale2_c = os.path.join(my_path, 'lib', bindir, 'iscale2')
     task_queue.start(cpus)
     for scale in sorted(image_scales_to_run):  # value string '1 2 4'
@@ -56,13 +54,6 @@ def generate_scales():
                         except:  logger.warning("Unable to link or copy from " + fn + " to " + ofn)
             else:
                 '''All Other Scales'''
-                # if os.path.split(os.path.split(os.path.split(fn)[0])[0])[1].startswith('scale_'):
-                #     '''This may be only run when re-scaling. Needs verification'''
-                #     # Convert the source from whatever scale is currently processed to scale_1
-                #     p, f = os.path.split(fn)
-                #     p, r = os.path.split(p)
-                #     p, s = os.path.split(p)
-                #     fn = os.path.join(p, 'scale_1', r, f)
                 if cfg.CODE_MODE == 'python':
                     task_queue.add_task(cmd=sys.executable,
                                         args=['job_single_scale.py', str(scale), str(fn), str(ofn)], wd='.')

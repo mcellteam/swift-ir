@@ -841,6 +841,7 @@ class MainWindow(QMainWindow):
         # self.python_console.set_color_linux()
         self.python_console.set_color_none()
         self.hud.set_theme_default()
+
         self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
         # drafting blue : #004060
         self.scales_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
@@ -3411,10 +3412,6 @@ class MainWindow(QMainWindow):
         self.plot_controls_layout = QHBoxLayout()
         self.plot_controls_layout.setAlignment(Qt.AlignBottom)
         self.plot_controls_layout.setContentsMargins(0, 0, 0, 0)
-        # self.plot_controls_layout.addWidget(self.plot_widget_update_button, alignment=Qt.AlignLeft)
-        # self.plot_controls_layout.addWidget(self.plot_widget_clear_button, alignment=Qt.AlignLeft)
-        # self.plot_controls_layout.addStretch()
-        # self.plot_controls_layout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
         self.snr_plot_and_control = QWidget()
         self.snr_plot_and_control_layout = QVBoxLayout()
@@ -3422,39 +3419,15 @@ class MainWindow(QMainWindow):
         self.snr_plot_and_control_layout.addWidget(self.snr_plot)
         self.snr_plot_and_control.setLayout(self.snr_plot_and_control_layout)
 
-        # self.plot_widget_layout = QVBoxLayout()
-        # self.plot_widget_layout.setContentsMargins(0, 0, 0, 0)
-        # self.plot_widget_layout.addWidget(self.snr_plot)
-        # self.plot_widget_layout.addLayout(self.plot_controls_layout)
-        # self.snr_plot_widget = QWidget()
-        # self.snr_plot_widget.setLayout(self.plot_widget_layout)
 
-        '''Python Console & Controls'''
-        # self.python_console_back_button = QPushButton('Back')
-        # self.python_console_back_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        # self.python_console_back_button.clicked.connect(self.back_callback)
-        # self.python_console_back_button.setFixedSize(normal_button_size)
-        # self.python_console_back_button.setAutoDefault(True)
-        # self.python_console_layout = QHBoxLayout()
-        # self.python_console_layout.addWidget(self.python_console)
-        # self.python_console_widget_container = QWidget()
-        # self.python_console_widget_container.setStyleSheet('background-color: #000000;')
-
-        # self.python_console_widget_container.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding) #0917
-        # self.python_console_widget_container.setLayout(self.python_console_layout)
-
+        '''Bottom Panel Splitter'''
         self.bottom_panel_splitter = QSplitter()
         self.bottom_panel_splitter.setAutoFillBackground(True)
-
         self.bottom_panel_splitter.setContentsMargins(0, 0, 0, 0)
         self.bottom_panel_splitter.setHandleWidth(8)
         self.bottom_panel_splitter.addWidget(self.hud)
-        # self.bottom_panel_splitter.addWidget(self.python_console_widget_container)
         self.bottom_panel_splitter.addWidget(self.python_console)
-        # self.bottom_panel_splitter.addWidget(self.snr_plot_widget)
-        # self.bottom_panel_splitter.addWidget(self.snr_plot)
         self.bottom_panel_splitter.addWidget(self.snr_plot_and_control)
-
         self.bottom_panel_splitter.setStretchFactor(0, 4)
         self.bottom_panel_splitter.setStretchFactor(1, 2)
         self.bottom_panel_splitter.setStretchFactor(2, 2)
@@ -3462,23 +3435,7 @@ class MainWindow(QMainWindow):
         self.bottom_panel_splitter.setCollapsible(1, True)
         self.bottom_panel_splitter.setCollapsible(2, True)
 
-        # self.main_panel_bottom_widget = QStackedWidget()
-        # self.main_panel_bottom_widget.setContentsMargins(0, 0, 0, 0)
-        # self.main_panel_bottom_widget.addWidget(self.hud)
-        # self.main_panel_bottom_widget.addWidget(self.snr_plot_widget)
-        # self.main_panel_bottom_widget.addWidget(self.python_console_widget_container)
-        # self.main_panel_bottom_widget.setCurrentIndex(0)
 
-        self.hud.setContentsMargins(0, 0, 0, 0) #0823
-        # self.snr_plot_widget.setContentsMargins(0, 0, 0, 0) #0823
-        # self.python_console_widget_container.setContentsMargins(0, 0, 0, 0) #0823
-
-        # "color: rgb(0,0,0);" \
-            # self.python_console.setStyleSheet('background-color: #35637c; color: #f3f6fb;')
-        self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
-
-        # "background-color: rgb(255,255,255);" \
-        # "background-color: rgb(255,255,255);" \
         '''Lower Right Tool Selection Buttons'''
         tip = 'Expand Bottom Panel'
         self.expand_bottom_panel_button = QPushButton()
@@ -3851,17 +3808,9 @@ class MainWindow(QMainWindow):
                 if is_arg_scale_aligned(scale=scale):
                     logger.info('showing snr plot for scale %s' % scale)
                     self.show_snr(scale=scale)
-
-        # self.snr_plot.setRange(xRange=[0, len(cfg.data)])
         max_snr = cfg.data.max_snr_all_scales()
-        if max_snr != None:
-            # self.snr_plot.setXRange(0, len(cfg.data), padding=0)
-            # self.snr_plot.setYRange(0, max_snr, padding=0)
-            # self.snr_plot.setRange(xRange=[0, len(cfg.data)])
-            # self.snr_plot.setRange(yRange=[0, max_snr])
-            self.snr_plot.setLimits(xMin=0, xMax=len(cfg.data), yMin=0, yMax=max_snr + 1)
+        if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=len(cfg.data), yMin=0, yMax=max_snr + 1)
         QApplication.processEvents()
-
 
 
     def show_snr(self, scale=None):
@@ -3962,7 +3911,7 @@ class MainWindow(QMainWindow):
             p.resetBrush()
         # print("clicked points", points)
         for p in points:
-            p.setBrush(pg.mkBrush('#f3f6fb'))
+            p.setBrush(pg.mkBrush('#FF0000'))
             # p.setPen(clickedPen)
 
         self.last_snr_click = points
@@ -3989,8 +3938,8 @@ class MainWindow(QMainWindow):
     def shutdownJupyter(self):
         logger.info('Shutting Down Jupyter Kernel...')
         try:
-            # self.python_console.kernel_client.stop_channels()
-            self.python_console.kernel_manager.shutdown_kernel()
+            # self.python_console._kernel_client.stop_channels()
+            self.python_console._kernel_manager.shutdown_kernel()
 
         except:
             logger.info('Having trouble shutting down Jupyter Console Kernel')

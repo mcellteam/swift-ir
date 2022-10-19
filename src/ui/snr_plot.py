@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 '''
+SNR Plot Class. Depends on 'pyqtgraph' Python module.
 https://github.com/robertsj/poropy/blob/master/pyqtgraph/graphicsItems/ScatterPlotItem.py
 https://pyqtgraph.readthedocs.io/en/latest/_modules/pyqtgraph/graphicsItems/ScatterPlotItem.html
 '''
@@ -15,26 +16,23 @@ class SnrPlot(pg.PlotWidget):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-        # self.useOpenGL()
         self.setAntialiasing(False)
         self.setAspectLocked(True)
         self.showGrid(x=True, y=True, alpha=220)  # alpha: 0-255
         self.getPlotItem().enableAutoRange()
-
         self.hoverable = True
-
-        self.hoverSize = 10
+        self.hoverSize = 11
         self.setFocusPolicy(Qt.NoFocus)
-        font = QFont()
-        font.setPixelSize(12)
+        font = QFont(); font.setPixelSize(12)
         self.getAxis("bottom").setStyle(tickFont=font)
         self.getAxis("bottom").setHeight(28)
         self.getAxis("left").setStyle(tickFont=font)
         self.getAxis("left").setWidth(36)
-        # pen = pg.mkPen(color=(255, 0, 0), width=5, style=Qt.SolidLine)b
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
         self.setLabel('left', 'SNR', **style)
         self.setLabel('bottom', 'Layer #', **style)
+
+        self.setCursor(Qt.CrossCursor)
 
         # self.scene() is a pyqtgraph.GraphicsScene.GraphicsScene.GraphicsScene
         self.scene().sigMouseClicked.connect(self.mouse_clicked)

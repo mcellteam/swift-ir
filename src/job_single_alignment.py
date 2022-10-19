@@ -10,7 +10,7 @@ import os
 import sys
 import json
 import logging
-from run_json_project import run_json_project
+from recipe_maker import run_json_project
 
 logger = logging.getLogger(__name__)
 
@@ -54,10 +54,8 @@ if __name__ == '__main__':
         if use_file_io:
             of = os.path.join(project_dict['data']['destination_path'], 'single_alignment_out_%d.json' % start_layer)
             if use_scale > 0:
-                # Set path for the selected scale:
                 of = os.path.join(project_dict['data']['destination_path'], "scale_%d" % use_scale,
                                         "single_alignment_out_%d.json" % start_layer)
-            # of = "single_alignment_out_%d.json" % start_layer
             with open(of, 'w') as f:
                 f.write(run_output_json)
         else:

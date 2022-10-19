@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-import os
+'''Toggle Switch UI Widget Class'''
+
 import sys
 import logging
-from qtpy.QtWidgets import QCheckBox, QApplication, QMainWindow, QWidget, QLabel
-from qtpy.QtCore import Qt, QSize, QPointF, QPoint, QRectF
-from qtpy.QtCore import Slot
-from qtpy.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter, QIcon
-import qtawesome as qta
+from qtpy.QtWidgets import QCheckBox, QApplication, QMainWindow
+from qtpy.QtCore import Qt, Slot, QSize, QPointF, QPoint, QRectF
+from qtpy.QtGui import QBrush, QColor, QFont, QPen, QPaintEvent, QPainter
 
 __all__ = ['ToggleSwitch']
 
@@ -134,11 +133,6 @@ class ToggleSwitch(QCheckBox):
         # logger.critical('self.trailLength=%s' % str(self.trailLength))
         # logger.critical('xLeft=%s' % str(xLeft))
         # logger.critical('xPos=%s' % str(xPos))
-
-        #original values
-        # self.trailLength=27
-        # self.xLeft=1
-        # self.xPos=5
 
         if self.isChecked():
             p.setBrush(self._bar_checked_brush)
