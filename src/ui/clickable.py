@@ -9,7 +9,6 @@ from qtpy.QtWidgets import QLabel, QAbstractButton
 
 logger = logging.getLogger(__name__)
 
-
 class ClickablePicButton(QAbstractButton):
     # clicked = Signal()
     def __init__(self, pixmap, parent=None):
@@ -35,12 +34,3 @@ class ClickableLabel(QLabel):
         qp = QPainter(self)
         qp.drawPixmap(100, 100, QPixmap("src/resources/button_ng.png"))
 
-# app = QApplication(sys.argv)
-# window = QWidget()
-# layout = QHBoxLayout(window)
-#
-# button = PicButton(QPixmap("image.png"))
-# layout.addWidget(button)
-#
-# window.show()
-# sys.exit(app.exec_())

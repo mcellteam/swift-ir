@@ -1,27 +1,11 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import glob
-import time
-import ctypes
-import struct
-import pathlib
-import logging
-import inspect
-import asyncio
-import platform
-import psutil
-import multiprocessing
-import numpy as np
+import os, struct, logging
 from dataclasses import dataclass
-from typing import Dict, List, Tuple, Any, Union, Sequence
-from numpy.compat import asbytes, asstr
-# import imageio
 import imageio.v3 as iio
+import numpy as np
 # from PIL import Image
 # import tifffile
-# import tensorstore as ts
 try:     from src.helpers import get_img_filenames
 except:  from helpers import get_img_filenames
 try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
@@ -64,7 +48,6 @@ def get_size_image_size_imageio(path):
     width, height = imageio_read_image(path).size
     #Todo finish this function
     return width, height
-
 
 
 def ImageSize(file_path):
@@ -386,7 +369,6 @@ def ApplyBiasFuncs(align_list):
         if bi < bias_iters - 1:
             bias_funcs = BiasFuncs(align_list, bias_funcs=bias_funcs)
     return c_afm_init
-
 
 
 def InitCafm(bias_funcs):

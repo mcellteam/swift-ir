@@ -11,9 +11,6 @@ import qtpy
 from qtpy.QtWidgets import QTreeView, QApplication, QHeaderView
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, QObject, Qt, QFileInfo
 
-import src.config as cfg
-
-
 class TreeItem:
     """A Json item corresponding to a line in QTreeView"""
 

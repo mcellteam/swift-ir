@@ -1,15 +1,6 @@
 #!/usr/bin/env python3
 
-import os
-import sys
-import time
-import glob
-import json
-import psutil
-import shutil
-import logging
-import inspect
-import platform
+import os, sys, time, json, logging, inspect, platform, shutil, psutil
 from glob import glob
 from pathlib import Path
 import multiprocessing as mp
@@ -18,36 +9,16 @@ import imageio.v3 as iio
 # from PIL import Image
 import zarr
 import tifffile
-import imagecodecs
+import tensorstore as ts
+# import imagecodecs
 # import dask.array as da
 import src.config as cfg
-from src.helpers import get_scale_val, time_limit
+from src.helpers import get_scale_val, time_limit, get_img_filenames, print_exception
 from src.image_funcs import ImageSize, BoundingRect, imageio_read_image
-from src.helpers import get_img_filenames, print_exception
 
 __all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
 
 logger = logging.getLogger(__name__)
-
-
-def loadTiffsMp(directory:str):
-    '''
-
-    :param directory: Directory containing TIF images.
-    :type directory: str
-    :return: image_arrays
-    :rtype: list[numpy.ndarray]
-    '''
-    tifs = glob.glob(os.path.join(directory, '*.tif'))
-    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    pool = mp.Pool(processes=cpus)
-    start = time.time()
-    image_arrays = pool.map(imageio_read_image, tifs)
-    dt = time.time() - start
-    logger.critical('Writing the Multipage Tiff Took %g Seconds' % dt)
-
-    return image_arrays
-
 
 def get_zarr_tensor_from_path(zarr_path):
     '''
@@ -62,49 +33,53 @@ def get_zarr_tensor_from_path(zarr_path):
     :return: A view into the dataset.
     :rtype: tensorstore.Future
     '''
-    if cfg.USE_TENSORSTORE:
-        import tensorstore as ts
-
-    system = platform.system()
     node = platform.node()
-
     if '.tacc.utexas.edu' in node:
         # Lonestar6: 256 GB (3200 MT/s) DDR4
         # total_bytes_limit = 200_000_000_000
         total_bytes_limit = 200_000_000_000_000
     else:
         total_bytes_limit = 6_000_000_000
-
     arr = ts.open({
         'driver': 'zarr',
         'kvstore': { 'driver': 'file', 'path': zarr_path },
         'context': { 'cache_pool': { 'total_bytes_limit': total_bytes_limit} },
         'recheck_cached_data': 'open',
     })
-
     return arr
 
+def loadTiffsMp(directory:str):
+    '''
+
+    :param directory: Directory containing TIF images.
+    :type directory: str
+    :return: image_arrays
+    :rtype: list[numpy.ndarray]
+    '''
+    tifs = glob(os.path.join(directory, '*.tif'))
+    cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+    pool = mp.Pool(processes=cpus)
+    start = time.time()
+    image_arrays = pool.map(imageio_read_image, tifs)
+    dt = time.time() - start
+    logger.critical('Writing the Multipage Tiff Took %g Seconds' % dt)
+
+    return image_arrays
 
 # def tiffs2MultiTiff(directory:str, out:str, n_frames:int, width:int, height:int):
 def tiffs2MultiTiff(directory:str, out:str):
     # tifs = list(pathlib.Path(directory).glob('*.tif'))
     image_arrays = loadTiffsMp(directory=directory) # image_arrays is a list of numpy arrays
-
     with tifffile.TiffWriter(out, bigtiff=True) as file:
         file.write(image_arrays)
-
     # write_multipage(tifs, out)
     # imageio.mimwrite(out, tifs)
-
-
     # a = np.ones((n_frames, width, height), dtype=np.uint8)
     # imlist = []
     # for m in a:
     #     imlist.append(Image.fromarray(m))
-    #
     # imlist[0].save("test.tif", compression="tiff_deflate", save_all=True, append_images=imlist[1:])
 
-# def remove_zarr() -> None:
 def remove_zarr(path) -> None:
     # path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     if os.path.isdir(path):
@@ -117,13 +92,6 @@ def remove_zarr(path) -> None:
             logger.warning("Timed out!")
         logger.info('Finished Removing Zarr Files')
 
-def init_zarr() -> None:
-    logger.critical('Initializing Zarr...')
-    path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
-    store = zarr.DirectoryStore(path, dimension_separator='/')  # Create Zarr DirectoryStore
-    root = zarr.group(store=store, overwrite=True)  # Create Root Group (?)
-    # root = zarr.group(store=store, overwrite=True, synchronizer=zarr.ThreadSynchronizer())  # Create Root Group (?)
-
 def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stride=16, chunks=(1, 512, 512), is_alignment=True):
     logger.critical('>>>> Preallocating Zarrs <<<<')
     cfg.main_window.hud.post('Preallocating Zarr Array...')
@@ -131,27 +99,14 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
     cur_scale_val = get_scale_val(cfg.data.scale())
     src = os.path.abspath(cfg.data.dest())
     n_imgs = cfg.data.n_imgs()
-    # n_scales = cfg.data.n_scales()
-
-
     zarr_path = os.path.join(cfg.data.dest(), name)
-    # if (use_scale == cfg.data.coarsest_scale_key()) or caller == 'generate_zarr_scales':
-    #     # remove_zarr()
-    #     init_zarr()
-
-    if name == 'img_aligned.zarr':
-        zarr_these_scales = [use_scale]
-    elif name == 'img_src.zarr':
-        zarr_these_scales = cfg.data.scales()
-    else:
-        zarr_these_scales = [use_scale]
-
+    if name == 'img_aligned.zarr':  zarr_these_scales = [use_scale]
+    elif name == 'img_src.zarr':    zarr_these_scales = cfg.data.scales()
+    else:                           zarr_these_scales = [use_scale]
     logger.info('Zarring these scales: %s' % str(zarr_these_scales))
-
     if cfg.PROJECT_OPEN & (name == 'img_src.zarr'):
         logger.critical('Removing Preexisting Zarrs...')
-        # remove_zarr(zarr_path)
-        #1017 TRYING REMOVE ZARR AT ROOT
+        # remove_zarr(zarr_path)  #1017 PERHAPS REMOVE ZARR AT ROOT
         for scale in zarr_these_scales:
             out_path = os.path.join(src, name, 's' + str(get_scale_val(scale)))
             if os.path.exists(out_path):
@@ -163,19 +118,13 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
         if os.path.exists(out_path):
             remove_zarr(out_path)
 
-
-    # name = 's' + str(scale_val(use_scale))
-    # zarr_name = os.path.join(zarr_path,name)
-    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)  # Create Root Group
-    root = zarr.group(store=zarr_path)  # Create Root Group
+    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)  # Create Root Group Using Synchronizer
+    root = zarr.group(store=zarr_path)  # Create Root Group W/out using Synchronizer
+    # root = zarr.group(store=zarr_name, overwrite=True)
     logger.info('Zarr Root is %s' % zarr_path)
-    # root = zarr.group(store=zarr_name, overwrite=True)  # Create Root Group
 
     # opt_cname = cfg.main_window.cname_combobox.currentText()
     # opt_clevel = int(cfg.main_window.clevel_input.text())
-
-
-
 
     datasets = []
     for scale in zarr_these_scales:
@@ -198,17 +147,13 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
                 logger.info('path = %s' % path)
                 dimx, dimy = ImageSize(path)
 
-
-
         name = 's' + str(get_scale_val(scale))
-
         shape = (n_imgs, dimy, dimx)
         # chunks = (z_stride, 64, 64)
         chunks = (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
         dtype = 'uint8'
         compressor = Blosc(cname=cfg.CNAME, clevel=cfg.CLEVEL) if cfg.CNAME in ('zstd', 'zlib', 'gzip') else None
         # compressor = Blosc(cname='zstd', clevel=5)
-
         logger.info('Zarr Array will have shape: %s' % str(shape))
         array = root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor, overwrite=True)
 
@@ -229,7 +174,6 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
         # }
         # root.attrs["multiscales"][0]["datasets"].append(metadata)
 
-
     # write_zarr_multiscale_metadata() # write single multiscale zarr for all aligned scale
 
     if cfg.data.scale() == 'scale_1':
@@ -242,7 +186,6 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
     # time.sleep(500)
 
 def write_zarr_multiscale_metadata(path):
-
     root = zarr.group(store=path)
     datasets = []
     for scale in cfg.data.aligned_list():
@@ -255,13 +198,11 @@ def write_zarr_multiscale_metadata(path):
                 "scale": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
         }
         datasets.append(metadata)
-
     axes = [
         {"name": "z", "type": "space", "unit": "nanometer"},
         {"name": "y", "type": "space", "unit": "nanometer"},
         {"name": "x", "type": "space", "unit": "nanometer"}
     ]
-
     root.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     root.attrs['multiscales'] = [
         {
@@ -381,15 +322,15 @@ def write_zarr_metadata_cur_scale(name='img_aligned.zarr'):
         files_2048 = sorted(list(Path('test_data').glob(r'*2048.tif')))
         files_4096 = sorted(list(Path('test_data').glob(r'*4096.tif')))
         # print(filenames)
-        print('tiffs2zarr is scaling size 1024...')
-        tiffs2zarr(files_1024, os.path.join(of, 'img_aligned_zarr', 's2'), chunk_shape_tuple, compression='zstd',
-                   overwrite=True)
-        print('tiffs2zarr is scaling size 2048...')
-        tiffs2zarr(files_2048, os.path.join(of, 'img_aligned_zarr', 's1'), chunk_shape_tuple, compression='zstd',
-                   overwrite=True)
-        print('tiffs2zarr is scaling size 4096...')
-        tiffs2zarr(files_4096, os.path.join(of, 'img_aligned_zarr', 's0'), chunk_shape_tuple, compression='zstd',
-                   overwrite=True)
+        # print('tiffs2zarr is scaling size 1024...')
+        # tiffs2zarr(files_1024, os.path.join(of, 'img_aligned_zarr', 's2'), chunk_shape_tuple, compression='zstd',
+        #            overwrite=True)
+        # print('tiffs2zarr is scaling size 2048...')
+        # tiffs2zarr(files_2048, os.path.join(of, 'img_aligned_zarr', 's1'), chunk_shape_tuple, compression='zstd',
+        #            overwrite=True)
+        # print('tiffs2zarr is scaling size 4096...')
+        # tiffs2zarr(files_4096, os.path.join(of, 'img_aligned_zarr', 's0'), chunk_shape_tuple, compression='zstd',
+        #            overwrite=True)
 
         print('writing .zarray...')
         zarray = {}

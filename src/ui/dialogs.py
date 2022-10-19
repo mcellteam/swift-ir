@@ -2,16 +2,15 @@
 
 #!/usr/bin/env python3
 
-import os, sys, copy, json, inspect, logging, textwrap
+import os, logging, textwrap
 
-from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
-    QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout, QFormLayout, \
-    QCheckBox, QToolButton, QDataWidgetMapper, QInputDialog, QTabWidget, QMessageBox, QFileDialog
-from qtpy.QtCore import Qt, Slot, QAbstractTableModel, QAbstractListModel, QModelIndex
+from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QGridLayout, QHBoxLayout, QLabel, \
+    QLineEdit, QVBoxLayout, QCheckBox, QTabWidget, QMessageBox, QFileDialog
+from qtpy.QtCore import Qt, Slot, QAbstractListModel, QModelIndex
 from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
 from src.image_funcs import ImageSize
-from src.helpers import get_scale_key, get_scale_val, do_scales_exist, get_img_filenames
+from src.helpers import get_scale_val, do_scales_exist
 
 logger = logging.getLogger(__name__)
 
@@ -85,12 +84,9 @@ class ConfigDialog(QDialog):
         self.tab_widget.addTab(self.tab2, "Storage")
         # self.tab_widget.addTab(self.tab3, "Tab 3")
 
-
         self.initUI_tab1()
         self.initUI_tab2()
         # self.initUI_tab3()
-
-
 
         # self.button_apply_settings = QPushButton("Generate Scales")
         # self.button_apply_settings.clicked.connect(self.on_create_button_clicked)
@@ -318,7 +314,6 @@ class ConfigDialog(QDialog):
 
         scales_str = ' '.join(scales_lst)
 
-
         self.scales_label = QLabel("Scale Factors:")
         self.scales_input = QLineEdit(self)
         self.scales_input.setFixedWidth(130)
@@ -379,7 +374,6 @@ class ConfigDialog(QDialog):
 
         '''Initial Rotation Field'''
         self.initial_rotation_label = QLabel("Initial Rotation:")
-        # self.initial_rotation_label.setAlignment(Qt.AlignLeft)
         self.initial_rotation_input = QLineEdit(self)
         self.initial_rotation_input.setFixedWidth(70)
         self.initial_rotation_input.setText(str(cfg.DEFAULT_INITIAL_ROTATION))
@@ -409,14 +403,7 @@ class ConfigDialog(QDialog):
         self.bounding_rectangle_layout.addWidget(self.bounding_rectangle_checkbox, alignment=Qt.AlignRight)
 
         '''Groupbox QFormLayout'''
-        # layout = QFormLayout()
         layout = QGridLayout()
-        # layout.setFormAlignment(Qt.AlignCenter)
-        # layout.setLabelAlignment(Qt.AlignLeft)
-        # layout.setFormAlignment(Qt.AlignRight)
-        # layout.addRow(self.whitening_label, self.whitening_input)
-        # layout.addRow(self.swim_label, self.swim_input)
-
         layout.addLayout(self.scales_layout , 0, 0)
         layout.addWidget(self.scale_instructions_label , 1, 0)
         layout.addLayout(self.resolution_layout, 2, 0)
@@ -442,16 +429,14 @@ class ConfigDialog(QDialog):
 def show_ng_commands():
     msgBox = QMessageBox()
     msgBox.setIcon(QMessageBox.Information)
-    msgBox.setText("Message box pop up window")
-    msgBox.setWindowTitle("QMessageBox Example")
+    msgBox.setText('pop up text')
+    msgBox.setWindowTitle('title')
     # msgBox.setStandardButtons(QMessageBox.Ok | QMessageBox.Cancel)
     msgBox.setStandardButtons(QMessageBox.Ok)
     # msgBox.buttonClicked.connect(msgButtonClick)
-
     # returnValue = msgBox.exec()
     # if returnValue == QMessageBox.Ok:
     #     print('OK clicked')
-
 
 
 class DefaultsModel(QAbstractListModel):
@@ -466,16 +451,9 @@ class DefaultsModel(QAbstractListModel):
         return len(self.lst)
 
     def data(self, index, role=Qt.DisplayRole):
-        # row = index.row()
-        # col = index.column()
         row = index.column()
-
-        if role == Qt.EditRole:
-            # return self.lst[row][col]
-            return self.lst[row]
-        elif role == Qt.DisplayRole:
-            # return self.lst[row][col]
-            return self.lst[row]
+        if role == Qt.EditRole:       return self.lst[row]
+        elif role == Qt.DisplayRole:  return self.lst[row]
 
     def flags(self, index):
         flags = super(DefaultsModel, self).flags(index)
@@ -489,14 +467,9 @@ class DefaultsModel(QAbstractListModel):
         return flags
 
     def setData(self, index, value, role=Qt.EditRole):
-
-        if not index.isValid() or role != Qt.EditRole:
-            return False
-
-        # self.lst[index.row()][index.column()] = value
+        if not index.isValid() or role != Qt.EditRole:  return False
         self.lst[index.row()] = value
-        # self.dataChanged.emit(index, index) # <-- list()/[] is necessary since Qt5
-        self.dataChanged.emit(index, index, list()) # <-- list()/[] is necessary since Qt5
+        self.dataChanged.emit(index, index, list())
         return True
 
 
@@ -504,44 +477,32 @@ class QFileDialogPreview(QFileDialog):
     def __init__(self, *args, **kwargs):
         QFileDialog.__init__(self, *args, **kwargs)
         self.setOption(QFileDialog.DontUseNativeDialog, True)
-
-        box = QVBoxLayout()
-
         self.setFixedSize(self.width() + 360, self.height())
-
         self.mpPreview = QLabel("Preview", self)
         self.mpPreview.setFixedSize(360, 360)
         self.mpPreview.setAlignment(Qt.AlignCenter)
         self.mpPreview.setObjectName("labelPreview")
+        box = QVBoxLayout()
         box.addWidget(self.mpPreview)
-
         box.addStretch()
-
         self.layout().addLayout(box, 1, 3, 1, 1)
-
         self.currentChanged.connect(self.onChange)
         self.fileSelected.connect(self.onFileSelected)
         self.filesSelected.connect(self.onFilesSelected)
-
         self._fileSelected = None
         self._filesSelected = None
 
     def onChange(self, path):
         pixmap = QPixmap(path)
-
         if(pixmap.isNull()):
-            self.mpPreview.setText("Preview")
+            self.mpPreview.setText('Preview')
         else:
-            self.mpPreview.setPixmap(pixmap.scaled(self.mpPreview.width(), self.mpPreview.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+            self.mpPreview.setPixmap(pixmap.scaled(self.mpPreview.width(),
+                                                   self.mpPreview.height(),
+                                                   Qt.KeepAspectRatio,
+                                                   Qt.SmoothTransformation))
 
-    def onFileSelected(self, file):
-        self._fileSelected = file
-
-    def onFilesSelected(self, files):
-        self._filesSelected = files
-
-    def getFileSelected(self):
-        return self._fileSelected
-
-    def getFilesSelected(self):
-        return self._filesSelected
+    def onFileSelected(self, file):    self._fileSelected = file
+    def onFilesSelected(self, files):  self._filesSelected = files
+    def getFileSelected(self):         return self._fileSelected
+    def getFilesSelected(self):        return self._filesSelected

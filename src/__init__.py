@@ -42,8 +42,8 @@ from . import mp_queue
 from .mp_queue import *
 __all__.extend(mp_queue.__all__)
 
-from . import run_json_project
-from .run_json_project import *
+from . import recipe_maker
+from .recipe_maker import *
 # __all__.extend(run_json_project.__all__)
 
 # __all__.extend(generate_zarr_scales.__all__)

@@ -15,7 +15,7 @@ from qtpy.QtGui import QFont, QTextCursor
 from qtpy.QtWidgets import QApplication, QWidget, QPlainTextEdit, QVBoxLayout, QSizePolicy
 import src.config as cfg
 
-__all__ = ['HeadupDisplay', 'HudWorker']
+__all__ = ['HeadupDisplay']
 
 # logger = logging.getLogger(__name__)
 logger = logging.getLogger("hud")
@@ -52,14 +52,9 @@ class HeadupDisplay(QWidget):
 
     COLORS = {
         logging.DEBUG: 'black',
-        # logging.INFO: 'blue',
-        # logging.INFO: '#d3dae3',
         logging.INFO: '#41FF00',
-        # logging.WARNING: 'orange',
         logging.WARNING: 'yellow',
         logging.ERROR: '#FD001B',
-        # logging.CRITICAL: 'purple',
-        # logging.CRITICAL: '#daf0ff',
         logging.CRITICAL: '#decfbe',
     }
 
@@ -70,7 +65,6 @@ class HeadupDisplay(QWidget):
         self.setMinimumHeight(140)
         self.textedit = te = QPlainTextEdit(self)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # Set whatever the default monospace font is for the platform
         f = QFont()
         f.setStyleHint(QFont.Monospace)
         te.setFont(f)
@@ -123,7 +117,6 @@ class HeadupDisplay(QWidget):
         self.hud_worker.setObjectName('HudWorker')
         self.hud_worker_thread.setObjectName('AlignEMLogger')  # for qThreadName
         self.hud_worker.moveToThread(self.hud_worker_thread)
-        # This will start an event loop in the worker thread
         self.hud_worker_thread.start()
 
     def kill_thread(self):

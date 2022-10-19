@@ -34,23 +34,6 @@ def run_command(cmd, arg_list=None, cmd_input=None):
     logger.debug("=================================================\n")
     return ({'out': cmd_stdout, 'err': cmd_stderr})
 
-
-# def image_apply_affine(in_fn=None, out_fn=None, afm=None, rect=None, grayBorder=False):
-#     logger.critical("image_apply_affine afm: " + str(afm))
-#     in_img = loadImage(in_fn)
-#     logger.critical("Transforming " + str(in_fn))
-#     logger.critical("    afm = " + str(afm))
-#     logger.critical("    rect = " + str(rect))
-#     logger.critical("    grayBorder = " + str(grayBorder))
-#     out_img = affineImage(afm, in_img, rect=rect, grayBorder=grayBorder)
-#     logger.critical("  saving transformed image as: " + str(out_fn))
-#     try:
-#         saveImage(out_img, out_fn)
-#     except Exception:
-#         logger.warning("An Exception Occurred Running 'saveImage'")
-#         logger.warning(traceback.format_exc())
-
-
 def print_command_line_syntax(args):
     logger.debug('Usage: %s [ options ] -afm 1 0 0 0 1 0  in_file_name out_file_name' % (args[0]))
     logger.debug('Description:')
