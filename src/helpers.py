@@ -133,20 +133,20 @@ def is_cur_scale_aligned() -> bool:
 
     #fix Note: This will return False if no scales have been generated, but code should be dynamic enough to run alignment
     functions even for a data that does not need scales.'''
-    logger.info('Called by %s' % inspect.stack()[1].function)
+    # logger.info('Called by %s' % inspect.stack()[1].function)
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(cfg.data.scale_val()))
     # logger.info('zarr_path = %s' % zarr_path)
     if not os.path.isdir(zarr_path):
-        logger.info('Returning False due to os.path.isdir(zarr_path)')
+        logger.debug('Returning False due to os.path.isdir(zarr_path)')
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zattrs')):
-        logger.info("Returning False due to os.path.exists(os.path.join(zarr_path, '.zattrs')")
+        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zattrs')")
         return False
     if not os.path.exists(os.path.join(zarr_path, '.zarray')):
-        logger.info("Returning False due to os.path.exists(os.path.join(zarr_path, '.zarray')")
+        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '.zarray')")
         return False
     if not os.path.exists(os.path.join(zarr_path, '0.0.0')):
-        logger.info("Returning False due to os.path.exists(os.path.join(zarr_path, '0.0.0')")
+        logger.debug("Returning False due to os.path.exists(os.path.join(zarr_path, '0.0.0')")
         return False
 
     return True

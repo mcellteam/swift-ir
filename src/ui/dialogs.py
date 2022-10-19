@@ -6,11 +6,9 @@ import os, sys, copy, json, inspect, logging, textwrap
 
 from qtpy.QtWidgets import QWidget, QComboBox, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QGroupBox, \
     QHBoxLayout, QLabel, QLineEdit, QPushButton, QSpinBox, QTextEdit, QVBoxLayout, QFormLayout, \
-    QCheckBox, QToolButton, QDataWidgetMapper, QInputDialog, QTabWidget, QMessageBox
-from qtpy.QtCore import Qt, QAbstractTableModel, QAbstractListModel, QModelIndex
-from qtpy.QtCore import Slot
-from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator
-import qtawesome as qta
+    QCheckBox, QToolButton, QDataWidgetMapper, QInputDialog, QTabWidget, QMessageBox, QFileDialog
+from qtpy.QtCore import Qt, Slot, QAbstractTableModel, QAbstractListModel, QModelIndex
+from qtpy.QtGui import QDoubleValidator, QFont, QIntValidator, QPixmap
 import src.config as cfg
 from src.image_funcs import ImageSize
 from src.helpers import get_scale_key, get_scale_val, do_scales_exist, get_img_filenames
@@ -501,3 +499,49 @@ class DefaultsModel(QAbstractListModel):
         self.dataChanged.emit(index, index, list()) # <-- list()/[] is necessary since Qt5
         return True
 
+
+class QFileDialogPreview(QFileDialog):
+    def __init__(self, *args, **kwargs):
+        QFileDialog.__init__(self, *args, **kwargs)
+        self.setOption(QFileDialog.DontUseNativeDialog, True)
+
+        box = QVBoxLayout()
+
+        self.setFixedSize(self.width() + 360, self.height())
+
+        self.mpPreview = QLabel("Preview", self)
+        self.mpPreview.setFixedSize(360, 360)
+        self.mpPreview.setAlignment(Qt.AlignCenter)
+        self.mpPreview.setObjectName("labelPreview")
+        box.addWidget(self.mpPreview)
+
+        box.addStretch()
+
+        self.layout().addLayout(box, 1, 3, 1, 1)
+
+        self.currentChanged.connect(self.onChange)
+        self.fileSelected.connect(self.onFileSelected)
+        self.filesSelected.connect(self.onFilesSelected)
+
+        self._fileSelected = None
+        self._filesSelected = None
+
+    def onChange(self, path):
+        pixmap = QPixmap(path)
+
+        if(pixmap.isNull()):
+            self.mpPreview.setText("Preview")
+        else:
+            self.mpPreview.setPixmap(pixmap.scaled(self.mpPreview.width(), self.mpPreview.height(), Qt.KeepAspectRatio, Qt.SmoothTransformation))
+
+    def onFileSelected(self, file):
+        self._fileSelected = file
+
+    def onFilesSelected(self, files):
+        self._filesSelected = files
+
+    def getFileSelected(self):
+        return self._fileSelected
+
+    def getFilesSelected(self):
+        return self._filesSelected

@@ -351,7 +351,7 @@ float fvca[MSIZE];
 void stats(float *ifp, int nx, int ny) {
 	double sum = 0, sum2 = 0, zscore;
 	int x, y, stat_n = nx * ny;
-	int nfixed = 0;
+	int hitmid = 0;
 	float *fp;
 again:
 //fprintf(stderr, "stats again\n");
@@ -381,24 +381,20 @@ again:
 	stat_avg = sum/stat_n;
 	stat_var = (sum2 - sum*sum/stat_n)/(stat_n-1);
 	stat_sd = sqrt(stat_var);
-// fprintf(stderr, "call stats  av %g  va %g  sd %g  n %d\n", stat_avg, stat_var, stat_sd, stat_n);
+//fprintf(stderr, "call stats  av %g  va %g  sd %g  n %d\n", stat_avg, stat_var, stat_sd, stat_n);
 	stat_maxz = stat_max - stat_avg;
 	stat_minz = stat_min - stat_avg;
-// fprintf(stderr, "max %g at %d %d  av %g\n", stat_max, stat_maxx, stat_maxy, stat_avg);
-	if(fixedpattern && nfixed == 0) {
-		int dx, dy, x, y;;
-		float *mp = ifp + nx*ny/2 + nx/2 + 0; // AWW was +5
-		dx = ((int)(patx-tarx+nx/2+.5)) - nx/2;
-		dy = ((int)(paty-tary+ny/2+.5)) - ny/2;
-fprintf(stderr, "supress fixed peak dxy %d %d\n", dx, dy);
-		mp += dy*nx + dx;
-		//fprintf(stderr, "	shift %d %d\n", dx, dy);
-		#define	D 1
-		for(y = -D; y <= D; y++) for(x = -D; x <= D; x++)
-			*(mp + y*nx + x) = stat_avg;
-		if(nfixed++ == 0)
-			goto again;
-	}
+//fprintf(stderr, "max %g at %d %d  av %g\n",
+//stat_max, stat_maxx, stat_maxy, stat_avg);
+if(fixedpattern) {
+int dx, dy, x, y;;
+float *mp = ifp + nx*ny/2 + nx/2 + 0; // AWW was +5
+dx = ((int)(patx-tarx+nx/2+.5)) - nx/2;
+dy = ((int)(paty-tary+ny/2+.5)) - ny/2;
+mp += dy*nx + dx;
+fprintf(stderr, "	shift %d %d\n", dx, dy);
+for(y = -2; y <= 2; y++) for(x = -2; x <= 2; x++) *(mp + y*nx + x) = stat_avg;
+}
 //fprintf(stderr, "min %g at %d %d  *****\n", stat_min, stat_minx, stat_miny);
 //fprintf(stderr, "minmaxz %g %g  %g %g  at %d %d\n",
 //stat_minz, stat_maxz, stat_minz/stat_sd, stat_maxz/stat_sd, stat_minx, stat_miny);
@@ -475,9 +471,9 @@ if(!quiet)
 	av = sum/n;
 	var = (sumsq - sum*sum/n) / (n-1);
 	sd = sqrt(var);
-//fprintf(stderr, "avg %g  var %g  sd %g\n", sum/n, var, sd);
+fprintf(stderr, "avg %g  var %g  sd %g\n", sum/n, var, sd);
 //fprintf(stderr, "max %d at %d %d ... %g\n", maxv, xmax, ymax, (maxv-av)/sd);
-//fprintf(stderr, "min %d at %d %d ... %g\n", minv, xmin, ymin, (av-minv)/sd);
+fprintf(stderr, "min %d at %d %d ... %g\n", minv, xmin, ymin, (av-minv)/sd);
 	worstsd = (maxv-av)/sd;
 	bestsd = (av-minv)/sd;
 /*
@@ -916,7 +912,7 @@ targs -= getticks();
 	afm[2] = 0;
 	afm[3] = 1;
 	fname0 = argv[1];
-// fprintf(stderr, "+++++++ %s argc %d\n", fname0, argc);
+fprintf(stderr, "+++++++ %s argc %d\n", fname0, argc);
 	if(argc == 3) {
 		fname1 = argv[2];
 	} else {
@@ -1180,7 +1176,7 @@ tfft0 -= getticks();
 		oldtarx = tarx; oldtary = tary; ntargft++;
 tfft0 += getticks();
 		Nforw++;
-// fprintf(stderr, "did first FFT\n");
+//fprintf(stderr, "did first FFT\n");
 	}
 	fdx = patx - oldpatx;
 	fdy = paty - oldpaty;
@@ -1235,10 +1231,11 @@ stats(ifft_comb, EW, EH); // easier to understand in gray levs
 //	stats(ifft_comb, EW, EH); // easier to understand in gray levs
 //fprintf(stderr, "cpfout ifft_comb %p\n", ifft_comb);
 	cpfout(ifft_comb, EW, EH, eo, 0, 0);
-// fprintf(stderr, "newbest %d  bestimg %s  quiet %d\n", newbest, bestimg, quiet);
 	if(newbest) {
-		if(bestimg || !quiet)
+		if(bestimg || !quiet) {
+			//sprintf(oname, bestimg);
 			write_img(bestimg, eo);
+		}
 		if(keepimg)
 			write_img(keepimg, io); /// XXX should regen after move
 		uncert = find_xyoff(eo->pp, eo->wid, eo->ht);
@@ -1263,7 +1260,7 @@ tpost += getticks();
 	npaty = paty + delty;
 	if(!quiet)
 	fprintf(stderr, "%g: %s %g %g %s %g %g delt %g %g\n", bestz,
-		fname0, ntarx, ntary, fname1, npatx, npaty, deltx, delty);
+	fname0, ntarx, ntary, fname1, npatx, npaty, deltx, delty);
 	fdx = fbestx-SIZEX/2.;
 	fdy = fbesty-SIZEY/2.;
 	m0 = sqrt(fdx*fdx + fdy*fdy);
@@ -1286,8 +1283,8 @@ tpost += getticks();
 	paty = paty - tdy;
 	if(!quiet)
 		fprintf(stderr, "   NEW patx paty %g %g\n", patx, paty);
-// fprintf(stderr, "tdxy %g %g -> NEW patx paty %g %g  tarxy %g %g niter %d\n",
-// tdx, tdy, patx, paty, tarx, tary, niter);
+fprintf(stderr, "tdxy %g %g -> NEW patx paty %g %g  tarxy %g %g niter %d\n",
+tdx, tdy, patx, paty, tarx, tary, niter);
 	if(--niter > 0)
 		goto loop;
 	if(!quiet) {
@@ -1297,19 +1294,18 @@ tpost += getticks();
 	}
 	if(!quiet && rota == 1024) {
 		fprintf(stderr, "keep %g: %s %d %d %s %g %g  %g %g %g %g\n",
-			bestz, fname0, (int)tarx, (int)tary, fname1, patx, paty,
-			afm[0], afm[1], afm[2], afm[3]);
+		bestz, fname0, (int)tarx, (int)tary, fname1, patx, paty,
+		afm[0], afm[1], afm[2], afm[3]);
 	} else if(!quiet) {
 		fprintf(stderr, "keep %g: %s %d %d %s %g %g  %g\n",
-			bestz, fname0, (int)tarx, (int)tary, fname1, patx, paty,
-			rota+besta);
+		bestz, fname0, (int)tarx, (int)tary, fname1, patx, paty,
+		rota+besta);
 	}
 	fdx = patx - startpatx;
 	fdy = paty - startpaty;
 	m0 = sqrt(fdx*fdx + fdy*fdy);
 {
-#define OBS 10000
-	char outbuf[OBS];
+	char outbuf[10000];
 	static char *flags[] = { "", " dx", " dy", " dxy", " dreset" };
 	int flag = 0, nw;
 	if(sqrt(fdx*fdx) > SIZEX/4)
@@ -1330,11 +1326,9 @@ tpost += getticks();
 	}
 //sprintf(outbuf, "%g: %s %g %g %s %g %g  %g (%g %g %g%s)\n", bestz, fname0,
 //tarx, tary, fname1, patx, paty, rota+besta, fdx, fdy, m0, flags[flag]);
-// avoid jumble from multi processes by atomic write ... other ways possible
-	snprintf(outbuf, OBS, "%g: %s %g %g %s %g %g  %g %g %g %g (%g %g %g%s)\n",
-		bestz, fname0, tarx, tary, fname1, patx, paty,
-		afm[0], afm[1], afm[2], afm[3], fdx, fdy, m0, flags[flag]);
-	nw = write(1, outbuf, strlen(outbuf));
+sprintf(outbuf, "%g: %s %g %g %s %g %g  %g %g %g %g (%g %g %g%s)\n", bestz, fname0,
+tarx, tary, fname1, patx, paty, afm[0], afm[1], afm[2], afm[3], fdx, fdy, m0, flags[flag]);
+nw = write(1, outbuf, strlen(outbuf));
 // printf("\t%g %g %g %g\n", afm[0], afm[1], afm[2], afm[3]);
 }
 	return(0);

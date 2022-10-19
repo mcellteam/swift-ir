@@ -486,6 +486,8 @@ class alignment_process:
                 # ingredient_4x4 = align_ingredient(ww=int(sx_4x4), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 ingredient_4x4 = align_ingredient(ww=(int(sx_4x4), int(sy_4x4)), psta=psta_4x4, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
                 self.recipe.add_ingredient(ingredient_4x4)
+                # ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, afm=self.init_affine_matrix, wht=wht, ad=self.align_dir)
+                # self.recipe.add_ingredient(ingredient_2x2)
             elif alignment_option == 'apply_affine':
                 '''apply_affine'''
                 ingredient_apply_affine = align_ingredient(afm=self.init_affine_matrix, align_mode='apply_affine_align', ad=self.align_dir)
@@ -796,7 +798,7 @@ class align_ingredient:
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' -f ' + \
+                              ' -f3' + \
                               ' ' + karg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
@@ -806,6 +808,7 @@ class align_ingredient:
                               ' ' + adjust_y + \
                               ' ' + rota_arg + \
                               ' ' + afm_arg
+            # default -f is 3x3
 
             logger.debug('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"

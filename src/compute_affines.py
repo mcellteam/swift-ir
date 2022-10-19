@@ -55,8 +55,9 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
         # f.write(json.JSONEncoder(indent=2, separators=(",", ": "), sort_keys=True).encode(cfg.data.to_json()))
         f.write(cfg.data.to_json())
 
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
+
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Computing Affine Transformations - Scale %d - %d CPUs' % (get_scale_val(use_scale), cpus))
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 
@@ -81,7 +82,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
             task_queue.add_task(task_args)
 
     # task_queue.work_q.join()
-    cfg.main_window.hud.post('Computing Alignment Using %d CPUs...' % cpus)
+    cfg.main_window.hud.post('Computing Alignment using SWIM (%d CPUs)...' % cpus)
     t0 = time.time()
     task_queue.collect_results()
     dt = time.time() - t0
