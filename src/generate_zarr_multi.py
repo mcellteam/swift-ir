@@ -30,7 +30,7 @@ def generate_zarr_multi(src, out):
     tasks = [[t for t in tasks_[x::Z_STRIDE]] for x in range(0, Z_STRIDE)]
     logger.info('\n(example task)\n%s' % str(tasks[0]))
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=len(tasks), parent=cfg.main_window)
+    task_queue = TaskQueue(n_tasks=len(tasks), parent=cfg.main_window, pbar_text='Generating Multiscale Zarr - %d CPUs' % cpus)
     task_queue.start(cpus)
     for task in tasks:
         script = 'job_convert_zarr_scales.py'

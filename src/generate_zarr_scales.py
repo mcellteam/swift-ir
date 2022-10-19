@@ -25,7 +25,7 @@ def generate_zarr_scales():
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
     n_tasks = len(cfg.data) * cfg.data.n_scales()
     cfg.main_window.hud('# Tasks: %d' % n_tasks)
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Zarr Scales - %d CPUs' % cpus)
     task_queue.start(cpus)
     for ID, img in enumerate(imgs):
         for scale in cfg.data.scales()[::-1]:

@@ -100,9 +100,9 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             rect = [0, 0, width, height]
             f.write("None\n")
     n_tasks = cfg.data.n_imgs()
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window)
-    task_queue.tqdm_desc = 'Generating Images'
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Alignment w/ MIR - Scale %d - %d CPUs' % (get_scale_val(use_scale), cpus))
+    task_queue.tqdm_desc = 'Generating Images'
     logger.info('Starting Task Queue...')
     task_queue.start(cpus)
     logger.info('Job Script: %s' % apply_affine_job)

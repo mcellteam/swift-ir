@@ -1,13 +1,26 @@
 
-
-#ImagePanel {
-    color: #333;
-    border: 2px solid #555;
-    border-radius: 7px;
-    padding: 3px;
-    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
-    min-width: 10px;
+QCheckBox {
+	spacing: 5px;
+	outline: none;
+	color: #f3f6fb;
+	/*margin-bottom: 2px;*/
+	border: 1px solid #f3f6fb;
+	border-radius: 2px;
+	border-style: outset;
+	font-size: 10px;
 }
+
+
+
+
+# #ImagePanel {
+#    color: #333;
+#    border: 2px solid #555;
+#    border-radius: 7px;
+#    padding: 3px;
+#    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
+#    min-width: 10px;
+#}
 
 
 hud {
@@ -110,7 +123,6 @@ QLabel {
 
 QToolTip {
     background-color: #8ad4ff;
-    /*color: white;*/
     color: #000000;
     border: #8ad4ff solid 1px;
     }

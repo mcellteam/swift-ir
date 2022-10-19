@@ -60,7 +60,7 @@ def worker(worker_id, task_q, result_q, n_tasks, n_workers):
 
 class TaskQueue(QObject):
     # def __init__(self, n_tasks, start_method='forkserver', progress_callback=None):
-    def __init__(self, n_tasks, parent=None, start_method='forkserver',logging_handler=None):
+    def __init__(self, n_tasks, parent=None, start_method='forkserver',logging_handler=None, pbar_text=None):
         self.parent = parent
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
@@ -68,6 +68,7 @@ class TaskQueue(QObject):
         self.workers = []
         self.close_worker = False
         self.n_tasks = n_tasks
+        self.pbar_text = pbar_text
         if sys.version_info >= (3, 7):
             self.close_worker = True
         self.logging_handler = logging_handler
@@ -91,7 +92,7 @@ class TaskQueue(QObject):
         cfg.main_window.hud.post('%d Workers Are Processing %d tasks' % (self.n_workers, self.n_tasks))
 
         for i in range(self.n_workers):
-            if i is not 0: sys.stderr.write('\n')
+            if i != 0: sys.stderr.write('\n')
             sys.stderr.write('Starting Worker %d >>>>>>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
@@ -174,6 +175,8 @@ class TaskQueue(QObject):
         logger.info('self.retries: %s' % self.retries)
         try:
             self.parent.pbar_max(self.n_tasks)
+            if self.pbar_text != None:
+                self.parent.setPbarText(text=self.pbar_text)
             self.parent.pbar.show()
         except:
             print_exception()

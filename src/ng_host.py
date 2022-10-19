@@ -153,7 +153,7 @@ class NgHost(QRunnable):
         aligned_url = os.path.join('img_aligned.zarr', 's' + str(scale_factor))
         src_url = os.path.join('img_src.zarr', 's' + str(scale_factor))
 
-        slug = '_scale' + str(scale_factor)
+        slug = '_s' + str(scale_factor)
 
         # This did the trick. Open tensorstore using filesystem path, not http.
         al_name = os.path.join(cfg.data.dest(), aligned_url)
@@ -166,9 +166,8 @@ class NgHost(QRunnable):
             al_img_dim = ImageSize(cfg.data.path_al())
             x_offset = (al_img_dim[0] - img_dim[0]) / 2
             y_offset = (al_img_dim[1] - img_dim[1]) / 2
-
-            x_offset = 0
-            y_offset = 0
+            # x_offset = 0
+            # y_offset = 0
 
         scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
 
@@ -236,7 +235,7 @@ class NgHost(QRunnable):
                     s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
                 if is_aligned:
                     rect = BoundingRect(cfg.data.aligned_dict())
-                    s.position = [l, rect[3] / 2, rect[2] / 2]
+                    s.position = [l, rect[2] / 2, rect[3] / 2]
                     s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
                                               ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout),
                                               ng.LayerGroupViewer(layers=['aligned' + slug], layout=self.layout)])
@@ -255,7 +254,19 @@ class NgHost(QRunnable):
                 # s.cross_section_background_color = "#000000"
                 s.cross_section_background_color = "#004060"
 
-            # s.cross_section_scale = 2
+            # s.cross_section_scale = 1e-7
+            s.cross_section_scale = (1e-8)*2
+            # 1e-7 = .0000001
+            # .001 = 1e-3       = mm
+            # .000001 = 1e-6    = micrometer
+            # .000000001 = 1e-9 = nanometer
+
+
+
+
+        # state = copy.deepcopy(cfg.viewer.state)
+        # state.position[0] = requested
+        # cfg.viewer.set_state(state)
 
 
         # with cfg.viewer.state as s:
@@ -330,11 +341,16 @@ class NgHost(QRunnable):
             # s.input_event_bindings.viewer['keyt'] = 'my-action'
             # s.status_messages['hello'] = "AlignEM-SWiFT: Scale: %d Viewer URL: %s  Protocol: %s" % \
             #                              (cfg.data.scale_val(), cfg.viewer.get_viewer_url(), self.http_server.protocol_version)
-            s.status_messages['hello'] = "AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)"
+            # s.status_messages['hello'] = 'AlignEM-SWiFT Volumetric Viewer (Powered By Neuroglancer)'
+            s.status_messages['hello'] = ''
 
         if cfg.viewer is not None:
             logger.info('Viewer URL: %s' % cfg.viewer.get_viewer_url())
             logger.info('Viewer Configuration: %s' % str(cfg.viewer.config_state))
+
+    def set_msg(self, msg:str) -> None:
+        with cfg.viewer.config_state.txn() as s:
+            s.status_messages['hello'] = msg
 
     # # layouts: 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'
     def set_layout_yz(self):  self.layout = 'xy'

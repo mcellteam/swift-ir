@@ -115,6 +115,16 @@ class DataModel:
         '''Returns the Current Scale as a String.'''
         return self._data['data']['current_scale']
 
+    def afm(self, scale=None) -> list:
+        if scale == None: scale = self.scale()
+        afm = [self._data['data']['scales'][scale]['alignment_stack'][self.layer()][
+            'align_to_ref_method']['method_results']['affine_matrix'][0],
+               self._data['data']['scales'][scale]['alignment_stack'][self.layer()][
+            'align_to_ref_method']['method_results']['affine_matrix'][1]]
+        return afm
+
+
+
     def scale_pretty(self) -> str:
         return 'Scale %d' % self.scale_val()
 
@@ -303,9 +313,10 @@ class DataModel:
         except:
             logger.warning('An Exception Was Raised Trying To Get SNR of The Current Layer')
 
-    def snr_list(self):
+    def snr_list(self, scale=None):
+        if scale == None: scale = self.scale()
         snr_lst = []
-        for layer in self._data['data']['scales'][self.scale()]['alignment_stack']:
+        for layer in self._data['data']['scales'][scale]['alignment_stack']:
             try:
                 snr_vals = layer['align_to_ref_method']['method_results']['snr']
                 mean_snr = sum(snr_vals) / len(snr_vals)
@@ -313,6 +324,17 @@ class DataModel:
             except:
                 pass
         return snr_lst
+
+    def max_snr_all_scales(self):
+        max_snr = []
+        for i, scale in enumerate(self.scales()):
+            if is_arg_scale_aligned(scale=scale):
+                max_snr.append(max(self.snr_list(scale=scale)))
+        if max_snr != []:
+            return max(max_snr)
+        else:
+            return None
+
 
     '''
         @Slot()

@@ -65,54 +65,18 @@ QGroupBox::indicator {
 QGroupBox::indicator {
 	margin-left: 2px;
 }
-
-QCheckBox::indicator:unchecked {
-	image: url(C:/Users/user/AppData/Roaming/TeXstudio/rc/checkbox_unchecked.png);
-}
-
 QCheckBox::indicator:unchecked:hover,
 QCheckBox::indicator:unchecked:focus,
 QCheckBox::indicator:unchecked:pressed,
 QGroupBox::indicator:unchecked:hover,
 QGroupBox::indicator:unchecked:focus,
-QGroupBox::indicator:unchecked:pressed {
-	border: none;
-	image: url(C:/Users/user/AppData/Roaming/TeXstudio/rc/checkbox_unchecked_focus.png);
-}
 
-QCheckBox::indicator:checked {
-	image: url(C:/Users/user/AppData/Roaming/TeXstudio/rc/checkbox_checked.png);
-}
 
 QCheckBox::indicator:checked:hover,
 QCheckBox::indicator:checked:focus,
 QCheckBox::indicator:checked:pressed,
 QGroupBox::indicator:checked:hover,
 QGroupBox::indicator:checked:focus,
-QGroupBox::indicator:checked:pressed {
-	border: none;
-	image: url(C:/Users/user/AppData/Roaming/TeXstudio/rc/checkbox_checked_focus.png);
-}
-
-QCheckBox::indicator:indeterminate {
-	image: url(C:/Users/user/AppData/Roaming/TeXstudio/rc/checkbox_indeterminate.png);
-}
-
-QCheckBox::indicator:indeterminate:focus,
-QCheckBox::indicator:indeterminate:hover,
-QCheckBox::indicator:indeterminate:pressed {
-	image: url(C:/Users/franc/AppData/Roaming/TeXstudio/rc/checkbox_indeterminate_focus.png);
-}
-
-QCheckBox::indicator:checked:disabled,
-QGroupBox::indicator:checked:disabled {
-	image: url(C:/Users/user/AppData/Roaming/TeXstudio/rc/checkbox_checked_disabled.png);
-}
-
-QCheckBox::indicator:unchecked:disabled,
-QGroupBox::indicator:unchecked:disabled {
-	image: url(C:/Users/user/AppData/Roaming/TeXstudio/rc/checkbox_unchecked_disabled.png);
-}
 
 /*================================================================
 QMenuBar - e.g. Main toolbar (file/edit/idefix etc.)
