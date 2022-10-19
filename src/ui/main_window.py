@@ -162,12 +162,22 @@ class MainWindow(QMainWindow):
         self.set_splash_controls()
         # self.set_project_controls()
 
-        self._snr_plot_brushes = [pg.mkBrush('#5c4ccc'),
-                                  pg.mkBrush('#f3e375'),
-                                  pg.mkBrush('#d6acd6'),
-                                  pg.mkBrush('#aaa672'),
-                                  pg.mkBrush('#152c74'),
-                                  pg.mkBrush('#404f74')]
+        self.snr_plot_colors = ['#5c4ccc', '#f3e375', '#d6acd6', '#aaa672', '#152c74', '#404f74',
+                                '#5c4ccc', '#f3e375', '#d6acd6', '#aaa672', '#152c74', '#404f74']
+
+        self._snr_plot_brushes = [pg.mkBrush(self.snr_plot_colors[0]),
+                                  pg.mkBrush(self.snr_plot_colors[1]),
+                                  pg.mkBrush(self.snr_plot_colors[2]),
+                                  pg.mkBrush(self.snr_plot_colors[3]),
+                                  pg.mkBrush(self.snr_plot_colors[4]),
+                                  pg.mkBrush(self.snr_plot_colors[5]),
+                                  pg.mkBrush(self.snr_plot_colors[6]),
+                                  pg.mkBrush(self.snr_plot_colors[7]),
+                                  pg.mkBrush(self.snr_plot_colors[8]),
+                                  pg.mkBrush(self.snr_plot_colors[9]),
+                                  pg.mkBrush(self.snr_plot_colors[10]),
+                                  pg.mkBrush(self.snr_plot_colors[11])
+                                  ]
 
         # self.set_idle()
 
@@ -880,7 +890,9 @@ class MainWindow(QMainWindow):
     
     def apply_sagittarius_style(self):
         # self.hud('Applying Sagittarius Theme')
-        self.main_stylesheet = os.path.abspath('src/styles/sagittarius.qss')
+        # parent = os.path.dirname(cfg.main_window.get_this_scripts_path()) # /ui
+        # os.path.dirname(os.path.dirname(cfg.main_window.get_this_scripts_path()))
+        self.main_stylesheet = os.path.abspath('../styles/sagittarius.qss')
         self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         self.python_console.set_color_linux()
@@ -1455,6 +1467,9 @@ class MainWindow(QMainWindow):
     # @Slot()
     # def print_image_library(self):
     #     self.hud(str(cfg.image_library))
+
+    def get_this_scripts_path(self):
+        return os.path.realpath(__file__)
     
     def new_project(self):
         logger.critical('>>>> New Project <<<<')
@@ -3786,11 +3801,13 @@ class MainWindow(QMainWindow):
         # self.plot_controls_layout.addWidget(self.plot_widget_update_button, alignment=Qt.AlignLeft)
         # self.plot_controls_layout.addWidget(self.plot_widget_clear_button, alignment=Qt.AlignLeft)
         self._snr_checkboxes = dict()
-        for scale in cfg.data.scales()[::-1]:
+        for i,scale in enumerate(cfg.data.scales()[::-1]):
             self._snr_checkboxes.update({scale: QCheckBox()})
             self._snr_checkboxes[scale].setText('s' + str(get_scale_val(scale)))
             self.plot_controls_layout.addWidget(self._snr_checkboxes[scale], alignment=Qt.AlignLeft)
             self._snr_checkboxes[scale].setChecked(True)
+            # self._snr_plot_brushes[cfg.data.scales().index(scale)]
+            self._snr_checkboxes[scale].setStyleSheet('border-color: %s' % self.snr_plot_colors[i])
             self._snr_checkboxes[scale].clicked.connect(self.update_snr_shown_data)
             # self._snr_checkboxes[scale].setToolTip('On/Off SNR Plot Scale %d' % get_scale_val(scale))
             if is_arg_scale_aligned(scale=scale):

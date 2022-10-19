@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-'''
-Jupyter Console Widget Class. Depends on 'qtconsole' Python module.
-Docs: https://github.com/jupyter/qtconsole/tree/abad7b57415259a090a48519c6e946bcb5b7cb5f
-'''
 
+import qtconsole
 from IPython.lib import guisupport
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
 from qtconsole.inprocess import QtInProcessKernelManager
@@ -20,12 +16,13 @@ class PythonConsole(RichJupyterWidget):
         if customBanner is not None:
             self.banner = customBanner
 
-        self.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
-        self._kernel_manager = QtInProcessKernelManager()
-        self._kernel_manager.start_kernel(show_banner=False)
-        self._kernel_manager.kernel.gui = 'qt'
-        self._kernel_client = self._kernel_manager.client()
-        self._kernel_client.start_channels()
+        # self.font_size = 6
+        # self.font_size = 4
+        self.kernel_manager = QtInProcessKernelManager()
+        self.kernel_manager.start_kernel(show_banner=False)
+        self.kernel_manager.kernel.gui = 'qt'
+        self.kernel_client = self._kernel_manager.client()
+        self.kernel_client.start_channels()
         self.setFocusPolicy(Qt.NoFocus)
         self.execute_command('import src.config as cfg')
         self.execute_command('from src.config import *')
@@ -41,20 +38,20 @@ class PythonConsole(RichJupyterWidget):
         self.print_text('AlignEM [<span class="out-prompt-number">%i</span>]: ')
 
         def stop():
-            self._kernel_client.stop_channels()
-            self._kernel_manager.shutdown_kernel()
+            self.kernel_client.stop_channels()
+            self.kernel_manager.shutdown_kernel()
             guisupport.get_app_qt().exit()
 
         self.exit_requested.connect(stop)
 
     def push_vars(self, variableDict):
         """Push dictionary variables to the Jupyter console widget"""
-        self._kernel_manager.kernel.shell.push(variableDict)
+        self.kernel_manager.kernel.shell.push(variableDict)
 
     def clear(self):
         """Clears the terminal"""
         self._control.clear()
-        # self._kernel_manager
+        # self.kernel_manager
 
     def print_text(self, text):
         """Print to the console"""
