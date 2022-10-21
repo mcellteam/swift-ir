@@ -13,6 +13,7 @@ from copy import deepcopy
 import src.config as cfg
 from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, \
     get_scale_val
+from src.image_funcs import compute_bounding_rect
 
 __all__ = ['DataModel']
 
@@ -124,6 +125,18 @@ class DataModel:
             'align_to_ref_method']['method_results']['affine_matrix'][1]]
         return afm
 
+    def res_x(self, scale=None) -> int:
+        if scale == None: scale=self.scale()
+        return int(self._data['data']['scales'][scale]['resolution_x'])
+
+    def res_y(self, scale=None) -> int:
+        if scale == None: scale = self.scale()
+        return int(self._data['data']['scales'][scale]['resolution_y'])
+
+    def res_z(self, scale=None) -> int:
+        if scale == None: scale = self.scale()
+        return int(self._data['data']['scales'][scale]['resolution_z'])
+
 
 
     def scale_pretty(self) -> str:
@@ -189,13 +202,14 @@ class DataModel:
         return float(self._data['data']['scales'][self.scale()]['alignment_stack'][
                          self.layer()]['align_to_ref_method']['method_data']['win_scale_factor'])
 
-    def bounding_rect(self) -> bool:
+    def has_bb(self) -> bool:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
         return bool(self._data['data']['scales'][self.scale()]['use_bounding_rect'])
 
-    def has_bounding(self) -> bool:
-        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
-        return bool(self._data['data']['scales'][self.scale()]['use_bounding_rect'])
+    def bounding_rect(self, scale=None):
+        if scale == None: scale = self.scale()
+        return self._data['data']['scales'][scale]['bounding_rect']
+
 
     def poly_order(self) -> int:
         '''Returns the Polynomial Order for the Current Scale.'''
@@ -268,15 +282,20 @@ class DataModel:
         self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['win_scale_factor'] = f
 
-    def set_bounding_rect(self, b:bool) -> None:
+    def set_use_bounding_rect(self, b:bool) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
         self._data['data']['scales'][self.scale()]['use_bounding_rect'] = bool(b)
+
+    def set_bounding_rect(self, bounding_rect:list, scale=None) -> None:
+        if scale == None: scale = self.scale()
+        self._data['data']['scales'][scale]['bounding_rect'] = list(bounding_rect)
+
 
     def set_poly_order(self, x:int) -> None:
         '''Sets the Polynomial Order for the Current Scale.'''
         self._data['data']['scales'][self.scale()]['poly_order'] = x
 
-    def set_null_cafm(self, b:bool) -> None:
+    def set_use_poly_order(self, b:bool) -> None:
         '''Sets the Null Cafm Trends On/Off State for the Current Scale.'''
         self._data['data']['scales'][self.scale()]['null_cafm_trends'] = bool(b)
 
@@ -372,8 +391,9 @@ class DataModel:
     '''
 
 
-    def aligned_dict(self) -> dict:
-        al_stack = self._data['data']['scales'][self.scale()]['alignment_stack']
+    def aligned_dict(self, scale = None) -> dict:
+        if scale == None: scale = self.scale()
+        al_stack = self._data['data']['scales'][scale]['alignment_stack']
         return al_stack
 
     def aligned_list(self) -> list[str]:
@@ -506,28 +526,48 @@ class DataModel:
         except:
             print_exception()
 
-    def set_defaults(self) -> None:
-        '''Force data defaults.'''
-        logger.info('set_defaults:')
-        scales_dict = self._data['data']['scales']
-        coarsest_scale = list(scales_dict.keys())[-1]
-        for scale_key in scales_dict.keys():
-            scale = scales_dict[scale_key]
-            scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
-            scale['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
-            scale['poly_order'] = cfg.DEFAULT_POLY_ORDER
-            if scale_key == coarsest_scale:
-                self._data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'init_affine'
-            else:
-                self._data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
-            for layer_index in range(len(scale['alignment_stack'])):
-                layer = scale['alignment_stack'][layer_index]
-                layer['align_to_ref_method']['method_data']['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
-                layer['align_to_ref_method']['method_data']['whitening_factor'] = cfg.DEFAULT_WHITENING
-                if scale_key == coarsest_scale:
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
-                else:
-                    layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+    # def set_defaults(self) -> None:
+    #     '''Force data defaults.
+    #     Called during 'autoscale'
+    #     Remove 2022-10-21'''
+    #     logger.info('set_defaults:')
+    #     scales_dict = self._data['data']['scales']
+    #     coarsest_scale = list(scales_dict.keys())[-1]
+    #     for scale_key in scales_dict.keys():
+    #         scale = scales_dict[scale_key]
+    #         # logger.info('use_bounding_rect: %s' % str(scale['use_bounding_rect']))
+    #         # logger.info('null_cafm_trends: %s' % str(scale['null_cafm_trends']))
+    #         # logger.info('poly_order: %s' % str(scale['poly_order']))
+    #         scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
+    #         scale['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
+    #         scale['poly_order'] = cfg.DEFAULT_POLY_ORDER
+    #         # logger.info('use_bounding_rect: %s' % str(scale['use_bounding_rect']))
+    #         # logger.info('null_cafm_trends: %s' % str(scale['null_cafm_trends']))
+    #         # logger.info('poly_order: %s' % str(scale['poly_order']))
+    #         if scale_key == coarsest_scale:
+    #             self._data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'init_affine'
+    #         else:
+    #             self._data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
+    #         for layer_index in range(len(scale['alignment_stack'])):
+    #             layer = scale['alignment_stack'][layer_index]
+    #
+    #             # logger.info(
+    #             #     'win_scale_factor: %s' % str(layer['align_to_ref_method']['method_data']['win_scale_factor']))
+    #             # logger.info(
+    #             #     'whitening_factor: %s' % str(layer['align_to_ref_method']['method_data']['whitening_factor']))
+    #
+    #             layer['align_to_ref_method']['method_data']['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
+    #             layer['align_to_ref_method']['method_data']['whitening_factor'] = cfg.DEFAULT_WHITENING
+    #
+    #             # logger.info(
+    #             #     'win_scale_factor: %s' % str(layer['align_to_ref_method']['method_data']['win_scale_factor']))
+    #             # logger.info(
+    #             #     'whitening_factor: %s' % str(layer['align_to_ref_method']['method_data']['whitening_factor']))
+    #
+    #             if scale_key == coarsest_scale:
+    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+    #             else:
+    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
 
     def are_there_any_skips(self) -> bool:

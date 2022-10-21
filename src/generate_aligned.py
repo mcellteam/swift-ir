@@ -11,7 +11,7 @@ import src.config as cfg
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
 from src.mp_queue import TaskQueue
-from src.image_funcs import SetStackCafm, BoundingRect, ImageSize
+from src.image_funcs import SetStackCafm, compute_bounding_rect, ImageSize
 from src.zarr_funcs import preallocate_zarr
 
 '''
@@ -81,21 +81,24 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1, preallocate=True):
     SetStackCafm(scale_dict=scale_dict, null_biases=bool(null_bias))
 
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
-    bounding_rect = cfg.data.bounding_rect()
+    bounding_rect = cfg.data.has_bb()
     logger.info('Bounding Rect is %s' % str(bounding_rect))
     # cfg.main_window.hud.done()
-    # preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=16, chunks=(16,64,64))
+    # preallocate_zarr(use_scale=use_scale, has_bb=has_bb, z_stride=16, chunks=(16,64,64))
     if preallocate == True:
         logger.info('Preallocating (preallocate set to True)...')
         preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, name='img_aligned.zarr', z_stride=Z_STRIDE, chunks=chunks)
 
-    ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
+    ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'has_bb.dat')
     use_bounding_rect = bool(cfg.data['data']['scales'][scale_key]['use_bounding_rect'])
-    logger.info('Writing Bounding Rectangle Dimensions to bounding_rect.dat...')
+    logger.info('Writing Bounding Rectangle Dimensions to has_bb.dat...')
     with open(ofn, 'w') as f:
         if use_bounding_rect:
             logger.critical('Using bounding rect...')
-            rect = BoundingRect(cfg.data['data']['scales'][scale_key]['alignment_stack'])
+            rect = compute_bounding_rect(cfg.data['data']['scales'][scale_key]['alignment_stack'])
+            logger.critical('rect = %s' % str(rect))
+            cfg.data.set_bounding_rect(list(rect))
+
             f.write("%d %d %d %d\n" % (rect[0], rect[1], rect[2], rect[3]))
             # Example: rect = [-346, -346, 1716, 1716]  <class 'list'>
         else:

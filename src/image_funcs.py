@@ -21,7 +21,7 @@ __all__ = [
     'InitCafm',
     'SetSingleCafm',
     'SetStackCafm',
-    'BoundingRect',
+    'compute_bounding_rect',
     'invertAffine',
 ]
 
@@ -449,13 +449,13 @@ def SetStackCafm(scale_dict, null_biases=False):
     return c_afm_init
 
 
-def BoundingRect(al_stack):
+def compute_bounding_rect(al_stack):
     '''
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
 
     To get result for current scale, in the main process, use:
-    from src.image_funcs import BoundingRect, ImageSize
-    BoundingRect(cfg.data.aligned_dict())
+    from src.image_funcs import compute_bounding_rect, ImageSize
+    compute_bounding_rect(cfg.data.aligned_dict())
 
     model_bounds example:
 AlignEM [29]:
@@ -501,7 +501,7 @@ array([[   0,    0],
         # AlignEM[2]: [-14, -76, 1052, 664]
         return rect
     else:
-        logger.debug('BoundingRect:')
+        logger.debug('compute_bounding_rect:')
         model_bounds = None
         siz = ImageSize(al_stack[0]['images']['base']['filename'])
         for item in al_stack:
@@ -514,7 +514,7 @@ array([[   0,    0],
                            0 - model_bounds[:, 1].min(),
                            model_bounds[:, 0].max() - siz[0],
                            model_bounds[:, 1].max() - siz[0])
-        rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[0] + 2 * border_width]
+        rect = [int(-border_width), int(-border_width), int(siz[0] + 2 * border_width), int(siz[0] + 2 * border_width)]
         logger.info('Returning: %s' % str(rect))
         return rect
 

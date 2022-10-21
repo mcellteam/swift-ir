@@ -233,11 +233,19 @@ class MainWindow(QMainWindow):
 
 
     @Slot()
-    def project_view_callback(self):
-        logger.critical("project_view_callback called by " + inspect.stack()[1].function + "...")
+    def toggle_json_widget_visibility(self):
+        if self.treeview_widget.isHidden():
+            self.project_model.load(cfg.data.to_dict())
+            self.treeview_widget.show()
+        else:
+            self.treeview_widget.hide()
+        # self.project_view.show()
+        # self.main_widget.setCurrentIndex(4)
+
+    @Slot()
+    def refresh_json_widget(self):
         self.project_model.load(cfg.data.to_dict())
-        self.project_view.show()
-        self.main_widget.setCurrentIndex(4)
+
 
     # @Slot()
     # def scale(self) -> None:
@@ -359,7 +367,7 @@ class MainWindow(QMainWindow):
     #     # self.set_progress_stage_2()
     #     self.reload_scales_combobox()  # 0529 #0713+
     #     self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
-    #     self.update_scale_controls()
+    #     self.update_enabled_buttons()
     #     self.save_project_to_file()
     #     self.hud.done()
     #     self.ng_worker.show_url()
@@ -381,11 +389,11 @@ class MainWindow(QMainWindow):
         self.hud('Generating Zarr Scales...')
         cfg.data.link_all_stacks()
         self.clear_snr_plot()
-        cfg.data.set_defaults()
+        # cfg.data.set_defaults() #1021-
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
         # for scale in cfg.data.scales()[::-1]:
         #     try:
-        #         preallocate_zarr(use_scale=scale, bounding_rect=False, name='img_src.zarr', is_alignment=False)
+        #         preallocate_zarr(use_scale=scale, has_bb=False, name='img_src.zarr', is_alignment=False)
         #     except:
         #         print_exception()
         try:
@@ -398,20 +406,17 @@ class MainWindow(QMainWindow):
             self.worker = BackgroundWorker(fn=generate_zarr_scales())
             self.threadpool.start(self.worker)
 
-            self.update_scale_controls()
-            logger.critical('Crating snr plot checkboxes...')
-
-            self.reload_snr_plot_checkboxes()
-
-            logger.info('Exiting main_window.autoscale')
         except:
             print_exception()
             logger.error('Zarr Export Failed')
 
         finally:
+            self.reload_snr_plot_checkboxes()
+            self.update_enabled_buttons()
             self.reload_scales_combobox()  # 0529 #0713+
             self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
             self.read_project_data_update_gui()
+            self.refresh_json_widget()
             self.set_idle()
 
 
@@ -445,7 +450,7 @@ class MainWindow(QMainWindow):
         finally:
             self.set_idle()
 
-        self.update_gui_details()
+        self.refresh_json_widget()
         # self.hud.done()
         self.hud('Generating Aligned Images...')
         try:
@@ -461,10 +466,11 @@ class MainWindow(QMainWindow):
         # self.hud.done()
         self.save_project_to_file() #0908+
         self.reload_ng()
-        self.ng_worker.show_url()
-        self.reload_snr_plot_checkboxes()
-        self.update_snr_shown_data()
-        self.update_scale_controls()
+        # self.ng_worker.show_url()
+        self.update_snr_plot()
+        self.update_enabled_buttons()
+        self.update_gui_details()
+        self.refresh_json_widget()
         self._snr_checkboxes[cfg.data.scale()].setChecked(True)
         self._snr_checkboxes[cfg.data.scale()].show()
 
@@ -474,8 +480,6 @@ class MainWindow(QMainWindow):
         #     cfg.DEFAULT_NULL_BIAS = True
         #     try:  cfg.DEFAULT_POLY_ORDER = int(self.get_null_bias_value())
         #     except:  logger.warning('Unable to set default poly order')
-        if self.toggle_bounding_rect.isChecked():  cfg.DEFAULT_BOUNDING_BOX = True
-        else:  cfg.DEFAULT_BOUNDING_BOX = False
 
 
 
@@ -528,7 +532,7 @@ class MainWindow(QMainWindow):
         finally:
             self.set_idle()
 
-        self.update_snr_shown_data()
+        self.update_snr_plot()
         self.save_project_to_file() #0908+
         self.reload_ng()
         self.pbar.hide()
@@ -584,7 +588,7 @@ class MainWindow(QMainWindow):
         finally:
             self.set_idle()
 
-        self.update_snr_shown_data()
+        self.update_snr_plot()
         self.save_project_to_file()  # 0908+
         self.reload_ng()
         self.pbar.hide()
@@ -635,8 +639,6 @@ class MainWindow(QMainWindow):
         #     try:  cfg.DEFAULT_POLY_ORDER = int(self.get_null_bias_value())
         #     except:  logger.warning('Unable to set default poly order')
 
-        if self.toggle_bounding_rect.isChecked():  cfg.DEFAULT_BOUNDING_BOX = True
-        else:  cfg.DEFAULT_BOUNDING_BOX = False
 
 
     
@@ -715,7 +717,7 @@ class MainWindow(QMainWindow):
                 mdata['whitening_factor'] = whitening_val
     
     @Slot()
-    def update_scale_controls(self) -> None:
+    def update_enabled_buttons(self) -> None:
         '''This method does three things:
         (1) Update the visibility of next/prev scale buttons depending on current scale.
         (2) Set the enabled/disabled state of the align_all-all button
@@ -759,12 +761,9 @@ class MainWindow(QMainWindow):
         # if cfg.DEFAULT_BOUNDING_BOX == True:  self.toggle_bounding_rect.setChecked(True)
         # else:  self.toggle_bounding_rect.setChecked(False)
 
-        self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
-        self.update_gui_details() #Shoehorn
-    
     @Slot()
     def update_gui_details(self) -> None:
-        '''Piggy-backs its updating with 'update_scale_controls'
+        '''Piggy-backs its updating with 'update_enabled_buttons'
         Update alignment details in the Alignment control panel group box.'''
         logger.critical('update_gui_details... called By %s' % inspect.stack()[1].function)
 
@@ -775,8 +774,12 @@ class MainWindow(QMainWindow):
             self.alignment_status_label.setText("Aligned")
             self.alignment_status_label.setStyleSheet('color: #41FF00;')
             try:
-                self.ng_worker.set_msg('Affine: ' + str(cfg.data.afm())) # may not be necessary
+                # self.ng_worker.set_msg('Affine: ' + str(cfg.data.afm()))
+                if cfg.data.has_bb():
+                    logger.info('Updating NG status message...')
+                    self.ng_worker.set_msg('%s - Bounding Rect: %s' % (cfg.data.name_base(), str(cfg.data.bounding_rect())))
             except:
+                print_exception()
                 pass
             self.alignment_status_label.setStyleSheet('color: #41FF00;')
             self.alignment_snr_label.setText(cfg.data.snr())
@@ -784,9 +787,10 @@ class MainWindow(QMainWindow):
             self.alignment_status_label.setText("Not Aligned")
             self.alignment_status_label.setStyleSheet('color: #FF0000;')
             try:
-                self.ng_worker.set_msg('Not Aligned') # Necessary
+                logger.info('Updating NG status message...')
+                self.ng_worker.set_msg('%s' % cfg.data.name_base())
             except:
-                pass
+                print_exception()
             self.alignment_status_label.setStyleSheet('color: #FF0000;')
             self.alignment_snr_label.setText('')
         # scale_str = str(get_scale_val(cfg.data.scale()))
@@ -864,7 +868,7 @@ class MainWindow(QMainWindow):
             requested_index = cur_index - 1
             self.scales_combobox.setCurrentIndex(requested_index)  # Changes The Scale
             self.read_project_data_update_gui()
-            self.update_scale_controls()
+            self.update_enabled_buttons()
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
@@ -899,7 +903,7 @@ class MainWindow(QMainWindow):
             self.read_project_data_update_gui()
 
             # self.update_aligned_2D_viewer()
-            self.update_scale_controls()
+            self.update_enabled_buttons()
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
@@ -1095,15 +1099,15 @@ class MainWindow(QMainWindow):
             return
 
         if self.get_null_bias_value() == 'None':
-            try:  cfg.data.set_null_cafm(False)
+            try:  cfg.data.set_use_poly_order(False)
             except:  logger.warning('Unable to Update Project Dictionary with Null CAFM')
         else:
-            try: cfg.data.set_null_cafm(True)
+            try: cfg.data.set_use_poly_order(True)
             except: logger.warning('Unable to Update Project Dictionary with Null CAFM')
             try: cfg.data.set_poly_order(int(self.get_null_bias_value()))
             except: logger.warning('Unable to Update Project Dictionary with Polynomial Order')
 
-        try: cfg.data.set_bounding_rect(bool(self.get_bounding_state()))
+        try: cfg.data.set_use_bounding_rect(bool(self.get_bounding_state()))
         except: logger.warning('Unable to Update Project Dictionary with Bounding Rect State')
 
         try: cfg.data.set_whitening(self.get_whitening_input())
@@ -1136,7 +1140,7 @@ class MainWindow(QMainWindow):
         try:  self.swim_input.setText(str(cfg.data.swim_window()))
         except:  logger.warning('Swim Input Widget Failed to Update')
 
-        try: self.toggle_bounding_rect.setChecked(cfg.data.bounding_rect())
+        try: self.toggle_bounding_rect.setChecked(cfg.data.has_bb())
         except: logger.warning('Bounding Rect Widget Failed to Update')
 
         if  cfg.data.null_cafm() == False:  self.null_bias_combobox.setCurrentText('None')
@@ -1149,7 +1153,6 @@ class MainWindow(QMainWindow):
         else:  self.next_layer_button.setEnabled(True)
 
         self.update_gui_details()
-        self.jump_input.setText(str(cfg.data.layer()))
 
         # if cfg.data.skipped():
         #     self.browser_overlay_widget.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
@@ -1344,7 +1347,7 @@ class MainWindow(QMainWindow):
 
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
-        self.update_scale_controls()
+        self.update_enabled_buttons()
         # self.update_2D_viewers()
         self.reload_ng()
 
@@ -1619,7 +1622,7 @@ class MainWindow(QMainWindow):
         self.clear_snr_plot_checkboxes()
         self.reset_details_banner()
         self.hud('Creating A Project...')
-        filename = self.new_project_save_as_dialog()
+        filename = self.new_project_dialog()
         if filename == '':
             self.hud("Project Canceled.")
             self.set_idle()
@@ -1629,9 +1632,7 @@ class MainWindow(QMainWindow):
             filename += ".proj"
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path)
-        # self.image_panel_stack_widget.setCurrentIndex(2)
         makedirs_exist_ok(cfg.data['data']['destination_path'], exist_ok=True)
-        # self.hud.done()
         self.setWindowTitle("Project: " + os.path.split(cfg.data.dest())[-1])
         self.save_project()
         self.scales_combobox.clear()  # why? #0528
@@ -1694,8 +1695,7 @@ class MainWindow(QMainWindow):
         dialog.setWindowTitle('Import Images - %s' % cfg.data.name())
         dialog.setNameFilter('Images (*.tif *.tiff)')
         dialog.setFileMode(QFileDialog.ExistingFiles)
-
-        urls = []
+        urls = dialog.sidebarUrls()
         urls.append(QUrl.fromLocalFile(QDir.homePath()))
         if '.tacc.utexas.edu' in platform.node():
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
@@ -1708,13 +1708,11 @@ class MainWindow(QMainWindow):
         logger.info('dialog.Accepted = %s' % dialog.Accepted)
         if dialog.exec_() == QDialog.Accepted:
             self.set_project_controls()
-            self.set_normal_view()
+            # self.set_normal_view() #1021-
             return dialog.selectedFiles()
         else:
-            if dialog.exec_() == QDialog.Accepted:
-                self.set_project_controls()
-                self.set_normal_view()
-                return dialog.selectedFiles()
+            logger.warning('Import Images dialog did not return an image list')
+            return
 
     
     def open_project_dialog(self) -> str:
@@ -1735,18 +1733,14 @@ class MainWindow(QMainWindow):
         # dialog.setProxyModel(FileFilterProxyModel())
         dialog.setWindowTitle('Open Project (*.proj *.json)')
         dialog.setNameFilter("Text Files (*.proj *.json)")
-
-        urls = []
-        urls.append(QUrl.fromLocalFile(QDir.homePath()))
+        dialog.setViewMode(QFileDialog.Detail)
+        urls = dialog.sidebarUrls()
         if '.tacc.utexas.edu' in platform.node():
             urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
             urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
             # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
         dialog.setSidebarUrls(urls)
-
         dialog.exec()
-
-        # return response[0]
         return dialog.selectedFiles()[0]
 
     def save_project_dialog(self) -> str:
@@ -1764,20 +1758,40 @@ class MainWindow(QMainWindow):
         )
         return response[0]
     
-    def new_project_save_as_dialog(self) -> str:
+    def new_project_dialog(self) -> str:
         '''Dialog for saving a data. Returns 'filename'.'''
-        caption = "New Project Save As..."
-        filter = "Project (*.proj)"
-        # if qtpy.QT5:
-        #     options = QFileDialog.Options()
-        #     options |= QFileDialog.DontUseNativeDialog
-        response = QFileDialog.getSaveFileName(
-            parent=self,
-            caption=caption,
-            filter=filter,
-            # options=options
-        )
-        return response[0]
+        # caption = "New Project Save As..."
+        # filter = "Project (*.proj, *.json)"
+        # # if qtpy.QT5:
+        # #     options = QFileDialog.Options()
+        # #     options |= QFileDialog.DontUseNativeDialog
+        # response = QFileDialog.getSaveFileName(
+        #     parent=self,
+        #     caption=caption,
+        #     filter=filter,
+        #     # options=options
+        # )
+
+
+        dialog = QFileDialog()
+        dialog.setOption(QFileDialog.DontUseNativeDialog)
+        # dialog.setProxyModel(FileFilterProxyModel())
+        dialog.setWindowTitle('Open Project (*.proj *.json)')
+        dialog.setNameFilter("Text Files (*.proj *.json)")
+        dialog.setViewMode(QFileDialog.Detail)
+        dialog.setAcceptMode(QFileDialog.AcceptSave)
+        urls = dialog.sidebarUrls()
+        if '.tacc.utexas.edu' in platform.node():
+            urls.append(QUrl.fromLocalFile(os.getenv('WORK')))
+            urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabShared'))
+            # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
+        dialog.setSidebarUrls(urls)
+
+        if dialog.exec() == QFileDialog.Accepted:
+            logger.info('Save File Name: %s' % dialog.selectedFiles()[0])
+            return dialog.selectedFiles()[0]
+
+        # return response[0]
 
     def show_warning(self, title, text):
         QMessageBox.warning(None, title, text)
@@ -1792,8 +1806,8 @@ class MainWindow(QMainWindow):
         logger.critical('>>>> Open Project <<<<')
         # self.set_status("Open Project...")
         # is_neuroglancer_viewer = True if self.is_neuroglancer_viewer() else False
-        self.main_widget.setCurrentIndex(0)
-        self.image_panel_stack_widget.setCurrentIndex(2)
+        # self.main_widget.setCurrentIndex(0) #1021-
+        # self.image_panel_stack_widget.setCurrentIndex(2) #1021-
         #Todo need something like this here
         # if self._unsaved_changes:
         #     self.hud('Confirm Exit AlignEM-SWiFT')
@@ -1835,7 +1849,8 @@ class MainWindow(QMainWindow):
 
         self.hud("Loading Project '%s'..." % filename)
         self.set_project_controls()
-        self.set_normal_view()
+        # self.set_normal_view() #1021-
+        self.refresh_json_widget()
         self.clear_snr_plot()
 
         project.set_paths_absolute(head=filename)
@@ -1846,23 +1861,16 @@ class MainWindow(QMainWindow):
         if are_images_imported():
             self.init_neuroglancer_client()  # force neuroglancer viewer (changes stack index)
         self.read_project_data_update_gui()
-
         self.reload_scales_combobox()
-        self.update_scale_controls()
-        self.reload_snr_plot_checkboxes()
-        self.update_snr_shown_data()
+        self.update_enabled_buttons()
+        self.update_snr_plot()
         cfg.PROJECT_OPEN = True
 
 
 
     def save_project(self):
         logger.info('Entering save_project...')
-        if self._splash:
-            logger.info('Nothing To Save')
-            return
-        logger.info('About to call self.set_status()...')
         self.set_status("Saving...")
-        logger.info('About to write to HUD...')
         self.hud.post('Saving Project...')
         logger.info('Trying...')
         try:
@@ -2032,6 +2040,10 @@ class MainWindow(QMainWindow):
 
         # self.hud.done()
         if are_images_imported():
+            self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
+            self.jump_input.setValidator(self.jump_validator)
+            self.jump_input.setText(str(cfg.data.layer()))
+
             cfg.IMAGES_IMPORTED = True
             img_size = ImageSize(
                 cfg.data['data']['scales']['scale_1']['alignment_stack'][0]['images'][str(role_to_import)]['filename'])
@@ -2072,6 +2084,7 @@ class MainWindow(QMainWindow):
         self.hud.hide()
         self.menu.hide()
         self.python_console.hide()
+        self.treeview_widget.hide()
 
         self.title_label.show()
         self.subtitle_label.show()
@@ -2146,8 +2159,10 @@ class MainWindow(QMainWindow):
         self.expand_console_button.hide()
 
         self.hud.show()
-        self.snr_plot.show()
         self.snr_plot_and_control.show()
+        self.treeview_widget.show()
+        self.python_console.show()
+
         self.bottom_panel_controls.show() # <- culprit
         self.dual_viewer_w_banner.show()
         self.alignment_widget.show()
@@ -2259,8 +2274,8 @@ class MainWindow(QMainWindow):
             logger.critical('No Unsaved Changes - Exiting')
 
         self.shutdownInstructions()
-        logger.info('Running shutdown instructions again...')
-        self.shutdownInstructions() # Run Shutdown Instructions 2x
+        # logger.info('Running shutdown instructions again...')
+        # self.shutdownInstructions() # Run Shutdown Instructions 2x
 
 
     def shutdownInstructions(self):
@@ -2415,7 +2430,7 @@ class MainWindow(QMainWindow):
         # cfg.data.set_layer(new_cur_layer)
         # self.jump_to(new_cur_layer)
         # self.read_project_data_update_gui() #0908+
-        self.set_normal_view()
+        # self.set_normal_view() #1021-
 
     def exit_docs(self):
         self.main_widget.setCurrentIndex(0)
@@ -2618,13 +2633,15 @@ class MainWindow(QMainWindow):
 
 
     def set_normal_view(self):
+        '''#Todo deprecate this'''
+
         # self.image_panel_widget.show()
         self.control_panel.show()
         # self.multi_img_viewer.show()
         self.image_panel_stack_widget.show()
         self.main_widget.setCurrentIndex(0)
         # self.python_console.show()
-        self.snr_plot.show()
+        self.snr_plot_and_control.show()
         self.hud.show()
         # self.import_images_button.hide()
 
@@ -2718,7 +2735,7 @@ class MainWindow(QMainWindow):
                   ]
                   ],
                  # ['Normalize View', 'None', self.set_normal_view, None, None, None],
-                 ['Project JSON', 'Ctrl+J', self.project_view_callback, None, None, None],
+                 ['Project JSON', 'Ctrl+J', self.toggle_json_widget_visibility, None, None, None],
                  ['Python Console', None, self.show_hide_python, None, None, None],
                  # ['SNR Plot', None, self.update_snr_plot, None, None, None],
                  ['Splash Screen', None, self.show_splash, None, None, None],
@@ -3011,13 +3028,9 @@ class MainWindow(QMainWindow):
         self.jump_input.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.jump_input.setAlignment(Qt.AlignmentFlag.AlignHCenter)
         self.jump_input.setFixedSize(std_input_size, std_height)
-        self.jump_validator = QIntValidator()
-        self.jump_input.setValidator(self.jump_validator)
         self.jump_input.returnPressed.connect(lambda: self.jump_to_layer())
 
-
         '''GroupBox 3 Alignment'''
-
         self.scales_combobox = QComboBox(self)
         # self.scales_combobox.hide()
         self.scales_combobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3414,7 +3427,8 @@ class MainWindow(QMainWindow):
         self.alignment_snr_label = QLabel('')
         self.reset_details_banner()
 
-        tip = 'Show Neuroglancer key bindings.'
+        # tip = 'Show Neuroglancer key bindings.'
+        tip = ''
         self.info_button = QLabel('')
         self.info_button = QPushButton()
         self.info_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3573,21 +3587,56 @@ class MainWindow(QMainWindow):
         self.snr_plot_and_control_layout.addWidget(self.snr_plot)
         self.snr_plot_and_control.setLayout(self.snr_plot_and_control_layout)
 
+        '''JSON Project View'''
+        self.project_view = QTreeView()
+        self.project_model = JsonModel()
+        self.project_view.setModel(self.project_model)
+        self.project_view.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.project_view.setAlternatingRowColors(True)
+        self.exit_project_view_button = QPushButton("Back")
+        self.exit_project_view_button.setFixedSize(slim_button_size)
+        self.exit_project_view_button.clicked.connect(self.back_callback)
+        self.refresh_project_view_button = QPushButton("Refresh")
+        self.refresh_project_view_button.setFixedSize(slim_button_size)
+        self.refresh_project_view_button.clicked.connect(self.refresh_json_widget)
+        self.save_project_project_view_button = QPushButton("Save")
+        self.save_project_project_view_button.setFixedSize(slim_button_size)
+        self.save_project_project_view_button.clicked.connect(self.save_project)
+
+        '''JSON Project View Container w/ Controls'''
+        self.treeview_widget = QWidget()
+        self.treeview_widget.setObjectName('treeview_widget')
+        self.treeview_widget.setStyleSheet('background-color: #ffffff;')
+        self.treeview_layout = QVBoxLayout()
+        self.treeview_layout.addWidget(self.project_view)
+        self.treeview_ctl_layout = QHBoxLayout()
+        self.treeview_ctl_layout.addWidget(self.exit_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.treeview_ctl_layout.addWidget(self.refresh_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.treeview_ctl_layout.addWidget(self.save_project_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
+        self.treeview_ctl_layout.addSpacerItem(
+            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
+        self.treeview_layout.addLayout(self.treeview_ctl_layout)
+        self.treeview_widget.setLayout(self.treeview_layout)
+
 
         '''Bottom Panel Splitter'''
         self.bottom_panel_splitter = QSplitter()
         self.bottom_panel_splitter.setAutoFillBackground(True)
         self.bottom_panel_splitter.setContentsMargins(0, 0, 0, 0)
-        self.bottom_panel_splitter.setHandleWidth(8)
+        self.bottom_panel_splitter.setHandleWidth(6)
         self.bottom_panel_splitter.addWidget(self.hud)
         self.bottom_panel_splitter.addWidget(self.snr_plot_and_control)
+        self.bottom_panel_splitter.addWidget(self.treeview_widget)
         self.bottom_panel_splitter.addWidget(self.python_console)
-        self.bottom_panel_splitter.setStretchFactor(0, 4)
+        self.bottom_panel_splitter.setStretchFactor(0, 2)
         self.bottom_panel_splitter.setStretchFactor(1, 2)
         self.bottom_panel_splitter.setStretchFactor(2, 2)
+        self.bottom_panel_splitter.setStretchFactor(3, 2)
         self.bottom_panel_splitter.setCollapsible(0, True)
         self.bottom_panel_splitter.setCollapsible(1, True)
         self.bottom_panel_splitter.setCollapsible(2, True)
+        self.bottom_panel_splitter.setCollapsible(3, True)
+        self.bottom_panel_splitter.setSizes([300,300,300,300])
 
 
         '''Lower Right Tool Selection Buttons'''
@@ -3618,35 +3667,33 @@ class MainWindow(QMainWindow):
         self.show_hide_python_button.setFixedSize(normal_button_size)
         self.show_hide_python_button.setIcon(qta.icon("fa.terminal", color='#f3f6fb'))
 
-        self.show_hide_snr = QPushButton(" SNR\n Plot")
-        self.show_hide_snr.setStyleSheet(lower_controls_style)
-        # self.show_hide_snr.setStyleSheet("font-size: 10px;")
-        # self.show_hide_snr.setStyleSheet("color: #f3f6fb; font-size: 10px;")
-        self.show_hide_snr.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.show_hide_snr.clicked.connect(self.show_hide_snr_plot)
-        self.show_hide_snr.setFixedSize(normal_button_size)
-        self.show_hide_snr.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
+        self.show_hide_snr_button = QPushButton(" SNR\n Plot")
+        self.show_hide_snr_button.setStyleSheet(lower_controls_style)
+        # self.show_hide_snr_button.setStyleSheet("font-size: 10px;")
+        # self.show_hide_snr_button.setStyleSheet("color: #f3f6fb; font-size: 10px;")
+        self.show_hide_snr_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_hide_snr_button.clicked.connect(self.show_hide_snr_plot)
+        self.show_hide_snr_button.setFixedSize(normal_button_size)
+        self.show_hide_snr_button.setIcon(qta.icon("mdi.scatter-plot", color='#f3f6fb'))
 
-        self.project_view_button = QPushButton('View\nJSON')
-        self.project_view_button.setStyleSheet(lower_controls_style)
-        self.project_view_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.project_view_button.setToolTip('Inspect the data dictionary in memory.')
-        self.project_view_button.clicked.connect(self.project_view_callback)
-        # self.project_view_button.clicked.connect(self.show_hide_json)
-        self.project_view_button.setFixedSize(normal_button_size)
-        # self.project_view_button.setStyleSheet("font-size: 10px;")
-        self.project_view_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
+        self.show_hide_json_button = QPushButton('View\nJSON')
+        self.show_hide_json_button.setStyleSheet(lower_controls_style)
+        self.show_hide_json_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.show_hide_json_button.setToolTip('Inspect the data dictionary in memory.')
+        self.show_hide_json_button.clicked.connect(self.toggle_json_widget_visibility)
+        # self.show_hide_json_button.clicked.connect(self.show_hide_json)
+        self.show_hide_json_button.setFixedSize(normal_button_size)
+        # self.show_hide_json_button.setStyleSheet("font-size: 10px;")
+        self.show_hide_json_button.setIcon(qta.icon("mdi.json", color='#f3f6fb'))
 
         self.main_lwr_vlayout = QVBoxLayout()
         self.main_lwr_vlayout.setContentsMargins(2, 2, 2, 0)
         self.main_lwr_vlayout.setSpacing(2)
         self.main_lwr_vlayout.addWidget(self.expand_bottom_panel_button, alignment=Qt.AlignRight)
         self.main_lwr_vlayout.addWidget(self.show_hide_hud_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_lwr_vlayout.addWidget(self.show_hide_snr_button, alignment=Qt.AlignmentFlag.AlignTop)
+        self.main_lwr_vlayout.addWidget(self.show_hide_json_button, alignment=Qt.AlignmentFlag.AlignTop)
         self.main_lwr_vlayout.addWidget(self.show_hide_python_button, alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_lwr_vlayout.addWidget(self.show_hide_snr, alignment=Qt.AlignmentFlag.AlignTop)
-        # self.main_lwr_vlayout.addWidget(self.plot_widget_clear_button, alignment=Qt.AlignmentFlag.AlignTop)
-        self.main_lwr_vlayout.addWidget(self.project_view_button, alignment=Qt.AlignmentFlag.AlignTop)
-        # self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
         self.main_lwr_vlayout.addSpacerItem(QSpacerItem(0, 0, QSizePolicy.Minimum, QSizePolicy.Expanding))
 
         self.bottom_panel_controls = QWidget()
@@ -3742,32 +3789,8 @@ class MainWindow(QMainWindow):
         self.main_splitter.setCollapsible(1, True)
         self.main_splitter.setCollapsible(2, True)
 
-        '''JSON Project View'''
-        self.project_view = QTreeView()
-        self.project_model = JsonModel()
-        self.project_view.setModel(self.project_model)
-        self.project_view.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        self.project_view.setAlternatingRowColors(True)
-        self.exit_project_view_button = QPushButton("Back")
-        self.exit_project_view_button.setFixedSize(std_button_size)
-        self.exit_project_view_button.clicked.connect(self.back_callback)
-        self.refresh_project_view_button = QPushButton("Refresh")
-        self.refresh_project_view_button.setFixedSize(std_button_size)
-        self.refresh_project_view_button.clicked.connect(self.project_view_callback)
-        self.save_project_project_view_button = QPushButton("Save")
-        self.save_project_project_view_button.setFixedSize(std_button_size)
-        self.save_project_project_view_button.clicked.connect(self.save_project)
-        self.treeview_widget = QWidget()
-        self.treeview_layout = QVBoxLayout()
-        self.treeview_layout.addWidget(self.project_view)
-        self.treeview_ctl_layout = QHBoxLayout()
-        self.treeview_ctl_layout.addWidget(self.exit_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.treeview_ctl_layout.addWidget(self.refresh_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.treeview_ctl_layout.addWidget(self.save_project_project_view_button, alignment=Qt.AlignmentFlag.AlignLeft)
-        self.treeview_ctl_layout.addSpacerItem(
-            QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum))
-        self.treeview_layout.addLayout(self.treeview_ctl_layout)
-        self.treeview_widget.setLayout(self.treeview_layout)
+
+
 
         '''Documentation Panel'''
         self.browser_docs = QWebEngineView()
@@ -3837,7 +3860,7 @@ class MainWindow(QMainWindow):
         self.main_widget.addWidget(self.docs_panel)                 # (1) docs_panel
         self.main_widget.addWidget(self.demos_panel)                # (2) demos_panel
         self.main_widget.addWidget(self.remote_viewer_panel)        # (3) remote_viewer_panel
-        self.main_widget.addWidget(self.treeview_widget)         # (4) self.project_view
+        # self.main_widget.addWidget(self.treeview_widget)         # (4) self.project_view
         self.main_widget.setCurrentIndex(0)
         self.main_layout = QVBoxLayout()
         self.main_layout.addWidget(self.main_widget)
@@ -3930,7 +3953,7 @@ class MainWindow(QMainWindow):
 
     # def show_hide_json(self):
     #     if self..isHidden():
-    #         self.project_view_button.setHidden(False)
+    #         self.show_hide_json_button.setHidden(False)
     #     else:
     #         self.python_console.setHidden(True)
 
@@ -3958,7 +3981,7 @@ class MainWindow(QMainWindow):
             self._snr_checkboxes[scale].setChecked(True)
             # self._snr_plot_brushes[cfg.data.scales().index(scale)]
             self._snr_checkboxes[scale].setStyleSheet('border-color: %s' % self._snr_plot_colors[i])
-            self._snr_checkboxes[scale].clicked.connect(self.update_snr_shown_data)
+            self._snr_checkboxes[scale].clicked.connect(self.update_snr_plot)
             self._snr_checkboxes[scale].setToolTip('On/Off SNR Plot Scale %d' % get_scale_val(scale))
             if is_arg_scale_aligned(scale=scale):
                 self._snr_checkboxes[scale].show()
@@ -3966,9 +3989,10 @@ class MainWindow(QMainWindow):
                 self._snr_checkboxes[scale].hide()
         self.plot_controls_layout.addStretch()
 
-    def update_snr_shown_data(self):
+    def update_snr_plot(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
-        logger.info('update_snr_shown_data:')
+        logger.info('update_snr_plot:')
+        self.reload_snr_plot_checkboxes()
         self.snr_plot.clear()
         for i,scale in enumerate(self._snr_checkboxes):
             logger.info('i = %d' % i)
@@ -3985,7 +4009,7 @@ class MainWindow(QMainWindow):
         try:
             if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_imgs(), yMin=0, yMax=max_snr + 1)
         except:
-            logger.warning('update_snr_shown_data encountered a problem')
+            logger.warning('update_snr_plot encountered a problem')
         # cfg.main_window.snr_plot.autoRange()
 
 

@@ -38,8 +38,6 @@ def generate_scales():
         for i, layer in enumerate(cfg.data['data']['scales'][scale_key]['alignment_stack']):
             fn = os.path.abspath(layer['images']['base']['filename'])
             ofn = os.path.join(cfg.data.dest(), scale_key, 'img_src', os.path.split(fn)[1])
-            layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
-            layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
 
             if scale == 1:
                 '''Scale 1 Only'''
