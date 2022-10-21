@@ -158,13 +158,14 @@ class ConfigDialog(QDialog):
 
         for scale in cfg.data.scales():
             # cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
+            scale_val = get_scale_val(scale)
             cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
             for layer in cfg.data['data']['scales'][scale]['alignment_stack']:
                 layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
                 layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
-                layer['align_to_ref_method']['method_options'].update({'resolution_x': cfg.RES_X})
-                layer['align_to_ref_method']['method_options'].update({'resolution_y': cfg.RES_Y})
-                layer['align_to_ref_method']['method_options'].update({'resolution_z': cfg.RES_Z})
+                layer['align_to_ref_method']['method_options'].update({'resolution_x': cfg.RES_X * scale_val})
+                layer['align_to_ref_method']['method_options'].update({'resolution_y': cfg.RES_Y * scale_val})
+                layer['align_to_ref_method']['method_options'].update({'resolution_z': cfg.RES_Z * scale_val})
         cfg.main_window.save_project_to_file()
 
         cfg.main_window.hud.done()

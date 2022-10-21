@@ -290,6 +290,20 @@ def get_img_filenames(path) -> list[str]:
     logger.debug('Returning: %s' % str(imgs))
     return imgs
 
+def rename_layers(use_scale, al_dict):
+    logger.info('rename_layers:')
+    source_dir = os.path.join(cfg.data['data']['destination_path'], use_scale, "img_src")
+    for layer in al_dict:
+        image_name = None
+        if 'base' in layer['images'].keys():
+            image = layer['images']['base']
+            try:
+                image_name = os.path.basename(image['filename'])
+                destination_image_name = os.path.join(source_dir, image_name)
+                shutil.copyfile(image.image_file_name, destination_image_name)
+            except:
+                logger.warning('Something went wrong with renaming the alignment layers')
+                pass
 
 def remove_aligned(use_scale, start_layer=0):
     '''
@@ -308,7 +322,7 @@ def remove_aligned(use_scale, start_layer=0):
     :type start_layer: int
     '''
 
-    logger.info('image_utils.remove_aligned:')
+    logger.info('remove_aligned:')
     for layer in cfg.data['data']['scales'][use_scale]['alignment_stack'][start_layer:]:
         ifn = layer['images'].get('filename', None)
         layer['images'].pop('aligned', None)

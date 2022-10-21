@@ -235,10 +235,10 @@ swim 2048 < test_50_51_iter0.sw > test_50_51_iter0.sw.out
 
 
 # Step 1)  use swim to generate inital guess at full affine transformation
-#  To get an affine Tform we need to align at least 3 points on the image planes.
+#  To get an affine Tform we need to align_all at least 3 points on the image planes.
 #  Using line above, create "iter1" swim command file  test_50_51_iter1.sw
 #  
-#  Here we'll align 4 points:
+#  Here we'll align_all 4 points:
 #  Choose delta x and delta y offsets for 4 overlapping windows
 #  i.e. deltas (e.g. 2000) that are smaller than the full window size (e.g. 2048)
 # File test_50_51_iter1.sw:

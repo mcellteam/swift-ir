@@ -144,7 +144,7 @@ The scaled image sets can be chosen from the "Scale / #" menu:
 
 Usually its best to start with the smallest images first. These
 will have the largest scale number. In this example (with scales
-1, 2, and 4), the first scale to align would be scale 4. Note that
+1, 2, and 4), the first scale to align_all would be scale 4. Note that
 the images are currently shown with the current zoom regardless of
 the scale. So selecting scale 4 will show the images at 1/4 of their
 original size:
@@ -174,7 +174,7 @@ Note that each image shows the image role (ref, base, aligned)
 along with the current scale and the current "layer" in the stack.
 
 Once a particular scale has been aligned, you may move to the next
-scale to align those images. Eventually, the "scale_1" images will
+scale to align_all those images. Eventually, the "scale_1" images will
 be aligned:
 
 .. image:: ./images/AlignEM_SWiFT_Aligned_Scale1.png

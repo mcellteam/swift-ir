@@ -121,7 +121,7 @@ QLCDNumber {
 	color: rgb(0, 113, 255, 255);
 }
 QProgressBar {
-	text-align: center;
+	text-align_all: center;
 	color: rgb(240, 240, 240);
 	border-width: 1px;
 	border-radius: 10px;

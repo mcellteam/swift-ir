@@ -2,17 +2,18 @@
 
 import os
 import sys
-import time
 import copy
 import json
+import time
 import shutil
 import psutil
 import logging
+from datetime import datetime
+from pathlib import Path
 import src.config as cfg
-from .mp_queue import TaskQueue
-# from .run_json_project import run_json_project
-from .save_bias_analysis import save_bias_analysis
-from .helpers import get_scale_val, remove_aligned, are_aligned_images_generated
+from src.mp_queue import TaskQueue
+from src.save_bias_analysis import save_bias_analysis
+from src.helpers import rename_layers, remove_aligned, get_scale_val, are_aligned_images_generated
 
 
 __all__ = ['compute_affines','rename_layers','remove_aligned']
@@ -28,6 +29,64 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     alignment_option = cfg.data['data']['scales'][use_scale]['method_data']['alignment_option']
     logger.debug('Use Scale: %s\nCode Mode: %s\nUse File IO: %d' % (use_scale, cfg.CODE_MODE, cfg.USE_FILE_IO))
     logger.debug('Start Layer: %d / # Layers: %d' % (start_layer, num_layers))
+
+    bias_data_path = os.path.join(cfg.data['data']['destination_path'], use_scale, 'bias_data')
+
+
+    logger.info('Removing swim_arg_string.dat file')
+    try:
+        os.remove(os.path.join(cfg.data['data']['destination_path'], 'swim_log.dat'))
+    except:
+        pass
+
+    try:
+        os.remove(os.path.join(cfg.data['data']['destination_path'], 'mir_commands.dat'))
+    except:
+        pass
+
+    try:
+        os.remove(os.path.join(bias_data_path, 'snr_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'bias_x_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'bias_y_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'bias_rot_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'bias_scale_x_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'bias_scale_y_1.dat'))
+    except:
+        pass
+
+    try:
+        os.remove(os.path.join(bias_data_path, 'bias_skew_x_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'bias_det_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'afm_1.dat'))
+    except:
+        pass
+    try:
+        os.remove(os.path.join(bias_data_path, 'c_afm_1.dat'))
+    except:
+        pass
+
+
 
     if are_aligned_images_generated():
         cfg.main_window.hud.post('Removing Aligned Images for Scale Level %d...' % get_scale_val(use_scale))
@@ -57,7 +116,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
 
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Computing Affine Transformations - Scale %d - %d CPUs' % (get_scale_val(use_scale), cpus))
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Computing Alignments - Scale %d - %d Cores' % (get_scale_val(use_scale), cpus))
     task_queue.start(cpus)
     align_job = os.path.join(os.path.split(os.path.realpath(__file__))[0], 'job_single_alignment.py')
 
@@ -82,7 +141,7 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
             task_queue.add_task(task_args)
 
     # task_queue.work_q.join()
-    cfg.main_window.hud.post('Computing Alignment using SWIM (%d CPUs)...' % cpus)
+    cfg.main_window.hud.post('Computing Alignment using SWIM (%d Cores)...' % cpus)
     t0 = time.time()
     task_queue.collect_results()
     dt = time.time() - t0
@@ -171,6 +230,8 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
     bias_data_path = os.path.join(cfg.data['data']['destination_path'], use_scale, 'bias_data')
     save_bias_analysis(cfg.data['data']['scales'][use_scale]['alignment_stack'], bias_data_path) # <-- call to save bias data
 
+    write_run_to_file()
+
     # print_alignment_layer()
 
     # '''Run the data directly in Serial mode. Does not generate aligned images.'''
@@ -190,19 +251,19 @@ def compute_affines(use_scale, start_layer=0, num_layers=-1):
 
     logger.critical('>>>> Compute Affines End <<<<')
 
-def rename_layers(use_scale, al_dict):
-    source_dir = os.path.join(cfg.data['data']['destination_path'], use_scale, "img_src")
-    for layer in al_dict:
-        image_name = None
-        if 'base' in layer['images'].keys():
-            image = layer['images']['base']
-            try:
-                image_name = os.path.basename(image['filename'])
-                destination_image_name = os.path.join(source_dir, image_name)
-                shutil.copyfile(image.image_file_name, destination_image_name)
-            except:
-                logger.warning('Something went wrong with renaming the alignment layers')
-                pass
+def write_run_to_file(scale=None):
+    if scale == None: scale = cfg.data.scale()
+    snr_avg = 'SNR=%.3f' % cfg.data.snr_average(scale=scale)
+    date = datetime.now().strftime("%Y-%m-%d")
+    time = datetime.now().strftime("%H%M%S")
+    swim_input = 'swim=%.3f' % cfg.main_window.get_swim_input()
+    whitening_input = 'whitening=%.3f' % cfg.main_window.get_whitening_input()
+    details = [scale, date, time, swim_input, whitening_input, snr_avg]
+    fn = '_'.join(details) + '.txt'
+    of = Path(os.path.join(cfg.data.dest(), scale, 'history', fn))
+    of.parent.mkdir(exist_ok=True, parents=True)
+    with open(of, 'w') as f:
+        json.dump(cfg.data['data']['scales'][scale], f, indent=4)
 
 
 

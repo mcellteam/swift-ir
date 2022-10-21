@@ -3,8 +3,10 @@
 import os
 import sys
 import time
+import json
 import psutil
 import logging
+from pathlib import Path
 import src.config as cfg
 from src.helpers import get_scale_key, get_scale_val, are_aligned_images_generated, \
     makedirs_exist_ok, print_exception, print_snr_list, remove_aligned, reorder_tasks
@@ -27,10 +29,10 @@ __all__ = ['generate_aligned']
 logger = logging.getLogger(__name__)
 
 
-def generate_aligned(use_scale, start_layer=0, num_layers=-1):
+def generate_aligned(use_scale, start_layer=0, num_layers=-1, preallocate=True):
     '''
     This function is currently called by two MainWindow methods:
-    - app.align
+    - app.align_all
     - app.regenerate
     For now, start_layer is always passed the value 0, and
     num_layers is always passed the value -1.
@@ -76,14 +78,16 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     logger.info('Propogating AFMs to generate CFMs at each layer')
     scale_dict = cfg.data['data']['scales'][scale_key]
     null_bias = cfg.data['data']['scales'][use_scale]['null_cafm_trends']
-    SetStackCafm(scale_dict=scale_dict, null_biases=null_bias)
+    SetStackCafm(scale_dict=scale_dict, null_biases=bool(null_bias))
 
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     bounding_rect = cfg.data.bounding_rect()
-    cfg.main_window.hud.done()
+    logger.info('Bounding Rect is %s' % str(bounding_rect))
+    # cfg.main_window.hud.done()
     # preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, z_stride=16, chunks=(16,64,64))
-    logger.critical('use_bounding_rect = %s' % str(bounding_rect))
-    preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, name='img_aligned.zarr', z_stride=Z_STRIDE, chunks=chunks)
+    if preallocate == True:
+        logger.info('Preallocating (preallocate set to True)...')
+        preallocate_zarr(use_scale=use_scale, bounding_rect=bounding_rect, name='img_aligned.zarr', z_stride=Z_STRIDE, chunks=chunks)
 
     ofn = os.path.join(cfg.data['data']['destination_path'], scale_key, 'bias_data', 'bounding_rect.dat')
     use_bounding_rect = bool(cfg.data['data']['scales'][scale_key]['use_bounding_rect'])
@@ -101,7 +105,7 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
             f.write("None\n")
     n_tasks = cfg.data.n_imgs()
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Alignment w/ MIR - Scale %d - %d CPUs' % (get_scale_val(use_scale), cpus))
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Alignment w/ MIR - Scale %d - %d Cores' % (get_scale_val(use_scale), cpus))
     task_queue.tqdm_desc = 'Generating Images'
     logger.info('Starting Task Queue...')
     task_queue.start(cpus)
@@ -180,12 +184,26 @@ def generate_aligned(use_scale, start_layer=0, num_layers=-1):
     except:
         logger.warning('task_queue.collect_results() encountered a problem')
         print_exception()
+    finally:
+        '''Shoehorn a dictionary key which states if the last images aligned had a bounding box'''
+        if (start_layer == 0) & (num_layers == -1):
+            for ID, layer in enumerate(alstack[start_layer:end_layer + 1]):
+                if cfg.data['data']['scales'][use_scale]['use_bounding_rect']:
+                    cfg.data['data']['scales'][use_scale]['alignment_stack'][ID]['align_to_ref_method'][
+                        'method_options'].update({'has_bounding_rect': True})
+                else:
+                    cfg.data['data']['scales'][use_scale]['alignment_stack'][ID]['align_to_ref_method'][
+                        'method_options'].update({'has_bounding_rect': False})
     try: task_queue.end_tasks()
     except: pass
     task_queue.stop()
     del task_queue
 
+
     logger.critical('>>>> Generate Aligned End <<<<')
+
+
+
 
 
 def create_align_directories(scale_key):

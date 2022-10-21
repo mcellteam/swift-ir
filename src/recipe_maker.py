@@ -129,7 +129,7 @@ def run_json_project(project,
 
         actual_num_layers = num_layers
         if actual_num_layers < 0:
-            # Set the actual number of layers to align to the end
+            # Set the actual number of layers to align_all to the end
             actual_num_layers = common_length - start_layer
 
         # Align Forward Change:
@@ -380,7 +380,7 @@ class alignment_process:
     '''#0707 NOTE: called in run_project_json'''
 
     def align(self, c_afm, save=True):
-        logger.info('Running align_alignment_process.align...')
+        logger.info('Running align_alignment_process.align_all...')
         atrm = self.layer_dict['align_to_ref_method']
         result = self.auto_swim_align(c_afm, save=save)
         return result
@@ -388,16 +388,21 @@ class alignment_process:
     def auto_swim_align(self, c_afm, save=True):
         logger.info('Running align_alignment_process.auto_swim_align...')
         siz = ImageSize(self.im_sta_fn)
-        atrm = self.layer_dict['align_to_ref_method']
-        wsf = atrm['method_data']['win_scale_factor']  # window size scale factor
+        atrm = self.layer_dict['align_to_ref_method'] # (A)lign (T)o (R)ef (M)ethod
+        wsf = atrm['method_data']['win_scale_factor']  #  (W)indow (S)cale (F)actor
         # dither_afm = np.array([[1., 0.005, 0.], [-0.005, 1., 0.]])
-        init_rot = self.layer_dict['align_to_ref_method']['method_options']['initial_rotation']
-        init_scale = self.layer_dict['align_to_ref_method']['method_options']['initial_scale']
-        deg2rad = 2*np.pi/360.
-        sin_rot = np.sin(deg2rad*init_rot)
-        assert isinstance(init_rot, float)
-        assert isinstance(init_scale, float)
-        dither_afm = np.array([[init_scale, sin_rot, 0.], [-sin_rot, init_scale, 0.]])
+
+        # [
+        # init_rot = self.layer_dict['align_to_ref_method']['method_options']['initial_rotation']
+        # init_scale = self.layer_dict['align_to_ref_method']['method_options']['initial_scale']
+        # deg2rad = 2*np.pi/360.
+        # sin_rot = np.sin(deg2rad*init_rot)
+        # assert isinstance(init_rot, float)
+        # assert isinstance(init_scale, float)
+
+        # dither_afm = np.array([[init_scale, sin_rot, 0.], [-sin_rot, init_scale, 0.]]) #orig
+        # ]
+
         # dither_afm = np.array([[DITHER_SCALE, DITHER_ROT, 0.], [-DITHER_ROT, DITHER_SCALE, 0.]])
         # sin_rot -> try 0.5, DITHER_SCALE -> try 1.05 #0804
 
@@ -444,7 +449,6 @@ class alignment_process:
         for x in range(nx):
             for y in range(ny):
                 pa[0, x + nx * y] = int(0.5 * sx + sx * x)  # Point Array (2x4) points
-                # pa[1, x + nx * y] = int(0.5 * sx + sx * y)  # Point Array (2x4) points
                 pa[1, x + nx * y] = int(0.5 * sy + sy * y)  # Point Array (2x4) points
         sx_2x2 = int(wsf * sx)
         sy_2x2 = int(wsf * sy)
@@ -455,6 +459,7 @@ class alignment_process:
         ny = 4
         pa = np.zeros((2, nx * ny))
         sx = int(wwx_f / 4.0)  # Initial Size of each window
+        sy = int(wwy_f / 4.0)  # Initial Size of each window # THIS WAS MISSING
         for x in range(nx):
             for y in range(ny):
                 pa[0, x + nx * y] = int(0.5 * sx + sx * x)
@@ -467,9 +472,9 @@ class alignment_process:
         # Set up a window size for match point alignment (1/32 of x dimension)
         s_mp = int(siz[0] / 32.0)
 
-        logger.debug("  psta_1   = " + str(psta_1))
-        logger.debug("  psta_2x2 = " + str(psta_2x2))
-        logger.debug("  psta_4x4 = " + str(psta_4x4))
+        logger.info("  psta_1   = " + str(psta_1))
+        logger.info("  psta_2x2 = " + str(psta_2x2))
+        logger.info("  psta_4x4 = " + str(psta_4x4))
 
         # im_sta_fn is 'ref', im_mov_fn is 'base'
         #    self.recipe = align_recipe(im_sta, im_mov, im_sta_fn=self.im_sta_fn, im_mov_fn=self.im_mov_fn)
@@ -497,7 +502,8 @@ class alignment_process:
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht)  # 1x1 SWIM window
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
 
-                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
+                # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
+                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir )  # 0721 only this one has dither (1x1)
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir)  # 0721-
                 # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
                 ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
@@ -775,6 +781,7 @@ class align_ingredient:
         # ' -k ' + kip + \
         # ' -d ' + dir + \
 
+        # ' -f3' + \
         for i in range(len(self.psta[0])):
             offx = int(self.psta[0][i] - (wwx_f / 2.0))
             offy = int(self.psta[1][i] - (wwy_f / 2.0))
@@ -794,11 +801,11 @@ class align_ingredient:
             #                   ' ' + rota_arg + \
             #                   ' ' + afm_arg
             swim_arg_string = 'ww_' + swim_ww_arg + \
+                              ' -f3 ' + \
                               ' -i ' + str(self.iters) + \
                               ' -w ' + str(self.wht) + \
                               ' -x ' + str(offx) + \
                               ' -y ' + str(offy) + \
-                              ' -f3' + \
                               ' ' + karg + \
                               ' ' + self.recipe.im_sta_fn + \
                               ' ' + base_x + \
@@ -808,17 +815,31 @@ class align_ingredient:
                               ' ' + adjust_y + \
                               ' ' + rota_arg + \
                               ' ' + afm_arg
+
             # default -f is 3x3
 
             logger.debug('SWIM argument string: %s' % swim_arg_string)
             multi_swim_arg_string += swim_arg_string + "\n"
             # print('\nSWIM argument string: %s\n' % multi_swim_arg_string)
 
+
+
+        '''SWIM'''
         o = run_command(self.swim_c, arg_list=[swim_ww_arg], cmd_input=multi_swim_arg_string) #run_command #tag
+
+
+
 
         swim_out_lines = o['out'].strip().split('\n')
         swim_err_lines = o['err'].strip().split('\n')
         swim_results.append({'out': swim_out_lines, 'err': swim_err_lines})
+
+        path = os.path.join(os.path.dirname(os.path.dirname(self.recipe.im_sta_fn)), 'swim_log.dat')
+        with open(path, 'a+') as f:
+            f.write('%s %s\n' % (str(swim_ww_arg), str(multi_swim_arg_string)))
+            f.write('swim_stdout: \n%s\n\n' % (o['out']))
+            f.write('swim_stderr: \n%s\n\n' % (o['err']))
+
         mir_script = ""
         snr_list = []
         dx = dy = 0.0
@@ -842,8 +863,12 @@ class align_ingredient:
                 snr_list.append(float(toks[0][0:-1]))
         mir_script += 'R\n'
 
-        # Do MIR step:
+        '''MIR'''
         o = run_command(self.mir_c, arg_list=[], cmd_input=mir_script)
+
+
+
+
         mir_out_lines = o['out'].strip().split('\n')
         mir_err_lines = o['err'].strip().split('\n')
         logger.info(str(mir_out_lines))

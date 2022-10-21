@@ -103,6 +103,8 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
     if name == 'img_aligned.zarr':  zarr_these_scales = [use_scale]
     elif name == 'img_src.zarr':    zarr_these_scales = cfg.data.scales()
     else:                           zarr_these_scales = [use_scale]
+
+    logger.critical('zarr_these_scales = %s' % str(zarr_these_scales))
     logger.info('Zarring these scales: %s' % str(zarr_these_scales))
     if cfg.PROJECT_OPEN & (name == 'img_src.zarr'):
         logger.critical('Removing Preexisting Zarrs...')
@@ -141,11 +143,16 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
             imgs = sorted(get_img_filenames(os.path.join(src, scale, 'img_src')))
             # dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
             if is_alignment:
-                dimx, dimy = tifffile.imread(os.path.join(src, scale, 'img_aligned', imgs[0])).size
+                path = os.path.join(src, scale, 'img_aligned', imgs[0])
+                # dimx, dimy = tifffile.imread(path).size
+                dimx, dimy = ImageSize(path)
             else:
                 path = os.path.join(src, scale, 'img_src', imgs[0])
                 logger.info('path = %s' % path)
                 dimx, dimy = ImageSize(path)
+
+
+        logger.critical('dimx = %d, dimy = %d' % (dimx, dimy))
 
         name = 's' + str(get_scale_val(scale))
         shape = (n_imgs, dimy, dimx)

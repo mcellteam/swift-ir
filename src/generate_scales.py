@@ -22,7 +22,7 @@ def generate_scales():
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     n_tasks = cfg.data.n_imgs() * (cfg.data.n_scales() - 1)  #0901 #Refactor
     cpus = min(psutil.cpu_count(logical=False), cfg.TACC_MAX_CPUS) - 2
-    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy - %d CPUs' % cpus)
+    task_queue = TaskQueue(n_tasks=n_tasks, parent=cfg.main_window, pbar_text='Generating Scale Image Hierarchy - %d Cores' % cpus)
     my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
     for s in cfg.data.scales():
         create_project_structure_directories(s)
@@ -74,7 +74,7 @@ def generate_scales():
     task_queue.stop()
     del task_queue
     dt = time.time() - t0
-    cfg.main_window.hud.post("Process generate_scales Completed in %.2f Seconds" % dt)
+    cfg.main_window.hud.post("Process Completed in %.2f Seconds" % dt)
 
     '''Set more lenient permissions on Tifs'''
     for scale in cfg.data.scales():

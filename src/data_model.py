@@ -8,6 +8,7 @@ import os
 import json
 import inspect
 import logging
+import statistics
 from copy import deepcopy
 import src.config as cfg
 from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, \
@@ -51,8 +52,8 @@ class DataModel:
                                 "method_data": {
                                     "alignment_option": "init_affine"
                                 },
-                                "null_cafm_trends": False,
-                                "use_bounding_rect": True,
+                                "null_cafm_trends": cfg.DEFAULT_NULL_BIAS,
+                                "use_bounding_rect": cfg.DEFAULT_BOUNDING_BOX,
                                 "alignment_stack": []
                             }
                         }
@@ -192,6 +193,10 @@ class DataModel:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
         return bool(self._data['data']['scales'][self.scale()]['use_bounding_rect'])
 
+    def has_bounding(self) -> bool:
+        '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
+        return bool(self._data['data']['scales'][self.scale()]['use_bounding_rect'])
+
     def poly_order(self) -> int:
         '''Returns the Polynomial Order for the Current Scale.'''
         return int(self._data['data']['scales'][self.scale()]['poly_order'])
@@ -212,15 +217,20 @@ class DataModel:
         l, s = self.layer(), self.scale()
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
 
-    def path_al(self) -> str:
-        logger.info('path_al:')
-        l, s = self.layer(), self.scale()
-        logger.info('Returning %s' % self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename'])
-        return self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename']
-
     def name_base(self) -> str:
         l, s = self.layer(), self.scale()
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+
+    # def path_al(self) -> str:
+    #     logger.info('path_al:')
+    #     l, s = self.layer(), self.scale()
+    #     logger.info('Returning %s' % self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename'])
+    #     return self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename']
+
+    def path_aligned(self, scale=None, layer=None) -> str:
+        if scale == None: scale = self.scale()
+        if layer == None: layer = self.layer()
+        return os.path.join(self.dest(), scale, 'img_aligned', self.name_base())
 
     def zarr_scale_paths(self):
         l = []
@@ -325,15 +335,22 @@ class DataModel:
                 pass
         return snr_lst
 
-    def max_snr_all_scales(self):
+    def snr_max_all_scales(self):
         max_snr = []
-        for i, scale in enumerate(self.scales()):
+        for i, scale in enumerate(self.aligned_list()):
             if is_arg_scale_aligned(scale=scale):
-                max_snr.append(max(self.snr_list(scale=scale)))
+                try:
+                    max_snr.append(max(self.snr_list(scale=scale)))
+                except:
+                    logger.warning('Unable to append maximum SNR, none found')
         if max_snr != []:
             return max(max_snr)
         else:
-            return None
+            return []
+
+    def snr_average(self, scale=None) -> float:
+        if scale == None: scale = cfg.data.scale()
+        return statistics.fmean(self.snr_list(scale=scale))
 
 
     '''

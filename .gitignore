@@ -1,4 +1,4 @@
-messages.log
+**/messages.log
 *.egg-info
 **/__pycache__
 **/.DS_Store

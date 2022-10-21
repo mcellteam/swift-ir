@@ -373,7 +373,7 @@ QDockWidget::title {
 	background: #373b3f;
 	color: transparent;
 	border: 1px transparent;
-	text-align: left;
+	text-align_all: left;
 }
 
 QDockWidget::close-button,
@@ -561,7 +561,7 @@ QPushButton:checked {
 QToolButton - e.g. Reset pushbutton in GUI scaling, toolbar buttons
 ================================================================*/
 QToolButton {
-	text-align: center;
+	text-align_all: center;
 }
 
 /*================================================================
@@ -646,7 +646,7 @@ QHeaderView::section {
 	padding: 5px;
 	border: 1px solid #76797C;
 	border-radius: 0px;
-	text-align: center;
+	text-align_all: center;
 }
 
 QHeaderView::section::vertical::first,

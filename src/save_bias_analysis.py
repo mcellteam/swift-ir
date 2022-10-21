@@ -37,26 +37,26 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
                 scale_y = (c_afm[1, 1] * np.cos(rot)) - (c_afm[0, 1] * np.sin(rot))
                 skew_x = ((c_afm[0, 1] * np.cos(rot)) + (c_afm[1, 1] * np.sin(rot))) / scale_y
                 det = (c_afm[0, 0] * c_afm[1, 1]) - (c_afm[0, 1] * c_afm[1, 0])
-                with open(os.path.join(bias_data_path, 'snr_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'snr_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, snr.mean()))
-                with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'bias_x_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, c_afm[0, 2]))
-                with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'bias_y_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, c_afm[1, 2]))
-                with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'bias_rot_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, rot))
-                with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'bias_scale_x_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, scale_x))
-                with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'bias_scale_y_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, scale_y))
-                with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'bias_skew_x_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, skew_x))
-                with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'bias_det_1.dat'), 'a+') as f:
                     f.write('%d %.6g\n' % (i, det))
-                with open(os.path.join(bias_data_path, 'afm_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'afm_1.dat'), 'a+') as f:
                     f.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (
                             i, afm[0, 0], afm[0, 1], afm[0, 2], afm[1, 0], afm[1, 1], afm[1, 2]))
-                with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'w') as f:
+                with open(os.path.join(bias_data_path, 'c_afm_1.dat'), 'a+') as f:
                     f.write('%d %.6g %.6g %.6g %.6g %.6g %.6g\n' % (
                             i, c_afm[0, 0], c_afm[0, 1], c_afm[0, 2], c_afm[1, 0], c_afm[1, 1], c_afm[1, 2]))
 
