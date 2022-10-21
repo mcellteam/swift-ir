@@ -188,16 +188,15 @@ def main():
     # sys.exit(app.exec())
 
     try:
-        logger.info('Trying sys.exit(app.exec())...')
         sys.exit(app.exec())
-        # sys.exit(app.exec_())
     except:
+        pass
         # print_exception()
-        logger.info('Trying sys.exit(app.exec_())...')
-        sys.exit(app.exec_())
-        # sys.exit(app.exec())
-    # finally:
-    #     print_exception()
+        # logger.info('Trying sys.exit(app.exec_())...')
+        # sys.exit(app.exec_())
+    finally:
+        sys.exit()
+
 
 
 if __name__ == "__main__":

@@ -14,7 +14,7 @@ import tensorstore as ts
 # import dask.array as da
 import src.config as cfg
 from src.helpers import get_scale_val, time_limit, get_img_filenames, print_exception
-from src.image_funcs import ImageSize, BoundingRect, imageio_read_image
+from src.image_funcs import ImageSize, compute_bounding_rect, imageio_read_image
 
 __all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
 
@@ -123,19 +123,16 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
     # root = zarr.group(store=zarr_path, synchronizer=synchronizer)  # Create Root Group Using Synchronizer
     root = zarr.group(store=zarr_path)  # Create Root Group W/out using Synchronizer
     # root = zarr.group(store=zarr_name, overwrite=True)
-    logger.info('Zarr Root is %s' % zarr_path)
-
-    # opt_cname = cfg.main_window.cname_combobox.currentText()
-    # opt_clevel = int(cfg.main_window.clevel_input.text())
+    logger.info('Zarr Root Location: %s' % zarr_path)
 
     datasets = []
     for scale in zarr_these_scales:
         logger.info('Zarring scale %s' % scale)
 
         logger.info('Preallocating Zarr for Scale: %s' % str(scale))
-        logger.info('bounding_rect = %s' % str(bounding_rect))
+        logger.info('has_bb = %s' % str(bounding_rect))
         if bounding_rect is True:
-            rect = BoundingRect(cfg.data['data']['scales'][scale]['alignment_stack'])
+            rect = compute_bounding_rect(cfg.data['data']['scales'][scale]['alignment_stack'])
             dimx, dimy = rect[2], rect[3]
             logger.info('dim_x=%d, dim_y=%d' % (dimx, dimy))
 
@@ -152,7 +149,7 @@ def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stri
                 dimx, dimy = ImageSize(path)
 
 
-        logger.critical('dimx = %d, dimy = %d' % (dimx, dimy))
+        logger.info('dimx = %d, dimy = %d' % (dimx, dimy))
 
         name = 's' + str(get_scale_val(scale))
         shape = (n_imgs, dimy, dimx)

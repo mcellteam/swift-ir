@@ -13,7 +13,7 @@ import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, Slot
 from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, are_images_imported
-from src.image_funcs import ImageSize, BoundingRect
+from src.image_funcs import ImageSize, compute_bounding_rect
 from src.zarr_funcs import get_zarr_tensor_from_path
 import src.config as cfg
 
@@ -171,7 +171,7 @@ class NgHost(QRunnable):
             # x_offset = 0
             # y_offset = 0
 
-        scales = [float(cfg.RES_Z), cfg.RES_Y * float(scale_val), cfg.RES_X * float(scale_val)]
+        scales = [cfg.data.res_z(), cfg.data.res_y(), cfg.data.res_x()]
 
         with cfg.viewer.txn() as s:
 
@@ -236,7 +236,7 @@ class NgHost(QRunnable):
                 if is_aligned:
                     s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
                 if is_aligned:
-                    rect = BoundingRect(cfg.data.aligned_dict())
+                    rect = compute_bounding_rect(cfg.data.aligned_dict())
                     s.position = [l, rect[3] / 2, rect[2] / 2]
                     s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
                                               ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout),

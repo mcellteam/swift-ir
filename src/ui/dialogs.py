@@ -72,7 +72,7 @@ class ConfigDialog(QDialog):
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.accept)
         self.buttonBox.rejected.connect(self.reject)
-        self.buttonBox.clicked.connect(self.on_create_button_clicked)
+        self.buttonBox.clicked.connect(self.set_project_configuration)
 
         self.tab_widget = QTabWidget()
 
@@ -139,45 +139,34 @@ class ConfigDialog(QDialog):
     #         data = json.dump(self.defaults, f)
     #         # f.write(self.defaults)
 
-    def update_project_dict(self):
-        # logger.critical('Running update_init_scale:')
-        cfg.main_window.hud('Configuring Project Settings...')
+    @Slot()
+    def set_project_configuration(self):
+        cfg.main_window.hud('Initializing Project Data...')
         cfg.data.set_scales_from_string(self.scales_input.text())
-        cfg.DEFAULT_INITIAL_ROTATION = float(self.initial_rotation_input.text())
-        cfg.DEFAULT_INITIAL_SCALE = float(self.initial_scale_input.text())
-        cfg.DEFAULT_BOUNDING_BOX = float(self.bounding_rectangle_checkbox.isChecked())
 
-        cfg.RES_X = int(self.res_x_lineedit.text())
-        cfg.RES_Y = int(self.res_y_lineedit.text())
-        cfg.RES_Z = int(self.res_z_lineedit.text())
+
         cfg.CHUNK_X = int(self.chunk_x_lineedit.text())
         cfg.CHUNK_Y = int(self.chunk_y_lineedit.text())
         cfg.CHUNK_Z = int(self.chunk_z_lineedit.text())
         cfg.CLEVEL = int(self.clevel_input.text())
         cfg.CNAME = self.cname_combobox.currentText()
+        cfg.data['data'].update({'initial_scale': float(self.initial_scale_input.text())})
+        cfg.data['data'].update({'initial_rotation': float(self.initial_rotation_input.text())})
 
         for scale in cfg.data.scales():
-            # cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
             scale_val = get_scale_val(scale)
-            cfg.data['data']['scales'][scale]['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
-            for layer in cfg.data['data']['scales'][scale]['alignment_stack']:
-                layer['align_to_ref_method']['method_options'].update({'initial_scale': cfg.DEFAULT_INITIAL_SCALE})
-                layer['align_to_ref_method']['method_options'].update({'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION})
-                layer['align_to_ref_method']['method_options'].update({'resolution_x': cfg.RES_X * scale_val})
-                layer['align_to_ref_method']['method_options'].update({'resolution_y': cfg.RES_Y * scale_val})
-                layer['align_to_ref_method']['method_options'].update({'resolution_z': cfg.RES_Z * scale_val})
-        cfg.main_window.save_project_to_file()
+            cfg.data['data']['scales'][scale]['use_bounding_rect'] = bool(self.bounding_rectangle_checkbox.isChecked())
+            cfg.data['data']['scales'][scale].update({'resolution_x': int(self.res_x_lineedit.text()) * scale_val})
+            cfg.data['data']['scales'][scale].update({'resolution_y': int(self.res_y_lineedit.text()) * scale_val})
+            cfg.data['data']['scales'][scale].update({'resolution_z': int(self.res_z_lineedit.text())})
 
+        cfg.main_window.save_project_to_file()
         cfg.main_window.hud.done()
+        self.close()
 
     def on_cancel(self):
         self.close()
 
-    @Slot()
-    def on_create_button_clicked(self):
-        logger.info('on_create_button_clicked:')
-        self.update_project_dict()
-        self.close()
 
     def initUI_tab2(self):
 

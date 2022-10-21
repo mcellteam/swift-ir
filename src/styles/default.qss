@@ -10,7 +10,15 @@ QCheckBox {
 	font-size: 10px;
 }
 
-
+#treeview_widget {
+    background-color: #ffffff;
+    color: #333;
+    border: 2px solid #555;
+    border-radius: 7px;
+    padding: 3px;
+    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
+    min-width: 10px;
+}
 
 
 # #ImagePanel {
