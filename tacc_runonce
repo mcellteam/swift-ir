@@ -70,11 +70,11 @@ conda env create --name=alignPYQT --file tacc.yml python=3.9
 #echo "Adding alignEM.py to PATH in .bashrc..."
 #echo 'export PATH="$PATH:$WORK/swift-ir/alignEM.py"' >> ~/.bashrc
 
-#if alias align >/dev/null 2>&1; then
+#if alias align_all >/dev/null 2>&1; then
 #
-#  echo "align alias already exists - continuing..."
+#  echo "align_all alias already exists - continuing..."
 #else
-#  #  echo "alias align='swr numactl --preferred=1 python3 $WORK/swift-ir/alignEM.py'" >> ~/.bashrc
+#  #  echo "alias align_all='swr numactl --preferred=1 python3 $WORK/swift-ir/alignEM.py'" >> ~/.bashrc
 #
 #fi
 

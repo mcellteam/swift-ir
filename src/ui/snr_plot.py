@@ -31,6 +31,7 @@ class SnrPlot(pg.PlotWidget):
         self.getAxis("bottom").setHeight(14)
         self.getAxis("left").setStyle(tickFont=font)
         self.getAxis("left").setWidth(36)
+        self.getAxis("left").setStyle(tickTextOffset=2)
         style = {'color': '#f3f6fb;', 'font-size': '14px'}
         self.setLabel('left', 'SNR', **style)
         # self.setLabel('bottom', 'Layer #', **style)

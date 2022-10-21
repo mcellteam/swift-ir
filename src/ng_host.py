@@ -158,12 +158,14 @@ class NgHost(QRunnable):
         # This did the trick. Open tensorstore using filesystem path, not http.
         al_name = os.path.join(cfg.data.dest(), aligned_url)
         unal_name = os.path.join(cfg.data.dest(), src_url)
+        logger.info('al_name = %s' % al_name)
+        logger.info('unal_name = %s' % unal_name)
 
         if not is_aligned:
             x_offset = 0
             y_offset = 0
         else:
-            al_img_dim = ImageSize(cfg.data.path_al())
+            al_img_dim = ImageSize(cfg.data.path_aligned())
             x_offset = (al_img_dim[0] - img_dim[0]) / 2
             y_offset = (al_img_dim[1] - img_dim[1]) / 2
             # x_offset = 0
@@ -235,7 +237,7 @@ class NgHost(QRunnable):
                     s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
                 if is_aligned:
                     rect = BoundingRect(cfg.data.aligned_dict())
-                    s.position = [l, rect[2] / 2, rect[3] / 2]
+                    s.position = [l, rect[3] / 2, rect[2] / 2]
                     s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
                                               ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout),
                                               ng.LayerGroupViewer(layers=['aligned' + slug], layout=self.layout)])
@@ -261,13 +263,9 @@ class NgHost(QRunnable):
             # .000001 = 1e-6    = micrometer
             # .000000001 = 1e-9 = nanometer
 
-
-
-
         # state = copy.deepcopy(cfg.viewer.state)
         # state.position[0] = requested
         # cfg.viewer.set_state(state)
-
 
         # with cfg.viewer.state as s:
         #     # state = copy.deepcopy(cfg.viewer.state)
@@ -377,7 +375,7 @@ class NgHost(QRunnable):
                 return self.viewer_url
 
     def show_url(self):
-        cfg.main_window.hud.post('Viewer Url:\n\n%s' % str(self.viewer_url))
+        cfg.main_window.hud.post('Viewer Url:\n%s' % str(self.viewer_url))
 
     def show_state(self):
         cfg.main_window.hud.post('Neuroglancer State:\n\n%s' % ng.to_url(cfg.viewer.state))

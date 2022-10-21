@@ -25,7 +25,7 @@ the asymmetry between _span_, which specifies the half-range, and
 _skip_, which specifies the total number of central images to
 skipped. Typically, _skip_ will be odd.
 
-The purpose of *remod* is to then align the central image to its
+The purpose of *remod* is to then align_all the central image to its
 neighbors with *swim*.
 
 Options

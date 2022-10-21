@@ -10,6 +10,8 @@ try:     from src.helpers import get_img_filenames
 except:  from helpers import get_img_filenames
 try:     from src.swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
 except:  from swiftir import composeAffine, identityAffine, invertAffine, modelBounds2
+try:     import src.config as cfg
+except:  import config as cfg
 
 __all__ = [
     'ImageSize',
@@ -430,7 +432,8 @@ def SetStackCafm(scale_dict, null_biases=False):
     # If null_biases==True, Iteratively determine and null out bias in c_afm
     bias_mat = None
     if null_biases:
-        bias_funcs = BiasFuncs(al_stack, poly_order=scale_dict['poly_order'])
+        # bias_funcs = BiasFuncs(al_stack, poly_order=scale_dict['poly_order'])  # <-- #1020-
+        bias_funcs = BiasFuncs(al_stack, poly_order=int(scale_dict['poly_order']))
         c_afm_init = InitCafm(bias_funcs)
     else:
         c_afm_init = identityAffine()
@@ -482,20 +485,41 @@ array([[   0,    0],
        [   9,   80],
        [ 997,  580]], dtype=int32)
     '''
-    # model_bounds = None
-    # al_stack = cfg.data.aligned_dict()
-    model_bounds = [[0,0]] #Todo initialize this better
-    siz = ImageSize(al_stack[0]['images']['base']['filename'])
-    for item in al_stack:
-        c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
-        model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
-    border_width_x = max(0 - model_bounds[:, 0].min(), model_bounds[:, 0].max() - siz[0])
-    border_width_y = max(0 - model_bounds[:, 1].min(), model_bounds[:, 1].max() - siz[1])
-    rect = [-border_width_x, -border_width_y, siz[0] + 2 * border_width_x, siz[1] + 2 * border_width_y]
-    logger.info('Bounding Rectangle Dims: %s' % str(rect))
-    # AlignEM[2]: [-14, -14, 1052, 540]
-    # AlignEM[2]: [-14, -76, 1052, 664]
-    return rect
+    if cfg.SUPPORT_NONSQUARE:
+        # model_bounds = None
+        # al_stack = cfg.data.aligned_dict()
+        model_bounds = [[0,0]] #Todo initialize this better
+        siz = ImageSize(al_stack[0]['images']['base']['filename'])
+        for item in al_stack:
+            c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
+            model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
+        border_width_x = max(0 - model_bounds[:, 0].min(), model_bounds[:, 0].max() - siz[0])
+        border_width_y = max(0 - model_bounds[:, 1].min(), model_bounds[:, 1].max() - siz[1])
+        rect = [-border_width_x, -border_width_y, siz[0] + 2 * border_width_x, siz[1] + 2 * border_width_y]
+        logger.info('Bounding Rectangle Dims: %s' % str(rect))
+        # AlignEM[2]: [-14, -14, 1052, 540]
+        # AlignEM[2]: [-14, -76, 1052, 664]
+        return rect
+    else:
+        logger.debug('BoundingRect:')
+        model_bounds = None
+        siz = ImageSize(al_stack[0]['images']['base']['filename'])
+        for item in al_stack:
+            c_afm = np.array(item['align_to_ref_method']['method_results']['cumulative_afm'])
+            if type(model_bounds) == type(None):
+                model_bounds = modelBounds2(c_afm, siz)
+            else:
+                model_bounds = np.append(model_bounds, modelBounds2(c_afm, siz), axis=0)
+        border_width = max(0 - model_bounds[:, 0].min(),
+                           0 - model_bounds[:, 1].min(),
+                           model_bounds[:, 0].max() - siz[0],
+                           model_bounds[:, 1].max() - siz[0])
+        rect = [-border_width, -border_width, siz[0] + 2 * border_width, siz[0] + 2 * border_width]
+        logger.info('Returning: %s' % str(rect))
+        return rect
+
+
+
 
 
 '''

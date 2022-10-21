@@ -18,7 +18,7 @@ WIDTH, HEIGHT = 1250, 800
 DEFAULT_SWIM_WINDOW       = float(0.8125)
 DEFAULT_WHITENING         = float(-0.6800)
 DEFAULT_POLY_ORDER        = int(0)
-DEFAULT_NULL_BIAS         = bool(False)
+DEFAULT_NULL_BIAS         = bool(True)
 DEFAULT_BOUNDING_BOX      = bool(True)
 DEFAULT_INITIAL_ROTATION  = float(0.0000)
 DEFAULT_INITIAL_SCALE     = float(1.0000)
@@ -39,7 +39,8 @@ USE_TENSORSTORE = True
 NO_EMBED_NG = False
 TACC_MAX_CPUS = 128  # 128 hardware cores/node on Lonestar6
 
-MULTIVIEW=True
+SUPPORT_NONSQUARE = False
+MULTIVIEW = True
 
 USE_FILE_IO = 0
 CODE_MODE = 'c'

@@ -385,7 +385,7 @@ QRadioButton::indicator:!checked {
 	background-color: transparent;
 }
 QStatusBar {
-	background: #1c2321;
+	/*background: #1c2321;*/
 	color: #F3F6FB;
 	font-weight: bold;
 }

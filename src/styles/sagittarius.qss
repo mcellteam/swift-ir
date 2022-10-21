@@ -156,7 +156,7 @@ QLineEdit {
 }
 
 QProgressBar {
-	text-align: center;
+	text-align_all: center;
 	color: rgb(255, 255, 255);
 	border-width: 1px;
 	border-radius: 10px;

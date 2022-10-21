@@ -101,7 +101,7 @@ Important For Launch:
 [] magnifying glass
 [] use QSplitter for showing additional status info/project details
 [] view or hide skipped images
-[] align just one
+[] align_all just one
 
 Things project_data should probably include:
 * is project scaled (bool)

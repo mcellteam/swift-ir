@@ -129,6 +129,8 @@ class MainWindow(QMainWindow):
         # self.pbar.setGeometry(30, 40, 200, 25)
         # self.pbar.setStyleSheet("QLineEdit { background-color: yellow }")
         self.statusBar.addPermanentWidget(self.pbar)
+        # self.statusBar.addWidget(self.pbar)
+        # self.statusBar.adjustSize()
         # self.pbar.setMaximumWidth(120)
         # self.pbar.setMaximumHeight(22)
         self.pbar.hide()
@@ -162,21 +164,21 @@ class MainWindow(QMainWindow):
         self.set_splash_controls()
         # self.set_project_controls()
 
-        self.snr_plot_colors = ['#5c4ccc', '#f3e375', '#d6acd6', '#aaa672', '#152c74', '#404f74',
-                                '#5c4ccc', '#f3e375', '#d6acd6', '#aaa672', '#152c74', '#404f74']
+        self._snr_plot_colors = ['#f3e375', '#5c4ccc', '#d6acd6', '#aaa672', '#152c74', '#404f74',
+                                '#f3e375', '#5c4ccc', '#d6acd6', '#aaa672', '#152c74', '#404f74']
 
-        self._snr_plot_brushes = [pg.mkBrush(self.snr_plot_colors[0]),
-                                  pg.mkBrush(self.snr_plot_colors[1]),
-                                  pg.mkBrush(self.snr_plot_colors[2]),
-                                  pg.mkBrush(self.snr_plot_colors[3]),
-                                  pg.mkBrush(self.snr_plot_colors[4]),
-                                  pg.mkBrush(self.snr_plot_colors[5]),
-                                  pg.mkBrush(self.snr_plot_colors[6]),
-                                  pg.mkBrush(self.snr_plot_colors[7]),
-                                  pg.mkBrush(self.snr_plot_colors[8]),
-                                  pg.mkBrush(self.snr_plot_colors[9]),
-                                  pg.mkBrush(self.snr_plot_colors[10]),
-                                  pg.mkBrush(self.snr_plot_colors[11])
+        self._snr_plot_brushes = [pg.mkBrush(self._snr_plot_colors[0]),
+                                  pg.mkBrush(self._snr_plot_colors[1]),
+                                  pg.mkBrush(self._snr_plot_colors[2]),
+                                  pg.mkBrush(self._snr_plot_colors[3]),
+                                  pg.mkBrush(self._snr_plot_colors[4]),
+                                  pg.mkBrush(self._snr_plot_colors[5]),
+                                  pg.mkBrush(self._snr_plot_colors[6]),
+                                  pg.mkBrush(self._snr_plot_colors[7]),
+                                  pg.mkBrush(self._snr_plot_colors[8]),
+                                  pg.mkBrush(self._snr_plot_colors[9]),
+                                  pg.mkBrush(self._snr_plot_colors[10]),
+                                  pg.mkBrush(self._snr_plot_colors[11])
                                   ]
 
         # self.set_idle()
@@ -229,12 +231,6 @@ class MainWindow(QMainWindow):
         logger.info('Exporting Tifs Took %g Seconds' % dt)
 
 
-    @Slot()
-    def show_all_controls(self):
-        self.control_panel.show()
-        self.alignment_widget.show()
-        # self.post_alignment_widget.show()
-        self.align_all_button.show()
 
     @Slot()
     def project_view_callback(self):
@@ -384,6 +380,7 @@ class MainWindow(QMainWindow):
             pass
         self.hud('Generating Zarr Scales...')
         cfg.data.link_all_stacks()
+        self.clear_snr_plot()
         cfg.data.set_defaults()
         cfg.data['data']['current_scale'] = cfg.data.scales()[-1]
         # for scale in cfg.data.scales()[::-1]:
@@ -400,25 +397,27 @@ class MainWindow(QMainWindow):
         try:
             self.worker = BackgroundWorker(fn=generate_zarr_scales())
             self.threadpool.start(self.worker)
-            self.read_project_data_update_gui()
-            self.reload_scales_combobox()  # 0529 #0713+
-            self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
+
             self.update_scale_controls()
             logger.critical('Crating snr plot checkboxes...')
 
-            self.load_snr_plot_checkboxes()
+            self.reload_snr_plot_checkboxes()
 
             logger.info('Exiting main_window.autoscale')
         except:
             print_exception()
             logger.error('Zarr Export Failed')
+
         finally:
+            self.reload_scales_combobox()  # 0529 #0713+
+            self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
+            self.read_project_data_update_gui()
             self.set_idle()
 
 
 
     @Slot()
-    def align(self, use_scale=None) -> None:
+    def align_all(self, use_scale=None) -> None:
         logger.critical('>>>> Align <<<<')
         if self._working == True: self.hud('Another Process is Already Running', logging.WARNING); return
 
@@ -451,7 +450,7 @@ class MainWindow(QMainWindow):
         self.hud('Generating Aligned Images...')
         try:
             self.set_status('Generating Alignment...')
-            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1))
+            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1, preallocate=True))
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -460,12 +459,23 @@ class MainWindow(QMainWindow):
         finally:
             self.set_idle()
         # self.hud.done()
-        self.update_snr_shown_data()
         self.save_project_to_file() #0908+
         self.reload_ng()
         self.ng_worker.show_url()
+        self.reload_snr_plot_checkboxes()
+        self.update_snr_shown_data()
+        self.update_scale_controls()
         self._snr_checkboxes[cfg.data.scale()].setChecked(True)
         self._snr_checkboxes[cfg.data.scale()].show()
+
+        # if self.get_null_bias_value() == 'None':
+        #     cfg.DEFAULT_NULL_BIAS = False
+        # else:
+        #     cfg.DEFAULT_NULL_BIAS = True
+        #     try:  cfg.DEFAULT_POLY_ORDER = int(self.get_null_bias_value())
+        #     except:  logger.warning('Unable to set default poly order')
+        if self.toggle_bounding_rect.isChecked():  cfg.DEFAULT_BOUNDING_BOX = True
+        else:  cfg.DEFAULT_BOUNDING_BOX = False
 
 
 
@@ -508,7 +518,7 @@ class MainWindow(QMainWindow):
         self.hud('Generating Aligned Images...')
         try:
             cur_layer = cfg.data.layer()
-            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=cur_layer, num_layers=num_layers))
+            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=cur_layer, num_layers=num_layers, preallocate=False))
             self.threadpool.start(self.worker)
 
         except:
@@ -523,7 +533,63 @@ class MainWindow(QMainWindow):
         self.reload_ng()
         self.pbar.hide()
         self.ng_worker.show_url()
-    
+
+    @Slot()
+    def align_one(self, use_scale=None, num_layers=1) -> None:
+        logger.critical('>>>> Align Forward <<<<')
+        if self._working == True:
+            self.hud('Another Process is Already Running', logging.WARNING)
+            return
+        else:
+            pass
+
+        if use_scale == None: use_scale = cfg.data.scale()
+        # self.main_panel_bottom_widget.setCurrentIndex(0) #og
+        self.read_gui_update_project_data()
+        if not cfg.data.is_alignable():
+            warning_msg = "Scale %s must be aligned first!" % get_scale_val(cfg.data.next_coarsest_scale_key())
+            self.hud(warning_msg, logging.WARNING)
+            return
+        # self.img_panels['aligned'].imageViewer.clearImage()
+        img_dims = ImageSize(cfg.data.path_base())
+        alignment_option = cfg.data['data']['scales'][use_scale]['method_data']['alignment_option']
+        if alignment_option == 'init_affine':
+            self.hud.post("Initializing Affine Transforms For Scale Factor %d..." % (get_scale_val(use_scale)))
+        else:
+            self.hud.post("Refining Affine Transform For Scale Factor %d..." % (get_scale_val(use_scale)))
+        # self.al_status_checkbox.setChecked(False)
+        try:
+            status = 'Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1])
+            self.set_status(status)
+            self.worker = BackgroundWorker(
+                fn=compute_affines(use_scale=use_scale, start_layer=cfg.data.layer(), num_layers=1))
+            self.threadpool.start(self.worker)
+        except:
+            print_exception()
+            self.hud('An Exception Was Raised During Alignment.', logging.ERROR)
+        finally:
+            pass
+        self.update_gui_details()
+        # self.hud.done()
+        self.hud('Generating Aligned Images...')
+        try:
+            cur_layer = cfg.data.layer()
+            self.worker = BackgroundWorker(
+                fn=generate_aligned(use_scale=use_scale, start_layer=cur_layer, num_layers=1, preallocate=False))
+            self.threadpool.start(self.worker)
+        except:
+            print_exception()
+            self.hud('Alignment Succeeded But Image Generation Failed Unexpectedly.'
+                     ' Try Re-generating images.', logging.ERROR)
+        finally:
+            self.set_idle()
+
+        self.update_snr_shown_data()
+        self.save_project_to_file()  # 0908+
+        self.reload_ng()
+        self.pbar.hide()
+        self.ng_worker.show_url()
+
     @Slot()
     def regenerate(self, use_scale) -> None:
         logger.info('regenerate:')
@@ -537,7 +603,7 @@ class MainWindow(QMainWindow):
         self.hud('Generating Aligned Images...')
         try:
             self.set_status('Regenerating Alignment...')
-            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1))
+            self.worker = BackgroundWorker(fn=generate_aligned(use_scale=use_scale, start_layer=0, num_layers=-1, preallocate=True))
             self.threadpool.start(self.worker)
         except:
             print_exception()
@@ -561,6 +627,18 @@ class MainWindow(QMainWindow):
         self.save_project_to_file() #0908+
         # self.has_unsaved_changes() #0908-
         self.ng_worker.show_url()
+
+        # if self.get_null_bias_value() == 'None':
+        #     cfg.DEFAULT_NULL_BIAS = False
+        # else:
+        #     cfg.DEFAULT_NULL_BIAS = True
+        #     try:  cfg.DEFAULT_POLY_ORDER = int(self.get_null_bias_value())
+        #     except:  logger.warning('Unable to set default poly order')
+
+        if self.toggle_bounding_rect.isChecked():  cfg.DEFAULT_BOUNDING_BOX = True
+        else:  cfg.DEFAULT_BOUNDING_BOX = False
+
+
     
     def export(self):
         logger.info('Exporting to Zarr format...')
@@ -640,7 +718,7 @@ class MainWindow(QMainWindow):
     def update_scale_controls(self) -> None:
         '''This method does three things:
         (1) Update the visibility of next/prev scale buttons depending on current scale.
-        (2) Set the enabled/disabled state of the align-all button
+        (2) Set the enabled/disabled state of the align_all-all button
         (3) Sets the input validator on the jump-to lineedit widget'''
         logger.info('Updating Scale Controls...')
         # if self.project_progress >= 2:
@@ -660,12 +738,26 @@ class MainWindow(QMainWindow):
             else:
                 self.scale_up_button.setEnabled(True)
                 self.scale_down_button.setEnabled(True)
-        if cfg.data.is_alignable():
+        if is_cur_scale_aligned():
             self.align_all_button.setEnabled(True)
+            self.align_one_button.setEnabled(True)
+            self.align_forward_button.setEnabled(True)
             self.regenerate_button.setEnabled(True)
         else:
-            self.align_all_button.setEnabled(False)
+            self.align_one_button.setEnabled(False)
+            self.align_forward_button.setEnabled(False)
             self.regenerate_button.setEnabled(False)
+        if cfg.data.is_alignable():
+            self.align_all_button.setEnabled(True)
+        else:
+            self.align_all_button.setEnabled(False)
+
+
+        # if cfg.DEFAULT_NULL_BIAS == False:  self.null_bias_combobox.setCurrentText('None')
+        # else:  self.null_bias_combobox.setCurrentText(str(cfg.DEFAULT_POLY_ORDER))
+        #
+        # if cfg.DEFAULT_BOUNDING_BOX == True:  self.toggle_bounding_rect.setChecked(True)
+        # else:  self.toggle_bounding_rect.setChecked(False)
 
         self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
         self.update_gui_details() #Shoehorn
@@ -674,18 +766,27 @@ class MainWindow(QMainWindow):
     def update_gui_details(self) -> None:
         '''Piggy-backs its updating with 'update_scale_controls'
         Update alignment details in the Alignment control panel group box.'''
+        logger.critical('update_gui_details... called By %s' % inspect.stack()[1].function)
 
         if is_cur_scale_aligned():
             font = QFont()
             font.setBold(True)
             self.alignment_status_label.setFont(font)
             self.alignment_status_label.setText("Aligned")
-            self.ng_worker.set_msg('Affine: ' + str(cfg.data.afm()))
+            self.alignment_status_label.setStyleSheet('color: #41FF00;')
+            try:
+                self.ng_worker.set_msg('Affine: ' + str(cfg.data.afm())) # may not be necessary
+            except:
+                pass
             self.alignment_status_label.setStyleSheet('color: #41FF00;')
             self.alignment_snr_label.setText(cfg.data.snr())
         else:
             self.alignment_status_label.setText("Not Aligned")
-            self.ng_worker.set_msg('Not Aligned')
+            self.alignment_status_label.setStyleSheet('color: #FF0000;')
+            try:
+                self.ng_worker.set_msg('Not Aligned') # Necessary
+            except:
+                pass
             self.alignment_status_label.setStyleSheet('color: #FF0000;')
             self.alignment_snr_label.setText('')
         # scale_str = str(get_scale_val(cfg.data.scale()))
@@ -753,6 +854,11 @@ class MainWindow(QMainWindow):
         try:
             # self.clear_images()
             # self.scales_combobox_switch = 1
+            # if self.get_null_bias_value() not in ('None', ''):
+            #     cfg.DEFAULT_NULL_BIAS = False
+            # else:
+            #     cfg.DEFAULT_POLY_ORDER = int(self.get_null_bias_value())
+
             self.read_gui_update_project_data()
             cur_index = self.scales_combobox.currentIndex()
             requested_index = cur_index - 1
@@ -831,6 +937,7 @@ class MainWindow(QMainWindow):
     @Slot()
     def set_status(self, msg: str) -> None:
         self.statusBar.showMessage(msg)
+        # pass
     
     def minimal_stylesheet(self):
         self.setStyleSheet('')
@@ -987,11 +1094,14 @@ class MainWindow(QMainWindow):
             logger.warning('No Scale To Change To. Import Some Images', logging.WARNING)
             return
 
-        try: cfg.data.set_null_cafm(False) if self.get_null_bias_value() == 'None' else cfg.data.set_null_cafm(True)
-        except: logger.warning('Unable to Update Project Dictionary with Null Cafm State')
-
-        try: cfg.data.set_poly_order(self.get_null_bias_value())
-        except: logger.warning('Unable to Update Project Dictionary with Polynomial Order')
+        if self.get_null_bias_value() == 'None':
+            try:  cfg.data.set_null_cafm(False)
+            except:  logger.warning('Unable to Update Project Dictionary with Null CAFM')
+        else:
+            try: cfg.data.set_null_cafm(True)
+            except: logger.warning('Unable to Update Project Dictionary with Null CAFM')
+            try: cfg.data.set_poly_order(int(self.get_null_bias_value()))
+            except: logger.warning('Unable to Update Project Dictionary with Polynomial Order')
 
         try: cfg.data.set_bounding_rect(bool(self.get_bounding_state()))
         except: logger.warning('Unable to Update Project Dictionary with Bounding Rect State')
@@ -1001,7 +1111,6 @@ class MainWindow(QMainWindow):
 
         try: cfg.data.set_swim_window(self.get_swim_input())
         except: logger.warning('Unable to Update Project Dictionary with SWIM Window')
-
 
         # cfg.CNAME = self.cname_combobox.currentText()
         # cfg.CLEVEL = int(self.clevel_input.text())
@@ -1049,7 +1158,7 @@ class MainWindow(QMainWindow):
 
         # self.skip_label.setText('Use Image #%d?' % cfg.data.layer())
 
-        self.align_all_button.setText('Align\n%s' % cfg.data.scale_pretty())
+        self.align_all_button.setText('Align All\n%s' % cfg.data.scale_pretty())
 
         #0907-
         # alignment_option = cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option']
@@ -1089,6 +1198,7 @@ class MainWindow(QMainWindow):
     def set_idle(self) -> None:
         if self._working == False:
             self.statusBar.showMessage('Idle')
+        # pass
 
     @Slot()
     def set_busy(self) -> None:
@@ -1504,7 +1614,9 @@ class MainWindow(QMainWindow):
                 self.hud('New Project Canceled', logging.WARNING)
                 self.set_idle()
                 return
+        self.image_panel_stack_widget.setCurrentIndex(2)
         self.clear_snr_plot()
+        self.clear_snr_plot_checkboxes()
         self.reset_details_banner()
         self.hud('Creating A Project...')
         filename = self.new_project_save_as_dialog()
@@ -1517,7 +1629,7 @@ class MainWindow(QMainWindow):
             filename += ".proj"
         path, extension = os.path.splitext(filename)
         cfg.data = DataModel(name=path)
-        self.image_panel_stack_widget.setCurrentIndex(2)
+        # self.image_panel_stack_widget.setCurrentIndex(2)
         makedirs_exist_ok(cfg.data['data']['destination_path'], exist_ok=True)
         # self.hud.done()
         self.setWindowTitle("Project: " + os.path.split(cfg.data.dest())[-1])
@@ -1529,12 +1641,12 @@ class MainWindow(QMainWindow):
             logger.warning('import_images Was Canceled')
             return
         try:
-            recipe_maker = ConfigDialog(parent=self)
+            recipe_dialog = ConfigDialog(parent=self)
         except:
             logger.warning('Configuration Dialog Was Exited')
             self.set_idle()
             return
-        result = recipe_maker.exec_()  # result = 0 or 1
+        result = recipe_dialog.exec_()  # result = 0 or 1
         if not result:
             logger.warning('Configuration Dialog Did Not Return A Result')
             self.set_idle()
@@ -1597,13 +1709,11 @@ class MainWindow(QMainWindow):
         if dialog.exec_() == QDialog.Accepted:
             self.set_project_controls()
             self.set_normal_view()
-            self.show_all_controls()
             return dialog.selectedFiles()
         else:
             if dialog.exec_() == QDialog.Accepted:
                 self.set_project_controls()
                 self.set_normal_view()
-                self.show_all_controls()
                 return dialog.selectedFiles()
 
     
@@ -1710,7 +1820,7 @@ class MainWindow(QMainWindow):
         # self.main_panel_bottom_widget.setCurrentIndex(0)
         filename = self.open_project_dialog()
         if os.path.isdir(filename):
-            self.hud('Selected path is a directory', logging.WARNING)
+            self.hud('Selected path is a directory')
             return
         if filename == '':
             self.hud("No Project File (.proj) Selected", logging.WARNING)
@@ -1739,7 +1849,7 @@ class MainWindow(QMainWindow):
 
         self.reload_scales_combobox()
         self.update_scale_controls()
-        self.load_snr_plot_checkboxes()
+        self.reload_snr_plot_checkboxes()
         self.update_snr_shown_data()
         cfg.PROJECT_OPEN = True
 
@@ -1974,7 +2084,7 @@ class MainWindow(QMainWindow):
         # self.bottom_display_area_controls.setMaximumHeight(200)
 
         # self.resize(100,50)
-        self.setFixedSize(700, 150)
+        self.setFixedSize(680, 150)
         # self.bottom_widget.setMaximumHeight(200)
         # self.control_panel.setMaximumHeight(140)
         # self.control_panel.setMaximumHeight(140)
@@ -2395,8 +2505,8 @@ class MainWindow(QMainWindow):
 
     def configure_project(self):
         logger.info('Showing configure project dialog...')
-        recipe_maker = ConfigDialog(parent=self)
-        result = recipe_maker.exec_()
+        recipe_dialog = ConfigDialog(parent=self)
+        result = recipe_dialog.exec_()
         if not result:  logger.warning('Dialog Did Not Return A Result')
 
 
@@ -2513,7 +2623,7 @@ class MainWindow(QMainWindow):
         # self.multi_img_viewer.show()
         self.image_panel_stack_widget.show()
         self.main_widget.setCurrentIndex(0)
-        self.python_console.show()
+        # self.python_console.show()
         self.snr_plot.show()
         self.hud.show()
         # self.import_images_button.hide()
@@ -2539,13 +2649,13 @@ class MainWindow(QMainWindow):
 
     def expand_console_callback(self):
         if self.python_console.isVisible():
-            self.python_console.hide()
             self.expand_console_button.setIcon(qta.icon("fa.caret-down"))
-            self.setFixedSize(700, 150)
+            self.setFixedSize(680, 150)
+            self.python_console.hide()
         else:
-            self.python_console.show()
             self.expand_console_button.setIcon(qta.icon("fa.caret-up"))
-            self.setFixedSize(700, 400)
+            self.setFixedSize(680, 400)
+            self.python_console.show()
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.KeyPress:
@@ -2625,6 +2735,13 @@ class MainWindow(QMainWindow):
 
             ['&Tools',
              [
+                 ['Align',
+                   [
+                     ['Align All', 'Ctrl+A', self.align_all, None, False, True],
+                     ['Align Forward', 'None', self.align_forward, None, None, None],
+                     ['Align One', 'None', self.align_one, None, None, None],
+                   ]
+                 ],
                  ['Project Configuration', None, self.configure_project, None, None, None],
                  # ['Regenerate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
                  ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
@@ -2650,7 +2767,7 @@ class MainWindow(QMainWindow):
 
             ['&Run',
              [
-                 # ['&Align', 'Ctrl+A', self.align(lambda : cfg.data.scale()), None, None, None],
+                 # ['&Align', 'Ctrl+A', self.align_all(lambda : cfg.data.scale()), None, None, None],
                  ['&Regenerate', None, self.regenerate, None, None, None],
                  # ['Generate Scales', None, self.scale, None, None, None],
                  # ['Generate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
@@ -2733,7 +2850,7 @@ class MainWindow(QMainWindow):
         std_input_size = int(56)
         small_input_size = int(36)
 
-        std_combobox_size = QSize(58, 20)
+        std_combobox_size = QSize(52, 20)
 
         self.expand_console_button = QPushButton()
         # self.expand_console_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -3020,14 +3137,33 @@ class MainWindow(QMainWindow):
         # self.scale_layer_ctrls_outer_layout.addLayout(self.scale_layer_ctrls_layout)
 
 
-        tip = 'Align This Scale'
+        tip = 'Align + Generate All Layers For Current Scale'
         self.align_all_button = QPushButton('Align This\nScale')
         self.align_all_button.setStyleSheet("font-size: 11px;")
         self.align_all_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.align_all_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        self.align_all_button.clicked.connect(lambda: self.align(use_scale=cfg.data.scale()))
+        self.align_all_button.clicked.connect(lambda: self.align_all(use_scale=cfg.data.scale()))
         self.align_all_button.setFixedSize(normal_button_size)
         # self.align_all_button.setIcon(qta.icon("fa.play", color=ICON_COLOR))
+
+        tip = 'Align and Generate This Layer %s' % str(cfg.data.layer())
+        self.align_one_button = QPushButton('Align This\nLayer')
+        self.align_one_button.setStyleSheet("font-size: 11px;")
+        self.align_one_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.align_one_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.align_one_button.clicked.connect(lambda: self.align_one(use_scale=cfg.data.scale()))
+
+        self.align_one_button.setFixedSize(normal_button_size)
+        # self.align_one_button.setIcon(qta.icon("fa.play", color=ICON_COLOR))
+
+        tip = 'Align and Generate From Layer %s to End' % str(cfg.data.layer())
+        self.align_forward_button = QPushButton('Align\nForward')
+        self.align_forward_button.setStyleSheet("font-size: 11px;")
+        self.align_forward_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.align_forward_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
+        self.align_forward_button.clicked.connect(lambda: self.align_forward(use_scale=cfg.data.scale()))
+        self.align_forward_button.setFixedSize(normal_button_size)
+        # self.align_forward_button.setIcon(qta.icon("fa.play", color=ICON_COLOR))
 
 
         tip = 'Automatically generate aligned images.'
@@ -3066,6 +3202,7 @@ class MainWindow(QMainWindow):
         self.bounding_label.setStyleSheet("font-size: 11px;")
         self.bounding_label.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.toggle_bounding_rect = ToggleSwitch()
+        self.toggle_bounding_rect.setChecked(True)
         self.toggle_bounding_rect.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
         self.toggle_bounding_rect.toggled.connect(self.bounding_rect_changed_callback)
         self.toggle_bounding_hlayout = QHBoxLayout()
@@ -3117,6 +3254,8 @@ class MainWindow(QMainWindow):
         self.alignment_layout.addLayout(self.poly_order_hlayout)
         self.alignment_layout.addLayout(self.toggle_bounding_hlayout)
         self.alignment_layout.addWidget(self.regenerate_button)
+        self.alignment_layout.addWidget(self.align_one_button)
+        self.alignment_layout.addWidget(self.align_forward_button)
         self.alignment_layout.addWidget(self.align_all_button)
         self.alignment_layout.addStretch()
 
@@ -3441,8 +3580,8 @@ class MainWindow(QMainWindow):
         self.bottom_panel_splitter.setContentsMargins(0, 0, 0, 0)
         self.bottom_panel_splitter.setHandleWidth(8)
         self.bottom_panel_splitter.addWidget(self.hud)
-        self.bottom_panel_splitter.addWidget(self.python_console)
         self.bottom_panel_splitter.addWidget(self.snr_plot_and_control)
+        self.bottom_panel_splitter.addWidget(self.python_console)
         self.bottom_panel_splitter.setStretchFactor(0, 4)
         self.bottom_panel_splitter.setStretchFactor(1, 2)
         self.bottom_panel_splitter.setStretchFactor(2, 2)
@@ -3795,11 +3934,22 @@ class MainWindow(QMainWindow):
     #     else:
     #         self.python_console.setHidden(True)
 
-    def load_snr_plot_checkboxes(self):
+    def clear_snr_plot_checkboxes(self):
         for i in reversed(range(self.plot_controls_layout.count())):
             self.plot_controls_layout.removeItem(self.plot_controls_layout.itemAt(i))
-        # self.plot_controls_layout.addWidget(self.plot_widget_update_button, alignment=Qt.AlignLeft)
-        # self.plot_controls_layout.addWidget(self.plot_widget_clear_button, alignment=Qt.AlignLeft)
+
+    def reload_snr_plot_checkboxes(self):
+        '''
+        cfg.main_window.snr_points.data <- numpy.ndarray of snr data points
+        type(cfg.main_window.snr_points.data)
+        AlignEM [11]: numpy.ndarray
+        cfg.main_window.snr_points.data[0]
+        AlignEM [13]: (1., 14.73061687, -1., None, None, None, None, None,
+          PyQt5.QtCore.QRectF(0.0, 0.0, 8.0, 8.0),
+          PyQt5.QtCore.QRectF(57.99999999999997, 60.602795211005855, 8.0, 8.0), 4.)
+        '''
+        logger.info('reload_snr_plot_checkboxes:')
+        self.clear_snr_plot_checkboxes()
         self._snr_checkboxes = dict()
         for i,scale in enumerate(cfg.data.scales()[::-1]):
             self._snr_checkboxes.update({scale: QCheckBox()})
@@ -3807,36 +3957,48 @@ class MainWindow(QMainWindow):
             self.plot_controls_layout.addWidget(self._snr_checkboxes[scale], alignment=Qt.AlignLeft)
             self._snr_checkboxes[scale].setChecked(True)
             # self._snr_plot_brushes[cfg.data.scales().index(scale)]
-            self._snr_checkboxes[scale].setStyleSheet('border-color: %s' % self.snr_plot_colors[i])
+            self._snr_checkboxes[scale].setStyleSheet('border-color: %s' % self._snr_plot_colors[i])
             self._snr_checkboxes[scale].clicked.connect(self.update_snr_shown_data)
-            # self._snr_checkboxes[scale].setToolTip('On/Off SNR Plot Scale %d' % get_scale_val(scale))
+            self._snr_checkboxes[scale].setToolTip('On/Off SNR Plot Scale %d' % get_scale_val(scale))
             if is_arg_scale_aligned(scale=scale):
                 self._snr_checkboxes[scale].show()
             else:
                 self._snr_checkboxes[scale].hide()
-
         self.plot_controls_layout.addStretch()
 
     def update_snr_shown_data(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
+        logger.info('update_snr_shown_data:')
         self.snr_plot.clear()
         for i,scale in enumerate(self._snr_checkboxes):
+            logger.info('i = %d' % i)
             if self._snr_checkboxes[scale].isChecked():
+                logger.info('  %s is checked...' % scale)
                 if is_arg_scale_aligned(scale=scale):
-                    logger.info('showing snr plot for scale %s' % scale)
+                    logger.info('    showing snr plot for scale %s' % scale)
                     self.show_snr(scale=scale)
-        max_snr = cfg.data.max_snr_all_scales()
-        if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=len(cfg.data), yMin=0, yMax=max_snr + 1)
-        QApplication.processEvents()
+            cfg.data.scales().index(scale)
+            color = self._snr_plot_colors[cfg.data.scales().index(scale)]
+            self._snr_checkboxes[scale].setStyleSheet('border-color: %s' % color)
+
+        max_snr = cfg.data.snr_max_all_scales()
+        try:
+            if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_imgs(), yMin=0, yMax=max_snr + 1)
+        except:
+            logger.warning('update_snr_shown_data encountered a problem')
+        # cfg.main_window.snr_plot.autoRange()
 
 
     def show_snr(self, scale=None):
+        logger.info('show_snr (scale: %s):' % str(scale))
         if scale == None: scale = cfg.data.scale()
         snr_list = cfg.data.snr_list(scale=scale)
         pg.setConfigOptions(antialias=True)
 
         x_axis = [x for x in range(0, len(snr_list))]
         brush = self._snr_plot_brushes[cfg.data.scales().index(scale)]
+        # color = self._snr_plot_colors[cfg.data.scales().index(scale)]
+        # self._snr_checkboxes[scale].setStyleSheet('border-color: %s' % color)
         self.snr_points = pg.ScatterPlotItem(
             size=7,
             pen=pg.mkPen(None),
@@ -3912,6 +4074,7 @@ class MainWindow(QMainWindow):
     def clear_snr_plot(self):
         # self.snr_plot.getPlotItem().enableAutoRange()
         self.snr_plot.clear()
+        self.clear_snr_plot_checkboxes()
 
     def onSnrClick(self, plot, points):
         '''
@@ -3941,16 +4104,8 @@ class MainWindow(QMainWindow):
         self.python_console = PythonConsole(customBanner='Caution - anything executed here is injected into the main '
                                                          'event loop of AlignEM-SWiFT - '
                                                          'As they say, with great power...!\n\n')
-        self.python_console.push_vars({'align':self.align})
+        self.python_console.push_vars({'align_all':self.align_all})
 
-        # self.main_panel_bottom_widget.setCurrentIndex(1)
-        # self.python_console.execute_command('import IPython; IPython.get_ipython().execution_count = 0')
-        # self.python_console.execute_command('from src.config import *')
-        # self.python_console.execute_command('from src.helpers import *')
-        # self.python_console.execute_command('import src.config as cfg')
-        # self.python_console.execute_command('import os, sys, zarr, neuroglancer')
-        # self.python_console.execute_command('import src.config as cfg')
-        # self.python_console.clear()
 
     def shutdownJupyter(self):
         logger.info('Shutting Down Jupyter Kernel...')

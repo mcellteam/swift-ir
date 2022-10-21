@@ -16,6 +16,8 @@ try:
 except ImportError:
     from src.helpers import is_tacc, is_linux, is_mac
 
+
+
 logger = logging.getLogger(__name__)
 
 def run_command(cmd, arg_list=None, cmd_input=None):
@@ -117,6 +119,11 @@ if (__name__ == '__main__'):
         'RW %s\n' \
         'E' % (bb_x, bb_y, in_fn, a, c, e, b, d, f, out_fn)
     o = run_command(mir_c, arg_list=[], cmd_input=mir_script)
+
+    import os
+    path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
+    with open(path, 'a+') as f:
+        f.write(mir_script + '\n')
 
     # Python Implementation
     # try:
