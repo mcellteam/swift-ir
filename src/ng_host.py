@@ -14,7 +14,7 @@ import neuroglancer as ng
 # from neuroglancer import ScreenshotSaver
 from qtpy.QtCore import QRunnable, Slot
 from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, are_images_imported
-from src.image_funcs import ImageSize, compute_bounding_rect
+from src.image_funcs import ImageSize, ComputeBoundingRect
 from src.zarr_funcs import get_zarr_tensor_from_path
 import src.config as cfg
 
@@ -157,8 +157,6 @@ class NgHost(QRunnable):
         # This did the trick. Open tensorstore using filesystem path, not http.
         al_name = os.path.join(cfg.data.dest(), aligned_url)
         unal_name = os.path.join(cfg.data.dest(), src_url)
-        logger.info('al_name = %s' % al_name)
-        logger.info('unal_name = %s' % unal_name)
 
         if not is_aligned:
             x_offset = 0

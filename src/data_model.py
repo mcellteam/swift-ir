@@ -13,7 +13,7 @@ from copy import deepcopy
 import src.config as cfg
 from src.helpers import print_exception, natural_sort, are_images_imported, is_arg_scale_aligned, get_scale_key, \
     get_scale_val
-from src.image_funcs import compute_bounding_rect
+from src.image_funcs import ComputeBoundingRect
 
 __all__ = ['DataModel']
 
@@ -96,6 +96,9 @@ class DataModel:
             logger.warning('No Images Found')
             return 0
 
+    def sl(self):
+        return (self.scale(), self.layer())
+
 
     def to_json(self):
         return json.dumps(self._data)
@@ -133,6 +136,12 @@ class DataModel:
             return None
             # print_exception()
             # logger.warning('Unable To Return a CAFM')
+
+    def bias_data_path(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: s = self.layer()
+        return os.path.join(cfg.data.dest(), s, 'bias_data')
+
 
 
     def show_afm(self):
@@ -727,7 +736,7 @@ class DataModel:
 
     def link_all_stacks(self):
         '''Called by the functions 'skip_changed_callback' and 'import_images'  '''
-        logger.info('link_all_stacks (called by %s):' % inspect.stack()[1].function)
+        # logger.info('link_all_stacks (called by %s):' % inspect.stack()[1].function)
         self.ensure_proper_data_structure()  # 0712 #0802 #original
         for scale_key in self._data['data']['scales'].keys():
             skip_list = []

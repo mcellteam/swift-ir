@@ -89,8 +89,8 @@ class MainWindow(QMainWindow):
         elif qtpy.PYQT6:
             os.environ['QT_IMAGEIO_MAXALLOC'] = "1000000000000000" #PyQt6
 
-        self.context = QOpenGLContext(self)
-        self.context.setFormat(QSurfaceFormat())
+        # self.context = QOpenGLContext(self)
+        # self.context.setFormat(QSurfaceFormat())
 
         # self.project_progress = 0
         self.project_progress = None
@@ -102,13 +102,13 @@ class MainWindow(QMainWindow):
         logger.info("Initializing Qt WebEngine")
         self.view = QWebEngineView()
 
-        if qtpy.PYSIDE6:
-            logger.info('Setting Qt6-specific browser settings')
-            self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
-            self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
-            self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
-            self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
-            self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
+        # if qtpy.PYSIDE6:
+        #     logger.info('Setting Qt6-specific browser settings')
+        #     self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
+        #     self.view.settings().setAttribute(QWebEngineSettings.JavascriptEnabled, True)
+        #     self.view.settings().setAttribute(QWebEngineSettings.AllowRunningInsecureContent, True)
+        #     self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessFileUrls, True)
+        #     self.view.settings().setAttribute(QWebEngineSettings.LocalContentCanAccessRemoteUrls, True)
         # self.browser.setPage(CustomWebEnginePage(self)) # Open clicked links in new window
 
         self.view.settings().setAttribute(QWebEngineSettings.PluginsEnabled, True)
@@ -158,11 +158,10 @@ class MainWindow(QMainWindow):
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.apply_default_style()
 
-        # self.set_normal_view() #0925
         self.image_panel_stack_widget.setCurrentIndex(2)
 
-        self.set_splash_controls()
-        # self.set_project_controls()
+        self.set_mainwindow_splash_view()
+        # self.set_mainwindow_project_view()
 
         self._snr_plot_colors = ['#f3e375', '#5c4ccc', '#d6acd6', '#aaa672', '#152c74', '#404f74',
                                 '#f3e375', '#5c4ccc', '#d6acd6', '#aaa672', '#152c74', '#404f74']
@@ -278,7 +277,7 @@ class MainWindow(QMainWindow):
             logger.error('Zarr Export Failed')
 
         finally:
-            self.reload_snr_plot_checkboxes()
+            # self.reload_snr_plot_checkboxes()
             self.update_enabled_buttons()
             self.reload_scales_combobox()  # 0529 #0713+
             self.scales_combobox.setCurrentIndex(self.scales_combobox.count() - 1)
@@ -324,7 +323,7 @@ class MainWindow(QMainWindow):
         # self.hud.done()
         self.hud('Generating Aligned Images...')
         try:
-            # self.set_status('Generating Alignment...')
+            self.set_status('Generating Alignment...')
             # self.worker = BackgroundWorker(fn=generate_aligned(scale=scale, start_layer=0, num_layers=-1, preallocate=True))
             # self.threadpool.start(self.worker)
             generate_aligned(scale=use_scale, start_layer=0, num_layers=-1, preallocate=True)
@@ -334,11 +333,10 @@ class MainWindow(QMainWindow):
                      'Try Re-generating images.', logging.ERROR)
         finally:
             self.set_idle()
-        # self.hud.done()
-        self.update_snr_plot()
         self.save_project_to_file() #0908+
         self.recreate_ng()
         self.update_enabled_buttons()
+        self.reload_snr_plot_checkboxes()
         self._snr_checkboxes[cfg.data.scale()].setChecked(True)
         self._snr_checkboxes[cfg.data.scale()].show()
 
@@ -680,25 +678,15 @@ class MainWindow(QMainWindow):
         '''Callback function for the Next Scale button.'''
         logger.info('scale_up:')
         self.read_gui_update_project_data()
-
         if not self.scale_up_button.isEnabled(): return
-        if not are_images_imported(): return
         if self._working:
             self.hud('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
-            self.hud('Changing Scale Up')
-            cur_index = self.scales_combobox.currentIndex()
-            requested_index = cur_index - 1
-            self.scales_combobox.setCurrentIndex(requested_index)  # Changes The Scale
-            self.read_project_data_update_gui()
-            self.update_enabled_buttons()
+            self.scales_combobox.setCurrentIndex(self.scales_combobox.currentIndex() - 1)  # Changes The Scale
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
-
-            self.recreate_ng()
-
         except:
             print_exception()
 
@@ -714,12 +702,8 @@ class MainWindow(QMainWindow):
             self.hud('Changing scales during CPU-bound processes is not currently supported.', logging.WARNING)
             return
         try:
-            self.hud('Changing Scale Down')
-            cur_index = self.scales_combobox.currentIndex()
-            requested_index = cur_index + 1
-            self.scales_combobox.setCurrentIndex(requested_index)  # changes s
-            self.read_project_data_update_gui()
-            self.update_enabled_buttons()
+            self.scales_combobox.setCurrentIndex(self.scales_combobox.currentIndex() + 1)
+
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
@@ -736,16 +720,6 @@ class MainWindow(QMainWindow):
         scale = cfg.data['data']['scales'][cfg.data['data']['current_scale']]
         logger.info("cfg.data.skipped() = ", cfg.data.skipped())
         self.toggle_skip.setChecked(not cfg.data.skipped())
-        # if cfg.data.skipped():
-        #     self.browser_overlay_label.setStyleSheet('background-color: rgba(0, 0, 0, 0.5);')
-        #     self.browser_overlay_label.setText('SKIPPED')
-        # else:
-        #     self.browser_overlay_label.setStyleSheet('background-color: rgba(0, 0, 0, 0.0);')
-        #     self.browser_overlay_label.setText('')
-        # if cfg.data.skipped():
-        #     self.align_label_is_skipped.setText('Is Skipped? Yes')
-        # else:
-        #     self.align_label_is_skipped.setText('Is Skipped? No')
 
 
     @Slot()
@@ -758,32 +732,19 @@ class MainWindow(QMainWindow):
         logger.info('Changing stylesheet to minimal')
     
     def apply_default_style(self):
-        '''
-        #colors
+        '''#colors
         color: #f3f6fb;  /* snow white */
         color: #004060;  /* drafting blue */
         '''
-
-
         # self.hud('Applying Default Theme')
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
-        # self.setStyleSheet('')
         self.setStyleSheet(open(self.main_stylesheet).read())
         # self.python_console.set_color_linux()
         self.python_console.set_color_none()
         self.hud.set_theme_default()
-
         self.python_console.setStyleSheet('background-color: #004060; border-width: 0px; color: #f3f6fb;')
-        # drafting blue : #004060
         self.scales_combobox.setStyleSheet('background-color: #f3f6fb; color: #000000;')
-        # self.image_panel_stack_widget.setStyleSheet('background-color: #f3f6fb;') #bg-color= viewer border
-        # self.image_panel_stack_widget.setStyleSheet('background-color: #000000;')
-        # self.image_panel_stack_widget.setStyleSheet('background-color: #004060;')
         self.image_panel_landing_page.setStyleSheet('background-color: #004060;')
-        # self.details_banner.setStyleSheet("""color: #F3F6FB; font-size: 14px;""")
-        # self.details_banner.setStyleSheet("""color: #ffe135; font-size: 14px;""")
-        # self.details_banner.setStyleSheet("""color: #FFF9A6; font-size: 14px;""")
-        # self.details_banner.setStyleSheet("""background-color: #000000; color: #ffe135; font-size: 14px;""")
         self.details_banner.setStyleSheet("""background-color: #000000; color: #f3f6fb; font-size: 14px;""")
         # self.reset_groupbox_styles()
 
@@ -824,16 +785,6 @@ class MainWindow(QMainWindow):
     def reset_groupbox_styles(self):
         logger.info('reset_groupbox_styles:')
 
-        #1001
-        # self.alignment_stack.setStyleSheet("""QGroupBox {border: 1px dotted #171d22;}""")
-        # self.postalignment_stack.setStyleSheet("""QGroupBox {border: 1px dashed #171d22;}""")
-        # self.export_and_view_stack.setStyleSheet("""QGroupBox {border: 1px dashed #171d22;}""")
-
-        # self.project_functions_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.alignment_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.postalignment_stack.setStyleSheet(open(self.main_stylesheet).read())
-        # self.export_and_view_stack.setStyleSheet(open(self.main_stylesheet).read())
-
     # def auto_set_user_progress(self):
     #     '''Set user progress (0 to 3). This is only called when user opens a data.'''
     #     logger.debug('auto_set_user_progress:')
@@ -842,8 +793,8 @@ class MainWindow(QMainWindow):
     #     elif is_destination_set():  self.set_progress_stage_1()
     #     else:  self.set_progress_stage_0()
     
-    def set_user_progress(self, gb1: bool, gb2: bool, gb3: bool, gb4: bool) -> None:
-        logger.debug('set_user_progress:')
+    # def set_user_progress(self, gb1: bool, gb2: bool, gb3: bool, gb4: bool) -> None:
+    #     logger.debug('set_user_progress:')
         # gb1 = None # Unused due to removal of images and scaling groupbox
         # self.alignment_stack.setCurrentIndex((0, 1)[gb2])
         # self.alignment_stack.setStyleSheet(
@@ -866,38 +817,38 @@ class MainWindow(QMainWindow):
     #     elif up == 2:  self.set_progress_stage_3()
     #     elif up == 3:  self.set_progress_stage_0()
     
-    def set_progress_stage_0(self):
-        if self.get_user_progress() != 0: self.hud('Reverting user progress to Project')
-        self.set_user_progress(False, False, False, False)
-        self.project_progress = 0
-    
-    def set_progress_stage_1(self):
-        if self.get_user_progress() > 1:
-            self.hud('Reverting user progress to Data Selection & Scaling')
-        elif self.get_user_progress() < 1:
-            self.hud('Setting user progress to Data Selection & Scaling')
-        self.set_user_progress(True, False, False, False)
-        self.project_progress = 1
-    
-    def set_progress_stage_2(self):
-        if self.get_user_progress() > 2:
-            self.hud('Reverting user progress to Alignment')
-        elif self.get_user_progress() < 2:
-            self.hud('Setting user progress to Alignment')
-        self.set_user_progress(True, True, True, False)
-        self.project_progress = 2
-    
-    def set_progress_stage_3(self):
-        if self.get_user_progress() < 2: self.hud('Setting user progress to Export & View')
-        self.set_user_progress(True, True, True, True)
-        self.project_progress = 3
-    
-    def get_user_progress(self) -> int:
-        '''Get user progress (0 to 3)'''
-        if is_any_scale_aligned_and_generated(): return int(3)
-        elif do_scales_exist(): return int(2)
-        elif is_destination_set(): return int(1)
-        else: return int(0)
+    # def set_progress_stage_0(self):
+    #     if self.get_user_progress() != 0: self.hud('Reverting user progress to Project')
+    #     self.set_user_progress(False, False, False, False)
+    #     self.project_progress = 0
+    #
+    # def set_progress_stage_1(self):
+    #     if self.get_user_progress() > 1:
+    #         self.hud('Reverting user progress to Data Selection & Scaling')
+    #     elif self.get_user_progress() < 1:
+    #         self.hud('Setting user progress to Data Selection & Scaling')
+    #     self.set_user_progress(True, False, False, False)
+    #     self.project_progress = 1
+    #
+    # def set_progress_stage_2(self):
+    #     if self.get_user_progress() > 2:
+    #         self.hud('Reverting user progress to Alignment')
+    #     elif self.get_user_progress() < 2:
+    #         self.hud('Setting user progress to Alignment')
+    #     self.set_user_progress(True, True, True, False)
+    #     self.project_progress = 2
+    #
+    # def set_progress_stage_3(self):
+    #     if self.get_user_progress() < 2: self.hud('Setting user progress to Export & View')
+    #     self.set_user_progress(True, True, True, True)
+    #     self.project_progress = 3
+    #
+    # def get_user_progress(self) -> int:
+    #     '''Get user progress (0 to 3)'''
+    #     if is_any_scale_aligned_and_generated(): return int(3)
+    #     elif do_scales_exist(): return int(2)
+    #     elif is_destination_set(): return int(1)
+    #     else: return int(0)
     
     @Slot()
     def read_gui_update_project_data(self) -> None:
@@ -926,14 +877,19 @@ class MainWindow(QMainWindow):
         try: cfg.data.set_swim_window(self.get_swim_input())
         except: logger.warning('Unable to Update Project Dictionary with SWIM Window')
 
-        # cfg.CNAME = self.cname_combobox.currentText()
-        # cfg.CLEVEL = int(self.clevel_input.text())
-
     
     @Slot()
     def read_project_data_update_gui(self) -> None:
         '''Reads Project Data to Update MainWindow.'''
         # logger.info('read_project_data_update_gui (Caller: %s):' % inspect.stack()[1].function)
+
+        try:
+            self.scales_combobox_switch = 0
+            self.scales_combobox.setCurrentText(cfg.data.scale())
+            self.scales_combobox_switch = 1
+        except:
+            logger.warning('Scales Combobox Failed to Update')
+
 
         try:  self.toggle_skip.setChecked(not cfg.data.skipped())
         except:  logger.warning('Skip Toggle Widget Failed to Update')
@@ -950,7 +906,7 @@ class MainWindow(QMainWindow):
         try: self.toggle_bounding_rect.setChecked(cfg.data.has_bb())
         except: logger.warning('Bounding Rect Widget Failed to Update')
 
-        self.null_bias_combobox.setCurrentText(str(cfg.data.poly_order())) if cfg.data.null_cafm() == False else 'None'
+        self.null_bias_combobox.setCurrentText(str(cfg.data.poly_order())) if cfg.data.null_cafm() == True else 'None'
         self.prev_layer_button.setEnabled(False) if cfg.data.layer() == 0 else True
         self.next_layer_button.setEnabled(False) if cfg.data.layer() == cfg.data.n_imgs() - 1 else True
 
@@ -1083,7 +1039,7 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def reload_scales_combobox(self) -> None:
-        # logger.info('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
+        logger.critical('Reloading Scale Combobox (caller: %s)' % inspect.stack()[1].function)
         self.scales_combobox_switch = 0
         curr_scale = cfg.data.scale()
         image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
@@ -1096,7 +1052,6 @@ class MainWindow(QMainWindow):
     
     @Slot()
     def fn_scales_combobox(self) -> None:
-        logger.critical('fn_scales_combobox (caller %s)' % inspect.stack()[1].function)
         # logger.info('self.scales_combobox_switch = %s' % self.scales_combobox_switch)
         if self.scales_combobox_switch == 0:
             if inspect.stack()[1].function != 'reload_scales_combobox':
@@ -1105,6 +1060,7 @@ class MainWindow(QMainWindow):
         if self._working:
             logger.warning('fn_scales_combobox was called but _working is True -> ignoring the signal')
             return None
+        logger.info('fn_scales_combobox is changing scale (caller: )' % inspect.stack()[1].function)
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
         self.update_enabled_buttons()
@@ -1304,8 +1260,7 @@ class MainWindow(QMainWindow):
         logger.debug('Selected Files:\n%s' % str(dialog.selectedFiles()))
         logger.info('dialog.Accepted = %s' % dialog.Accepted)
         if dialog.exec_() == QDialog.Accepted:
-            self.set_project_controls()
-            # self.set_normal_view() #1021-
+            self.set_mainwindow_project_view()
             return dialog.selectedFiles()
         else:
             logger.warning('Import Images dialog did not return an image list')
@@ -1347,20 +1302,8 @@ class MainWindow(QMainWindow):
 
     def open_project_dialog(self) -> str:
         '''Dialog for opening a data. Returns 'filename'.'''
-        # caption = "Open Project (.proj)"
-        # filter = "Project (*.proj *.json)"
-        # # if qtpy.QT5:
-        # # options = QFileDialog.Options()
-        # # options |= QFileDialog.DontUseNativeDialog
-        # response = QFileDialog.getOpenFileName(
-        #     parent=self,
-        #     caption=caption,
-        #     filter=filter,
-        #     # options=options,
-        # )
         dialog = QFileDialog()
         dialog.setOption(QFileDialog.DontUseNativeDialog)
-        # dialog.setProxyModel(FileFilterProxyModel())
         dialog.setWindowTitle('Open Project (*.proj *.json)')
         dialog.setNameFilter("Text Files (*.proj *.json)")
         dialog.setViewMode(QFileDialog.Detail)
@@ -1377,13 +1320,6 @@ class MainWindow(QMainWindow):
 
     def show_warning(self, title, text):
         QMessageBox.warning(None, title, text)
-
-    def request_confirmation(self, title, text):
-        button = QMessageBox.question(None, title, text)
-        logger.debug("You clicked " + str(button))
-        logger.debug("Returning " + str(button == QMessageBox.StandardButton.Yes))
-        return (button == QMessageBox.StandardButton.Yes)
-
 
     def new_project(self):
         logger.critical('>>>> New Project >>>>')
@@ -1499,8 +1435,6 @@ class MainWindow(QMainWindow):
         # self.main_panel_bottom_widget.setCurrentIndex(0)
         filename = self.open_project_dialog()
 
-
-
         if filename == '':
             self.hud("No Project File (.proj) Selected (='')", logging.WARNING)
             return
@@ -1520,7 +1454,7 @@ class MainWindow(QMainWindow):
             return
 
         self.hud("Loading Project '%s'..." % filename)
-        self.set_project_controls()
+        self.set_mainwindow_project_view()
 
         cfg.data = copy.deepcopy(project)
         cfg.data.set_paths_absolute(head=filename) #Todo This may not work
@@ -1533,11 +1467,7 @@ class MainWindow(QMainWindow):
         self.reload_scales_combobox()
         self.update_enabled_buttons()
         self.update_snr_plot()
-
         self.refresh_json_widget()
-        cfg.PROJECT_OPEN = True
-
-
 
     def save_project(self):
         self.hud.post('Saving Project...')
@@ -1597,8 +1527,7 @@ class MainWindow(QMainWindow):
         # logger.info("Called by " + inspect.stack()[1].function)
         if saveas is not None:
             cfg.data.set_destination(saveas)
-        if self.get_user_progress() > 1: #0801+
-            self.read_gui_update_project_data()
+        self.read_gui_update_project_data()
         data_cp = copy.deepcopy(cfg.data.to_dict())
         data_cp['data']['destination_path'] = \
             make_relative(data_cp['data']['destination_path'], cfg.data['data']['destination_path'])
@@ -1725,7 +1654,7 @@ class MainWindow(QMainWindow):
         self.move(qr.topLeft())
 
 
-    def set_splash_controls(self):
+    def set_mainwindow_splash_view(self):
         logger.info('Setting Splash Controls...')
         self._splash = True
 
@@ -1752,19 +1681,19 @@ class MainWindow(QMainWindow):
         self.subtitle_label.show()
         self.expand_console_button.show()
 
-        self.control_panel.setStyleSheet('background-color: #f3f6fb;')
-        self.main_splitter.setAutoFillBackground(True)
+        # self.control_panel.setStyleSheet('background-color: #f3f6fb;')
+        # self.main_splitter.setAutoFillBackground(True)
 
         # self.bottom_display_area_widget.setMaximumHeight(200)
         # self.bottom_display_area_controls.setMaximumHeight(200)
 
         # self.resize(100,50)
-        self.setFixedSize(680, 150)
+        self.setFixedSize(self.main_window_spash_size)
         # self.bottom_widget.setMaximumHeight(200)
         # self.control_panel.setMaximumHeight(140)
         # self.control_panel.setMaximumHeight(140)
 
-        button_w, button_h = 100, 40
+        button_w, button_h = 100, 36
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.new_project_button.setMinimumSize(button_w, button_h)
         self.open_project_button.setMinimumSize(button_w, button_h)
@@ -1801,7 +1730,7 @@ class MainWindow(QMainWindow):
         self.moveCenter()
 
 
-    def set_project_controls(self):
+    def set_mainwindow_project_view(self):
         logger.info('Setting Project Controls...')
 
         self._splash = False
@@ -1827,9 +1756,11 @@ class MainWindow(QMainWindow):
         self.dual_viewer_w_banner.show()
         self.alignment_widget.show()
         self.menu.show()
+        self.control_panel.show() # just to make sure
+        self.image_panel_stack_widget.show() # just to make sure
+        self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color='#f3f6fb'))
 
-        self.bottom_widget.setMaximumHeight(1200)
-        self.control_panel.setMinimumHeight(100)
+        # self.bottom_widget.setMaximumHeight(1200) #1024-
 
         self.new_project_button.setMinimumSize(1, 1)
         self.open_project_button.setMinimumSize(1, 1)
@@ -2069,7 +2000,6 @@ class MainWindow(QMainWindow):
         # cfg.data.set_layer(new_cur_layer)
         # self.jump_to(new_cur_layer)
         # self.read_project_data_update_gui() #0908+
-        # self.set_normal_view() #1021-
 
     def exit_docs(self):
         self.main_widget.setCurrentIndex(0)
@@ -2271,23 +2201,14 @@ class MainWindow(QMainWindow):
             QShortcut(event, self, action)
 
 
-    def set_normal_view(self):
-        '''#Todo deprecate this'''
-
-        # self.image_panel_widget.show()
-        self.control_panel.show()
-        # self.multi_img_viewer.show()
-        self.image_panel_stack_widget.show()
-        self.main_widget.setCurrentIndex(0)
-        # self.python_console.show()
-        self.snr_plot_and_control.show()
-        self.hud.show()
-        # self.import_images_button.hide()
-
-        # self.main_panel_bottom_widget.setCurrentIndex(0)
-
     def expand_bottom_panel_callback(self):
-        if not self.image_panel_stack_widget.isHidden():
+        if self.image_panel_stack_widget.isHidden():
+            # self.multi_img_viewer.show()
+            self.dual_viewer_w_banner.show()
+            self.control_panel.show()
+            self.image_panel_stack_widget.show()
+            self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color='#f3f6fb'))
+        else:
             # self.multi_img_viewer.hide()
             self.dual_viewer_w_banner.hide()
             self.control_panel.hide()
@@ -2296,22 +2217,18 @@ class MainWindow(QMainWindow):
             self.bottom_widget.adjustSize()
             self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-down", color='#f3f6fb'))
 
-        elif self.image_panel_stack_widget.isHidden():
-            # self.multi_img_viewer.show()
-            self.dual_viewer_w_banner.show()
-            self.control_panel.show()
-            self.image_panel_stack_widget.show()
-            self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color='#f3f6fb'))
 
     def expand_console_callback(self):
         if self.python_console.isVisible():
-            self.expand_console_button.setIcon(qta.icon("fa.caret-down"))
-            self.setFixedSize(680, 150)
             self.python_console.hide()
+            self.expand_console_button.setIcon(qta.icon("fa.caret-down"))
+            self.setFixedSize(self.main_window_spash_size)
+
         else:
-            self.expand_console_button.setIcon(qta.icon("fa.caret-up"))
-            self.setFixedSize(680, 400)
             self.python_console.show()
+            self.expand_console_button.setIcon(qta.icon("fa.caret-up"))
+            self.setFixedSize(QSize(680,400))
+
 
     def eventFilter(self, source, event):
         if event.type() == QEvent.KeyPress:
@@ -2350,15 +2267,12 @@ class MainWindow(QMainWindow):
                  ['&Open Project', 'Ctrl+O', self.open_project, None, None, None],
                  ['&Save Project', 'Ctrl+S', self.save_project, None, None, None],
                  # ['Rename Project', None, self.rename_project, None, None, None],
-                 ['Restart Python Kernel', None, self.restart_python_kernel, None, None, None],
                  ['Exit', 'Ctrl+Q', self.exit_app, None, None, None]
              ]
              ],
             ['&View',
              [
-                 # ['Classic Viewer', 'None', self.use_classic_viewer, None, None, None],
-                 # ['Neuroglancer Viewer', 'None', self.init_neuroglancer_client, None, None, None],
-                 ['Normal View', 'None', self.set_normal_view, None, None, None],
+                 ['Normalize View', 'None', self.set_mainwindow_project_view, None, None, None],
                  ['Reload Neuroglancer', 'None', self.recreate_ng, None, None, None],
                  ['Init Neuroglancer Client', 'None', self.init_neuroglancer_client, None, None, None],
                  ['Neuroglancer Layout',
@@ -2373,7 +2287,6 @@ class MainWindow(QMainWindow):
                       ['4panel', None, self.ng_set_layout_4panel, None, None, None],
                   ]
                   ],
-                 # ['Normalize View', 'None', self.set_normal_view, None, None, None],
                  ['Project JSON', 'Ctrl+J', self.toggle_json_widget_visibility, None, None, None],
                  ['Python Console', None, self.show_hide_python, None, None, None],
                  # ['SNR Plot', None, self.update_snr_plot, None, None, None],
@@ -2400,8 +2313,8 @@ class MainWindow(QMainWindow):
                  ],
                  ['Project Configuration', None, self.configure_project, None, None, None],
                  # ['Regenerate Zarr Scales', None, generate_zarr_scales_da, None, None, None],
-                 ['Go To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
-                 ['Go To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
+                 ['Jump To Next Worst SNR', None, self.jump_to_worst_snr, None, None, None],
+                 ['Jump To Next Best SNR', None, self.jump_to_best_snr, None, None, None],
                  ['Toggle Autogenerate Callback', None, self.toggle_auto_generate_callback, True, None, None],
                  # ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
                  ['Show &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
@@ -2438,7 +2351,8 @@ class MainWindow(QMainWindow):
              [
                  ['Test WebGL', None, self.webgl2_test, None, None, None],
                  ['Check GPU Configuration', None, self.gpu_config, None, None, None],
-                 ['Show SNR List', None, self.show_snr_list, None, None, None],
+                 ['Restart Python Kernel', None, self.restart_python_kernel, None, None, None],
+                 # ['Show SNR List', None, self.show_snr_list, None, None, None],
                  ['Update SNR Plot', None, self.update_snr_plot, None, None, None],
                  ['Neuroglancer',
                    [
@@ -2479,6 +2393,8 @@ class MainWindow(QMainWindow):
 
     def initUI(self):
         '''Initialize Main UI'''
+
+        self.main_window_spash_size = QSize(680,140)
 
         gb_margin = (8, 14, 8, 6)
         # cpanel_height = 115
@@ -3050,6 +2966,7 @@ class MainWindow(QMainWindow):
         self.control_panel_outter_layout.addLayout(self.control_panel_inner_layout)
 
         self.control_panel = QWidget()
+        self.control_panel.setFixedHeight(110)
         self.control_panel.setContentsMargins(4, 0, 4, 12)
 
         # self.control_panel.setFixedHeight(cpanel_height + 10)
@@ -3611,6 +3528,7 @@ class MainWindow(QMainWindow):
           PyQt5.QtCore.QRectF(0.0, 0.0, 8.0, 8.0),
           PyQt5.QtCore.QRectF(57.99999999999997, 60.602795211005855, 8.0, 8.0), 4.)
         '''
+
         self.clear_snr_plot_checkboxes()
         self._snr_checkboxes = dict()
         for i,scale in enumerate(cfg.data.scales()[::-1]):
@@ -3627,11 +3545,12 @@ class MainWindow(QMainWindow):
             else:
                 self._snr_checkboxes[scale].hide()
         self.plot_controls_layout.addStretch()
+        self.update_snr_plot()
 
     def update_snr_plot(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
         # logger.info('Updating SNR Plot...')
-        self.reload_snr_plot_checkboxes()
+        # self.reload_snr_plot_checkboxes()
         self.snr_plot.clear()
         for i,scale in enumerate(self._snr_checkboxes):
             if self._snr_checkboxes[scale].isChecked():
@@ -3669,11 +3588,6 @@ class MainWindow(QMainWindow):
             # pxMode=False #allow spots to transform with the view
         )
         ##41FF00 <- good green color
-
-        # if self.main_stylesheet == 'src/styles/daylight.qss':
-        #     self.snr_plot.setBackground(None)
-        # else: self.snr_plot.setBackground('#000000')
-
         self.snr_points.sigClicked.connect(self.onSnrClick)
         self.snr_points.addPoints(x_axis[1:], snr_list[1:])
 
