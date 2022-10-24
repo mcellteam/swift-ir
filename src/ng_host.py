@@ -6,6 +6,7 @@ can connect to the web server"""
 
 import os
 import copy
+import inspect
 import http.server
 import logging
 import argparse
@@ -77,15 +78,14 @@ class NgHost(QRunnable):
 
         sa = self.http_server.socket.getsockname()
         # self.http_server.allow_reuse_address = True
-        logger.info("Serving Data at http  : //%s:%d" % (sa[0], sa[1]))
+        logger.info("Serving Data At       : //%s:%d" % (sa[0], sa[1]))
         # self.http_address = "zarr://http://%s:%s" % (str(sa[0]), str(sa[1]))
-        logger.info("Neuroglancer Address  : ")
-        logger.info("Protocol Version      : %s" % str(self.http_server.protocol_version))
-        logger.info("Server Name           : %s" % str(self.http_server.server_name))
-        logger.info("Server Port           : %s" % str(self.http_server.server_port))
-        logger.info("Server Type           : %s" % str(self.http_server.socket_type))
-        logger.info("Server Address        : %s" % str(self.http_server.server_address))
-        logger.info("Server Socket         : %s" % str(self.http_server.socket))
+        # logger.info("Protocol Version      : %s" % str(self.http_server.protocol_version))
+        # logger.info("Server Name           : %s" % str(self.http_server.server_name))
+        # logger.info("Server Port           : %s" % str(self.http_server.server_port))
+        # logger.info("Server Type           : %s" % str(self.http_server.socket_type))
+        # logger.info("Server Address        : %s" % str(self.http_server.server_address))
+        # logger.info("Server Socket         : %s" % str(self.http_server.socket))
 
 
         try:
@@ -119,7 +119,7 @@ class NgHost(QRunnable):
 
 
     def create_viewer(self):
-        logger.info('Creating Neuroglancer Viewer...')
+        logger.info('Creating Neuroglancer Viewer (called by %s)...' % inspect.stack()[1].function)
         '''
         Note tensorstore appears not to support multiscale metadata yet:
         However, we do have to deal with issues of rounding. I have been looking into supporting this in tensorstore, 
@@ -138,7 +138,6 @@ class NgHost(QRunnable):
         #Todo set different coordinates for the two different datasets. For now use larger dim.
         img_dim = ImageSize(cfg.data.path_base())
 
-        logger.info('Creating the Neuroglancer Viewer...')
         addr = "zarr://http://localhost:" + str(self.port)
         # addr = "http://localhost:" + str(self.port) # probably want this addr
         # for TensorStore. 'zarr://' protocol only known to Neuroglancer
@@ -175,9 +174,8 @@ class NgHost(QRunnable):
 
         with cfg.viewer.txn() as s:
 
-            '''NOTE: call .info on layer for tensor details'''
+            '''NOTE: call .info on l for tensor details'''
 
-            logger.info('Creating Local Volumes...')
             if cfg.USE_TENSORSTORE:
                 ''' USE_TENSORSTORE is ON, so point Neuroglancer to TensorStore Object. '''
 
@@ -229,14 +227,13 @@ class NgHost(QRunnable):
                     else:
                         layer = 'zarr://http://localhost:' + str(self.port) + '/' + src_url
 
-            logger.info('Setting ng.LayerGroupViewer Layouts...')
             if cfg.MULTIVIEW:
                 s.layers['ref' + slug] = ng.ImageLayer(source=ref_layer)
                 s.layers['base' + slug] = ng.ImageLayer(source=base_layer)
                 if is_aligned:
                     s.layers['aligned' + slug] = ng.ImageLayer(source=al_layer)
                 if is_aligned:
-                    rect = compute_bounding_rect(cfg.data.aligned_dict())
+                    rect = cfg.data.bounding_rect()
                     s.position = [l, rect[3] / 2, rect[2] / 2]
                     s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
                                               ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout),
@@ -247,8 +244,8 @@ class NgHost(QRunnable):
                     s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['ref' + slug], layout=self.layout),
                                               ng.LayerGroupViewer(layers=['base' + slug], layout=self.layout)])
             else:
-                s.layers['layer'] = ng.ImageLayer(source=layer)
-                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['layer'], layout=self.layout)])
+                s.layers['l'] = ng.ImageLayer(source=layer)
+                s.layout = ng.row_layout([ng.LayerGroupViewer(layers=['l'], layout=self.layout)])
 
             if cfg.main_window.main_stylesheet == os.path.abspath('src/styles/daylight.qss'):
                 s.cross_section_background_color = "#ffffff"
@@ -276,9 +273,9 @@ class NgHost(QRunnable):
         #     # cfg.viewer.set_state(state)
 
 
-        # If changes are made to a neuroglancer layer through custom actions, the
-        # layer needs to be re-rendered for the changes to be visible in the
-        # viewer. To re-render a layer simply call the invalidate() function on a
+        # If changes are made to a neuroglancer l through custom actions, the
+        # l needs to be re-rendered for the changes to be visible in the
+        # viewer. To re-render a l simply call the invalidate() function on a
         # LocalVolume object
         #
         # # assume a viewer with is already created
@@ -290,7 +287,7 @@ class NgHost(QRunnable):
         #
         # # do something ...
         #
-        # # re-renders the 'mesh' layer in viewer
+        # # re-renders the 'mesh' l in viewer
         # mesh_volume.invalidate()
         # https://connectomics.readthedocs.io/en/latest/external/neuroglancer.html
 
@@ -305,8 +302,6 @@ class NgHost(QRunnable):
         #     s.crossSectionScale = 2
         #     # cfg.viewer.set_state(state)
 
-
-        logger.info('Configuring State Attributes...')
         # logger.info('Loading Neuroglancer Callbacks...')
         # # cfg.viewer.actions.add('unchunk_', unchunk)
         # # cfg.viewer.actions.add('blend_', blend)
@@ -325,12 +320,12 @@ class NgHost(QRunnable):
             s.position[0] += 1
 
         # cfg.viewer.actions.add('screenshot', self.take_screenshot)
-        cfg.viewer.actions.add('layer-right', layer_right)
-        cfg.viewer.actions.add('layer-left', layer_left)
+        cfg.viewer.actions.add('l-right', layer_right)
+        cfg.viewer.actions.add('l-left', layer_left)
         with cfg.viewer.config_state.txn() as s:
             # s.input_event_bindings.viewer['keyb'] = 'screenshot'
-            s.input_event_bindings.viewer['keyl'] = 'layer-left'
-            s.input_event_bindings.viewer['keyr'] = 'layer-right'
+            s.input_event_bindings.viewer['keyl'] = 'l-left'
+            s.input_event_bindings.viewer['keyr'] = 'l-right'
             # s.show_ui_controls = True
             s.show_ui_controls = True
             # s.show_panel_borders = True
@@ -344,7 +339,7 @@ class NgHost(QRunnable):
 
         if cfg.viewer is not None:
             logger.info('Viewer URL: %s' % cfg.viewer.get_viewer_url())
-            logger.info('Viewer Configuration: %s' % str(cfg.viewer.config_state))
+            # logger.info('Viewer Configuration: %s' % str(cfg.viewer.config_state))
 
     def set_msg(self, msg:str) -> None:
         with cfg.viewer.config_state.txn() as s:

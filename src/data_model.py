@@ -117,27 +117,75 @@ class DataModel:
         '''Returns the Current Scale as a String.'''
         return self._data['data']['current_scale']
 
-    def afm(self, scale=None) -> list:
-        if scale == None: scale = self.scale()
-        afm = [self._data['data']['scales'][scale]['alignment_stack'][self.layer()][
-            'align_to_ref_method']['method_results']['affine_matrix'][0],
-               self._data['data']['scales'][scale]['alignment_stack'][self.layer()][
-            'align_to_ref_method']['method_results']['affine_matrix'][1]]
-        return afm
+    def afm(self, s=None, l=None) -> list:
+        if s == None: s = self.scale()
+        if l == None: s = self.layer()
+        return self._data['data']['scales'][s]['alignment_stack'][l][
+            'align_to_ref_method']['method_results']['affine_matrix']
 
-    def res_x(self, scale=None) -> int:
-        if scale == None: scale=self.scale()
-        return int(self._data['data']['scales'][scale]['resolution_x'])
-
-    def res_y(self, scale=None) -> int:
-        if scale == None: scale = self.scale()
-        return int(self._data['data']['scales'][scale]['resolution_y'])
-
-    def res_z(self, scale=None) -> int:
-        if scale == None: scale = self.scale()
-        return int(self._data['data']['scales'][scale]['resolution_z'])
+    def cafm(self, s=None, l=None) -> list:
+        if s == None: s = self.scale()
+        if l == None: s = self.layer()
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['cumulative_afm']
+        except:
+            return None
+            # print_exception()
+            # logger.warning('Unable To Return a CAFM')
 
 
+    def show_afm(self):
+        cfg.main_window.hud('\nafm = %s\n' % ' '.join(map(str, self.afm())))
+
+    def show_cafm(self):
+        cfg.main_window.hud('\ncafm = %s\n' % ' '.join(map(str, self.cafm())))
+
+    def res_x(self, s=None) -> int:
+        if s == None: s = self.scale()
+        if 'resolution_x' in self._data['data']['scales'][s]:
+            return int(self._data['data']['scales'][s]['resolution_x'])
+        else:
+            logger.warning('resolution_x not in dictionary')
+            return int(2)
+
+    def res_y(self, s=None) -> int:
+        if s == None: s = self.scale()
+        if 'resolution_y' in self._data['data']['scales'][s]:
+            return int(self._data['data']['scales'][s]['resolution_y'])
+        else:
+            logger.warning('resolution_y not in dictionary')
+            return int(2)
+
+    def res_z(self, s=None) -> int:
+        if s == None: s = self.scale()
+        if 'resolution_z' in self._data['data']['scales'][s]:
+            return int(self._data['data']['scales'][s]['resolution_z'])
+        else:
+            logger.warning('resolution_z not in dictionary')
+            return int(50)
+
+    def cname(self):
+        if 'cname' in self._data['data']:
+            return self._data['data']['cname']
+        else:
+            logger.warning('cname not in dictionary')
+            return cfg.CNAME
+
+    def clevel(self):
+        if 'clevel' in self._data['data']:
+            return int(self._data['data']['clevel'])
+        else:
+            logger.warning('clevel not in dictionary')
+            return int(cfg.CLEVEL)
+
+    def chunkshape(self):
+        if 'chunkshape' in self._data['data']:
+            chunks = self._data['data']['chunkshape']
+            return (int(chunks[0]), int(chunks[1]), int(chunks[2]))
+        else:
+            logger.warning('chunkshape not in dictionary')
+            return (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
 
     def scale_pretty(self) -> str:
         return 'Scale %d' % self.scale_val()
@@ -152,7 +200,7 @@ class DataModel:
         return [int(v) for v in sorted([get_scale_val(s) for s in self._data['data']['scales'].keys()])]
 
     def n_scales(self) -> int:
-        '''Returns the number of scales in scale pyramid'''
+        '''Returns the number of scales in s pyramid'''
         try:
             n_scales = len(self._data['data']['scales'].keys())
             return n_scales
@@ -179,7 +227,7 @@ class DataModel:
         return bool(self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()]['skipped'])
 
     def skip_list(self) -> list[int]:
-        '''Returns the list of skipped images at the current scale'''
+        '''Returns the list of skipped images at the current s'''
         l = []
         try:
             scale = self.scale()
@@ -206,9 +254,9 @@ class DataModel:
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
         return bool(self._data['data']['scales'][self.scale()]['use_bounding_rect'])
 
-    def bounding_rect(self, scale=None):
-        if scale == None: scale = self.scale()
-        return self._data['data']['scales'][scale]['bounding_rect']
+    def bounding_rect(self, s=None):
+        if s == None: s = self.scale()
+        return self._data['data']['scales'][s]['bounding_rect']
 
 
     def poly_order(self) -> int:
@@ -223,28 +271,32 @@ class DataModel:
         '''Gets the Alignment Option for the Current Scale.'''
         return cfg.data['data']['scales'][self.scale()]['method_data']['alignment_option']
 
-    def path_ref(self) -> str:
-        l, s = self.layer(), self.scale()
+    def path_ref(self, s=None, l=None) -> str:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['ref']['filename']
 
-    def path_base(self) -> str:
-        l, s = self.layer(), self.scale()
+    def path_base(self, s=None, l=None) -> str:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
         return self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename']
 
-    def name_base(self) -> str:
-        l, s = self.layer(), self.scale()
+    def name_base(self, s=None, l=None) -> str:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
         return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+
+    def path_aligned(self, s=None, l=None) -> str:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        return os.path.join(self.dest(), s, 'img_aligned', self.name_base(l=l))
+
 
     # def path_al(self) -> str:
     #     logger.info('path_al:')
-    #     l, s = self.layer(), self.scale()
+    #     l, s = self.l(), self.s()
     #     logger.info('Returning %s' % self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename'])
     #     return self._data['data']['scales'][s]['alignment_stack'][l]['images']['aligned']['filename']
-
-    def path_aligned(self, scale=None, layer=None) -> str:
-        if scale == None: scale = self.scale()
-        if layer == None: layer = self.layer()
-        return os.path.join(self.dest(), scale, 'img_aligned', self.name_base())
 
     def zarr_scale_paths(self):
         l = []
@@ -282,13 +334,20 @@ class DataModel:
         self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()][
             'align_to_ref_method']['method_data']['win_scale_factor'] = f
 
-    def set_use_bounding_rect(self, b:bool) -> None:
+    def set_use_bounding_rect(self, b:bool, s=None) -> None:
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.scale()]['use_bounding_rect'] = bool(b)
+        if s == None:
+            for s in self.scales():
+                self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
+        else:
+            self._data['data']['scales'][s]['use_bounding_rect'] = bool(b)
 
-    def set_bounding_rect(self, bounding_rect:list, scale=None) -> None:
-        if scale == None: scale = self.scale()
-        self._data['data']['scales'][scale]['bounding_rect'] = list(bounding_rect)
+
+
+
+    def set_bounding_rect(self, bounding_rect:list, s=None) -> None:
+        if s == None: s = self.scale()
+        self._data['data']['scales'][s]['bounding_rect'] = bounding_rect
 
 
     def set_poly_order(self, x:int) -> None:
@@ -302,6 +361,28 @@ class DataModel:
     # def make_absolute(file_path, proj_path):
     #     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
     #     return abs_path
+
+    def set_afm(self, afm:list, s=None, l=None) -> None:
+        '''set afm as list of lists of floats'''
+        if s == None: s = self.scale()
+        if l == None: s = self.layer()
+        try:
+            self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['cumulative_afm'] = afm
+        except:
+            print_exception()
+
+
+    def set_cafm(self, cafm:list, s=None, l=None) -> None:
+        '''set cafm as list of lists of floats'''
+        if s == None: s = self.scale()
+        if l == None: s = self.layer()
+        try:
+            self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['cumulative_afm'] = cafm
+        except:
+            print_exception()
+
 
     def set_paths_absolute(self, head):
         logger.info('Configuring Absolute File Paths...')
@@ -417,7 +498,7 @@ class DataModel:
         return l
 
     def coarsest_scale_key(self) -> str:
-        '''Return the coarsest scale key. '''
+        '''Return the coarsest s key. '''
         k = natural_sort(list(self._data['data']['scales'].keys()))[-1]
         return k
 
@@ -437,7 +518,7 @@ class DataModel:
         return next_coarsest_scale_key
 
     def is_alignable(self) -> bool:
-        '''Checks if the current scale is able to be aligned'''
+        '''Checks if the current s is able to be aligned'''
         answer = True
         if not are_images_imported():
             # logger.info('Returning False, images not imported')
@@ -446,7 +527,7 @@ class DataModel:
         cur_scale_key = self.scale()
         coarsest_scale = scales_list[-1]
         if cur_scale_key == coarsest_scale:
-            # logger.info('Returning True, current scale is the coarsest scale')
+            # logger.info('Returning True, current s is the coarsest s')
             return True
         cur_scale_index = scales_list.index(cur_scale_key)
         next_coarsest_scale_key = scales_list[cur_scale_index + 1]
@@ -534,40 +615,40 @@ class DataModel:
     #     scales_dict = self._data['data']['scales']
     #     coarsest_scale = list(scales_dict.keys())[-1]
     #     for scale_key in scales_dict.keys():
-    #         scale = scales_dict[scale_key]
-    #         # logger.info('use_bounding_rect: %s' % str(scale['use_bounding_rect']))
-    #         # logger.info('null_cafm_trends: %s' % str(scale['null_cafm_trends']))
-    #         # logger.info('poly_order: %s' % str(scale['poly_order']))
-    #         scale['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
-    #         scale['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
-    #         scale['poly_order'] = cfg.DEFAULT_POLY_ORDER
-    #         # logger.info('use_bounding_rect: %s' % str(scale['use_bounding_rect']))
-    #         # logger.info('null_cafm_trends: %s' % str(scale['null_cafm_trends']))
-    #         # logger.info('poly_order: %s' % str(scale['poly_order']))
+    #         s = scales_dict[scale_key]
+    #         # logger.info('use_bounding_rect: %s' % str(s['use_bounding_rect']))
+    #         # logger.info('null_cafm_trends: %s' % str(s['null_cafm_trends']))
+    #         # logger.info('poly_order: %s' % str(s['poly_order']))
+    #         s['use_bounding_rect'] = cfg.DEFAULT_BOUNDING_BOX
+    #         s['null_cafm_trends'] = cfg.DEFAULT_NULL_BIAS
+    #         s['poly_order'] = cfg.DEFAULT_POLY_ORDER
+    #         # logger.info('use_bounding_rect: %s' % str(s['use_bounding_rect']))
+    #         # logger.info('null_cafm_trends: %s' % str(s['null_cafm_trends']))
+    #         # logger.info('poly_order: %s' % str(s['poly_order']))
     #         if scale_key == coarsest_scale:
     #             self._data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'init_affine'
     #         else:
     #             self._data['data']['scales'][scale_key]['method_data']['alignment_option'] = 'refine_affine'
-    #         for layer_index in range(len(scale['alignment_stack'])):
-    #             layer = scale['alignment_stack'][layer_index]
+    #         for layer_index in range(len(s['alignment_stack'])):
+    #             l = s['alignment_stack'][layer_index]
     #
     #             # logger.info(
-    #             #     'win_scale_factor: %s' % str(layer['align_to_ref_method']['method_data']['win_scale_factor']))
+    #             #     'win_scale_factor: %s' % str(l['align_to_ref_method']['method_data']['win_scale_factor']))
     #             # logger.info(
-    #             #     'whitening_factor: %s' % str(layer['align_to_ref_method']['method_data']['whitening_factor']))
+    #             #     'whitening_factor: %s' % str(l['align_to_ref_method']['method_data']['whitening_factor']))
     #
-    #             layer['align_to_ref_method']['method_data']['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
-    #             layer['align_to_ref_method']['method_data']['whitening_factor'] = cfg.DEFAULT_WHITENING
+    #             l['align_to_ref_method']['method_data']['win_scale_factor'] = cfg.DEFAULT_SWIM_WINDOW
+    #             l['align_to_ref_method']['method_data']['whitening_factor'] = cfg.DEFAULT_WHITENING
     #
     #             # logger.info(
-    #             #     'win_scale_factor: %s' % str(layer['align_to_ref_method']['method_data']['win_scale_factor']))
+    #             #     'win_scale_factor: %s' % str(l['align_to_ref_method']['method_data']['win_scale_factor']))
     #             # logger.info(
-    #             #     'whitening_factor: %s' % str(layer['align_to_ref_method']['method_data']['whitening_factor']))
+    #             #     'whitening_factor: %s' % str(l['align_to_ref_method']['method_data']['whitening_factor']))
     #
     #             if scale_key == coarsest_scale:
-    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
+    #                 l['align_to_ref_method']['method_data']['alignment_option'] = 'init_affine'
     #             else:
-    #                 layer['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
+    #                 l['align_to_ref_method']['method_data']['alignment_option'] = 'refine_affine'
 
 
     def are_there_any_skips(self) -> bool:
@@ -661,17 +742,17 @@ class DataModel:
                     if 'ref' not in base_layer['images'].keys():
                         self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename='')
                 elif layer_index in skip_list:
-                    # No ref for skipped layer
+                    # No ref for skipped l
                     if 'ref' not in base_layer['images'].keys():
                         self.add_img(scale_key=scale_key, layer_index=layer_index, role='ref', filename='')
 
                 else:
-                    # Find nearest previous non-skipped layer
+                    # Find nearest previous non-skipped l
                     j = layer_index - 1
                     while (j in skip_list) and (j >= 0):
                         j -= 1
 
-                    # Use the nearest previous non-skipped layer as ref for this layer
+                    # Use the nearest previous non-skipped l as ref for this l
                     if (j not in skip_list) and (j >= 0):
                         ref_layer = self._data['data']['scales'][scale_key]['alignment_stack'][j]
                         ref_fn = ''
@@ -691,9 +772,9 @@ class DataModel:
             if self._data['version'] <= 0.26:
                 print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.27))
                 # Need to modify the data model from 0.26 or lower up to 0.27
-                # The "alignment_option" had been in the method_data at each layer
-                # This new version defines it only at the scale level
-                # So loop through each scale and move the alignment_option from the layer to the scale
+                # The "alignment_option" had been in the method_data at each l
+                # This new version defines it only at the s level
+                # So loop through each s and move the alignment_option from the l to the s
                 for scale_key in self._data['data']['scales'].keys():
                     scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
@@ -704,12 +785,12 @@ class DataModel:
                             if 'method_data' in align_method:
                                 if 'alignment_option' in align_method['method_data']:
                                     current_alignment_options.append(align_method['method_data']['alignment_option'])
-                    # The current_alignment_options list now holds all of the options for this scale (if any)
-                    # Start by setting the default for the scale option to "init_affine" if none are found
+                    # The current_alignment_options list now holds all of the options for this s (if any)
+                    # Start by setting the default for the s option to "init_affine" if none are found
                     scale_option = "init_affine"
-                    # If any options were found in this scale, search through them for most common
+                    # If any options were found in this s, search through them for most common
                     if len(current_alignment_options) > 0:
-                        # They should all be the same at this scale, so set to the first
+                        # They should all be the same at this s, so set to the first
                         scale_option = current_alignment_options[0]
                         # But check if any are different and then find the most common
                         if current_alignment_options.count(current_alignment_options[0]) != len(
@@ -728,9 +809,9 @@ class DataModel:
             if self._data['version'] == 0.27:
                 print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.28))
                 # Need to modify the data model from 0.27 up to 0.28
-                # The "alignment_option" had been left in the method_data at each layer
-                # This new version removes that option from the layer method data
-                # So loop through each scale and remove the alignment_option from the layer
+                # The "alignment_option" had been left in the method_data at each l
+                # This new version removes that option from the l method data
+                # So loop through each s and remove the alignment_option from the l
                 for scale_key in self._data['data']['scales'].keys():
                     scale = self._data['data']['scales'][scale_key]
                     stack = scale['alignment_stack']
@@ -786,15 +867,15 @@ class DataModel:
                 print("\n\nUpgrading data model from " + str(self._data['version']) + " to " + str(0.32))
                 # Need to modify the data model from 0.31 up to 0.32
                 #   1) change name of method_results key "affine_matrix" to "afm"
-                #   2) change name of method_results key "cumulative_afm" to "c_afm"
+                #   2) change name of method_results key "cumulative_afm" to "cafm"
                 #   3) add new method_results key, "aim" and compute/store this value
                 #   4) add new method_results key, "c_aim" and compute/store this value
                 #   5) add new method_results key, "reconstruct_x_coeff" and compute/store this value
                 #   6) add new method_results key, "reconstruct_y_coeff" and compute/store this value
-                #   7) add new scale key, "bounding_rect_x" and compute/store this value
-                #   8) add new scale key, "bounding_rect_y" and compute/store this value
-                # Note, aim and c_aim are the inverse of afm and c_afm
-                # Note, c_afm and c_aim are the now the cumulative matrices not including
+                #   7) add new s key, "bounding_rect_x" and compute/store this value
+                #   8) add new s key, "bounding_rect_y" and compute/store this value
+                # Note, aim and c_aim are the inverse of afm and cafm
+                # Note, cafm and c_aim are the now the cumulative matrices not including
                 #       the bounding rect.
                 # Note, reconstruct_x_coeff and _y_coeff are the coefficients of the
                 #       dim 3 polynomial basis transforms used by RECONSTRUCT.
@@ -815,18 +896,18 @@ class DataModel:
 
     # def update_init_rot(self):
     #     image_scales_to_run = [self.scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
-    #     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
-    #         scale_key = self.get_scale_key(scale)
-    #         for i, layer in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
-    #             layer['align_to_ref_method']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
+    #     for s in sorted(image_scales_to_run):  # i.e. string '1 2 4'
+    #         scale_key = self.get_scale_key(s)
+    #         for i, l in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
+    #             l['align_to_ref_method']['method_options'] = {'initial_rotation': cfg.DEFAULT_INITIAL_ROTATION}
     #     logger.critical('cfg.DEFAULT_INITIAL_ROTATION = %f' % cfg.DEFAULT_INITIAL_ROTATION)
     #
     # def update_init_scale(self):
     #     image_scales_to_run = [self.scale_val(s) for s in sorted(self._data['data']['scales'].keys())]
-    #     for scale in sorted(image_scales_to_run):  # i.e. string '1 2 4'
-    #         scale_key = self.get_scale_key(scale)
-    #         for i, layer in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
-    #             layer['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
+    #     for s in sorted(image_scales_to_run):  # i.e. string '1 2 4'
+    #         scale_key = self.get_scale_key(s)
+    #         for i, l in enumerate(self._data['data']['scales'][scale_key]['alignment_stack']):
+    #             l['align_to_ref_method']['method_options'] = {'initial_scale': cfg.DEFAULT_INITIAL_SCALE}
     #     logger.critical('cfg.DEFAULT_INITIAL_SCALE = %f' % cfg.DEFAULT_INITIAL_SCALE)
 
 
@@ -836,7 +917,7 @@ class DataModel:
             layer['align_to_ref_method']['method_results'] = {}
 
     def clear_match_points(self):
-        logger.info("Deleting all match points for this layer")
+        logger.info("Deleting all match points for this l")
         scale_key = self._data['data']['current_scale']
         layer_num = self._data['data']['current_layer']
         stack = self._data['data']['scales'][scale_key]['alignment_stack']

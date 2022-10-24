@@ -12,6 +12,7 @@ import os
 import sys
 import zarr
 from PIL import Image
+import numpy as np
 # import tifffile
 # import imageio.v3 as iio
 
@@ -27,11 +28,10 @@ if __name__ == '__main__':
     Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
 
     scale_img = os.path.join(src, scale_str, 'img_src', img)
-    im = Image.open(scale_img)
     # im = tifffile.imread(scale_img)
     # im = iio.imread(scale_img)
     store = zarr.open(out)
-    store[ID,:,:] = im
+    store[ID,:,:] = np.flip(Image.open(scale_img), axis=1)
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     sys.stdout.close()
     sys.stderr.close()

@@ -680,7 +680,7 @@ class QtImageViewer(QGraphicsView):
 
     # @Slot()
     def scale(self, horz, vert):
-        logger.critical('scale:')
+        logger.critical('s:')
         super().scale(horz, vert)
         self.scaled.emit(self.horizontalScrollBar().value(),
                          self.verticalScrollBar().value(),

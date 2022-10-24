@@ -28,6 +28,7 @@ def save_bias_analysis(al_stack, bias_data_path, include_snr=True):
                 try:
                     c_afm = np.array(atrm['method_results']['cumulative_afm'])
                 except:
+                    print_exception()
                     logger.warning('save_bias_analysis Exception (!)')
 
                 snr = np.array(atrm['method_results']['snr'])

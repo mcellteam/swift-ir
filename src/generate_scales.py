@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 def generate_scales():
-    logger.critical('>>>> Generate Scales <<<<')
+    logger.critical('>>>> Generate Scales >>>>')
     image_scales_to_run = [get_scale_val(s) for s in sorted(cfg.data['data']['scales'].keys())]
     logger.info("Scale Factors : %s" % str(image_scales_to_run))
     n_tasks = cfg.data.n_imgs() * (cfg.data.n_scales() - 1)  #0901 #Refactor
@@ -60,7 +60,8 @@ def generate_scales():
                     of_arg = 'of=%s' % ofn
                     if_arg = '%s' % fn
                     task_queue.add_task([iscale2_c, scale_arg, of_arg, if_arg])
-                    logger.info('\nTQ Params:\n1: %s\n2: %s\n3: %s\n4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
+                    if i in [0,1,2]:
+                        logger.info('\nTQ Params:\n1: %s\n2: %s\n3: %s\n4: %s' % (iscale2_c, scale_arg, of_arg, if_arg))
 
             layer['images']['base']['filename'] = ofn
         cfg.main_window.hud.done()
@@ -76,14 +77,14 @@ def generate_scales():
 
     '''Set more lenient permissions on Tifs'''
     for scale in cfg.data.scales():
-        logger.info('Setting permissions on generated images for scale %s...' % scale)
+        logger.info('Setting permissions on generated images for s %s...' % scale)
         path = os.path.join(cfg.data.dest(), scale, 'img_src')
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 path = os.path.join(dirpath, filename)
                 os.chmod(path, 0o766)
 
-    logger.critical('>>>> Generate Scales End <<<<')
+    logger.critical('<<<< Generate Scales End <<<<')
 
     '''
     ____task_queue Parameters (Example)____

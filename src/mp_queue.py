@@ -83,7 +83,7 @@ class TaskQueue(QObject):
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
-        logger.debug('TaskQueue.start:')
+        logger.debug('>>>> TaskQueue.start >>>>')
         self.task_id = 0
         self.n_workers = n_workers
         self.retries = retries
@@ -93,7 +93,7 @@ class TaskQueue(QObject):
 
         for i in range(self.n_workers):
             if i != 0: sys.stderr.write('\n')
-            sys.stderr.write('Starting Worker %d >>>>>>>>' % i)
+            sys.stderr.write('Starting Worker %d >>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
@@ -102,7 +102,7 @@ class TaskQueue(QObject):
                 self.workers[i].start()
             except:
                 logger.warning('Original Worker # %d Triggered An Exception' % i)
-        logger.debug('<<<< Exiting TaskQueue.start')
+        logger.debug('<<<< Exiting TaskQueue.start <<<<')
 
     def restart(self) -> None:
         logger.warning('Restarting the Task Queue...')
@@ -148,7 +148,7 @@ class TaskQueue(QObject):
         self.task_id += 1
 
     def requeue_task(self, task_id) -> None:
-        logger.debug("TaskQueue.requeue  >>>>>>>>")
+        logger.debug(">>>> TaskQueue.requeue  >>>>")
         task = []
         task.append(self.task_dict[task_id]['cmd'])
         task.extend(self.task_dict[task_id]['args'])
@@ -158,7 +158,7 @@ class TaskQueue(QObject):
         self.task_dict[task_id]['statusBar'] = 'queued'
         self.task_dict[task_id]['retries'] += 1
         self.work_queue.put((task_id, task))
-        logger.debug("<<<<<<<<  TaskQueue.requeue")
+        logger.debug("<<<<  TaskQueue.requeue <<<<")
 
     def clear_tasks(self) -> None:
         self.task_dict = {}
@@ -167,12 +167,13 @@ class TaskQueue(QObject):
 
     def collect_results(self) -> None:
         '''Run All Tasks and Collect Results'''
-        logger.info("TaskQueue.collect_results  >>>>")
+        print('\n')
+        logger.critical('>>>> Task Queue (collect_results) >>>>')
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
         retries_tot = 0
-        logger.info('self.retries: %s' % self.retries)
+        logger.info('# Retries Allowed: %s' % self.retries)
         try:
             self.parent.pbar_max(self.n_tasks)
             if self.pbar_text != None:
@@ -235,7 +236,7 @@ class TaskQueue(QObject):
         # self.stop() # This is called redundantly in pre-TaskQueue scripts to ensure stoppage
         self.parent.pbar.hide()
 
-        logger.info('<<<<  TaskQueue.collect_results')
+        logger.critical('<<<< Task Queue (collect_results) <<<<')
 
 
 
@@ -252,14 +253,14 @@ if __name__ == '__main__':
     for i in range(2 * cpus):
         tasks.append(['./demo_datamodel_read.py'])
 
-    print('\n>>>>>> Submitting Tasks: <<<<<<\n')
+    print('\n>>>> Submitting Tasks: >>>>\n')
     for task in tasks:
         tq.add_task(task)
 
-    print('\n>>>>>> Collecting Results: <<<<<<\n')
+    print('\n>>>> Collecting Results: >>>>\n')
     tq.collect_results()
 
-    print('\n>>>>>> Task Results: <<<<<<\n')
+    print('\n>>>> Task Results: >>>>\n')
     for task_id in tq.task_dict:
         print('[task %s]: %s %s %s %s %s' %
               (str(task_id),

@@ -23,12 +23,10 @@ programs are planned.'''
 
 import os
 import numpy as np
-# import cv2
-import tifffile #0720+
+import tifffile
 # import scipy
 
-os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
-
+# os.environ["OPENCV_IO_MAX_IMAGE_PIXELS"] = (pow(2,32)-1).__str__()
 
 apo = []
 apo0 = []

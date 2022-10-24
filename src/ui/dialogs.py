@@ -143,25 +143,19 @@ class ConfigDialog(QDialog):
     def set_project_configuration(self):
         cfg.main_window.hud('Initializing Project Data...')
         cfg.data.set_scales_from_string(self.scales_input.text())
-
-
-        cfg.CHUNK_X = int(self.chunk_x_lineedit.text())
-        cfg.CHUNK_Y = int(self.chunk_y_lineedit.text())
-        cfg.CHUNK_Z = int(self.chunk_z_lineedit.text())
-        cfg.CLEVEL = int(self.clevel_input.text())
-        cfg.CNAME = self.cname_combobox.currentText()
-        cfg.data['data'].update({'initial_scale': float(self.initial_scale_input.text())})
-        cfg.data['data'].update({'initial_rotation': float(self.initial_rotation_input.text())})
-
+        cfg.data.set_use_bounding_rect(self.bounding_rectangle_checkbox.isChecked())
+        cfg.data['data']['initial_scale'] = float(self.initial_scale_input.text())
+        cfg.data['data']['initial_rotation'] = float(self.initial_rotation_input.text())
+        cfg.data['data']['clevel'] = int(self.clevel_input.text())
+        cfg.data['data']['cname'] = self.cname_combobox.currentText()
+        cfg.data['data']['chunkshape'] = [int(self.chunk_z_lineedit.text()),
+                                          int(self.chunk_y_lineedit.text()),
+                                          int(self.chunk_x_lineedit.text())]
         for scale in cfg.data.scales():
             scale_val = get_scale_val(scale)
-            cfg.data['data']['scales'][scale]['use_bounding_rect'] = bool(self.bounding_rectangle_checkbox.isChecked())
-            cfg.data['data']['scales'][scale].update({'resolution_x': int(self.res_x_lineedit.text()) * scale_val})
-            cfg.data['data']['scales'][scale].update({'resolution_y': int(self.res_y_lineedit.text()) * scale_val})
-            cfg.data['data']['scales'][scale].update({'resolution_z': int(self.res_z_lineedit.text())})
-
-        cfg.main_window.save_project_to_file()
-        cfg.main_window.hud.done()
+            cfg.data['data']['scales'][scale]['resolution_x'] = int(self.res_x_lineedit.text()) * scale_val
+            cfg.data['data']['scales'][scale]['resolution_y'] = int(self.res_y_lineedit.text()) * scale_val
+            cfg.data['data']['scales'][scale]['resolution_z'] = int(self.res_z_lineedit.text())
         self.close()
 
     def on_cancel(self):

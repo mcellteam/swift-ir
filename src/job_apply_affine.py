@@ -10,6 +10,7 @@ import subprocess as sp
 import numpy as np
 from PIL import Image
 import zarr
+import numpy as np
 # import tifffile
 try:
     from helpers import is_tacc, is_linux, is_mac
@@ -123,7 +124,7 @@ if (__name__ == '__main__'):
     import os
     path = os.path.join(os.path.dirname(os.path.dirname(out_fn)), 'mir_commands.dat')
     with open(path, 'a+') as f:
-        f.write(mir_script + '\n')
+        f.write('\n---------------------------\n' + mir_script + '\n')
 
     # Python Implementation
     # try:
@@ -135,11 +136,9 @@ if (__name__ == '__main__'):
     dimx, dimy = rect[2], rect[3]
     # im = tifffile.imread(out_fn)
     Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
-    im = Image.open(out_fn)
-    logger.critical('out_fn = %s' % out_fn)
     store = zarr.open(zarr_grp)
     # print(store.info)
-    store[ID, :, :] = im
+    store[ID, :, :] = np.flip(Image.open(out_fn), axis=1)
     store.attrs['_ARRAY_DIMENSIONS'] = ["z", "y", "x"]
     sys.stdout.close()
     sys.stderr.close()
