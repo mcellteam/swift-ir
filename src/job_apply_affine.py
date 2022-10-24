@@ -22,19 +22,19 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 def run_command(cmd, arg_list=None, cmd_input=None):
-    logger.debug("\n================== Run Command ==================")
+    logger.info("\n================== Run Command ==================")
     cmd_arg_list = [cmd]
     if arg_list != None:
         cmd_arg_list = [a for a in arg_list]
         cmd_arg_list.insert(0, cmd)
-    logger.debug("  Running command: " + str(cmd_arg_list))
-    logger.debug("   Passing Data\n==========================\n" + str(cmd_input) + "==========================\n")
+    # logger.info("  Running command: " + str(cmd_arg_list))
+    # logger.info("   Passing Data\n==========================\n" + str(cmd_input) + "==========================\n")
     # Note: decode bytes if universal_newlines=False in Popen (cmd_stdout.decode('utf-8'))
     cmd_proc = sp.Popen(cmd_arg_list, stdin=sp.PIPE, stdout=sp.PIPE, stderr=sp.PIPE, universal_newlines=True)
     cmd_stdout, cmd_stderr = cmd_proc.communicate(cmd_input)
-    logger.debug("Command output: \n\n" + cmd_stdout + "==========================\n")
-    logger.error("Command error: \n\n" + cmd_stderr + "==========================\n")
-    logger.debug("=================================================\n")
+    # logger.info("Command output: \n\n" + cmd_stdout + "==========================\n")
+    # logger.error("Command error: \n\n" + cmd_stderr + "==========================\n")
+    # logger.info("=================================================\n")
     return ({'out': cmd_stdout, 'err': cmd_stderr})
 
 def print_command_line_syntax(args):
@@ -133,7 +133,7 @@ if (__name__ == '__main__'):
     #     logger.warning("An Exception Occurred Running 'image_apply_affine'")
     #     logger.warning(traceback.format_exc())
 
-    dimx, dimy = rect[2], rect[3]
+    # dimx, dimy = rect[2], rect[3]
     # im = tifffile.imread(out_fn)
     Image.MAX_IMAGE_PIXELS = 1_000_000_000_000
     store = zarr.open(zarr_grp)

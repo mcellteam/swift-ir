@@ -214,6 +214,8 @@ def is_cur_scale_exported() -> bool:
 
 
 
+
+
 def check_for_binaries():
     print("Checking platform-specific path to SWiFT-IR executables...")
     path = os.path.split(os.path.realpath(__file__))[0]

@@ -14,7 +14,7 @@ import tensorstore as ts
 # import dask.array as da
 import src.config as cfg
 from src.helpers import get_scale_val, time_limit, get_img_filenames, print_exception
-from src.image_funcs import ImageSize, compute_bounding_rect, imageio_read_image
+from src.image_funcs import ImageSize, ComputeBoundingRect, imageio_read_image
 
 __all__ = ['preallocate_zarr_src', 'preallocate_zarr_aligned', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
 

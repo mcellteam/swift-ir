@@ -17,7 +17,7 @@ __all__ = [
     'InitCafm',
     'SetSingleCafm',
     'SetStackCafm',
-    'compute_bounding_rect',
+    'ComputeBoundingRect',
     'invertAffine',
 ]
 
@@ -346,7 +346,7 @@ def BiasFuncs(al_stack, bias_funcs=None, poly_order=4):
     if init_scalars:
         bias_funcs['y'][poly_order] = p[poly_order]
 
-    logging.critical("init_scalars=%s\nReturning Biases: %s\n" % (str(init_scalars), str(bias_funcs)))
+    logging.info("init_scalars=%s\nReturning Biases: %s\n" % (str(init_scalars), str(bias_funcs)))
 
     return bias_funcs
 
@@ -538,13 +538,13 @@ def reptoshape(mat, pattern):
                              + str(pattern.shape))
     return mat
 
-def compute_bounding_rect(al_stack):
+def ComputeBoundingRect(al_stack):
     '''
     Determines Bounding Rectangle size for alignment stack. Must be preceded by a call to SetStackCafm.
 
     To get result for current s, in the main process, use:
-    from src.image_funcs import compute_bounding_rect, ImageSize
-    compute_bounding_rect(cfg.data.aligned_dict())
+    from src.image_funcs import ComputeBoundingRect, ImageSize
+    ComputeBoundingRect(cfg.data.aligned_dict())
 
     model_bounds example:
 AlignEM [29]:
@@ -574,7 +574,7 @@ array([[   0,    0],
        [   9,   80],
        [ 997,  580]], dtype=int32)
     '''
-    logger.critical('>>>> compute_bounding_rect >>>>')
+    logger.critical('>>>> ComputeBoundingRect >>>>')
 
     if cfg.SUPPORT_NONSQUARE:
         # model_bounds = None
@@ -607,7 +607,7 @@ array([[   0,    0],
         rect = [int(-border_width), int(-border_width), int(siz[0] + 2 * border_width), int(siz[0] + 2 * border_width)]
         logger.critical('Returning: %s' % str(rect))
 
-    logger.critical('<<<< compute_bounding_rect <<<<')
+    logger.critical('<<<< ComputeBoundingRect <<<<')
     return rect
 
 

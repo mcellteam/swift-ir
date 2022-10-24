@@ -128,7 +128,7 @@ class TaskQueue(QObject):
             self.work_queue.put('END_TASKS')
 
     def stop(self) -> None:
-        # logger.info("Calling 'stop' on TaskQueue")
+        logger.info("Calling 'stop' on TaskQueue")
         self.work_queue.close()
         time.sleep(0.1)  # Needed to Avoid Race Condition
     #    for i in range(len(self.workers)):

@@ -12,8 +12,7 @@ from datetime import datetime
 from pathlib import Path
 import src.config as cfg
 from src.mp_queue import TaskQueue
-
-from src.helpers import rename_layers, remove_aligned, get_scale_val, are_aligned_images_generated
+from src.helpers import print_exception, rename_layers, remove_aligned, get_scale_val, are_aligned_images_generated
 
 
 __all__ = ['compute_affines','rename_layers','remove_aligned']
@@ -179,7 +178,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
 
 
     try: task_queue.end_tasks()
-    except: pass
+    except: print_exception()
     task_queue.stop()
     del task_queue
 
