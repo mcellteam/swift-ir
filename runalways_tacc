@@ -34,7 +34,7 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
 #  ml intel/19.1.1 impi/19.0.9 fftw3/3.3.10
 #  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
 
-  echo "Setting GALLIUM_DRIVER=swr..."
+  echo "Setting GALLIUM_DRIVER=swr...":
   export GALLIUM_DRIVER=swr
 
 #  echo "Setting OPENBLAS_NUM_THREADS=1"
