@@ -31,14 +31,14 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
 
   echo "Loading TACC swr and fftw3 modules..."
 #  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
-#  ml intel/19.1.1 impi/19.0.9 fftw3/3.3.10
-  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
+  ml intel/19.1.1 impi/19.0.9 fftw3/3.3.10
+#  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
 
   echo "Setting GALLIUM_DRIVER=swr..."
   export GALLIUM_DRIVER=swr
 
-  echo "Setting OPENBLAS_NUM_THREADS=1"
-  export OPENBLAS_NUM_THREADS=1
+#  echo "Setting OPENBLAS_NUM_THREADS=1"
+#  export OPENBLAS_NUM_THREADS=1
 
   echo "Setting MESA_DEBUG..."
   export MESA_DEBUG=flush,incomplete_tex,incomplete_fbo,context
