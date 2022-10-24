@@ -58,7 +58,7 @@ fi
 echo ""
 echo "To run AlignEM-SWiFT type:"
 echo "    cd $WORK/swift-ir"
-echo "    swr python3 alignEM.py:"
+echo "    swr python3 alignEM.py"
 echo ""
 
 
