@@ -62,10 +62,10 @@ module purge
 
 echo "Removing alignment environment if it exists..."
 conda deactivate
-conda env remove -n alignPYQT
+conda env remove -n alignTACC1024
 
 echo "Creating Conda environment from tacc.yml..."
-conda env create --name=alignPYQT --file tacc.yml python=3.9
+conda env create -y --name=alignTACC1024 --file tacc.yml python=3.9
 
 #echo "Adding alignEM.py to PATH in .bashrc..."
 #echo 'export PATH="$PATH:$WORK/swift-ir/alignEM.py"' >> ~/.bashrc
