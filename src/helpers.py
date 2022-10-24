@@ -42,6 +42,12 @@ __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binarie
 
 logger = logging.getLogger(__name__)
 
+def obj_to_string(obj, extra='    '):
+    return str(obj.__class__) + '\n' + '\n'.join(
+        (extra + (str(item) + ' = ' +
+                  (obj_to_string(obj.__dict__[item], extra + '    ') if hasattr(obj.__dict__[item], '__dict__') else str(
+                      obj.__dict__[item])))
+         for item in sorted(obj.__dict__)))
 
 def is_tacc() -> bool:
     '''Checks if the program is running on a computer at TACC. Returns a boolean.'''
@@ -87,7 +93,7 @@ def get_scale_key(scale_val) -> str:
 
 
 def get_scale_val(scale_of_any_type) -> int:
-    '''Converts scale key to integer (i.e. 'scale_1' as string -> 1 as int)
+    '''Converts s key to integer (i.e. 'scale_1' as string -> 1 as int)
     TODO: move this to glanceem_utils'''
     scale = scale_of_any_type
     try:
@@ -112,7 +118,7 @@ def do_scales_exist() -> bool:
         pass
 
 def is_cur_scale_aligned() -> bool:
-    '''Checks if there exists an alignment stack for the current scale
+    '''Checks if there exists an alignment stack for the current s
 
     #0615 Bug fixed - look for populated bias_data folder, not presence of aligned images
 
@@ -137,7 +143,7 @@ def is_cur_scale_aligned() -> bool:
     return True
 
 def is_arg_scale_aligned(scale: str) -> bool:
-    '''Returns boolean based on whether arg scale is aligned '''
+    '''Returns boolean based on whether arg s is aligned '''
     # logger.info('called by ', inspect.stack()[1].function)
     zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
     if not os.path.isdir(zarr_path):  return False
@@ -147,7 +153,7 @@ def is_arg_scale_aligned(scale: str) -> bool:
     return True
 
 def get_num_aligned() -> int:
-    '''Returns the count aligned and generated images for the current scale.'''
+    '''Returns the count aligned and generated images for the current s.'''
 
     path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'img_aligned')
     # logger.info('get_num_aligned | path=', path)
@@ -159,7 +165,7 @@ def get_num_aligned() -> int:
     return n_aligned
 
 def is_any_scale_aligned_and_generated() -> bool:
-    '''Checks if there exists a set of aligned images at the current scale
+    '''Checks if there exists a set of aligned images at the current s
     Todo: Sometimes aligned images are generated but do get rendered'''
     files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif*')
     if len(files) > 0:
@@ -168,7 +174,7 @@ def is_any_scale_aligned_and_generated() -> bool:
         return False
 
 def return_aligned_imgs() -> list:
-    '''Returns the list of paths for aligned images at the current scale, if any exist.'''
+    '''Returns the list of paths for aligned images at the current s, if any exist.'''
 
     try:
         files = glob(cfg.data['data']['destination_path'] + '/scale_*/img_aligned/*.tif')
@@ -182,14 +188,14 @@ def return_aligned_imgs() -> list:
 
 
 def are_aligned_images_generated() ->bool:
-    '''Returns True or False dependent on whether aligned images have been generated for the current scale.'''
+    '''Returns True or False dependent on whether aligned images have been generated for the current s.'''
     path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'img_aligned')
     files = glob(path + '/*.tif')
     if len(files) < 1:
-        logger.debug('Zero aligned TIFs were found at this scale - Returning False')
+        logger.debug('Zero aligned TIFs were found at this s - Returning False')
         return False
     else:
-        logger.debug('One or more aligned TIFs were found at this scale - Returning True')
+        logger.debug('One or more aligned TIFs were found at this s - Returning True')
         return True
 
 
@@ -288,7 +294,7 @@ def get_img_filenames(path) -> list[str]:
         '.eps'
     )]
     logger.debug('Returning: %s' % str(imgs))
-    return imgs
+    return natural_sort(imgs)
 
 def rename_layers(use_scale, al_dict):
     logger.info('rename_layers:')
@@ -307,22 +313,15 @@ def rename_layers(use_scale, al_dict):
 
 def remove_aligned(use_scale, start_layer=0):
     '''
-    Removes previously generated aligned images for the current scale, starting at layer 'start_layer'.
+    Removes previously generated aligned images for the current s, starting at l 'start_layer'.
 
-    :param use_scale: The scale to remove aligned images from.
+    :param use_scale: The s to remove aligned images from.
     :type use_scale: str
 
-    :param project_dict: The project data dictionary.
-    :type project_dict: dict
-
-    :param image_library: The image library.
-    :type image_library: ImageLibrary
-
-    :param start_layer: The starting layer index from which to remove all aligned images, defaults to 0.
+    :param start_layer: The starting l index from which to remove all aligned images, defaults to 0.
     :type start_layer: int
     '''
 
-    logger.info('remove_aligned:')
     for layer in cfg.data['data']['scales'][use_scale]['alignment_stack'][start_layer:]:
         ifn = layer['images'].get('filename', None)
         layer['images'].pop('aligned', None)
@@ -332,10 +331,6 @@ def remove_aligned(use_scale, start_layer=0):
             except:
                 print_exception()
                 logger.warning("os.remove(%s) Triggered An Exception" % ifn)
-            # try:
-            #     cfg.image_library.remove_image_reference(ifn)
-            # except:
-            #     print_exception()
 
 
 def verify_image_file(path: str) -> str:
@@ -412,7 +407,7 @@ def print_project_tree() -> None:
 
 
 def print_alignment_layer() -> None:
-    '''Prints a single alignment layer (the last layer) for the current scale from the data dictionary.'''
+    '''Prints a single alignment l (the last l) for the current s from the data dictionary.'''
     try:
         al_layer = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][-1]
         print(json.dumps(al_layer, indent=2))
@@ -421,7 +416,7 @@ def print_alignment_layer() -> None:
 
 
 def print_dat_files() -> None:
-    '''Prints the .dat files for the current scale, if they exist .'''
+    '''Prints the .dat files for the current s, if they exist .'''
     bias_data_path = os.path.join(cfg.data['data']['destination_path'], cfg.data.scale(), 'bias_data')
     if are_images_imported():
         logger.info('Printing .dat Files')
@@ -459,7 +454,7 @@ def print_dat_files() -> None:
                 c_afm_1 = f.read()
                 logger.info('c_afm_1             : %s' % c_afm_1)
         except:
-            logger.info('Is this scale aligned? No .dat files were found at this scale.')
+            logger.info('Is this s aligned? No .dat files were found at this s.')
             pass
 
 
@@ -476,12 +471,12 @@ def print_sanity_check():
         print("  Destination path                                 : n/a")
     cur_scale = cfg.data['data']['current_scale']
     try:
-        scale = cfg.data.scale()  # logger.info(scale) returns massive wall of text
+        scale = cfg.data.scale()  # logger.info(s) returns massive wall of text
     except:
         pass
-    print("  Current scale                                    :", cur_scale)
+    print("  Current s                                    :", cur_scale)
     print("  Project Method                                   :", cfg.data['method'])
-    print("  Current layer                                    :", cfg.data['data']['current_layer'])
+    print("  Current l                                    :", cfg.data['data']['current_layer'])
     try:
         print("  Alignment Option                                 :",
               scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
@@ -504,14 +499,14 @@ def print_sanity_check():
     print("  Which scales?                                    :", cfg.data.scales())
 
     print("Alignment__________________________________________")
-    print("  Is any scale aligned+generated?                  :", is_any_scale_aligned_and_generated())
-    print("  Is this scale aligned?                           :", is_cur_scale_aligned())
-    print("  Is this scale ready to be aligned?               :", cfg.data.is_alignable())
+    print("  Is any s aligned+generated?                  :", is_any_scale_aligned_and_generated())
+    print("  Is this s aligned?                           :", is_cur_scale_aligned())
+    print("  Is this s ready to be aligned?               :", cfg.data.is_alignable())
     try:
         
-        print("  How many aligned at this scale?                  :", get_num_aligned())
+        print("  How many aligned at this s?                  :", get_num_aligned())
     except:
-        print("  How many aligned at this scale?                  : n/a")
+        print("  How many aligned at this s?                  : n/a")
     try:
         al_scales = cfg.data.aligned_list()
         if al_scales == []:
@@ -524,21 +519,21 @@ def print_sanity_check():
     print("  alignment_option                                 :",
           cfg.data['data']['scales'][cfg.data.scale()]['method_data']['alignment_option'])
     try:
-        print("  whitening factor (current layer)                 :",
+        print("  whitening factor (current l)                 :",
               scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
                   'whitening_factor'])
     except:
-        print("  whitening factor (current layer)                 : n/a")
+        print("  whitening factor (current l)                 : n/a")
     try:
-        print("  SWIM window (current layer)                      :",
+        print("  SWIM window (current l)                      :",
               scale['alignment_stack'][cfg.data['data']['current_layer']]['align_to_ref_method']['method_data'][
                   'win_scale_factor'])
     except:
-        print("  SWIM window (current layer)                      : n/a")
+        print("  SWIM window (current l)                      : n/a")
     try:
-        print("  SNR (current layer)                              :", cfg.data.snr())
+        print("  SNR (current l)                              :", cfg.data.snr())
     except:
-        print("  SNR (current layer)                              : n/a")
+        print("  SNR (current l)                              : n/a")
 
 
     print("Post-alignment_____________________________________")
@@ -557,7 +552,7 @@ def print_sanity_check():
 
     print("Export & View______________________________________")
     print("  Is any alignment exported?                       :", is_any_alignment_exported())
-    print("  Is current scale exported?                       :", is_cur_scale_exported())
+    print("  Is current s exported?                       :", is_cur_scale_exported())
 
 
 def module_debug() -> None:
@@ -603,7 +598,7 @@ def print_snr_list() -> None:
         snr_report = cfg.data['data']['scales'][cfg.data.scale()]['alignment_stack'][cfg.data.layer()][
             'align_to_ref_method']['method_results']['snr_report']
         logger.info('snr_report:  %s' % str(snr_report))
-        logger.debug('All Mean SNRs for current scale:  %s' % str(cfg.data.snr_list()))
+        logger.debug('All Mean SNRs for current s:  %s' % str(cfg.data.snr_list()))
     except:
         logger.info('An Exception Was Raised trying to Print the SNR List')
 

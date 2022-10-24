@@ -46,13 +46,13 @@ def run_json_project(project,
                      start_layer=0,
                      num_layers=-1,
                      alone=False):
-    '''Align one scale - either the one specified in "use_scale" or the coarsest without an AFM.
+    '''Align one s - either the one specified in "scale" or the coarsest without an AFM.
     :param project: All data data as a JSON dictionary
     :param alignment_option: This the alignment operation which can be one of three values: 'init_affine' (initializes
-    the python_swiftir, normally it is run only on the coarsest scale), 'refine_affine' (refines the python_swiftir, normally is run on
-    all remaining scales), and 'apply_affine' (usually never run, it forces the current python_swiftir onto any scale including
-    the full scale images), defaults to 'init_affine'
-    :param use_scale: The scale value to run the json data at
+    the python_swiftir, normally it is run only on the coarsest s), 'refine_affine' (refines the python_swiftir, normally is run on
+    all remaining scales), and 'apply_affine' (usually never run, it forces the current python_swiftir onto any s including
+    the full s images), defaults to 'init_affine'
+    :param use_scale: The s value to run the json data at
     :param swiftir_code_mode: This can be either 'c' or 'python', defaults to python
     :param start_layer: Layer index number to start at, defaults to 0.
     :param num_layers: The number of index layers to operate on, defaults to -1 which equals all of the images.
@@ -60,7 +60,7 @@ def run_json_project(project,
     '''
     logger.info('\n\nrun_json_project >>>>\n\n')
     logger.info("alignment_option = %s" % str(alignment_option))
-    logger.info("use_scale = %s" % str(use_scale))
+    logger.info("scale = %s" % str(use_scale))
     logger.info("code_mode = %s" % str(swiftir_code_mode))
     logger.info("alone = %s" % str(alone))
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -76,11 +76,11 @@ def run_json_project(project,
         if finest_scale_done != 0:
             upscale = (float(finest_scale_done) / float(scale_tbd))  # Compute upscale factor
             next_scale = finest_scale_done
-        allow_scale_climb = (finest_scale_done != 0)  # Allow scale climbing if there is a finest_scale_done
+        allow_scale_climb = (finest_scale_done != 0)  # Allow s climbing if there is a finest_scale_done
     else:
-        # Force scale_tbd to be equal to use_scale
+        # Force scale_tbd to be equal to scale
         scale_tbd = use_scale
-        # Set allow_scale_climb according to statusBar of next coarser scale
+        # Set allow_scale_climb according to statusBar of next coarser s
         scale_tbd_idx = proj_status['defined_scales'].index(scale_tbd)
         if scale_tbd_idx < len(proj_status['defined_scales']) - 1:
             next_scale = proj_status['defined_scales'][scale_tbd_idx + 1]
@@ -89,22 +89,22 @@ def run_json_project(project,
             allow_scale_climb = proj_status['scales'][next_scale_key]['all_aligned']
 
     if ((not allow_scale_climb) & (alignment_option != 'init_affine')):
-        logger.warning('AlignEM SWiFT Error: Cannot perform alignment_option: %s at scale: %d' % (
+        logger.warning('AlignEM SWiFT Error: Cannot perform alignment_option: %s at s: %d' % (
             alignment_option, scale_tbd))
-        logger.warning('                       Because next coarsest scale is not fully aligned')
+        logger.warning('                       Because next coarsest s is not fully aligned')
 
         return (project, False)
 
     if scale_tbd:
         if use_scale:
-            logger.info("Performing %s at predetermined scale: %d" % (alignment_option, scale_tbd))
-            logger.info("Finest scale completed: %s" % str(finest_scale_done))
-            logger.info("Next coarsest scale completed: %s" % str(next_scale))
+            logger.info("Performing %s at predetermined s: %d" % (alignment_option, scale_tbd))
+            logger.info("Finest s completed: %s" % str(finest_scale_done))
+            logger.info("Next coarsest s completed: %s" % str(next_scale))
             logger.info("Upscale factor: %s" % str(upscale))
         else:
-            logger.info("Performing %s at automatically determined scale: %d" % (alignment_option, scale_tbd))
-            logger.info("Finest scale completed: %s" % str(finest_scale_done))
-            logger.info("Next coarsest scale completed: %s" % str(next_scale))
+            logger.info("Performing %s at automatically determined s: %d" % (alignment_option, scale_tbd))
+            logger.info("Finest s completed: %s" % str(finest_scale_done))
+            logger.info("Next coarsest s completed: %s" % str(next_scale))
             logger.info("Upscale factor: %s" % str(upscale))
 
         scale_tbd_dir = os.path.join(project['data']['destination_path'], 'scale_' + str(scale_tbd))
@@ -113,7 +113,7 @@ def run_json_project(project,
         common_length = len(s_tbd)
 
         if next_scale:
-            # Copy settings from next coarsest completed scale to tbd:
+            # Copy settings from next coarsest completed s to tbd:
             #      s_done = data['data']['scales']['scale_'+str(finest_scale_done)]['alignment_stack']
             s_done = project['data']['scales']['scale_' + str(next_scale)]['alignment_stack']
             common_length = min(len(s_tbd), len(s_done))
@@ -178,7 +178,7 @@ def run_json_project(project,
             # put updated atrm into s_tbd
             s_tbd[i]['align_to_ref_method'] = atrm
 
-            # if there are match points, copy and scale them for scale_tbd
+            # if there are match points, copy and s them for scale_tbd
             if atrm['selected_method'] == 'Match Point Align':
                 mp_ref = (np.array(s_tbd[i]['images']['ref']['metadata']['match_points']) * upscale).tolist()
                 mp_base = (np.array(s_tbd[i]['images']['base']['metadata']['match_points']) * upscale).tolist()
@@ -186,7 +186,7 @@ def run_json_project(project,
                 s_tbd[i]['images']['base']['metadata']['match_points'] = mp_base
 
         if (alignment_option == 'refine_affine') or (alignment_option == 'apply_affine'):
-            # Copy the affine_matrices from s_tbd and scale the translation part to use as the initial guess for s_tbd
+            # Copy the affine_matrices from s_tbd and s the translation part to use as the initial guess for s_tbd
             afm_tmp = np.array([al['align_to_ref_method']['method_results']['affine_matrix'] for al in s_tbd])
             logger.debug('\n>>>> Original python_swiftir matrices: \n\n')
             logger.debug(str(afm_tmp))
@@ -230,14 +230,14 @@ def run_json_project(project,
                 # Align Forward Change:
                 align_list.append({'i': i, 'proc': align_proc, 'do': (i in range_to_process)})
 
-        c_afm = swiftir.identityAffine() # Initialize c_afm to identity matrix
+        c_afm = swiftir.identityAffine() # Initialize cafm to identity matrix
 
         # Align Forward Change:
         if (range_to_process[0] != 0) and not alone:
             logger.debug(80 * "@")
-            logger.debug("Not starting at zero, initialize the c_afm to non-identity from previous aligned image")
+            logger.debug("Not starting at zero, initialize the cafm to non-identity from previous aligned image")
             logger.debug(80 * "@")
-            # Set the c_afm to the afm of the previously aligned image
+            # Set the cafm to the afm of the previously aligned image
             # TODO: Check this for handling skips!!!
             # TODO: Check this for handling skips!!!
             # TODO: Check this for handling skips!!!
@@ -259,7 +259,7 @@ def run_json_project(project,
                 align_item = item['proc']
                 logger.debug('\nAligning: %s %s' % (
                     os.path.basename(align_item.im_sta_fn), os.path.basename(align_item.im_mov_fn)))
-                # align_item.cumulative_afm = c_afm
+                # align_item.cumulative_afm = cafm
                 c_afm = align_item.align(c_afm, save=False)
             else:
                 align_item = item['proc']
@@ -295,17 +295,17 @@ def evaluate_project_status(project):
         proj_status['scales'][scale_key] = {}
         alstack = project['data']['scales'][scale_key]['alignment_stack']
         logger.info('alstack: %s' % str(alstack))
-        # Create an array of boolean values representing whether 'affine_matrix' is in the method results for each layer
+        # Create an array of boolean values representing whether 'affine_matrix' is in the method results for each l
         proj_status['scales'][scale_key]['aligned_stat'] = np.array(
             ['affine_matrix' in item['align_to_ref_method']['method_results'] for item in alstack])
         num_afm = np.count_nonzero(proj_status['scales'][scale_key]['aligned_stat'] == True)
         if num_afm == len(alstack):
             proj_status['scales'][scale_key]['all_aligned'] = True
             if not proj_status['finest_scale_done']:
-                proj_status['finest_scale_done'] = scale  # If not yet set, we found the finest scale done
+                proj_status['finest_scale_done'] = scale  # If not yet set, we found the finest s done
         else:
             proj_status['scales'][scale_key]['all_aligned'] = False
-            proj_status['scale_tbd'] = scale  # this will always be the coarsest scale not done
+            proj_status['scale_tbd'] = scale  # this will always be the coarsest s not done
     logger.info('<<<< Returning Project Status Dict')
     return proj_status
 
@@ -530,7 +530,7 @@ class alignment_process:
         #    self.recipe.add_ingredient(ingredient_check_align)
 
         self.recipe.execute()  # DOES the alignment -jy
-        self.setCafm(c_afm, bias_mat=None)  # returns new current c_afm -jy
+        self.setCafm(c_afm, bias_mat=None)  # returns new current cafm -jy
 
         # Retrieve alignment result
         snr = self.recipe.ingredients[-1].snr
@@ -560,7 +560,7 @@ class alignment_process:
         logger.debug('setCafm >>>>')
         '''Calculate new cumulative python_swiftir for current stack location'''
         self.cumulative_afm = swiftir.composeAffine(self.recipe.afm, c_afm)
-        # matrix multiplication of current python_swiftir matrix with c_afm (cumulative) -jy
+        # matrix multiplication of current python_swiftir matrix with cafm (cumulative) -jy
         # current cumulative "at this point in the stack"
 
         # Apply bias_mat if given
@@ -1117,7 +1117,7 @@ if __name__ == '__main__':
                 match_points[0] = [[m[0][2 * i], m[0][(2 * i) + 1]] for i in range(len(m[0]) / 2)]
                 match_points[1] = [[m[1][2 * i], m[1][(2 * i) + 1]] for i in range(len(m[1]) / 2)]
 
-                # Build the layer dictionary with the match points
+                # Build the l dictionary with the match points
                 layer_dict = {
                     "images": {
                         "base": {
@@ -1169,7 +1169,7 @@ single_scale_job.py
     updated_model, need_to_write_json =  run_json_project(
                                          data = project_dict,
                                          alignment_option = alignment_option,
-                                         use_scale = use_scale,
+                                         scale = scale,
                                          code_mode = code_mode,
                                          start_layer = start_layer,
                                          num_layers = num_layers )
@@ -1178,7 +1178,7 @@ single_alignment_job.py
    updated_model, need_to_write_json =  run_json_project(
                                          data = project_dict,
                                          alignment_option = alignment_option,
-                                         use_scale = use_scale,
+                                         scale = scale,
                                          code_mode = code_mode,
                                          start_layer = start_layer,
                                          num_layers = num_layers )
@@ -1187,7 +1187,7 @@ project_runner.py
             self.updated_model, self.need_to_write_json = run_json_project(
                     data=self.data,
                     alignment_option=self.alignment_option,
-                    use_scale=self.use_scale,
+                    scale=self.scale,
                     code_mode=self.code_mode,
                     start_layer=self.start_layer,
                     num_layers=self.num_layers)
@@ -1206,7 +1206,7 @@ movingPatches  # USES cv2 (fft)!
 multiSwim  #no cv2
 composeAffine  #no cv2
 
-wsf = atrm['method_data']['win_scale_factor']  # window size scale factor
+wsf = atrm['method_data']['win_scale_factor']  # window size s factor
 #    Previously hard-coded values for wsf chosen by trial-and-error
 #    wsf = 0.80  # Most common good value for wsf
 #    wsf = 0.75  # Also a good value for most projects

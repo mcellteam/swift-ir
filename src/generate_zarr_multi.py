@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 Z_STRIDE = 1
 
 def generate_zarr_multi(src, out):
-    logger.critical('>>>> Generate Zarr Multi <<<<')
+    logger.critical('>>>> Generate Zarr Multi >>>>')
     logger.info('src : %s\nout: %s' % (src, out))
     # Todo conditional handling of skips
     tasks_ = []
@@ -40,7 +40,7 @@ def generate_zarr_multi(src, out):
                      str(task[1]),          # img
                      str(task[2]),          # src
                      str(task[3]),          # out
-                     str(task[4]),          # scale str
+                     str(task[4]),          # s str
                      ]
         task_queue.add_task(task_args)
     task_queue.collect_results()
@@ -48,7 +48,7 @@ def generate_zarr_multi(src, out):
     except: print_exception()
     task_queue.stop()
     del task_queue
-    logger.critical('>>>> Generate Zarr End <<<<')
+    logger.critical('<<<< Generate Zarr End <<<<')
 
 
 if __name__ == '__main__':

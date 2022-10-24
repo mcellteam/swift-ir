@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("scale", type=int, help="integer value to scale image")
+    parser.add_argument("s", type=int, help="integer value to s image")
     parser.add_argument("infile", help="file name of the original image")
     parser.add_argument("outfile", help="file name of the scaled image")
     arg_space = parser.parse_args()

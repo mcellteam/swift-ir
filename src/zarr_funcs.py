@@ -16,7 +16,7 @@ import src.config as cfg
 from src.helpers import get_scale_val, time_limit, get_img_filenames, print_exception
 from src.image_funcs import ImageSize, compute_bounding_rect, imageio_read_image
 
-__all__ = ['preallocate_zarr', 'tiffs2MultiTiff', 'write_zarr_multiscale_metadata']
+__all__ = ['preallocate_zarr_src', 'preallocate_zarr_aligned', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
 
 logger = logging.getLogger(__name__)
 
@@ -81,115 +81,77 @@ def tiffs2MultiTiff(directory:str, out:str):
     # imlist[0].save("test.tif", compression="tiff_deflate", save_all=True, append_images=imlist[1:])
 
 def remove_zarr(path) -> None:
+    logger.critical('Removing Preexisting Zarrs...')
     # path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     if os.path.isdir(path):
         logger.critical('Removing Zarr Located at %s...' % path)
         try:
-            with time_limit(15):
+            with time_limit(20):
                 logger.info('Removing %s...' % path)
                 shutil.rmtree(path, ignore_errors=True)
         except TimeoutError as e:
             logger.warning("Timed out!")
         logger.info('Finished Removing Zarr Files')
 
-def preallocate_zarr(use_scale=None, bounding_rect=True, name='out.zarr', z_stride=16, chunks=(1, 512, 512), is_alignment=True):
-    logger.critical('>>>> Preallocating Zarrs <<<<')
-    cfg.main_window.hud.post('Preallocating Zarr Array...')
-    cur_scale = cfg.data.scale()
-    cur_scale_val = get_scale_val(cfg.data.scale())
+
+def preallocate_zarr_src():
+    cfg.main_window.hud.post('Preallocating Scaled Zarr Array...')
+    zarr_path = os.path.join(cfg.data.dest(), 'img_src.zarr')
+    logger.info('Zarr Root Location: %s' % zarr_path)
+    if os.path.exists(zarr_path):
+        remove_zarr(zarr_path)
+
+    root = zarr.group(store=zarr_path, overwrite=True)
+    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)
+
+    cname = cfg.data.cname()
+    clevel = cfg.data.clevel()
+    chunkshape = cfg.data.chunkshape()
+
+    for scale in cfg.data.scales():
+        dimx, dimy = ImageSize(cfg.data.path_base(s=scale))
+        name = 's' + str(get_scale_val(scale))
+        shape = (cfg.data.n_imgs(), dimy, dimx)
+        logger.info('Preallocating Scale Zarr Array for %s, shape: %s' % (scale, str(shape)))
+        compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+        root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+
+def preallocate_zarr_aligned(scales=None):
+    cfg.main_window.hud.post('Preallocating Aligned Zarr Array...')
+    if scales == None: scales = [cfg.data.scale()]
     src = os.path.abspath(cfg.data.dest())
-    n_imgs = cfg.data.n_imgs()
-    zarr_path = os.path.join(cfg.data.dest(), name)
-    if name == 'img_aligned.zarr':  zarr_these_scales = [use_scale]
-    elif name == 'img_src.zarr':    zarr_these_scales = cfg.data.scales()
-    else:                           zarr_these_scales = [use_scale]
+    zarr_path = os.path.join(src, 'img_aligned.zarr')
+    logger.info('Zarring these scales: %s' % str(scales))
+    logger.info('Zarr Root Location: %s' % zarr_path)
 
-    logger.critical('zarr_these_scales = %s' % str(zarr_these_scales))
-    logger.info('Zarring these scales: %s' % str(zarr_these_scales))
-    if cfg.PROJECT_OPEN & (name == 'img_src.zarr'):
-        logger.critical('Removing Preexisting Zarrs...')
-        # remove_zarr(zarr_path)  #1017 PERHAPS REMOVE ZARR AT ROOT
-        for scale in zarr_these_scales:
-            out_path = os.path.join(src, name, 's' + str(get_scale_val(scale)))
-            if os.path.exists(out_path):
-                remove_zarr(out_path)
+    root = zarr.group(store=zarr_path)
+    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)
+    # root = zarr.group(store=zarr_name, overwrite=True)
 
-    if name == 'img_aligned.zarr':
-        logger.critical('Removing Preexisting Zarrs...')
-        out_path = os.path.join(src, name, 's' + str(get_scale_val(use_scale)))
+    cname = cfg.data.cname()
+    clevel = cfg.data.clevel()
+    chunkshape = cfg.data.chunkshape()
+
+    for scale in scales:
+        out_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr', 's' + str(get_scale_val(scale)))
         if os.path.exists(out_path):
             remove_zarr(out_path)
 
-    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)  # Create Root Group Using Synchronizer
-    root = zarr.group(store=zarr_path)  # Create Root Group W/out using Synchronizer
-    # root = zarr.group(store=zarr_name, overwrite=True)
-    logger.info('Zarr Root Location: %s' % zarr_path)
-
-    datasets = []
-    for scale in zarr_these_scales:
-        logger.info('Zarring scale %s' % scale)
-
-        logger.info('Preallocating Zarr for Scale: %s' % str(scale))
-        logger.info('has_bb = %s' % str(bounding_rect))
-        if bounding_rect is True:
-            rect = compute_bounding_rect(cfg.data['data']['scales'][scale]['alignment_stack'])
-            dimx, dimy = rect[2], rect[3]
-            logger.info('dim_x=%d, dim_y=%d' % (dimx, dimy))
-
-        else:
-            imgs = sorted(get_img_filenames(os.path.join(src, scale, 'img_src')))
-            # dimx, dimy = Image.open(os.path.join(src, scale, 'img_aligned', imgs[0])).size
-            if is_alignment:
-                path = os.path.join(src, scale, 'img_aligned', imgs[0])
-                # dimx, dimy = tifffile.imread(path).size
-                dimx, dimy = ImageSize(path)
-            else:
-                path = os.path.join(src, scale, 'img_src', imgs[0])
-                logger.info('path = %s' % path)
-                dimx, dimy = ImageSize(path)
-
-
-        logger.info('dimx = %d, dimy = %d' % (dimx, dimy))
+        rect = cfg.data.bounding_rect(s=scale)
+        shape = (cfg.data.n_imgs(), rect[2], rect[3])
+        logger.info('Preallocating Aligned Zarr Array for %s, shape: %s' % (scale, str(shape)))
 
         name = 's' + str(get_scale_val(scale))
-        shape = (n_imgs, dimy, dimx)
-        # chunks = (z_stride, 64, 64)
-        chunks = (cfg.CHUNK_Z, cfg.CHUNK_Y, cfg.CHUNK_X)
-        dtype = 'uint8'
-        compressor = Blosc(cname=cfg.CNAME, clevel=cfg.CLEVEL) if cfg.CNAME in ('zstd', 'zlib', 'gzip') else None
-        # compressor = Blosc(cname='zstd', clevel=5)
-        logger.info('Zarr Array will have shape: %s' % str(shape))
-        array = root.zeros(name=name, shape=shape, chunks=chunks, dtype=dtype, compressor=compressor, overwrite=True)
+        compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
+        root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
 
-        # datasets.append(
-        #     {
-        #         "path": name,
-        #         "coordinateTransformations": [{
-        #             "type": "scale",
-        #             "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
-        #     }
-        # )
-
-        # metadata = {
-        #     "path": name,
-        #     "coordinateTransformations": [{
-        #         "type": "scale",
-        #         "scale": [float(50.0), 2 * float(scale_val), 2 * float(scale_val)]}]
-        # }
-        # root.attrs["multiscales"][0]["datasets"].append(metadata)
-
-    # write_zarr_multiscale_metadata() # write single multiscale zarr for all aligned scale
+    # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
 
     if cfg.data.scale() == 'scale_1':
-        zarr_path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
-        write_zarr_multiscale_metadata(path=zarr_path)
-    else:
-        write_zarr_metadata_cur_scale()  # write multiscale zarr for current scale
-    cfg.main_window.hud.done()
+        write_metadata_zarr_multiscale(path=os.path.join(cfg.data.dest(), 'img_aligned.zarr'))
 
-    # time.sleep(500)
 
-def write_zarr_multiscale_metadata(path):
+def write_metadata_zarr_multiscale(path):
     root = zarr.group(store=path)
     datasets = []
     for scale in cfg.data.aligned_list():
@@ -198,8 +160,8 @@ def write_zarr_multiscale_metadata(path):
         metadata = {
             "path": name,
             "coordinateTransformations": [{
-                "type": "scale",
-                "scale": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
+                "type": "s",
+                "s": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
         }
         datasets.append(metadata)
     axes = [
@@ -218,18 +180,18 @@ def write_zarr_multiscale_metadata(path):
         }
     ]
 
-def write_zarr_metadata_cur_scale(name='img_aligned.zarr'):
+def write_metadata_zarr_aligned(name='img_aligned.zarr'):
     zarr_path = os.path.join(cfg.data.dest(), name)
     root = zarr.group(store=zarr_path)
     datasets = []
-    # scale_factor = scale_val(cfg.data.scale())
+    # scale_factor = scale_val(cfg.data.s())
     scale_factor = cfg.data.scale_val()
     name = 's' + str(scale_factor)
     metadata = {
         "path": name,
         "coordinateTransformations": [{
-            "type": "scale",
-            "scale": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
+            "type": "s",
+            "s": [float(50.0), 2 * float(scale_factor), 2 * float(scale_factor)]}]
     }
     datasets.append(metadata)
 
@@ -266,8 +228,8 @@ def write_zarr_metadata_cur_scale(name='img_aligned.zarr'):
 #         # z.attrs['offset'] = ["0", "0", "0"]
 #
 #     # zarr_path = os.path.join(dest, 'img_src.zarr')
-#     # write_zarr_multiscale_metadata(path=zarr_path)
-#     write_zarr_metadata_cur_scale(name='img_src.zarr')
+#     # write_metadata_zarr_multiscale(path=zarr_path)
+#     write_metadata_zarr_aligned(name='img_src.zarr')
 #
 #     # scale_factor = cfg.data.scale_val()
 #

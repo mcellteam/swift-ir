@@ -382,7 +382,7 @@ class QtImageStackViewer(QWidget):
             x_al = self._image[self.currentIndex(), :, :]
             future_al = x_al.read()
             self.imageViewer.setImage(future_al.result())
-            # self.imageViewer.setImage(np.asarray(self._image[cfg.data.layer(), :, :])) # Uses No I/O
+            # self.imageViewer.setImage(np.asarray(self._image[cfg.data.l(), :, :])) # Uses No I/O
 
             # read_future = x.read() <-- This Returns a tensorstore.Future to read a slice asynchronously, if desired
         elif type(self._image) is dask.array.core.Array:
