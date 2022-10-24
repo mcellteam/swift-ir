@@ -23,7 +23,7 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
 
   echo "Activating alignment conda env..."
 #  conda activate $WORK/miniconda3/envs/alignPYQT
-  conda activate alignPYQT
+  conda activate alignTACC1024
 
   # echo "Setting MAX_NUM_THREADS flag..."
   # unset MAX_NUM_THREADS
