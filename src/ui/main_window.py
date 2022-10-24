@@ -80,7 +80,6 @@ class MainWindow(QMainWindow):
         self.threadpool = QThreadPool(self)  # important consideration is this 'self' reference
         self.threadpool.setExpiryTimeout(3000) # ms
         self.ng_worker = None
-        self._splash = True
 
         self._snr_by_scale = dict()
 
@@ -1656,8 +1655,6 @@ class MainWindow(QMainWindow):
 
     def set_mainwindow_splash_view(self):
         logger.info('Setting Splash Controls...')
-        self._splash = True
-
         # self.bottom_widget.hide()
 
         self.new_project_button.setCursor(QCursor(Qt.PointingHandCursor))
@@ -1731,10 +1728,9 @@ class MainWindow(QMainWindow):
 
 
     def set_mainwindow_project_view(self):
-        logger.info('Setting Project Controls...')
+        logger.info('Setting MainWindow View...')
 
-        self._splash = False
-
+        logger.info('Setting cursors...')
         self.new_project_button.setCursor(QCursor(Qt.ArrowCursor))
         self.open_project_button.setCursor(QCursor(Qt.ArrowCursor))
         self.save_project_button.setCursor(QCursor(Qt.ArrowCursor))
@@ -1743,6 +1739,7 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setCursor(QCursor(Qt.ArrowCursor))
         self.expand_console_button.setCursor(QCursor(Qt.ArrowCursor))
 
+        logger.info('Hiding panels...')
         self.title_label.hide()
         self.subtitle_label.hide()
         self.expand_console_button.hide()
@@ -1760,8 +1757,9 @@ class MainWindow(QMainWindow):
         self.image_panel_stack_widget.show() # just to make sure
         self.expand_bottom_panel_button.setIcon(qta.icon("fa.caret-up", color='#f3f6fb'))
 
-        # self.bottom_widget.setMaximumHeight(1200) #1024-
+        # self.bottom_widget.setMaxiumHeight(1200) #1024-
 
+        logger.info('Setting button sizes...')
         self.new_project_button.setMinimumSize(1, 1)
         self.open_project_button.setMinimumSize(1, 1)
         self.save_project_button.setMinimumSize(1, 1)
@@ -1771,6 +1769,7 @@ class MainWindow(QMainWindow):
         self.expand_console_button.setMinimumSize(1, 1)
         # self.import_images_button.setMinimumSize(1, 1)
 
+        logger.info('Setting stylesheets...')
         font_size = 12
         # self.import_images_button.setStyleSheet('font-size: %spx;' % font_size)
         self.new_project_button.setStyleSheet('font-size: %spx;' % font_size)
@@ -1781,6 +1780,7 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setStyleSheet('font-size: %spx;' % font_size)
         # self.expand_console_button.setStyleSheet('font-size: %spx;' % font_size)
 
+        logger.info('Setting icon sizes...')
         icon_size = 12
         # self.import_images_button.setIconSize(QSize(icon_size, icon_size))
         self.new_project_button.setIconSize(QSize(icon_size, icon_size))
@@ -1791,8 +1791,10 @@ class MainWindow(QMainWindow):
         self.exit_app_button.setIconSize(QSize(icon_size, icon_size))
         # self.expand_console_button.setIconSize(QSize(icon_size, icon_size))
 
+        logger.info('Setting mainwindow maximum size...')
         self.setMaximumSize(16777215, 16777215)
         # self.setGeometry(100,100,cfg.WIDTH,cfg.HEIGHT)
+        logger.info('Resizing mainwindow...')
         self.resize(cfg.WIDTH,cfg.HEIGHT)
         self.moveCenter()
         # self.adjustSize()
