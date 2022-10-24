@@ -89,8 +89,8 @@ class MainWindow(QMainWindow):
         elif qtpy.PYQT6:
             os.environ['QT_IMAGEIO_MAXALLOC'] = "1000000000000000" #PyQt6
 
-        # self.context = QOpenGLContext(self)
-        # self.context.setFormat(QSurfaceFormat())
+        self.context = QOpenGLContext(self)
+        self.context.setFormat(QSurfaceFormat())
 
         # self.project_progress = 0
         self.project_progress = None
