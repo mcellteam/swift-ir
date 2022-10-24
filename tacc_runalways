@@ -30,8 +30,8 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
   # export MAX_NUM_THREADS=128
 
   echo "Loading TACC swr and fftw3 modules..."
-#  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
-  ml intel/19.1.1 impi/19.0.9 fftw3/3.3.10
+  ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
+#  ml intel/19.1.1 impi/19.0.9 fftw3/3.3.10
 #  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
 
   echo "Setting GALLIUM_DRIVER=swr..."
@@ -56,7 +56,9 @@ else
 fi
 
 echo ""
-echo "To run AlignEM-SWiFT type 'cd $WORK/swift-ir' then 'python3 alignEM.py'"
+echo "To run AlignEM-SWiFT type:"
+echo "    cd $WORK/swift-ir"
+echo "    swr python3 alignEM.py:"
 echo ""
 
 
