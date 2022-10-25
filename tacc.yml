@@ -151,7 +151,7 @@ dependencies:
     - google-auth==2.11.0
     - httplib2==0.20.4
     - idna==3.3
-    - neuroglancer==2.29
+    - neuroglancer==2.30
     - oauth2client==4.1.3
     - opencv-python-headless==4.6.0.66
     - pyasn1==0.4.8
@@ -165,4 +165,4 @@ dependencies:
     - rsa==4.9
     - tensorstore==0.1.27
     - urllib3==1.26.12
-prefix: alignTACC1024
+prefix: /work/08507/joely/ls6/miniconda3/envs/alignTACC1024

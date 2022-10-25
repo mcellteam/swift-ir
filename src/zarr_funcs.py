@@ -119,7 +119,7 @@ def preallocate_zarr_src():
         dimx, dimy = ImageSize(cfg.data.path_base(s=scale))
         name = 's' + str(get_scale_val(scale))
         shape = (cfg.data.n_imgs(), dimy, dimx)
-        logger.info('Preallocating Scale Zarr Array for %s, shape: %s' % (scale, str(shape)))
+        logger.info('Preallocating Zarr %s array, shape: %s' % (scale, str(shape)))
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
         root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
         # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
