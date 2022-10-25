@@ -1059,7 +1059,7 @@ class MainWindow(QMainWindow):
         if self._working:
             logger.warning('fn_scales_combobox was called but _working is True -> ignoring the signal')
             return None
-        logger.info('fn_scales_combobox is changing scale (caller: )' % inspect.stack()[1].function)
+        logger.info('fn_scales_combobox is changing scale (caller: %s)' % inspect.stack()[1].function)
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
         self.update_enabled_buttons()
