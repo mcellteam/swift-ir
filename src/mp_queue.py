@@ -23,7 +23,6 @@ __all__ = ['TaskQueue']
 logger = logging.getLogger(__name__)
 mpl = mp.log_to_stderr()
 # mpl.setLevel(logging.INFO)
-mpl.setLevel(logging.DEBUG)
 
 SENTINEL = 1
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
@@ -92,6 +91,10 @@ class TaskQueue(QObject):
         self.n_workers = n_workers
         self.retries = retries
         self.task_dict = {}
+        if cfg.DEBUG_MP:
+            mpl.setLevel(logging.DEBUG)
+        else:
+            mpl.setLevel(logging.INFO)
 
         cfg.main_window.hud.post('%d Workers Are Processing %d tasks' % (self.n_workers, self.n_tasks))
 
