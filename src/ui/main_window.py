@@ -1619,7 +1619,7 @@ class MainWindow(QMainWindow):
         
         if filenames != None:
             if len(filenames) > 0:
-                self.hud('Importing Selected Images...')
+                self.hud.post('Importing Selected Images...')
                 logger.debug("Selected Files: " + str(filenames))
                 for i, f in enumerate(filenames):
                     # Find next l with an empty role matching the requested role_to_import
@@ -1913,16 +1913,16 @@ class MainWindow(QMainWindow):
 
 
     def documentation_view(self):  # documentationview
-        self.hud("Switching to AlignEM_SWiFT Documentation")
+        self.hud.post("Switching to AlignEM_SWiFT Documentation")
         self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/joel-dev/README.md'))
         self.main_widget.setCurrentIndex(1)
 
     def documentation_view_home(self):
-        self.hud("Viewing AlignEM-SWiFT Documentation")
+        self.hud.post("Viewing AlignEM-SWiFT Documentation")
         self.browser_docs.setUrl(QUrl('https://github.com/mcellteam/swift-ir/blob/development_ng/README.md'))
 
     def remote_view(self):
-        self.hud("Switching to Remote Neuroglancer Server")
+        self.hud.post("Switching to Remote Neuroglancer Server")
         # self.browser.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.main_widget.setCurrentIndex(3)
@@ -2019,7 +2019,7 @@ class MainWindow(QMainWindow):
         self.main_widget.setCurrentIndex(1)
 
     def google(self):
-        self.hud('Googling...')
+        self.hud.post('Googling...')
         self.browser_docs.setUrl(QUrl('https://www.google.com'))
         self.main_widget.setCurrentIndex(1)
 
@@ -2040,7 +2040,7 @@ class MainWindow(QMainWindow):
 
     def print_ng_state(self):
         try:
-            self.hud('\n\n%s' % str(cfg.viewer.state))
+            self.hud.post('\n\n%s' % str(cfg.viewer.state))
         except:
             pass
 
@@ -2054,7 +2054,7 @@ class MainWindow(QMainWindow):
 
     def print_ng_raw_state(self):
         try:
-            self.hud('\n\n%s' % str(cfg.viewer.config_state.raw_state))
+            self.hud.post('\n\n%s' % str(cfg.viewer.config_state.raw_state))
         except:
             pass
 
@@ -2068,9 +2068,9 @@ class MainWindow(QMainWindow):
         if not are_images_imported():
             return
         v = cfg.viewer
-        self.hud("v.position: %s\n" % str(v.state.position))
-        self.hud("v.config_state: %s\n" % str(v.config_state))
-        self.hud(self.ng_worker)
+        self.hud.post("v.position: %s\n" % str(v.state.position))
+        self.hud.post("v.config_state: %s\n" % str(v.config_state))
+        self.hud.post(self.ng_worker)
 
 
     def blend_ng(self):
@@ -2276,8 +2276,6 @@ class MainWindow(QMainWindow):
             ['&View',
              [
                  ['Normalize View', 'None', self.set_mainwindow_project_view, None, None, None],
-                 ['Reload Neuroglancer', 'None', self.recreate_ng, None, None, None],
-                 ['Init Neuroglancer Client', 'None', self.init_neuroglancer_client, None, None, None],
                  ['Neuroglancer Layout',
                   [
                       ['xy', None, self.ng_set_layout_xy, None, None, None],
@@ -2322,12 +2320,12 @@ class MainWindow(QMainWindow):
                  # ['Apply Project Defaults', None, cfg.data.set_defaults, None, None, None],
                  ['Show &K Image', 'Ctrl+K', self.view_k_img, None, None, None],
                  ['&Write Multipage Tifs', 'None', self.write_paged_tiffs, None, None, None],
-                 ['&Match Point Align Mode',
-                  [
-                      ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
-                      ['Clear Match Points', 'None', self.clear_match_points, None, None, None],
-                  ]
-                  ],
+                 # ['&Match Point Align Mode',
+                 #  [
+                 #      ['Toggle &Match Point Mode', 'Ctrl+M', self.toggle_match_point_align, None, False, True],
+                 #      ['Clear Match Points', 'None', self.clear_match_points, None, None, None],
+                 #  ]
+                 #  ],
                  ['&Advanced',
                   [
                       ['Toggle Zarr Controls', None, self.toggle_zarr_controls, None, None, None],
@@ -2368,19 +2366,15 @@ class MainWindow(QMainWindow):
                       ['Dump Neuroglancer Details', None, self.dump_ng_details, None, None, None],
                     ]
                   ],
-                 ['Browser',
-                  [
-                      ['Reload', None, self.browser_reload, None, None, None],
-                  ]
-                  ],
-                 ['Show Zarr Info', None, self.show_zarr_info, None, None, None],
-                 ['Show Environment', None, self.show_run_path, None, None, None],
-                 ['Show Module Search Path', None, self.show_module_search_path, None, None, None],
-                 ['Print Sanity Check', None, print_sanity_check, None, None, None],
-                 ['Print Project Tree', None, print_project_tree, None, None, None],
-                 ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
-                 ['Create Multipage TIF', None, create_paged_tiff, None, None, None],
 
+                ['Reload Browser', None, self.browser_reload, None, None, None],
+                ['Show Zarr Info', None, self.show_zarr_info, None, None, None],
+                ['Show Environment', None, self.show_run_path, None, None, None],
+                ['Show Module Search Path', None, self.show_module_search_path, None, None, None],
+                ['Print Sanity Check', None, print_sanity_check, None, None, None],
+                ['Print Project Tree', None, print_project_tree, None, None, None],
+                ['Print Single Alignment Layer', None, print_alignment_layer, None, None, None],
+                ['Create Multipage TIF', None, create_paged_tiff, None, None, None],
              ]
              ],
 
