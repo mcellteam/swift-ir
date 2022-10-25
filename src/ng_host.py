@@ -17,6 +17,7 @@ from src.helpers import print_exception, get_scale_val, is_cur_scale_aligned, ar
 from src.image_funcs import ImageSize, ComputeBoundingRect
 from src.zarr_funcs import get_zarr_tensor_from_path
 import src.config as cfg
+if cfg.USE_TENSORSTORE: import tensorstore as ts
 
 __all__ = ['NgHost']
 
