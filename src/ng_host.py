@@ -57,10 +57,12 @@ class NgHost(QRunnable):
     @Slot()
     def run(self):
         # time.sleep(1)
-        logger.info('Starting HTTP Server...')
+        logger.critical('>>>> Starting HTTP Server >>>>')
 
         os.chdir(self.src) # <-- this sucks, refactor
         self.http_server = None
+        # del self.http_server
+        '''Find An Available Port'''
         while self.http_server is None:
             try:
                 self.http_server = Server((self.bind, self.port))
@@ -72,7 +74,8 @@ class NgHost(QRunnable):
                 print_exception()
 
         try:
-            self.create_viewer()
+            self.updateViewer()
+            # self.initViewer()
         except:
             print_exception()
             logger.error('Failed NgHost Failed to Create The Viewer')
@@ -101,8 +104,8 @@ class NgHost(QRunnable):
             # os.chdir(os.path.split(os.path.realpath(__file__))[0]) #0908+
             logger.info('Finally: Stopping Neuroglancer...')
             ng.server.stop()
-            logger.info('Finally: Closing HTTP Server on port %s...' % str(self.http_server.server_port))
-            self.http_server.server_close()
+            # logger.info('Finally: Closing HTTP Server on port %s...' % str(self.http_server.server_port))
+            # self.http_server.server_close()
             logger.info('Finally: Shutting Down HTTP Server...')
             self.http_server.shutdown()
             logger.info('Finally: Exiting System...')
@@ -119,22 +122,30 @@ class NgHost(QRunnable):
     #     ss.capture()
 
 
-    def create_viewer(self):
-        logger.info('Creating Neuroglancer Viewer (called by %s)...' % inspect.stack()[1].function)
+
+    def updateViewer(self):
+        logger.info('Creating NG Viewer (called by %s)...' % inspect.stack()[1].function)
         '''
         Note tensorstore appears not to support multiscale metadata yet:
         However, we do have to deal with issues of rounding. I have been looking into supporting this in tensorstore, 
         but it is not yet ready.
         https://github.com/google/neuroglancer/issues/333
         '''
-        is_aligned = is_cur_scale_aligned()
-        # if is_aligned:  logger.info('is_aligned=True')
-        # else:           logger.info('is_aligned=False')
-        scale_val = get_scale_val(cfg.data.scale())
-        l = cfg.data.layer()
+
         if not are_images_imported():
-            logger.warning('Nothing To View, Cant Use Neuroglancer - Returning')
+            logger.warning('Nothing To View in Neuroglancer - Returning')
             return
+
+        if ng.is_server_running():
+            logger.critical('Stopping and Restarting NG Client...')
+            ng.server.stop()
+        else:
+            logger.info('NG Client Is Not Running. Continuing...')
+
+        cfg.viewer = ng.Viewer()
+
+        is_aligned = is_cur_scale_aligned()
+        l = cfg.data.layer()
 
         #Todo set different coordinates for the two different datasets. For now use larger dim.
         img_dim = ImageSize(cfg.data.path_base())
@@ -144,8 +155,7 @@ class NgHost(QRunnable):
         # for TensorStore. 'zarr://' protocol only known to Neuroglancer
 
         logger.info('Layer Address: %s' % addr)
-        del cfg.viewer
-        cfg.viewer = ng.Viewer()
+
         # cfg.viewer = ng.UnsynchronizedViewer()
         self.viewer_url = str(cfg.viewer)
         scale_factor = cfg.data.scale_val()
