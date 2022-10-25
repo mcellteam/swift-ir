@@ -108,8 +108,9 @@ def preallocate_zarr_src():
     if os.path.exists(zarr_path):
         remove_zarr(zarr_path)
 
-    root = zarr.group(store=zarr_path, overwrite=True)
-    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)
+    # root = zarr.group(store=zarr_path, overwrite=True)
+    synchronizer = zarr.ThreadSynchronizer()
+    root = zarr.group(store=zarr_path, overwrite=True, synchronizer=synchronizer)
 
     cname = cfg.data.cname()
     clevel = cfg.data.clevel()
@@ -132,8 +133,9 @@ def preallocate_zarr_aligned(scales=None):
     logger.info('Zarring these scales: %s' % str(scales))
     logger.info('Zarr Root Location: %s' % zarr_path)
 
-    root = zarr.group(store=zarr_path)
-    # root = zarr.group(store=zarr_path, synchronizer=synchronizer)
+    # root = zarr.group(store=zarr_path) #orig
+    synchronizer = zarr.ThreadSynchronizer()
+    root = zarr.group(store=zarr_path, overwrite=True, synchronizer=synchronizer)
     # root = zarr.group(store=zarr_name, overwrite=True)
 
     cname = cfg.data.cname()
