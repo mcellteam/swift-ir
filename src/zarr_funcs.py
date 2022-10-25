@@ -114,7 +114,8 @@ def preallocate_zarr_src():
         shape = (cfg.data.n_imgs(), dimy, dimx)
         logger.info('Preallocating Scale Zarr Array for %s, shape: %s' % (scale, str(shape)))
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+        # root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+        root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
 
 def preallocate_zarr_aligned(scales=None):
     cfg.main_window.hud.post('Preallocating Aligned Zarr Array...')
@@ -143,7 +144,8 @@ def preallocate_zarr_aligned(scales=None):
 
         name = 's' + str(get_scale_val(scale))
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+        # root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+        root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
 
     # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
 
