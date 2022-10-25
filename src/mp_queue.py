@@ -75,11 +75,8 @@ class TaskQueue(QObject):
         # self.work_queue = self.ctx.JoinableQueue()
         # self.result_queue = self.ctx.Queue()
 
-        logger.info('TaskQueue Initialization')
-        logger.info('self.start_method = %s' % self.start_method)
-        logger.info('self.close_worker = %s' % str(self.close_worker))
-        logger.info('self.n_tasks = %d' % self.n_tasks)
-        logger.info('sys.version_info = %s' % str(sys.version_info))
+
+
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
@@ -95,6 +92,12 @@ class TaskQueue(QObject):
             mpl.setLevel(logging.DEBUG)
         else:
             mpl.setLevel(logging.INFO)
+        logger.info('TaskQueue Initialization')
+        # logger.info('self.start_method = %s' % self.start_method)
+        logger.info('self.ctx.get_start_method() = %s' % self.ctx.get_start_method())
+        logger.info('self.close_worker = %s' % str(self.close_worker))
+        logger.info('self.n_tasks = %d' % self.n_tasks)
+        logger.info('sys.version_info = %s' % str(sys.version_info))
 
         cfg.main_window.hud.post('%d Workers Are Processing %d tasks' % (self.n_workers, self.n_tasks))
 
@@ -178,11 +181,9 @@ class TaskQueue(QObject):
         '''Run All Tasks and Collect Results'''
         print('\n')
         logger.critical('>>>> Task Queue (collect_results) >>>>')
-        logger.info('mp.get_start_method() = %s' % str(mp.get_start_method()))
-        logger.info('mp.get_context() = %s' % str(mp.get_context()))
+        logger.info('self.ctx.get_start_method() = %s' % str(self.ctx.get_start_method()))
         # logger.info('mp.log_to_stderr() = %s' % str(mp.log_to_stderr())) #?
-        logger.info('mp.cpu_count() = %s' % str(mp.cpu_count()))
-        logger.info(mp.get_context())
+        logger.info('self.ctx.cpu_count() = %s' % str(self.ctx.cpu_count()))
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending

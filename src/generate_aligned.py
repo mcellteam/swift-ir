@@ -85,9 +85,9 @@ def getSetBoundingRect(scale, alstack):
 def makeTasksList(al_substack, job_script, rect, zarr_group):
     args_list = []
     for ID, layer in enumerate(al_substack):
-        if ID in [0,1,2]:
-            logger.critical('\nafm = %s\n' % ' '.join(map(str, cfg.data.afm(l=ID))))
-            logger.critical('\ncafm = %s\n' % ' '.join(map(str, cfg.data.cafm(l=ID))))
+        # if ID in [0,1,2]:
+        #     logger.critical('\nafm = %s\n' % ' '.join(map(str, cfg.data.afm(l=ID))))
+        #     logger.critical('\ncafm = %s\n' % ' '.join(map(str, cfg.data.cafm(l=ID))))
         base_name = layer['images']['base']['filename']
         al_path, fn = os.path.split(base_name)
         al_name = os.path.join(os.path.split(al_path)[0], 'img_aligned', fn)
@@ -129,11 +129,11 @@ def tryRemoveDatFiles(scale):
 
 def print_example_cafms(scale_dict):
     try:
-        print('---------- CAFMs ----------')
+        print('---------- First 3 CAFMs ----------')
         print(str(cfg.data.cafm(l=0)))
         print(str(cfg.data.cafm(l=1)))
         print(str(cfg.data.cafm(l=2)))
-        print('---------------------------')
+        print('-----------------------------------')
     except:
         pass
 
