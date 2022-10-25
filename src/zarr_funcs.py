@@ -90,17 +90,15 @@ def tiffs2MultiTiff(directory:str, out:str):
     # imlist[0].save("test.tif", compression="tiff_deflate", save_all=True, append_images=imlist[1:])
 
 def remove_zarr(path) -> None:
-    logger.critical('Removing Preexisting Zarrs...')
     # path = os.path.join(cfg.data.dest(), 'img_aligned.zarr')
     if os.path.isdir(path):
-        logger.critical('Removing Zarr Located at %s...' % path)
+        logger.critical('Removing Extant Zarr Located at %s' % path)
         try:
             with time_limit(20):
-                logger.info('Removing %s...' % path)
                 shutil.rmtree(path, ignore_errors=True)
         except TimeoutError as e:
             logger.warning("Timed out!")
-        logger.info('Finished Removing Zarr Files')
+        logger.info('Done Removing Zarr')
 
 
 def preallocate_zarr_src():

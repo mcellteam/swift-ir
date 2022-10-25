@@ -182,13 +182,13 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     task_queue.stop()
     del task_queue
 
-    '''BUG OCCURS BEFORE THIS POINT'''
-    logger.info('\nExample Layer from Alignment Stack:')
-    try:
-        al_layer = updated_model['data']['scales'][scale]['alignment_stack'][-1]
-        logger.info(json.dumps(al_layer, indent=2))
-    except:
-        logger.info('No Alignment Layer Found')
+    # '''BUG OCCURS BEFORE THIS POINT'''
+    # logger.info('\nExample Layer from Alignment Stack:')
+    # try:
+    #     al_layer = updated_model['data']['scales'][scale]['alignment_stack'][-1]
+    #     logger.info(json.dumps(al_layer, indent=2))
+    # except:
+    #     logger.info('No Alignment Layer Found')
 
 
     cfg.data = updated_model #0809-
