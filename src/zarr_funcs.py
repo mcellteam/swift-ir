@@ -40,6 +40,7 @@ def get_zarr_tensor_from_path(zarr_path):
         total_bytes_limit = 200_000_000_000_000
     else:
         total_bytes_limit = 6_000_000_000
+    # total_bytes_limit = (6_000_000_000, 200_000_000_000_000)['.tacc.utexas.edu' in platform.node()]
     arr = ts.open({
         'driver': 'zarr',
         'kvstore': { 'driver': 'file', 'path': zarr_path },
@@ -144,8 +145,9 @@ def preallocate_zarr_aligned(scales=None):
 
         name = 's' + str(get_scale_val(scale))
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        # root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
-        root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
+        root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+        # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
+        '''dtype definitely sets the dtype, otherwise goes to float64 on Lonestar6, at least for use with tensorstore'''
 
     # write_metadata_zarr_multiscale() # write single multiscale zarr for all aligned s
 
