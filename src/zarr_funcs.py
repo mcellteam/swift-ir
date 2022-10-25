@@ -16,6 +16,14 @@ import src.config as cfg
 from src.helpers import get_scale_val, time_limit, get_img_filenames, print_exception
 from src.image_funcs import ImageSize, ComputeBoundingRect, imageio_read_image
 
+'''
+TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 
+processing of large datasets in neuroscience, such as peta-scale 3d electron microscopy data and “4d” videos of 
+neuronal activity). TensorStore has also been used in the creation of large-scale machine learning models such as 
+PaLM by addressing the problem of managing model parameters (checkpoints) during distributed training.
+https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
+'''
+
 __all__ = ['preallocate_zarr_src', 'preallocate_zarr_aligned', 'tiffs2MultiTiff', 'write_metadata_zarr_multiscale']
 
 logger = logging.getLogger(__name__)
@@ -115,8 +123,8 @@ def preallocate_zarr_src():
         shape = (cfg.data.n_imgs(), dimy, dimx)
         logger.info('Preallocating Scale Zarr Array for %s, shape: %s' % (scale, str(shape)))
         compressor = Blosc(cname=cname, clevel=clevel) if cname in ('zstd', 'zlib', 'gzip') else None
-        # root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
-        root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
+        root.zeros(name=name, shape=shape, chunks=chunkshape, dtype='uint8', compressor=compressor, overwrite=True)
+        # root.zeros(name=name, shape=shape, chunks=chunkshape, compressor=compressor, overwrite=True)
 
 def preallocate_zarr_aligned(scales=None):
     cfg.main_window.hud.post('Preallocating Aligned Zarr Array...')
