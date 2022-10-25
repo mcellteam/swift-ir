@@ -34,7 +34,8 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
 #  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
 
 #  echo "Setting GALLIUM_DRIVER=swr...":
-#  export GALLIUM_DRIVER=swr  # NOTE: this may be conflicting with TACC SWR module and env variables
+#  export GALLIUM_DRIVER=swr
+# ^^^^^ NOTE: this probably conflicts with TACC SWR module and env variables
 
 #  echo "Setting OPENBLAS_NUM_THREADS=1"
 #  export OPENBLAS_NUM_THREADS=1
