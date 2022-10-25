@@ -22,7 +22,8 @@ __all__ = ['TaskQueue']
 
 logger = logging.getLogger(__name__)
 mpl = mp.log_to_stderr()
-mpl.setLevel(logging.INFO)
+# mpl.setLevel(logging.INFO)
+mpl.setLevel(logging.DEBUG)
 
 SENTINEL = 1
 def worker(worker_id, task_q, result_q, n_tasks, n_workers):
@@ -64,7 +65,7 @@ class TaskQueue(QObject):
         self.parent = parent
         self.start_method = start_method
         self.ctx = mp.get_context(self.start_method)
-        self.task_dict = {}
+        # self.task_dict = {}
         self.workers = []
         self.close_worker = False
         self.n_tasks = n_tasks
@@ -72,18 +73,21 @@ class TaskQueue(QObject):
         if sys.version_info >= (3, 7):
             self.close_worker = True
         self.logging_handler = logging_handler
-        self.work_queue = self.ctx.JoinableQueue()
-        self.result_queue = self.ctx.Queue()
+        # self.work_queue = self.ctx.JoinableQueue()
+        # self.result_queue = self.ctx.Queue()
 
-        logger.debug('TaskQueue Initialization')
-        logger.debug('self.start_method = %s' % self.start_method)
-        logger.debug('self.close_worker = %s' % str(self.close_worker))
-        logger.debug('self.n_tasks = %d' % self.n_tasks)
-        logger.debug('sys.version_info = %s' % str(sys.version_info))
+        logger.info('TaskQueue Initialization')
+        logger.info('self.start_method = %s' % self.start_method)
+        logger.info('self.close_worker = %s' % str(self.close_worker))
+        logger.info('self.n_tasks = %d' % self.n_tasks)
+        logger.info('sys.version_info = %s' % str(sys.version_info))
 
     # def start(self, n_workers, retries=10) -> None:
     def start(self, n_workers, retries=3) -> None:
         logger.debug('>>>> TaskQueue.start >>>>')
+        self.work_queue = self.ctx.JoinableQueue()
+        self.result_queue = self.ctx.Queue()
+        self.task_dict = {}
         self.task_id = 0
         self.n_workers = n_workers
         self.retries = retries
@@ -96,7 +100,8 @@ class TaskQueue(QObject):
             sys.stderr.write('Starting Worker %d >>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
-                p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -114,7 +119,8 @@ class TaskQueue(QObject):
             sys.stderr.write('Restarting Worker %d >>>>' % i)
             try:
                 # p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
-                p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                # p = self.ctx.Process(target=worker, daemon=True, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
+                p = self.ctx.Process(target=worker, args=(i, self.work_queue, self.result_queue, self.n_tasks, self.n_workers, ))
                 # p = QProcess('', [i, self.m.work_queue, self.m.result_queue, self.n_tasks, self.n_workers, self.m.pbar_q])
                 self.workers.append(p)
                 self.workers[i].start()
@@ -123,12 +129,12 @@ class TaskQueue(QObject):
 
     def end_tasks(self) -> None:
         '''Tell child processes to stop'''
-        logger.debug('TaskQueue.end_tasks:')
+        logger.info("'Calling 'end_tasks' on Task Queue")
         for i in range(self.n_workers):
             self.work_queue.put('END_TASKS')
 
     def stop(self) -> None:
-        logger.info("Calling 'stop' on TaskQueue")
+        logger.info("Calling 'stop' on Task Queue")
         self.work_queue.close()
         time.sleep(0.1)  # Needed to Avoid Race Condition
     #    for i in range(len(self.workers)):
@@ -170,6 +176,10 @@ class TaskQueue(QObject):
         print('\n')
         logger.critical('>>>> Task Queue (collect_results) >>>>')
         logger.info('mp.get_start_method() = %s' % str(mp.get_start_method()))
+        logger.info('mp.get_context() = %s' % str(mp.get_context()))
+        # logger.info('mp.log_to_stderr() = %s' % str(mp.log_to_stderr())) #?
+        logger.info('mp.cpu_count() = %s' % str(mp.cpu_count()))
+        logger.info(mp.get_context())
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
