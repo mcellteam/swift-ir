@@ -3055,7 +3055,7 @@ class MainWindow(QMainWindow):
         self.main_details_widget.setAutoFillBackground(False)
         self.main_details_widget.setStyleSheet("background:transparent;")
 
-        self.main_details_widget.setText('Testttt')
+        self.main_details_widget.setText('Project Details will go here.')
 
         self.control_panel_outter_layout = QVBoxLayout()
         self.control_panel_outter_layout.setSpacing(0) # *** gives a lot more room for main_details_widget
