@@ -3547,12 +3547,12 @@ class MainWindow(QMainWindow):
             else:
                 self._snr_checkboxes[scale].hide()
         self.plot_controls_layout.addStretch()
-        self.update_snr_plot()
+        # self.update_snr_plot()
 
     def update_snr_plot(self):
         '''Update SNR plot widget based on checked/unchecked state of checkboxes'''
         # logger.info('Updating SNR Plot...')
-        # self.reload_snr_plot_checkboxes()
+        self.reload_snr_plot_checkboxes()
         self.snr_plot.clear()
         for i,scale in enumerate(self._snr_checkboxes):
             if self._snr_checkboxes[scale].isChecked():
