@@ -1465,7 +1465,8 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
         self.reload_scales_combobox()
         self.update_enabled_buttons()
-        self.update_snr_plot()
+        if is_any_scale_aligned_and_generated():
+            self.update_snr_plot()
         self.refresh_json_widget()
 
     def save_project(self):
@@ -3562,10 +3563,11 @@ class MainWindow(QMainWindow):
             color = self._snr_plot_colors[cfg.data.scales().index(scale)]
             self._snr_checkboxes[scale].setStyleSheet('border-color: %s' % color)
         max_snr = cfg.data.snr_max_all_scales()
-        try:
-            if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_imgs(), yMin=0, yMax=max_snr + 1)
-        except:
-            logger.warning('update_snr_plot encountered a problem')
+        if is_any_scale_aligned_and_generated():
+            try:
+                if max_snr != None:  self.snr_plot.setLimits(xMin=0, xMax=cfg.data.n_imgs(), yMin=0, yMax=max_snr + 1)
+            except:
+                logger.warning('update_snr_plot encountered a problem setting plot limits')
 
 
     def show_snr(self, scale=None):
