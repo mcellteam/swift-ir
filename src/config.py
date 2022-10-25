@@ -42,6 +42,7 @@ TACC_MAX_CPUS = 112  # 128 hardware cores/node on Lonestar6
 
 SUPPORT_NONSQUARE = False
 MULTIVIEW = True
+DEBUG_MP = False
 
 USE_FILE_IO = 0
 CODE_MODE = 'c'
