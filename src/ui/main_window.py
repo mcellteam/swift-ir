@@ -855,7 +855,7 @@ class MainWindow(QMainWindow):
         logger.debug('read_gui_update_project_data:')
 
         if not do_scales_exist():
-            logger.warning('No Scale To Change To. Import Some Images', logging.WARNING)
+            logger.warning('Scales do not exist yet - Returning')
             return
 
         if self.get_null_bias_value() == 'None':
