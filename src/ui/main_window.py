@@ -1825,8 +1825,8 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event):
         logger.info("MainWindow.closeEvent (called by %s):" % inspect.stack()[1].function)
         self.shutdownInstructions()
-        logger.info('Running shutdown instructions again...')
-        self.shutdownInstructions() # Run Shutdown Instructions 2x
+        # logger.info('Running shutdown instructions again...')
+        # self.shutdownInstructions() # Run Shutdown Instructions 2x
 
     @Slot()
     def exit_app(self):
