@@ -513,7 +513,7 @@ class QtImageStackViewer(QWidget):
 
 
     def ng_callback(self):
-        cfg.main_window.init_neuroglancer_client()
+        cfg.main_window.neuroglancer_initialize()
 
     def show_ng_button(self):
         self.ng_callback_button.show()

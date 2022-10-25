@@ -333,7 +333,7 @@ class MainWindow(QMainWindow):
         finally:
             self.set_idle()
         self.save_project_to_file() #0908+
-        self.recreate_ng()
+        self.neuroglancer_update()
         self.update_enabled_buttons()
         self.reload_snr_plot_checkboxes()
         self._snr_checkboxes[cfg.data.scale()].setChecked(True)
@@ -386,7 +386,7 @@ class MainWindow(QMainWindow):
             self.set_idle()
         self.update_snr_plot()
         self.save_project_to_file() #0908+
-        self.recreate_ng()
+        self.neuroglancer_update()
 
     @Slot()
     def align_one(self, use_scale=None, num_layers=1) -> None:
@@ -440,7 +440,7 @@ class MainWindow(QMainWindow):
 
         self.update_snr_plot()
         self.save_project_to_file()  # 0908+
-        self.recreate_ng()
+        self.neuroglancer_update()
 
     @Slot()
     def regenerate(self, use_scale) -> None:
@@ -467,7 +467,7 @@ class MainWindow(QMainWindow):
         if are_aligned_images_generated():
             logger.info('are_aligned_images_generated() returned True. Setting user progress to stage 3...')
             self.read_project_data_update_gui()
-            self.recreate_ng()
+            self.neuroglancer_update()
             self.hud("Regenerate Complete")
         else:
             print_exception()
@@ -706,7 +706,7 @@ class MainWindow(QMainWindow):
             self.hud('Scale Changed to %d' % get_scale_val(cfg.data.scale()))
             if not cfg.data.is_alignable():
                 self.hud('Scale(s) of lower resolution have not been aligned yet', logging.WARNING)
-            self.recreate_ng()
+            self.neuroglancer_update()
             self.ng_worker.show_url()
 
         except:
@@ -955,7 +955,7 @@ class MainWindow(QMainWindow):
         elif requested < 0:        requested = 0
         cfg.data['data']['current_layer'] = int(requested)
         self.read_project_data_update_gui()
-        self.recreate_ng()
+        self.neuroglancer_update()
 
 
     @Slot()
@@ -976,7 +976,7 @@ class MainWindow(QMainWindow):
             cfg.data.set_layer(requested_layer)
             self.read_project_data_update_gui()
             # if self.image_panel_stack_widget.currentIndex() == 1:
-            self.recreate_ng()
+            self.neuroglancer_update()
         except:
             print_exception()
     
@@ -1063,7 +1063,7 @@ class MainWindow(QMainWindow):
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
         self.update_enabled_buttons()
-        self.recreate_ng()
+        self.neuroglancer_update()
 
     def fn_ng_layout_combobox(self) -> None:
         logger.critical("fn_ng_layout_combobox (called by: %s)" % inspect.stack()[1].function)
@@ -1076,7 +1076,7 @@ class MainWindow(QMainWindow):
             elif self.ng_layout_combobox.currentText() == 'xz-3d':   self.ng_worker.set_layout_xz_3d()
             elif self.ng_layout_combobox.currentText() == '3d':      self.ng_worker.set_layout_3d()
             elif self.ng_layout_combobox.currentText() == '4panel':  self.ng_worker.set_layout_4panel()
-            self.recreate_ng()
+            self.neuroglancer_update()
         except:
             logger.warning('Cannot Change Neuroglancer Layout At This Time')
 
@@ -1390,7 +1390,7 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
         self.autoscale()
         try:
-            self.init_neuroglancer_client()
+            self.neuroglancer_initialize()
             self.image_panel_stack_widget.setCurrentIndex(1)
             self.ng_worker.show_url()
             self.scales_combobox_switch = 1
@@ -1461,7 +1461,7 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
         if are_images_imported():
-            self.init_neuroglancer_client()
+            self.neuroglancer_initialize()
         self.read_project_data_update_gui()
         self.reload_scales_combobox()
         self.update_enabled_buttons()
@@ -1927,35 +1927,37 @@ class MainWindow(QMainWindow):
         self.browser_remote.setUrl(QUrl('https://neuroglancer-demo.appspot.com/'))
         self.main_widget.setCurrentIndex(3)
 
-    def recreate_ng(self):
-        logger.critical("Reloading Neuroglancer (called by: %s)" % inspect.stack()[1].function)
-        self.ng_worker.create_viewer()
+    def set_url(self, text:str) -> None:
+        # self.image_panel_stack_widget.setCurrentIndex(1)
+        self.ng_browser.setUrl(QUrl(text))
+
+    def neuroglancer_update(self):
+        logger.info("Updating NG View (caller: %s)" % inspect.stack()[1].function)
+        self.ng_worker.updateViewer()
         if not cfg.NO_EMBED_NG:
             self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
             self.ng_browser.setFocus()
         self.read_project_data_update_gui()
 
-    def set_url(self, text:str) -> None:
-        # self.image_panel_stack_widget.setCurrentIndex(1)
-        self.ng_browser.setUrl(QUrl(text))
 
-
-    def init_neuroglancer_client(self):  #view_3dem #ngview #neuroglancer
+    def neuroglancer_initialize(self):  #view_3dem #ngview #neuroglancer
         '''
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/ui/default_input_event_bindings.ts
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
         '''
         sys.stdout.flush()
-        logger.critical('>>>> Initializing Neuroglancer >>>>')
+        logger.info('Initializing Neuroglancer...')
         if not are_images_imported():
             self.hud.post('Nothing To View', logging.WARNING)
             return
         logger.info("Switching To Neuroglancer Viewer")
 
-        dest = os.path.abspath(cfg.data['data']['destination_path'])
-        s, l = cfg.data.scale(), cfg.data.layer()
-        # self.ng_worker = NgHost(src=dest, s=s, port=9000)
-        self.ng_worker = NgHost(src=dest, scale=s)
+        del self.ng_worker
+        '''Todo write a routine to shutdown HTTP and NG client'''
+        # del cfg.viewer
+        # import neuroglancer as ng
+        # cfg.viewer = ng.Viewer()
+        self.ng_worker = NgHost(src=cfg.data.dest(), scale=cfg.data.scale())
         self.threadpool.start(self.ng_worker)
         if not cfg.NO_EMBED_NG:
             self.ng_browser.setUrl(QUrl(self.ng_worker.url()))
@@ -1981,14 +1983,14 @@ class MainWindow(QMainWindow):
         else:  return False
 
 
-    def ng_set_layout_yz(self): self.ng_worker.set_layout_yz(); self.recreate_ng()
-    def ng_set_layout_xy(self): self.ng_worker.set_layout_xy(); self.recreate_ng()
-    def ng_set_layout_xz(self): self.ng_worker.set_layout_xz(); self.recreate_ng()
-    def ng_set_layout_xy_3d(self): self.ng_worker.set_layout_xy_3d(); self.recreate_ng()
-    def ng_set_layout_yz_3d(self): self.ng_worker.set_layout_yz_3d(); self.recreate_ng()
-    def ng_set_layout_xz_3d(self): self.ng_worker.set_layout_xz_3d(); self.recreate_ng()
-    def ng_set_layout_4panel(self): self.ng_worker.set_layout_4panel(); self.recreate_ng()
-    def ng_set_layout_3d(self): self.ng_worker.set_layout_3d(); self.recreate_ng()
+    def ng_set_layout_yz(self): self.ng_worker.set_layout_yz(); self.neuroglancer_update()
+    def ng_set_layout_xy(self): self.ng_worker.set_layout_xy(); self.neuroglancer_update()
+    def ng_set_layout_xz(self): self.ng_worker.set_layout_xz(); self.neuroglancer_update()
+    def ng_set_layout_xy_3d(self): self.ng_worker.set_layout_xy_3d(); self.neuroglancer_update()
+    def ng_set_layout_yz_3d(self): self.ng_worker.set_layout_yz_3d(); self.neuroglancer_update()
+    def ng_set_layout_xz_3d(self): self.ng_worker.set_layout_xz_3d(); self.neuroglancer_update()
+    def ng_set_layout_4panel(self): self.ng_worker.set_layout_4panel(); self.neuroglancer_update()
+    def ng_set_layout_3d(self): self.ng_worker.set_layout_3d(); self.neuroglancer_update()
 
 
 
@@ -2357,8 +2359,8 @@ class MainWindow(QMainWindow):
                  ['Update SNR Plot', None, self.update_snr_plot, None, None, None],
                  ['Neuroglancer',
                    [
-                      ['Reload State', None, self.recreate_ng, None, None, None],
-                      ['Reload Server', None, self.init_neuroglancer_client, None, None, None],
+                      ['Update Neuroglancer View', None, self.neuroglancer_update, None, None, None],
+                      ['Reinitialize Neuroglancer', None, self.neuroglancer_initialize, None, None, None],
                       ['Show Neuroglancer URL', None, self.print_url_ng, None, None, None],
                       ['Show Neuroglancer State URL', None, self.print_ng_state_url, None, None, None],
                       ['Show Neuroglancer State', None, self.print_ng_state, None, None, None],
@@ -2865,7 +2867,7 @@ class MainWindow(QMainWindow):
         # tip = 'View Zarr export in Neuroglancer.'
         # self.ng_button = QPushButton("View In\nNeuroglancer")
         # self.ng_button.setToolTip('\n'.join(textwrap.wrap(tip, width=35)))
-        # self.ng_button.clicked.connect(self.init_neuroglancer_client)
+        # self.ng_button.clicked.connect(self.neuroglancer_initialize)
         # self.ng_button.setFixedSize(normal_button_size)
         # # self.ng_button.setIcon(qta.icon("mdi.video-3d", color=ICON_COLOR))
         # self.ng_button.setStyleSheet("font-size: 9px;")
@@ -3046,7 +3048,7 @@ class MainWindow(QMainWindow):
         self.exit_ng_button.clicked.connect(self.exit_ng)
         self.reload_ng_button = QPushButton("Reload")
         self.reload_ng_button.setFixedSize(std_button_size)
-        self.reload_ng_button.clicked.connect(self.recreate_ng)
+        self.reload_ng_button.clicked.connect(self.neuroglancer_update)
         self.print_state_ng_button = QPushButton("Print State")
         self.print_state_ng_button.setFixedSize(std_button_size)
         self.print_state_ng_button.clicked.connect(self.print_ng_state_url)
