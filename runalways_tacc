@@ -27,15 +27,13 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
 
   # echo "Setting MAX_NUM_THREADS flag..."
   # unset MAX_NUM_THREADS
-   export MAX_NUM_THREADS=128 # this is for SWR, see 'swr -h'
+  export MAX_NUM_THREADS=128 # this is for SWR, see 'swr -h'
+
+  unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
 
   echo "Loading TACC swr and fftw3 modules..."
   ml intel/19.1.1 swr/21.2.5 impi/19.0.9 fftw3/3.3.10
 #  ml gcc/11.2.0 impi/19.0.9 fftw3/3.3.10
-
-#  echo "Setting GALLIUM_DRIVER=swr...":
-#  export GALLIUM_DRIVER=swr
-# ^^^^^ NOTE: this probably conflicts with TACC SWR module and env variables
 
 #  echo "Setting OPENBLAS_NUM_THREADS=1"
 #  export OPENBLAS_NUM_THREADS=1
