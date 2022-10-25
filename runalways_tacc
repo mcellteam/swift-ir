@@ -27,7 +27,9 @@ if [[ $hostname == *"tacc.utexas.edu"* ]]; then
 
   # echo "Setting MAX_NUM_THREADS flag..."
   # unset MAX_NUM_THREADS
-  export MAX_NUM_THREADS=128 # this is for SWR, see 'swr -h'
+#  export MAX_NUM_THREADS=128 # this is for SWR, see 'swr -h'
+
+  unset MAX_NUM_THREADS
 
   unset GALLIUM_DRIVER # Conflicts with TACC SWR module and env variables
 
