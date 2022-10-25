@@ -1,4 +1,4 @@
-""" PyQtImageViewer.py: PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
+""" PyQtImageViewer.py: PyQt image viewports widget based on QGraphicsView with mouse zooming/panning and ROIs.
 Source:
 https://github.com/marcel-goldschen-ohm/PyQtImageViewer/blob/master/QtImageViewer.py
 https://github.com/marcel-goldschen-ohm/PyQtImageViewer/blob/master/QtImageStackViewer.py
@@ -42,7 +42,7 @@ except ImportError:
 
 # qimage2ndarray is optional: useful for displaying numpy 2d arrays as images.
 # !!! qimage2ndarray requires PyQt5.
-#     Some custom code in the viewer appears to handle the conversion from numpy 2d arrays,
+#     Some custom code in the viewports appears to handle the conversion from numpy 2d arrays,
 #     so qimage2ndarray probably is not needed anymore. I've left it here just in case.
 try:
     import qimage2ndarray
@@ -65,14 +65,14 @@ __version__ = '2.0.0'
 
 
 class QtImageViewer(QGraphicsView):
-    """ PyQt image viewer widget based on QGraphicsView with mouse zooming/panning and ROIs.
+    """ PyQt image viewports widget based on QGraphicsView with mouse zooming/panning and ROIs.
     Image File:
     -----------
-    Use the open("path/to/file") method to load an image file into the viewer.
+    Use the open("path/to/file") method to load an image file into the viewports.
     Calling open() without a file argument will popup a file selection dialog.
     Image:
     ------
-    Use the setImage(im) method to set the image data in the viewer.
+    Use the setImage(im) method to set the image data in the viewports.
         - im can be a QImage, QPixmap, or NumPy 2D array (the later requires the package qimage2ndarray).
         For display in the QGraphicsView the image will be converted to a QPixmap.
     Some useful image format conversion utilities:
@@ -164,7 +164,7 @@ class QtImageViewer(QGraphicsView):
         self.wheelZoomFactor = 1.25  # Set to None or 1 to disable mouse wheel zoom.
 
         # Stack of QRectF zoom boxes in scene coordinates.
-        # !!! If you update this manually, be sure to call updateViewer() to reflect any changes.
+        # !!! If you update this manually, be sure to call initViewer() to reflect any changes.
         self.zoomStack = []
 
         # Flags for active zooming/panning.
@@ -644,7 +644,7 @@ class QtImageViewer(QGraphicsView):
             self.ROIs.append(spot)
 
     # def ng_callback(self):
-    #     cfg.main_window.neuroglancer_initialize()
+    #     cfg.main_window.initNeuroglancer()
     #
     # def show_ng_button(self):
     #     self.ng_callback_button.show()

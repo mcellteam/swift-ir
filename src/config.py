@@ -1,14 +1,14 @@
 '''This file is for initializing global config and 'data' the dictionary data state in memory.'''
 
-__all__ = ['data', 'main_window', 'viewer']
+__all__ = ['data', 'main_window']
 
 LOG_LEVEL = 1
 
 '''Main Objects'''
 data = None
 main_window = None
-viewer = None
-opengllogger=None
+# viewports = None
+opengllogger = None
 
 '''Default Window Size'''
 WIDTH, HEIGHT = 1250, 800
@@ -38,7 +38,7 @@ USE_TENSORSTORE = True
 # USE_TENSORSTORE = False
 NO_EMBED_NG = False
 # TACC_MAX_CPUS = 128  # 128 hardware cores/node on Lonestar6
-TACC_MAX_CPUS = 112  # 128 hardware cores/node on Lonestar6
+TACC_MAX_CPUS = 124  # 128 hardware cores/node on Lonestar6
 
 SUPPORT_NONSQUARE = False
 MULTIVIEW = True

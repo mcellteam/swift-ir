@@ -10,31 +10,19 @@ QCheckBox {
 	font-size: 10px;
 }
 
+
 #treeview_widget {
     background-color: #ffffff;
     color: #333;
     border: 2px solid #555;
-    border-radius: 7px;
+    border-radius: 3px;
     padding: 3px;
     background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
     min-width: 10px;
 }
 
 
-# #ImagePanel {
-#    color: #333;
-#    border: 2px solid #555;
-#    border-radius: 7px;
-#    padding: 3px;
-#    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
-#    min-width: 10px;
-#}
 
-
-hud {
-	background-color: #ffffff;
-	color:#ffe135;
-}
 
 QDialog QLabel {
 	/*color: #151a1e;*/
@@ -87,8 +75,6 @@ QMenu::item:selected {
 
 
 
-
-
 QDockWidget {
 	/*background-color:#151a1e;*/
 	/*background-color: #7c7c7c;*/
@@ -108,13 +94,17 @@ QDockWidget::title:hover {
     /*background: yellow;*/
 }
 
+
+
+/* This is overridden */
 QMainWindow {
 	/*background-color:#151a1e;*/
 	/*background-color:#2e2e2e;*/ /* 18% gray */
 	background-color: #7c7c7c;
 	/*background-color: #4b4b4b;*/ /*18% grey, lighter shade of Cellblender GUI*/
 	/*background-color: #404040;*//*darker shade of Cellblender GUI*/
-	color: #151a1e; /* dark */
+	/*color: #151a1e;*/ /* dark */
+	color: #f3f6fb; /* dark */
 }
 
 
@@ -233,6 +223,7 @@ QPushButton{
 	/*color: #F3F6FB;*/
 	/*color: #455364;*/
 	color: #171d22;
+	/*color: #f3f6fb;*/
 	border-color: #171d22;
 	padding: 3px;
 	/* background-color: rgb(255,255,255);*/

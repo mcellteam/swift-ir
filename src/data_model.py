@@ -329,9 +329,11 @@ class DataModel:
         '''Sets the Current Layer as Integer.'''
         self._data['data']['current_layer'] = x
 
-    def set_skip(self, b:bool) -> None:
+    def set_skip(self, b:bool, s=None, l=None) -> None:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
         '''Sets the Bounding Rectangle On/Off State for the Current Scale.'''
-        self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()]['skipped'] = b
+        self._data['data']['scales'][s]['alignment_stack'][l]['skipped'] = b
 
     def set_whitening(self, f:float) -> None:
         '''Sets the Whitening Factor for the Current Layer.'''
@@ -487,24 +489,30 @@ class DataModel:
         return al_stack
 
     def aligned_list(self) -> list[str]:
-        '''Get aligned scales list.'''
-        l = []
+        '''Get aligned scales list. Check project data and aligned Zarr group presence.'''
+        lst = []
         for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
             r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
             if r != {}:
-                l.append(s)
-        logger.debug('Aligned Scales List: %s ' % str(l))
-        return l
+                lst.append(s)
+        for s in lst:
+            if not is_arg_scale_aligned(s):
+                lst.remove(s)
+        return lst
 
     def not_aligned_list(self) -> list[str]:
         '''Get not aligned scales list.'''
-        l = []
-        for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
-            r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
-            if r == {}:
-                l.append(s)
-        logger.debug('Not Aligned Scales List: %s ' % str(l))
-        return l
+        lst = []
+        # for s in natural_sort([key for key in self._data['data']['scales'].keys()]):
+        #     r = self._data['data']['scales'][s]['alignment_stack'][-1]['align_to_ref_method']['method_results']
+        #     if r == {}:
+        #         lst.append(s)
+
+        for s in cfg.data.scales():
+            if not is_arg_scale_aligned(s):
+                lst.append(s)
+        logger.debug('Not Aligned Scales List: %s ' % str(lst))
+        return lst
 
     def coarsest_scale_key(self) -> str:
         '''Return the coarsest s key. '''
