@@ -49,7 +49,7 @@ class ConfigDialog(QDialog):
     def __init__(self, parent=None): # parent=None allows passing in MainWindow if needed
         self.parent = parent
         super(ConfigDialog, self).__init__()
-        logger.critical('>>>>>>>> Config Dialog Start <<<<<<<<')
+        logger.critical('>>>> Config Dialog Start >>>>')
         # self.setGeometry(400,400,300,260)
         # g = self.geometry()
         # g.moveCenter(self.parent.geometry().center())

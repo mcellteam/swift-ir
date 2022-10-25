@@ -1,6 +1,6 @@
 
 
-""" PyQtImageStackViewer.py: PyQt image stack viewer similar to that in ImageJ.
+""" PyQtImageStackViewer.py: PyQt image stack viewports similar to that in ImageJ.
 """
 
 
@@ -57,7 +57,7 @@ def invertIconColors(qicon, w, h):
 
 
 class QtImageStackViewer(QWidget):
-    """ PyQtImageStackViewer.py: PyQt image stack viewer similar to that in ImageJ.
+    """ PyQtImageStackViewer.py: PyQt image stack viewports similar to that in ImageJ.
     Uses a QtImageViewer with frame/channel sliders and a titlebar indicating current frame and mouse position
     similar to that in ImageJ.
     Display a multi-page image stack with a slider to traverse the frames in the stack.
@@ -272,7 +272,7 @@ class QtImageStackViewer(QWidget):
             self.imageViewer.wheelZoomFactor = zoomFactor
 
     def updateViewer(self):
-        logger.info('updateViewer:')
+        logger.info('initViewer:')
         logger.info("Image Slice Has Type %s" % type(self._image))
         if self._image is None:
             self.imageViewer.clearImage()
@@ -513,7 +513,7 @@ class QtImageStackViewer(QWidget):
 
 
     def ng_callback(self):
-        cfg.main_window.neuroglancer_initialize()
+        cfg.main_window.initNeuroglancer()
 
     def show_ng_button(self):
         self.ng_callback_button.show()
@@ -567,7 +567,7 @@ if __name__ == '__main__':
     # Create the application.
     app = QApplication(sys.argv)
 
-    # Create image viewer.
+    # Create image viewports.
     viewer = QtImageViewer()
 
     # Open an image from file.
@@ -576,6 +576,6 @@ if __name__ == '__main__':
     # Handle left mouse clicks with custom slot.
     viewer.leftMouseButtonReleased.connect(handleLeftClick)
 
-    # Show viewer and run application.
+    # Show viewports and run application.
     viewer.show()
     sys.exit(app.exec())

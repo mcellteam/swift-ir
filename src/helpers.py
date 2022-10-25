@@ -34,7 +34,7 @@ except: from utils.treeview import Treeview
 __all__ = ['is_tacc','is_linux','is_mac','create_paged_tiff', 'check_for_binaries', 'remove_aligned',
            'is_destination_set','do_scales_exist', 'make_relative', 'make_absolute','is_cur_scale_aligned',
            'get_num_aligned', 'are_aligned_images_generated', 'print_alignment_layer', 'print_dat_files',
-           'print_sanity_check','copy_skips_to_all_scales', 'are_images_imported', 'is_cur_scale_exported',
+           'print_sanity_check', 'are_images_imported', 'is_cur_scale_exported',
            'get_img_filenames', 'print_exception', 'get_scale_key', 'get_scale_val', 'makedirs_exist_ok',
            'print_project_tree','verify_image_file', 'is_arg_scale_aligned', 'print_snr_list',
            'is_any_scale_aligned_and_generated',
@@ -631,24 +631,6 @@ def makedirs_exist_ok(path_to_build, exist_ok=False):
         elif not exist_ok:
             pass
             # logger.info("Warning: Attempt to create existing directory: " + full)
-
-
-def copy_skips_to_all_scales():
-    logger.info('Copying skips to all scales...')
-    source_scale_key = cfg.data['data']['current_scale']
-    if not 'scale_' in str(source_scale_key):
-        source_scale_key = 'scale_' + str(source_scale_key)
-    scales = cfg.data['data']['scales']
-    image_scale_keys = [s for s in sorted(scales.keys())]
-    for scale in image_scale_keys:
-        scale_key = str(scale)
-        if not 'scale_' in str(scale_key):
-            scale_key = 'scale_' + str(scale_key)
-        if scale_key != source_scale_key:
-            for l in range(len(scales[source_scale_key]['alignment_stack'])):
-                if l < len(scales[scale_key]['alignment_stack']):
-                    scales[scale_key]['alignment_stack'][l]['skipped'] = \
-                        scales[source_scale_key]['alignment_stack'][l]['skipped']  # <----
 
 
 def update_skip_annotations():
