@@ -169,6 +169,7 @@ class TaskQueue(QObject):
         '''Run All Tasks and Collect Results'''
         print('\n')
         logger.critical('>>>> Task Queue (collect_results) >>>>')
+        logger.info('mp.get_start_method() = %s' % str(mp.get_start_method()))
         # cfg.main_window.hud.post('Collecting Results...')
         n_pending = len(self.task_dict) # <-- # images in the stack
         realtime = n_pending
