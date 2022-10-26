@@ -26,11 +26,11 @@ QCheckBox {
 
 QDialog QLabel {
 	/*color: #151a1e;*/
-	/%color: #f3f6fb;*/
+	/*color: #f3f6fb;*/
 	color: #000000;
 }
 
-
+#####
 QMenu {
 	border-width: 2px;
 	/*border-radius: 10px;*/
@@ -102,7 +102,7 @@ QMainWindow {
 	/*background-color:#2e2e2e;*/ /* 18% gray */
 	background-color: #7c7c7c;
 	/*background-color: #4b4b4b;*/ /*18% grey, lighter shade of Cellblender GUI*/
-	/*background-color: #404040;*//*darker shade of Cellblender GUI*/
+	/*background-color: #404040;*/ /*darker shade of Cellblender GUI*/
 	/*color: #151a1e;*/ /* dark */
 	color: #f3f6fb; /* dark */
 }
@@ -251,6 +251,12 @@ QLineEdit {
 	color: #151a1e;
 	/*color: #f3f6fb;*/
 }
+
+
+
+
+
+
 
 QLCDNumber {
 	color: #4d9b87;
@@ -656,12 +662,6 @@ QPushButton:disabled{
 #    padding: 0 3px;
 #    background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 #FF0ECE, stop: 1 #FFFFFF);
 #}
-
-
-
-
-
-
 
 
 

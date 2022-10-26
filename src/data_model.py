@@ -265,7 +265,12 @@ class DataModel:
 
     def bounding_rect(self, s=None):
         if s == None: s = self.scale()
-        return self._data['data']['scales'][s]['bounding_rect']
+        try:
+            return self._data['data']['scales'][s]['bounding_rect']
+        except:
+            self.set_bounding_rect(ComputeBoundingRect(self.aligned_dict(s=s)))
+            return self._data['data']['scales'][s]['bounding_rect']
+
 
 
     def poly_order(self) -> int:
@@ -483,9 +488,9 @@ class DataModel:
     '''
 
 
-    def aligned_dict(self, scale = None) -> dict:
-        if scale == None: scale = self.scale()
-        al_stack = self._data['data']['scales'][scale]['alignment_stack']
+    def aligned_dict(self, s = None) -> dict:
+        if s == None: s = self.scale()
+        al_stack = self._data['data']['scales'][s]['alignment_stack']
         return al_stack
 
     def aligned_list(self) -> list[str]:

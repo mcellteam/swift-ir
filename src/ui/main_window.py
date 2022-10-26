@@ -159,7 +159,6 @@ class MainWindow(QMainWindow):
         self.initUI()
         self.initShortcuts()
 
-
         self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.apply_default_style()
 
@@ -314,7 +313,7 @@ class MainWindow(QMainWindow):
         try:
             status = 'Aligning Scale %d (%d x %d pixels)...' % (get_scale_val(use_scale), img_dims[0], img_dims[1])
             self.set_status(status)
-            # self.worker = BackgroundWorker(fn=compute_affines(scale=scale, start_layer=0, num_layers=-1))
+            # self.worker = BackgroundWorker(fn=compute_affines(s=s, start_layer=0, num_layers=-1))
             # self.threadpool.start(self.worker)
             compute_affines(scale=use_scale, start_layer=0, num_layers=-1)
         except:
@@ -329,7 +328,7 @@ class MainWindow(QMainWindow):
         self.hud.post('Generating Aligned Images...')
         try:
             self.set_status('Generating Alignment...')
-            # self.worker = BackgroundWorker(fn=generate_aligned(scale=scale, start_layer=0, num_layers=-1, preallocate=True))
+            # self.worker = BackgroundWorker(fn=generate_aligned(s=s, start_layer=0, num_layers=-1, preallocate=True))
             # self.threadpool.start(self.worker)
             generate_aligned(scale=use_scale, start_layer=0, num_layers=-1, preallocate=True)
         except:
@@ -340,7 +339,8 @@ class MainWindow(QMainWindow):
             self.set_idle()
         self.save_project_to_file() #0908+
         # self.updateNeuroglancer()
-        self.initNeuroglancer(s=cfg.data.scale())
+        # self.initNeuroglancer(s=cfg.data.scale())
+        self.initNeuroglancer()
         # self.invalidateAlignedLayers()
         self.update_enabled_buttons()
         self.reload_snr_plot_checkboxes()
@@ -395,7 +395,7 @@ class MainWindow(QMainWindow):
         self.update_snr_plot()
         self.save_project_to_file() #0908+
         # self.updateNeuroglancer()
-        # self.initNeuroglancer(s=cfg.data.scale())
+        # self.initNeuroglancer(s=cfg.data.s())
         self.invalidateAlignedLayers()
 
 
@@ -452,7 +452,7 @@ class MainWindow(QMainWindow):
         self.update_snr_plot()
         self.save_project_to_file()  # 0908+
         # self.updateNeuroglancer()
-        # self.initNeuroglancer(s=cfg.data.scale())
+        # self.initNeuroglancer(s=cfg.data.s())
         self.invalidateAlignedLayers()
 
     @Slot()
@@ -489,7 +489,7 @@ class MainWindow(QMainWindow):
         self.update_win_self()
         self.update_snr_plot()
         self.save_project_to_file() #0908+
-        # self.initNeuroglancer(s=cfg.data.scale())
+        # self.initNeuroglancer(s=cfg.data.s())
         self.invalidateAlignedLayers()
     
     def export(self):
@@ -749,9 +749,9 @@ class MainWindow(QMainWindow):
         color: #f3f6fb;  /* snow white */
         color: #004060;  /* drafting blue */
         '''
+        # p = Path(__file__).parents[2]
+        # os.chdir(p)
         # self.hud.post('Applying Default Theme')
-        p = Path(__file__).parents[2]
-        os.chdir(p)
         # self.main_stylesheet = os.path.abspath('src/styles/default.qss')
         self.setStyleSheet(open(self.main_stylesheet).read())
         # self.python_console.set_color_linux()
@@ -765,8 +765,8 @@ class MainWindow(QMainWindow):
 
     def apply_daylight_style(self):
         '''Light stylesheet'''
-        p = Path(__file__).parents[2]
-        os.chdir(p)
+        # p = Path(__file__).parents[2]
+        # os.chdir(p)
         # self.hud.post('Applying Daylight Theme')
         self.main_stylesheet = os.path.abspath('src/styles/daylight.qss')
         self.setStyleSheet('')
@@ -778,8 +778,8 @@ class MainWindow(QMainWindow):
     
     def apply_moonlit_style(self):
         '''Grey stylesheet'''
-        p = Path(__file__).parents[2]
-        os.chdir(p)
+        # p = Path(__file__).parents[2]
+        # os.chdir(p)
         # self.hud.post('Applying Moonlit Theme')
         self.main_stylesheet = os.path.abspath('src/styles/moonlit.qss')
         self.setStyleSheet('')
@@ -790,8 +790,8 @@ class MainWindow(QMainWindow):
         # self.reset_groupbox_styles()
     
     def apply_sagittarius_style(self):
-        p = Path(__file__).parents[2]
-        os.chdir(p)
+        # p = Path(__file__).parents[2]
+        # os.chdir(p)
         # self.hud.post('Applying Sagittarius Theme')
         # parent = os.path.dirname(cfg.main_window.get_this_scripts_path()) # /ui
         # os.path.dirname(os.path.dirname(cfg.main_window.get_this_scripts_path()))
@@ -931,6 +931,7 @@ class MainWindow(QMainWindow):
         try: self.toggle_bounding_rect.setChecked(cfg.data.has_bb())
         except: logger.warning('Bounding Rect Widget Failed to Update')
 
+        # self.refresh_callback() ## NO
 
         self.null_bias_combobox.setCurrentText(str(cfg.data.poly_order())) if cfg.data.null_cafm() == True else 'None'
         self.update_gui_details()
@@ -1081,7 +1082,7 @@ class MainWindow(QMainWindow):
         if self._working:
             logger.warning('fn_scales_combobox was called but _working is True -> ignoring the signal')
             return None
-        logger.info('fn_scales_combobox is changing scale (caller: %s)' % inspect.stack()[1].function)
+        logger.info('fn_scales_combobox is changing s (caller: %s)' % inspect.stack()[1].function)
         cfg.data.set_scale(self.scales_combobox.currentText())
         self.read_project_data_update_gui()
         self.update_enabled_buttons()
@@ -1091,15 +1092,24 @@ class MainWindow(QMainWindow):
         # logger.critical("fn_ng_layout_combobox (called by: %s)" % inspect.stack()[1].function)
         s = cfg.data.scale()
         try:
-            if self.ng_layout_combobox.currentText() == 'xy':        self.ng_workers[s].set_layout_xy()
-            elif self.ng_layout_combobox.currentText() == 'yz':      self.ng_workers[s].set_layout_yz()
-            elif self.ng_layout_combobox.currentText() == 'xz':      self.ng_workers[s].set_layout_xz()
-            elif self.ng_layout_combobox.currentText() == 'xy-3d':   self.ng_workers[s].set_layout_xy_3d()
-            elif self.ng_layout_combobox.currentText() == 'yz-3d':   self.ng_workers[s].set_layout_yz_3d()
-            elif self.ng_layout_combobox.currentText() == 'xz-3d':   self.ng_workers[s].set_layout_xz_3d()
-            elif self.ng_layout_combobox.currentText() == '3d':      self.ng_workers[s].set_layout_3d()
-            elif self.ng_layout_combobox.currentText() == '4panel':  self.ng_workers[s].set_layout_4panel()
+            if self.ng_layout_combobox.currentText() == 'xy':
+                self.ng_workers[s].set_layout_xy()
+            elif self.ng_layout_combobox.currentText() == 'yz':
+                self.ng_workers[s].set_layout_yz()
+            elif self.ng_layout_combobox.currentText() == 'xz':
+                self.ng_workers[s].set_layout_xz()
+            elif self.ng_layout_combobox.currentText() == 'xy-3d':
+                self.ng_workers[s].set_layout_xy_3d()
+            elif self.ng_layout_combobox.currentText() == 'yz-3d':
+                self.ng_workers[s].set_layout_yz_3d()
+            elif self.ng_layout_combobox.currentText() == 'xz-3d':
+                self.ng_workers[s].set_layout_xz_3d()
+            elif self.ng_layout_combobox.currentText() == '3d':
+                self.ng_workers[s].set_layout_3d()
+            elif self.ng_layout_combobox.currentText() == '4panel':
+                self.ng_workers[s].set_layout_4panel()
             self.updateNeuroglancer()
+            # self.initNeuroglancer()
         except:
             logger.warning('Cannot Change Neuroglancer Layout At This Time')
 
@@ -1319,7 +1329,7 @@ class MainWindow(QMainWindow):
             # urls.append(QUrl.fromLocalFile('/work/08507/joely/ls6/HarrisLabData'))
         dialog.setSidebarUrls(urls)
         if dialog.exec() == QFileDialog.Accepted:
-            logger.info('Save File Name: %s' % dialog.selectedFiles()[0])
+            logger.info('Save File Path:\n%s' % dialog.selectedFiles()[0])
             return dialog.selectedFiles()[0]
 
 
@@ -1339,7 +1349,7 @@ class MainWindow(QMainWindow):
 
         if dialog.exec() == QFileDialog.Accepted:
             logger.info('Save File Name: %s' % dialog.selectedFiles()[0])
-            self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
+            # self.hud.post("Loading Project '%s'" % os.path.basename(dialog.selectedFiles()[0]))
             return dialog.selectedFiles()[0]
 
     def show_warning(self, title, text):
@@ -1349,10 +1359,8 @@ class MainWindow(QMainWindow):
         logger.critical('>>>> New Project >>>>')
         self.scales_combobox_switch = 0
 
-        # logger.critical(os.path.realpath(__file__))
-        app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
-        logger.info('app_dir = %s' % app_dir)
-        os.chdir(app_dir)
+        # app_dir = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+        # os.chdir(app_dir)
         if is_destination_set():
             logger.info('Asking user to confirm new data')
             msg = QMessageBox(QMessageBox.Warning,
@@ -1424,14 +1432,14 @@ class MainWindow(QMainWindow):
             self.initNeuroglancer()
             self.image_panel_stack_widget.setCurrentIndex(1)
             self.ng_workers[cfg.data.scale()].show_url()
+            self.save_project_to_file()
+            self.set_mainwindow_project_view()
             self.scales_combobox_switch = 1
         except:
             print_exception()
             self.hud.post('Unable To Initialize Neuroglancer Client', logging.WARNING)
         finally:
-            self.set_mainwindow_project_view()
-        self.save_project_to_file()
-        logger.critical('<<<< New Project <<<<')
+            logger.critical('<<<< New Project <<<<')
 
 
 
@@ -1479,9 +1487,11 @@ class MainWindow(QMainWindow):
 
         self.image_panel_stack_widget.setCurrentIndex(2)
         self.shutdownNeuroglancer()
-
-        with open(filename, 'r') as f:
-            project = DataModel(json.load(f))
+        try:
+            with open(filename, 'r') as f:
+                project = DataModel(json.load(f))
+        except:
+            logger.info('No valid file was selected.')
         if type(project) == type('abc'):
             self.hud.post('There Was a Problem Loading the Project File', logging.ERROR)
             logger.warning("Project Type is Abstract Base Class - Unable to Load!")
@@ -1493,11 +1503,12 @@ class MainWindow(QMainWindow):
         cfg.data.link_all_stacks()
 
         self.setWindowTitle("Project: %s" % os.path.basename(cfg.data.dest()))
-        if are_images_imported():
-            self.initNeuroglancer()
+        self.initNeuroglancer()
         self.read_project_data_update_gui()
         self.set_mainwindow_project_view()
         self.image_panel_stack_widget.setCurrentIndex(1)
+        self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
+        self.jump_input.setValidator(self.jump_validator)
 
     def save_project(self):
         self.hud.post('Saving Project...')
@@ -1662,7 +1673,7 @@ class MainWindow(QMainWindow):
         if are_images_imported():
             self.jump_validator = QIntValidator(0, cfg.data.n_imgs())
             self.jump_input.setValidator(self.jump_validator)
-            self.jump_input.setText(str(cfg.data.layer()))
+            # self.jump_input.setText(str(cfg.data.layer()))
 
             cfg.IMAGES_IMPORTED = True
             img_size = ImageSize(
@@ -1852,6 +1863,7 @@ class MainWindow(QMainWindow):
             self.update_snr_plot()
         self.refresh_json_widget()
 
+
     # @Slot()
     # def actual_size_callback(self):
     #     logger.info('MainWindow.actual_size_callback:')
@@ -1990,8 +2002,8 @@ class MainWindow(QMainWindow):
         else:
             logger.info('Starting NG Client...')
 
-    # def invalidateLayers(self, layers, scale):
-    #     logger.info('Invalidating Scale %s, Layers # %s' % (get_scale_val(scale),str(layers)))
+    # def invalidateLayers(self, layers, s):
+    #     logger.info('Invalidating Scale %s, Layers # %s' % (get_scale_val(s),str(layers)))
 
     def invalidateAlignedLayers(self, s=None):
         if s == None: s = cfg.data.scale()
@@ -2013,7 +2025,7 @@ class MainWindow(QMainWindow):
         self.read_project_data_update_gui()
 
     # def neuroglancer_update_quick(self, s=None):
-    #     if s == None: s = cfg.data.scale()
+    #     if s == None: s = cfg.data.s()
     #     self.ng_browser.setUrl(QUrl(self.ng_workers[s].url()))
 
 
@@ -2023,11 +2035,12 @@ class MainWindow(QMainWindow):
         https://github.com/google/neuroglancer/blob/566514a11b2c8477f3c49155531a9664e1d1d37a/src/neuroglancer/util/event_action_map.ts
         '''
         logger.critical('>>>> Initializing NG Workers >>>>')
-        if s == None: scales = cfg.data.scales()
-        else: scales = [s]
+        # if s == None:
+        #     scales = cfg.data.scales()
+        #     self.shutdownNeuroglancer()  # *** Restart NG completely when all scales ***
+        # else: scales = [s]
+        scales = cfg.data.scales()
         logger.info('Initializing NG for scales %s' % str(scales))
-        self.shutdownNeuroglancer()
-
         self.hud.post('Initializing NG Workers...')
         self.set_status('Initializing NG Workers...')
         # del self.ng_workers #orig
@@ -2038,12 +2051,15 @@ class MainWindow(QMainWindow):
         self.ng_workers = {} #Todo not good but for now just initialize everything together
         try:
             for s in scales:
+                logger.info('s=%s' % s)
+                # del self.ng_workers[s] ###
                 self.ng_workers[s] = NgHost(src=cfg.data.dest(), scale=s)
                 self.threadpool.start(self.ng_workers[s])
-                # self.updateNeuroglancer(s=scale)
+                # self.updateNeuroglancer(s=s)
                 self.ng_workers[s].initViewer()
             # self.updateNeuroglancer()
             if not cfg.NO_EMBED_NG:
+                # self.ng_browser.stop()
                 self.ng_browser.setUrl(QUrl(self.ng_workers[cfg.data.scale()].url()))
                 self.ng_browser.setFocus()
             self.ng_layout_combobox.setCurrentText('xy')
@@ -2071,14 +2087,24 @@ class MainWindow(QMainWindow):
         else:  return False
 
 
-    def ng_set_layout_yz(self): self.ng_workers[cfg.data.scale()].set_layout_yz(); self.initNeuroglancer(s=cfg.data.scale())
-    def ng_set_layout_xy(self): self.ng_workers[cfg.data.scale()].set_layout_xy(); self.initNeuroglancer(s=cfg.data.scale())
-    def ng_set_layout_xz(self): self.ng_workers[cfg.data.scale()].set_layout_xz(); self.initNeuroglancer(s=cfg.data.scale())
-    def ng_set_layout_xy_3d(self): self.ng_workers[cfg.data.scale()].set_layout_xy_3d(); self.initNeuroglancer(s=cfg.data.scale())
-    def ng_set_layout_yz_3d(self): self.ng_workers[cfg.data.scale()].set_layout_yz_3d(); self.initNeuroglancer(s=cfg.data.scale())
-    def ng_set_layout_xz_3d(self): self.ng_workers[cfg.data.scale()].set_layout_xz_3d(); self.initNeuroglancer(s=cfg.data.scale())
-    def ng_set_layout_4panel(self): self.ng_workers[cfg.data.scale()].set_layout_4panel(); self.initNeuroglancer(s=cfg.data.scale())
-    def ng_set_layout_3d(self): self.ng_workers[cfg.data.scale()].set_layout_3d(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_yz(self): self.ng_workers[cfg.data.scale()].set_layout_yz(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_xy(self): self.ng_workers[cfg.data.scale()].set_layout_xy(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_xz(self): self.ng_workers[cfg.data.scale()].set_layout_xz(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_xy_3d(self): self.ng_workers[cfg.data.scale()].set_layout_xy_3d(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_yz_3d(self): self.ng_workers[cfg.data.scale()].set_layout_yz_3d(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_xz_3d(self): self.ng_workers[cfg.data.scale()].set_layout_xz_3d(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_4panel(self): self.ng_workers[cfg.data.scale()].set_layout_4panel(); self.initNeuroglancer(s=cfg.data.scale())
+    # def ng_set_layout_3d(self): self.ng_workers[cfg.data.scale()].set_layout_3d(); self.initNeuroglancer(s=cfg.data.scale())
+
+    def ng_set_layout_yz(self): self.ng_workers[cfg.data.scale()].set_layout_yz(); self.initNeuroglancer()
+    def ng_set_layout_xy(self): self.ng_workers[cfg.data.scale()].set_layout_xy(); self.initNeuroglancer()
+    def ng_set_layout_xz(self): self.ng_workers[cfg.data.scale()].set_layout_xz(); self.initNeuroglancer()
+    def ng_set_layout_xy_3d(self): self.ng_workers[cfg.data.scale()].set_layout_xy_3d(); self.initNeuroglancer()
+    def ng_set_layout_yz_3d(self): self.ng_workers[cfg.data.scale()].set_layout_yz_3d(); self.initNeuroglancer()
+    def ng_set_layout_xz_3d(self): self.ng_workers[cfg.data.scale()].set_layout_xz_3d(); self.initNeuroglancer()
+    def ng_set_layout_4panel(self): self.ng_workers[cfg.data.scale()].set_layout_4panel(); self.initNeuroglancer()
+    def ng_set_layout_3d(self): self.ng_workers[cfg.data.scale()].set_layout_3d(); self.initNeuroglancer()
+
 
     def get_viewport(self):
         return self.ng_workers[cfg.data.scale()].viewport
@@ -2498,9 +2524,16 @@ class MainWindow(QMainWindow):
 
 
     def refresh_callback(self):
-        self.reload_snr_plot_checkboxes()
-        self.update_gui_details()
-        self.update_snr_plot()
+        # self.reload_snr_plot_checkboxes()
+        # self.update_gui_details()
+        # self.update_snr_plot()
+        if is_cur_scale_aligned():
+            self.main_details_widget.setText('%s\n'
+                                             'Bounding Rect: %s' % (cfg.data.name_base(),
+                                                                    str(cfg.data.bounding_rect())))
+        else:
+            self.main_details_widget.setText('%s' % (cfg.data.name_base()))
+        self.initNeuroglancer()
         self.hud.post('Refreshed!')
 
 
@@ -3696,7 +3729,7 @@ class MainWindow(QMainWindow):
 
     def show_snr(self, scale=None):
         if scale == None: scale = cfg.data.scale()
-        # logger.info('show_snr (s: %s):' % str(scale))
+        # logger.info('show_snr (s: %s):' % str(s))
         snr_list = cfg.data.snr_list(scale=scale)
         pg.setConfigOptions(antialias=True)
 

@@ -185,14 +185,14 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     # '''BUG OCCURS BEFORE THIS POINT'''
     # logger.info('\nExample Layer from Alignment Stack:')
     # try:
-    #     al_layer = updated_model['data']['scales'][scale]['alignment_stack'][-1]
+    #     al_layer = updated_model['data']['scales'][s]['alignment_stack'][-1]
     #     logger.info(json.dumps(al_layer, indent=2))
     # except:
     #     logger.info('No Alignment Layer Found')
 
 
     cfg.data = updated_model #0809-
-    # cfg.data['data']['scales'][scale]['alignment_stack']
+    # cfg.data['data']['scales'][s]['alignment_stack']
 
 
     write_run_to_file()
@@ -203,7 +203,7 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     # updated_model, need_to_write_json = run_json_project(
     #         project=copy.deepcopy(cfg.data.to_dict()),
     #         alignment_option=alignment_option,
-    #         scale=scale,
+    #         s=s,
     #         swiftir_code_mode=cfg.CODE_MODE,
     #         start_layer=start_layer,
     #         num_layers=num_layers)

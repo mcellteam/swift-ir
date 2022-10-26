@@ -137,10 +137,10 @@ def print_example_cafms(scale_dict):
     except:
         pass
 
-# def create_align_directories(scale):
-#     source_dir = os.path.join(cfg.data['data']['destination_path'], scale, "img_src")
+# def create_align_directories(s):
+#     source_dir = os.path.join(cfg.data['data']['destination_path'], s, "img_src")
 #     makedirs_exist_ok(source_dir, exist_ok=True)
-#     target_dir = os.path.join(cfg.data['data']['destination_path'], scale, "img_aligned")
+#     target_dir = os.path.join(cfg.data['data']['destination_path'], s, "img_aligned")
 #     makedirs_exist_ok(target_dir, exist_ok=True)
 
 

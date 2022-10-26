@@ -163,7 +163,7 @@ class HeadupDisplay(QWidget):
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
-        # QApplication.processEvents()
+        QApplication.processEvents()
 
     @Slot()
     def clear_display(self):
