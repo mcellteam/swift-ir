@@ -46,7 +46,7 @@ def run_json_project(project,
                      start_layer=0,
                      num_layers=-1,
                      alone=False):
-    '''Align one s - either the one specified in "scale" or the coarsest without an AFM.
+    '''Align one s - either the one specified in "s" or the coarsest without an AFM.
     :param project: All data data as a JSON dictionary
     :param alignment_option: This the alignment operation which can be one of three values: 'init_affine' (initializes
     the python_swiftir, normally it is run only on the coarsest s), 'refine_affine' (refines the python_swiftir, normally is run on
@@ -60,7 +60,7 @@ def run_json_project(project,
     '''
     logger.info('\n\nrun_json_project >>>>\n\n')
     logger.info("alignment_option = %s" % str(alignment_option))
-    logger.info("scale = %s" % str(use_scale))
+    logger.info("s = %s" % str(use_scale))
     logger.info("code_mode = %s" % str(swiftir_code_mode))
     logger.info("alone = %s" % str(alone))
     # __import__('code').interact(local={k: v for ns in (globals(), locals()) for k, v in ns.items()})
@@ -78,7 +78,7 @@ def run_json_project(project,
             next_scale = finest_scale_done
         allow_scale_climb = (finest_scale_done != 0)  # Allow s climbing if there is a finest_scale_done
     else:
-        # Force scale_tbd to be equal to scale
+        # Force scale_tbd to be equal to s
         scale_tbd = use_scale
         # Set allow_scale_climb according to statusBar of next coarser s
         scale_tbd_idx = proj_status['defined_scales'].index(scale_tbd)
@@ -1169,7 +1169,7 @@ single_scale_job.py
     updated_model, need_to_write_json =  run_json_project(
                                          data = project_dict,
                                          alignment_option = alignment_option,
-                                         scale = scale,
+                                         s = s,
                                          code_mode = code_mode,
                                          start_layer = start_layer,
                                          num_layers = num_layers )
@@ -1178,7 +1178,7 @@ single_alignment_job.py
    updated_model, need_to_write_json =  run_json_project(
                                          data = project_dict,
                                          alignment_option = alignment_option,
-                                         scale = scale,
+                                         s = s,
                                          code_mode = code_mode,
                                          start_layer = start_layer,
                                          num_layers = num_layers )
@@ -1187,7 +1187,7 @@ project_runner.py
             self.updated_model, self.need_to_write_json = run_json_project(
                     data=self.data,
                     alignment_option=self.alignment_option,
-                    scale=self.scale,
+                    s=self.s,
                     code_mode=self.code_mode,
                     start_layer=self.start_layer,
                     num_layers=self.num_layers)

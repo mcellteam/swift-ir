@@ -38,7 +38,7 @@ class NgHost(QRunnable):
         self.viewer_url = None
         self.scale = scale
         self.scales = [cfg.data.res_z(s=scale), cfg.data.res_y(s=scale), cfg.data.res_x(s=scale)]
-        self.sf = get_scale_val(scale)  # scale factor
+        self.sf = get_scale_val(scale)  # s factor
         self.ref_l = 'ref_' + str(self.sf)
         self.base_l = 'base_' + str(self.sf)
         self.aligned_l = 'aligned_' + str(self.sf)
@@ -271,8 +271,8 @@ class NgHost(QRunnable):
 
         # https://github.com/google/neuroglancer/blob/master/python/neuroglancer/local_volume.py
 
-        # cfg.main_window.ng_workers[cfg.data.scale()].baseLV.invalidate()
-        # cfg.main_window.ng_workers[cfg.data.scale()].baseLV.info()
+        # cfg.main_window.ng_workers[cfg.data.s()].baseLV.invalidate()
+        # cfg.main_window.ng_workers[cfg.data.s()].baseLV.info()
 
         def layer_left(s):
             # print('Layering left...')
@@ -331,21 +331,37 @@ class NgHost(QRunnable):
             s.status_messages['hello'] = msg
 
     # # layouts: 'xy', 'yz', 'xz', 'xy-3d', 'yz-3d', 'xz-3d', '4panel', '3d'
-    def set_layout_yz(self):  self.layout = 'xy'
+    def set_layout_yz(self):
+        self.layout = 'xy'
+        self.initViewer()
 
-    def set_layout_xy(self):  self.layout = 'yz'
+    def set_layout_xy(self):
+        self.layout = 'yz'
+        self.initViewer()
 
-    def set_layout_xz(self):  self.layout = 'xz'
+    def set_layout_xz(self):
+        self.layout = 'xz'
+        self.initViewer()
 
-    def set_layout_xy_3d(self):  self.layout = 'yz-3d'
+    def set_layout_xy_3d(self):
+        self.layout = 'yz-3d'
+        self.initViewer()
 
-    def set_layout_yz_3d(self):  self.layout = 'xy-3d'
+    def set_layout_yz_3d(self):
+        self.layout = 'xy-3d'
+        self.initViewer()
 
-    def set_layout_xz_3d(self):  self.layout = 'xz-3d'
+    def set_layout_xz_3d(self):
+        self.layout = 'xz-3d'
+        self.initViewer()
 
-    def set_layout_3d(self):  self.layout = '3d'
+    def set_layout_3d(self):
+        self.layout = '3d'
+        self.initViewer()
 
-    def set_layout_4panel(self):  self.layout = '4panel'
+    def set_layout_4panel(self):
+        self.layout = '4panel'
+        self.initViewer()
 
     def url(self):
         while True:

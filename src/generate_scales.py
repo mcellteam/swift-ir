@@ -77,9 +77,9 @@ def generate_scales():
 
     # '''Set more lenient permissions on Tifs'''
     # Triggers a warning when working with image files owned by other TACC users
-    # for scale in cfg.data.scales():
-    #     logger.info('Setting permissions on generated images for s %s...' % scale)
-    #     path = os.path.join(cfg.data.dest(), scale, 'img_src')
+    # for s in cfg.data.scales():
+    #     logger.info('Setting permissions on generated images for s %s...' % s)
+    #     path = os.path.join(cfg.data.dest(), s, 'img_src')
     #     for dirpath, dirnames, filenames in os.walk(path):
     #         for filename in filenames:
     #             path = os.path.join(dirpath, filename)

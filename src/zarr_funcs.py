@@ -18,8 +18,8 @@ from src.image_funcs import ImageSize, ComputeBoundingRect, imageio_read_image
 
 '''
 TensorStore has already been used to solve key engineering challenges in scientific computing (e.g., management and 
-processing of large datasets in neuroscience, such as peta-scale 3d electron microscopy data and “4d” videos of 
-neuronal activity). TensorStore has also been used in the creation of large-scale machine learning models such as 
+processing of large datasets in neuroscience, such as peta-s 3d electron microscopy data and “4d” videos of 
+neuronal activity). TensorStore has also been used in the creation of large-s machine learning models such as 
 PaLM by addressing the problem of managing model parameters (checkpoints) during distributed training.
 https://www.reddit.com/r/worldTechnology/comments/xuw7kk/tensorstore_for_highperformance_scalable_array/
 '''

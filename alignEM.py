@@ -136,7 +136,7 @@ def main():
     os.environ['QTWEBENGINE_CHROMIUM_FLAGS'] = '--disable-web-security'
 
     # os.environ['OPENBLAS_NUM_THREADS'] = '1'
-    os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
+    # os.environ['QTWEBENGINE_REMOTE_DEBUGGING'] = '9000'
 
     logger.critical('QtCore.__version__ = %s' % QtCore.__version__)
     logger.critical('qtpy.PYSIDE_VERSION = %s' % qtpy.PYSIDE_VERSION)
