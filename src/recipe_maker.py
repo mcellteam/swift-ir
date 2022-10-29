@@ -503,7 +503,7 @@ class alignment_process:
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=None)  # 0721
 
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, afm=dither_afm, ad=self.align_dir)  # 0721 only this one has dither (1x1)
-                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir )  # 0721 only this one has dither (1x1)
+                ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir )  # 0721
                 # ingredient_1 = align_ingredient(ww=(wwx, wwy), psta=psta_1, wht=wht, ad=self.align_dir)  # 0721-
                 # ingredient_2x2 = align_ingredient(ww=sx_2x2, psta=psta_2x2, wht=wht, ad=self.align_dir)
                 ingredient_2x2 = align_ingredient(ww=(int(sx_2x2), int(sy_2x2)), psta=psta_2x2, wht=wht, ad=self.align_dir)
@@ -687,20 +687,20 @@ class align_ingredient:
         self.ad=ad
 
         # Configure platform-specific path to executables for C SWiFT-IR
-        my_path = os.path.split(os.path.realpath(__file__))[0] + '/'
+        my_path = os.path.split(os.path.realpath(__file__))[0]
         logger.info('my_path = %s' % my_path)
         self.system = platform.system()
         self.node = platform.node()
         if self.system == 'Darwin':
-            self.swim_c = my_path + 'lib/bin_darwin/swim'
-            self.mir_c = my_path + 'lib/bin_darwin/mir'
+            self.swim_c = my_path + '/lib/bin_darwin/swim'
+            self.mir_c = my_path + '/lib/bin_darwin/mir'
         elif self.system == 'Linux':
             if '.tacc.utexas.edu' in self.node:
-                self.swim_c = my_path + 'lib/bin_tacc/swim'
-                self.mir_c = my_path + 'lib/bin_tacc/mir'
+                self.swim_c = my_path + '/lib/bin_tacc/swim'
+                self.mir_c = my_path + '/lib/bin_tacc/mir'
             else:
-                self.swim_c = my_path + 'lib/bin_linux/swim'
-                self.mir_c = my_path + 'lib/bin_linux/mir'
+                self.swim_c = my_path + '/lib/bin_linux/swim'
+                self.mir_c = my_path + '/lib/bin_linux/mir'
 
     def __str__(self):
         s = "ingredient:\n"

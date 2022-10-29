@@ -155,7 +155,7 @@ class QtImageStackViewer(QWidget):
         # self.setContentsMargins(0, 0, 0, 0)
 
         if self.role == 'aligned':
-            pixmap = QPixmap("src/resources/button_ng.png").scaled(120, 120, Qt.KeepAspectRatio,
+            pixmap = QPixmap("resources/button_ng.png").scaled(120, 120, Qt.KeepAspectRatio,
                                                                    Qt.SmoothTransformation)
             self.ng_callback_button = ClickablePicButton(pixmap)
             self.ng_callback_button.clicked.connect(self.ng_callback)

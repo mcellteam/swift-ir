@@ -10,6 +10,22 @@ Last updated: 22/01/2019, 07:55.
 Available at: https://github.com/GTRONICK/QSS/blob/master/Aqua.qss
 */
 
+QLabel#browser_overlay_label {
+    color: #FF0000;
+    font-size: 28px;
+}
+
+
+QTreeView#treeview_widget {
+    background-color: #ffffff;
+    color: #333;
+    border: 2px solid #555;
+    border-radius: 3px;
+    padding: 3px;
+    background: qradialgradient(cx: 0.3, cy: -0.4, fx: 0.3, fy: -0.4, radius: 1.35, stop: 0 #fff, stop: 1 #888);
+    min-width: 10px;
+}
+
 QWidget {
 
 	color: #000000;

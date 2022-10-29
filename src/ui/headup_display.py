@@ -110,7 +110,7 @@ class HeadupDisplay(QWidget):
         extra = {'qThreadName': ctname()}
         logger.log(level, message, extra=extra)
         self.textedit.moveCursor(QTextCursor.End)
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
     def start_thread(self):
         self.hud_worker = HudWorker()
@@ -163,7 +163,7 @@ class HeadupDisplay(QWidget):
         # logger.log(level, message, extra=extra)
         logger.log(level, message)
         self.textedit.moveCursor(QTextCursor.End)
-        QApplication.processEvents()
+        # QApplication.processEvents()
 
     @Slot()
     def clear_display(self):

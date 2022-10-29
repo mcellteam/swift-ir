@@ -122,24 +122,43 @@ class DataModel:
 
     def afm(self, s=None, l=None) -> list:
         if s == None: s = self.scale()
-        if l == None: s = self.layer()
-        return self._data['data']['scales'][s]['alignment_stack'][l][
-            'align_to_ref_method']['method_results']['affine_matrix']
+        if l == None: l = self.layer()
+        try:
+            return self._data['data']['scales'][s]['alignment_stack'][l][
+                'align_to_ref_method']['method_results']['affine_matrix']
+        except:
+            return [[0, 0, 0], [0, 0, 0]]
+
+    def afm_list(self, s=None, l=None) -> list:
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        lst = [l['align_to_ref_method']['method_results']['affine_matrix'] for l in self.aligned_dict()]
+        return lst
+
 
     def cafm(self, s=None, l=None) -> list:
         if s == None: s = self.scale()
-        if l == None: s = self.layer()
+        if l == None: l = self.layer()
         try:
             return self._data['data']['scales'][s]['alignment_stack'][l][
                 'align_to_ref_method']['method_results']['cumulative_afm']
         except:
-            return None
+            return [[0, 0, 0], [0, 0, 0]]
+            # return None
             # print_exception()
             # logger.warning('Unable To Return a CAFM')
 
+    def cafm_list(self, s=None, l=None):
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
+        lst = [l['align_to_ref_method']['method_results']['cumulative_afm'] for l in self.aligned_dict()]
+        return lst
+
+
+
     def bias_data_path(self, s=None, l=None):
         if s == None: s = self.scale()
-        if l == None: s = self.layer()
+        if l == None: l = self.layer()
         return os.path.join(cfg.data.dest(), s, 'bias_data')
 
 
@@ -231,23 +250,46 @@ class DataModel:
         # logger.critical('Returning %s ' % str(l))
         return l
 
-    def skipped(self) -> bool:
+    def skipped(self, s=None, l=None) -> bool:
+        # logger.info('skipped (called By %s)' % inspect.stack()[1].function)
+        if s == None: s = self.scale()
+        if l == None: l = self.layer()
         '''Returns the Bounding Rectangle On/Off State for the Current Scale.'''
-        return bool(self._data['data']['scales'][self.scale()]['alignment_stack'][self.layer()]['skipped'])
+        try:
+            skipped = bool(self._data['data']['scales'][s]['alignment_stack'][l]['skipped'])
+        except:
+            print_exception()
+            skipped = None
+        return skipped
 
-    def skip_list(self) -> list[int]:
+    def skips_list(self) -> list[int]:
         '''Returns the list of skipped images at the current s'''
-        l = []
+        lst = []
         try:
             scale = self.scale()
             for i in range(self.n_imgs()):
                 if self._data['data']['scales'][scale]['alignment_stack'][i]['skipped'] == True:
-                    l.append(i)
+                    lst.append(i)
+            return lst
         except:
-            logger.warning('Unable to To Get Skips');
+            logger.warning('Unable to To Return Skips List');
             return []
-        else:
-            return l
+
+
+    def skips_by_name(self, s=None) -> list[str]:
+        '''Returns the list of skipped images at the current s'''
+        if s == None: s = self.scale()
+        lst = []
+        try:
+            for i in range(self.n_imgs()):
+                if self._data['data']['scales'][s]['alignment_stack'][i]['skipped'] == True:
+                    f = os.path.basename(self._data['data']['scales'][s]['alignment_stack'][i][
+                                             'images']['base']['filename'])
+                    lst.append(f)
+            return lst
+        except:
+            logger.warning('Unable to To Return Skips By Name List');
+            return []
 
     def whitening(self) -> float:
         '''Returns the Whitening Factor for the Current Layer.'''
@@ -268,8 +310,12 @@ class DataModel:
         try:
             return self._data['data']['scales'][s]['bounding_rect']
         except:
-            self.set_bounding_rect(ComputeBoundingRect(self.aligned_dict(s=s)))
-            return self._data['data']['scales'][s]['bounding_rect']
+            try:
+                self.set_bounding_rect(ComputeBoundingRect(self.aligned_dict(s=s)))
+                return self._data['data']['scales'][s]['bounding_rect']
+            except:
+                logger.warning('Unable to return a bounding rect')
+                return None
 
 
 
@@ -298,7 +344,10 @@ class DataModel:
     def name_base(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
         if l == None: l = self.layer()
-        return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+        try:
+            return os.path.basename(self._data['data']['scales'][s]['alignment_stack'][l]['images']['base']['filename'])
+        except:
+            return ''
 
     def path_aligned(self, s=None, l=None) -> str:
         if s == None: s = self.scale()
@@ -378,10 +427,17 @@ class DataModel:
     #     abs_path = os.path.join(os.path.split(proj_path)[0], file_path)
     #     return abs_path
 
+    def set_al_dict(self, aldict, s=None):
+        if s == None: s = self.scale()
+        try:
+            self._data['data']['scales'][s]['alignment_stack'] = aldict
+        except:
+            logger.warning('Unable to set alignment dict')
+
     def set_afm(self, afm:list, s=None, l=None) -> None:
         '''set afm as list of lists of floats'''
         if s == None: s = self.scale()
-        if l == None: s = self.layer()
+        if l == None: l = self.layer()
         try:
             self._data['data']['scales'][s]['alignment_stack'][l][
                 'align_to_ref_method']['method_results']['cumulative_afm'] = afm
@@ -392,7 +448,7 @@ class DataModel:
     def set_cafm(self, cafm:list, s=None, l=None) -> None:
         '''set cafm as list of lists of floats'''
         if s == None: s = self.scale()
-        if l == None: s = self.layer()
+        if l == None: l = self.layer()
         try:
             self._data['data']['scales'][s]['alignment_stack'][l][
                 'align_to_ref_method']['method_results']['cumulative_afm'] = cafm
@@ -674,7 +730,7 @@ class DataModel:
 
 
     def are_there_any_skips(self) -> bool:
-        if cfg.data.skip_list() == []:
+        if cfg.data.skips_list() == []:
             return False
         else:
             return True

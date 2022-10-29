@@ -194,7 +194,6 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
     cfg.data = updated_model #0809-
     # cfg.data['data']['scales'][s]['alignment_stack']
 
-
     write_run_to_file()
 
     # print_alignment_layer()
@@ -219,12 +218,16 @@ def compute_affines(scale, start_layer=0, num_layers=-1):
 def write_run_to_file(scale=None):
     if scale == None: scale = cfg.data.scale()
     snr_avg = 'SNR=%.3f' % cfg.data.snr_average(scale=scale)
-    date = datetime.now().strftime("%Y-%m-%d")
-    time = datetime.now().strftime("%H%M%S")
+    # date = datetime.now().strftime("%Y-%m-%d") # date + time is always 17 chars
+    # time = datetime.now().strftime("%H%M%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d_%I:%M:%S%p")
+    results = 'results'
     swim_input = 'swim=%.3f' % cfg.main_window.get_swim_input()
     whitening_input = 'whitening=%.3f' % cfg.main_window.get_whitening_input()
-    details = [scale, date, time, swim_input, whitening_input, snr_avg]
-    fn = '_'.join(details) + '.txt'
+    # details = [date, time, scale, swim_input, whitening_input, snr_avg]
+    scale_str = 's' + str(get_scale_val(scale))
+    details = [scale, timestamp]
+    fn = '_'.join(details) + '.json'
     of = Path(os.path.join(cfg.data.dest(), scale, 'history', fn))
     of.parent.mkdir(exist_ok=True, parents=True)
     with open(of, 'w') as f:

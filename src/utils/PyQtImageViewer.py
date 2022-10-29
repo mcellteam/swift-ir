@@ -197,7 +197,7 @@ class QtImageViewer(QGraphicsView):
                                         border: #8ad4ff solid 1px;
                                         }""")
 
-        # pixmap = QPixmap("src/resources/button_ng.png").scaled(120, 120, Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        # pixmap = QPixmap("resources/button_ng.png").scaled(120, 120, Qt.KeepAspectRatio, Qt.SmoothTransformation)
 
         # if self.role == 'aligned':
         #     self.ng_callback_button = ClickablePicButton(pixmap)
